@@ -16,83 +16,68 @@
 Open to suggestion on how to separate and describe low-level design
 concepts and implementations.
 
-\subsection{Discrete PDEs and Operators}
+\subsection{Operators}
 An Operator represents a map from linear space $X$ to linear space $Y$.
-Typically, this map is a linear map; however, it can be used also to calculate
-a nonlinear residual. 
-The spaces $X$ and $Y$ are described by class {\tt CompositeVector}. 
+Typically, this map is a linear map; however, there are exceptions in
+high-order advection methods. The spaces $X$ and $Y$ are described 
+by class {\tt CompositeVector}. 
 A few maps $X \to Y$ are supported now.
+At the moment $X = Y$.
 
-An discrete PDE consists of (a) a single global operatorr, (2) an 
-optional assembled matrix, and (3) an un-ordered additive collection of 
-lower-rank (or equal) local operators, here called Ops. 
-During its construction, a PDE can grow by assimilating more Ops. 
-The global Operator knows how to peform the method "Apply" and assemble 
-all of its local Ops.
-The PDE knows how to apply boundary conditions and to create a preconditioner.
+An Operator consists of, potentially, both a single, global, assembled
+matrix AND an un-ordered, additive collection of lower-rank (or equal) 
+local operators, here called 'Op's. During its construction, an operator
+can grow by assimilating more Ops. An Operator knows how to peform 
+the method "Apply" and assemble all of its local Ops.
 
 Typically the forward operator is applied using only local Ops.
 The inverse operator typically requires assembling a matrix, which 
-may represent the entire operator or may be only its Schur complement.
+may represent the entire operator or may be a Schur complement.
 
-In all Operators and Ops, a key concept is the schema. 
-A schema includes at least one enum representing the dofs associated
-with the Operator's domain and range. A single schema is a major limitation 
-since it implies $X=Y$.
-The new design (backward compatible) includes two schemas that are more 
-detailed. A list of enums allows us to represent various collections of 
-degrees of freedom including derivatives and vector components.
-A schema includes also information on the base entity on which the local 
-matrix lives.
+In all Operators, Ops, and matrices, a key concept is the schema. 
+A schema includes, at the least, an enum representing the dofs associated
+with the Operator's domain (and implied equivalent range, since $X=Y$).
+A schema may also, in the case of Ops, include information on the base
+entity on which the local matrix lives.
 
 The idea behind the desing of Amanzi operators is to separate three 
 functionalities that are frequently placed in a single class in other
 C++ packages.
 
 \begin{enumerate}
-\item Local matrices and data layout such as the local schema.
+\item Assembly of a global matrix, including matrix map issues;
+action of an inverse operator; calculation of Schur complements.
 
-\item Operators: assembly of a global matrix and elemental operations with it
-such as action of an inverse operator, and calculation of the Schur complement.
+\item Data layout of local matrices, such as the local schema.
 
-\item Discrete PDEs: populate values in local matrices, add nonlinear 
-coefficients, create specialized preconditioners, and impose special
-boundary conditions. 
+\item Values in local matrices, i.e. the actual discretization.
 \end{enumerate}
 
-A series of {\tt Op\_BASE\_DOFS} classes (such as {\tt Op\_Cell\_FaceCell} and 
-{\tt Op\_Cell\_Schema}) handle data layout (item \#1). 
-These are really just structs of vectors of
+The class {\tt Operator} performes actions summarized in item \#1. There exists
+a series of inheriting classes such as {\tt Operator\_Cell}, {\tt Operator\_FaceCell}, 
+{\tt Operator\_FaceCellSff}, where the suffix {\tt \_X} indicates the map/matrix.
+They are derived from the virtual class {\tt Operator} which stores a list of Op classes,
+see below.
+
+A series of {\tt Op\_BASE\_DOFS} classes (such as {\tt Op\_Cell\_FaceCell})
+handle data layout (item \#2). These are really just structs of vectors of
 dense matrices of doubles, and simply provide a type.
 They are derived from the virtual class {\tt Op}.
 
-The class {\tt Operator} performes actions summarized in item \#2. There exists
-a series of inheriting classes such as {\tt Operator\_Cell}, {\tt Operator\_Schema}, 
-{\tt Operator\_FaceCellSff}, where the suffix {\tt \_X} indicates the map/matrix.
-Explicit maps are superceded by the flexible new schema.
-They are derived from the virtual class {\tt Operator} which stores a local 
-and global schemas. 
-One Operator is marked as the global operator. It stores a list of Op classes
-with compatible (equal or smaller) schemas.
-
-The classes {\tt Diffusion}, {\tt Advection}, {\tt Elasticity},  
-and {\tt Accumulation} in item \#3 create operators of the right type (for instance 
-{\tt Operator\_FaceCell} or {\tt Operator\_Schema}), populate their values, and stick 
-them in a global operator.
+The classes {\tt OperatorDiffusion}, {\tt OperatorAdvection}, and {\tt OperatorAccumulation} 
+in item \#3 create operators of the right type (for instance {\tt Operator\_FaceCell}), populate their 
+values, and stick them in a {\it global operator}.
 These are physics based operators and perform complex operations such as approximation
 of Newton correction terms.
 
 This desing enables a few things for future code development.
 For instance, it should make creating surface matrices, and then assembling into a 
-subsurface matrix doable by introducing a new {\tt Op} class with a simple schema
-or using class {\tt Op\_Cell\_Schema} with a complex schema. 
+subsurface matrix doable by introducing a new {\tt Op} class.  
 It also makes it trivial to assemble the global operator into a bigger, containing 
 matrix (i.e. energy + flow) as any of the four sub-blocks.
-Finally, the new schema support rectangular matrices useful for copling with 
-Stokes-type systems.
 
-The only potentially confusing part is the use of the visitor pattern (i.e. double 
-dispatch in this case) to resolve all types.  
+The only potentially confusing part is the use of the visitor pattern (i.e. double dispatch 
+in this case) to resolve all types.  
 For instance to assemble a matrix, we may use the following pseudocode
 
 \begin{verbatim}
@@ -123,34 +108,29 @@ AssembleMatrixOp(Op_Cell_FaceCell& op, Matrix& A) {
 \end{verbatim}
 
 The reason for the double dispatch is to get the types specifically
-without a ton of statements like this one "if (schema | XX \&\& schema | YY) 
+without a ton of statement like this one "if (schema | XX \&\& schema | YY) 
 \{ assemble one way \} else \{ assemble another way\}".
 
-\underline{Note on the discretization of PDEs}: Discretization of a simple 
-PDE (i.e. diffusion) is not constructed directly. 
-Instead, a helper class that contains methods for creating and populating 
-the Ops within the Operator is created. This helper class can create the
-appropriate discretization itself. More complex PDES, for instance the
-advection-diffusion, can be discretized by creating a global Operator that 
-is the union of all dofs requirements, and then passing this Operator
+Note on the construction of Operators: For simple operations
+(i.e. diffusion), Operators are not constructed directly.  Instead, 
+a helper class that contains methods for creating and populating the
+Ops within the Operator is created. This helper class can create the
+appropriate Operator itself. More complex operations, i.e. 
+advection-diffusion, can be generated by creating an Operator that 
+is the union of all dof requirements, and then passing this Operator
 into the helper's constructor. When this is done, the helper simply 
 checks to make sure the Operator contains the necessary dofs and
-adds local Ops to the global Operator's list of Ops.
+adds local Ops to the Operator's list of Ops.
 
-\underline{Three notes on implementation for developers}: 
-1. Ops work via a visitor pattern.
+Note on implementation for developers: Ops work via a visitor pattern.
 Matrix assembly, "Apply", apllication of boundary conditions, and symbolic assembly 
 are implemented by the virtual class {\tt Operator} calling a dispatch to the 
 virtual class {\tt Op}, which then dispatches back to the derived class Operator so that
 type information of both the Operator (i.e. global matrix info) and 
 the Op (i.e. local matrix info) are known.
 
-2. Application of boundary conditions is driven by a discrete PDEs class. 
-Hence, each PDE object contributing to the global PDE object must apply
-boundary conditions itself.
-
-3. Ops can be shared by Operators. 
-In combination with {\it CopyShadowToMaster()} and {\it Rescale()},
+Note on implementation for developers: Ops can be shared by
+Operators. In combination with {\it CopyShadowToMaster()} and {\it Rescale()},
 the developer has a room for a variaty of optimized implementations.
 The key variable is ops\_properties. The key parameters are 
 OPERATOR\_PROPERTY and described in Operators\_Defs.hh.
