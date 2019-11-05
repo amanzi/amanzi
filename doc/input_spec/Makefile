@@ -8,8 +8,8 @@ PY_CSS = --stylesheet=$(CBpath)/pygments-default.css
 PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
 SRC = \
-	AmanziNativeSpecV8.rst \
-	AmanziInputSpec-v2.3.2-draft.rst
+	AmanziNativeSpecV7.rst \
+	AmanziInputSpec-v2.3.rst
 
 HTML = $(SRC:%.rst=%.html)
 

@@ -119,7 +119,7 @@ under isothermal conditions are
 \begin{equation}
   \phi \left(\Frac{S_s}{g} + \Frac{S_y}{L\,g}\right) \frac{\partial p_l}{\partial t} 
   =
-  -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
+  \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \qquad
   \bq_l = -\frac{\K}{\mu_l} 
   (\bnabla p_l - \rho_l \bg),
@@ -177,7 +177,7 @@ In the mixed formulation, this equation is continuous when
 transitioning from the saturated zone to the vadoze zone:
 \begin{equation}
   \frac{\partial \theta}{\partial t} 
-  = -\bnabla \cdot (\eta_l \bq_l) + Q,
+  = \bnabla \cdot (\eta_l \bq_l) + Q,
   \qquad
   \bq_l = -\frac{\K k_{rl}}{\mu_l} 
   (\bnabla p_l - \rho_l \bg),
@@ -364,7 +364,7 @@ is given by
 \begin{equation}
   \frac{\partial \theta}{\partial t} 
   =
-  - \bnabla \cdot (\eta_l \bq_l)
+  \bnabla \cdot (\eta_l \bq_l)
   - \bnabla \cdot (\K_g \bnabla \big(\frac{p_v}{p_g}\big)) + Q,
   \qquad
   \bq_l = -\frac{\K k_r}{\mu} (\bnabla p - \rho_l \bg)
@@ -391,7 +391,7 @@ The Richards equation in the mobile region is augmented by the water exchange
 term $\Sigma_w$: 
 \begin{equation}
   \frac{\partial \theta_f}{\partial t} 
-  = -\bnabla \cdot (\eta_l \bq_l) - \Sigma_w + Q_f,
+  = \bnabla \cdot (\eta_l \bq_l) - \Sigma_w + Q_f,
   \qquad
   \bq_l = -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg),
 \end{equation}

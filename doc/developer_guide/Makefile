@@ -16,7 +16,9 @@ AUXFILES=$(shell ls bu*.aux)
 $(PDFFILE): $(TEXFILES) $(BIBFILE)
 	TEXINPUTS=.//:;\
 	pdflatex $(TEXFILE);\
-	bibtex $(FILE)
+	bibtex $(FILE);\
+	pdflatex $(TEXFILE);\
+	pdflatex $(TEXFILE)
 
 $(BIBFILE): $(BIBFILES)
 	/bin/rm -f $(BIBFILE); cat $(BIBFILES) > $(BIBFILE)
