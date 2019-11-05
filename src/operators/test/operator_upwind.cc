@@ -51,8 +51,6 @@ class Model {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-typedef double(Model::*ModelUpwindFn)(int c, double pc) const; 
-
 }  // namespace Amanzi
 
 

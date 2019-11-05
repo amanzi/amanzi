@@ -187,8 +187,6 @@ class HeatConduction {
   mutable Analytic03 ana_;
 };
 
-typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
-
 }  // namespace Amanzi
 
 #endif

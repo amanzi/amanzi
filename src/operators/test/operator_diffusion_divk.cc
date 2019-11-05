@@ -283,9 +283,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   knc->UpdateValues(*flux, bc_model, bc_value);  // 1st argument is not used
   // upwind.Compute(*flux, *solution, bc_model, *knc->values());
-  ModelUpwindFn func = &HeatConduction::Conduction;
   upwind.Compute(*flux, *solution, bc_model, *knc->values());
-  // upwind.Compute2(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);
