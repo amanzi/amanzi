@@ -24,7 +24,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext github
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -48,6 +48,7 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  github     to push HTML documentation to gh-pages branch"
 	@echo ""
 	@echo " Environment Check "
 	@echo " AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
@@ -93,6 +94,18 @@ htmlhelp:
 	@echo
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      ".hhp project file in $(BUILDDIR)/htmlhelp."
+
+github:
+	$(eval GIT_BRANCH := $(shell git branch | grep \* | cut -d ' ' -f2))
+	make html
+	git symbolic-ref HEAD refs/heads/gh-pages
+	rm ../../.git/index
+	git add _build/html/*
+	git mv _build/html/* ../../
+	touch ../../.nojekyll && git add ../../.nojekyll
+	git commit -m "Update documentation"
+	git push origin gh-pages
+	git checkout -f ${GIT_BRANCH}
 
 qthelp:
 	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(BUILDDIR)/qthelp
