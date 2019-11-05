@@ -17,7 +17,7 @@
 #include "VaporPressure_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 VaporPressure_Water::VaporPressure_Water(Teuchos::ParameterList& plist) :
     plist_(plist),
@@ -46,5 +46,5 @@ double VaporPressure_Water::DSaturatedVaporPressureDT(double T) {
   return SaturatedVaporPressure(T) * (-ka_/(T*T) + kb_ + 2.0*kc_*T + kd_/T);
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

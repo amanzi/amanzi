@@ -22,7 +22,7 @@
 #include "EOS.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class EOS_ConstantMolarMass : public EOS {
  public:
@@ -60,7 +60,7 @@ class EOS_ConstantMolarMass : public EOS {
   double M_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

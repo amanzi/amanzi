@@ -15,7 +15,7 @@
 #include "EOS_Constant.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 EOS_Constant::EOS_Constant(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist) {
@@ -38,5 +38,5 @@ void EOS_Constant::InitializeFromPlist_() {
   }
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

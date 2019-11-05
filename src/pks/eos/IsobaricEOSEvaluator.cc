@@ -15,7 +15,7 @@
 #include "IsobaricEOSEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 /* *******************************************************************
 * Constructor takes a parameter list.
@@ -182,5 +182,5 @@ void IsobaricEOSEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

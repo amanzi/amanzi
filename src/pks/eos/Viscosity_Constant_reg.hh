@@ -14,9 +14,9 @@
 #include "Viscosity_Constant.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 Utils::RegisteredFactory<Viscosity_Base, Viscosity_Constant> Viscosity_Constant::factory_("constant");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
