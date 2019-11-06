@@ -11,6 +11,7 @@ add_library(generic_evaluators
     MultiplicativeEvaluator.cc
     AdditiveEvaluator.cc
     SubgridDisaggregateEvaluator.cc
+    SubgridAggregateEvaluator.cc
     )
 
 install(TARGETS generic_evaluators DESTINATION lib)

@@ -1,15 +1,15 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The thaw depth evaluator gets the subsurface temperature.
-  This computes the thaw depth over time.
+  The gas content evaluator gets the subsurface temperature.
+  This computes the gas content in the underneath column and puts on the surface cell.
   This is SecondaryVariablesFieldEvaluator and depends on the subsurface temperature, 
 
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_GASCONTENT_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_GASCONTENT_EVALUATOR_
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -17,12 +17,12 @@
 namespace Amanzi {
 namespace Flow {
 
-class ThawDepthEvaluator : public SecondaryVariableFieldEvaluator {
+class GasContentEvaluator : public SecondaryVariableFieldEvaluator {
 
 public:
   explicit
-  ThawDepthEvaluator(Teuchos::ParameterList& plist);
-  ThawDepthEvaluator(const ThawDepthEvaluator& other);
+  GasContentEvaluator(Teuchos::ParameterList& plist);
+  GasContentEvaluator(const GasContentEvaluator& other);
   Teuchos::RCP<FieldEvaluator> Clone() const;
   
 protected:
@@ -39,11 +39,11 @@ protected:
 
 
   bool updated_once_;
-  double trans_width_;
+  Key temp_key_, cv_key_, sat_key_;
   Key domain_;
-  Key temp_key_;
+  double trans_width_;
 private:
-  static Utils::RegisteredFactory<FieldEvaluator,ThawDepthEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,GasContentEvaluator> reg_;
 
 };
   

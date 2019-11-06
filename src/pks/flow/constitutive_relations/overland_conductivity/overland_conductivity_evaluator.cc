@@ -45,7 +45,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   }
 
   sg_model_ =  plist_.get<bool>("subgrid model", false);
-  AMANZI_ASSERT(!sg_model_);
+  //AMANZI_ASSERT(!sg_model_);
   if(sg_model_){
     pdd_key_ = Keys::readKey(plist_, domain, "ponded depth minus depression depth", "ponded_depth_minus_depression_depth");
     dependencies_.insert(pdd_key_);
@@ -61,7 +61,6 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   }
 
   // create the model
-  std::cout<<"Overland: "<<domain<<"\n";
   AMANZI_ASSERT(plist_.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
@@ -198,8 +197,10 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
    //never called otherwsise it needs to changed for subgrid model
   if (sg_model_){
-    Errors::Message message("Overland Conductivity Evaluator: Evaluate partial derivaritve not implemented for the Subgrid Model."); 
-    Exceptions::amanzi_throw(message);
+    // FIX ME -- need to add derivatives of conductivity model wrt slope, coef --etc
+    result->PutScalar(0.);
+    //    Errors::Message message("Overland Conductivity Evaluator: Evaluate partial derivaritve not implemented for the Subgrid Model."); 
+    // Exceptions::amanzi_throw(message);
   }
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);

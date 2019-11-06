@@ -1,20 +1,20 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation evaluator gets the subsurface temperature and computes the thaw depth 
+  The elevation evaluator gets the subsurface temperature and computes water table 
   over time.
 
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "thaw_depth_evaluator.hh"
+#include "water_table_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 
 
-ThawDepthEvaluator::ThawDepthEvaluator(Teuchos::ParameterList& plist)
+WaterTableEvaluator::WaterTableEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
@@ -25,25 +25,29 @@ ThawDepthEvaluator::ThawDepthEvaluator(Teuchos::ParameterList& plist)
   domain_ss << "column_"<< col_id;
   temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
   dependencies_.insert(temp_key_);
+  
+  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
+  dependencies_.insert(sat_key_);
 
   trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
 }
   
 
-ThawDepthEvaluator::ThawDepthEvaluator(const ThawDepthEvaluator& other)
+WaterTableEvaluator::WaterTableEvaluator(const WaterTableEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
-    temp_key_(other.temp_key_)
+    temp_key_(other.temp_key_),
+    sat_key_(other.sat_key_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
-ThawDepthEvaluator::Clone() const
+WaterTableEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ThawDepthEvaluator(*this));
+  return Teuchos::rcp(new WaterTableEvaluator(*this));
 }
 
 
 void
-ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+WaterTableEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -56,29 +60,30 @@ ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& top_z_centroid = S->GetMesh(domain_ss)->face_centroid(0);
   AmanziGeometry::Point z_centroid(top_z_centroid);
 
-  const auto& temp_c = *S->GetFieldData(temp_key_)
-    ->ViewComponent("cell", false);
-    
+  const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
+  const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
+
   int col_cells = temp_c.MyLength();
   for (int i=0; i!=col_cells; ++i) {
-    if (temp_c[0][i] >= trans_temp) {
-      z_centroid = S->GetMesh(domain_ss)->face_centroid(i+1);
+    if (sat_c[0][i] == 1.0) {
+      z_centroid = S->GetMesh(domain_ss)->face_centroid(i);
+      break;
     }
   }
-  
+    
   res_c[0][0] = top_z_centroid[2] - z_centroid[2];
-  
+ 
 }
   
 void
-ThawDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+WaterTableEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {}
 
  
 // Custom EnsureCompatibility forces this to be updated once.
 bool
-ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
+WaterTableEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
         Key request)
 {
   bool changed = SecondaryVariableFieldEvaluator::HasFieldChanged(S,request);
@@ -92,7 +97,7 @@ ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
 }
 
 void
-ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+WaterTableEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
 
   AMANZI_ASSERT(my_key_ != std::string(""));

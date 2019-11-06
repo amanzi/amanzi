@@ -8,8 +8,8 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_MOISTURECONTENT_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_MOISTURECONTENT_EVALUATOR_
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -17,12 +17,12 @@
 namespace Amanzi {
 namespace Flow {
 
-class ThawDepthEvaluator : public SecondaryVariableFieldEvaluator {
+class MoistureContentEvaluator : public SecondaryVariableFieldEvaluator {
 
 public:
   explicit
-  ThawDepthEvaluator(Teuchos::ParameterList& plist);
-  ThawDepthEvaluator(const ThawDepthEvaluator& other);
+  MoistureContentEvaluator(Teuchos::ParameterList& plist);
+  MoistureContentEvaluator(const MoistureContentEvaluator& other);
   Teuchos::RCP<FieldEvaluator> Clone() const;
   
 protected:
@@ -39,11 +39,11 @@ protected:
 
 
   bool updated_once_;
-  double trans_width_;
+  Key temp_key_, cv_key_, sat_key_;
   Key domain_;
-  Key temp_key_;
+  double trans_width_;
 private:
-  static Utils::RegisteredFactory<FieldEvaluator,ThawDepthEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,MoistureContentEvaluator> reg_;
 
 };
   

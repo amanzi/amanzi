@@ -1,20 +1,20 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation evaluator gets the subsurface temperature and computes the thaw depth 
+  The elevation evaluator gets the subsurface temperature and computes moisture content 
   over time.
 
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "thaw_depth_evaluator.hh"
+#include "moisture_content_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 
 
-ThawDepthEvaluator::ThawDepthEvaluator(Teuchos::ParameterList& plist)
+MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
@@ -25,25 +25,33 @@ ThawDepthEvaluator::ThawDepthEvaluator(Teuchos::ParameterList& plist)
   domain_ss << "column_"<< col_id;
   temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
   dependencies_.insert(temp_key_);
-
+  
+  cv_key_ = Keys::getKey(domain_ss.str(),"cell_volume");
+  dependencies_.insert(cv_key_);
+  
+  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
+  dependencies_.insert(sat_key_);
+  
   trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
 }
   
 
-ThawDepthEvaluator::ThawDepthEvaluator(const ThawDepthEvaluator& other)
+MoistureContentEvaluator::MoistureContentEvaluator(const MoistureContentEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
-    temp_key_(other.temp_key_)
+    temp_key_(other.temp_key_),
+    cv_key_(other.cv_key_),
+    sat_key_(other.sat_key_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
-ThawDepthEvaluator::Clone() const
+MoistureContentEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ThawDepthEvaluator(*this));
+  return Teuchos::rcp(new MoistureContentEvaluator(*this));
 }
 
 
 void
-ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+MoistureContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -56,29 +64,34 @@ ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& top_z_centroid = S->GetMesh(domain_ss)->face_centroid(0);
   AmanziGeometry::Point z_centroid(top_z_centroid);
 
-  const auto& temp_c = *S->GetFieldData(temp_key_)
-    ->ViewComponent("cell", false);
-    
+  const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
+  const auto& cv_c = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
+  const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
+
   int col_cells = temp_c.MyLength();
+  double col_sum = 0;
+  double cv_sum = 0;
   for (int i=0; i!=col_cells; ++i) {
+    // this hard codes in the transition width to 0.2 K
     if (temp_c[0][i] >= trans_temp) {
-      z_centroid = S->GetMesh(domain_ss)->face_centroid(i+1);
+      col_sum += cv_c[0][i] * sat_c[0][i];
+      cv_sum += cv_c[0][i];
     }
   }
   
-  res_c[0][0] = top_z_centroid[2] - z_centroid[2];
-  
+  res_c[0][0] = cv_sum > 0.0 ? col_sum/cv_sum : 0;
+ 
 }
   
 void
-ThawDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+MoistureContentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {}
 
  
 // Custom EnsureCompatibility forces this to be updated once.
 bool
-ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
+MoistureContentEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
         Key request)
 {
   bool changed = SecondaryVariableFieldEvaluator::HasFieldChanged(S,request);
@@ -92,7 +105,7 @@ ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
 }
 
 void
-ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+MoistureContentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
 
   AMANZI_ASSERT(my_key_ != std::string(""));
