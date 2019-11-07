@@ -91,6 +91,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
     melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
+    my_keys_.push_back(evap_key_);
     snow_temp_key_ = Keys::readKey(plist, domain_snow_, "snow temperature", "temperature");
     qE_sh_key_ = Keys::readKey(plist, domain_, "sensible heat flux", "qE_sensible_heat");
     qE_lh_key_ = Keys::readKey(plist, domain_, "latent heat of evaporation", "qE_latent_heat");
