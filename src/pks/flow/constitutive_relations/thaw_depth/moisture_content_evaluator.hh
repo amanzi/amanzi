@@ -39,7 +39,8 @@ protected:
 
 
   bool updated_once_;
-  Key temp_key_, cv_key_, sat_key_;
+  bool volumetric_wc_;
+  Key temp_key_, cv_key_, sat_key_, por_key_;
   Key domain_;
   double trans_width_;
 private:
