@@ -21,7 +21,7 @@
 #include "MolarFractionGasEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
@@ -48,7 +48,7 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

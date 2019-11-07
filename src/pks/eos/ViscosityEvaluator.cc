@@ -16,7 +16,7 @@
 #include "ViscosityEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -101,5 +101,5 @@ void ViscosityEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

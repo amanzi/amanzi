@@ -13,9 +13,9 @@
 #include "EOS_VaporInGas.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 Utils::RegisteredFactory<EOS, EOS_VaporInGas> EOS_VaporInGas::factory_("vapor in gas");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

@@ -19,7 +19,7 @@
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
@@ -53,7 +53,7 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator, EOSEvaluator> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

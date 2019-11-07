@@ -36,6 +36,14 @@ if __name__ == "__main__":
         sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
     except:
         pass
+
+    try:
+        PF_DIR='/home/smolins/work/PF-Alquimia_verification'
+        sys.path.append(PF_DIR)
+        from PF_GetXY import GetXY_ParFlow_1D_100
+    except:
+        print 'error: parflow directory not found in ',PF_DIR
+        raise
     
     # root name for problem
     root = "tracer"
@@ -113,7 +121,29 @@ if __name__ == "__main__":
         struct_crunch = len(x_amanziS_crunch)
     except:
         struct_crunch = 0
-
+       
+    # parflow + pflotran
+    try:
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_pflotran')
+        
+        compPF = "tracer_pf.out.PrimaryMobile.00.tracer.00005.txt"
+        x_parflow_pflo, c_parflow_pflo = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
+        parflow_pflo = len(x_parflow_pflo)
+       
+    except:
+        parflow_pflo = 0
+        
+    # parflow + crunch
+    try:
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_crunch')
+        
+        compPF = "tracer_pf.out.PrimaryMobile.00.tracer.00005.txt"
+        x_parflow_crunch, c_parflow_crunch = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
+        parflow_crunch = len(x_parflow_crunch)
+       
+    except:
+        parflow_crunch = 0
+        
 # plotting --------------------------------------------------------
 
 # subplots
@@ -140,6 +170,16 @@ if __name__ == "__main__":
     if (struct_crunch>0):
         sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)     
 
+#    import pdb; pdb.set_trace()
+        
+# parflow + pflotran
+    if (parflow_pflo>0):
+        pfpfC  = ax.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alq(PFT)',linewidth=2)
+
+# parflow + crunch
+    if (parflow_crunch>0):
+        pfcfC  = ax.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CF)',linewidth=2)
+        
 # figure look
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)

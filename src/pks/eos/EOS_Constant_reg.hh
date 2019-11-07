@@ -15,10 +15,10 @@
 #include "EOS_Constant.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<EOS, EOS_Constant> EOS_Constant::factory_("constant");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

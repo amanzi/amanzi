@@ -19,7 +19,7 @@
 #include "VaporPressure_Base.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class VaporPressure_Water : public VaporPressure_Base {
  public:
@@ -36,7 +36,7 @@ class VaporPressure_Water : public VaporPressure_Base {
   static Utils::RegisteredFactory<VaporPressure_Base, VaporPressure_Water> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

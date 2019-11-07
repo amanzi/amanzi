@@ -15,12 +15,12 @@
 #include "VaporPressureBaseFactory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // explicity instantitate the static data of Factory<VaporPressure>
 // template<> 
-// Amanzi::Utils::Factory<Amanzi::EOS::VaporPressureRelation>::map_type* 
-//    Amanzi::Utils::Factory<Amanzi::EOS::VaporPressureRelation>::map_;
+// Amanzi::Utils::Factory<Amanzi::AmanziEOS::VaporPressureRelation>::map_type* 
+//    Amanzi::Utils::Factory<Amanzi::AmanziEOS::VaporPressureRelation>::map_;
 
 // method for instantiating VaporPressure implementations
 Teuchos::RCP<VaporPressure_Base> VaporPressureBaseFactory::CreateVaporPressure(Teuchos::ParameterList& plist) {
@@ -28,6 +28,6 @@ Teuchos::RCP<VaporPressure_Base> VaporPressureBaseFactory::CreateVaporPressure(T
   return Teuchos::rcp(CreateInstance(eos_typename, plist));
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 

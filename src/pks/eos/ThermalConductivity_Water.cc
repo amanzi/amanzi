@@ -17,7 +17,7 @@
 #include "ThermalConductivity_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 /* *******************************************************************
 * Constructor takes a parameter list to override defaulr values. This
@@ -85,5 +85,5 @@ void ThermalConductivity_Water::InitializeFromPlist_()
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

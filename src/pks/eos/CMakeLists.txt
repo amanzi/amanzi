@@ -107,7 +107,6 @@ endif()
 # Install Targets
 #
 set(eos_inc_files 
-    EffectivePressureEvaluator.cc
     EOS.hh
     EOSEvaluator.hh
     EOSFactory.hh
@@ -129,7 +128,8 @@ set(eos_inc_files
     ViscosityBaseFactory.hh
     ViscosityEvaluator.hh)
 
-add_install_include_file(${eos_inc_files})
+# install headers into a subdirectory
+install(FILES ${eos_inc_files} DESTINATION include/amanzi)
 
 if (BUILD_TESTS) 
 endif()

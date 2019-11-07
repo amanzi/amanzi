@@ -14,7 +14,7 @@
 #include "EOS_IdealGas.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 EOS_IdealGas::EOS_IdealGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {
   InitializeFromPlist_();
@@ -47,5 +47,5 @@ void EOS_IdealGas::InitializeFromPlist_()
   }
 };
  
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
