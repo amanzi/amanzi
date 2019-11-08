@@ -199,6 +199,7 @@ class MeshExtractedManifold : public Mesh {
   //    on all owned faces into an Epetra vector defined only on exterior faces
   virtual const Epetra_Import& exterior_face_importer(void) const override {
     AMANZI_ASSERT(false);
+    assert(false);
   }
 
   // Mesh Sets for ICs, BCs, Material Properties
