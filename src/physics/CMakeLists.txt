@@ -1,3 +1,3 @@
-if (ENABLE_ATS)
+if (ENABLE_ATSPhysicsModule)
   add_subdirectory(ats)
 endif()
