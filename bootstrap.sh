@@ -897,10 +897,8 @@ function build_cmake
 # ---------------------------------------------------------------------------- #
 function ats_git_clone
 {
-    error_message "should not be cloning ats..."
-    exit_now 30
     # have to deal with branches at some point?
-    ${git_binary} submodule update --init --remote ats
+    ${git_binary} submodule update --init --remote src/physics/ats
     if [$? -ne 0 ]; then
         error_message "Failed to pull submodule ATS"
         exit_now 30
