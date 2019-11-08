@@ -129,6 +129,31 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
+  // create diffusion operator
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
+  PDE_DiffusionFV op(olist, mesh);
+  op.Init();
+  op.SetBCs(bc, bc);
+  op.Setup(K, knc->values(), knc->derivatives());
+
+  // get the global operator
+  Teuchos::RCP<Operator> global_op = op.global_operator();
+  
+  // create accumulation operator
+  PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+
+  // create preconditioner, linear solver
+  global_op->SymbolicAssembleMatrix();
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+
+  ParameterList lop_list = plist.sublist("solvers")
+                           .sublist("Amanzi GMRES").sublist("gmres parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+                             Operator, CompositeVector, CompositeVectorSpace>(
+                                 global_op, global_op));
+  solver->Init(lop_list);
+
   // MAIN LOOP
   double tstop = plist.get<double>("simulation time", 0.5);
   int step(0);
@@ -138,6 +163,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   while (t < tstop) {
     solution->ScatterMasterToGhosted();
 
+    // zero out local matrices
+    global_op->Init();
+    
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& xf = mesh->face_centroid(f);
@@ -148,40 +176,16 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     knc->UpdateValues(*solution, bc_model, bc_value);
     upwind.Compute(*flux, *solution, bc_model, *knc->values());
 
-    // add diffusion operator
-    Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    PDE_DiffusionFactory diff_factory;
-    Teuchos::RCP<PDE_Diffusion> op = diff_factory.Create(olist, mesh, bc);
-
-    int schema_dofs = op->schema_dofs();
-    int schema_prec_dofs = op->schema_prec_dofs();
-
-    op->Setup(K, knc->values(), knc->derivatives());
-    op->UpdateMatrices(flux.ptr(), solution.ptr());
-
-    // get the global operator
-    Teuchos::RCP<Operator> global_op = op->global_operator();
-
-    // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
+    // set scalars, generate local matrices
+    op.SetScalarCoefficient(knc->values(), knc->derivatives());
+    op.UpdateMatrices(flux.ptr(), Teuchos::null);
+    op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
     op->ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
-    // create preconditoner
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
     global_op->UpdatePreconditioner();
-
-    // solve the problem
-    ParameterList lop_list = plist.sublist("solvers")
-                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);

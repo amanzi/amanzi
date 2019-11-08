@@ -205,7 +205,7 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 3
                     SOURCE test/Main.cc test/operator_marshak.cc
-                           test/Main.cc test/operator_marshak_logical.cc
+                           test/operator_marshak_logical.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface

@@ -480,7 +480,7 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  if (smap_.get() == NULL) {
+  if (smap_.get() == nullptr) {
     if (plist.isParameter("preconditioner type") &&
         plist.get<std::string>("preconditioner type") == "identity") {
       smap_ = createSuperMap(*cvs_col_);

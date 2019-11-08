@@ -190,7 +190,7 @@ void HeatConduction::Init(
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
   op_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionMFD(olist, mesh_));
-  op_diff_->Init(olist);
+  op_diff_->Init();
   op_diff_->SetBCs(bc_, bc_);
 
   op_ = op_diff_->global_operator();
