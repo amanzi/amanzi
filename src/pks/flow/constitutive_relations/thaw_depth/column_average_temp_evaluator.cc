@@ -1,20 +1,19 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation evaluator gets the subsurface temperature and computes water table 
-  over time.
+  The column average temperature evaluator gets the subsurface temperature and number of cells (related to depth), and returns the average column temperature.
 
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "water_table_evaluator.hh"
+#include "column_average_temp_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 
 
-WaterTableEvaluator::WaterTableEvaluator(Teuchos::ParameterList& plist)
+ColumnAverageTempEvaluator::ColumnAverageTempEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
@@ -26,34 +25,30 @@ WaterTableEvaluator::WaterTableEvaluator(Teuchos::ParameterList& plist)
   temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
   dependencies_.insert(temp_key_);
   
-  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
-  dependencies_.insert(sat_key_);
-
-  trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
+  depth_ = plist_.get<double>("depth from surface [m]", 0); // depth from the surface
+  ncells_depth_ = plist_.get<int>("number of cells [m]", -1); // or number of cells
 }
   
 
-WaterTableEvaluator::WaterTableEvaluator(const WaterTableEvaluator& other)
+ColumnAverageTempEvaluator::ColumnAverageTempEvaluator(const ColumnAverageTempEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
     temp_key_(other.temp_key_),
-    sat_key_(other.sat_key_)
+    depth_(other.depth_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
-WaterTableEvaluator::Clone() const
+ColumnAverageTempEvaluator::Clone() const
 {
-  return Teuchos::rcp(new WaterTableEvaluator(*this));
+  return Teuchos::rcp(new ColumnAverageTempEvaluator(*this));
 }
 
 
 void
-WaterTableEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+ColumnAverageTempEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
   
-  double trans_temp = 273.15 + 0.5*trans_width_;
-
   // search through the column and find the deepest unfrozen cell
 
   std::string domain_ss = Keys::getDomain(temp_key_);
@@ -61,35 +56,44 @@ WaterTableEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   AmanziGeometry::Point z_centroid(top_z_centroid);
 
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
-  const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
-
+  
   int col_cells = temp_c.MyLength();
-  bool water_flag = false;
+  double temp_sum = 0;
+  int count = 0 ;
+  
+  AMANZI_ASSERT (ncells_depth_ <= col_cells);
 
   for (int i=0; i!=col_cells; ++i) {
-    if (sat_c[0][i] == 1.0) {
-      z_centroid = S->GetMesh(domain_ss)->face_centroid(i);
-      water_flag = true;
-      break;
+    if (depth_ > 0.0) {
+      z_centroid = S->GetMesh(domain_ss)->face_centroid(i+1);
+      double z_depth = top_z_centroid[2] - z_centroid[2];
+      if (z_depth <= depth_) {
+        temp_sum += temp_c[0][i];
+        count += 1;
+      }
+      else {
+        break;
+      }
+    }
+    else if (ncells_depth_ > 0 && i <= ncells_depth_) {
+      temp_sum += temp_c[0][i];
+      count += 1;
     }
   }
   
-  if (water_flag)
-    res_c[0][0] = top_z_centroid[2] - z_centroid[2];
-  else
-    res_c[0][0] = -100; // no water table
- 
+  res_c[0][0] = count >0 ? temp_sum/count : 0.0;
+
 }
   
 void
-WaterTableEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+ColumnAverageTempEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {}
 
  
 // Custom EnsureCompatibility forces this to be updated once.
 bool
-WaterTableEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
+ColumnAverageTempEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
         Key request)
 {
   bool changed = SecondaryVariableFieldEvaluator::HasFieldChanged(S,request);
@@ -103,7 +107,7 @@ WaterTableEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
 }
 
 void
-WaterTableEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+ColumnAverageTempEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
 
   AMANZI_ASSERT(my_key_ != std::string(""));

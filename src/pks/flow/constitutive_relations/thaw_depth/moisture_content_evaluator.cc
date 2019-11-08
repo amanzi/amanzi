@@ -72,8 +72,6 @@ MoistureContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // search through the column and find the deepest unfrozen cell
 
   std::string domain_ss = Keys::getDomain(temp_key_);
-  const auto& top_z_centroid = S->GetMesh(domain_ss)->face_centroid(0);
-  AmanziGeometry::Point z_centroid(top_z_centroid);
 
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
   const auto& cv_c = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
