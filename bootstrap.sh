@@ -897,6 +897,8 @@ function build_cmake
 # ---------------------------------------------------------------------------- #
 function ats_git_clone
 {
+    error_message "should not be cloning ats..."
+    exit_now 30
     # have to deal with branches at some point?
     ${git_binary} submodule update --init --remote ats
     if [$? -ne 0 ]; then
@@ -1577,7 +1579,7 @@ fi
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # clone subrepos
-if [ "${ats}" ]; then
+if [ "${ats}" -eq "${TRUE}" ]; then
     ats_git_clone
 fi
 
