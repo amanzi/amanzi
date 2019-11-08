@@ -34,6 +34,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
@@ -95,6 +96,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
@@ -110,6 +112,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
 * **************************************************************** */
 double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * fabs(g_[dim_ - 1]); 
   double zf = (mesh_->face_centroid(f))[dim_ - 1];
   return u + rho_g * zf; 

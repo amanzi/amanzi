@@ -43,7 +43,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
       K_default_(1.0)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_ELASTICITY;
     Init_(plist);
   }
 
@@ -53,13 +52,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   void SetTensorCoefficient(double K);
 
   // -- creation of an operator
-  using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
-
-  // -- postprocessing: calculated stress u from displacement p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+  virtual void UpdateMatrices();
 
   // access
   const Schema& global_schema_col() { return global_schema_col_; }
@@ -79,8 +72,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
-
-  OperatorType operator_type_;
 };
 
 }  // namespace Operators

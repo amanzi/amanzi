@@ -43,10 +43,8 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   PDE_DiffusionDG(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      Kf_(NULL)
+      Kf_(nullptr)
   {
-    global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_DIFFUSION_DG;
     Init_(plist);
   }
 
@@ -57,22 +55,28 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
              const std::shared_ptr<std::vector<double> >& Kf);
 
   // -- creation of an operator
-  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+          const Teuchos::Ptr<const CompositeVector>& p=Teuchos::null);
+  virtual void UpdateMatrices() {
+    UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
 
   // -- modify local matrices due to boundary conditions 
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                          const Teuchos::Ptr<CompositeVector>& flux) override;
+                          const Teuchos::Ptr<CompositeVector>& flux);
 
   // access
   const WhetStone::DG_Modal& dg() const { return *dg_; }
 
  private:
-  virtual void Init_(Teuchos::ParameterList& plist);
+  // NOTE: functions called in a constructor are not virtual.  You can call
+  // them virtual, but they do not call derived class methods.  If you want it
+  // to be virtual, make this public and call it in the factory (as is done in
+  // PDE_DiffusionFV, etc).
+  void Init_(Teuchos::ParameterList& plist);
 
  private:
   std::string matrix_;

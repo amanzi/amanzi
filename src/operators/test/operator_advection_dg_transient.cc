@@ -357,7 +357,8 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial>> velf_c = velf;
+  op_flux->UpdateMatrices(velf_c.ptr());
   op_flux->local_op()->Rescale(weak_sign_);
   op_flux->ApplyBCs(true, true, true);
 

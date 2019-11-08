@@ -40,12 +40,17 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
   
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& dhdT) override {};
+                              const Teuchos::Ptr<const CompositeVector>& dhdT) override {
+    Exceptions::amanzi_throw("PDE_AdvectionUpwindDFN::UpdateMatrices not implemented for non-primary variable.");
+  };
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h, 
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux) override {};
+                          const Teuchos::Ptr<CompositeVector>& flux) override {
+    Exceptions::amanzi_throw("PDE_AdvectionUpwindDFN::UpdateFlux not implemented.");
+
+  };
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:

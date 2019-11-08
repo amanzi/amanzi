@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
+void PDE_DiffusionFV::Init()
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -41,7 +41,7 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
+    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, global_op_schema_));
 
   } else {
     // constructor was given an Operator
@@ -50,11 +50,11 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
   }
 
   // Do we need to exclude the primary terms?
-  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  exclude_primary_terms_ = plist_.get<bool>("exclude primary terms", false);
   
   // create the local Op and register it with the global Operator
   if (!exclude_primary_terms_) {
-    if (plist.get<bool>("surface operator", false)) {
+    if (plist_.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface";
       local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
       global_op_->OpPushBack(local_op_);
@@ -67,7 +67,7 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
   
   // upwind options
   Errors::Message msg;
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  std::string uwname = plist_.get<std::string>("nonlinear coefficient", "upwind: face");
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
 
@@ -89,12 +89,12 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
 
   // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
+  if (plist_.isParameter("newton correction")) {
     msg << "DiffusionFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
-  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  std::string jacobian = plist_.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "true Jacobian") {
@@ -110,7 +110,7 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
     
 
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
-    if (plist.get<bool>("surface operator", false)) {
+    if (plist_.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface Jacobian terms";
       jac_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
     } else {

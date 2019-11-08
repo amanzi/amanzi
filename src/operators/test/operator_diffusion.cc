@@ -128,8 +128,10 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   g[dim - 1] = -gravity;
 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
-  op->Init(op_list);
+  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh));
+  op->Init();
+  op->SetGravity(g);
+  op->SetDensity(rho);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -283,6 +285,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator cell");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
+  op->Init();
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

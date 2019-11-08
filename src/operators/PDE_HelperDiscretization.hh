@@ -30,23 +30,11 @@ namespace Operators {
 
 class PDE_HelperDiscretization : public PDE_HelperBCsList {
  public:
-  PDE_HelperDiscretization() {};
+  //  PDE_HelperDiscretization() {};
   PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
-  PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~PDE_HelperDiscretization() {};
 
-  // generate linearized operator
-  // -- generate matrix. We can use parameter to define coefficeints
-  //    or/and perform on-a-fly linearization. 
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) = 0;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) {
-    UpdateMatrices(u, Teuchos::null);
-  }
-  virtual void UpdateMatrices() {
-    UpdateMatrices(Teuchos::null, Teuchos::null);
-  }
   // -- modify matrix due to boundary conditions: generic implementation 
   //    for PDE classes based on new schema: 
   //    primary=true indicates that the operator updates both matrix and right-hand
@@ -59,11 +47,6 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
-
-  // postprocessing
-  // -- flux calculation uses potential p to calculate flux u
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) = 0;
 
   // access
   // -- global operator (collection of ops with Apply, etc)
@@ -92,7 +75,6 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
  protected:
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-  OperatorType operator_type_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

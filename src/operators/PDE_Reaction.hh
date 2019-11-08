@@ -55,16 +55,11 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   void Setup(const Teuchos::RCP<std::vector<T> >& K, bool reset);
 
   // -- generate a linearized operator 
-  using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+  virtual void UpdateMatrices();
+
   // -- new interface for pre-computed data  
   void UpdateMatrices(double t);
 
-  // -- flux calculation has yet no meaning for this operator
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
-  
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 

@@ -28,7 +28,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
+void PDE_DiffusionNLFV::Init()
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -43,7 +43,7 @@ void PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
+    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, global_op_schema_));
 
   } else {
     // constructor was given an Operator
@@ -57,7 +57,7 @@ void PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // upwind options (not used yet)
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  std::string uwname = plist_.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
@@ -67,14 +67,14 @@ void PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
   }
 
   // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
+  if (plist_.isParameter("newton correction")) {
     Errors::Message msg;
     msg << "PDE_DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
   // Newton correction terms
-  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  std::string jacobian = plist_.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "approximate Jacobian") {
@@ -108,10 +108,8 @@ void PDE_DiffusionNLFV::SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  PDE_Diffusion::SetScalarCoefficient(k, dkdp);
   stencil_initialized_ = false;
-
-  k_ = k;
-  dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {

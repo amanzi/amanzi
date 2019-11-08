@@ -63,9 +63,12 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
   // main members 
   // -- required by the interface
-  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+          const Teuchos::Ptr<const CompositeVector>& p=Teuchos::null);
+  void UpdateMatrices() {
+    UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
+
   // -- new interface for pre-computed data  
   void UpdateMatrices(double t);
 
@@ -74,10 +77,6 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   //    values are not deleted
   template<typename T>
   void Setup(const Teuchos::RCP<std::vector<T> >& K, bool reset);
-
-  // optional calculation of flux from potential p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
  protected:
   // available models for operator coefficient

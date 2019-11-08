@@ -155,7 +155,6 @@ add_amanzi_library(operators
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionDG.cc
                           PDE_DiffusionFracturedMatrix.cc
-                          PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
                           PDE_Electromagnetics.cc

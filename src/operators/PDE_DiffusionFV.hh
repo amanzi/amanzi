@@ -56,38 +56,24 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFV : public virtual PDE_Diffusion {
+class PDE_DiffusionFV : public PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
+      PDE_Diffusion(plist, global_op),
       transmissibility_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
-    Init_(plist);
-  }
+  {}
 
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
+      PDE_Diffusion(plist, mesh),
       transmissibility_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
-    Init_(plist);
-  }
+  {}
 
-  PDE_DiffusionFV(Teuchos::ParameterList& plist,
-                  const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      transmissibility_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
-    Init_(plist);
-  }
+  virtual void Init() override;
 
   // main virtual members
   // -- setup
-  using PDE_Diffusion::Setup;
   virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -132,9 +118,8 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
-  void Init_(Teuchos::ParameterList& plist);
-  
  protected:
+  Teuchos::ParameterList plist_;
   Teuchos::RCP<CompositeVector> transmissibility_;
   bool transmissibility_initialized_;
 

@@ -114,12 +114,13 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   if (gravity > 0.0) op_list.set<bool>("gravity", true);
 
-  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
-  op->Init(op_list);
-  auto global_op = op->global_operator();
-
-  // -- boundary conditions
+  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh));
+  op->Init();
+  op->SetGravity(g);
+  op->SetDensity(rho);
   op->SetBCs(bc, bc);
+
+  auto global_op = op->global_operator();
 
   // populate the diffusion operator
   op->Setup(Kc, Teuchos::null, Teuchos::null);

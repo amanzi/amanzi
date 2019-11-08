@@ -51,10 +51,8 @@ void PDE_Elasticity::SetTensorCoefficient(double K) {
 
 /* ******************************************************************
 * Calculate elemental matrices.
-* NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                    const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Elasticity::UpdateMatrices()
 {
   WhetStone::DenseMatrix Acell;
 

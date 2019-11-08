@@ -71,48 +71,33 @@ Additional options available only for the MFD family of discretizations include:
 namespace Amanzi {
 namespace Operators {
 
-class PDE_DiffusionMFD : public virtual PDE_Diffusion {
+class PDE_DiffusionMFD : public PDE_Diffusion {
  public:
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
-      plist_(plist),
+      PDE_Diffusion(plist, global_op),
       factor_(1.0)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
-    ParsePList_(plist);
+    ParsePList_();
   }
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      plist_(plist),
+      PDE_Diffusion(plist, mesh),
       factor_(1.0)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
-    ParsePList_(plist);
+    ParsePList_();
   }
 
-  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      plist_(plist),
-      factor_(1.0)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
-    ParsePList_(plist);
-  }
-
-  // main virtual members for populating an operator
-  virtual void Init(Teuchos::ParameterList& plist);
-
+  virtual void Init() override;
+  
   virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
-  using PDE_HelperDiscretization::UpdateMatrices;
+  using PDE_Diffusion::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
 
@@ -167,7 +152,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void set_factor(double factor) { factor_ = factor; }
 
  protected:
-  void ParsePList_(Teuchos::ParameterList& plist);
+  void ParsePList_();
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
@@ -195,7 +180,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                        bool primary, bool eliminate, bool essential_eqn);
 
  protected:
-  Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   bool mass_matrices_initialized_;
 

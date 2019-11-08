@@ -38,7 +38,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
       K_(Teuchos::null)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_ELECTROMAGNETICS;
     Init_(plist);
   }
 
@@ -49,9 +48,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
 
   // -- creation of a linearized operator
-  using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+  virtual void UpdateMatrices();
   // -- modify matrix due to boundary conditions 
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
@@ -64,16 +61,12 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
-  // -- postprocessing: calculated flux u from potential p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+  // // new virtual members
+  // // -- before solving the problem
+  // virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
 
-  // new virtual members
-  // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
-
-  // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
+  // // -- after solving the problem
+  // virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }

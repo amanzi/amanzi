@@ -66,7 +66,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract a manifold mesh
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::FACE);
+  RCP<const Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::FACE);
 
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -112,7 +112,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(diff_op);
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
-  op->Init(olist);
+  op->Init();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

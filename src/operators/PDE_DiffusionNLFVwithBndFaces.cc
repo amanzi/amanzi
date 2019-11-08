@@ -29,7 +29,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
+void PDE_DiffusionNLFVwithBndFaces::Init()
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_BNDFACE;
@@ -45,7 +45,7 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
     cvs->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
-    global_op_ = Teuchos::rcp(new Operator_CellBndFace(cvs, plist, global_op_schema_));
+    global_op_ = Teuchos::rcp(new Operator_CellBndFace(cvs, plist_, global_op_schema_));
 
   } else {
     // constructor was given an Operator
@@ -60,7 +60,7 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
 
   // upwind options (not used yet)
   Errors::Message msg;
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  std::string uwname = plist_.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
@@ -70,13 +70,13 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
   }
 
   // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
+  if (plist_.isParameter("newton correction")) {
     msg << "PDE_DiffusionNLFVwithBndFaces: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
   // Newton correction terms
-  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  std::string jacobian = plist_.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "approximate Jacobian") {

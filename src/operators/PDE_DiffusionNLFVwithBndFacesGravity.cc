@@ -35,9 +35,11 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   Epetra_MultiVector& hh_bnd = *hh->ViewComponent("boundary_face");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_bnd = *u->ViewComponent("boundary_face");
+  const Epetra_MultiVector* rho_c = is_scalar_ ? nullptr :
+                              rho_cv_->ViewComponent("cell", false).get();
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+    double rho_g = is_scalar_ ? rho_ : (*rho_c)[0][c] * fabs(g_[dim_ - 1]);
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
@@ -77,7 +79,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       WhetStone::DenseVector v(ncells), av(ncells);
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
-        double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+        double rho_g = is_scalar_ ? rho_ : (*rho_c)[0][c] * fabs(g_[dim_ - 1]);
         double zc = (mesh_->cell_centroid(c))[dim_ - 1];
         v(n) = zc * rho_g;
       }
@@ -89,7 +91,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       }
     } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET)||(bc_model[f] == OPERATOR_BC_NEUMANN)) {
       int c = cells[0];
-      double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+      double rho_g = is_scalar_ ? rho_ : (*rho_c)[0][c] * fabs(g_[dim_ - 1]);
       double zf = (mesh_->face_centroid(f))[dim_ - 1];
       double zc = (mesh_->cell_centroid(c))[dim_ - 1];
       double gravity_flux = 0.;
@@ -128,8 +130,10 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell"); 
   const Epetra_MultiVector& u_bnd = *u->ViewComponent("boundary_face"); 
 
+  const Epetra_MultiVector* rho_c = is_scalar_ ? nullptr : rho_cv_->ViewComponent("cell", false).get();
+  
   for (int c = 0; c < ncells_owned; ++c) {
-    double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
+    double rho_g = is_scalar_ ? rho_ : (*rho_c)[0][c] * fabs(g_[dim_ - 1]);
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
@@ -142,9 +146,6 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
       }
     }
   }
-
-  
-
   PDE_DiffusionNLFVwithBndFaces::UpdateFlux(hh.ptr(), flux);
 }
 

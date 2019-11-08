@@ -14,6 +14,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "PDE_DiffusionMFD.hh"
+#include "PDE_DiffusionWithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -21,19 +22,17 @@ namespace Operators {
 class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
  public:
   PDE_DiffusionFracturedMatrix(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               double rho, const AmanziGeometry::Point& g) :
-      PDE_Diffusion(mesh),
-      PDE_DiffusionMFD(plist, mesh),
-      g_(g),
-      rho_(rho)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FRACTURED_MATRIX;
-  }
+          const Teuchos::RCP<Operator>& global_op) :
+      PDE_DiffusionMFD(plist, global_op)
+  {}
 
+  PDE_DiffusionFracturedMatrix(Teuchos::ParameterList& plist,
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_DiffusionMFD(plist, mesh)
+  {}
+  
   // main interface members
-  virtual void Init(Teuchos::ParameterList& plist) override;
-
+  virtual void Init() override;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
 
@@ -55,10 +54,7 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
 
  private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
-
-  double rho_;
   bool gravity_;
-  AmanziGeometry::Point g_;
 };
 
 }  // namespace Operators

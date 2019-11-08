@@ -44,13 +44,6 @@ PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<const Aman
 }
 
 
-PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-     mesh_(mesh)
-{
-  PopulateDimensions_();
-}
-
-
 /* ******************************************************************
 * Supporting private routines.
 ****************************************************************** */

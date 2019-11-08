@@ -69,7 +69,7 @@ void RunTest(std::string op_list_name) {
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
+  RCP<const Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
@@ -118,7 +118,7 @@ void RunTest(std::string op_list_name) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
   PDE_DiffusionMFD op(olist, surfmesh);
-  op.Init(olist);
+  op.Init();
   op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);

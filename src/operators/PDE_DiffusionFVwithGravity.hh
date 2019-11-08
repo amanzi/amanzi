@@ -33,108 +33,24 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
-                                   public PDE_DiffusionWithGravity {
+class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV {
  public:
   PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<Operator>& global_op) :
-      PDE_DiffusionFV(plist, global_op),
-      PDE_DiffusionWithGravity(global_op),
-      PDE_Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-  }
+      PDE_DiffusionFV(plist, global_op)
+  {}
 
   PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_DiffusionFV(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-  }
-
-  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<Operator>& global_op,
-                             const AmanziGeometry::Point& g) :
-      PDE_DiffusionFV(plist, global_op),
-      PDE_DiffusionWithGravity(global_op),
-      PDE_Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-
-    SetGravity(g);
-  }
-
-  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             const AmanziGeometry::Point& g) :
-      PDE_DiffusionFV(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-
-    SetGravity(g);
-  }
-
-  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<Operator>& global_op,
-                             double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionFV(plist, global_op),
-      PDE_DiffusionWithGravity(global_op),
-      PDE_Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-
-    SetGravity(g);
-    SetDensity(rho);
-  }
-
-  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionFV(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    Init_(plist);
-
-    SetGravity(g);
-    SetDensity(rho);
-  }
+      PDE_DiffusionFV(plist, mesh)
+  {}
   
+  virtual void Init() override;
+
   // main virtual members
   // -- setup
   virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) override;
   virtual void SetDensity(double rho) override;
-
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             double rho, const AmanziGeometry::Point& g) {
-    SetGravity(g);
-    SetDensity(rho);
-    SetTensorCoefficient(K);
-    SetScalarCoefficient(k, dkdp);
-  } 
-
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             const Teuchos::RCP<const CompositeVector>& rho,
-             const AmanziGeometry::Point& g) {
-    SetGravity(g);
-    SetDensity(rho);
-    SetTensorCoefficient(K);
-    SetScalarCoefficient(k, dkdp);
-  }
 
   // -- create a lineratized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -165,8 +81,6 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
-
-  void Init_(Teuchos::ParameterList& plist);
 
  protected:
   Teuchos::RCP<CompositeVector> gravity_term_;

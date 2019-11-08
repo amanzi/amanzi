@@ -63,36 +63,102 @@ namespace Operators {
 
 class PDE_Diffusion : public PDE_HelperDiscretization {
  public:
-  PDE_Diffusion(const Teuchos::RCP<Operator>& global_op) :
+  PDE_Diffusion(Teuchos::ParameterList& plist,
+                const Teuchos::RCP<Operator>& global_op) :
       PDE_HelperDiscretization(global_op),
-      K_(Teuchos::null),
-      k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      plist_(plist)
   {};
 
-  PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  PDE_Diffusion(Teuchos::ParameterList& plist,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null),
-      k_(Teuchos::null),
-      dkdp_(Teuchos::null)
-  {};
-
-  PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null),
-      k_(Teuchos::null),
-      dkdp_(Teuchos::null)
+      plist_(plist)
   {};
 
   virtual ~PDE_Diffusion() = default;
-  
-  // main virtual members
-  // -- setup 
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) = 0;
-  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
-  // -- creation of an operator
+  // virtual constructor, creates the space/schema and operator.
+  virtual void Init() = 0;
+  
+  // Setters and Setup
+  //
+  // Note that these default setters can be overridden to do actual work.
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) {
+    K_ = K;
+  }
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+          const Teuchos::RCP<const CompositeVector>& dkdp) {
+    k_ = k;
+    dkdp_ = dkdp;
+  }
+  // Note that gravity and density can be ignored in non-gravity-affected
+  // diffusion.
+  virtual void SetGravity(const AmanziGeometry::Point& g) {
+    g_ = g;
+  }
+  virtual void SetDensity(double rho) {
+    is_scalar_ = true;
+    rho_ = rho;
+  }
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+    is_scalar_ = false;
+    if (rho->HasComponent("cell")) {
+      rho_cv_ = rho;
+    }
+  }
+
+  // NOTE: this is very inefficient! Deprecate this!
+  // 
+  // double GetDensity(const int c) {
+  //   return is_scalar_ ? rho_ :
+  //   if (is_scalar_) {
+  //     return rho_ ;
+  //   }else{
+  //     return (*rho_cv_->ViewComponent("cell", true))[0][c];
+  //   }
+  // }
+  
+  // Lumped Setters for lazy development
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp) {
+    SetTensorCoefficient(K);
+    SetScalarCoefficient(k, dkdp);
+  }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             const double rho,
+             const AmanziGeometry::Point& g) {
+    SetTensorCoefficient(K);
+    SetScalarCoefficient(k, dkdp);
+    SetDensity(rho);
+    SetGravity(g);
+  }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+             const Teuchos::RCP<const CompositeVector>& k,
+             const Teuchos::RCP<const CompositeVector>& dkdp,
+             const Teuchos::RCP<const CompositeVector>& rho,
+             const AmanziGeometry::Point& g) {
+    SetTensorCoefficient(K);
+    SetScalarCoefficient(k, dkdp);
+    SetDensity(rho);
+    SetGravity(g);
+  }
+
+  // generate linearized operator
+  // -- generate local matrices. We can use parameter to define coefficeints
+  //    or/and perform on-a-fly linearization. 
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& p) = 0;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) {
+    UpdateMatrices(u, Teuchos::null);
+  }
+  virtual void UpdateMatrices() {
+    UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
+  
+  // -- populate additional Jacobian local matrices
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
@@ -103,21 +169,31 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
           const Teuchos::Ptr<const CompositeVector>& u,
           const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
+  // postprocessing
+  // -- flux calculation uses potential p to calculate flux u
+  //
+  // NOTE: this probably should live in Diffusion?  This is a very
+  // Diffusion-looking interface that is not valid for other operators?
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) = 0;
+  
   // -- additional interface on non-manifolds
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) = 0;
+          const Teuchos::Ptr<CompositeVector>& flux) {
+    Errors::Message msg("Diffusion: This diffusion implementation does not support non-manifolds.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   // -- matrix modifications
-  virtual void ModifyMatrices(const CompositeVector& u) = 0;
-  virtual void ScaleMassMatrices(double s) = 0;
-
-  // default implementation  
-  virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
-                     const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp) {
-    SetTensorCoefficient(K);
-    SetScalarCoefficient(k, dkdp);
+  virtual void ModifyMatrices(const CompositeVector& u) {
+    Errors::Message msg("Diffusion: This diffusion implementation does not support ModifyMatrices.");
+    Exceptions::amanzi_throw(msg);
   }
+  virtual void ScaleMassMatrices(double s) {
+    Errors::Message msg("Diffusion: This diffusion implementation does not support ScaleMassMatrices.");
+    Exceptions::amanzi_throw(msg);
+  }
+    
 
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u) {
@@ -127,8 +203,18 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
   
   // interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const = 0;
-  virtual double ComputeGravityFlux(int f) const = 0;
+  virtual double ComputeTransmissibility(int f) const {
+    Errors::Message msg("Diffusion: This diffusion implementation does not support local calculations.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+    
+  virtual double ComputeGravityFlux(int f) const {
+    Errors::Message msg("Diffusion: This diffusion implementation does not support local calculations.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+    
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }
@@ -164,6 +250,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
   
  protected:
+  Teuchos::ParameterList plist_;
   Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
   bool K_symmetric_;
 
@@ -171,6 +258,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
   int little_k_;
 
+  // gravity
+  bool is_scalar_;
+  double rho_;
+  Teuchos::RCP<const CompositeVector> rho_cv_;
+  AmanziGeometry::Point g_;
+  
   // additional operators
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;

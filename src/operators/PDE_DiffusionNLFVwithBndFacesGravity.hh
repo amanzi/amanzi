@@ -33,86 +33,17 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFaces,
-                                             public PDE_DiffusionWithGravity {
+class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFaces {
  public:
   PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
-                                       const Teuchos::RCP<Operator>& global_op,
-                                       double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionNLFVwithBndFaces(plist, global_op),
-      PDE_DiffusionWithGravity(global_op),
-      PDE_Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
-    SetGravity(g);
-    SetDensity(rho);
-  }
-
-  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
                                        const Teuchos::RCP<Operator>& global_op) :
-      PDE_DiffusionNLFVwithBndFaces(plist, global_op),
-      PDE_DiffusionWithGravity(global_op),
-      PDE_Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
-  }  
-
-  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionNLFVwithBndFaces(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
-    SetGravity(g);
-    SetDensity(rho);
-  }
+      PDE_DiffusionNLFVwithBndFaces(plist, global_op)
+  {}  
 
   PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_DiffusionNLFVwithBndFaces(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
-  }
-
-  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
-                                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                       const Teuchos::RCP<const CompositeVector>& rho,
-                                       const AmanziGeometry::Point& g) :
-      PDE_DiffusionNLFVwithBndFaces(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      PDE_Diffusion(mesh)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
-    SetGravity(g);
-    SetDensity(rho);
-  }
-
-  // main virtual members 
-  // -- setup
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             double rho, const AmanziGeometry::Point& g) {
-    SetGravity(g);
-    SetDensity(rho);
-    SetTensorCoefficient(K);
-    SetScalarCoefficient(k, dkdp);
-  } 
-
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             const Teuchos::RCP<const CompositeVector>& rho,
-             const AmanziGeometry::Point& g) {
-    SetGravity(g);
-    SetDensity(rho);
-    SetTensorCoefficient(K);
-    SetScalarCoefficient(k, dkdp);
-  }
+      PDE_DiffusionNLFVwithBndFaces(plist, mesh)
+  {}
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -121,24 +52,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override {};
 
-  // -- modify an operator
-  virtual void ModifyMatrices(const CompositeVector& u) override {};
-  virtual void ScaleMassMatrices(double s) override {};
-
-  // Developments
-  // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const override {
-    AMANZI_ASSERT(0);
-    return 0.;
-  };
-
-  // virtual members from the base NLFV class
-  // -- solution can be modified on boundary faces. This reflects specifics
-  //    of nonlinear FV schemes.
-  // virtual double MapBoundaryValue_(int f, double u) override;
 };
 
 }  // namespace Operators

@@ -362,12 +362,14 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor, i.e. only once.
 ****************************************************************** */
-void PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
+void PDE_DiffusionMFDwithGravity::Init()
 {
+  PDE_DiffusionMFD::Init();
+
   gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA);
 
   // gravity discretization
-  std::string name = plist.get<std::string>("gravity term discretization", "hydraulic head");
+  std::string name = plist_.get<std::string>("gravity term discretization", "hydraulic head");
   if (name == "hydraulic head")
     gravity_method_ = OPERATOR_GRAVITY_HH;
   else

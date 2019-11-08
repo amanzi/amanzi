@@ -20,16 +20,14 @@ namespace Operators {
 
 class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
  public:
-  PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
+  PDE_DiffusionWithGravity(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<Operator>& global_op) :
+      PDE_Diffusion(plist, global_op),
       is_scalar_(false) {};
 
-  PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      is_scalar_(false) {};
-
-  PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
+  PDE_DiffusionWithGravity(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(plist, mesh),
       is_scalar_(false) {};
 
   virtual ~PDE_DiffusionWithGravity() = default;

@@ -28,26 +28,31 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
+void PDE_DiffusionFracturedMatrix::Init()
 {
   // extract mesh in fractures
   AmanziMesh::MeshFactory meshfactory(mesh_->get_comm(), mesh_->geometric_model());
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
 
-  std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
+  std::vector<std::string> names = plist_.get<Teuchos::Array<std::string> >("fracture").toVector();
   Teuchos::RCP<const AmanziMesh::Mesh> fracture = meshfactory.create(mesh_, names, AmanziMesh::FACE);
 
   // create global operator
+  //
+  // Note currently FracturedMatrix is hard-coded to create its own Operator.
+  // This could probably be fixed, allowing more general coupling of fractured
+  // flow.  But for now, it covers the need.  If this assertion throws, the
+  // developer called the wrong constructor.
+  AMANZI_ASSERT(global_operator() == Teuchos::null);  
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);
-
-  global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs_, plist));
+  set_global_operator(Teuchos::rcp(new Operator_FaceCell(cvs_, plist_)));
 
   std::string name = "DiffusionFracturedMatrix: CELL_FACE+CELL";
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
   // other parameters
-  gravity_ = plist.get<bool>("gravity");
+  gravity_ = plist_.get<bool>("gravity");
   scaled_constraint_ = false;
   little_k_ = OPERATOR_LITTLE_K_NONE;
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;

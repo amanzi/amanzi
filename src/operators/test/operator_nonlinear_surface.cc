@@ -121,7 +121,7 @@ void RunTest(std::string op_list_name) {
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
+  RCP<const Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -176,7 +176,7 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
-    op.Init(olist);
+    op.Init();
     op.SetBCs(bc, bc);
 
     // get the global operator

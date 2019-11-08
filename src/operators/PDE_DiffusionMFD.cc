@@ -1241,12 +1241,12 @@ void PDE_DiffusionMFD::ScaleMassMatrices(double s)
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_DiffusionMFD::ParsePList_(Teuchos::ParameterList& plist)
+void PDE_DiffusionMFD::ParsePList_()
 {
   // Determine discretization
-  std::string primary = plist.get<std::string>("discretization primary");
-  std::string secondary = plist.get<std::string>("discretization secondary", primary);
-  K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
+  std::string primary = plist_.get<std::string>("discretization primary");
+  std::string secondary = plist_.get<std::string>("discretization secondary", primary);
+  K_symmetric_ = (plist_.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
   if (primary == "mfd: monotone for hex") {
@@ -1284,13 +1284,13 @@ void PDE_DiffusionMFD::ParsePList_(Teuchos::ParameterList& plist)
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
-  if (plist.isParameter("schema")) {
-    names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  if (plist_.isParameter("schema")) {
+    names = plist_.get<Teuchos::Array<std::string> > ("schema").toVector();
   } else {
     names.resize(2);
     names[0] = "face";
     names[1] = "cell";
-    plist.set<Teuchos::Array<std::string> >("schema", names);
+    plist_.set<Teuchos::Array<std::string> >("schema", names);
   }
 
   int schema_dofs = 0;
@@ -1318,8 +1318,8 @@ void PDE_DiffusionMFD::ParsePList_(Teuchos::ParameterList& plist)
 
   // define stencil for the assembled matrix
   schema_prec_dofs_ = 0;
-  if (plist.isParameter("preconditioner schema")) {
-    names = plist.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
+  if (plist_.isParameter("preconditioner schema")) {
+    names = plist_.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "cell") {
         schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_CELL;
@@ -1336,9 +1336,9 @@ void PDE_DiffusionMFD::ParsePList_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Put here stuff that has to be done in constructor.
-****************************************************************** */
-void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
+ * Virtual constructor, sets up global op, cvs.
+ ****************************************************************** */
+void PDE_DiffusionMFD::Init()
 {
   // create or check the existing Operator
   int global_op_schema = schema_prec_dofs_;  
@@ -1358,19 +1358,19 @@ void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
 
     // choose the Operator from the prec schema
     if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
-      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
+      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
     } 
     else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
       // cvs->AddComponent("face", AmanziMesh::FACE, 1);
-      // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
-      global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, schema_prec_dofs_));
+      // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist_));
+      global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, schema_prec_dofs_));
     } 
     else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
       cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-      global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist));
+      global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist_));
     } 
     else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-      global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs, plist));
+      global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs, plist_));
     } 
     else {
       Errors::Message msg;
@@ -1385,7 +1385,7 @@ void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
   }
 
   // Do we need to exclude the primary terms?
-  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  exclude_primary_terms_ = plist_.get<bool>("exclude primary terms", false);
   
   // create the local Op and register it with the global Operator
   if (!exclude_primary_terms_) {
@@ -1399,7 +1399,7 @@ void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
       local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
     } 
     else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-      if (plist.get<bool>("surface operator", false)) {
+      if (plist_.get<bool>("surface operator", false)) {
         std::string name = "Diffusion: FACE_CELL Surface";
         local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
       } else {
@@ -1414,13 +1414,13 @@ void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
   }
   
   // scaled constraint -- enables zero value of k on a face
-  scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
-  scaled_constraint_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
-  scaled_constraint_fuzzy_ = plist.get<double>("constraint equation fuzzy number", 1.0e-12);
+  scaled_constraint_ = plist_.get<bool>("scaled constraint equation", false);
+  scaled_constraint_cutoff_ = plist_.get<double>("constraint equation scaling cutoff", 1.0);
+  scaled_constraint_fuzzy_ = plist_.get<double>("constraint equation fuzzy number", 1.0e-12);
 
   // little-k options
-  AMANZI_ASSERT(!plist.isParameter("upwind method"));
-  std::string name = plist.get<std::string>("nonlinear coefficient", "none");
+  AMANZI_ASSERT(!plist_.isParameter("upwind method"));
+  std::string name = plist_.get<std::string>("nonlinear coefficient", "none");
   if (name == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {
@@ -1446,7 +1446,7 @@ void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
   }
 
   // Do we need to calculate Newton correction terms?
-  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  std::string jacobian = plist_.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "true Jacobian") {

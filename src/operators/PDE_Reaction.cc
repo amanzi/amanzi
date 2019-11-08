@@ -76,10 +76,8 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
 /* ******************************************************************
 * Collection of local matrices.
-* NOTE: Not all input parameters are used yet.
 ****************************************************************** */
-void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Reaction::UpdateMatrices()
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;

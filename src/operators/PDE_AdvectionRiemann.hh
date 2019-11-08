@@ -67,7 +67,12 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // -- generate linearized operator: standard interface
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override {};
+          const Teuchos::Ptr<const CompositeVector>& dhdu=Teuchos::null) override {
+    AMANZI_ASSERT(false);
+  }
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override {
+    AMANZI_ASSERT(false);
+  }
 
   // -- generate linearized operator: new interface
   void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u);

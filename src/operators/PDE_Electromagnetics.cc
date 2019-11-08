@@ -53,9 +53,7 @@ void PDE_Electromagnetics::SetTensorCoefficient(
 * Calculate elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_Electromagnetics::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Electromagnetics::UpdateMatrices()
 {
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);

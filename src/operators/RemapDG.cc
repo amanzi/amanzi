@@ -177,7 +177,7 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
   }
 
   op_reac_->Setup(jac_, false);
-  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_reac_->UpdateMatrices();
 
   // discrete volume conservation law
   // op_reac_->Setup(det_, false);
@@ -208,7 +208,7 @@ void RemapDG<TreeVector>::NonConservativeToConservative(
   }
 
   op_reac_->Setup(jac_, false);
-  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_reac_->UpdateMatrices();
 
   // conversion is matrix-vector product
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
@@ -230,7 +230,7 @@ void RemapDG<TreeVector>::ConservativeToNonConservative(
   }
 
   op_reac_->Setup(jac_, false);
-  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_reac_->UpdateMatrices();
 
   // conversion is inverse matrix-vector product
   auto& matrices = op_reac_->local_op()->matrices;

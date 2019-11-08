@@ -22,6 +22,15 @@
 
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionWithGravity.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_DiffusionFracturedMatrix.hh"
+#include "PDE_DiffusionMFD.hh"
+#include "PDE_DiffusionMFDwithGravity.hh"
+#include "PDE_DiffusionNLFV.hh"
+#include "PDE_DiffusionNLFVwithBndFaces.hh"
+#include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
+#include "PDE_DiffusionNLFVwithGravity.hh"
 
 /*!
 
@@ -83,6 +92,8 @@ namespace Operators {
 class BCs;
 
 struct PDE_DiffusionFactory {
+  // A variety of users with a variety of natural interfaces.
+
   // Diffusion-type PDEs with optional gravity.
   // Decision is made based on data in the parameter list.
   Teuchos::RCP<PDE_Diffusion>
@@ -90,52 +101,148 @@ struct PDE_DiffusionFactory {
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
          const Teuchos::RCP<BCs>& bc,
          double rho,
-         const AmanziGeometry::Point& g);
+         const AmanziGeometry::Point& g)
+  {
+    if (oplist.get<bool>("gravity", false)) {
+      auto op = CreateWithGravity_(oplist, mesh, bc);
+      op->SetDensity(rho);
+      op->SetGravity(g);
+      return op;
+      
+    } else {
+      return CreateWithoutGravity_(oplist, mesh, bc);
+    }
+  }
 
   Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
          const Teuchos::RCP<BCs>& bc,
          const Teuchos::RCP<const CompositeVector>& rho,
-         const AmanziGeometry::Point& g);
+         const AmanziGeometry::Point& g)
+  {
+    if (oplist.get<bool>("gravity", false)) {
+      auto op = CreateWithGravity_(oplist, mesh, bc);
+      op->SetDensity(rho);
+      op->SetGravity(g);
+      return op;
+    } else {
+      return CreateWithoutGravity_(oplist, mesh, bc);
+    }
+  }
 
   // Diffusion operators without gravity.
   Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-         const Teuchos::RCP<BCs>& bc);
-
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+         const Teuchos::RCP<BCs>& bc=Teuchos::null)
+  {
+    return CreateWithoutGravity_(oplist, mesh, bc);
+  }
   
   Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<Operator>& global_op);
-
+         const Teuchos::RCP<Operator>& global_op,
+         const Teuchos::RCP<BCs>& bc=Teuchos::null)
+  {
+    return CreateWithoutGravity_(oplist, global_op, bc);
+  }
+         
   // Diffusion operators with gravity.
-  Teuchos::RCP<PDE_DiffusionWithGravity>
+  Teuchos::RCP<PDE_Diffusion>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                    const Teuchos::RCP<BCs>& bc);
+                    const Teuchos::RCP<BCs>& bc=Teuchos::null)
+  {
+    return CreateWithGravity_(oplist, mesh, bc);
+  }
                     
-  Teuchos::RCP<PDE_DiffusionWithGravity>
+  Teuchos::RCP<PDE_Diffusion>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<Operator>& global_op,
-                    const Teuchos::RCP<BCs>& bc);
+                    const Teuchos::RCP<BCs>& bc=Teuchos::null)
+  {
+    return CreateWithGravity_(oplist, global_op, bc);
+  }
 
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-                    
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<Operator>& global_op);
-  
  private:
-  inline void SetCellSchema_(Teuchos::ParameterList& oplist);
-  inline void SetCellFaceSchema_(Teuchos::ParameterList& oplist);
-};
+
+  template<class Second_ptr_type>
+  Teuchos::RCP<PDE_Diffusion>
+  CreateWithoutGravity_(Teuchos::ParameterList& oplist,
+          const Second_ptr_type& mesh_or_global_op,
+          const Teuchos::RCP<BCs>& bc);
+
+  template<class Second_ptr_type>
+  Teuchos::RCP<PDE_Diffusion>
+  CreateWithGravity_(Teuchos::ParameterList& oplist,
+                     const Second_ptr_type& mesh_or_global_op,
+                     const Teuchos::RCP<BCs>& bc);
+};  
+
+
+//
+// Implementations
+//
+template<class Second_ptr_type>
+Teuchos::RCP<PDE_Diffusion>
+PDE_DiffusionFactory::CreateWithoutGravity_(
+    Teuchos::ParameterList& oplist,
+    const Second_ptr_type& mesh_or_global_op, 
+    const Teuchos::RCP<BCs>& bc)
+{
+  std::string name = oplist.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist.isParameter("fracture");
+
+  Teuchos::RCP<PDE_Diffusion> op;
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh_or_global_op));
+  } else if (name == "nlfv: default") {
+    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh_or_global_op));
+  } else if (name == "nlfv: bnd_faces") {
+    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist,
+            mesh_or_global_op));
+  } else if (fractured_matrix) {
+    op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist,
+            mesh_or_global_op));
+  } else {
+    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh_or_global_op));
+  }
+  op->Init();
+  if (bc != Teuchos::null) op->SetBCs(bc, bc);
+  return op;
+}
+
+template<class Second_ptr_type>
+Teuchos::RCP<PDE_Diffusion>
+PDE_DiffusionFactory::CreateWithGravity_(
+    Teuchos::ParameterList& oplist,
+    const Second_ptr_type& mesh_or_global_op, 
+    const Teuchos::RCP<BCs>& bc)
+{
+  std::string name = oplist.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist.isParameter("fracture");
+
+  Teuchos::RCP<PDE_Diffusion> op_g;
+  if (name == "fv: default") {
+    op_g = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh_or_global_op));
+  } else if (name == "nlfv: default") {
+    op_g = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh_or_global_op));
+  } else if (name == "nlfv: bnd_faces") {
+    op_g = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh_or_global_op));
+  } else if (fractured_matrix) {
+    op_g = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh_or_global_op));
+  } else {
+    op_g = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh_or_global_op));
+  }
+  op_g->Init();
+  if (bc != Teuchos::null) op_g->SetBCs(bc, bc);
+  return op_g;
+}
+
+
+
+
 
 }  // namespace Operators
 }  // namespace Amanzi

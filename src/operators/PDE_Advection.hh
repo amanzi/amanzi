@@ -38,11 +38,14 @@ class PDE_Advection : public PDE_HelperDiscretization {
   // -- setup
   virtual void Setup(const CompositeVector& u) = 0;
 
-  // -- standard interface for flux calculation
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+  // -- interface for local matrices, primary variable u, advected quanity h.
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& dhdu) = 0;
 
-  // -- extended interface for flux calculation
+  // -- interface for local matrices, h == u
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) = 0;
+
+  // -- interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::RCP<BCs>& bc, 

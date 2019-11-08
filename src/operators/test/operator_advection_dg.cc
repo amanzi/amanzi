@@ -253,7 +253,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial>> velf_c = velf;
+  op_flux->UpdateMatrices(velf_c.ptr());
   op_flux->ApplyBCs(true, true, true);
 
   op_adv->Setup(velc, false);
@@ -263,7 +264,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     op_reac->Setup(Kc);
   else 
     op_reac->Setup(Kn, false);
-  op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_reac->UpdateMatrices();
 
   // create preconditoner
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");

@@ -38,27 +38,23 @@ class PDE_CouplingFlux : public PDE_HelperDiscretization {
                    const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
                    std::shared_ptr<const std::vector<std::vector<int> > > row_inds,
                    std::shared_ptr<const std::vector<std::vector<int> > > col_inds,
-                   const Teuchos::RCP<Operator> global_op = Teuchos::null) {
-    global_op_ = global_op;
+                   const Teuchos::RCP<Operator> global_op = Teuchos::null) :
+      PDE_HelperDiscretization(global_op)
+  {
     Init_(plist, cvs_row, cvs_col, row_inds, col_inds);
   }
   ~PDE_CouplingFlux() {};
 
   // main members 
   // -- required by the interface
-  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+          const Teuchos::Ptr<const CompositeVector>& p);
   
   // -- setup
   void Setup(std::shared_ptr<const std::vector<double> > K, double factor) {
     K_ = K;
     factor_ = factor;
   }
-
-  // optional calculation of flux from potential p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
 
  private:
   void Init_(Teuchos::ParameterList& plist,

@@ -98,9 +98,12 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(op_list, mesh, rho, g));
-  Teuchos::RCP<Operator> global_op = op->global_operator();
+  auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(op_list, mesh));
+  op->Init();
   op->SetBCs(bc, bc);
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, g);
+  
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   const CompositeVectorSpace& cvs = global_op->DomainMap();
 
   // create and initialize state variables.
@@ -118,7 +121,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null);
   for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
@@ -242,9 +244,11 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(op_list, mesh, rho, g));
-  Teuchos::RCP<Operator> global_op = op->global_operator();
+  auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(op_list, mesh));
+  op->Init();
+  op->Setup(K, Teuchos::null, Teuchos::null, rho, g);
   op->SetBCs(bc, bc);
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   const CompositeVectorSpace& cvs = global_op->DomainMap();
 
   // create and initialize state variables.
@@ -263,7 +267,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   }
 
   // populate the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null);
   for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());

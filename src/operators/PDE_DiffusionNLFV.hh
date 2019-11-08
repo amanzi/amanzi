@@ -36,39 +36,25 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
+class PDE_DiffusionNLFV : public PDE_Diffusion {
  public:
   PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
                     const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
+      PDE_Diffusion(plist, global_op),
       stencil_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    Init_(plist);
-  }
+  {}
 
   PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
+      PDE_Diffusion(plist, mesh),
       stencil_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    Init_(plist);
-  }
+  {}
 
-  PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      stencil_initialized_(false)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    Init_(plist);
-  }
-
+  virtual void Init() override;
+  
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override { K_ = K; }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -76,33 +62,22 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateMatricesNewtonCorrection(
-          const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u, double scalar_factor) override;
+      const Teuchos::Ptr<const CompositeVector>& flux,
+      const Teuchos::Ptr<const CompositeVector>& u, double scalar_factor) override;
   
-    virtual void UpdateMatricesNewtonCorrection(
-          const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u,
-          const Teuchos::Ptr<const CompositeVector>& factor) override;
-
+  virtual void UpdateMatricesNewtonCorrection(
+      const Teuchos::Ptr<const CompositeVector>& flux,
+      const Teuchos::Ptr<const CompositeVector>& u,
+      const Teuchos::Ptr<const CompositeVector>& factor) override;
+  
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override {};
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override {};
-  virtual void ScaleMassMatrices(double s) override {};
-
-  // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const override { return 0.0; }
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
  protected:
-  // virtual functions for derived clases
-  // -- processing of control parameters 
-  void Init_(Teuchos::ParameterList& plist);
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes, see implementation in the derived classes.
   virtual double MapBoundaryValue_(int f, double u) { return u; }

@@ -15,24 +15,6 @@
 namespace Amanzi {
 namespace Operators {
 
-typedef enum { OPERATOR_DIFFUSION_MFD,
-               OPERATOR_DIFFUSION_FV,
-               OPERATOR_DIFFUSION_NLFV,
-               OPERATOR_DIFFUSION_NLFVFACES,
-               OPERATOR_DIFFUSION_MFD_GRAVITY,
-               OPERATOR_DIFFUSION_FV_GRAVITY,
-               OPERATOR_DIFFUSION_NLFV_GRAVITY,
-               OPERATOR_DIFFUSION_NLFVFACES_GRAVITY,
-               OPERATOR_DIFFUSION_MFD_XMOF,
-               OPERATOR_DIFFUSION_MFD_TRACER,
-               OPERATOR_DIFFUSION_DG,
-               OPERATOR_DIFFUSION_FRACTURED_MATRIX,
-               OPERATOR_ADVECTION,
-               OPERATOR_ACCUMULATION,
-               OPERATOR_ELASTICITY,
-               OPERATOR_ELECTROMAGNETICS,
-               OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
-
 // coefficient type
 typedef enum { CONSTANT = 0,  // includes tensorial coefficients
                POLYNOMIAL,
