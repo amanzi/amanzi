@@ -30,6 +30,10 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
                                   Teuchos::RCP<TreeVector> f)
 {
   const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value_p = op_bc_p_->bc_value();
+
+  const std::vector<int>& bc_model_p_n = op_bc_p_n_->bc_model();
+  const std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
 
   double dTp(t_new - t_old);
   // Get the new pressure and saturation from the solution tree vector
@@ -61,8 +65,8 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
   rho_g_old->Scale(Cg_);
 
   // Calculate total mobility needed to initialize diffusion operator
-  coef_w_->Compute(*rhl, *saturation_w);
-  coef_n_->Compute(*pressure_w, *saturation_w);
+  coef_w_->Compute(*rhl, *saturation_w, bc_model_p, bc_value_p);
+  coef_n_->Compute(*pressure_w, *saturation_w, bc_model_p_n, bc_value_p_n);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
 
@@ -167,6 +171,10 @@ int CompH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, double dTp)
 {
   const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value_p = op_bc_p_->bc_value();
+
+  const std::vector<int>& bc_model_p_n = op_bc_p_n_->bc_model();
+  const std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
 
   Teuchos::RCP<const CompositeVector> pressure_w = u->SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> saturation_w = u->SubVector(1)->Data();
@@ -174,7 +182,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   // new nonwet pressure
   Teuchos::RCP<CompositeVector> pressure_n = Teuchos::rcp(new CompositeVector(*pressure_w));
-  capillary_pressure_->Compute(*saturation_w);  
+  capillary_pressure_->Compute(*saturation_w);
   pressure_n->Update(1.0, *capillary_pressure_->Pc(), 1.0);
 
   // compute density of gas rho_g = rho_h_g = P_g * Cg
@@ -182,8 +190,8 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   rho_g->Scale(Cg_);
 
   // Calculate total mobility needed to initialize diffusion operator
-  coef_w_->Compute(*rhl, *saturation_w);
-  coef_n_->Compute(*pressure_w, *saturation_w);
+  coef_w_->Compute(*rhl, *saturation_w, bc_model_p, bc_value_p);
+  coef_n_->Compute(*pressure_w, *saturation_w, bc_model_p_n, bc_value_p_n);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
 
@@ -219,8 +227,6 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   op1_preconditioner_->global_operator()->Init();
   op1_preconditioner_->Setup(Kptr, total_coef, Teuchos::null);
   op1_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
-std::cout << (*total_coef->ViewComponent("face"))[0][4190] << std::endl;
-std::cout << (op1_preconditioner_->local_op()->matrices)[4190] << std::endl;
   op1_preconditioner_->ApplyBCs(true, true, true);
   // op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
   // op1_preconditioner_->global_operator()->AssembleMatrix();

@@ -101,7 +101,6 @@ public:
 
   void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessSublistTimeInterval(Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs);
-  void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);

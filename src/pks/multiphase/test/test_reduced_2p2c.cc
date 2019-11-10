@@ -30,6 +30,7 @@
 #include "Reduced2p2c_PK.hh"
 #include "OperatorDefs.hh"
 #include "TimeStepManager.hh"
+#include "Visualization.hh"
 
 
 /* **************************************************************** */
@@ -65,6 +66,17 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   // create a simple state populate it
   RCP<State> S = rcp(new State(*state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  std::vector<Teuchos::RCP<Visualization> > visualization_;
+  for (State::mesh_iterator mesh=S->mesh_begin(); mesh!=S->mesh_end(); ++mesh) {
+    if (plist->isSublist("visualization data")) {
+      Teuchos::ParameterList& vis_plist = plist->sublist("visualization data");
+      Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist));
+      vis->set_mesh(mesh->second.first);
+      vis->CreateFiles();
+      visualization_.push_back(vis);
+    }
+  }
 
   double dT = time_list->get<double>("time step");
   double t_final = time_list->get<double>("end time");
@@ -149,6 +161,9 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
       if (MyPID == 0) {
         std::cout << "State time: " << S->time() << "; State cycle: " << S->cycle() << endl;
       }
+      for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin(); vis!=visualization_.end(); ++vis) {
+        WriteVis((*vis).ptr(), S.ptr());
+      } 
       dT = MPMC->get_dt();
     } 
   }

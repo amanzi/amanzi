@@ -497,6 +497,7 @@ void CompH_PK::InitNextTI()
 void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   const std::vector<int>& bc_model_p_n = op_bc_p_n_->bc_model();
+  const std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
 
   // Write pressure to state
   auto p2 = S_->GetFieldData("pressure_n", passwd_);
@@ -520,7 +521,7 @@ void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 
   // compute upwind velocities from pressure 
   // Calculate total mobility needed to initialize diffusion operator
-  coef_n_->Compute(s1);
+  coef_n_->Compute(s1, bc_model_p_n, bc_value_p_n);
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p_n, *coef_n_->Krel());
@@ -747,35 +748,6 @@ void CompH_PK::ComputeBC_Pn()
         // bc_value_p_n[*i] = bc_value_p[*i];
         // do nothing for now
       }
-    }
-  }
-}
-
-
-void CompH_PK::DeriveFaceValuesFromCellValues(
-    const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
-{
-  AmanziMesh::Entity_ID_List cells;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-  for (int f = 0; f < nfaces; f++) {
-    cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 2) {
-      double face_value = 0.0;
-      for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
-      ufaces[0][f] = face_value / ncells;
-    } else if (ncells == 1) {
-        if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-          ufaces[0][f] = bc_value[f];
-        } else {
-          ufaces[0][f] = ucells[0][cells[0]];
-        }
-    } else {
-      // do nothing
     }
   }
 }

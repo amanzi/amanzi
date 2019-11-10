@@ -228,7 +228,6 @@ void CompW_PK::InitializeComponent()
   // create verbosity object
   vo_ = new VerboseObject("MPMC:Component", *comp_list_); 
 
-  //ProcessParameterList(*comp_list_);
   // Create the BC objects.
   if (!comp_list_->isSublist("boundary conditions")) {
     Errors::Message msg;
@@ -404,6 +403,7 @@ void CompW_PK::InitNextTI()
 void CompW_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   const std::vector<int>& bc_model = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value = op_bc_p_->bc_value();
 
   // Write pressure to state
   auto p1 = soln_->SubVector(0)->Data();
@@ -414,7 +414,7 @@ void CompW_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 
   // compute upwind velocities from pressure 
   // Calculate total mobility needed to initialize diffusion operator
-  rel_perm_w_->Compute(s1);
+  rel_perm_w_->Compute(s1, bc_model, bc_value);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model, *rel_perm_w_->Krel());

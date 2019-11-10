@@ -30,6 +30,7 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
                                   Teuchos::RCP<TreeVector> f)
 {
   const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value_p = op_bc_p_->bc_value();
 
   const std::vector<int>& bc_model_s = op_bc_s_->bc_model();
   const std::vector<double>& bc_value_s = op_bc_s_->bc_value();
@@ -47,7 +48,7 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   Teuchos::RCP<const CompositeVector> rhl_old = u_old->SubVector(2)->Data(); 
 
   // Calculate total mobility needed to initialize diffusion operator
-  rel_perm_w_->Compute(*saturation_w);
+  rel_perm_w_->Compute(*saturation_w, bc_model_p, bc_value_p);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->Krel());
@@ -135,6 +136,7 @@ int CompW_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, double dTp)
 {
   const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value_p = op_bc_p_->bc_value();
 
   // Get the new pressure and saturation from the solution tree vector
   Teuchos::RCP<const CompositeVector> pressure_w = u->SubVector(0)->Data();
@@ -142,7 +144,7 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> rhl = u->SubVector(2)->Data();
 
   // Calculate relative perm needed to initialize diffusion operator
-  rel_perm_w_->Compute(*saturation_w);
+  rel_perm_w_->Compute(*saturation_w, bc_model_p, bc_value_p);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->Krel());

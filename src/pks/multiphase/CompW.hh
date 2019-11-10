@@ -132,17 +132,6 @@ public:
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces,
                                       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
-  // io members, implemented in Pressure_PK_IO.cc
-  void ProcessParameterList(Teuchos::ParameterList& list);
-  void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
-  void ProcessStringSourceDistribution(const std::string name, int* method);
-  void ProcessStringTimeIntegration(const std::string name, int* method);
-  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void ProcessSublistTimeInterval(Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs);
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
-  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
-  void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
-
   // access member functions
   Teuchos::RCP<Operators::PDE_Diffusion> OpPrec1() { return op1_preconditioner_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> OpPrec2() { return op_prec_sat_; }
