@@ -10,11 +10,6 @@
 #include <string>
 #include "vapor_pressure_relation_factory.hh"
 
-// explicity instantitate the static data of Factory<VaporPressure>
-template<> 
-Amanzi::Utils::Factory<Amanzi::Relations::VaporPressureRelation>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Relations::VaporPressureRelation>::map_;
-
 namespace Amanzi {
 namespace Relations {
 

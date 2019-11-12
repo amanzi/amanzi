@@ -512,9 +512,9 @@ class RegressionTest(object):
 
             # clean the gold directory
             filenames.append(os.path.join(gold_dir, 'ats_version.txt'))
-            for f in os.listdir(gold_dir):
-                if not os.path.join(gold_dir, f) in filenames:
-                    os.remove(os.path.join(gold_dir, f))
+            # for f in os.listdir(gold_dir):
+            #     if not os.path.join(gold_dir, f) in filenames:
+            #         os.remove(os.path.join(gold_dir, f))
 
             # git add stuff
             filenames.append('{}_orig.xml'.format(self.name()))
