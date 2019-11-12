@@ -179,10 +179,10 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     // set scalars, generate local matrices
     op.SetScalarCoefficient(knc->values(), knc->derivatives());
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
-    op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
+    op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
-    op->ApplyBCs(true, true, true);
+    op.ApplyBCs(true, true, true);
     global_op->AssembleMatrix();
 
     global_op->UpdatePreconditioner();
@@ -191,8 +191,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     step++;
     t += dt;
@@ -201,7 +201,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
-          step, solver.residual(), solver.num_itrs(), snorm, t, dt);
+          step, solver->residual(), solver->num_itrs(), snorm, t, dt);
     }
 
     // Change time step based on solution change.

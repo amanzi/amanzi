@@ -179,6 +179,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
       if (fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(T + dT, xf);
     }
 
+    
     // upwind heat conduction coefficient
     knc->UpdateValues(solution, bc_model, bc_value);
     upwind.Compute(*flux, solution, bc_model, *knc->values());
