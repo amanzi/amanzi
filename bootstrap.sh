@@ -137,7 +137,8 @@ hypre=${TRUE}
 netcdf4=${TRUE}
 petsc=${TRUE}
 pflotran=${FALSE}
-physics=${TRUE}
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
 shared=${FALSE}
 silo=${FALSE}
 
@@ -342,7 +343,8 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
-  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+  amanzi_physics	  build Amanzi native physics package ['"${amanzi_physics}"']
+  ats_physics		  build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -468,10 +470,11 @@ Build configuration:
     tpl_config_file     = '"${tpl_config_file}"'
 
 Amanzi Components:   
-    structured   = '"${structured}"'
-    spacedim     = '"${spacedim}"'
-    physics      = '"${physics}"'
-    unstructured = '"${unstructured}"'
+    structured     = '"${structured}"'
+    spacedim       = '"${spacedim}"'
+    unstructured   = '"${unstructured}"'
+    amanzi_physics = '"${amanzi_physics}"'
+    ats_physics    = '"${ats_physics}"'
 
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
@@ -961,6 +964,19 @@ function git_change_branch()
   cd ${save_dir}
 }
 
+function git_submodule_clone()
+{
+  submodule_name=$1
+  save_dir=`pwd`
+  cd ${amanzi_source_dir}
+  status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
+  ${git_binary} submodule update --init --remote ${submodule_name}
+  if [$? -ne 0 ]; then
+    error_message "Failed to check out submodule ${submodule_name}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+}
 
 # ---------------------------------------------------------------------------- #
 # MPI functions
@@ -1605,6 +1621,16 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# Clone any submodules (ATS)
+if [ "${ats_physics}" -eq "${TRUE}" ]; then
+    if [ "${amanzi_physics}" -eq "${TRUE}" ]; then
+        error_message "amanzi_physics and ats_physics are currently incompatible -- enable only one."
+        exit_now 30
+    fi
+    git_submodule_clone "src/physics/ats"
+fi
+
+
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
     -C${tpl_config_file} \
@@ -1627,7 +1653,8 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-    -DENABLE_Physics:BOOL=${physics} \
+    -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
+    -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
