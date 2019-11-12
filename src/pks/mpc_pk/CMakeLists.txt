@@ -49,7 +49,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Install Targets
 #
-if (ENABLE_Physics)
+if (ENABLE_AmanziPhysicsModule)
   set(mpc_tree_inc_files
       PK_MPCStrong.hh
       PK_MPCWeak.hh
@@ -126,7 +126,7 @@ if (BUILD_TESTS)
     set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
 
     # Test: 1
-    #if (ENABLE_Physics) 
+    #if (ENABLE_AmanziPhysicsModule) 
     #  add_amanzi_test(energy_test energy_test
     #                  KIND int
     #                  SOURCE test/Main.cc test/energy_test.cc
