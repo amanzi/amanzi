@@ -69,18 +69,14 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   // Set up my dependencies.
   Key domain_name = Keys::getDomain(name);
 
-  // // -- temperature
-  // temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
-  // dependencies_.insert(temp_key_);
-
   // -- logging
-  // if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-  //   Teuchos::OSTab tab = vo_->getOSTab();
-  //   for (KeySet::const_iterator dep=dependencies_.begin();
-  //        dep!=dependencies_.end(); ++dep) {
-  //     *vo_->os() << " dep: " << *dep << std::endl;
-  //   }
-  // }
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    for (KeySet::const_iterator dep=dependencies_.begin();
+         dep!=dependencies_.end(); ++dep) {
+      *vo_->os() << " dep: " << *dep << std::endl;
+    }
+  }
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
@@ -190,117 +186,9 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
   
   Errors::Message msg("Derivative computation is missing for these EOSEvaluator");
   Exceptions::amanzi_throw(msg);
+
 }
 
-//   int num_dep = dependencies_.size();  
-//   std::vector<double> eos_params(num_dep);
-//   std::vector< Teuchos::RCP<const CompositeVector> > dep_cv(num_dep);
-//   std::vector< Teuchos::RCP<const Epetra_MultiVector> > dep_vec(num_dep);
-
-//   // Pull dependencies out of state.  
-//   KeySet::const_iterator dep;
-//   int k;
-//   for (k=0, dep=dependencies_.begin();
-//        dep!=dependencies_.end(); ++k, ++dep)  {    
-//     dep_cv[k] = S->GetFieldData(*dep);
-//   }
-
-  
-//   Teuchos::Ptr<CompositeVector> molar_dens, mass_dens;
-//   if (mode_ == EOS_MODE_MOLAR) {
-//     molar_dens = results[0];
-//   } else if (mode_ == EOS_MODE_MASS) {
-//     mass_dens = results[0];
-//   } else {
-//     molar_dens = results[0];
-//     mass_dens = results[1];
-//   }
-
-//   if (wrt_key == pres_key_) {
-//     if (molar_dens != Teuchos::null) {
-//       // evaluate MolarDensity()
-//       for (CompositeVector::name_iterator comp=molar_dens->begin();
-//            comp!=molar_dens->end(); ++comp) {
-//         const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-//         const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-//         Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
-
-//         int count = dens_v.MyLength();
-//         for (int i=0; i!=count; ++i) {
-//           dens_v[0][i] = eos_->DMolarDensityDp(2, params);
-//         }
-//       }
-//     }
-
-//     if (mass_dens != Teuchos::null) {
-//       for (CompositeVector::name_iterator comp=mass_dens->begin();
-//            comp!=mass_dens->end(); ++comp) {
-//         if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-//             molar_dens->HasComponent(*comp)) {
-//           // calculate MassDensity from MolarDensity and molar mass.
-//           double M = eos_->MolarMass();
-
-//           mass_dens->ViewComponent(*comp,false)->Update(M,
-//                   *molar_dens->ViewComponent(*comp,false), 0.);
-//         } else {
-//           // evaluate MassDensity() directly
-//           const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-//           const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-//           Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
-
-//           int count = dens_v.MyLength();
-//           for (int i=0; i!=count; ++i) {
-//             dens_v[0][i] = eos_->DMassDensityDp(2, params);
-//           }
-//         }
-//       }
-//     }
-
-  // } else if (wrt_key == temp_key_) {
-
-  //   if (molar_dens != Teuchos::null) {
-  //     // evaluate MolarDensity()
-  //     for (CompositeVector::name_iterator comp=molar_dens->begin();
-  //          comp!=molar_dens->end(); ++comp) {
-  //       const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-  //       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-  //       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
-
-  //       int count = dens_v.MyLength();
-  //       for (int i=0; i!=count; ++i) {
-  //         dens_v[0][i] = eos_->DMolarDensityDT(2, params);
-  //       }
-  //     }
-  //   }
-
-  //   if (mass_dens != Teuchos::null) {
-  //     for (CompositeVector::name_iterator comp=mass_dens->begin();
-  //          comp!=mass_dens->end(); ++comp) {
-  //       if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-  //           molar_dens->HasComponent(*comp)) {
-  //         // calculate MassDensity from MolarDensity and molar mass.
-  //         double M = eos_->MolarMass();
-
-  //         mass_dens->ViewComponent(*comp,false)->Update(M,
-  //                 *molar_dens->ViewComponent(*comp,false), 0.);
-  //       } else {
-  //         // evaluate MassDensity() directly
-  //         const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-  //         const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-  //         Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
-
-  //         int count = dens_v.MyLength();
-  //         for (int i=0; i!=count; ++i) {
-  //           dens_v[0][i] = eos_->DMassDensityDT(2, params);
-  //         }
-  //       }
-  //     }
-  //   }
-
-  // } else {
-  //   AMANZI_ASSERT(0);
-  // }
-  //} 
 
 } // namespace
 } // namespace

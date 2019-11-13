@@ -11,10 +11,10 @@ add_subdirectory(generic_evaluators)
 
 # eos/
 
-register_evaluator_with_factory(
-  HEADERFILE eos/effective_pressure_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE eos/effective_pressure_evaluator_reg.hh
+#  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
+#  )
 
 register_evaluator_with_factory(
   HEADERFILE eos/effective_concentration_evaluator_reg.hh
