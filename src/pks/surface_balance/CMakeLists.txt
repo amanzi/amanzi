@@ -136,6 +136,11 @@ register_evaluator_with_factory(
 )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/interception_fraction_evaluator_reg.hh
+  LISTNAME ATS_SURFACE_BALANCE_REG
+)
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/litter/latent_heat_evaluator_reg.hh
   LISTNAME ATS_SURFACE_BALANCE_REG
 )
