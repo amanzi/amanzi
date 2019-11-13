@@ -22,7 +22,7 @@ class InterceptionFractionModel {
 
   double InterceptionFraction(double ai) const;
 
-  double DInterceptionFractionDSurface-areaIndex(double ai) const;
+  double DInterceptionFractionDAreaIndex(double ai) const;
   
  protected:
   void InitializeFromPlist_(Teuchos::ParameterList& plist);

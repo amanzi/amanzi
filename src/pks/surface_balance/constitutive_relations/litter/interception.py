@@ -9,8 +9,8 @@ deps = [("surface-area_index", "ai"),]
 params = [("alpha", "double", "scaling factor [-]", 0.25),] # Lawrence 2007
 
 import sympy
-ai, alpha = sympy.var("ai, alpha")
-expression = alpha * (1 - sympy.exp(-0.5 * ai))
+ai, alpha_ = sympy.var("ai, alpha")
+expression = alpha_ * (1 - sympy.exp(-0.5 * ai))
 
 
 evaluator_generator.generate_evaluator("interception_fraction", "SurfaceBalance", "interception fraction",

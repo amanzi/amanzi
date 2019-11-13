@@ -1,12 +1,9 @@
 # -*- mode: cmake -*-
+include_directories(${ATS_SOURCE_DIR}/pks)
 
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc
-
-
-include_directories(${ATS_SOURCE_DIR}/src/pks)
-
-add_library(pk_BGC
+set(ats_bgc_src_files
   bgc_simple/utils.cc
   bgc_simple/PFT.cc
   bgc_simple/SoilCarbonParameters.cc
@@ -15,9 +12,37 @@ add_library(pk_BGC
   bgc_simple/bgc_simple.cc
   carbon/simple/CarbonSimple.cc
   constitutive_models/carbon/bioturbation_evaluator.cc
-)
+  )
 
-install(TARGETS pk_BGC DESTINATION lib)
+set(ats_bgc_inc_files
+  bgc_simple/utils.hh
+  bgc_simple/PFT.hh
+  bgc_simple/SoilCarbonParameters.hh
+  bgc_simple/vegetation.hh
+  bgc_simple/bgc_simple_funcs.hh
+  bgc_simple/bgc_simple.hh
+  carbon/simple/CarbonSimple.hh
+  constitutive_models/carbon/bioturbation_evaluator.hh
+  )
+
+
+set(ats_bgc_link_libs
+  ${Teuchos_LIBRARIES}
+  ${Epetra_LIBRARIES}
+  error_handling
+  atk
+  mesh
+  data_structures
+  state
+  pks
+  ats_pks
+  )
+
+
+add_amanzi_library(ats_bgc
+                   SOURCE ${ats_bgc_src_files}
+                   HEADERS ${ats_bgc_inc_files}
+		   LINK_LIBS ${ats_bgc_link_libs})
 
 #================================================
 # register evaluators/factories/pks
@@ -25,22 +50,22 @@ install(TARGETS pk_BGC DESTINATION lib)
 # SEB explicit
 register_evaluator_with_factory(
   HEADERFILE bgc_simple/bgc_simple_reg.hh
-  LISTNAME BGC_REG
+  LISTNAME ATS_BGC_REG
 )
 
 register_evaluator_with_factory(
   HEADERFILE carbon/simple/CarbonSimple_reg.hh
-  LISTNAME BGC_REG
+  LISTNAME ATS_BGC_REG
 )
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_models/carbon/bioturbation_evaluator_reg.hh
-  LISTNAME BGC_REG
+  LISTNAME ATS_BGC_REG
 )
 
 generate_evaluators_registration_header(
-  HEADERFILE BGC_registration.hh
-  LISTNAME   BGC_REG
+  HEADERFILE ats_bgc_registration.hh
+  LISTNAME   ATS_BGC_REG
   INSTALL    True
 )
 

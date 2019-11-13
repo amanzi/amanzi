@@ -34,13 +34,13 @@ InterceptionFractionModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 double
 InterceptionFractionModel::InterceptionFraction(double ai) const
 {
-  return alpha*(1 - exp(-0.5*ai));
+  return alpha_*(1 - exp(-0.5*ai));
 }
 
 double
-InterceptionFractionModel::DInterceptionFractionDSurface-areaIndex(double ai) const
+InterceptionFractionModel::DInterceptionFractionDAreaIndex(double ai) const
 {
-  return 0.5*alpha*exp(-0.5*ai);
+  return 0.5*alpha_*exp(-0.5*ai);
 }
 
 } //namespace

@@ -46,8 +46,7 @@ InterceptionFractionEvaluator::InitializeFromPlist_()
 
   // - pull Keys from plist
   // dependency: surface-area_index
-  ai_key_ = plist_.get<std::string>("surface-area index key",
-          domain_name+"surface-area_index");
+  ai_key_ = plist_.get<std::string>("area index key", domain_name+"area_index");
   dependencies_.insert(ai_key_);
 }
 
@@ -85,12 +84,12 @@ Teuchos::RCP<const CompositeVector> ai = S->GetFieldData(ai_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DInterceptionFractionDSurface-areaIndex(ai_v[0][i]);
+        result_v[0][i] = model_->DInterceptionFractionDAreaIndex(ai_v[0][i]);
       }
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 
