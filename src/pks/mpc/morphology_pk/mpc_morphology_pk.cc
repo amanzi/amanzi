@@ -59,7 +59,7 @@ void Morphology_PK::Setup(const Teuchos::Ptr<State>& S){
 
 
   dt_MPC_ = plist_->get<double>("dt MPC", 31557600);
-  dt_sample_ = plist_->get<double>("dt sample", 259200);
+  MSF_ = plist_->get<double>("morphology scaling factor", 1);
   
   Amanzi::PK_MPCSubcycled_ATS::Setup(S);
   
@@ -204,13 +204,20 @@ void Morphology_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
+
   bool fail = false;
   Teuchos::OSTab tab = vo_->getOSTab();
   
   double dt_step;
-  if (dt_sample_ > 0) dt_step = std::min(S_inter_->final_time() - S_inter_->initial_time(), dt_sample_);
-  else dt_step = S_inter_->final_time() - S_inter_->initial_time();
+  dt_step = S_inter_->final_time() - S_inter_->initial_time();
 
+  if (dt_step < dt_MPC_){
+    std::stringstream messagestream;
+    messagestream << "Actual step is less than prescribed MPC time step.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  
   
   Teuchos::RCP<Field_Scalar> msl_rcp = Teuchos::rcp_dynamic_cast<Field_Scalar>(S_inter_->GetField("msl", "state"));
   msl_rcp->Compute(t_old);
@@ -219,22 +226,21 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   Epetra_MultiVector& dz = *S_next_->GetFieldData(elevation_increase_key_, "state")->ViewComponent("cell",false);
   dz.PutScalar(0.);
 
-  std::cout<<"DEBUG: flow_pk_ -> ResetTimeStepper t_old="<<t_old<<"\n";
   flow_pk_ -> ResetTimeStepper(t_old);
   
   S_inter_->set_intermediate_time(t_old);
   S_next_->set_intermediate_time(t_old);
   double dt_done = 0;
   double dt_next = flow_pk_ -> get_dt();
-  double t_sample_end = t_old + dt_step;
+  double t_DNS_end = t_old + dt_step/MSF_;   // end of direct numerical simulation
   
   bool done = false;
   int ncycles = 0;
 
   while(!done){
     dt_next = flow_pk_ -> get_dt();   
-    if (t_old + dt_done + dt_next > t_sample_end) {
-      dt_next = t_sample_end - t_old - dt_done;
+    if (t_old + dt_done + dt_next > t_DNS_end) {
+      dt_next = t_DNS_end - t_old - dt_done;
     }
     
     fail = true;
@@ -283,17 +289,17 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
 
     // check for done condition
-    done = (std::abs(t_old + dt_done - t_sample_end) / (t_sample_end - t_old) < 0.1*min_dt_) || // finished the step
+    done = (std::abs(t_old + dt_done - t_DNS_end) / (t_DNS_end - t_old) < 0.1*min_dt_) || // finished the step
       (dt_next  < min_dt_); // failed
   }
 
-
-  if ((dt_sample_ > 0)&&(dt_MPC_ >0)){
-    double factor = dt_MPC_ / dt_sample_;   
-    dz.Scale(factor);
-  }
-
-
+  double max_dz, min_dz;
+  dz.MinValue(&min_dz);
+  dz.MaxValue(&max_dz);
+  std::cout<<"min "<<min_dz<<" max "<<max_dz<<"\n";
+  
+  dz.Scale(MSF_);
+  
   dz_accumul_->Update(1, dz, 1);  
   Update_MeshVertices_(S_next_.ptr() );
 

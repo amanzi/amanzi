@@ -1036,6 +1036,11 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         values[f] = h0;
         
       }
+
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)){
+        *vo_->os() << "Tidal BC: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<"\n";
+      }
+      
     }
 
   }
@@ -1191,8 +1196,11 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
         values[f] = h0;
         
       }
-      //std::cout<<"tidal bc"<<" face "<<f<<": "<< values[f] <<" "<<markers[f]<<" val h "<<bc->second<<" flux "<<flux_f[0][f]*fdirs[j]<<" elev "<<elevation_f[0][f]<<" pond " <<
-      //  ponded_c[0][c] <<" "<< min_tidal_bc_ponded_depth_<<"\n";
+
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)){
+        *vo_->os() << "Tidal BC2: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<
+          " Aff "<< Aff[f](0,0) << "\n";
+      }
 
       
     }

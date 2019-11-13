@@ -67,6 +67,7 @@ namespace Amanzi {
 
     double master_dt_, slave_dt_;
     double dt_MPC_, dt_sample_;
+    double MSF_;  // morphology scaling factor
 
     Teuchos::RCP<AmanziMesh::Mesh> mesh_, mesh_3d_, mesh_ss_;
     Teuchos::RCP<PrimaryVariableFieldEvaluator> deform_eval_;
