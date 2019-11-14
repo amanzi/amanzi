@@ -34,7 +34,7 @@ SettlementRateEvaluator :: SettlementRateEvaluator(Teuchos::ParameterList& plist
 
   lambda_ = 8./(3*pi) * (umax_/(xi_*xi_));
     
-  dependencies_.insert("surface-effective_pressure");
+  dependencies_.insert("surface-pressure");
   dependencies_.insert(sediment_key_);
     
 }
@@ -70,7 +70,7 @@ void SettlementRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     }else{
       result_c[0][c] = 0.;
     }
-    //if (c<50) std::cout<<"cell "<<c<<" "<<result_c[0][c]<<" "<< tau_0<<" "<<tcc[0][c]<<"\n";
+
   }
    
 }

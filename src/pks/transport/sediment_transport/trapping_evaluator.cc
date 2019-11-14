@@ -33,7 +33,7 @@ TrappingRateEvaluator :: TrappingRateEvaluator(Teuchos::ParameterList& plist) :
   beta_ = plist_.get<double>("beta");
   gamma_ = plist_.get<double>("gamma");
     
-  dependencies_.insert("surface-effective_pressure");
+  dependencies_.insert("surface-pressure");
   dependencies_.insert(sediment_key_);
   dependencies_.insert(ponded_depth_key_);
   dependencies_.insert(biomass_key_);
@@ -92,8 +92,6 @@ void TrappingRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       result_c[0][c] += tcc[0][c] * u_abs * eps * d_s * n_s * std::min(depth[0][c], h_s);
     }
-    //if (c<10) std::cout<<"trapping "<<c<<" "<<tcc[0][c]<<" "<<u_abs<<" "<<eps <<" "<< bio_d[0][c] <<" "<< bio_n[0][c] <<" "<< std::min(depth[0][c], bio_h[0][c])<<"\n";
-    //result_c[0][c] = 1e-2*tcc[0][c] * u_abs;
   }
       
 

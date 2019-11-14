@@ -296,7 +296,8 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   double max_dz, min_dz;
   dz.MinValue(&min_dz);
   dz.MaxValue(&max_dz);
-  std::cout<<"min "<<min_dz<<" max "<<max_dz<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os()<<"min "<<min_dz<<" max "<<max_dz<<"\n";
   
   dz.Scale(MSF_);
   

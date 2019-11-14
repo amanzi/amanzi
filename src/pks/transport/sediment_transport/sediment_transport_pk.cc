@@ -55,7 +55,7 @@ SedimentTransport_PK::SedimentTransport_PK(Teuchos::ParameterList& pk_tree,
   
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  //std::cout<<*pk_list;
+
   tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   if (tp_list_->isParameter("component names")) {
@@ -135,14 +135,6 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
 
-
-
-  // require state fields
-  // if (abs_perm) {
-  //   S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
-  //     ->AddComponent("cell", AmanziMesh::CELL, dim);
-  //   S->RequireFieldEvaluator(permeability_key_);
-  // }
 
   if (!S->HasField(flux_key_)){
     S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -358,8 +350,6 @@ void SedimentTransport_PK::Initialize(const Teuchos::Ptr<State>& S)
             bc->tcc_names().push_back(component_names_[i]);
             bc->tcc_index().push_back(i);
           }
-          //          std::cout << "tcc_names "<<tcc_names<<"\n";
-          //std::cout << "tcc_index "<<tcc_index<<"\n";
           
           bc->set_state(S_);
           bcs_.push_back(bc);
@@ -380,8 +370,7 @@ void SedimentTransport_PK::Initialize(const Teuchos::Ptr<State>& S)
             bc->tcc_names().push_back(component_names_[i]);
             bc->tcc_index().push_back(i);
           }
-          //          std::cout << "tcc_names "<<tcc_names<<"\n";
-          //std::cout << "tcc_index "<<tcc_index<<"\n";
+
           
           bc->set_state(S_);
           bcs_.push_back(bc);
@@ -638,7 +627,6 @@ double SedimentTransport_PK::StableTimeStep()
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = 0;
   for (int c = 0; c < ncells_owned; c++) {
-    // if (c<10) std::cout<< c<<" : "<< total_outflux[c]<<" "<<(*ws_)[0][c]<<" "<<(*ws_prev_)[0][c]<<"\n";
     outflux = total_outflux[c];
 
     if ( (outflux > 0) && ((*ws_prev_)[0][c] > 1e-6) && ((*ws_)[0][c] > 1e-6 )) {
@@ -648,10 +636,6 @@ double SedimentTransport_PK::StableTimeStep()
     if (dt_cell < dt_) {
       dt_ = dt_cell;
       cmin_dt = c;
-
-      
-      // *vo_->os()<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<" ws "<<
-      //   (*ws_prev_)[0][c]<<" "<< (*ws_)[0][c] <<"  dt= "<<dt_cell<<"\n";
 
     }
   }
@@ -864,13 +848,9 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     ncycles++;
-    // if (ncycles > 150) {
-    //   std::cout <<"number of cycles more than 150\n";
-    //   exit(0);
-    // }
   }
 
-  std::cout<<"ncycles = "<<ncycles<<"\n";
+
  
 
 
@@ -1020,8 +1000,6 @@ void SedimentTransport_PK::CommitStep(double t_old, double t_new, const Teuchos:
   // tcc = S_->GetFieldData(tcc_key_, passwd_);
   // *tcc = *tcc_tmp;
 
-  // const Epetra_MultiVector& tcc_vec = *tcc->ViewComponent("cell"); 
-  // for (int c =0; c<15; c++) std::cout<<"tcc commit "<<c<<" : "<<tcc_vec[0][c]<<"\n";
 }
 
 
@@ -1086,11 +1064,8 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
     else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        //if ((c2 < 0) && fabs(tcc_flux) >1e-17) std::cout <<MyPID<<":u "<<u<<" cell "<<c1<<" "<<c2<<" face "<<f<<
-        //                                          " tcc "<<tcc_prev[i][c1]<<" tcc_flux "<<tcc_flux<<" cntr "<<mesh_->face_centroid(f)<<"\n";
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_sediment_bc_ -= tcc_flux;
-        //AmanziGeometry::Point normal = mesh_->face_normal(f);
       }
 
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -1132,10 +1107,6 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
   ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   //}
 
-  // if (domain_name_ == "surface") {
-  //   std::cout<<*conserve_qty_<<"\n";
-  // }
-  
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_ws_den = mesh_->cell_volume(c) * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
@@ -1143,13 +1114,6 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
       if ((*ws_end)[0][c] > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
         
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_ws_den;
-
-        //if ((*conserve_qty_)[i][c] > vol_ws_den) {
-        if (tcc_next[i][c] > 4e-6){
-          // std::cout<<"cell "<<c<<" tcc "<<tcc_next[i][c]<<" mass "<<(*conserve_qty_)[i][c]<<"\n";
-          // std::cout<<"ws " << (*ws_start)[0][c] <<" "<<(*ws_end)[0][c] << " den "<<(*mol_dens_start)[0][c] <<" " <<(*mol_dens_end)[0][c]<<" "<<mesh_->cell_volume(c)<<" dt "<<dt_<<"\n";
-          //exit(0);
-        }
         
       }
       else  {
@@ -1448,14 +1412,11 @@ void SedimentTransport_PK::ComputeAddSourceTerms(double tp, double dtp,
     tcc[0][c] += value * dtp;
     mass_sediment_source_ += value;
     dz[0][c] += mesh_->cell_volume(c) * ((Q_dt[0][c] + Q_ds[0][c])  + Q_db[0][c] - Q_e[0][c]) * dtp/ (1 - poro[0][c]);
-    //if (c<10) std::cout<<"cell "<<c<<" : "<<dz[0][c]<<" Qdt "<<Q_dt[0][c] <<"  Q_ds "<<Q_ds[0][c] <<"  Q_e "<< Q_e[0][c]<<"\n";
   }
 
   
-  //std::cout<<"Time "<<tp<<"\n";
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-    //std::cout<<srcs_[m]->name()<<"\n";    
     srcs_[m]->Compute(t0, tp); 
 
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
@@ -1463,7 +1424,6 @@ void SedimentTransport_PK::ComputeAddSourceTerms(double tp, double dtp,
       int c = it->first;
       std::vector<double>& values = it->second;
 
-      //      std::cout<<c<<": "<<ncells_owned<<" "<<values[0]<<"\n";
       if (c >= ncells_owned) continue;
 
       for (int k = 0; k < tcc_index.size(); ++k) {
@@ -1493,16 +1453,6 @@ void SedimentTransport_PK::ComputeAddSourceTerms(double tp, double dtp,
     }
   }
 
-  // for (int c = 0; c < ncells_owned; c++) {
-  //   mass2 += tcc[0][c];
-  // }
-  // tmp1 = mass2;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass2, 1);
-  // tmp1 = add_mass;
-  // mesh_->get_comm()->SumAll(&tmp1, &add_mass, 1);
-
-
-  // std::cout<<std::setprecision(10)<<mass1<<" "<<mass2<<" "<<add_mass<<" "<<mass2 - mass1<<"\n";
   
 }
 

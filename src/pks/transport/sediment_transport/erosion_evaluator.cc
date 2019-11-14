@@ -30,7 +30,7 @@ ErosionRateEvaluator :: ErosionRateEvaluator(Teuchos::ParameterList& plist) :
 
   lambda_ = 8./(3*pi) * (umax_/(xi_*xi_));
     
-  dependencies_.insert("surface-effective_pressure");
+  dependencies_.insert("surface-pressure");
     
 }
 
