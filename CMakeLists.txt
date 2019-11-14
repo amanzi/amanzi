@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
+
 # Standard CMake modules
 include(CMakeDependentOption)
 include(FeatureSummary)
@@ -28,7 +29,8 @@ add_feature_info(TESTS
                  "Toggle for unit tests")
 if (ENABLE_TESTS)
   set(BUILD_TESTS 1)
-endif()    
+endif()
+
 
 # --------------------------------------------------------------------------- #
 # Define the project name
@@ -59,6 +61,20 @@ if ( Amanzi_FOUND )
 else()
   message(FATAL_ERROR "Failed to locate Amanzi")
 endif()
+
+
+set(HDF5_USE_STATIC_LIBRARIES ON)
+set(HDF5_ROOT ${Amanzi_TPL_HDF5_DIR})
+find_package(HDF5 1.10.0 REQUIRED COMPONENTS C HL)
+message(STATUS "HDF5 Package information")
+message(STATUS "\tHDF5_INCLUDE_DIR  = ${HDF5_INCLUDE_DIR}")
+message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
+message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
+message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
+message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
+message(STATUS "\tHDF5_HL_LIBRARIES    = ${HDF5_HL_LIBRARIES}")
+message(STATUS "")
+
 
 # Useful variables pointing to directories in the source tree
 set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
