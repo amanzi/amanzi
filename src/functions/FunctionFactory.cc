@@ -20,6 +20,7 @@
 #include "FunctionStandardMath.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionTabular.hh"
+#include "FunctionBilinearAndTime.hh"
 
 namespace Amanzi {
 
@@ -64,6 +65,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_standard_math(function_params);
       else if (function_type == "function-bilinear")
         f = create_bilinear(function_params);
+      else if (function_type == "function-bilinear-and-time")
+        f = create_bilinear_and_time(function_params);
       else if (function_type == "function-distance")
         f = create_distance(function_params);
       else if (function_type == "function-squaredistance")
@@ -585,4 +588,16 @@ Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params)
   }
   return f;
 }
+
+
+Function* FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
+{
+  std::string filename = params.get<std::string>("file");
+  std::string x_header = params.get<std::string>("x header");
+  std::string y_header = params.get<std::string>("y header");
+  std::string time_header = params.get<std::string>("time header");
+  std::string value_header = params.get<std::string>("value header");
+  return new FunctionBilinearAndTime(filename, time_header, x_header, y_header, value_header);
+}
+
 }  // namespace Amanzi
