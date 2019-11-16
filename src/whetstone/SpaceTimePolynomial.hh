@@ -36,6 +36,7 @@ class SpaceTimePolynomial {
   SpaceTimePolynomial() : d_(0), order_(-1), size_(-1) {};
   SpaceTimePolynomial(int d, int order);
   SpaceTimePolynomial(const SpaceTimePolynomial& poly);
+  ~SpaceTimePolynomial() {};
 
   // reshape polynomial and erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
