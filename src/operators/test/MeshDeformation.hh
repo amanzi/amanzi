@@ -198,9 +198,9 @@ AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& x
       uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]);
       uv[1] =-0.2 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]);
     } else {
-      uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::cos(M_PI * yv[2]);
-      uv[1] =-0.1 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]) * std::cos(M_PI * yv[2]);
-      uv[2] =-0.1 * std::cos(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::sin(M_PI * yv[2]);
+      uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::sin(M_PI * yv[2] / 2);
+      uv[1] =-0.2 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]) * std::sin(M_PI * yv[2] / 2);
+      uv[2] = 0.0;
     }
     yv += uv * ds;
   }
