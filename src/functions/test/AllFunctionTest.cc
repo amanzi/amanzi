@@ -477,7 +477,7 @@ TEST(bilinear_and_time_test)
   //        [ 6 8 ]
   //        [ 7 9 ]
   
-  FunctionBilinearAndTime f("test/bilinear_and_time.h5", "time", "x", "y", "values");
+  FunctionBilinearAndTime f("test/bilinear_and_time.h5", "time", "x", "x", "y", "y", "values");
   CHECK_CLOSE(0., f(std::vector<double>{-1., 0., 0.}), 1.e-7);
   CHECK_CLOSE(0., f(std::vector<double>{0., 0., 0.}), 1.e-7);
   CHECK_CLOSE(1., f(std::vector<double>{.25, 0., 0.}), 1.e-7);

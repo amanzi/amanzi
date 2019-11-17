@@ -25,8 +25,10 @@ bounds.
  
 * `"file`" ``[string]`` HDF5 filename of the data
 * `"time header`" ``[Array(string)]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
-* `"x header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
-* `"y header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
+* `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
+* `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
+* `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
+* `"column coordinate`" ``[string]`` **y** one of `"x`",`"y`",`"z`"
 * `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
 
 Example1:
@@ -36,8 +38,8 @@ Example1:
   <ParameterList name="function-nd-linear">
     <Parameter name="file" type="string" value="head.h5"/>
     <Parameter name="time header" type="string" value="time"/>
-    <Parameter name="x header" type="string" value="x"/>
-    <Parameter name="y header" type="string" value="y"/>
+    <Parameter name="row header" type="string" value="x"/>
+    <Parameter name="column header" type="string" value="y"/>
     <Parameter name="value header" type="string" value="rain"/>
   </ParameterList>
 
@@ -68,8 +70,10 @@ class FunctionBilinearAndTime : public Function {
  public:
   FunctionBilinearAndTime(const std::string& filename,
                           const std::string& time_header,
-                          const std::string& x_header,
-                          const std::string& y_header,
+                          const std::string& row_header,
+                          const std::string& row_coordinate,
+                          const std::string& column_header,
+                          const std::string& column_coordinate,
                           const std::string& val_header);
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);    
@@ -84,7 +88,8 @@ class FunctionBilinearAndTime : public Function {
   
  private:
 
-  std::string x_header_, y_header_, val_header_;
+  std::string row_header_, col_header_, val_header_;
+  int row_index_, col_index_;
   std::vector<double> times_;
   std::string filename_;
   mutable double t_before_;

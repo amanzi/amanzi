@@ -10,12 +10,14 @@ namespace Amanzi {
 
 FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
         const std::string& time_header,
-        const std::string& x_header,
-        const std::string& y_header,
+        const std::string& row_header,
+        const std::string& row_coordinate,
+        const std::string& col_header,
+        const std::string& col_coordinate,
         const std::string& val_header)
     : filename_(filename),
-      x_header_(x_header),
-      y_header_(y_header),
+      row_header_(row_header),
+      col_header_(col_header),
       val_header_(val_header),
       t_before_(-1.0),
       t_after_(-1.0),
@@ -23,16 +25,29 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
 {
   HDF5Reader reader(filename_);
   reader.ReadData(time_header, times_);
+
+  if (row_coordinate == "x") row_index_ = 1;
+  else if (row_coordinate == "y") row_index_ = 2;
+  else if (row_coordinate == "z") row_index_ = 3;
+
+  if (col_coordinate == "x") col_index_ = 1;
+  else if (col_coordinate == "y") col_index_ = 2;
+  else if (col_coordinate == "z") col_index_ = 3;
 }
 
 
 
 FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& other)
-    : t_before_(other.t_before_),
-      t_after_(other.t_after_),
-      current_interval_(other.current_interval_),
+    : row_header_(other.row_header_),
+      row_index_(other.row_index_),
+      col_header_(other.col_header_),
+      col_index_(other.col_index_),
+      val_header_(other.val_header_),
       times_(other.times_),
       filename_(other.filename_),
+      t_before_(other.t_before_),
+      t_after_(other.t_after_),
+      current_interval_(other.current_interval_),
       val_before_(std::unique_ptr<FunctionBilinear>(other.val_before_->Clone())),
       val_after_(std::unique_ptr<FunctionBilinear>(other.val_after_->Clone()))
 {}
@@ -79,13 +94,13 @@ std::unique_ptr<FunctionBilinear>
 FunctionBilinearAndTime::Load_(const int time_index) const {
   HDF5Reader reader(filename_);
 
-  std::vector<double> x, y;
-  reader.ReadData(x_header_, x);
-  reader.ReadData(y_header_, y);
+  std::vector<double> row, col;
+  reader.ReadData(row_header_, row);
+  reader.ReadData(col_header_, col);
 
   Epetra_SerialDenseMatrix values;
   reader.ReadMatData(val_header_+"/"+std::to_string(time_index), values);
-  return std::make_unique<FunctionBilinear>(x, y, values, 1, 2);
+  return std::make_unique<FunctionBilinear>(row, col, values, row_index_, col_index_);
 }
 
 } // namespace Amanzi
