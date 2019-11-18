@@ -15,10 +15,10 @@
 #include "IsobaricEOSEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

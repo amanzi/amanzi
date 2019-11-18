@@ -77,7 +77,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
-  int max_error_growth_factor_, max_du_growth_factor_;
+  double max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
 
   int modify_correction_;

@@ -91,5 +91,7 @@ include(RegisterEvaluators)
 option(ENABLE_NewTimeIntegrators "Build Amanzi with dev time integrators" FALSE)
 
 # Turn off physics, just build the framework
-option(ENABLE_Physics "Build Amanzi with physics libraries" TRUE)
+option(ENABLE_AmanziPhysicsModule "Build Amanzi with native physics libraries" TRUE)
+option(ENABLE_ATSPhysicsModule "Build Amanzi with ATS physics libraries" FALSE)
+
 

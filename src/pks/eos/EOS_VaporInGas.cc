@@ -17,7 +17,7 @@
 #include "EOS_VaporInGas.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 /* *******************************************************************
 * Constructor takes a parameter list with EOS parameters.
@@ -49,5 +49,5 @@ void EOS_VaporInGas::InitializeFromPlist_() {
   gas_eos_ = eos_factory.CreateEOS(gas_eos_plist);
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

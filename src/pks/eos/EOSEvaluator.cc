@@ -16,7 +16,7 @@
 #include "EOSEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 /* ******************************************************************
 * Constructor
@@ -275,6 +275,6 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 

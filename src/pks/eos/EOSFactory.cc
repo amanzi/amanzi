@@ -20,7 +20,7 @@
 //    Amanzi::Utils::Factory<Amanzi::EOS>::map_;
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // method for instantiating EOS implementations
 Teuchos::RCP<EOS> EOSFactory::CreateEOS(Teuchos::ParameterList& plist) {
@@ -28,6 +28,6 @@ Teuchos::RCP<EOS> EOSFactory::CreateEOS(Teuchos::ParameterList& plist) {
   return Teuchos::rcp(CreateInstance(eos_typename, plist));
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 

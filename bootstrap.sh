@@ -104,37 +104,43 @@ tpl_build_dir=${dflt_build_prefix}/build/tpls
 tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_install_prefix}/install/tpls
 
-# only build the TPLs
-tpls_only=$FALSE
+# build stages (TPLs, TPLs + Amanzi, TPLs + Amanzi + UserGuide)
+build_tpls=$TRUE
+build_amanzi=$TRUE
+build_user_guide=$TRUE
 
 # Color output display
 no_color=$FALSE
 
 # Amanzi build configuration
+# -- components
 structured=$TRUE
 unstructured=$TRUE
-ccse_tools=$FALSE
+geochemistry=$TRUE
+# -- mesh frameworks
 stk_mesh=$FALSE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
+# -- tools
 amanzi_branch=
+ccse_tools=$FALSE
+spacedim=2
 test_suite=$FALSE
 reg_tests=$FALSE
-netcdf4=${TRUE}
-petsc=${TRUE}
-hypre=${TRUE}
-alquimia=${FALSE}
-pflotran=${FALSE}
-crunchtope=${FALSE}
-shared=${FALSE}
-spacedim=2
-silo=${FALSE}
-physics=${TRUE}
 build_stage_1=${FALSE}
 build_stage_2=${FALSE}
-
-# Dry-Run
 dry_run=${FALSE}
+# -- tpls
+alquimia=${FALSE}
+crunchtope=${FALSE}
+hypre=${TRUE}
+netcdf4=${TRUE}
+petsc=${TRUE}
+pflotran=${FALSE}
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
+shared=${FALSE}
+silo=${FALSE}
 
 # System specific options
 # - Intended for supercomputing facilities, and institutional computing
@@ -283,7 +289,7 @@ function parse_option_with_equal()
   fi
 }
 
-function print_usage()
+function print_help()
 {
 echo '
 Usage: '"$0"' [options]
@@ -332,11 +338,13 @@ Value in brackets indicates default setting.
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
+  geochemistry            build all geochemistry packages (pflotran, crunchtope, alquimia) ['"${geochemistry}"']
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
-  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+  amanzi_physics	  build Amanzi native physics package ['"${amanzi_physics}"']
+  ats_physics		  build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -344,7 +352,9 @@ Value in brackets indicates default setting.
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
-  tpls_only               only build the TPLs, do not build Amanzi itself
+
+  build_amanzi            build TPLs and Amanzi
+  build_user_guide        build TPLs, Amanzi, and UserGuide
 
 
 Tool definitions:
@@ -409,7 +419,7 @@ Directories and file names:
 Example with pre-existing MPI installation that builds dynamic libraries
 and executables for external packages (TPLs) and then for Amanzi:
 
-  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.96.3-clang-9.0.0-ompi-3.1.4
                  --with-mpi=/opt/local 
                  --parallel=8 
                  --enable-shared
@@ -419,7 +429,7 @@ and executables for external packages (TPLs) and then for Amanzi:
 Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
 OSX C and C++ compilers and Fortran compiler from MacPorts:
 
-  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.96.3-clang-9.0.0-ompi-3.1.4
                  --with-c-compiler=/usr/bin/clang
                  --with-cxx-compiler=/usr/bin/clang++
                  --with-fort-compiler=/opt/local/bin/gfortran-mp-6
@@ -434,76 +444,80 @@ function print_variable_values
 {
 echo '
 
-Tools:
-    cmake_binary ='"${cmake_binary}"'
-    ctest_binary ='"${ctest_binary}"'
-    git_binary   ='"${git_binary}"'
-    curl_binary  ='"${curl_binary}"'
-    Spack_binary ='"${Spack_binary}"'
-    mpi_root_dir ='"${mpi_root_dir}"'
-
-Compilers:
-    build_c_compiler    ='"${build_c_compiler}"'
-    build_cxx_compiler  ='"${build_cxx_compiler}"'
-    build_fort_compiler ='"${build_fort_compiler}"'
-
-Compile Flags    
-    build_c_flags    ='"${build_c_flags}"'
-    build_cxx_flags  ='"${build_cxx_flags}"'
-    build_fort_flags ='"${build_fort_flags}"'
-
-Link Flags
-    build_link_flags ='"${build_link_flags}"'
+List of computed and ADJUSTED parameters
+========================================
+Compilers and Flags:
+    build_c_compiler    = '"${build_c_compiler}"'
+    build_cxx_compiler  = '"${build_cxx_compiler}"'
+    build_fort_compiler = '"${build_fort_compiler}"'
+    build_c_flags       = '"${build_c_flags}"'
+    build_cxx_flags     = '"${build_cxx_flags}"'
+    build_fort_flags    = '"${build_fort_flags}"'
+    build_link_flags    = '"${build_link_flags}"'
+    mpi_root_dir        = '"${mpi_root_dir}"'
 
 Build configuration:
-    build_type          ='"${build_type}"'
-    tpls_build_type     ='"${tpls_build_type}"'
-    trilinos_build_type ='"${trilinos_build_type}"'
-    tpl_config_file     ='"${tpl_config_file}"'
-    parallel            ='"${parallel_jobs}"'
-    shared              ='"${shared}"'
-    spacedim            ='"${spacedim}"'
-    nersc               ='"${nersc}"'
-    static_libs_prefer  ='"${prefer_static}"'
-    static_executables  ='"${exec_static}"'
-    build_stage_1       ='"${build_stage_1}"'
-    build_stage_2       ='"${build_stage_2}"'
+    build_type          = '"${build_type}"'
+    build_stage_1       = '"${build_stage_1}"'
+    build_stage_2       = '"${build_stage_2}"'
+    nersc               = '"${nersc}"'
+    parallel            = '"${parallel_jobs}"'
+    shared              = '"${shared}"'
+    static_libs_prefer  = '"${prefer_static}"'
+    static_executables  = '"${exec_static}"'
+    tpls_build_type     = '"${tpls_build_type}"'
+    trilinos_build_type = '"${trilinos_build_type}"'
+    tpl_config_file     = '"${tpl_config_file}"'
 
-Build Features:   
-    structured          ='"${structured}"'
-    unstructured        ='"${unstructured}"'
-    ccse_tools          ='"${ccse_tools}"'
-    stk_mesh            ='"${stk_mesh}"'
-    mstk_mesh           ='"${mstk_mesh}"'
-    moab_mesh           ='"${moab_mesh}"'
-    test_suite          ='"${test_suite}"'
-    reg_tests           ='"${reg_tests}"'
-    netcdf4             ='"${netcdf4}"'
-    hypre               ='"${hypre}"'
-    petsc               ='"${petsc}"'
-    alquimia            ='"${alquimia}"'
-    pflotran            ='"${pflotran}"'
-    crunchtope          ='"${crunchtope}"'
-    physics             ='"${physics}"'
-    Spack               ='"${Spack}"'
-    xsdk                ='"${xsdk}"'
+Amanzi Components:   
+    structured     = '"${structured}"'
+    spacedim       = '"${spacedim}"'
+    unstructured   = '"${unstructured}"'
+    amanzi_physics = '"${amanzi_physics}"'
+    ats_physics    = '"${ats_physics}"'
+
+Amanzi TPLs:
+    alquimia     = '"${alquimia}"'
+    crunchtope   = '"${crunchtope}"'
+    geochemistry = '"${geochemistry}"'
+    mstk_mesh    = '"${mstk_mesh}"'
+    moab_mesh    = '"${moab_mesh}"'
+    netcdf4      = '"${netcdf4}"'
+    reg_tests    = '"${reg_tests}"'
+    stk_mesh     = '"${stk_mesh}"'
+    hypre        = '"${hypre}"'
+    petsc        = '"${petsc}"'
+    pflotran     = '"${pflotran}"'
+    Spack        = '"${Spack}"'
+    xsdk         = '"${xsdk}"'
+
+Tools and Tests:
+    ccse_tools   = '"${ccse_tools}"'
+    cmake_binary = '"${cmake_binary}"'
+    ctest_binary = '"${ctest_binary}"'
+    curl_binary  = '"${curl_binary}"'
+    git_binary   = '"${git_binary}"'
+    Spack_binary = '"${Spack_binary}"'
+    test_suite   = '"${test_suite}"'
 
 Directories:
-    prefix                 ='"${prefix}"'
-    amanzi_install_prefix  ='"${amanzi_install_prefix}"'
-    amanzi_build_dir       ='"${amanzi_build_dir}"'
-    tpl_install_prefix     ='"${tpl_install_prefix}"'
-    tpl_build_dir          ='"${tpl_build_dir}"'
-    tpl_download_dir       ='"${tpl_download_dir}"'
-    tools_install_prefix   ='"${tools_install_prefix}"'
-    tools_build_dir        ='"${tools_build_dir}"'
-    tools_download_dir     ='"${tpl_download_dir}"'
-    
+    prefix                = '"${prefix}"'
+    amanzi_install_prefix = '"${amanzi_install_prefix}"'
+    amanzi_build_dir      = '"${amanzi_build_dir}"'
+    tpl_install_prefix    = '"${tpl_install_prefix}"'
+    tpl_build_dir         = '"${tpl_build_dir}"'
+    tpl_download_dir      = '"${tpl_download_dir}"'
+    tools_install_prefix  = '"${tools_install_prefix}"'
+    tools_build_dir       = '"${tools_build_dir}"'
+    tools_download_dir    = '"${tpl_download_dir}"'
 '    
 }  
 
 function parse_argv()
 {
+echo '
+List of INPUT parameters
+========================'
   argv=( "$@" )
   last=$(( ${#argv[@]} - 1 ))
   i=0
@@ -514,7 +528,7 @@ function parse_argv()
     case ${opt} in
 
       -h|--h|--help)
-                print_usage
+                print_help
                 exit_now 0
                 ;;
 
@@ -681,8 +695,8 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
-      --tpls_only)
-                 tpls_only=${TRUE}
+      --build_user_guide)
+                 build_user_guide=${TRUE}
                  ;;
 
       --tools-install-prefix=*)
@@ -716,6 +730,39 @@ function parse_argv()
 
       i=$[$i+1]
   done
+
+  # enforce implicit rules
+  if [ "${build_user_guide}" -eq "${TRUE}" ]; then
+    build_amanzi=$TRUE
+  fi
+
+  if [ "${geochemistry}" -eq "${TRUE}" ]; then
+    alguimia=${geochemistry}
+    pflotran=${geochemistry}
+    crunchtope=${geochemistry}
+  fi
+
+  # check compatibility
+  if [ "${geochemistry}" -eq "${FALSE}" ]; then
+    if [ "${pflotran}" -eq "${TRUE}" ]; then
+      error_message "Option 'geochemisty' is incomatible with option 'pflotran'"
+      exit_now 30
+    fi
+    if [ "${alquimia}" -eq "${TRUE}" ]; then
+      error_message "Option 'geochemisty' is incomatible with option 'alquimia'"
+      exit_now 30
+    fi
+    if [ "${crunchtope}" -eq "${TRUE}" ]; then
+      error_message "Option 'geochemisty' is incomatible with option 'crunchtope'"
+      exit_now 30
+    fi
+  fi
+
+  # delprecased options
+  if [ "${tpls_only}" ]; then
+    error_message "Option 'tpls_only' has been deprecated"
+    exit_now 30
+  fi
 }
 
 
@@ -917,6 +964,19 @@ function git_change_branch()
   cd ${save_dir}
 }
 
+function git_submodule_clone()
+{
+  submodule_name=$1
+  save_dir=`pwd`
+  cd ${amanzi_source_dir}
+  status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
+  ${git_binary} submodule update --init --remote ${submodule_name}
+  if [$? -ne 0 ]; then
+    error_message "Failed to check out submodule ${submodule_name}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+}
 
 # ---------------------------------------------------------------------------- #
 # MPI functions
@@ -1315,6 +1375,7 @@ function define_nersc_options
 # Parse the command line arguments
 array=( "$@" )
 parse_argv "${array[@]}"
+print_variable_values
 
 # Define the TPL build source directory
 tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
@@ -1448,7 +1509,7 @@ if [ -z "${tpl_config_file}" ]; then
     fi
   fi
 
-  if [ "${tpls_only}" -eq "${TRUE}" ]; then
+  if [ "${build_amanzi}" -eq "${FALSE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
 
@@ -1532,13 +1593,10 @@ if [ -z "${tpl_config_file}" ]; then
     status_message "For future Amanzi builds use ${tpl_config_file}"
 
   else
- 
     status_message "To execute this TPL build remove the --dry_run option."
-  
   fi
   
 else 
-
   status_message "Checking configuration file ${tpl_config_file}"
 
   if [ ! -e "${tpl_config_file}" ]; then
@@ -1555,14 +1613,23 @@ else
     error_message "Configure file ${tpl_config_file} is not a regular file"
     exit_now 30
   fi
-
 fi
 
-if [ "${tpls_only}" -eq "${TRUE}" ]; then
+if [ "${build_amanzi}" -eq "${FALSE}" ]; then
     exit_now 0
 fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
+
+# Clone any submodules (ATS)
+if [ "${ats_physics}" -eq "${TRUE}" ]; then
+    if [ "${amanzi_physics}" -eq "${TRUE}" ]; then
+        error_message "amanzi_physics and ats_physics are currently incompatible -- enable only one."
+        exit_now 30
+    fi
+    git_submodule_clone "src/physics/ats"
+fi
+
 
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
@@ -1586,7 +1653,8 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-    -DENABLE_Physics:BOOL=${physics} \
+    -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
+    -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
@@ -1605,14 +1673,14 @@ else
 fi
 
 if [ ${dry_run} == "${FALSE}" ]; then
-if [ $? -ne 0 ]; then
-  error_message "Failed to configure Amanzi"
-  exit_now 50
-fi
-status_message "Amanzi configure complete"
+  if [ $? -ne 0 ]; then
+    error_message "Failed to configure Amanzi"
+    exit_now 50
+  fi
+  status_message "Amanzi configure complete"
 
-# Amanzi Build
-if [ "${build_stage_1}" == "${TRUE}" ]; then
+  # Amanzi Build
+  if [ "${build_stage_1}" == "${TRUE}" ]; then
     # we could make this fancier, but operators is roughly mid-way in the build in terms of dependencies.
     status_message "Amanzi build-stage 1: "
     cd ${amanzi_build_dir}/src/whetstone
@@ -1630,7 +1698,7 @@ if [ "${build_stage_1}" == "${TRUE}" ]; then
         status_message "Bootstrap Incomplete: run with --enable-build_stage_2 to complete the build."
         exit_now 0
     fi
-elif [ "${build_stage_2}" == "${TRUE}" ]; then
+  elif [ "${build_stage_2}" == "${TRUE}" ]; then
     status_message "Amanzi build-stage 2: "
     status_message "  - building in $(pwd)"
     make -j ${parallel_jobs}
@@ -1640,40 +1708,59 @@ elif [ "${build_stage_2}" == "${TRUE}" ]; then
     else
         status_message "Amanzi build-stage 2: complete"
     fi
-else
+  else
     make -j ${parallel_jobs}
     if [ $? -ne 0 ]; then
         error_message "Failed to build Amanzi"
         exit_now 50
     fi
     status_message "Amanzi build complete"
-fi
-
-# Amanzi Test Suite
-if [ "${test_suite}" -eq "${TRUE}" ]; then
-  status_message "Run Amanzi test suite"
-  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log #-j ${parallel_jobs}
-  status_message "Test results in amanzi-test-results.log"
-  if [ $? -ne 0 ]; then
-    error_message "Amanzi test suite failed"
-    exit_now 30
   fi
-fi
 
-# Amanzi Install
-if [ "${build_stage_1}" -ne "${TRUE}" ]; then
+  # Amanzi Test Suite
+  if [ "${test_suite}" -eq "${TRUE}" ]; then
+    status_message "Run Amanzi test suite"
+    ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log #-j ${parallel_jobs}
+    status_message "Test results in amanzi-test-results.log"
+    if [ $? -ne 0 ]; then
+      error_message "Amanzi test suite failed"
+      exit_now 30
+    fi
+  fi
+
+  # Amanzi Install
+  if [ "${build_stage_1}" -ne "${TRUE}" ]; then
     make install
-fi
-if [ $? -ne 0 ]; then
-  error_message "Failed to install Amanzi"
-  exit_now 50
-fi
-status_message "Amanzi install complete"
+  fi
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install Amanzi"
+    exit_now 50
+  fi
+  status_message "Amanzi install complete"
 
 else
+  status_message "To execute this Amanzi build remove the --dry_run option."
+fi
 
-status_message "To execute this Amanzi build remove the --dry_run option."
+status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+
+# Build User Guide
+if [ ${dry_run} == "${FALSE}" ]; then
+  if [ "${build_user_guide}" -eq "${FALSE}" ]; then
+    exit_now 0
+  fi
+
+  cd ${amanzi_source_dir}/doc/user_guide
+
+  export AMANZI_INSTALL_DIR=${amanzi_install_prefix}
+  export AMANZI_MPI_EXEC=${mpi_root_dir}/bin/mpiexec
+  export AMANZI_MPI_NP=${parallel_jobs}
+  export PYTHONPATH=${tpl_install_prefix}/lib:$(eval echo \$\{PYTHONPATH\})
+
+  make html AMANZI_SECTION_OPTIONS="--full-guide"
+
+  status_message "Build User Guide, see ${amanzi_source_dir}/doc/user_guide/_build/html/index.html"
 fi
 
 status_message "Bootstrap complete"
