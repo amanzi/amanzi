@@ -56,6 +56,10 @@ struct HDF5Reader {
     vec.resize(size);
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, &vec[0]);
+    if (status) {
+      std::string message("HDF5Reader: read error");
+      Exceptions::amanzi_throw(message);
+    }
   }
 
   void
@@ -73,6 +77,10 @@ struct HDF5Reader {
     mat.Shape(dims[1],dims[0]);
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, &mat[0][0]);
+    if (status) {
+      std::string message("HDF5Reader: read error");
+      Exceptions::amanzi_throw(message);
+    }
   }
 
  protected:

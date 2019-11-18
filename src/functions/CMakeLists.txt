@@ -11,7 +11,6 @@ include(TestManager)
 include(LibraryManager)
 #include(RegistryManager)
 
-
 #
 # Define a project name
 # After this command the following variables are defined
