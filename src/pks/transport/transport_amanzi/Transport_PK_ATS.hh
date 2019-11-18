@@ -19,7 +19,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "LimiterCell.hh"
 #include "CompositeVector.hh"
 #include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
@@ -33,7 +32,6 @@
 #include "VerboseObject.hh"
 #include "PK_PhysicalExplicit.hh"
 #include "DenseVector.hh"
-#include "pk_physical_explicit_default.hh"
 
 #include <string>
 
@@ -64,8 +62,7 @@ namespace Transport {
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
-  // class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
-class Transport_PK_ATS : public PK_Physical_Explicit_Default {
+  class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
 
   public:
     Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
@@ -137,8 +134,8 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
-  bool ComputeBCs_(std::vector<int>& bc_model,
-                   std::vector<double>& bc_value, int component);
+  bool PopulateBoundaryData(std::vector<int>& bc_model,
+                            std::vector<double>& bc_value, int component);
 
   // -- limiters 
   void LimiterBarthJespersen(const int component,
@@ -162,7 +159,8 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
 
   // time integration members
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-  void FunctionalTimeDerivative(const double t, const TreeVector& component, TreeVector& f_component){};
+    //  void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, TreeVector& f_component);
+
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
@@ -232,6 +230,7 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
 
 
  protected:
+    Teuchos::RCP<TreeVector> soln_;
 
     Key domain_name_;
     Key saturation_key_;

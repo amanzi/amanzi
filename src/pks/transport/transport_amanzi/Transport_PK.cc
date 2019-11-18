@@ -50,13 +50,13 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-  PK(pk_tree, glist,  S, soln),
-  PK_Explicit_Default(pk_tree, glist, S, soln),
-  PK_Physical_Explicit_Default(pk_tree, glist, S, soln)
+  //  PK(pk_tree, glist,  S, soln),
+  // PK_Explicit_Default(pk_tree, glist, S, soln),
+  S_(S),
+  soln_(soln)
     
 {
   name_ = Keys::cleanPListName(pk_tree.name());
-  S_ = S;
  
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -93,28 +93,6 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
 
   vo_ = Teuchos::null;
 }
-
-
-/* ******************************************************************
-* Old constructor for unit tests.
-****************************************************************** */
-// Transport_PK_ATS::Transport_PK_ATS(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-//                            Teuchos::RCP<State> S, 
-//                            const std::string& pk_list_name,
-//                            std::vector<std::string>& component_names) :
-//     S_(S),
-//     component_names_(component_names)
-// {
-//   // Create miscaleneous lists.
-//   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-//   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-//   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-//   linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-//   nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
-
-//   vo_ = Teuchos::null;
-// }
 
 
 /* ******************************************************************
@@ -174,9 +152,6 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
 
-
-
-  
   water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-3);
   max_tcc_ = tp_list_->get<double>("maximal concentration", 0.9);
 
@@ -1014,7 +989,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
     auto& bc_value = bc_dummy->bc_value();
-    ComputeBCs_(bc_model, bc_value, -1);
+    PopulateBoundaryData(bc_model, bc_value, -1);
    
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
@@ -1069,9 +1044,6 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-      // add boundary conditions 
-        ComputeBCs_(bc_model, bc_value, i);        
-        
         // add accumulation term
         Epetra_MultiVector& fac = *factor.ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -1082,7 +1054,10 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         op1->ApplyBCs(true, true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
-        op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
+
+        Teuchos::ParameterList pc_list = preconditioner_list_->sublist(dispersion_preconditioner);
+        op->InitializePreconditioner(pc_list);
+        op->UpdatePreconditioner();        
       } else {
         Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -1150,7 +1125,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
-      ComputeBCs_(bc_model, bc_value, i);
+      PopulateBoundaryData(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeAddSourceTerms(t_new, 1.0, rhs_cell, i, i);
@@ -1806,7 +1781,7 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
 * Populates operators' boundary data for given component.
 * Returns true if at least one face was populated.
 ******************************************************************* */
-bool Transport_PK_ATS::ComputeBCs_(
+bool Transport_PK_ATS::PopulateBoundaryData(
     std::vector<int>& bc_model, std::vector<double>& bc_value, int component)
 {
   bool flag = false;
