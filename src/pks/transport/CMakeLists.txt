@@ -50,6 +50,7 @@ set(ats_transport_link_libs
   time_integration
   state
   pks
+  chempk
   ats_operators
   ats_eos
   ats_pks
