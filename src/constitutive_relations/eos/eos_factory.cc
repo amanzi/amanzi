@@ -10,11 +10,6 @@
 #include <string>
 #include "eos_factory.hh"
 
-// explicity instantitate the static data of Factory<EOS>
-template<> 
-Amanzi::Utils::Factory<Amanzi::Relations::EOS>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Relations::EOS>::map_;
-
 namespace Amanzi {
 namespace Relations {
 
@@ -24,6 +19,9 @@ Teuchos::RCP<EOS> EOSFactory::createEOS(Teuchos::ParameterList& plist) {
   return Teuchos::rcp(CreateInstance(eos_typename, plist));
 };
 
+
 } // namespace
 } // namespace
+
+
 

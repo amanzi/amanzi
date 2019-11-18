@@ -8,7 +8,6 @@
 #include "boost/algorithm/string/predicate.hpp"
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 #include "meshed_elevation_evaluator.hh"
 
@@ -48,10 +47,8 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   
   // Note that static casts are safe here because we have
   // already ensured the meshes were MSTK.
-  auto domain_mesh = 
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
-  auto surface_mesh =
-    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
+  auto domain_mesh = S->GetMesh(domain_ss);
+  auto surface_mesh = S->GetMesh(domain);
   
   if (domain_ss.find("column") != std::string::npos) {
     // Column mesh and column surface cell.
