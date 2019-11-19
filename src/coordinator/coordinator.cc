@@ -158,32 +158,34 @@ void Coordinator::initialize() {
 
   //---
   if (restart_) {
-    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+     if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
     //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-    //   t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
-    //   S_->set_time(t0_);
-    // }
-    // else{
+	auto comm_self = Amanzi::getCommSelf();
+//       Epetra_MpiComm *comm_self = new Epetra_MpiComm(comm_self);
+       t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
+       S_->set_time(t0_);
+     }
+     else{
     t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
     S_->set_time(t0_);
-    // }
+     }
   }
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-    //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-    //   ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
-    //   t0_ = S_->time();
-    //   cycle0_ = S_->cycle();
-    // }
-    // else{
+     if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+       auto comm_self = Amanzi::getCommSelf();
+	
+    // Epetra_MpiComm *comm_self = new Epetra_MpiComm(comm_self);
+       ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
+       t0_ = S_->time();
+       cycle0_ = S_->cycle();
+     }
+     else{
     ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
-    //}
+    }
     
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
