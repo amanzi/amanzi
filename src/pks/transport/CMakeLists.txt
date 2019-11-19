@@ -53,11 +53,9 @@ set(ats_transport_inc_files
   MultiscaleTransportPorosityPartition.hh
   TransportDomainFunction.hh  
   MultiscaleTransportPorosity_DPM.hh
-  TransportSourceFunction.hh
   TransportSourceFunction_Alquimia.hh
   MultiscaleTransportPorosity_GDPM.hh
   MultiscaleTransportPorosity.hh
-  TransportBoundaryFunction.hh
   MultiscaleTransportPorosityFactory.hh
   TransportBoundaryFunction_Alquimia.hh
   Transport_PK_ATS.hh
