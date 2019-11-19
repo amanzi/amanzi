@@ -197,11 +197,6 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE morphology_pk/mpc_morphology_reg.hh
-  LISTNAME   ATS_MPC_REG
-  )
-
-register_evaluator_with_factory(
     HEADERFILE mpc_coupled_transport_reg.hh
     LISTNAME   ATS_MPC_REG
    )
@@ -223,7 +218,7 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE morphology_pk/biomass_evaluator_reg.hh
+  HEADERFILE biomass_evaluator_reg.hh
   LISTNAME MPC_PK_FAC
   )
 
