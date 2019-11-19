@@ -25,6 +25,7 @@ include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
 
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations)
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
@@ -80,6 +81,7 @@ set(amanzi_link_libs
   whetstone
   time_integration
   solvers
+  dbg       
   data_structures
   mesh
   mesh_audit

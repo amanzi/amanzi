@@ -12,9 +12,9 @@ add_subdirectory(sediment_transport)
 #================================================
 # register evaluators/factories/pks
 
-include_directories(${AMANZI_SOURCE_DIR}/src/pks/chemistry)
+include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${AMANZI_SOURCE_DIR}/src/common/alquimia)
-include_directories(${AMANZI_SOURCE_DIR}/src/functions)
+include_directories(${FUNCTIONS_SOURCE_DIR})
 
 
 set(ats_transport_src_files
@@ -77,7 +77,6 @@ set(ats_transport_link_libs
   time_integration
   state
   pks
-  chempk
   ats_operators
   ats_eos
   ats_pks

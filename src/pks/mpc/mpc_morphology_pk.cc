@@ -10,8 +10,6 @@
 
 #include "mpc_morphology_pk.hh"
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
-
 
 namespace Amanzi {
 
