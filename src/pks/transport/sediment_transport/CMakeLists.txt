@@ -1,7 +1,7 @@
 # -*- mode: cmake -*-
 
 #
-#  Amanzi
+#  
 #   Transport process kernel
 #
 

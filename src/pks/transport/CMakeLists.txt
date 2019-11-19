@@ -12,6 +12,33 @@ add_subdirectory(sediment_transport)
 #================================================
 # register evaluators/factories/pks
 
+include_directories(${AMANZI_SOURCE_DIR}/src/pks/chemistry)
+include_directories(${AMANZI_SOURCE_DIR}/src/common/alquimia)
+include_directories(${AMANZI_SOURCE_DIR}/src/functions)
+
+
+set(ats_transport_src_files
+  MDM_BurnettFrind.cc
+  MDM_Bear.cc
+  MDMPartition.cc
+  MDM_LichtnerKelkarRobinson.cc
+  MDM_Isotropic.cc
+  MDMFactory.cc
+  MultiscaleTransportPorosity_DPM.cc
+  Transport_Dispersion.cc
+  Transport_TI.cc
+  MultiscaleTransportPorosity_GDPM.cc
+  Transport_HenryLaw.cc
+  Transport_VandV.cc
+  MultiscaleTransportPorosityFactory.cc
+  TransportBoundaryFunction_Alquimia.cc
+  Transport_Initialize.cc
+  MultiscaleTransportPorosityPartition.cc
+  TransportSourceFunction_Alquimia.cc
+  Transport_PK.cc
+ )
+
+
 set(ats_transport_inc_files
   TransportDefs.hh
   MDM.hh
@@ -87,7 +114,7 @@ register_evaluator_with_factory(
 generate_evaluators_registration_header( 
   HEADERFILE sediment_transport_registration.hh   
   LISTNAME   SEDIMENT_TRANSPORT_REGISTRATIONS
-  INSTALL    True
+  INSTALL    True 
   )
 
 #================================================
