@@ -101,18 +101,13 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
           mesh_p->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           auto num_cols = cells.extent(0);
           auto num_rows = cells.extent(0);
-          Kokkos::parallel_for(
-              "local_mat_mult_row_loop",
-              num_rows,
-              KOKKOS_LAMBDA(const int& i) {
-                double result = 0.0;
-                Kokkos::parallel_reduce("local_mat_mult_inner_reduction",
-                        cells.extent(0),
-                        KOKKOS_LAMBDA(const int& j, double& lsum) {
-                          lsum += op_v(f, j+i*num_cols) * X_v(cells(j), 0);
-                        }, result);
-                Kokkos::atomic_add(&Y_v(cells(i), 0), result);
-              });
+          for(int i = 0 ; i < num_rows; ++i){
+            double result = 0.0; 
+            for(int j = 0 ; j < cells.extent(0); ++j){
+              result += op_v(f,j+i*num_cols)*X_v(cells(j),0); 
+            }
+            Kokkos::atomic_add(&Y_v(cells(i), 0), result);
+          }
         });
   }
 

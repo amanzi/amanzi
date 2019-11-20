@@ -31,12 +31,11 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   getLocalDiagCopy(CompositeVector& X) const
   {
     auto Xv = X.ViewComponent("face", false);
-    Kokkos::parallel_for(
-        data.extent(0),
-        KOKKOS_LAMBDA(const int sc) {
-          auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-          Xv(f,0) += data(sc,0);
-        });
+    // entity_get_parent is not available on device
+    for(int sc = 0 ; sc < data.extent(0); ++sc){
+      auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+      Xv(f,0) += data(sc,0);
+    }
   }
   
   virtual void
@@ -77,11 +76,10 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
 
       auto scaling_v = scaling.ViewComponent("face", false);
 
-      Kokkos::parallel_for(scaling_v.extent(0),
-                           KOKKOS_LAMBDA(const int sc) {
-                             auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-                             data(sc, 0) *= scaling_v(f, 0);
-                           });
+      for(int sc = 0 ; sc < scaling_v.extent(0); ++sc){
+        auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+        data(sc, 0) *= scaling_v(f, 0);
+      }
     }
   }
 

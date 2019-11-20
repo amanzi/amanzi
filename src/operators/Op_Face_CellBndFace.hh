@@ -119,7 +119,7 @@ class Op_Face_CellBndFace : public Op {
             data.extent(0),
             KOKKOS_LAMBDA(const int f) {
               AmanziMesh::Entity_ID_View cells;
-              mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+              mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
               data(f,0) *= s_c(cells(0),0);
               data(f,1) *= s_c(cells(0),0);
               if (cells.extent(0) > 1) {

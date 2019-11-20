@@ -33,18 +33,17 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
     auto Xv = X.ViewComponent("face", true);
     
     AmanziMesh::Mesh const * surf_mesh_ = surf_mesh.get();
-    Kokkos::parallel_for(
-        data.extent(0),
-        KOKKOS_LAMBDA(const int sf) {
-          AmanziMesh::Entity_ID_View cells;
-          surf_mesh_->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
-          Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(0)),0) +=
-              data(sf,0);
-          if (cells.extent(0) > 1) {
-            Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(1)),0) +=
-                data(sf,3);
-          }
-        });
+    // entity_get_parent is not available on device
+    for(int sf = 0 ; sf < data.extent(0); ++sf){
+      AmanziMesh::Entity_ID_View cells;
+      surf_mesh_->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
+      Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(0)),0) +=
+          data(sf,0);
+      if (cells.extent(0) > 1) {
+        Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(1)),0) +=
+            data(sf,3);
+      }
+    }
   }
 
   
