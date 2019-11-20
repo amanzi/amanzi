@@ -585,7 +585,7 @@ TEST(REMAP_CURVED_DEV) {
   /*
   int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
-  int deform = 4;
+  int deform = 5;
   RemapTestsCurved<AnalyticDG04>("test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved<AnalyticDG04>("test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved<AnalyticDG04>("test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);

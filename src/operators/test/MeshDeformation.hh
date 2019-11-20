@@ -34,8 +34,7 @@ AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int d
 
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
 
@@ -162,11 +161,11 @@ AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int d
   case 2: 
     yv = Unused(t, xv);
     break;
-  case 4: 
-    yv = CompressionExpansion2D(t, xv);
+  case 4:
+    AMANZI_ASSERT(false);
     break;
   case 5:
-    yv = CompressionExpansion3D(t, xv);
+    yv = CompressionExpansion(t, xv);
     break;
   case 6:
     yv = Rotation2D(t, xv);
@@ -229,22 +228,15 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
 * Compression/Expansion
 ***************************************************************** */
 inline
-AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv)
+AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(xv);
-  yv[0] += t * yv[0] * yv[1] * (1.0 - yv[0]) / 2;
-  yv[1] += t * yv[0] * yv[1] * (1.0 - yv[1]) / 2;
-  return yv;
-}
+  int d = xv.dim();
 
+  double factor(t);
+  for (int i = 0; i < d; ++i) factor *= yv[i];
 
-inline
-AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv)
-{
-  AmanziGeometry::Point yv(xv);
-  yv[0] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[0]) / 2;
-  yv[1] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[1]) / 2;
-  yv[2] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[2]) / 2;
+  for (int i = 0; i < d; ++i) yv[i] += factor * (1.0 - yv[i]) / 2;
   return yv;
 }
 
