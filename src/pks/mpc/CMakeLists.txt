@@ -52,6 +52,7 @@ set(ats_mpc_src_files
   mpc_surface.cc
   mpc_permafrost.cc
   mpc_morphology_pk.cc
+  biomass_evaluator.cc
   )
 
 set(ats_mpc_inc_files
@@ -80,6 +81,7 @@ set(ats_mpc_inc_files
   mpc_subsurface.hh
   mpc_surface.hh
   mpc_permafrost.hh
+  biomass_evaluator.hh
   )
 
 set(ats_mpc_link_libs
@@ -219,7 +221,7 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE biomass_evaluator_reg.hh
-  LISTNAME MPC_PK_FAC
+  LISTNAME ATS_MPC_REG
   )
 
 generate_evaluators_registration_header(

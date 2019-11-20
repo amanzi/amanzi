@@ -60,6 +60,7 @@ include_evaluators_directories(LISTNAME ATS_DEFORMATION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_SURFACE_BALANCE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_MPC_REG_INCLUDES)
+include_evaluators_directories(LISTNAME SED_TRANSPORT_REG_INCLUDES)
 
 set(ats_src_files
   coordinator.cc
@@ -109,6 +110,7 @@ set(ats_link_libs
   ats_eos
   ats_pks
   ats_transport
+  ats_sed_transport  
   ats_energy
   ats_energy_relations
   ats_flow

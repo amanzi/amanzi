@@ -57,7 +57,7 @@ void Morphology_PK::Setup(const Teuchos::Ptr<State>& S){
 
 
   dt_MPC_ = plist_->get<double>("dt MPC", 31557600);
-  MSF_ = plist_->get<double>("morphology scaling factor", 1);
+  MSF_ = plist_->get<double>("morphological scaling factor", 1);
   
   Amanzi::PK_MPCSubcycled_ATS::Setup(S);
   
@@ -176,23 +176,24 @@ void Morphology_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
   sed_transport_pk_->CommitStep(t_old , t_new, S);
 
   S->set_time(t_new);
-  // Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
-  // Key slope_key = Keys::readKey(*plist_, domain_, "slope magnitude", "slope_magnitude");
+  
+  Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
+  Key slope_key = Keys::readKey(*plist_, domain_, "slope magnitude", "slope_magnitude");
     
-  // bool chg = S_ -> GetFieldEvaluator(elev_key)->HasFieldChanged(S_.ptr(), elev_key);
-  // if (chg){
-  //   Teuchos::RCP<CompositeVector> elev =  S->GetFieldData(elev_key, elev_key);
-  //   Teuchos::RCP<CompositeVector> slope = S->GetFieldData(slope_key, slope_key);
-  //   Teuchos::RCP<CompositeVector> vc = S->GetFieldData(vertex_coord_key_ss_, "state");
-  //   Teuchos::RCP<CompositeVector> dz = S->GetFieldData(elevation_increase_key_, "state");
+  bool chg = S_ -> GetFieldEvaluator(elev_key)->HasFieldChanged(S_.ptr(), elev_key);
+  if (chg){
+    Teuchos::RCP<CompositeVector> elev =  S->GetFieldData(elev_key, elev_key);
+    Teuchos::RCP<CompositeVector> slope = S->GetFieldData(slope_key, slope_key);
+    Teuchos::RCP<CompositeVector> vc = S->GetFieldData(vertex_coord_key_ss_, "state");
+    Teuchos::RCP<CompositeVector> dz = S->GetFieldData(elevation_increase_key_, "state");
 
-  //   *elev  = *S_ -> GetFieldData(elev_key, elev_key);
-  //   *slope = *S_ -> GetFieldData(slope_key, slope_key);
-  //   *vc    = *S_ -> GetFieldData(vertex_coord_key_ss_, "state");
-  // }
+    *elev  = *S_ -> GetFieldData(elev_key, elev_key);
+    *slope = *S_ -> GetFieldData(slope_key, slope_key);
+    *vc    = *S_ -> GetFieldData(vertex_coord_key_ss_, "state");
+  }
 
-  // Key biomass_key = Keys::getKey(domain_, "biomass");
-  // chg = S_ -> GetFieldEvaluator(biomass_key) -> HasFieldChanged(S_.ptr(), biomass_key);
+  Key biomass_key = Keys::getKey(domain_, "biomass");
+  chg = S_ -> GetFieldEvaluator(biomass_key) -> HasFieldChanged(S_.ptr(), biomass_key);
   // if (chg)
     
   

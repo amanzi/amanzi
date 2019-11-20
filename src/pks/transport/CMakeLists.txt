@@ -80,39 +80,11 @@ set(ats_transport_link_libs
   ats_pks
   )
 
-register_evaluator_with_factory(
-  HEADERFILE sediment_transport/sediment_transport_reg.hh
-  LISTNAME   TRANSPORT_AMANZI_REG
-  )
 
 add_amanzi_library(ats_transport
                    SOURCE ${ats_transport_src_files}
                    HEADERS ${ats_transport_inc_files}
 		   LINK_LIBS ${ats_transport_link_libs})
-
-#sediment diposition and erosion rates
-register_evaluator_with_factory(
-  HEADERFILE sediment_transport/erosion_evaluator_reg.hh
-  LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
-  )
-register_evaluator_with_factory(
-  HEADERFILE sediment_transport/settlement_evaluator_reg.hh
-  LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
-  )
-register_evaluator_with_factory(
-  HEADERFILE sediment_transport/trapping_evaluator_reg.hh
-  LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
-  )
-register_evaluator_with_factory(
-  HEADERFILE sediment_transport/organic_matter_evaluator_reg.hh
-  LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE sediment_transport_registration.hh   
-  LISTNAME   SEDIMENT_TRANSPORT_REGISTRATIONS
-  INSTALL    True 
-  )
 
 #================================================
 # register evaluators/factories/pks

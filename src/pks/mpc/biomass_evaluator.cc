@@ -143,9 +143,7 @@ namespace Amanzi {
       int ncells = biomass.MyLength();
 
       const double MSL = *S->GetScalarData(msl_key_);
-
-      //std::cout<<"MSL "<<MSL<<" "<<S->time()<<"\n";
-      
+     
       for (int n=0; n<nspecies_; n++){
         AMANZI_ASSERT((zmax[n] - zmin[n]) > 1e-6);
         switch(type_){
