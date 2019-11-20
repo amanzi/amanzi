@@ -140,8 +140,8 @@ void DeformMeshCurved(
         auto yv = MovePoint(t, xe, deform);
         (*ho_nodes1e)[e].push_back(yv);
       }
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_edge_ho_nodes(ho_nodes0e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_edge_ho_nodes(ho_nodes1e);
     }
   }
 }
@@ -232,8 +232,8 @@ inline
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(xv);
-  yv[0] += t * xv[0] * xv[1] * (1.0 - xv[0]) / 2;
-  yv[1] += t * xv[0] * xv[1] * (1.0 - xv[1]) / 2;
+  yv[0] += t * yv[0] * yv[1] * (1.0 - yv[0]) / 2;
+  yv[1] += t * yv[0] * yv[1] * (1.0 - yv[1]) / 2;
   return yv;
 }
 
@@ -242,9 +242,9 @@ inline
 AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(xv);
-  yv[0] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) / 2;
-  yv[1] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[1]) / 2;
-  yv[2] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[2]) / 2;
+  yv[0] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[0]) / 2;
+  yv[1] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[1]) / 2;
+  yv[2] += t * yv[0] * yv[1] * yv[2] * (1.0 - yv[2]) / 2;
   return yv;
 }
 

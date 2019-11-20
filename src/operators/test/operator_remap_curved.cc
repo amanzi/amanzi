@@ -461,7 +461,6 @@ void RemapTestsCurved(std::string file_name,
 
   // calculate error in the new basis
   Entity_ID_List nodes;
-  std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
