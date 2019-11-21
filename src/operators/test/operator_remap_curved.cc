@@ -461,7 +461,6 @@ void RemapTestsCurved(std::string file_name,
 
   // calculate error in the new basis
   Entity_ID_List nodes;
-  std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
@@ -586,7 +585,7 @@ TEST(REMAP_CURVED_DEV) {
   /*
   int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
-  int deform = 4;
+  int deform = 5;
   RemapTestsCurved<AnalyticDG04>("test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved<AnalyticDG04>("test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved<AnalyticDG04>("test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);

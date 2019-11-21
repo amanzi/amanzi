@@ -149,8 +149,10 @@ void RemapDG<TreeVector>::FunctionalTimeDerivative(
   auto tmp = *f.SubVector(1)->Data();
   op_flux_->global_operator()->Apply(ones, tmp);
 
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(0.0);
+  // op_reac_->Setup(det_, false);
+  // op_reac_->UpdateMatrices(0.0);
+  op_reac_->Setup(Teuchos::null);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
