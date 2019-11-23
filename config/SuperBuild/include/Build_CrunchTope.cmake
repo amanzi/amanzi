@@ -4,13 +4,10 @@
 # Build TPL:  CRUNCHTOPE
 #   
 # --- Define all the directories and common external project flags
-define_external_project_args(CRUNCHTOPE
-                             TARGET crunchtope)
-
 if (NOT ENABLE_XSDK)
     define_external_project_args(CRUNCHTOPE
                                  TARGET crunchtope
-                                 DEPENDS ${PETSC_BUILD_TARGET})
+                                 DEPENDS PETSc)
 else()
     define_external_project_args(CRUNCHTOPE
                                  TARGET crunchtope

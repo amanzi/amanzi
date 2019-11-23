@@ -737,7 +737,7 @@ List of INPUT parameters
   fi
 
   if [ "${geochemistry}" -eq "${TRUE}" ]; then
-    alguimia=${geochemistry}
+    alquimia=${geochemistry}
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
   fi

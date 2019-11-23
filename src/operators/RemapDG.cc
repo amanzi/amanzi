@@ -178,10 +178,11 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
     (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
   }
 
+  // discrete volume conservation law: new approach
   op_reac_->Setup(jac_, false);
   op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // discrete volume conservation law
+  // discrete volume conservation law: old approach
   // op_reac_->Setup(det_, false);
   // op_reac_->UpdateMatrices(t);
 
