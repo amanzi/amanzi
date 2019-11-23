@@ -684,7 +684,8 @@ double Transport_PK_ATS::StableTimeStep()
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
-
+  Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh_->cell_map(false)));
+  
   // double flux_next_norm=0., flux_norm=0.;
   // flux_->NormInf(&flux_next_norm);
   // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm); 
@@ -707,7 +708,6 @@ double Transport_PK_ATS::StableTimeStep()
     if (c >= 0) {
       total_outflux[c] += fabs((*flux_)[0][f]);
     }
-
   }
 
   Sinks2TotalOutFlux(tcc_prev, total_outflux, 0, num_aqueous - 1);
@@ -726,6 +726,7 @@ double Transport_PK_ATS::StableTimeStep()
 
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
+  double ws_min_dt, outflux_min_dt;
   vol=0;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = 0;
@@ -736,11 +737,10 @@ double Transport_PK_ATS::StableTimeStep()
       dt_cell = vol * (*mol_dens_)[0][c] * (*phi_)[0][c] * std::min( (*ws_prev_)[0][c], (*ws_)[0][c] ) / outflux;
     }
     if (dt_cell < dt_) {
-      // if (domain_name_=="surface") std::cout<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<
-      //                                " wo_sink "<<total_outflux_wo_sink[c]<<"  dt= "<<dt_cell<<
-      //                                " cntr "<< mesh_->cell_centroid(c)<<"\n";
       dt_ = dt_cell;
       cmin_dt = c;
+      ws_min_dt = std::min( (*ws_prev_)[0][c], (*ws_)[0][c] );
+      outflux_min_dt = total_outflux[c];
     }
   }
 
@@ -748,33 +748,35 @@ double Transport_PK_ATS::StableTimeStep()
 
   // communicate global time step
   double dt_tmp = dt_;
-#ifdef HAVE_MPI
   const Epetra_Comm& comm = ws_prev_->Comm();
   comm.MinAll(&dt_tmp, &dt_, 1);
-#endif
-
+ 
   // incorporate developers and CFL constraints
   dt_ = std::min(dt_, dt_debug_);
   dt_ *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
-//   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-//     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
-// #ifdef HAVE_MPI
-//     int cmin_dt_tmp = cmin_dt_unique;
-//     comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
-// #endif
-//     if (cmin_dt == cmin_dt_unique) {
-//       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cell_map->GID(cmin_dt) : -2;
 
-//       Teuchos::OSTab tab = vo_->getOSTab();
-//       *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
-//       if (p.dim() == 3) *vo_->os() << ", " << p[2];
-//       *vo_->os() << ")" << std::endl;
-//     }
-//   }
-  
+    int cmin_dt_tmp = cmin_dt_unique;
+    comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
 
+    std::cout <<name_<<" pid: "<<comm.MyPID()<<" + "<<cmin_dt_unique<<" "<<cell_map->GID(cmin_dt)<<" "<<cmin_dt<<"\n";
+
+    if (cell_map->GID(cmin_dt) == cmin_dt_unique) {
+      const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
+
+      Teuchos::OSTab tab = vo_->getOSTab();
+      std::cout<<name_ <<": pid "<< comm.MyPID()<< " : cell " << cmin_dt << " has smallest dt, " << p[0] << ", " << p[1];
+      if (p.dim() == 3) std::cout << ", " << p[2];
+      std::cout << " "<< std::endl;
+      std::cout <<name_<< ": -  min dt:  water content: "<<ws_min_dt<<" out flux "<<outflux_min_dt<<"\n";
+			   
+    }
+  }
+    
+										    
   return dt_;
 }
 
