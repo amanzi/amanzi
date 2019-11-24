@@ -460,14 +460,32 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
       ++i;
     }
   } else {
-    for (int i=0; i!=subfield_names_.size(); ++i) {
+
+   
+    if (subfield_names_.size() != data_->NumComponents()){
+      subfield_names_.resize(data_->NumComponents());
+    }
+
+    unsigned int i = 0;
+    for (CompositeVector::name_iterator compname=data_->begin();
+         compname!=data_->end(); ++compname) {
+      
+      if (subfield_names_[i].size() == 0) {
+        subfield_names_[i].resize(data_->NumVectors(*compname));
+      }
+
       for (int j=0; j!=subfield_names_[i].size(); ++j) {
         if (subfield_names_[i][j].length() == 0) {
-          std::stringstream s;
-          s << j;
-          subfield_names_[i][j] = s.str();
+          if (i==0) {
+            std::stringstream s;
+            s << j;
+            subfield_names_[i][j] = s.str();
+          }else{
+            subfield_names_[i][j] = subfield_names_[0][j];
+          }
         }
       }
+      i++;      
     }
   }
 };

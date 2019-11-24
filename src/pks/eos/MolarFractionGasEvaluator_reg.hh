@@ -15,12 +15,12 @@
 #include "VaporPressureBaseFactory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator>
     MolarFractionGasEvaluator::factory_("molar fraction gas");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 

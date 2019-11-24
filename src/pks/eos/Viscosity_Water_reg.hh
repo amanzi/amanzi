@@ -16,10 +16,10 @@
 #include "Viscosity_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<Viscosity_Base, Viscosity_Water> Viscosity_Water::factory_("liquid water");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

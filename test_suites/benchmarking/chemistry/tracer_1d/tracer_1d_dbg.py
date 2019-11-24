@@ -10,6 +10,16 @@ import matplotlib
 # matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
+try:
+    sys.path.append('../../../../tools/amanzi_xml')
+except:
+    pass
+    
+try:
+    sys.path.append('../../../../tools/testing')
+except:
+    pass
+
 import run_amanzi_standard
 from compare_field_results import GetXY_AmanziU_1D
 from compare_field_results import GetXY_AmanziS_1D
@@ -20,11 +30,6 @@ from compare_field_results import GetXY_CrunchFlow_1D
 if __name__ == "__main__":
 
     import os,sys
-    try:
-        sys.path.append('../../../../tools/amanzi_xml')
-    except:
-        pass
-    import run_amanzi_standard
     import numpy as np
 
     try:
@@ -37,12 +42,13 @@ if __name__ == "__main__":
 
     # pflotran
     path_to_pflotran = "pflotran"
+    root_pflo = "1d-"+root  
 
      # hardwired for 1d-calcite: time and comp
     time = 'Time:  5.00000E+01 y'
     comp = 'Total_'+root.title()+' [M]'
 
-    x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)    
+    x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflo,time,comp)    
     
     # CrunchFlow: hardwired for calcite_1d_CF.in: time and comp
     times_CF = 'totcon5.out'

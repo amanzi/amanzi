@@ -10,6 +10,16 @@ import matplotlib
 # matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
+try:
+    sys.path.append('../../../../tools/amanzi_xml')
+except:
+    pass
+    
+try:
+    sys.path.append('../../../../tools/testing')
+except:
+    pass
+
 import run_amanzi_standard
 from compare_field_results import GetXY_AmanziU_1D
 from compare_field_results import GetXY_AmanziS_1D
@@ -17,11 +27,6 @@ from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
 if __name__ == "__main__":
-
-    try:
-        sys.path.append('../../../../tools/amanzi_xml')
-    except:
-        pass
 
     try:
         sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')

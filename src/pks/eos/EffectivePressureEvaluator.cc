@@ -14,7 +14,7 @@
 #include "EffectivePressureEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 /* *******************************************************************
 * Constructor.
@@ -112,7 +112,7 @@ void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 

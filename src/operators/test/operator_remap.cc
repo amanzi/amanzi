@@ -431,7 +431,7 @@ TEST(REMAP_DUAL_DEV) {
 
   /*
   double dT(0.01);
-  int deform = 4;
+  int deform = 5;
   RemapTestsDualRK(maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
@@ -441,7 +441,7 @@ TEST(REMAP_DUAL_DEV) {
 
   /*
   double dT(0.05);
-  int deform = 4;
+  int deform = 5;
   RemapTestsDualRK(maps, "test/mesh_poly20x20.exo",    20,0,0, dT,   deform);
   RemapTestsDualRK(maps, "test/mesh_poly40x40.exo",    40,0,0, dT/2, deform);
   RemapTestsDualRK(maps, "test/mesh_poly80x80.exo",    80,0,0, dT/4, deform);
@@ -450,7 +450,7 @@ TEST(REMAP_DUAL_DEV) {
 
   /*
   double dT(0.05);
-  int deform = 4;
+  int deform = 5;
   RemapTestsDualRK(maps, "test/random10.exo", 10,0,0, dT,   deform);
   RemapTestsDualRK(maps, "test/random20.exo", 20,0,0, dT/2, deform);
   RemapTestsDualRK(maps, "test/random40.exo", 40,0,0, dT/4, deform);

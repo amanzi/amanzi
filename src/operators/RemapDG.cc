@@ -149,8 +149,10 @@ void RemapDG<TreeVector>::FunctionalTimeDerivative(
   auto tmp = *f.SubVector(1)->Data();
   op_flux_->global_operator()->Apply(ones, tmp);
 
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(0.0);
+  // op_reac_->Setup(det_, false);
+  // op_reac_->UpdateMatrices(0.0);
+  op_reac_->Setup(Teuchos::null);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
@@ -176,10 +178,11 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
     (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
   }
 
+  // discrete volume conservation law: new approach
   op_reac_->Setup(jac_, false);
   op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // discrete volume conservation law
+  // discrete volume conservation law: old approach
   // op_reac_->Setup(det_, false);
   // op_reac_->UpdateMatrices(t);
 

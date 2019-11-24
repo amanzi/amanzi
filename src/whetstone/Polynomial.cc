@@ -168,7 +168,8 @@ void Polynomial::Reshape(int d, int order, bool reset)
     if (reset) { 
       coefs_.PutScalar(0.0);
     } else {
-      for (int i = size; i < size_; ++i) coefs_(i) = 0.0;
+      double* data = coefs_.Values();
+      for (int i = size; i < size_; ++i) data[i] = 0.0;
     }
   } else if (reset) {
     coefs_.PutScalar(0.0);

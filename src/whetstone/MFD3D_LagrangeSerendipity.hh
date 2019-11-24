@@ -256,6 +256,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration<MyMesh> numi(mymesh);
 
+  int i0, i1, pos;
   AmanziGeometry::Point xv(d);
 
   // number of moments of faces
@@ -272,12 +273,14 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     mymesh->face_get_nodes(f, &face_nodes);
     int nfnodes = face_nodes.size();
 
-    for (int j = 0; j < nfnodes; j++) {
-      int v = face_nodes[j];
-      mymesh->node_get_coordinates(v, &xv);
+    if (d == 2) {
+      for (int j = 0; j < nfnodes; j++) {
+        int v = face_nodes[j];
+        mymesh->node_get_coordinates(v, &xv);
 
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-      vdof(pos) = vf[n].Value(xv);
+        pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        vdof(pos) = vf[n].Value(xv);
+      }
     }
 
     if (order_ > 1) { 
@@ -313,6 +316,19 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
+
+      // nodal DOFs
+      mymesh->edge_get_nodes(e, &i0, &i1);
+
+      mymesh->node_get_coordinates(i0, &xv);
+      pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i0));
+      vdof(pos) = ve[n].Value(xv);
+
+      mymesh->node_get_coordinates(i1, &xv);
+      pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i1));
+      vdof(pos) = ve[n].Value(xv);
+
+      // edge moments
       const auto& xe = mymesh->edge_centroid(e);
       double length = mymesh->edge_length(e);
       std::vector<AmanziGeometry::Point> tau(1, mymesh->edge_vector(e));

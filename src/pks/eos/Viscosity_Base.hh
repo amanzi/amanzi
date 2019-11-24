@@ -15,7 +15,7 @@
 #define AMANZI_EOS_VISCOSITY_BASE_HH_
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class Viscosity_Base {
@@ -27,7 +27,7 @@ class Viscosity_Base {
   virtual double DViscosityDT(double T) = 0;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

@@ -8,14 +8,14 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOSs for liquid water: rho = q3(T-Tref) * q1(p - pref) where
+  EOS for liquid water: rho = q3(T-Tref) * q1(p - pref) where
   q3 and q1 are cubic and linear polynomials, respectively.
 */
 
 #include "EOS_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 EOS_Water::EOS_Water(Teuchos::ParameterList& eos_plist) :
     EOS_ConstantMolarMass(0.0180153),
@@ -52,5 +52,5 @@ double EOS_Water::DMassDensityDp(double T, double p) {
   return rho1bar * kalpha_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

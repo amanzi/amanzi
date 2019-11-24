@@ -16,7 +16,7 @@
 #include "Viscosity_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 Viscosity_Water::Viscosity_Water(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),
@@ -57,5 +57,5 @@ double Viscosity_Water::DViscosityDT(double T) {
   return -1.0;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

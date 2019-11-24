@@ -21,14 +21,14 @@
 #include "Factory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class ViscosityBaseFactory : public Utils::Factory<Viscosity_Base> {
  public:
   Teuchos::RCP<Viscosity_Base> CreateViscosity(Teuchos::ParameterList& plist);
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

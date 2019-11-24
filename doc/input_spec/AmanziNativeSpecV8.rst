@@ -4494,14 +4494,48 @@ that vary in time and the x dimension.
 .. code-block:: xml
 
   <ParameterList name="function-bilinear">
-    <Parameter name="file" type="string" value="_PRESSURE_FACE.h5"/>
+    <Parameter name="file" type="string" value="pressure.h5"/>
     <Parameter name="row header" type="string" value="/time"/>
     <Parameter name="row coordinate" type="string" value="time"/>
     <Parameter name="column header" type="string" value="/x"/>
     <Parameter name="column coordinate" type="string" value="x"/>
     <Parameter name="value header" type="string" value="/pressures"/>
   </ParameterList>
-  
+
+
+Bilinear-and-time function
+..........................
+
+The bilinear-and-time function does trilinear interpolation between
+two spatial dimensions and one temporal dimension, but does so with
+lazy loading of an HDF5 file for the temporal dimension.  This allows,
+for instance, efficient interpolation of precipitation data that is
+both temporally varying and provided as a raster.  By lazily loading
+the coefficients, long time series can be safely interpolated.
+
+.. code-block:: xml
+
+  <ParameterList name="function-bilinear-and-time">
+    <Parameter name="file" type="string" value="precipitation_rain.h5"/>
+    <Parameter name="time header" type="string" value="/time"/>
+    <Parameter name="x header" type="string" value="/x"/>
+    <Parameter name="y header" type="string" value="/y"/>
+    <Parameter name="value header" type="string" value="/values"/>
+  </ParameterList>
+
+Note this expects and HDF5 file laid out as:
+
+.. code-block:: 
+
+   precipitation_rain.h5
+   | time (NTIMES 1D array)
+   | x (NX 1D array)
+   | y (NY 1D array)
+   | values (group)
+   |  | 0 (NX x NY 2D array)
+   |  | 1 (NX x NY 2D array)
+   |  | ...
+   |  | NTIMES (NX x NY 2D array)
 
 Smooth step function
 ....................

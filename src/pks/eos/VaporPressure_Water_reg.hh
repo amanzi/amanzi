@@ -16,10 +16,10 @@
 #include "VaporPressure_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<VaporPressure_Base, VaporPressure_Water> VaporPressure_Water::factory_("water vapor over water/ice");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

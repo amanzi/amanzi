@@ -34,8 +34,7 @@ AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int d
 
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv);
-AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
 
@@ -140,8 +139,8 @@ void DeformMeshCurved(
         auto yv = MovePoint(t, xe, deform);
         (*ho_nodes1e)[e].push_back(yv);
       }
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_edge_ho_nodes(ho_nodes0e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_edge_ho_nodes(ho_nodes1e);
     }
   }
 }
@@ -162,11 +161,11 @@ AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int d
   case 2: 
     yv = Unused(t, xv);
     break;
-  case 4: 
-    yv = CompressionExpansion2D(t, xv);
+  case 4:
+    AMANZI_ASSERT(false);
     break;
   case 5:
-    yv = CompressionExpansion3D(t, xv);
+    yv = CompressionExpansion(t, xv);
     break;
   case 6:
     yv = Rotation2D(t, xv);
@@ -198,9 +197,9 @@ AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& x
       uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]);
       uv[1] =-0.2 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]);
     } else {
-      uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::cos(M_PI * yv[2]);
-      uv[1] =-0.1 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]) * std::cos(M_PI * yv[2]);
-      uv[2] =-0.1 * std::cos(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::sin(M_PI * yv[2]);
+      uv[0] = 0.2 * std::sin(M_PI * yv[0]) * std::cos(M_PI * yv[1]) * std::sin(M_PI * yv[2] / 2);
+      uv[1] =-0.2 * std::cos(M_PI * yv[0]) * std::sin(M_PI * yv[1]) * std::sin(M_PI * yv[2] / 2);
+      uv[2] = 0.0;
     }
     yv += uv * ds;
   }
@@ -229,22 +228,15 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
 * Compression/Expansion
 ***************************************************************** */
 inline
-AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv)
+AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(xv);
-  yv[0] += t * xv[0] * xv[1] * (1.0 - xv[0]) / 2;
-  yv[1] += t * xv[0] * xv[1] * (1.0 - xv[1]) / 2;
-  return yv;
-}
+  int d = xv.dim();
 
+  double factor(t);
+  for (int i = 0; i < d; ++i) factor *= yv[i];
 
-inline
-AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv)
-{
-  AmanziGeometry::Point yv(xv);
-  yv[0] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) / 2;
-  yv[1] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[1]) / 2;
-  yv[2] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[2]) / 2;
+  for (int i = 0; i < d; ++i) yv[i] += factor * (1.0 - yv[i]) / 2;
   return yv;
 }
 
