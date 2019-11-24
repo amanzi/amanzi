@@ -129,6 +129,7 @@
 #                - update PFloTran to b681066 (Sep 20, 2019)
 #                - update Alquimia to 1.0.6-rc
 #   0.96.3       - update HDF5 to 1.10.5
+#   0.96.4       - update MSTK to 3.2.0
 
 include(CMakeParseArguments)
 
@@ -345,13 +346,13 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 3)
-set(MSTK_VERSION_MINOR 1)
+set(MSTK_VERSION_MINOR 2)
 set(MSTK_VERSION_PATCH 0)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
 set(MSTK_ARCHIVE_FILE   v${MSTK_VERSION_MAJOR}_${MSTK_VERSION_MINOR}_${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        bc9c39885d9dc41655f8b54c628e460b)
+set(MSTK_MD5_SUM        7f34c466221458816f5cc38e3de2a30c)
 
 #
 # TPL: MOAB
