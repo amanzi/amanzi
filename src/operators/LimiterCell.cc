@@ -509,7 +509,7 @@ void LimiterCell::LimiterScalarDG_(
     u1 = (*field_)[0][c];
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
 
-    int m = limiter_points_ - 1;
+    int mq = limiter_points_ - 1;
     double climiter(1.0);
 
     for (int m = 0; m < nfaces; ++m) {
@@ -525,7 +525,7 @@ void LimiterCell::LimiterScalarDG_(
         mesh_->node_get_coordinates(nodes[j], &x2);
 
         for (int k = 0; k < limiter_points_; ++k) {
-          xm = x1 * WhetStone::q1d_points[m][k] + x2 * (1.0 - WhetStone::q1d_points[m][k]);
+          xm = x1 * WhetStone::q1d_points[mq][k] + x2 * (1.0 - WhetStone::q1d_points[mq][k]);
           u1f = poly.Value(xm);
           double u1_add = u1f - u1;
 
