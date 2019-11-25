@@ -86,6 +86,9 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
         const ModelParams& params, 
         double vapor_pressure_air, double vapor_pressure_ground);
 
+double EvaporativeResistanceCoef(double saturation_gas,
+        double porosity, double dessicated_zone_thickness, double Clapp_Horn_b);
+
 
 // 
 // Basic sensible heat.

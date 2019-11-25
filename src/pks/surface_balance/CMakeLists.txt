@@ -19,6 +19,8 @@ set(ats_surface_balance_src_files
   constitutive_relations/SEB/longwave_evaluator.cc
   constitutive_relations/litter/drainage_evaluator.cc
   constitutive_relations/litter/interception_evaluator.cc
+  constitutive_relations/litter/interception_fraction_evaluator.cc
+  constitutive_relations/litter/interception_fraction_model.cc
   constitutive_relations/litter/latent_heat_evaluator.cc
   constitutive_relations/litter/latent_heat_model.cc       
   constitutive_relations/litter/evaporative_flux_relaxation_evaluator.cc       
@@ -43,6 +45,8 @@ set(ats_surface_balance_inc_files
   constitutive_relations/SEB/longwave_evaluator.hh
   constitutive_relations/litter/drainage_evaluator.hh
   constitutive_relations/litter/interception_evaluator.hh
+  constitutive_relations/litter/interception_fraction_evaluator.hh
+  constitutive_relations/litter/interception_fraction_model.hh
   constitutive_relations/litter/latent_heat_evaluator.hh
   constitutive_relations/litter/latent_heat_model.hh       
   constitutive_relations/litter/evaporative_flux_relaxation_evaluator.hh       
@@ -54,7 +58,6 @@ set(ats_surface_balance_inc_files
   surface_balance_base.hh
   surface_balance_implicit_subgrid.hh
 )  
-
 
 set(ats_surface_balance_link_libs
   ${Teuchos_LIBRARIES}
@@ -72,7 +75,6 @@ set(ats_surface_balance_link_libs
   ats_operators
   ats_pks
   )
-
 
 add_amanzi_library(ats_surface_balance
                    SOURCE ${ats_surface_balance_src_files}
@@ -119,12 +121,22 @@ register_evaluator_with_factory(
 )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/SEB/evaporation_downregulation_evaluator_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/litter/drainage_evaluator_reg.hh
   LISTNAME ATS_SURFACE_BALANCE_REG
 )
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/litter/interception_evaluator_reg.hh
+  LISTNAME ATS_SURFACE_BALANCE_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/litter/interception_fraction_evaluator_reg.hh
   LISTNAME ATS_SURFACE_BALANCE_REG
 )
 
