@@ -20,7 +20,6 @@
 #include "PK.hh"
 #include "Transport_PK_ATS.hh"
 #include "Chemistry_PK.hh"
-#include "PK_Factory.hh"
 #include "PK_MPCAdditive.hh"
 
 namespace Amanzi {

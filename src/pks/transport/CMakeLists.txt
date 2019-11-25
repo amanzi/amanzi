@@ -4,6 +4,19 @@
 #  ATS
 #    Transport Amanzi
 #
+
+
+# ATS include directories
+add_subdirectory(sediment_transport)
+
+#================================================
+# register evaluators/factories/pks
+
+include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${AMANZI_SOURCE_DIR}/src/common/alquimia)
+include_directories(${FUNCTIONS_SOURCE_DIR})
+
+
 set(ats_transport_src_files
   MDM_BurnettFrind.cc
   MDM_Bear.cc
@@ -23,7 +36,8 @@ set(ats_transport_src_files
   MultiscaleTransportPorosityPartition.cc
   TransportSourceFunction_Alquimia.cc
   Transport_PK.cc
-  )
+ )
+
 
 set(ats_transport_inc_files
   TransportDefs.hh
@@ -39,11 +53,9 @@ set(ats_transport_inc_files
   MultiscaleTransportPorosityPartition.hh
   TransportDomainFunction.hh  
   MultiscaleTransportPorosity_DPM.hh
-  TransportSourceFunction.hh
   TransportSourceFunction_Alquimia.hh
   MultiscaleTransportPorosity_GDPM.hh
   MultiscaleTransportPorosity.hh
-  TransportBoundaryFunction.hh
   MultiscaleTransportPorosityFactory.hh
   TransportBoundaryFunction_Alquimia.hh
   Transport_PK_ATS.hh
@@ -73,7 +85,6 @@ add_amanzi_library(ats_transport
                    SOURCE ${ats_transport_src_files}
                    HEADERS ${ats_transport_inc_files}
 		   LINK_LIBS ${ats_transport_link_libs})
-
 
 #================================================
 # register evaluators/factories/pks

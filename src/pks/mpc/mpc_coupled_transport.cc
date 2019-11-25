@@ -69,7 +69,8 @@ double CoupledTransport_PK::get_dt() {
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {    
     *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
     *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
   }
@@ -105,55 +106,6 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
   WeakMPC::Initialize(S);
 
 }
-
-// void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
-
-//   int  nfaces_owned;
-
-//   Teuchos::RCP<const Epetra_MultiVector> darcy_flux = 
-//     S->GetFieldData(Keys::getKey(subsurface_name_,"mass_flux"))->ViewComponent("face");
-
-//   Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
-//     S->GetFieldData(Keys::getKey(surface_name_,"mass_flux"))->ViewComponent("face");
-
-//   Key molar_den_key = Keys::getKey(subsurface_name_, "molar_density_liquid");
-//   Teuchos::RCP<const Epetra_MultiVector> molar_density = 
-//     S->GetFieldData(molar_den_key)->ViewComponent("cell", true);
-
-//   Key surf_molar_den_key = Keys::getKey(surface_name_, "molar_density_liquid");
-//   Teuchos::RCP<const Epetra_MultiVector> surf_molar_density = 
-//     S->GetFieldData(surf_molar_den_key)->ViewComponent("cell", true);
-
-
-//   // subsurface
-//   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-//   AmanziMesh::Entity_ID_List cells;
-  
-//   for (int f = 0; f < nfaces_owned; f++){
-//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-//     double n_liq=0.;
-//     for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
-//     n_liq /= cells.size();
-//     if (n_liq > 0) (*vol_darcy)[0][f] = (*darcy_flux)[0][f]/n_liq;
-//     else (*vol_darcy)[0][f] = 0.;
-//   }
-//   S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
-
-//   // surface
-//   nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-//   for (int f = 0; f < nfaces_owned; f++){
-//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-//     double n_liq=0.;
-//     for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
-//     n_liq /= cells.size();
-//     if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_darcy_flux)[0][f]/n_liq;
-//     else (*surf_vol_darcy)[0][f] = 0.;
-//   }
-//   S->GetField(surf_vol_darcy_key_, passwd_)->set_initialized();
-    
-
-// }
-
 
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.

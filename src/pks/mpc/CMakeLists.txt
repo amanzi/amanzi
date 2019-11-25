@@ -8,6 +8,9 @@
 # ATS include directories
 
 add_subdirectory(constitutive_relations)
+#add_subdirectory(morphology_pk)
+
+
 
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
@@ -48,6 +51,8 @@ set(ats_mpc_src_files
   mpc_subsurface.cc
   mpc_surface.cc
   mpc_permafrost.cc
+  mpc_morphology_pk.cc
+  biomass_evaluator.cc
   )
 
 set(ats_mpc_inc_files
@@ -76,6 +81,7 @@ set(ats_mpc_inc_files
   mpc_subsurface.hh
   mpc_surface.hh
   mpc_permafrost.hh
+  biomass_evaluator.hh
   )
 
 set(ats_mpc_link_libs
@@ -142,6 +148,10 @@ register_evaluator_with_factory(
    LISTNAME   ATS_MPC_REG
    )
 
+register_evaluator_with_factory(
+   HEADERFILE mpc_morphology_reg.hh
+   LISTNAME   ATS_MPC_REG
+   )
     
 register_evaluator_with_factory(
   HEADERFILE mpc_subsurface_reg.hh
@@ -193,6 +203,7 @@ register_evaluator_with_factory(
     LISTNAME   ATS_MPC_REG
    )
 
+
 register_evaluator_with_factory(
   HEADERFILE weak_mpc_semi_coupled_reg.hh
   LISTNAME   ATS_MPC_REG
@@ -208,11 +219,17 @@ register_evaluator_with_factory(
   LISTNAME   ATS_MPC_REG
   )
 
+register_evaluator_with_factory(
+  HEADERFILE biomass_evaluator_reg.hh
+  LISTNAME ATS_MPC_REG
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE ats_mpc_registration.hh
   LISTNAME   ATS_MPC_REG
   INSTALL    True
 )
+
 
 
 

@@ -15,7 +15,7 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #include "mpc_flowreactivetransport_pk.hh"
 
 namespace Amanzi {
+ 
+RegisteredPKFactory<FlowReactiveTransport_PK_ATS> FlowReactiveTransport_PK_ATS::reg_("flow reactive transport");
 
-RegisteredPKFactory<FlowReactiveTransport_PK_ATS> FlowReactiveTransport_PK_ATS::reg_("flow reactive transport ATS");
-
-} // namespace
+}

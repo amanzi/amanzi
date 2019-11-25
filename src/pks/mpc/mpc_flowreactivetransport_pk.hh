@@ -17,7 +17,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "PK.hh"
-#include "PK_Factory.hh"
 #include "mpc.hh"
 #include "pk_mpcsubcycled_ats.hh"
 

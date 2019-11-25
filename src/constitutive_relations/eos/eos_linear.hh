@@ -27,9 +27,9 @@ class EOSLinear : public EOSConstantMolarMass {
 public:
   explicit EOSLinear(Teuchos::ParameterList& eos_plist);
 
-  virtual double MassDensity(double T, double p) { return rho_ * (1+beta_*std::max(p-101325., 0.)); }
-  virtual double DMassDensityDp(double T, double p) { return p > 101325. ? rho_ * beta_ : 0.; }
-  virtual double DMassDensityDT(double T, double p) { return 0.; }
+  virtual double MassDensity(std::vector<double>& params) override { return rho_ * (1+beta_*std::max(params[1] - 101325., 0.)); }
+  virtual double DMassDensityDp(std::vector<double>& params) override { return params[1] > 101325. ? rho_ * beta_ : 0.; }
+  virtual double DMassDensityDT(std::vector<double>& params) override { return 0.; }
 
 private:
   virtual void InitializeFromPlist_();

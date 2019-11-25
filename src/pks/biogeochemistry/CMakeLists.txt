@@ -3,6 +3,12 @@ include_directories(${ATS_SOURCE_DIR}/pks)
 
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc
+
+
+if (ENABLE_FATES)
+  add_subdirectory(fates)
+endif()
+
 set(ats_bgc_src_files
   bgc_simple/utils.cc
   bgc_simple/PFT.cc
@@ -11,7 +17,7 @@ set(ats_bgc_src_files
   bgc_simple/bgc_simple_funcs.cc
   bgc_simple/bgc_simple.cc
   carbon/simple/CarbonSimple.cc
-  constitutive_models/carbon/bioturbation_evaluator.cc
+  constitutive_models/carbon/bioturbation_evaluator.cc  
   )
 
 set(ats_bgc_inc_files
@@ -47,11 +53,18 @@ add_amanzi_library(ats_bgc
 #================================================
 # register evaluators/factories/pks
 
-# SEB explicit
+
 register_evaluator_with_factory(
   HEADERFILE bgc_simple/bgc_simple_reg.hh
   LISTNAME ATS_BGC_REG
 )
+
+if (ENABLE_FATES)
+  register_evaluator_with_factory(
+    HEADERFILE fates/fates_reg.hh
+    LISTNAME ATS_BGC_REG
+  )
+endif()
 
 register_evaluator_with_factory(
   HEADERFILE carbon/simple/CarbonSimple_reg.hh

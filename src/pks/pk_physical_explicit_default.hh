@@ -21,6 +21,7 @@ domains/meshes of PKPhysicalBase and Explicit methods of PKExplicitBase.
 
 namespace Amanzi {
 
+
 class  PK_Physical_Explicit_Default : virtual public PK_Explicit_Default, public PK_Physical_Default {
 
 public:

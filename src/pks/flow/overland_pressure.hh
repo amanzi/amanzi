@@ -78,6 +78,7 @@ May inherit options from PKPhysicalBDFBase_.
 #define PK_FLOW_OVERLAND_HEAD_HH_
 
 #include "BoundaryFunction.hh"
+#include "DynamicBoundaryFunction.hh"
 #include "upwinding.hh"
 
 #include "Operator.hh"
@@ -211,6 +212,7 @@ protected:
   double p_limit_;
   double patm_limit_;
   bool patm_hard_limit_;
+  double min_vel_ponded_depth_, min_tidal_bc_ponded_depth_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;
@@ -246,6 +248,8 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_tidal_;
+  Teuchos::RCP<Functions::DynamicBoundaryFunction> bc_dynamic_;
   
   // needed physical models
   Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;

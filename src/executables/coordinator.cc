@@ -23,6 +23,8 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziComm.hh"
 #include "AmanziTypes.hh"
 
+
+#include "InputAnalysis.hh"
 #include "Units.hh"
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
@@ -32,7 +34,6 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "PK.hh"
 #include "TreeVector.hh"
 #include "PK_Factory.hh"
-//#include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
 
@@ -123,7 +124,21 @@ void Coordinator::coordinator_init() {
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension()); 
       }
     }
+
+  // -------------- ANALYSIS --------------------------------------------
+    if (parameter_list_->isSublist("analysis")){
+      Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
+      //analysis.Init(parameter_list_->sublist(mesh->first));
+      // std::cout<<mesh->first<<"\n";
+      // std::cout<<parameter_list_->sublist("analysis").sublist(mesh->first)<<"\n";
+      analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
+      analysis.RegionAnalysis();
+      analysis.OutputBCs();
+    }
+
   }
+
+  
   // create the time step manager
   tsm_ = Teuchos::rcp(new Amanzi::TimeStepManager());
   
@@ -153,7 +168,7 @@ void Coordinator::initialize() {
   // -- BDF history to allow projection to continue correctly.
 
   int size = comm_->NumProc();
-
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   //---
   if (restart_) {
@@ -212,11 +227,12 @@ void Coordinator::initialize() {
   S_->InitializeFields();
   //S_->WriteStatistics(vo_);
 
+  S_->WriteStatistics(vo_);
+
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
   //S_->WriteStatistics(vo_);
 
-// Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->InitializeEvaluators();
   //  S_->WriteStatistics(vo_);

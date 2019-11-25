@@ -33,7 +33,7 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+                                               Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
 
   Teuchos::RCP<EOS> get_EOS() { return eos_; }
  protected:
@@ -43,11 +43,11 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
 
   // Keys for fields
   // dependencies
-  Key temp_key_;
-  Key pres_key_;
+  // Key temp_key_;
+  // Key pres_key_;
 
- private:
-  static Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> factory_;
+ // private:
+ //  static Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> factory_;
 };
 
 } // namespace

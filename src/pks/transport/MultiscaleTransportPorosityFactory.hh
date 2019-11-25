@@ -16,8 +16,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Factory.hh"
 
+#include "Factory.hh"
 #include "MultiscaleTransportPorosity.hh"
 
 namespace Amanzi {
