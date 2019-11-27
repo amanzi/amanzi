@@ -33,7 +33,7 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFV : public virtual PDE_Diffusion {
+class PDE_DiffusionFV : public PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<Operator>& global_op)
@@ -63,7 +63,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   // -- setup
   using PDE_Diffusion::Setup;
   virtual void SetTensorCoefficient(
-    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+      const TensorCoef_view_type& K) override;
   virtual void SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -96,8 +96,8 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
+  // virtual double ComputeTransmissibility(int f) const override;
+  // virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
@@ -107,10 +107,10 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
 
   void AnalyticJacobian_(const CompositeVector& solution);
 
-  virtual void
-  ComputeJacobianLocal_(int mcells, int f, int face_dir_0to1, int bc_model,
-                        double bc_value, double* pres, double* dkdp_cell,
-                        WhetStone::DenseMatrix& Jpp);
+  // virtual void
+  // ComputeJacobianLocal_(int mcells, int f, int face_dir_0to1, int bc_model,
+  //                       double bc_value, double* pres, double* dkdp_cell,
+  //                       WhetStone::DenseMatrix& Jpp);
 
   void Init_(Teuchos::ParameterList& plist);
 

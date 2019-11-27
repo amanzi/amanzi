@@ -4,18 +4,11 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-
-*/
-
-//!
-
-/*
-  This is the operators component of the Amanzi code.
-
-  License: BSD
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
 */
+
+//! Verification of matrix properties for testing.
 
 #ifndef AMANZI_OPERATOR_VERIFICATION_HH_
 #define AMANZI_OPERATOR_VERIFICATION_HH_
@@ -129,20 +122,9 @@ class Verification {
         double VL, VR, dmem2[n], dwork[lwork];
         Amanzi::WhetStone::DenseVector dmem1(n);
 
-        Amanzi::WhetStone::DGEEV_F77("N",
-                                     "N",
-                                     &n,
-                                     Acell.Values(),
-                                     &n,
-                                     dmem1.Values(),
-                                     dmem2,
-                                     &VL,
-                                     &ldv,
-                                     &VR,
-                                     &ldv,
-                                     dwork,
-                                     &lwork,
-                                     &info);
+        Amanzi::WhetStone::DGEEV_F77("N", "N", &n, Acell.Values(), &n,
+                                     dmem1.Values(), dmem2, &VL, &ldv,
+                                     &VR, &ldv, dwork, &lwork, &info);
 
         OrderByIncrease_(n, dmem1.Values());
 

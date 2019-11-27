@@ -279,7 +279,7 @@ class Mesh {
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void cell_get_faces_and_bisectors(
     const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-    Kokkos::View<AmanziGeometry::Point*>* bisectors) const;
+    Kokkos::View<AmanziGeometry::Point*>& bisectors) const;
 
   // Get edges of a cell
   void cell_get_edges(const Entity_ID cellid,

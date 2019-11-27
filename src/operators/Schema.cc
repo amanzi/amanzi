@@ -152,7 +152,7 @@ Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
  ****************************************************************** */
 // void
 // Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-//                       std::vector<int>& offset) const
+//                       Kokkos::View<int*>& offset) const
 // {
 //   AmanziMesh::Entity_ID_List nodes, edges, faces;
 

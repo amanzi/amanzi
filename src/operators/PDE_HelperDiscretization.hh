@@ -82,14 +82,14 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   void set_local_matrices(const Teuchos::RCP<Op>& op);
 
  protected:
-  void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
-                             bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+  //                            bool eliminate, bool essential_eqn);
 
-  void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
-                            bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+  //                           bool eliminate, bool essential_eqn);
 
-  void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
-                             bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+  //                            bool eliminate, bool essential_eqn);
 
  private:
   void PopulateDimensions_();

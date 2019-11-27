@@ -33,15 +33,21 @@ Example:
 .. code-block:: xml
 
     <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="mfd:
-optimized for monotonicity"/> <Parameter name="discretization secondary"
-type="string" value="mfd: two-point flux approximation"/> <Parameter
-name="schema" type="Array(string)" value="{face, cell}"/> <Parameter
-name="preconditioner schema" type="Array(string)" value="{face}"/> <Parameter
-name="gravity" type="bool" value="true"/> <Parameter name="gravity term
-discretization" type="string" value="hydraulic head"/> <Parameter
-name="nonlinear coefficient" type="string" value="upwind: face"/> <Parameter
-name="Newton correction" type="string" value="true Jacobian"/>
+      <Parameter name="discretization primary" type="string"
+                value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string"
+                value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)"
+                value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)"
+                value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string"
+                value="hydraulic head"/>
+      <Parameter name="nonlinear coefficient" type="string"
+                value="upwind: face"/>
+      <Parameter name="Newton correction" type="string"
+                value="true Jacobian"/>
 
       <ParameterList name="consistent faces">
         <ParameterList name="linear solver">
@@ -66,21 +72,24 @@ namespace Operators {
 
 class PDE_Diffusion : public PDE_HelperDiscretization {
  public:
+  // using TensorCoef_view_type = Kokkos::View<double**>;
+  using TensorCoef_view_type = Kokkos::View<double**, Kokkos::LayoutRight>;
+  
   PDE_Diffusion(const Teuchos::RCP<Operator>& global_op)
     : PDE_HelperDiscretization(global_op),
-      K_(Teuchos::null),
+      K_(),
       k_(Teuchos::null),
       dkdp_(Teuchos::null){};
 
   PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null),
+      K_(),
       k_(Teuchos::null),
       dkdp_(Teuchos::null){};
 
   PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null),
+      K_(),
       k_(Teuchos::null),
       dkdp_(Teuchos::null){};
 
@@ -89,7 +98,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // main virtual members
   // -- setup
   virtual void SetTensorCoefficient(
-    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) = 0;
+      const TensorCoef_view_type& K) = 0;
   virtual void
   SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                        const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
@@ -116,7 +125,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // default implementation
   virtual void
-  Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K,
+  Setup(const Kokkos::View<double**>& K,
         const Teuchos::RCP<const CompositeVector>& k,
         const Teuchos::RCP<const CompositeVector>& dkdp)
   {
@@ -134,8 +143,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
   // interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const = 0;
-  virtual double ComputeGravityFlux(int f) const = 0;
+  // virtual double ComputeTransmissibility(int f) const = 0;
+  // virtual double ComputeGravityFlux(int f) const = 0;
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }
@@ -188,7 +197,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
  protected:
-  Teuchos::RCP<const std::vector<WhetStone::Tensor>> K_;
+  TensorCoef_view_type K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation

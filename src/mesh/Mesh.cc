@@ -457,16 +457,14 @@ Mesh::init_cache()
 void
 Mesh::cell_get_faces_and_bisectors(
   const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-  Kokkos::View<AmanziGeometry::Point*>* bisectors) const
+  Kokkos::View<AmanziGeometry::Point*>& bisectors) const
 {
   cell_get_faces(cellid, faceids);
 
   AmanziGeometry::Point cc = cell_centroid(cellid);
-  if (bisectors) {
-    Kokkos::resize(*bisectors, faceids.extent(0));
-    for (int i = 0; i != faceids.extent(0); ++i) {
-      (*bisectors)(i) = face_centroid(faceids(i)) - cc;
-    }
+  Kokkos::resize(bisectors, faceids.extent(0));
+  for (int i = 0; i != faceids.extent(0); ++i) {
+    bisectors(i) = face_centroid(faceids(i)) - cc;
   }
   return;
 }

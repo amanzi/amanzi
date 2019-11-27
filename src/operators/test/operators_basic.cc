@@ -21,6 +21,7 @@
 #include "MeshFactory.hh"
 
 #include "Operator.hh"
+#include "Operator_Cell.hh"
 #include "Op.hh"
 #include "Op_Cell_Cell.hh"
 
@@ -54,7 +55,7 @@ void opPutScalar(Op_type& op, double scalar) {
 SUITE(OPERATOR)
 {
 
-  TEST_FIXTURE(test, CONSTRUCTION)
+  TEST_FIXTURE(test, MAT_VEC_CELL_CELL)
   {
     Teuchos::ParameterList plist;
 
@@ -64,7 +65,7 @@ SUITE(OPERATOR)
         ->SetGhosted()->SetComponents({"cell"}, {AmanziMesh::CELL}, {1});
 
     // create the operator
-    Operator oper(cvs.CreateSpace(), plist, OPERATOR_SCHEMA_DOFS_CELL);
+    Operator_Cell oper(cvs.CreateSpace(), plist, OPERATOR_SCHEMA_DOFS_CELL);
 
     // push back an op
     auto op = Teuchos::rcp(new Op_Cell_Cell("diag", mesh));
