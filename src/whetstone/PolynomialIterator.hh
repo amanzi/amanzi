@@ -105,7 +105,7 @@ class PolynomialIterator {
   int m_;  // current position in the list of monomials
   int multi_index_[3];
   int d_;
-  int count_;  // iterator count
+  int count_;  // iterator counter
 };
 
 }  // namespace WhetStone

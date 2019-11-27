@@ -58,7 +58,7 @@ using namespace Amanzi::AmanziGeometry;
   S->RegisterMesh("domain", mesh);
   
   {
-  Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
+    Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       auto S = cycle_driver.Go();
       S->GetFieldData("saturation_liquid")->MeanValue(&avg1);

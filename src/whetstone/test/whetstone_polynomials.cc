@@ -194,3 +194,24 @@ TEST(DG_SPACE_TIME_POLYNOMIALS) {
 }
 
 
+/* ****************************************************************
+* Test of vector iterators
+**************************************************************** */
+TEST(VECTOR_POLYNOMIAL_ITERATOR) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "Vector polynomial iterator..." << std::endl; 
+  VectorPolynomial p(2, 2, 3);
+
+  int i(0);
+  for (auto it = p.begin(); it < p.end(); ++it) {
+    int pos = it.VectorPolynomialPosition();
+    CHECK(pos == i++);
+    CHECK(it.MonomialSetOrder() <= 3);
+    CHECK(it.PolynomialPosition() == pos % 10);
+    CHECK(it.VectorComponent() == (pos / 10));
+  }
+}
+

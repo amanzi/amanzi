@@ -85,8 +85,8 @@ add_amanzi_library(whetstone
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
-                           Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
-                           SpaceTimePolynomial.hh
+                           Monomial.hh Polynomial.hh PolynomialBase.hh SpaceTimePolynomial.hh
+                           PolynomialIterator.hh VectorObjectsIterator.hh 
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh

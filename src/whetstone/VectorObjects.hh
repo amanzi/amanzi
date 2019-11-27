@@ -24,6 +24,7 @@
 #include "Polynomial.hh"
 #include "SpaceTimePolynomial.hh"
 #include "Tensor.hh"
+#include "VectorObjectsIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -105,6 +106,19 @@ class VectorObjects {
     return tmp *= val;
   }
 
+  // iterators require specialization
+  VectorObjectsIterator<T> begin() {
+    int order = (polys_.size() > 0) ? polys_[0].order() : 0;
+    auto it = VectorObjectsIterator<T>(d_, polys_.size(), order);
+    return it.begin();
+  }
+
+  VectorObjectsIterator<T> end() {
+    int order = (polys_.size() > 0) ? polys_[0].order() : 0;
+    auto it = VectorObjectsIterator<T>(d_, polys_.size(), order);
+    return it.end();
+  }
+
   // change the coordinate system
   void set_origin(const AmanziGeometry::Point& origin) {
     for (int i = 0; i < size(); ++i) polys_[i].set_origin(origin);
@@ -179,7 +193,6 @@ class VectorObjects {
   int d_;
   std::vector<T> polys_;
 };
-
 
 // used types
 typedef VectorObjects<Polynomial> VectorPolynomial;

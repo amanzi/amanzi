@@ -86,7 +86,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   mymesh->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  Polynomial pc(d, order_), pe(d - 1, order_);
+  Polynomial poly(d, order_), pe(d - 1, order_);
 
   int ndc = PolynomialSpaceDimension(d, order_);
   int nde = PolynomialSpaceDimension(d - 1, order_);
@@ -117,7 +117,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
       Polynomial emono(d, index, 1.0);
       emono.InverseChangeCoordinates(xe, tau_edge);  
 
-      for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
+      for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
         int m = jt.PolynomialPosition();
         const int* jndex = jt.multi_index();
         double factor = basis.monomial_scales()[jt.MonomialSetOrder()];
@@ -135,7 +135,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   }
 
   // calculate Mc = P0 M_G P0^T  FIXME
-  GrammMatrix(pc, integrals, basis, MG);
+  GrammMatrix(poly, integrals, basis, MG);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

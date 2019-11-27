@@ -102,7 +102,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
   nde = PolynomialSpaceDimension(d_ - 2, order_);
   int ndof_S = nedges * nde;
 
-  // Hcurl spaces on faces
+  // iterators
+  VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
+  it0.begin();
+  it1.end();
+
+  // H-curl spaces on faces
   std::vector<WhetStone::DenseMatrix> vNf, vMG;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
@@ -158,9 +163,10 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
     // integral over face requires vector of polynomial coefficients of pc
     WhetStone::DenseVector v(P0.NumCols()), p0v(P0.NumRows());
-    auto tau& = *vcoordsys[n]->tau();
+    auto& tau = *vcoordsys[n]->tau();
 
-    for (auto it = pc.begin(); it < pc.end(); ++it) {
+    for (auto it = it0; it < it1; ++it) {
+      int k = it.VectorComponent();
       int m = it.PolynomialPosition();
 
       const int* index = it.multi_index();
@@ -170,27 +176,27 @@ int VEM_NedelecSerendipityType2::L2consistency(
       qe.ChangeCoordinates(xf, tau);
 
       int s(0);
-      for (int k = 0; k < d_; ++k) {
-        for (int i = 0; i < d_ - 1; ++i) {
-          Polynomial q1(d_, 1);
-          for (int l = 0; l < d_; ++l) {
-            q1(l + 1) = tau[i][l] * normal[k] - tau[i][k] * normal[l];
-          }
-          q1.set_origin(xc);
-          q1.ChangeCoordinates(xf, tau);
-
-          q1 *= qe;
-
-          // AmanziGeometry::Point p(d_);
-          // p[k] = 1.0 / area;
-          // auto tmp = vcoordsys[n]->Project(((xf - xc) ^ p) ^ normal, false);
-
-        for (int l = 0; l < d_ - 1; ++l) v(l) = tmp[l];
-        P0.Multiply(v, p0v, false);
-
-        for (int i = 0; i < p0v.NumRows(); ++i) {
-          N(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
+      /*
+      for (int i = 0; i < d_ - 1; ++i) {
+        Polynomial q1(d_, 1);
+        for (int l = 0; l < d_; ++l) {
+          q1(l + 1) = tau[i][l] * normal[k] - tau[i][k] * normal[l];
         }
+        q1.set_origin(xc);
+        q1.ChangeCoordinates(xf, tau);
+
+        q1 *= qe;
+      */
+
+      AmanziGeometry::Point p(d_);
+      p[k] = 1.0 / area;
+      auto tmp = vcoordsys[n]->Project(((xf - xc) ^ p) ^ normal, false);
+
+      for (int l = 0; l < d_ - 1; ++l) v(l) = tmp[l];
+      P0.Multiply(v, p0v, false);
+
+      for (int i = 0; i < p0v.NumRows(); ++i) {
+        N(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
       }
     }
   }
