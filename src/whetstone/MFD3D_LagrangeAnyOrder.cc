@@ -142,7 +142,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     mfd_surf.H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
     const DenseMatrix& Rf = mfd_surf.R();
     const DenseMatrix& Gf = mfd_surf.G();
-    auto integrals_f = mfd_surf.integrals();
+    auto& integrals_f = mfd_surf.integrals();
 
     NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
     numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);

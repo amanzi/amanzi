@@ -403,6 +403,20 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   j1c.PutScalar(0.0);
   j1c(0)->PutScalar(1.0);
 
+  // initialize I/O
+  {
+    /*
+    Teuchos::ParameterList iolist;
+    iolist.get<std::string>("file name base", "plot");
+    OutputXDMF io(iolist, mesh0, true, false);
+
+    io.InitializeCycle(0.0, 1);
+    Epetra_MultiVector& p1c_tmp = *p1->SubVector(0)->Data()->ViewComponent("cell");
+    io.WriteVector(*p1c_tmp(0), "solution", AmanziMesh::CELL);
+    io.FinalizeCycle();
+    */
+  }
+
   // create remap object
   MyRemapDGr remap(mesh0, mesh1, plist, T1);
   DeformMeshCurved(mesh1, deform, T1, mesh0, order);
