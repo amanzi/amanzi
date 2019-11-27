@@ -302,6 +302,7 @@ PDE_DiffusionNLFV::UpdateMatrices(
   const Teuchos::Ptr<const CompositeVector>& flux,
   const Teuchos::Ptr<const CompositeVector>& u)
 {
+  AMANZI_ASSERT(u.get());
   if (!stencil_initialized_) InitStencils_();
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 

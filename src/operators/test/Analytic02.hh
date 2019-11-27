@@ -17,24 +17,23 @@
 
 class Analytic02 : public AnalyticBase {
  public:
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : AnalyticBase(mesh), g_(0.0), v_(d_)
-  {
-    v_[0] = 1.0, v_[1] = 2.0;
-  }
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g)
-    : AnalyticBase(mesh), g_(g), v_(d_)
-  {
-    v_[0] = 1.0, v_[1] = 2.0;
-  }
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-             const Amanzi::AmanziGeometry::Point& v, double g)
-    : AnalyticBase(mesh), g_(g), v_(v){};
-  ~Analytic02(){};
+  Analytic02(int dim) :
+      AnalyticBase(dim),
+      g_(0.0), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
+  Analytic02(int dim, double g) :
+      AnalyticBase(dim),
+      g_(g), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
+  Analytic02(const Amanzi::AmanziGeometry::Point& v, double g, const Amanzi::WhetStone::Tensor& K) :
+      AnalyticBase(v.dim()),
+      g_(g),
+      v_(v),
+      K_(K) {};
+  ~Analytic02() {};
 
+  virtual std::string name() const override { return "Analytic02"; }
+  
   Amanzi::WhetStone::Tensor
-  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override{
     Amanzi::WhetStone::Tensor K(d_, 2);
     K(0, 0) = 1.0;
     K(1, 1) = 3.0;
@@ -45,26 +44,24 @@ class Analytic02 : public AnalyticBase {
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  double
+  pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     return p * v_ - g_ * p[d_ - 1];
   }
 
-  // Gradient of potential, since the base class does not handle gravity.
+  // Gradient of potential, since the base class does not handle gravity. 
   Amanzi::AmanziGeometry::Point
-  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     return v_;
   }
 
   Amanzi::AmanziGeometry::Point
-  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return Amanzi::AmanziGeometry::Point(d_);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  double
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return 0.0;
   }
 

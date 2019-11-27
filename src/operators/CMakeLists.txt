@@ -41,7 +41,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 
-
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
@@ -219,57 +218,53 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    set(operators_test_link_libs output geometry mesh mstk_mesh mesh_factory data_structures whetstone operators atk ${UnitTest_LIBRARIES})
+    set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
-    add_amanzi_test(operators_basic operators_basic
-      KIND unit
-      SOURCE test/Main.cc test/operators_basic.cc
-      LINK_LIBS ${operators_test_link_libs})
+    
+    # Tests: diffusion
+    add_amanzi_test(operators_utils operators_utils
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_utils.cc
+                    LINK_LIBS ${operators_test_link_libs})
 
-    # if (ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS)
-    #     add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
-    #                     KIND unit
-    #                     SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
-    #                     LINK_LIBS ${operators_test_link_libs})
-    #     add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
-    #                     KIND unit
-    #                     SOURCE test/Main.cc test/operator_parabolic_surface.cc
-    #     		LINK_LIBS ${operators_test_link_libs})
-    #     add_amanzi_test(operators_marshak operators_marshak
-    #                     KIND unit
-    #                     NPROCS 3
-    #                     SOURCE test/Main.cc test/operator_marshak.cc
-    #                     LINK_LIBS ${operators_test_link_libs})
-    #     add_amanzi_test(operators_marshak_logical operators_marshak_logical
-    #                     KIND unit
-    #                     SOURCE test/Main.cc test/operator_marshak_logical.cc
-    #                     LINK_LIBS ${operators_test_link_libs})
-    # else()
-    #     add_amanzi_test(operators_bundle_pdes operators_bundle_pdes
-    #                     KIND unit
-    #                     SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
-    #                                         test/operator_parabolic_surface.cc
-    #                                         test/operator_marshak.cc
-    #                                         test/operator_marshak_logical.cc
-    #                     LINK_LIBS ${operators_test_link_libs})
-    # endif()
+    # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
+    #                 LINK_LIBS ${operators_test_link_libs})
+
+    # add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_parabolic_surface.cc
+    #                 LINK_LIBS ${operators_test_link_libs})
+
+    # add_amanzi_test(operators_marshak operators_marshak
+    #                 KIND unit
+    #                 NPROCS 3
+    #                 SOURCE test/Main.cc test/operator_marshak.cc
+    #                        test/operator_marshak_logical.cc
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_nonlinear_surface.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
+    add_amanzi_test(operators_diffusion_discretization operators_diffusion_discretization
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
+                    LINK_LIBS ${operators_test_link_libs})
+
+    add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
+                  
     # add_amanzi_test(operators_diffusion operators_diffusion
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_diffusion.cc
-    #                                     test/operator_diffusion_nodal.cc
+    #                 SOURCE test/Main.cc test/operator_diffusion_nodal.cc
     #                                     test/operator_diffusion_divk.cc
     #                                     test/operator_diffusion_nonsymmetric.cc
     #                                     test/operator_diffusion_nlfv.cc
     #                                     test/operator_diffusion_curved.cc
     #                                     test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
-    #                LINK_LIBS ${operators_test_link_libs})
-
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
@@ -284,23 +279,18 @@ if (BUILD_TESTS)
     # add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_diffusion_dg.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
     #                 KIND unit
+    #                 NPROCS 2
     #                 SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # add_amanzi_test(operators_commute operators_commute
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_commute.cc
     #                 LINK_LIBS ${operators_test_link_libs})
-
-    # # # Test: tpfa
-    # # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
-    # #                 KIND unit
-    # #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
-    # #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     
     # # Test: advection-diffusion 
     # add_amanzi_test(operators_advection_diffusion operators_advection_diffusion
@@ -308,12 +298,19 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_advdiff.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
-    # # Test: matrices for surface
+    # # Test: matrices for surface and fractures
     # add_amanzi_test(operators_surface operators_surface
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_advdiff_surface.cc
-    #                                     test/operator_fractures.cc
     #                 LINK_LIBS ${operators_test_link_libs})
+
+    # add_amanzi_test(operators_dfn operators_dfn
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_advection_dfn.cc
+    #                                     test/operator_diffusion_dfn.cc
+    #                 LINK_LIBS ${operators_test_link_libs})
+
+    # add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
     # # Test: electromagnetics 
     # add_amanzi_test(operators_electromagnetics operators_electromagnetics
@@ -401,7 +398,7 @@ if (BUILD_TESTS)
     # add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_diffusion_high_order.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # # DG advection test
     # add_amanzi_test(operators_advection_dg operators_advection_dg
@@ -409,14 +406,29 @@ if (BUILD_TESTS)
     #                 NPROCS 3
     #                 SOURCE test/Main.cc test/operator_advection_dg.cc
     #                                     test/operator_advection_dg_transient
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 LINK_LIBS ${operators_test_link_libs})
 
     # # Test: mini PDEs
     # add_amanzi_test(operators_mini1D operators_mini1D
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_mini1D.cc
     #                                     test/operator_mini1D_nonlinear.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 LINK_LIBS ${operators_test_link_libs})
+
+    # DG advection test
+    add_amanzi_test(operators_advection_dg operators_advection_dg
+                    KIND unit
+                    NPROCS 3
+                    SOURCE test/Main.cc test/operator_advection_dg.cc
+                                        test/operator_advection_dg_transient
+                    LINK_LIBS ${operators_test_link_libs})
+
+    # Test: mini PDEs
+    add_amanzi_test(operators_mini1D operators_mini1D
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_mini1D.cc
+                                        test/operator_mini1D_nonlinear.cc
+                    LINK_LIBS ${operators_test_link_libs})
 
 endif()
 
