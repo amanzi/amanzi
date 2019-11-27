@@ -126,7 +126,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (d == 2)
     H1consistency2D_<MyMesh>(mymesh, c, T, N, A);
   else
-    H1consistency3D_(c, T, N, A);
+    H1consistency3D_(c, T, N, A, false);
 
   // select number of non-aligned edges: we assume cell convexity 
   int nfaces;
@@ -141,7 +141,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   // degrees of freedom: serendipity space S contains all boundary dofs
   // plus a few internal dofs that depend on the value of eta.
   int nd = PolynomialSpaceDimension(d, order_);
-  int ndof = A.NumRows();
+  int ndof = N.NumRows();
   int ndof_c = PolynomialSpaceDimension(d, order_ - 2);
   int ndof_cs = PolynomialSpaceDimension(d, order_ - eta);
   int ndof_f(ndof - ndof_c);
