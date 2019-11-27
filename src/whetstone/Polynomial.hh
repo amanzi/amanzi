@@ -90,18 +90,17 @@ class Polynomial : public PolynomialBase {
     return tmp -= poly2;
   }
 
-  friend Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2) {
-    Polynomial tmp(poly1);
-    return tmp *= poly2;
-  }
+  friend Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2);
 
   friend Polynomial operator*(double val, const Polynomial& poly) {
     Polynomial tmp(poly);
-    return tmp *= val;
+    for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
+    return tmp;
   }
   friend Polynomial operator*(const Polynomial& poly, double val) {
     Polynomial tmp(poly);
-    return tmp *= val;
+    for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
+    return tmp;
   }
 
   // iterator starts with constant term
