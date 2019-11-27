@@ -42,7 +42,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 
-
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
@@ -184,187 +183,186 @@ if (BUILD_TESTS)
 
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
+    
     # Tests: diffusion
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-
-    add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_parabolic_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_marshak operators_marshak
-                    KIND unit
-                    NPROCS 3
-                    SOURCE test/Main.cc test/operator_marshak.cc
-                           test/operator_marshak_logical.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_nonlinear_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_diffusion operators_diffusion
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion.cc
-                                        test/operator_diffusion_nodal.cc
-                                        test/operator_diffusion_divk.cc
-                                        test/operator_diffusion_nonsymmetric.cc
-                                        test/operator_diffusion_nlfv.cc
-                                        test/operator_diffusion_curved.cc
-                                        test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
-                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-
-    add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
-
-    add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
-                    NPROCS 3 KIND unit)
-
-    add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_dg.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
-                    KIND unit
-                    NPROCS 2
-                    SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_commute operators_commute
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_commute.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # # Test: tpfa
-    # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
+    # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #                 SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_parabolic_surface.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_marshak operators_marshak
+    #                 KIND unit
+    #                 NPROCS 3
+    #                 SOURCE test/Main.cc test/operator_marshak.cc
+    #                        test/operator_marshak_logical.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_discretization operators_diffusion_discretization
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
+                  
+    # add_amanzi_test(operators_diffusion operators_diffusion
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_nodal.cc
+    #                                     test/operator_diffusion_divk.cc
+    #                                     test/operator_diffusion_nonsymmetric.cc
+    #                                     test/operator_diffusion_nlfv.cc
+    #                                     test/operator_diffusion_curved.cc
+    #                                     test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
+
+    # add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
+    #                 NPROCS 3 KIND unit)
+
+    # add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_dg.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
+    #                 KIND unit
+    #                 NPROCS 2
+    #                 SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # add_amanzi_test(operators_commute operators_commute
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_commute.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     
-    # Test: advection-diffusion 
-    add_amanzi_test(operators_advection_diffusion operators_advection_diffusion
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_advdiff.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: advection-diffusion 
+    # add_amanzi_test(operators_advection_diffusion operators_advection_diffusion
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_advdiff.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: matrices for surface and fractures
-    add_amanzi_test(operators_surface operators_surface
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_advdiff_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: matrices for surface and fractures
+    # add_amanzi_test(operators_surface operators_surface
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_advdiff_surface.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_dfn operators_dfn
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_advection_dfn.cc
-                                        test/operator_diffusion_dfn.cc
-                    LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_dfn operators_dfn
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_advection_dfn.cc
+    #                                     test/operator_diffusion_dfn.cc
+    #                 LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
+    # add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
-    # Test: electromagnetics 
-    add_amanzi_test(operators_electromagnetics operators_electromagnetics
-                    KIND unit
-                    SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
-                                        test/operator_electromagnetics.cc 
-                                        test/operator_magnetic_diffusion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: electromagnetics 
+    # add_amanzi_test(operators_electromagnetics operators_electromagnetics
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
+    #                                     test/operator_electromagnetics.cc 
+    #                                     test/operator_magnetic_diffusion.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: utils
-    add_amanzi_test(operators_upwind operators_upwind
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_upwind.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: utils
+    # add_amanzi_test(operators_upwind operators_upwind
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_upwind.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
+    # add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
 
-    # stability analysis
-    add_amanzi_test(operators_stability operators_stability
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_stability.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # stability analysis
+    # add_amanzi_test(operators_stability operators_stability
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_stability.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
+    # add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
-    # convergence rates
-    add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_convergence.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_coupled_diffusion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
+    # # convergence rates
+    # add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_convergence.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_coupled_diffusion.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
 
     
-    # Test: diffusion with gravity
-    add_amanzi_test(operators_gravity operators_gravity
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_gravity.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: diffusion with gravity
+    # add_amanzi_test(operators_gravity operators_gravity
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_gravity.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: elasticity methods
-    add_amanzi_test(operators_elasticity operators_elasticity
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_elasticity.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: elasticity methods
+    # add_amanzi_test(operators_elasticity operators_elasticity
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_elasticity.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_stokes operators_stokes
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_stokes.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_stokes operators_stokes
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_stokes.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # reconstruction tests
-    add_amanzi_test(operators_reconstruction_limiters operators_reconstruction_limiters
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_reconstruction.cc
-                                        test/operator_limiters.cc
-                                        test/operator_limiters_dg.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # reconstruction tests
+    # add_amanzi_test(operators_reconstruction_limiters operators_reconstruction_limiters
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_reconstruction.cc
+    #                                     test/operator_limiters.cc
+    #                                     test/operator_limiters_dg.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_reconstruction_limiters_2pe operators_reconstruction_limiters
-                    NPROCS 2
-                    KIND unit)
+    # add_amanzi_test(operators_reconstruction_limiters_2pe operators_reconstruction_limiters
+    #                 NPROCS 2
+    #                 KIND unit)
 
-    # remap tests
-    add_amanzi_test(operators_remap operators_remap
-                    KIND unit
-                    NPROCS 2
-                    SOURCE test/Main.cc test/operator_remap.cc
-                                        test/operator_remap_curved.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # remap tests
+    # add_amanzi_test(operators_remap operators_remap
+    #                 KIND unit
+    #                 NPROCS 2
+    #                 SOURCE test/Main.cc test/operator_remap.cc
+    #                                     test/operator_remap_curved.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_remap_gcl.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_remap_gcl.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # high-order diffusion test
-    add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_high_order.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # high-order diffusion test
+    # add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_high_order.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # DG advection test
     add_amanzi_test(operators_advection_dg operators_advection_dg

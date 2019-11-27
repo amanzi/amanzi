@@ -73,11 +73,11 @@ class Verification {
 
     if (a.Comm()->MyPID() == 0) {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
-      std::cout << "Preconditioner: size=" << size << "\n";
+      std::cout << "  Preconditioner: size=" << size << "\n";
       if (symmetry)
-          printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
+          printf("  Symmetry test: %21.14e == %21.14e\n", ahb, bha);
       if (pos_def)
-          std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+          std::cout << "  Positivity test (>0): " << aha << " " << bhb << std::endl;
     } 
     if (symmetry) CHECK_CLOSE(ahb, bha, rtol * fabs(ahb));
     if (pos_def) {
