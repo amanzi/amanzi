@@ -257,12 +257,12 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_nonlinear_surface.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    #add_amanzi_test(operators_diffusion_discretization operators_diffusion_discretization
-    #                KIND unit
-    #                SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(operators_diffusion_discretization operators_diffusion_discretization
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    #add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
+    add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
                   
     # add_amanzi_test(operators_diffusion operators_diffusion
     #                 KIND unit
@@ -295,7 +295,7 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    #add_amanzi_test(operators_commute operators_commute
+    # add_amanzi_test(operators_commute operators_commute
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_commute.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
@@ -316,7 +316,6 @@ if (BUILD_TESTS)
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_advection_dfn.cc
     #                                     test/operator_diffusion_dfn.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
@@ -395,11 +394,12 @@ if (BUILD_TESTS)
     #                 KIND unit
     #                 NPROCS 2
     #                 SOURCE test/Main.cc test/operator_remap.cc
+    #                                     test/operator_remap_curved.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # add_amanzi_test(operators_remap_curved operators_remap_curved
+    # add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_remap_curved.cc
+    #                 SOURCE test/Main.cc test/operator_remap_gcl.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # # high-order diffusion test

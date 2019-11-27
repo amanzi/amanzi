@@ -31,7 +31,6 @@ class Analytic00 : public AnalyticBase {
         v_(v)
   {
     K_(0,0) = K;
-
     poly_(0, 0) = 1.0;
     if (order > 0) {
       poly_(1, 0) = 1.0;

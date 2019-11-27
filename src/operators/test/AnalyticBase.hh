@@ -105,7 +105,6 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 // Nonmember helper functions
 //
 
-
 /* ******************************************************************
 * Exterior normal
 ****************************************************************** */
@@ -113,9 +112,9 @@ inline
 AmanziGeometry::Point
 FaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, bool* flag)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  *flag = (cells.size() == 1);
+  AmanziMesh::Entity_ID_View cells;
+  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  *flag = (cells.extent(0) == 1);
 
   int dir;
   AmanziGeometry::Point normal;
@@ -134,7 +133,6 @@ void GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
   memcpy(val_tmp,val,n*sizeof(double)); 
-  //for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum")
     Teuchos::reduceAll(comm,Teuchos::REDUCE_SUM, 
