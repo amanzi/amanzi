@@ -41,14 +41,16 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
   
  protected:
   void InitializeFromPlist_();
+  bool TranspirationPeriod(double time);
 
   Key f_wp_key_;
   Key f_root_key_;
-  Key trans_total_key_;
+  Key potential_trans_key_;
   Key cv_key_;
   Key surf_cv_key_;
   int npfts_;
-
+  double trans_on_date_, trans_off_date_;
+  bool limiter_local_;
   Teuchos::RCP<Function> limiter_;
   
  private:

@@ -8,7 +8,6 @@
 #include "boost/algorithm/string/predicate.hpp"
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 #include "meshed_elevation_evaluator.hh"
 
@@ -48,10 +47,8 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   
   // Note that static casts are safe here because we have
   // already ensured the meshes were MSTK.
-  auto domain_mesh = 
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
-  auto surface_mesh =
-    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
+  auto domain_mesh = S->GetMesh(domain_ss);
+  auto surface_mesh = S->GetMesh(domain);
   
   if (domain_ss.find("column") != std::string::npos) {
     // Column mesh and column surface cell.
@@ -65,7 +62,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, 0);
       
     // elevation.
-    AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
+    AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face, true);
     elev_c[0][0] = x[2];
 
     // Slope is zero by definition
@@ -93,7 +90,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
       domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
       
       // First elevation.
-      AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
+      AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face, true);
       elev_c[0][c] = x[2];
 
       // Now slope.
@@ -133,7 +130,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
           surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
 
       // First elevation.
-      AmanziGeometry::Point x = domain_mesh->cell_centroid(domain_cell);
+      AmanziGeometry::Point x = domain_mesh->cell_centroid(domain_cell, true);
       elev_c[0][c] = x[2];
 
       // Now slope.
@@ -173,7 +170,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
         // Note that a surface face is a surface mesh's face.
         AmanziMesh::Entity_ID domain_face =
             surface_mesh->entity_get_parent(AmanziMesh::FACE, f);
-        AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
+        AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face, true);
 
         elev_f[0][f] = x[2];
       }

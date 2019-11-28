@@ -122,20 +122,28 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
   // calculate evaporation prefactors
   if (vapor_pressure_air > vapor_pressure_ground) { // condensation
     return 0.;
-  } else if (surf.saturation_gas == 0.) { // ponded water present
-    return 0.;
-  } else { // evaporating from soil
+  } else {
+    return EvaporativeResistanceCoef(surf.saturation_gas,
+            surf.porosity, surf.dz, params.Clapp_Horn_b);
+  }
+}
+
+double EvaporativeResistanceCoef(double saturation_gas,
+        double porosity, double dessicated_zone_thickness, double Clapp_Horn_b) {
+  double Rsoil;
+  if (saturation_gas == 0.) {
+    Rsoil = 0.; // ponded water
+  } else {
     // Equation for reduced vapor diffusivity
     // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
-    double vp_diffusion = 0.000022 * (std::pow(surf.porosity,2))
-                          * std::pow((1-(0.0556/surf.porosity)),(2+3*params.Clapp_Horn_b));
-
+    double vp_diffusion = 0.000022 * (std::pow(porosity,2))
+                          * std::pow((1-(0.0556/porosity)),(2+3*Clapp_Horn_b));
     // Sakagucki and Zeng 2009 eqaution (10)
-    double L_Rsoil = std::exp(std::pow(surf.saturation_gas, 5));
-    L_Rsoil = surf.dz * (L_Rsoil -1) * (1/(std::exp(1.)-1));
-    double Rsoil = L_Rsoil/vp_diffusion;
-    return Rsoil;
+    double L_Rsoil = std::exp(std::pow(saturation_gas, 5));
+    L_Rsoil = dessicated_zone_thickness * (L_Rsoil -1) * (1/(std::exp(1.)-1));
+    Rsoil = L_Rsoil/vp_diffusion;
   }
+  return Rsoil;
 }
 
 
@@ -154,21 +162,21 @@ double LatentHeat(double resistance_coef,
                   double vapor_pressure_air,
                   double vapor_pressure_skin,
                   double Apa) {
+  AMANZI_ASSERT(resistance_coef <= 1.);
   return resistance_coef * density_air * latent_heat_fusion * 0.622
       * (vapor_pressure_air - vapor_pressure_skin) / Apa;
 }
 
 double ConductedHeatIfSnow(double ground_temp,
-                           const SnowProperties& snow)
+                           const SnowProperties& snow, const ModelParams& params)
 {
   // Calculate heat conducted to ground, if snow
-  double Ks = -1;
-  if (snow.density > 150) { // frost hoar
-    double snow_hoar_density = 1. / ((0.90/snow.density) + (0.10/150));
-    Ks = 2.9e-6 * std::pow(snow_hoar_density,2);
-  } else {
-    Ks = 2.9e-6 * std::pow(snow.density,2);
+  double density = snow.density;
+  if (density > 150) {
+    // adjust for frost hoar
+    density = 1. / ((0.90/density) + (0.10/150));
   }
+  double Ks = params.thermalK_freshsnow * std::pow(density/params.density_freshsnow, params.thermalK_snow_exp);
   return Ks * (snow.temp - ground_temp) / snow.height;
 }
 
@@ -196,7 +204,7 @@ void UpdateEnergyBalanceWithSnow_Inner(const GroundProperties& surf,
                       params.Apa);
 
   // conducted heat
-  eb.fQc = ConductedHeatIfSnow(surf.temp, snow);
+  eb.fQc = ConductedHeatIfSnow(surf.temp, snow, params);
 
   // balance of energy goes into melting
   eb.fQm = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh - eb.fQc + eb.fQe;
@@ -261,6 +269,7 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 
   double Rsoil = EvaporativeResistanceGround(surf, met, params, vapor_pressure_air, vapor_pressure_skin);
   double coef = 1.0 / (Rsoil + 1.0/(Dhe*Sqig));
+
 
   // NUMERICAL DOWNREGULATION due to difficulty evaporating ice...
   //  coef *= surf.unfrozen_fraction;
