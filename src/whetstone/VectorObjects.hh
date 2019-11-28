@@ -9,8 +9,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operations with vector of objects that admit ring algebra.
-  Avalaible values for template are Polynomial and SpaceTimePolynomial.
+  Vector of objects that admit a ring algebra. Possible values 
+  for the template parameter are Monomial, Polynomial and
+  SpaceTimePolynomial.
 */ 
 
 #ifndef AMANZI_WHETSTONE_VECTOR_OBJECTS_HH_
@@ -33,13 +34,13 @@ template<class T>
 class VectorObjects {
  public:
   VectorObjects() : d_(0) {};
-  VectorObjects(int d, int size) : d_(d) {
-    polys_.resize(size);
-    for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, 0, true);
+  VectorObjects(int d, int m) : d_(d) {
+    polys_.resize(m);
+    for (int i = 0; i < m; ++i) polys_[i].Reshape(d_, 0, true);
   }
-  VectorObjects(int d, int size, int order) : d_(d) {
-    polys_.resize(size);
-    for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, order, true);
+  VectorObjects(int d, int m, int order) : d_(d) {
+    polys_.resize(m);
+    for (int i = 0; i < m; ++i) polys_[i].Reshape(d_, order, true);
   }
   VectorObjects(const T& p) : d_(p.dimension()) {
     polys_.resize(1);
@@ -55,34 +56,34 @@ class VectorObjects {
   }
 
   // minimal set of vector operations
-  int size() const { return polys_.size(); }
-  void resize(int size) { polys_.resize(size); }
+  int NumRows() const { return polys_.size(); }
+  void resize(int m) { polys_.resize(m); }
 
   T& operator[](int i) { return polys_[i]; }
   const T& operator[](int i) const { return polys_[i]; }
 
   // typical operations with polynomials
   void PutScalar(double val) {
-    for (int i = 0; i < size(); ++i) polys_[i].PutScalar(val);
+    for (int i = 0; i < NumRows(); ++i) polys_[i].PutScalar(val);
   }
   double NormInf() const {
     double tmp(0.0);
-    for (int i = 0; i <size(); ++i) tmp = std::max(tmp, polys_[i].NormInf());
+    for (int i = 0; i < NumRows(); ++i) tmp = std::max(tmp, polys_[i].NormInf());
     return tmp;
   }
 
   // ring algebra
   VectorObjects<T>& operator*=(double val) {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] *= val;
+    for (int i = 0; i < NumRows(); ++i) polys_[i] *= val;
     return *this;
   }
 
   VectorObjects<T>& operator+=(const VectorObjects<T>& vp) {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] += vp[i];
+    for (int i = 0; i < NumRows(); ++i) polys_[i] += vp[i];
     return *this;
   }
   VectorObjects<T>& operator-=(const VectorObjects<T>& vp) {
-    for (int i = 0; i < polys_.size(); ++i) polys_[i] -= vp[i];
+    for (int i = 0; i < NumRows(); ++i) polys_[i] -= vp[i];
     return *this;
   }
 
@@ -108,37 +109,37 @@ class VectorObjects {
 
   // iterators require specialization
   VectorObjectsIterator<T> begin() {
-    int order = (polys_.size() > 0) ? polys_[0].order() : 0;
-    auto it = VectorObjectsIterator<T>(d_, polys_.size(), order);
+    int order = (NumRows() > 0) ? polys_[0].order() : 0;
+    auto it = VectorObjectsIterator<T>(d_, NumRows(), order);
     return it.begin();
   }
 
   VectorObjectsIterator<T> end() {
-    int order = (polys_.size() > 0) ? polys_[0].order() : 0;
-    auto it = VectorObjectsIterator<T>(d_, polys_.size(), order);
+    int order = (NumRows() > 0) ? polys_[0].order() : 0;
+    auto it = VectorObjectsIterator<T>(d_, NumRows(), order);
     return it.end();
   }
 
   // change the coordinate system
   void set_origin(const AmanziGeometry::Point& origin) {
-    for (int i = 0; i < size(); ++i) polys_[i].set_origin(origin);
+    for (int i = 0; i < NumRows(); ++i) polys_[i].set_origin(origin);
   }
   void ChangeOrigin(const AmanziGeometry::Point& origin) {
-    for (int i = 0; i < size(); ++i) polys_[i].ChangeOrigin(origin);
+    for (int i = 0; i < NumRows(); ++i) polys_[i].ChangeOrigin(origin);
   }
 
   // typical operations with vector polynomials
   // -- value
   DenseVector Value(const AmanziGeometry::Point& xp) const {
-    int n = polys_.size();
-    DenseVector val(n);
-    for (int i = 0; i < n; ++i) val(i) = polys_[i].Value(xp);
+    int m = NumRows();
+    DenseVector val(m);
+    for (int i = 0; i < m; ++i) val(i) = polys_[i].Value(xp);
     return val;
   }
 
   // dot product v1 * p 
   friend T operator*(const VectorObjects<T>& poly, const AmanziGeometry::Point& p) {
-    AMANZI_ASSERT(poly.size() == p.dim());
+    AMANZI_ASSERT(poly.NumRows() == p.dim());
 
     T tmp(poly[0] * p[0]);
 
@@ -170,20 +171,28 @@ class VectorObjects {
 
   // dot product v1 * v2
   friend T operator*(const VectorObjects<T>& v1, const VectorObjects<T>& v2) {
-    AMANZI_ASSERT(v1.size() == v2.size());
+    AMANZI_ASSERT(v1.NumRows() == v2.NumRows());
 
     T tmp(v1[0] * v2[0]);
 
-    for (int i = 1; i < v1.size(); ++i) {
+    for (int i = 1; i < v1.NumRows(); ++i) {
       tmp += v1[i] * v2[i];
     }
     return tmp;
   }
 
+  // decompositions are limited to d=2 and 3
+  //  3D: q_k = curl(x ^ p_k) + x . p_{k-1}
+  //      q_k = grad(p_{k+1}) + x . p_{k-1}
+  //  2D: q_k =  rot(p_{k+1}) + x ^ p_{k-1}
+  //      q_k = grad(p_{k+1}) + x*. p_{k-1}, x* = (-y, x)
+  void CurlDecomposition(VectorObjects<T>& p1, T& p2);
+  void GradDecomposition(VectorObjects<T>& p1, T& p2) {};
+
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorObjects<T>& poly) {
-    os << "Vector Object (length=" << poly.size() << "):" << std::endl;
-    for (int i = 0; i < poly.size(); ++i) {
+    os << "Vector Object (length=" << poly.NumRows() << "):" << std::endl;
+    for (int i = 0; i < poly.NumRows(); ++i) {
       os << "i=" << i << " " << poly[i];
     }
     return os;

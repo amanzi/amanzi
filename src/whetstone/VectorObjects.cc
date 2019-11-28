@@ -81,7 +81,7 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 Polynomial Divergence(const VectorPolynomial& vp) 
 {
   int d = vp[0].dimension();
-  AMANZI_ASSERT(d == vp.size());
+  AMANZI_ASSERT(d == vp.NumRows());
 
   int order = vp[0].order();
   order = std::max(0, order - 1);

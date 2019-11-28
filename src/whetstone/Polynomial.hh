@@ -116,6 +116,7 @@ class Polynomial : public PolynomialBase {
   void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
                                 const std::vector<AmanziGeometry::Point>& B);
 
+  // access
   // -- one-index access
   double& operator()(int i) { return coefs_(i); }
   const double& operator()(int i) const { return coefs_(i); }

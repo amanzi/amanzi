@@ -259,7 +259,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   int ndof_c(ndof - ndof_f);
 
   // create zero vector polynomial
-  int dim = vf[0].size();
+  int dim = vf[0].NumRows();
   uc.Reshape(d_, dim, d_, order_ - 1, true);
 
   std::vector<const PolynomialBase*> polys(2);

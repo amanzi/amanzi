@@ -318,9 +318,9 @@ double MatrixObjects<T>::NormInf() const
 template<class T>
 MatrixObjects<T> Gradient(const VectorObjects<T>& p)
 {
-  int d = p[0].dimension(), n = p.size();
-  MatrixObjects<T> grad(d, d, n, 0);
-  for (int i = 0; i < n; ++i) {
+  int d = p[0].dimension(), m = p.NumRows();
+  MatrixObjects<T> grad(d, d, m, 0);
+  for (int i = 0; i < m; ++i) {
     auto tmp = Gradient(p[i]);
     for (int k = 0; k < d; ++k) grad(i, k) = tmp[k];
   }

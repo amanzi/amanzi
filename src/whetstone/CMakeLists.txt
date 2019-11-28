@@ -54,7 +54,7 @@ add_amanzi_library(whetstone
                           nlfv.cc 
                           NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
-                          Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
+                          Monomial.cc Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc

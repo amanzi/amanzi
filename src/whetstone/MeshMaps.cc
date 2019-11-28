@@ -177,7 +177,7 @@ void MeshMaps::NansonFormula(
 void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
-  int nvc = vc.size();
+  int nvc = vc.NumRows();
   J.Reshape(d_, nvc, d_, 0, false);
 
   // copy velocity gradients to Jacobian
