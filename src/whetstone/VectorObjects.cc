@@ -76,6 +76,36 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 
 
 /* ******************************************************************
+* Curl
+****************************************************************** */
+VectorPolynomial Curl(const VectorPolynomial& p)
+{
+  int d = p[0].dimension();
+  int m = p.NumRows();
+  AMANZI_ASSERT(d == m);
+
+  // gradient of vector polynomial
+  std::vector<VectorPolynomial> grad(d);
+
+  for (int i = 0; i < d; ++i) { 
+    grad[i] = Gradient(p[i]);
+  }
+
+  // assemble curl
+  int n = (d == 3) ? 3 : 1;
+  VectorPolynomial tmp(d, n);
+  if (d == 2) {
+    tmp[0] = grad[1][0] - grad[0][1];
+  } else {
+    tmp[0] = grad[2][1] - grad[1][2];
+    tmp[1] = grad[0][2] - grad[2][0];
+    tmp[2] = grad[1][0] - grad[0][1];
+  }
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Divergence
 ****************************************************************** */
 Polynomial Divergence(const VectorPolynomial& vp) 
@@ -110,6 +140,28 @@ Polynomial Divergence(const VectorPolynomial& vp)
   }
 
   return div;
+}
+
+
+/* ******************************************************************
+* Cross product
+****************************************************************** */
+VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p2)
+{
+  int d = p1[0].dimension();
+
+  AMANZI_ASSERT(d == 3);
+  AMANZI_ASSERT(p1.NumRows() == d);
+  AMANZI_ASSERT(p2.NumRows() == d);
+  AMANZI_ASSERT(p1[0].origin() == p2[0].origin());
+
+  VectorPolynomial tmp(d, d, 0);
+  tmp[0] = p1[1] * p2[2] - p1[2] * p2[1];
+  tmp[1] = p1[2] * p2[0] - p1[0] * p2[2];
+  tmp[2] = p1[0] * p2[1] - p1[1] * p2[0];
+  tmp.set_origin(p1[0].origin());
+
+  return tmp;
 }
 
 

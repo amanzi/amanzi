@@ -215,3 +215,41 @@ TEST(VECTOR_POLYNOMIAL_ITERATOR) {
   }
 }
 
+
+/* ****************************************************************
+* Test of vector decomposition
+**************************************************************** */
+TEST(VECTOR_POLYNOMIAL_DECOMPOSITON) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "Vector polynomial decomposition..." << std::endl; 
+
+  VectorPolynomial q(3, 3, 3), p1;
+  Polynomial p2;
+
+  for (auto it = q.begin(); it < q.end(); ++it) {
+    int k = it.VectorComponent();
+    int n = it.PolynomialPosition();
+    q[k](n) = n;
+
+    q.CurlDecomposition(p1, p2);
+    // std::cout << q << std::endl; 
+    // std::cout << p1 << p2 << std::endl; 
+
+    // verify 
+    VectorPolynomial x(3, 3, 1);
+    x[0](1) = 1.0;
+    x[1](2) = 1.0;
+    x[2](3) = 1.0;
+
+    auto p4 = x;
+    for (int i = 0; i < 3; ++i) p4[i] *= p2;
+
+    auto p3 = Curl(x ^ p1) + p4;
+    p3 -= q;
+    CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
+  }
+}
+

@@ -212,12 +212,62 @@ typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;
 VectorPolynomial Gradient(const Polynomial& p);
 VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p);
 
+VectorPolynomial Curl(const VectorPolynomial& p);
+
 Polynomial Divergence(const VectorObjects<Polynomial>& vp);
 VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+
+VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p2);
 
 // project gradient of the given polynomial on unit sphere using
 // the Taylor expansion with k terms
 VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+
+
+// Specializations
+
+/* ******************************************************************
+* Decomposition of vector polynomials:
+*   3D: q_k = curl(x ^ p_k) + x . p_{k-1}
+*   2D: q_k =  rot(p_{k+1}) + x ^ p_{k-1}
+****************************************************************** */
+template<>
+inline
+void VectorPolynomial::CurlDecomposition(VectorPolynomial& p1, Polynomial& p2)
+{
+  AMANZI_ASSERT(d_ == 3);
+
+  // reshape output
+  p1 = *this;
+
+  int order(0);
+  for (int k = 0; k < d_; ++k) order = std::max(order, polys_[k].order() - 1);
+  p2.Reshape(d_, order, true);
+  p2.set_origin(p1[0].origin());
+
+  // calculate decomposition for each monomial of each component
+  int idx[3];
+  for (int k = 0; k < d_; ++k) {
+    for (auto it = polys_[k].begin(); it < polys_[k].end(); ++it) {
+      int n = it.PolynomialPosition();
+      const int* index = it.multi_index();
+
+      double a(2.0);
+      for (int i = 0; i < d_; ++i) a += index[i];
+
+      double coef = polys_[k](n);
+      p1[k](n) = -coef / a;
+
+      if (index[k] > 0) {
+        for (int i = 0; i < d_; ++i) idx[i] = index[i];
+        idx[k]--;
+        
+        int l = PolynomialPosition(d_, idx);
+        p2(l) += coef * index[k] / a;
+      }
+    }
+  }
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi
