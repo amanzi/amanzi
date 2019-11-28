@@ -11,11 +11,6 @@ add_subdirectory(generic_evaluators)
 # eos/
 
 register_evaluator_with_factory(
-  HEADERFILE eos/effective_pressure_evaluator_reg.hh
-  LISTNAME   ATS_RELATIONS_REG
-  )
-
-register_evaluator_with_factory(
   HEADERFILE eos/eos_constant_reg.hh
   LISTNAME   ATS_RELATIONS_REG
   )
