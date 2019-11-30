@@ -202,7 +202,7 @@ TEST(VECTOR_POLYNOMIAL_ITERATOR) {
   using namespace Amanzi::WhetStone;
 
   // polynomials in two dimentions
-  std::cout << "Vector polynomial iterator..." << std::endl; 
+  std::cout << "\nVector polynomial iterator..." << std::endl; 
   VectorPolynomial p(2, 2, 3);
 
   int i(0);
@@ -217,14 +217,49 @@ TEST(VECTOR_POLYNOMIAL_ITERATOR) {
 
 
 /* ****************************************************************
-* Test of vector decomposition
+* Test of vector decomposition in 2D
 **************************************************************** */
-TEST(VECTOR_POLYNOMIAL_DECOMPOSITON) {
+TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_2D) {
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
   // polynomials in two dimentions
-  std::cout << "Vector polynomial decomposition..." << std::endl; 
+  std::cout << "\nVector polynomial decomposition (2D)..." << std::endl; 
+
+  VectorPolynomial q(2, 2, 2);
+  Polynomial p1, p2;
+
+  for (auto it = q.begin(); it < q.end(); ++it) {
+    int k = it.VectorComponent();
+    int n = it.PolynomialPosition();
+    q[k](n) = n + 1;
+
+    q.VectorDecomposition2DRot(p1, p2);
+
+    // verify 
+    VectorPolynomial x(2, 2, 1);
+    x[0](1) = 1.0;
+    x[1](2) = 1.0;
+
+    auto p4 = x;
+    for (int i = 0; i < 2; ++i) p4[i] *= p2;
+
+    auto p3 = Rot2D(p1) + p4;
+    p3 -= q;
+    CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
+  }
+}
+
+
+/* ****************************************************************
+* Test of vector decomposition in 3D
+**************************************************************** */
+TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "\nVector polynomial decomposition (3D)..." << std::endl; 
 
   VectorPolynomial q(3, 3, 3), p1;
   Polynomial p2;
@@ -232,11 +267,9 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON) {
   for (auto it = q.begin(); it < q.end(); ++it) {
     int k = it.VectorComponent();
     int n = it.PolynomialPosition();
-    q[k](n) = n;
+    q[k](n) = n + 1;
 
-    q.CurlDecomposition(p1, p2);
-    // std::cout << q << std::endl; 
-    // std::cout << p1 << p2 << std::endl; 
+    q.VectorDecomposition3DCurl(p1, p2);
 
     // verify 
     VectorPolynomial x(3, 3, 1);
@@ -247,7 +280,7 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON) {
     auto p4 = x;
     for (int i = 0; i < 3; ++i) p4[i] *= p2;
 
-    auto p3 = Curl(x ^ p1) + p4;
+    auto p3 = Curl3D(p1 ^ x) + p4;
     p3 -= q;
     CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
   }

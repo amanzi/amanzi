@@ -76,15 +76,15 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 
 
 /* ******************************************************************
-* Curl
+* Curl in 3D: vector function -> vector function
 ****************************************************************** */
-VectorPolynomial Curl(const VectorPolynomial& p)
+VectorPolynomial Curl3D(const VectorPolynomial& p)
 {
   int d = p[0].dimension();
   int m = p.NumRows();
-  AMANZI_ASSERT(d == m);
+  AMANZI_ASSERT(d == m && d == 3);
 
-  // gradient of vector polynomial
+  // gradient of vector polynomial: poor efficiency FIXME
   std::vector<VectorPolynomial> grad(d);
 
   for (int i = 0; i < d; ++i) { 
@@ -92,15 +92,53 @@ VectorPolynomial Curl(const VectorPolynomial& p)
   }
 
   // assemble curl
-  int n = (d == 3) ? 3 : 1;
-  VectorPolynomial tmp(d, n);
-  if (d == 2) {
-    tmp[0] = grad[1][0] - grad[0][1];
-  } else {
-    tmp[0] = grad[2][1] - grad[1][2];
-    tmp[1] = grad[0][2] - grad[2][0];
-    tmp[2] = grad[1][0] - grad[0][1];
+  VectorPolynomial tmp(d, d);
+  tmp[0] = grad[2][1] - grad[1][2];
+  tmp[1] = grad[0][2] - grad[2][0];
+  tmp[2] = grad[1][0] - grad[0][1];
+
+  return tmp;
+}
+
+
+/* ******************************************************************
+* Curl in 2D: vector function -> scalar function
+****************************************************************** */
+Polynomial Curl2D(const VectorPolynomial& p)
+{
+  int d = p[0].dimension();
+  int m = p.NumRows();
+  AMANZI_ASSERT(d == m && d == 2);
+
+  // gradient of vector polynomial: poor efficiency FIXME
+  std::vector<VectorPolynomial> grad(d);
+  for (int i = 0; i < d; ++i) { 
+    grad[i] = Gradient(p[i]);
   }
+
+  // assemble curl
+  Polynomial tmp(d, 0);
+  tmp = grad[1][0] - grad[0][1];
+
+  return tmp;
+}
+
+
+/* ******************************************************************
+* Rot in 2D: scalar function -> vector function
+****************************************************************** */
+VectorPolynomial Rot2D(const Polynomial& p)
+{
+  int d = p.dimension();
+  AMANZI_ASSERT(d == 2);
+
+  auto grad = Gradient(p);
+
+  VectorPolynomial tmp(d, d, 0);
+  tmp[0] = grad[1];
+  tmp[1] = grad[0];
+  tmp[1] *= -1.0;
+
   return tmp;
 }
 

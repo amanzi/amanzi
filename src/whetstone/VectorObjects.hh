@@ -181,13 +181,17 @@ class VectorObjects {
     return tmp;
   }
 
-  // decompositions are limited to d=2 and 3
-  //  3D: q_k = curl(x ^ p_k) + x . p_{k-1}
-  //      q_k = grad(p_{k+1}) + x . p_{k-1}
-  //  2D: q_k =  rot(p_{k+1}) + x ^ p_{k-1}
-  //      q_k = grad(p_{k+1}) + x*. p_{k-1}, x* = (-y, x)
-  void CurlDecomposition(VectorObjects<T>& p1, T& p2);
-  void GradDecomposition(VectorObjects<T>& p1, T& p2) {};
+  // vector decompositions
+  // -- curl-based
+  //  3D: q_k = curl(p_k ^ x) + x . p_{k-1}
+  //  2D: q_k =  rot(p_{k+1}) + x . p_{k-1}
+  void VectorDecomposition3DCurl(VectorObjects<T>& p1, T& p2);
+  void VectorDecomposition2DRot(T& p1, T& p2);
+  // -- grad based
+  //  3D: q_k = grad(p_{k+1}) + x ^ p_{k-1}
+  //  2D: q_k = grad(p_{k+1}) + x*. p_{k-1}, x* = (-y, x)
+  void VectorDecomposition3DGrad(T& p1, VectorObjects<T>& p2) {};
+  void VectorDecomposition2DGrad(T& p1, T& p2) {};
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorObjects<T>& poly) {
@@ -209,14 +213,17 @@ typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;
 
 
 // non-member functions
+// -- differential operators
 VectorPolynomial Gradient(const Polynomial& p);
 VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p);
 
-VectorPolynomial Curl(const VectorPolynomial& p);
+VectorPolynomial Curl3D(const VectorPolynomial& p);
+Polynomial Curl2D(const VectorPolynomial& p);
+VectorPolynomial Rot2D(const Polynomial& p);
 
 Polynomial Divergence(const VectorObjects<Polynomial>& vp);
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 
+// -- algebra
 VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p2);
 
 // project gradient of the given polynomial on unit sphere using
@@ -227,42 +234,91 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 // Specializations
 
 /* ******************************************************************
-* Decomposition of vector polynomials:
-*   3D: q_k = curl(x ^ p_k) + x . p_{k-1}
-*   2D: q_k =  rot(p_{k+1}) + x ^ p_{k-1}
+* 3D vector decomposition: q_k = curl(p_k ^ x) + x . p_{k-1}
 ****************************************************************** */
 template<>
 inline
-void VectorPolynomial::CurlDecomposition(VectorPolynomial& p1, Polynomial& p2)
+void VectorPolynomial::VectorDecomposition3DCurl(VectorPolynomial& p1, Polynomial& p2)
 {
-  AMANZI_ASSERT(d_ == 3);
-
   // reshape output
   p1 = *this;
 
+  int d = p1[0].dimension();
   int order(0);
-  for (int k = 0; k < d_; ++k) order = std::max(order, polys_[k].order() - 1);
-  p2.Reshape(d_, order, true);
+  for (int k = 0; k < d; ++k) order = std::max(order, p1[k].order() - 1);
+  p2.Reshape(d, order, true);
   p2.set_origin(p1[0].origin());
 
   // calculate decomposition for each monomial of each component
   int idx[3];
-  for (int k = 0; k < d_; ++k) {
-    for (auto it = polys_[k].begin(); it < polys_[k].end(); ++it) {
+  for (int k = 0; k < d; ++k) {
+    for (auto it = p1[k].begin(); it < p1[k].end(); ++it) {
       int n = it.PolynomialPosition();
       const int* index = it.multi_index();
 
       double a(2.0);
-      for (int i = 0; i < d_; ++i) a += index[i];
+      for (int i = 0; i < d; ++i) a += index[i];
 
-      double coef = polys_[k](n);
-      p1[k](n) = -coef / a;
+      double coef = p1[k](n);
+      p1[k](n) = coef / a;
 
       if (index[k] > 0) {
-        for (int i = 0; i < d_; ++i) idx[i] = index[i];
+        for (int i = 0; i < d; ++i) idx[i] = index[i];
         idx[k]--;
         
-        int l = PolynomialPosition(d_, idx);
+        int l = PolynomialPosition(d, idx);
+        p2(l) += coef * index[k] / a;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* 2D vector decomposition: q_k = tor(p_{k+1}) + x . p_{k-1}
+****************************************************************** */
+template<>
+inline
+void VectorPolynomial::VectorDecomposition2DRot(Polynomial& p1, Polynomial& p2)
+{
+  // reshape output
+  int d = polys_[0].dimension();
+  int order(0);
+  for (int k = 0; k < d; ++k) order = std::max(order, polys_[k].order() - 1);
+
+  p1.Reshape(d, order + 2, true);
+  p1.set_origin(polys_[0].origin());
+
+  p2.Reshape(d, order, true);
+  p2.set_origin(polys_[0].origin());
+
+  // calculate decomposition for each monomial of each component
+  int idx[3];
+  for (int k = 0; k < d; ++k) {
+    for (auto it = polys_[k].begin(); it < polys_[k].end(); ++it) {
+      int n = it.PolynomialPosition();
+      const int* index = it.multi_index();
+
+      double a(1.0);
+      for (int i = 0; i < d; ++i) {
+        a += index[i];
+        idx[i] = index[i];
+      }
+
+      idx[1 - k]++;
+      int l = PolynomialPosition(d, idx);
+
+      double coef = polys_[k](n);
+      if (k == 0)
+        p1(l) += coef / a;
+      else
+        p1(l) -= coef / a;
+      
+      if (index[k] > 0) {
+        idx[1 - k]--;
+        idx[k]--;
+        
+        int l = PolynomialPosition(d, idx);
         p2(l) += coef * index[k] / a;
       }
     }
