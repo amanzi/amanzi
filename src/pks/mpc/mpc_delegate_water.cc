@@ -348,7 +348,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
     Key key_ss = Keys::getKey(domain_ss_,"pressure");
 
 
-    Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
+    Teuchos::RCP<const CompositeVector> domain_pold = S_inter_->GetFieldData(key_ss);
     // const Epetra_MultiVector& domain_pold_f =
     //     *S_->GetFieldData(key_ss)->ViewComponent("face",false);
 
