@@ -96,13 +96,24 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
+  std::string face_entity;
+  if (Pu->SubVector(i_domain_)->Data()->HasComponent("face")){
+    face_entity = "face";
+  }else if (Pu->SubVector(i_domain_)->Data()->HasComponent("boundary_face")){
+    face_entity = "boundary_face";
+  }else{
+    Errors::Message message("Subsurface vector does not have face component.");
+    Exceptions::amanzi_throw(message);
+  }
+  
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
       u->SubVector(i_surf_)->Data()->Mesh();
   int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(i_domain_)->Data();
   Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
-  Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
+  Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell", false);
+  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent(face_entity, false);
 
   // Approach 2
   double damp = 1.;
@@ -122,7 +133,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
     }
 
     double proc_damp = damp;
-    domain_Pu_c.Comm().MinAll(&proc_damp, &damp, 1);
+    domain_Pu_f.Comm().MinAll(&proc_damp, &damp, 1);
     if (damp < 1.0) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
