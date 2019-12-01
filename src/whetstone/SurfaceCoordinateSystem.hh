@@ -46,7 +46,6 @@ class SurfaceCoordinateSystem {
   // -- matrix of the transformation
   DenseMatrix InverseTransformation() const;
   
-
   // const access
   const AmanziGeometry::Point& origin() const { return origin_; }
   const AmanziGeometry::Point& normal() const { return normal_; }

@@ -32,6 +32,7 @@
 
 #include "Basis_Regularized.hh"
 #include "GrammMatrix.hh"
+#include "VectorObjectsUtils.hh"
 #include "VEM_NedelecSerendipityType2.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
@@ -93,6 +94,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
+  std::vector<const PolynomialBase*> polys(2);
+
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
   Polynomial pc(d_, order_), pf(d_ - 1, order_), pe(d_ - 2, order_);
 
@@ -107,9 +110,58 @@ int VEM_NedelecSerendipityType2::L2consistency(
   it0.begin();
   it1.end();
 
-  // H-curl spaces on faces
-  std::vector<WhetStone::DenseMatrix> vNf, vMG;
+  // fixed vector
+  VectorPolynomial xyz(d_, d_, 1);
+  for (int i = 0; i < d_; ++i) xyz[i](i + 1) = 1.0;
+
+  // Rows of matrix N are simply tangents. Since N goes to the Gramm-Schmidt 
+  // orthogonalizetion procedure, we drop scaling with tensorial factor K.
+  N.Reshape(ndof_S, ndc * d_);
+
+  for (auto it = it0; it < it1; ++it) { 
+    int k = it.VectorComponent();
+    int col = it.VectorPolynomialPosition();
+
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+    Polynomial cmono(d_, index, factor);
+    cmono.set_origin(xc);  
+
+    int row(0);
+    for (int i = 0; i < nedges; i++) {
+      int e = edges[i];
+      const auto& xe = mesh_->edge_centroid(e);
+      const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+      double length = mesh_->edge_length(e);
+      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+
+      // order 0 scheme
+      // for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / length;
+
+      for (auto it = pe.begin(); it < pe.end(); ++it) {
+        const int* index = it.multi_index();
+        Polynomial emono(d_ - 2, index, tau[k]);
+        emono.InverseChangeCoordinates(xe, tau_edge);  
+
+        polys[0] = &cmono;
+        polys[1] = &emono;
+
+        N(row, col) = numi.IntegratePolynomialsEdge(e, polys) / length;
+        row++;
+      }
+    }
+  }
+
+  // ----------------------
+  // pre-compute projectors
+  // ----------------------
+  // -- L2 projectors on faces
+  std::vector<WhetStone::DenseMatrix> vL2f;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
+
+  Tensor Idf(d_ - 1, 2), Idc(d_, 2);
+  Idf.MakeDiagonal(1.0);
+  Idc.MakeDiagonal(1.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -119,84 +171,79 @@ int VEM_NedelecSerendipityType2::L2consistency(
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
 
-    DenseMatrix Nf, Mf, MG;
+    DenseMatrix Nf, NfT, Mf, MG;
     L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
 
-    vNf.push_back(Nf);
-    vMG.push_back(MG);
     vcoordsys.push_back(coordsys);
-  }
 
-  // contributions of least square projectors on faces
-  Tensor Id(d_ - 1, 2);
-  Id.MakeDiagonal(1.0);
-
-  N.Reshape(ndof_S, ndc * d_);
-  N.PutScalar(0.0);
-
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-    double area = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    const auto& Nf = vNf[n];
-    DenseMatrix NfT(Nf.NumCols(), Nf.NumRows());
     NfT.Transpose(Nf);
-
     auto NN = NfT * Nf;
     NN.InverseMoorePenrose();
+    auto L2f = (MG ^ Idf) * NN * NfT;
+    vL2f.push_back(L2f);
+  }
 
-    // matrix Nf * NN represents the least square projector
-    auto P0 = Nf * NN * (vMG[n] ^ Id);
+  // -- L2-projector in cell
+  DenseMatrix MG(ndc, ndc), NT, L2c;
+  GrammMatrix(pc, integrals_, basis, MG);
 
-    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
-    int nfedges = fedges.size();
+  NT.Transpose(N);
+  auto NN = NT * N;
+  NN.InverseMoorePenrose();
+  L2c = (MG ^ Idc) * NN * NT;
 
-    // local face -> local cell map
-    std::vector<int> map;
-    for (int i = 0; i < nfedges; ++i) {
-      int e = fedges[i];
-      int pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
-      for (int l = 0; l < nde; ++l) map.push_back(nde * pos + l); 
-    }
+  // contributions of least square projectors on faces
+  DenseMatrix R(ndof_S, ndc * d_);
+  R.PutScalar(0.0);
 
-    // integral over face requires vector of polynomial coefficients of pc
-    WhetStone::DenseVector v(P0.NumCols()), p0v(P0.NumRows());
-    auto& tau = *vcoordsys[n]->tau();
+  for (auto it = it0; it < it1; ++it) {
+    int k = it.VectorComponent();
+    int m = it.PolynomialPosition();
 
-    for (auto it = it0; it < it1; ++it) {
-      int k = it.VectorComponent();
-      int m = it.PolynomialPosition();
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+    Monomial q(d_, index, factor);
+    q.set_origin(xc);
 
-      const int* index = it.multi_index();
-      double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-      Polynomial qe(d_, index, factor);
-      qe.set_origin(xc);
-      qe.ChangeCoordinates(xf, tau);
+    Polynomial cmono(q);
 
-      int s(0);
-      /*
-      for (int i = 0; i < d_ - 1; ++i) {
-        Polynomial q1(d_, 1);
-        for (int l = 0; l < d_; ++l) {
-          q1(l + 1) = tau[i][l] * normal[k] - tau[i][k] * normal[l];
-        }
-        q1.set_origin(xc);
-        q1.ChangeCoordinates(xf, tau);
+    // vector decomposition of vector (0, q, 0) with q at k-th position
+    VectorPolynomial p1;
+    Polynomial p2;
+    VectorDecomposition3DCurl(q, k, p1, p2);
 
-        q1 *= qe;
-      */
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+      int nfedges = fedges.size();
+
+      // local face -> local cell map
+      std::vector<int> map;
+      for (int i = 0; i < nfedges; ++i) {
+        int e = fedges[i];
+        int pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
+        for (int l = 0; l < nde; ++l) map.push_back(nde * pos + l); 
+      }
+
+      // integral over face requires vector of polynomial coefficients of pc
+      WhetStone::DenseVector v(vL2f[n].NumRows()), p0v(vL2f[n].NumCols());
+      auto& tau = *vcoordsys[n]->tau();
+
+      cmono.ChangeCoordinates(xf, tau);
 
       AmanziGeometry::Point p(d_);
       p[k] = 1.0 / area;
       auto tmp = vcoordsys[n]->Project(((xf - xc) ^ p) ^ normal, false);
 
       for (int l = 0; l < d_ - 1; ++l) v(l) = tmp[l];
-      P0.Multiply(v, p0v, false);
+      vL2f[n].Multiply(v, p0v, true);
 
       for (int i = 0; i < p0v.NumRows(); ++i) {
-        N(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
+        R(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
       }
     }
   }
@@ -208,43 +255,14 @@ int VEM_NedelecSerendipityType2::L2consistency(
   Kinv.Inverse();
 
   for (int i = 0; i < nedges; i++) {
-    for (int k = 0; k < d_; ++k) v1[k] = N(i, k);
+    for (int k = 0; k < d_; ++k) v1[k] = R(i, k);
     v2 = Kinv * v1;
 
     for (int j = i; j < nedges; j++) {
-      for (int k = 0; k < d_; ++k) v3[k] = N(j, k);
+      for (int k = 0; k < d_; ++k) v3[k] = R(j, k);
       Mc(i, j) = (v2 * v3) / volume;
     }
   }
-
-  // Rows of matrix N are simply tangents. Since N goes to the Gramm-Schmidt 
-  // orthogonalizetion procedure, we drop scaling with tensorial factor K.
-  int row(0);
-  for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
-    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-    double len = mesh_->edge_length(e);
-
-    for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / len;
-  }
-
-  // create Gramm-Schmidt for serial and vector cases following the order of dofs
-  /*
-  DenseMatrix M1(nd, nd);
-  GrammMatrix(poly, integrals_, basis, M1);
-
-  Tensor Kinv(d_, 2);
-  if (K.rank() == 2) Kinv = K;
-  else Kinv += K(0, 0);
-  Kinv.Inverse();
-
-  auto M3 = M1 ^ Kinv;
-
-  // Integrate least-square polynomial
-  DenseMatrix P0T(P0.NumCols(), P0.NumRows());
-  P0T.Transpose(P0);
-  Mc = P0 * M3 * P0T;
-  */
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

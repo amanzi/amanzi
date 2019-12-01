@@ -47,7 +47,7 @@ void SurfaceCoordinateSystem::Init()
 
 
 /* ******************************************************************
-* Initialization of local coordinate system
+* Project a vector on manifold.
 ****************************************************************** */
 AmanziGeometry::Point SurfaceCoordinateSystem::Project(
    const AmanziGeometry::Point& x, bool flag) const

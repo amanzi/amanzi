@@ -54,7 +54,7 @@ add_amanzi_library(whetstone
                           nlfv.cc 
                           NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
-                          Monomial.cc Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
+                          Monomial.cc Polynomial.cc SpaceTimePolynomial.cc VectorObjectsUtils.cc 
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc
@@ -89,7 +89,8 @@ add_amanzi_library(whetstone
                            PolynomialIterator.hh VectorObjectsIterator.hh 
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
-                           VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
+                           VectorObjects.hh MatrixObjects.hh VectorObjectsUtils.hh
+                           PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh

@@ -9,14 +9,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Partial specialization of operations with vector of polynomials.
+  Miscalleneous tools for working with vector objects.
 */ 
 
-#include <vector>
-
-#include "Polynomial.hh"
-#include "SpaceTimePolynomial.hh"
+#include "Monomial.hh"
 #include "VectorObjects.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -198,6 +196,57 @@ VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p
   tmp[1] = p1[2] * p2[0] - p1[0] * p2[2];
   tmp[2] = p1[0] * p2[1] - p1[1] * p2[0];
   tmp.set_origin(p1[0].origin());
+
+  return tmp;
+}
+
+
+/* ******************************************************************
+* Vector is created by setting one component to *this.
+*   3D: q_k = curl(p_k ^ x) + x . p_{k-1}
+****************************************************************** */
+void VectorDecomposition3DCurl(const Monomial& q, int component,
+                               VectorPolynomial& p1, Polynomial& p2)
+{
+  int d = q.dimension();
+  const int* index = q.multi_index();
+
+  double a(2.0);
+  for (int i = 0; i < d; ++i) a += index[i];
+
+  p1.Reshape(d, d, 0, true);
+  p1.set_origin(q.origin());
+
+  double coef = q.coefs()(0);
+  p1[component] = Polynomial(d, index, coef / a);
+
+  int idx[3];
+  if (index[component] > 0) {
+    for (int i = 0; i < d; ++i) idx[i] = index[i];
+    idx[component]--;
+
+    p2 = Polynomial(d, idx, coef * index[component] / a);
+    p2.set_origin(q.origin());
+  } else {
+    p2.Reshape(d, 0, true);
+  }
+}
+
+
+/* ******************************************************************
+* Project a vector on manifold.
+****************************************************************** */
+VectorPolynomial ProjectVectorPolynomialOnManifold(
+   const VectorPolynomial& vpoly, const AmanziGeometry::Point& x0,
+   const std::vector<AmanziGeometry::Point>& tau)
+{
+  int d = tau.size();
+  VectorPolynomial tmp(d, d, 0);    
+
+  for (int i = 0; i < d; ++i) {
+    tmp[i] = vpoly * tau[i];
+    tmp[i].ChangeCoordinates(x0, tau);
+  }
 
   return tmp;
 }

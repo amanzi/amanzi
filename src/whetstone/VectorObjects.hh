@@ -10,8 +10,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Vector of objects that admit a ring algebra. Possible values 
-  for the template parameter are Monomial, Polynomial and
-  SpaceTimePolynomial.
+  for the template parameter are Polynomial and SpaceTimePolynomial.
 */ 
 
 #ifndef AMANZI_WHETSTONE_VECTOR_OBJECTS_HH_
