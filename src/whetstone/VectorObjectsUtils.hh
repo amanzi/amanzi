@@ -32,13 +32,18 @@ VectorPolynomial Rot2D(const Polynomial& p);
 
 Polynomial Divergence(const VectorObjects<Polynomial>& vp);
 
-// algebra
-VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p2);
-
 // vector decompositions
 // -- q_k = curl(p_k ^ x) + x . p_{k-1}
 void VectorDecomposition3DCurl(const Monomial& q, int component,
                                VectorPolynomial& p1, Polynomial& p2);
+// -- q_k = rot(p_{k+1}) + x . p_{k-1}
+void VectorDecomposition2DRot(const VectorPolynomial& q,
+                              Polynomial& p1, Polynomial& p2);
+
+//  3D: q_k = grad(p_{k+1}) + x ^ p_{k-1}
+//  2D: q_k = grad(p_{k+1}) + x*. p_{k-1}, x* = (-y, x)
+// void VectorDecomposition3DGrad(T& p1, VectorObjects<T>& p2) {};
+// void VectorDecomposition2DGrad(T& p1, T& p2) {};
 
 // projector
 VectorPolynomial ProjectVectorPolynomialOnManifold(

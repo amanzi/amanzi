@@ -36,6 +36,7 @@
 #include "PolynomialOnMesh.hh"
 #include "SurfaceCoordinateSystem.hh"
 #include "Tensor.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -291,7 +292,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
 
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
-      VectorPolynomial Kgrad = K * grad;
+      auto Kgrad = K * grad;
       Polynomial tmp = Divergence(Kgrad);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {

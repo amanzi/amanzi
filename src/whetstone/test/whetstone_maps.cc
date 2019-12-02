@@ -68,7 +68,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
-  VectorPolynomial det;
+  Polynomial det;
   VectorPolynomial uc;
   MatrixPolynomial J;
 
@@ -98,7 +98,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
       J(1, 1)(0) += 1.0;
       maps->Determinant(J, det);
 
-      double tmp = numi->IntegratePolynomialCell(cell, det[0]);
+      double tmp = numi->IntegratePolynomialCell(cell, det);
       double err = tmp - volume;
       fac /= (k + 1);
       CHECK(fabs(err) < fac);
@@ -228,7 +228,7 @@ TEST(DG_MAP_GCL) {
   }
 
   // left-hand side of GCL, 2nd-order FD is exact
-  VectorPolynomial det0, det1, det2;
+  Polynomial det0, det1, det2;
   MatrixPolynomial J, Jt, C;
 
   maps->Jacobian(u, J);
@@ -264,8 +264,7 @@ TEST(DG_MAP_GCL) {
   for (int i = 0; i < 2; ++i) {
     v[0] = C(i, 0);
     v[1] = C(i, 1);
-    u = Divergence(v);
-    err = u.NormInf();
+    err = Divergence(v).NormInf();
     std::cout << "Piola compatibility condition error=" << err << std::endl;
   }
 }

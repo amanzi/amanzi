@@ -17,9 +17,10 @@
 #include "UnitTest++.h"
 
 // Amanzi::WhetStone
+#include "Monomial.hh"
 #include "Polynomial.hh"
 #include "SpaceTimePolynomial.hh"
-#include "VectorObjects.hh"
+#include "VectorObjectsUtils.hh"
 
 
 /* ****************************************************************
@@ -234,7 +235,7 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_2D) {
     int n = it.PolynomialPosition();
     q[k](n) = n + 1;
 
-    q.VectorDecomposition2DRot(p1, p2);
+    VectorDecomposition2DRot(q, p1, p2);
 
     // verify 
     VectorPolynomial x(2, 2, 1);
@@ -267,9 +268,10 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
   for (auto it = q.begin(); it < q.end(); ++it) {
     int k = it.VectorComponent();
     int n = it.PolynomialPosition();
-    q[k](n) = n + 1;
+    Monomial mono(3, it.multi_index(), n + 1);
+    mono.set_origin(AmanziGeometry::Point(3));
 
-    q.VectorDecomposition3DCurl(p1, p2);
+    VectorDecomposition3DCurl(mono, k, p1, p2);
 
     // verify 
     VectorPolynomial x(3, 3, 1);
@@ -281,7 +283,7 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
     for (int i = 0; i < 3; ++i) p4[i] *= p2;
 
     auto p3 = Curl3D(p1 ^ x) + p4;
-    p3 -= q;
+    p3[k] -= Polynomial(mono);
     CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
   }
 }

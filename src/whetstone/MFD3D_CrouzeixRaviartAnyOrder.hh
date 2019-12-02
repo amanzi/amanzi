@@ -31,6 +31,7 @@
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

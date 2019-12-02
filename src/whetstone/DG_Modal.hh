@@ -35,7 +35,7 @@
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
-#include "VectorObjects.hh"
+#include "VectorObjectsUtils.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneFunction.hh"
 
@@ -152,7 +152,6 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
   // integrate traces of polynomials on face f
   double coef00, coef01, coef10, coef11;
   Polynomial p0, p1, q0, q1;
-  VectorPolynomial pgrad;
   std::vector<const PolynomialBase*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
@@ -162,7 +161,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    pgrad = Gradient(p0);
+    auto pgrad = Gradient(p0);
     p0 = pgrad * conormal1;
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
@@ -182,7 +181,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
         Polynomial p1(d_, idx0, 1.0);
         p1.set_origin(mesh_->cell_centroid(c2));
 
-        pgrad = Gradient(p1);
+        auto pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
         Polynomial q1(d_, idx1, 1.0);

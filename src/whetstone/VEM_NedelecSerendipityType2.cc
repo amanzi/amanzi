@@ -113,6 +113,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   // fixed vector
   VectorPolynomial xyz(d_, d_, 1);
   for (int i = 0; i < d_; ++i) xyz[i](i + 1) = 1.0;
+  xyz.set_origin(xc);
 
   // Rows of matrix N are simply tangents. Since N goes to the Gramm-Schmidt 
   // orthogonalizetion procedure, we drop scaling with tensorial factor K.
@@ -230,20 +231,18 @@ int VEM_NedelecSerendipityType2::L2consistency(
       }
 
       // integral over face requires vector of polynomial coefficients of pc
-      WhetStone::DenseVector v(vL2f[n].NumRows()), p0v(vL2f[n].NumCols());
+      WhetStone::DenseVector p0v(vL2f[n].NumCols());
       auto& tau = *vcoordsys[n]->tau();
-
       cmono.ChangeCoordinates(xf, tau);
 
-      AmanziGeometry::Point p(d_);
-      p[k] = 1.0 / area;
-      auto tmp = vcoordsys[n]->Project(((xf - xc) ^ p) ^ normal, false);
+      VectorPolynomial aaa = p1 * (xyz * normal) - xyz * (p1 * normal);
+      auto v = ProjectVectorPolynomialOnManifold(aaa, xf, *vcoordsys[n]->tau()).Value(AmanziGeometry::Point(0.0, 0.0));
+      v /= area;
 
-      for (int l = 0; l < d_ - 1; ++l) v(l) = tmp[l];
       vL2f[n].Multiply(v, p0v, true);
 
       for (int i = 0; i < p0v.NumRows(); ++i) {
-        R(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
+        R(map[i], d_ * m + k) += p0v(i) * fdirs[n];
       }
     }
   }

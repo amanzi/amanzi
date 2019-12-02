@@ -180,28 +180,6 @@ Polynomial Divergence(const VectorPolynomial& vp)
 
 
 /* ******************************************************************
-* Cross product
-****************************************************************** */
-VectorPolynomial operator^(const VectorPolynomial& p1, const VectorPolynomial& p2)
-{
-  int d = p1[0].dimension();
-
-  AMANZI_ASSERT(d == 3);
-  AMANZI_ASSERT(p1.NumRows() == d);
-  AMANZI_ASSERT(p2.NumRows() == d);
-  AMANZI_ASSERT(p1[0].origin() == p2[0].origin());
-
-  VectorPolynomial tmp(d, d, 0);
-  tmp[0] = p1[1] * p2[2] - p1[2] * p2[1];
-  tmp[1] = p1[2] * p2[0] - p1[0] * p2[2];
-  tmp[2] = p1[0] * p2[1] - p1[1] * p2[0];
-  tmp.set_origin(p1[0].origin());
-
-  return tmp;
-}
-
-
-/* ******************************************************************
 * Vector is created by setting one component to *this.
 *   3D: q_k = curl(p_k ^ x) + x . p_{k-1}
 ****************************************************************** */
@@ -214,21 +192,70 @@ void VectorDecomposition3DCurl(const Monomial& q, int component,
   double a(2.0);
   for (int i = 0; i < d; ++i) a += index[i];
 
-  p1.Reshape(d, d, 0, true);
-  p1.set_origin(q.origin());
-
   double coef = q.coefs()(0);
+  p1.Reshape(d, d, 0, true);
   p1[component] = Polynomial(d, index, coef / a);
+  p1.set_origin(q.origin());
 
   int idx[3];
   if (index[component] > 0) {
     for (int i = 0; i < d; ++i) idx[i] = index[i];
     idx[component]--;
-
     p2 = Polynomial(d, idx, coef * index[component] / a);
-    p2.set_origin(q.origin());
   } else {
     p2.Reshape(d, 0, true);
+  }
+  p2.set_origin(q.origin());
+}
+
+
+/* ******************************************************************
+* 2D vector decomposition: q_k = tor(p_{k+1}) + x . p_{k-1}
+****************************************************************** */
+void VectorDecomposition2DRot(
+    const VectorPolynomial& q, Polynomial& p1, Polynomial& p2)
+{
+  // reshape output
+  int d = q[0].dimension();
+  int order(0);
+  for (int k = 0; k < d; ++k) order = std::max(order, q[k].order() - 1);
+
+  p1.Reshape(d, order + 2, true);
+  p1.set_origin(q[0].origin());
+
+  p2.Reshape(d, order, true);
+  p2.set_origin(q[0].origin());
+
+  // calculate decomposition for each monomial of each component
+  int idx[3];
+  for (int k = 0; k < d; ++k) {
+    for (auto it = q[k].begin(); it < q[k].end(); ++it) {
+      int n = it.PolynomialPosition();
+      const int* index = it.multi_index();
+
+      double a(1.0);
+      for (int i = 0; i < d; ++i) {
+        a += index[i];
+        idx[i] = index[i];
+      }
+
+      idx[1 - k]++;
+      int l = PolynomialPosition(d, idx);
+
+      double coef = q[k](n);
+      if (k == 0)
+        p1(l) += coef / a;
+      else
+        p1(l) -= coef / a;
+      
+      if (index[k] > 0) {
+        idx[1 - k]--;
+        idx[k]--;
+        
+        int l = PolynomialPosition(d, idx);
+        p2(l) += coef * index[k] / a;
+      }
+    }
   }
 }
 

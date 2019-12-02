@@ -21,6 +21,7 @@
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "SurfaceCoordinateSystem.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

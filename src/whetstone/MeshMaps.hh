@@ -71,8 +71,8 @@ class MeshMaps {
   void Cofactors(const Matrix& J, Matrix& C) const;
 
   // -- determinant
-  template<typename Matrix, typename Vector>
-  void Determinant(const Matrix& J, Vector& det) const;
+  template<typename Matrix, typename Scalar>
+  void Determinant(const Matrix& J, Scalar& det) const;
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1

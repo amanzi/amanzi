@@ -22,6 +22,7 @@
 #include "FunctionUpwind.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
+#include "VectorObjectsUtils.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -865,7 +866,6 @@ int DG_Modal::FaceMatrixJump(
   // integrate traces of polynomials on face f
   double coef00, coef01, coef10, coef11;
   Polynomial p0, p1, q0, q1;
-  VectorPolynomial pgrad;
   std::vector<const WhetStoneFunction*> funcs(3);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
@@ -875,7 +875,7 @@ int DG_Modal::FaceMatrixJump(
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    pgrad = Gradient(p0);
+    auto pgrad = Gradient(p0);
     p0 = pgrad * normal;
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
@@ -896,7 +896,7 @@ int DG_Modal::FaceMatrixJump(
         Polynomial p1(d_, idx0, 1.0);
         p1.set_origin(mesh_->cell_centroid(c2));
 
-        pgrad = Gradient(p1);
+        auto pgrad = Gradient(p1);
         p1 = pgrad * normal;
 
         Polynomial q1(d_, idx1, 1.0);
