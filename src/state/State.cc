@@ -1334,7 +1334,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
 double ReadCheckpoint(const Comm_ptr_type& comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
   checkpoint->open_h5file();
 
   // load the attributes
@@ -1370,7 +1370,7 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      bool read_complete = field->second->ReadCheckpoint(checkpoint);
+      bool read_complete = field->second->ReadCheckpoint(checkpoint.ptr());
       if (read_complete) field->second->set_initialized();
     }
   }
@@ -1382,7 +1382,7 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
                                  std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
 
   // load the attributes
   double time(0.);
@@ -1395,7 +1395,7 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 // Non-member function for checkpointing position.
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
                            std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
 
   // load the attributes
   int pos = 0;
@@ -1409,7 +1409,7 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
   checkpoint->open_h5file();
 
   // read observations

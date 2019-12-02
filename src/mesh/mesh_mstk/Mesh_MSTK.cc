@@ -5709,7 +5709,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (fregs) {
           int nfregs = List_Num_Entries(fregs);
           List_Delete(fregs);
-          if (nfregs == 1) return true;
+          if (nfregs == 1) {
+            List_Delete(vfaces);
+            return true;
+          }
         }
       }
       List_Delete(vfaces);
@@ -5725,7 +5728,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (efaces) {
           int nefaces = List_Num_Entries(efaces);
           List_Delete(efaces);
-          if (nefaces == 1) return true;
+          if (nefaces == 1) {
+            List_Delete(vedges);
+            return true;
+          }
         }
       }
       List_Delete(vedges);

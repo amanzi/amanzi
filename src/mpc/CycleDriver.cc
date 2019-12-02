@@ -221,8 +221,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("cycle driver")));
-  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times

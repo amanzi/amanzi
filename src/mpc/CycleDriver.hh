@@ -81,7 +81,7 @@ class CycleDriver {
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager
-  Teuchos::Ptr<TimeStepManager> tsm_;
+  Teuchos::RCP<TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> glist_;
