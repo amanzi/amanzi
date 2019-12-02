@@ -733,11 +733,11 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     dE_dp_->AddAccumulationTerm(*dE_dp, h, "cell", false);
    
     // write for debugging
-    // std::vector<std::string> vnames;
-    // vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
-    // std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    // vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
-    // db_->WriteVectors(vnames, vecs, false);
+    std::vector<std::string> vnames;
+    vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
+    db_->WriteVectors(vnames, vecs, false);
     
 
     // finally assemble the full system, dump if requested, and form the inverse

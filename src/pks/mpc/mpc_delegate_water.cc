@@ -365,7 +365,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
     if (domain_pnew->HasComponent("face")){
       Epetra_MultiVector& domain_pnew_f = *domain_pnew -> ViewComponent("face",false);
       domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
-    } else if (domain_pnew->HasComponent("face")){
+    } else if (domain_pnew->HasComponent("boundary face")){
       Epetra_MultiVector& domain_pnew_f = *domain_pnew -> ViewComponent("boundary face",false);
       domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
     }
