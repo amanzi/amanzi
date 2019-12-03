@@ -66,8 +66,8 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 0);
-  // WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
-  WhetStone::VEM_NedelecSerendipityType2 mfd(plist, mesh_);
+  WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
+  // WhetStone::VEM_NedelecSerendipityType2 mfd(plist, mesh_);
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, edges;

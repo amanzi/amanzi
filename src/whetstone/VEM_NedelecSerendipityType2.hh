@@ -54,6 +54,9 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override { return 0; }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override { return 0; }
 
+  // access
+  PolynomialOnMesh& integrals() { return integrals_; }
+
  protected:
   template<typename MyMesh>
   int L2consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
@@ -93,13 +96,12 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   N.Reshape(nedges * nde, ndc * d);
 
   // selecting regularized basis (parameter integrals is not used)
-  PolynomialOnMesh integrals;
   Basis_Regularized<MyMesh> basis;
-  basis.Init(mymesh, c, order_, integrals.poly());
+  basis.Init(mymesh, c, order_, integrals_.poly());
 
   // pre-calculate integrals of monomials 
   NumericalIntegration<MyMesh> numi(mymesh);
-  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   std::vector<const PolynomialBase*> polys(2);
 
@@ -135,7 +137,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   }
 
   // calculate Mc = P0 M_G P0^T  FIXME
-  GrammMatrix(poly, integrals, basis, MG);
+  GrammMatrix(numi, order_, integrals_, basis, MG);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

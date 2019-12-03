@@ -153,9 +153,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
-    Polynomial tmp(d_ - 1, order_);
-    tmp.set_origin(surf_mesh->cell_centroid(f));
-    GrammMatrix(tmp, integrals_f, basis_f, Mf);
+    GrammMatrix(numi_f, order_, integrals_f, basis_f, Mf);
 
     DenseMatrix RG(Rf), RGM(Rf);
     RG.Multiply(Rf, Gf, false);
@@ -566,12 +564,9 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
-    Polynomial poly(d_, order_);
     NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
-    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-    GrammMatrix(poly, integrals_, basis, M);
-
+    GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
@@ -661,12 +656,9 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
 
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
-    Polynomial poly(d_, order_);
     NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
-    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-    GrammMatrix(poly, integrals_, basis, M);
-
+    GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 

@@ -251,7 +251,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   StiffnessMatrix(c, T, A);  
 
   // number of degrees of freedom
-  Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
+  Polynomial poly(d_, order_ - 1), pf(d_ - 1, order_ - 1);
   int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
@@ -313,7 +313,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
       // calculate coefficients of polynomial
       DenseMatrix M;
-      GrammMatrix(poly, integrals_, basis, M);
+      GrammMatrix(numi, order_ - 1, integrals_, basis, M);
 
       M.Inverse();
       M.Multiply(v4, v5, false);

@@ -182,12 +182,9 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
-    Polynomial poly(d, order_);
-
     NumericalIntegration<MyMesh> numi(mymesh);
-    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
-    GrammMatrix(poly, integrals_, basis, M);
+    GrammMatrix(numi, order_, integrals_, basis, M);
     M.Multiply(v5, v4, false);
 
     vdof.Reshape(ndof_f + ndof_c);
@@ -206,12 +203,9 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
-    Polynomial poly(d, order_);
-
     NumericalIntegration<MyMesh> numi(mymesh);
-    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
-    GrammMatrix(poly, integrals_, basis, M);
+    GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 

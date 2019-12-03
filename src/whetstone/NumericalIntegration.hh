@@ -129,6 +129,9 @@ class NumericalIntegration {
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
+  // accsess
+  int dimension() { return d_; }
+
  private:
   void IntegrateMonomialsFace_(
       int c, int f, double factor, int k, Polynomial& integrals) const;

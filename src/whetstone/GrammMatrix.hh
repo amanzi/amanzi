@@ -9,7 +9,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Supporting routines: Gramm matrices.
+  Calculation of various Gramm matrices. Implemented algorithms use
+  integrator and optional database of monomial integrals.
 */
 
 #ifndef AMANZI_WHETSTONE_GRAMM_MATRIX_HH_
@@ -20,6 +21,7 @@
 
 #include "Basis_Regularized.hh"
 #include "Mesh.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
@@ -34,7 +36,8 @@ class PolynomialOnMesh;
 // Gramm matrix for polynomials
 template<class MyMesh>
 void GrammMatrix(
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    NumericalIntegration<MyMesh>& numi,
+    int order, PolynomialOnMesh& integrals,
     const Basis_Regularized<MyMesh>& basis, DenseMatrix& G);
 
 // Gramm matrix for gradient of polynomials with tensorial weight
@@ -50,20 +53,30 @@ void GrammMatrixGradients(
 ****************************************************************** */
 template<class MyMesh>
 void GrammMatrix(
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    NumericalIntegration<MyMesh>& numi,
+    int order, PolynomialOnMesh& integrals,
     const Basis_Regularized<MyMesh>& basis, DenseMatrix& G)
 {
-  int nd = poly.size();
-  int d = poly.dimension();
+  int d = numi.dimension();
+
+  PolynomialIterator it0(d), it1(d);
+  it0.begin(0);
+  it1.begin(order + 1);
+
+  int nd = it1.PolynomialPosition();
   G.Reshape(nd, nd);
 
+  // extended database of integrals of monomials
+  int c = integrals.id();
+  numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
+
   int multi_index[3];
-  for (auto it = poly.begin(); it < poly.end(); ++it) {
+  for (auto it = it0; it < it1; ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
     double scalek = basis.monomial_scales()[it.MonomialSetOrder()];
 
-    for (auto jt = it; jt < poly.end(); ++jt) {
+    for (auto jt = it; jt < it1; ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];

@@ -157,7 +157,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
   // pre-compute projectors
   // ----------------------
   // -- L2 projectors on faces
-  std::vector<WhetStone::DenseMatrix> vL2f;
+  Polynomial qf(d_ - 1, order_ + 1);
+  std::vector<WhetStone::DenseMatrix> vL2f, vMGf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   Tensor Idf(d_ - 1, 2), Idc(d_, 2);
@@ -182,11 +183,13 @@ int VEM_NedelecSerendipityType2::L2consistency(
     NN.InverseMoorePenrose();
     auto L2f = (MG ^ Idf) * NN * NfT;
     vL2f.push_back(L2f);
+
+    // GrammMatrix(qf, integrals_, basis, MG);
   }
 
   // -- L2-projector in cell
   DenseMatrix MG(ndc, ndc), NT, L2c;
-  GrammMatrix(pc, integrals_, basis, MG);
+  GrammMatrix(numi, order_, integrals_, basis, MG);
 
   NT.Transpose(N);
   auto NN = NT * N;
@@ -235,8 +238,9 @@ int VEM_NedelecSerendipityType2::L2consistency(
       auto& tau = *vcoordsys[n]->tau();
       cmono.ChangeCoordinates(xf, tau);
 
-      VectorPolynomial aaa = p1 * (xyz * normal) - xyz * (p1 * normal);
-      auto v = ProjectVectorPolynomialOnManifold(aaa, xf, *vcoordsys[n]->tau()).Value(AmanziGeometry::Point(0.0, 0.0));
+      VectorPolynomial p3D = p1 * (xyz * normal) - xyz * (p1 * normal);
+      VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p3D, xf, *vcoordsys[n]->tau());
+      auto v = ExpandCoefficients(p2D);
       v /= area;
 
       vL2f[n].Multiply(v, p0v, true);
