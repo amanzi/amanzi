@@ -29,6 +29,7 @@
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "Polynomial.hh"
+#include "VectorObjects.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -54,6 +55,18 @@ class Basis {
   // transformation of vector 
   virtual void ChangeBasisMyToNatural(DenseVector& v) const = 0;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
+
+  // transformation of polynomials
+  void ChangeBasisMyToNatural(Polynomial& p) const { ChangeBasisMyToNatural(p.coefs()); }
+  void ChangeBasisNaturalToMy(Polynomial& p) const { ChangeBasisNaturalToMy(p.coefs()); }
+
+  // transformation of vector polynomials of possibly different degree
+  void ChangeBasisMyToNatural(VectorPolynomial& p) const {
+    for (int i = 0; i < p.NumRows(); ++i) ChangeBasisMyToNatural(p[i]);
+  }
+  void ChangeBasisNaturalToMy(VectorPolynomial& p) const {
+    for (int i = 0; i < p.NumRows(); ++i) ChangeBasisNaturalToMy(p[i]);
+  }
 
   // recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const MyMesh>& mymesh,

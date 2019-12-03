@@ -52,7 +52,9 @@ TEST(MASS_MATRIX_2D) {
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
+  plist.set<int>("method order", 0);
   MFD3D_Electromagnetics mfd(plist, mesh);
+  VEM_NedelecSerendipityType2 vem(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
@@ -67,7 +69,7 @@ TEST(MASS_MATRIX_2D) {
   T(0, 1) = 1.0;
   T(1, 0) = 1.0;
 
-  for (int method = 0; method < 4; method++) {
+  for (int method = 0; method < 5; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {
@@ -80,6 +82,9 @@ TEST(MASS_MATRIX_2D) {
     } else if (method == 3) {
       mfd.MassMatrixInverseOptimized(cell, T, M);
       M.Inverse();
+    } else if (method == 4) {
+      vem.set_order(0);
+      vem.MassMatrix(cell, T, M);
     }
 
     printf("Mass matrix for cell %3d method=%d\n", cell, method);
@@ -176,6 +181,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       mfd.MassMatrixInverseOptimized(cell, T, M);
       M.Inverse();
     } else if (method == 4) {
+      vem.set_order(0);
       vem.MassMatrix(cell, T, M);
     } else if (method == 5) {
       vem.set_order(1);
@@ -220,7 +226,10 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
 TEST(MASS_MATRIX_3D_CUBE) {
   MassMatrix3D("", 12);
-exit(0);
+}
+
+TEST(MASS_MATRIX_3D_CUBE_ROTATED) {
+  MassMatrix3D("test/cube_unit_rotated.exo", 12);
 }
 
 TEST(MASS_MATRIX_3D_HEX) {

@@ -124,7 +124,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
-  GrammMatrix(poly, integrals_, basis, M);
+  GrammMatrix(numi, order_, integrals_, basis, M);
 
   // setup matrix representing Laplacian of polynomials
   DenseMatrix L(nd, nd);

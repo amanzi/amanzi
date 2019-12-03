@@ -54,6 +54,9 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override { return 0; }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override { return 0; }
 
+  // access
+  PolynomialOnMesh& integrals() { return integrals_; }
+
  protected:
   template<typename MyMesh>
   int L2consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
@@ -93,49 +96,70 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   N.Reshape(nedges * nde, ndc * d);
 
   // selecting regularized basis (parameter integrals is not used)
-  PolynomialOnMesh integrals;
   Basis_Regularized<MyMesh> basis;
-  basis.Init(mymesh, c, order_, integrals.poly());
+  basis.Init(mymesh, c, order_, integrals_.poly());
 
   // pre-calculate integrals of monomials 
   NumericalIntegration<MyMesh> numi(mymesh);
-  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   std::vector<const PolynomialBase*> polys(2);
 
-  int row(0);
-  for (int i = 0; i < nedges; ++i) {
-    int e = edges[i];
-    double len = mymesh->edge_length(e);
-    const AmanziGeometry::Point& xe = mymesh->edge_centroid(e);
+  // iterators
+  VectorPolynomialIterator it0(d, d, order_), it1(d, d, order_);
+  it0.begin();
+  it1.end();
 
-    const AmanziGeometry::Point& tau = mymesh->edge_vector(e);
-    std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+  for (auto it = it0; it < it1; ++it) {
+    int k = it.VectorComponent();
+    int n = it.VectorPolynomialPosition();
+    int m = it.PolynomialPosition();
 
-    for (auto it = pe.begin(); it < pe.end(); ++it) {
-      const int* index = it.multi_index();
-      Polynomial emono(d, index, 1.0);
-      emono.InverseChangeCoordinates(xe, tau_edge);  
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+    Polynomial cmono(d, index, factor);
+    cmono.set_origin(mymesh->cell_centroid(c));
 
-      for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
-        int m = jt.PolynomialPosition();
+    int row(0);
+    for (int i = 0; i < nedges; ++i) {
+      int e = edges[i];
+      double len = mymesh->edge_length(e);
+      const AmanziGeometry::Point& xe = mymesh->edge_centroid(e);
+
+      const AmanziGeometry::Point& tau = mymesh->edge_vector(e);
+      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+
+      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
         const int* jndex = jt.multi_index();
-        double factor = basis.monomial_scales()[jt.MonomialSetOrder()];
-        Polynomial cmono(d, jndex, factor);
-        cmono.set_origin(mymesh->cell_centroid(c));
+        Polynomial emono(d, jndex, tau[k] / len);
+        emono.InverseChangeCoordinates(xe, tau_edge);  
 
         polys[0] = &cmono;
         polys[1] = &emono;
 
-        double val = numi.IntegratePolynomialsEdge(e, polys) / len;
-        for (int k = 0; k < d; ++k) N(row, d * m + k) = val * tau[k] / len;
+        N(row, n) = numi.IntegratePolynomialsEdge(e, polys) / len;
       }
       row++;
     }
   }
 
-  // calculate Mc = P0 M_G P0^T  FIXME
-  GrammMatrix(poly, integrals, basis, MG);
+  // calculate Mc = P0 M_G P0^T
+  GrammMatrix(numi, order_, integrals_, basis, MG);
+  
+  DenseMatrix NT, P0T;
+  Tensor Id(d, 2);
+  Id.MakeDiagonal(1.0);
+
+  NT.Transpose(N);
+  auto NN = NT * N;
+  NN.InverseMoorePenrose();
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  auto P0 = N * NN;
+  P0T.Transpose(P0);
+  Mc = P0 * ((Id * Kinv) ^ MG) * P0T;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

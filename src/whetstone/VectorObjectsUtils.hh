@@ -50,6 +50,9 @@ VectorPolynomial ProjectVectorPolynomialOnManifold(
    const VectorPolynomial& vpoly, const AmanziGeometry::Point& x0,
    const std::vector<AmanziGeometry::Point>& tau);
 
+// miscalleneous
+DenseVector ExpandCoefficients(VectorPolynomial& vp);
+
 // project gradient of the given polynomial on unit sphere using
 // the Taylor expansion with k terms
 VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);

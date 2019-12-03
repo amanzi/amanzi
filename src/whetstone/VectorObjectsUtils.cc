@@ -280,6 +280,32 @@ VectorPolynomial ProjectVectorPolynomialOnManifold(
 
 
 /* ******************************************************************
+* Return vector of coefficients in the same order as iterator does
+****************************************************************** */
+DenseVector ExpandCoefficients(VectorPolynomial& vp)
+{
+  int m(0);
+  for (int k= 0; k < vp.NumRows(); ++k) {
+    m += vp[k].size();
+  }
+
+  DenseVector tmp(m);
+  double* vdata = tmp.Values();
+
+  for (int k= 0; k < vp.NumRows(); ++k) {
+    const double* data = vp[k].coefs().Values();
+    for (int i = 0; i < vp[k].size(); ++i) {
+      *vdata = *data;
+      vdata++;
+      data++;
+    }
+  }
+
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Projecton of gradient using Taylor expansion with k terms
 ****************************************************************** */
 VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)

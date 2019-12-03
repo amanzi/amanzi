@@ -106,6 +106,7 @@ class DenseMatrix {
 
   // Kroneker product of matrices and tensors
   friend DenseMatrix operator^(const DenseMatrix& A, const Tensor& K);
+  friend DenseMatrix operator^(const Tensor& K, const DenseMatrix& A);
 
   // calculates either A * B to A^T * B
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);

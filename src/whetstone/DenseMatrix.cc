@@ -221,7 +221,7 @@ DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B)
 
 
 /* ******************************************************************
-* Kroneker product
+* Kroneker product (A ^ K)
 ****************************************************************** */
 DenseMatrix operator^(const DenseMatrix& A, const Tensor& K)
 {
@@ -236,6 +236,31 @@ DenseMatrix operator^(const DenseMatrix& A, const Tensor& K)
       for (int i = 0; i < d; ++i) {
         for (int j = 0; j < d; ++j) {
           AK(d * m + i, d * n + j) = A(m, n) * K(i, j);
+        }
+      }
+    }
+  }
+
+  return AK;
+}
+
+
+/* ******************************************************************
+* Kroneker product (K ^ A)
+****************************************************************** */
+DenseMatrix operator^(const Tensor& K, const DenseMatrix& A)
+{
+  int d = K.dimension();
+  int nrows = A.NumRows();
+  int ncols = A.NumCols();
+
+  DenseMatrix AK(nrows * d, ncols * d);
+
+  for (int m = 0; m < nrows; ++m) {
+    for (int n = 0; n < ncols; ++n) {
+      for (int i = 0; i < d; ++i) {
+        for (int j = 0; j < d; ++j) {
+          AK(nrows * i + m, ncols * j + n) = A(m, n) * K(i, j);
         }
       }
     }

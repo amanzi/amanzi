@@ -47,6 +47,11 @@ class Basis_Regularized : public Basis<MyMesh> {
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
+  // special transformation of vectors for vector discretizations
+  // it is assumed that v was assembled from same degree polynomials
+  void ChangeBasisMyToNatural(DenseVector& v, int nrows) const;
+  void ChangeBasisNaturalToMy(DenseVector& v, int nrows) const;
+
   // Recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const MyMesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
@@ -189,6 +194,46 @@ void Basis_Regularized<MyMesh>::ChangeBasisNaturalToMy(DenseVector& v) const
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     v(n) /= monomial_scales_[m];
+  }
+}
+
+
+/* ******************************************************************
+* Special transformation for vector discretizations
+****************************************************************** */
+template<class MyMesh>
+void Basis_Regularized<MyMesh>::ChangeBasisMyToNatural(DenseVector& v, int nrows) const
+{
+  int stride = v.NumRows() / nrows;
+
+  PolynomialIterator it(d_);
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    for (int i = 0; i < nrows; ++i) {
+      int k = i * stride + n;
+      v(k) *= monomial_scales_[m];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Special transformation for vector discretizations
+****************************************************************** */
+template<class MyMesh>
+void Basis_Regularized<MyMesh>::ChangeBasisNaturalToMy(DenseVector& v, int nrows) const
+{
+  int stride = v.NumRows() / nrows;
+
+  PolynomialIterator it(d_);
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    for (int i = 0; i < nrows; ++i) { 
+      int k = i * stride + n;
+      v(k) /= monomial_scales_[m];
+    }
   }
 }
 

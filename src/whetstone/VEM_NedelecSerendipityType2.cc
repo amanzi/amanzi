@@ -36,6 +36,7 @@
 #include "VEM_NedelecSerendipityType2.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
+#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -72,7 +73,11 @@ std::vector<SchemaItem> VEM_NedelecSerendipityType2::schema() const
 int VEM_NedelecSerendipityType2::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  AMANZI_ASSERT(d_ == 3);
+  if (d_ == 2) {
+    DenseMatrix MG;
+    L2consistency2D_<AmanziMesh::Mesh>(mesh_, c, K, N, Mc, MG);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
 
   Entity_ID_List edges, faces, fedges;
   std::vector<int> fdirs, edirs;
@@ -141,7 +146,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
       for (auto it = pe.begin(); it < pe.end(); ++it) {
         const int* index = it.multi_index();
-        Polynomial emono(d_ - 2, index, tau[k]);
+        Polynomial emono(d_ - 2, index, tau[k] / length);
         emono.InverseChangeCoordinates(xe, tau_edge);  
 
         polys[0] = &cmono;
@@ -157,12 +162,13 @@ int VEM_NedelecSerendipityType2::L2consistency(
   // pre-compute projectors
   // ----------------------
   // -- L2 projectors on faces
-  std::vector<WhetStone::DenseMatrix> vL2f;
+  Polynomial qf(d_ - 1, order_ + 1);
+  std::vector<WhetStone::DenseMatrix> vL2f, vMGf;
+  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
-  Tensor Idf(d_ - 1, 2), Idc(d_, 2);
+  Tensor Idf(d_ - 1, 2);
   Idf.MakeDiagonal(1.0);
-  Idc.MakeDiagonal(1.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -180,18 +186,26 @@ int VEM_NedelecSerendipityType2::L2consistency(
     NfT.Transpose(Nf);
     auto NN = NfT * Nf;
     NN.InverseMoorePenrose();
-    auto L2f = (MG ^ Idf) * NN * NfT;
+    auto L2f = NN * NfT;
     vL2f.push_back(L2f);
+
+    Basis_Regularized<SurfaceMiniMesh> basis_f;
+    basis_f.Init(surf_mesh, f, order_ + 1, integrals_.poly());
+    vbasisf.push_back(basis_f);
+
+    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+    GrammMatrix(numi_f, order_ + 1, integrals_, basis_f, MG);
+    vMGf.push_back(Idf ^ MG);
   }
 
   // -- L2-projector in cell
   DenseMatrix MG(ndc, ndc), NT, L2c;
-  GrammMatrix(pc, integrals_, basis, MG);
+  GrammMatrix(numi, order_, integrals_, basis, MG);
 
   NT.Transpose(N);
   auto NN = NT * N;
   NN.InverseMoorePenrose();
-  L2c = (MG ^ Idc) * NN * NT;
+  L2c = NN * NT;
 
   // contributions of least square projectors on faces
   DenseMatrix R(ndof_S, ndc * d_);
@@ -200,13 +214,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
   for (auto it = it0; it < it1; ++it) {
     int k = it.VectorComponent();
     int m = it.PolynomialPosition();
+    int col = it.VectorPolynomialPosition();
 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Monomial q(d_, index, factor);
     q.set_origin(xc);
-
-    Polynomial cmono(q);
 
     // vector decomposition of vector (0, q, 0) with q at k-th position
     VectorPolynomial p1;
@@ -231,21 +244,40 @@ int VEM_NedelecSerendipityType2::L2consistency(
       }
 
       // integral over face requires vector of polynomial coefficients of pc
-      WhetStone::DenseVector p0v(vL2f[n].NumCols());
-      auto& tau = *vcoordsys[n]->tau();
-      cmono.ChangeCoordinates(xf, tau);
+      int nrows = vL2f[n].NumRows();
+      int ncols = vL2f[n].NumCols();
+      int krows = vMGf[n].NumRows();
+      WhetStone::DenseVector w(krows), p0v(ncols);
 
-      VectorPolynomial aaa = p1 * (xyz * normal) - xyz * (p1 * normal);
-      auto v = ProjectVectorPolynomialOnManifold(aaa, xf, *vcoordsys[n]->tau()).Value(AmanziGeometry::Point(0.0, 0.0));
+      Polynomial xyzn(xyz[0]);
+      for (int i = 0; i < d_; ++i) xyzn(i + 1) = normal[i];  // xyz * normal
+      VectorPolynomial p3D = p1 * xyzn - xyz * (p1 * normal);
+      VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p3D, xf, *vcoordsys[n]->tau());
+      auto v = ExpandCoefficients(p2D);
       v /= area;
 
-      vL2f[n].Multiply(v, p0v, true);
+      // calculate one factor in the L2 inner product
+      vbasisf[n].ChangeBasisNaturalToMy(v, d_ - 1);
+      vMGf[n].Multiply(v, w, false);
+
+      // reduce polynomial degree of the vector of coefficients by 1
+      int s(0), stride(krows / (d_ - 1));
+      for (int i = 0; i < d_ - 1; ++i) {
+        for (int j = 0; j < ndf; ++j) w(s++) = w(i * stride + j);
+      }
+      w.Reshape(s);
+
+      vL2f[n].Multiply(w, p0v, true);
 
       for (int i = 0; i < p0v.NumRows(); ++i) {
-        R(map[i], d_ * m + k) += p0v(i) * fdirs[n];
+        R(map[i], col) += p0v(i) * fdirs[n];
       }
     }
   }
+
+  // DenseMatrix X;
+  // X.Transpose(N);
+  // std::cout << X * R << std::endl;
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);

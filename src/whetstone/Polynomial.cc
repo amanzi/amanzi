@@ -430,6 +430,20 @@ void Polynomial::ChangeCoordinates(
   }
 
   else if (dnew == 2) {
+    tmp(0) = coefs_(0);
+    if (order_ == 0) {
+      *this = tmp;
+      return;
+    }
+
+    if (order_ == 1) {
+      for (int i = 0; i < 2; ++i) {
+        tmp(i + 1) = coefs_(1) * B[i][0] + coefs_(2) * B[i][1] + coefs_(3) * B[i][2];
+      }
+      *this = tmp;
+      return;
+    }
+
     Polynomial poly0(dnew, 1), poly1(dnew, 1), poly2(dnew, 1);
 
     poly0(1) = B[0][0];
@@ -503,6 +517,7 @@ void Polynomial::InverseChangeCoordinates(
 
     int multi_index[3] = {0, 0, 0};
 
+    double 
     for (int n = 0; n < size_; ++n) {
       multi_index[i] = n;
       int m = PolynomialPosition(3, multi_index);

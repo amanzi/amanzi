@@ -125,6 +125,9 @@ class Polynomial : public PolynomialBase {
   double& operator()(int i, int j) { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
   const double& operator()(int i, int j) const { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
 
+  DenseVector& coefs() { return coefs_; }
+  const DenseVector& coefs() const { return coefs_; }
+
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
 

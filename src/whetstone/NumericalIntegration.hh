@@ -129,6 +129,9 @@ class NumericalIntegration {
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
+  // accsess
+  int dimension() { return d_; }
+
  private:
   void IntegrateMonomialsFace_(
       int c, int f, double factor, int k, Polynomial& integrals) const;
@@ -596,8 +599,11 @@ void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
   Polynomial& poly = integrals.poly();
   int k0 = poly.order();
 
-  // reset polynomial metadata
-  if (integrals.kind() != (Entity_kind)WhetStone::CELL || integrals.id() != c) {
+  // data are uniqueckly defined by topological dimension of
+  // a geometric entity and its mesh id. 
+  if (integrals.kind() != (Entity_kind)WhetStone::CELL ||
+      integrals.id() != c ||
+      poly.dimension() != d_) {
     integrals.set_kind((Entity_kind)WhetStone::CELL);
     integrals.set_id(c);
     k0 = -1;
