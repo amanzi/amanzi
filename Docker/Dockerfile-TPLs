@@ -8,6 +8,7 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   apt-utils \
   cmake \
   curl \
+  libcurl4-openssl-dev \
   emacs \
   g++ \
   gfortran \
