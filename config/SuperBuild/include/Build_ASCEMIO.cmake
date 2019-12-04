@@ -33,6 +33,12 @@ set(ASCEMIO_CMAKE_ARGS
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DHDF5_DIR=${HDF5_DIR}")
 
+if (BUILD_SHARED_LIBS)
+  set(HDF5_USE_STATIC_LIBRARIES OFF)
+else()
+  set(HDF5_USE_STATIC_LIBRARIES ON)
+endif()
+
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     DEPENDS   ${ASCEMIO_PACKAGE_DEPENDS}          # Package dependency target
@@ -50,6 +56,7 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                                 ${ASCEMIO_CMAKE_ARGS}
                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}   # Ensure uniform build
                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                -DHDF5_USE_STATIC_LIBRARIES:BOOL=${HDF5_USE_STATIC_LIBRARIES}
                     # -- Build
                     BINARY_DIR       ${ASCEMIO_build_dir}         # Build directory 
                     BUILD_COMMAND    ${MAKE}
