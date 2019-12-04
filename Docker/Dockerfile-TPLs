@@ -25,7 +25,9 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   openssl \
   python2.7 \
   rsync \
-  wget 
+  wget \
+  zlib1g-dev
+  
 
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
