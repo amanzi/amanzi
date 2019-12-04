@@ -517,7 +517,6 @@ void Polynomial::InverseChangeCoordinates(
 
     int multi_index[3] = {0, 0, 0};
 
-    double 
     for (int n = 0; n < size_; ++n) {
       multi_index[i] = n;
       int m = PolynomialPosition(3, multi_index);
