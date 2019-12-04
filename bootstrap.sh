@@ -971,7 +971,7 @@ function git_submodule_clone()
   cd ${amanzi_source_dir}
   status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
   ${git_binary} submodule update --init --remote ${submodule_name}
-  if [$? -ne 0 ]; then
+  if [ $? -ne 0 ]; then
     error_message "Failed to check out submodule ${submodule_name}"
     exit_now 30
   fi
