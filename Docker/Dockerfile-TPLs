@@ -51,6 +51,9 @@ USER amanzi_user
 # (creates teh directory if it doesn't exist)
 WORKDIR /home/amanzi_user
 
+ENV https_proxy=proxyout.lanl.gov:8080 \
+    http_proxy=proxyout.lanl.gov:8080
+
 # Clone the amanzi git repo.
 RUN git clone https://github.com/amanzi/amanzi.git
 
@@ -70,7 +73,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
   --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
-  --enable-tpls_only \
+  --disable-build_amanzi --disable-build_user_guide \
   --enable-shared --enable-structured --enable-silo \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
   --with-mpi=/usr \
@@ -80,4 +83,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
 RUN echo $LD_LIBRARY_PATH
+
+# Unset proxy
+RUN unset https_proxy && unset http_proxy
 
