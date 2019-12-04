@@ -143,9 +143,11 @@ PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
 /* ******************************************************************
  * Setup methods: scalar coefficients
  ****************************************************************** */
+
+
 void
 PDE_DiffusionFV::SetTensorCoefficient(
-    const TensorCoef_view_type& K)
+    const TensorArray& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -532,15 +534,18 @@ PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           mesh_p->cell_get_faces_and_bisectors(c, faces, bisectors);
 
+          WhetStone::Tensor Kc = K_.getTensor(i);
+          
           Kokkos::parallel_for(
               faces.extent(0),
-              KOKKOS_LAMBDA(const int& i) {
+              (=) (const int& i) {
                 auto f = faces(i);
                 const AmanziGeometry::Point& a = bisectors(i);
                 const AmanziGeometry::Point& normal = mesh_p->face_normal(f);
 
                 double s = mesh_p->face_area(f) / AmanziGeometry::norm(a);
-                double perm = ((K_(c,0) * a) * normal) * s;
+
+                double perm = ((Kc * a) * normal) * s;
                 double dxn = a * normal;
                 Kokkos::atomic_add(&trans_f(f,0), fabs(dxn / perm));
               });

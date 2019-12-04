@@ -44,7 +44,7 @@ class Tensor {
     data_ = NULL;
     Init(d, rank);
   }
-  Tensor(int d, int rank, const double* data);
+  Tensor(int d, int rank, Kokkos::View<double*> data);
   ~Tensor()
   {
     if (data_) delete[] data_;
@@ -93,8 +93,27 @@ class Tensor {
 
  private:
   int d_, rank_, size_;
-  double* data_;
+  Kokkos::View<double*> data_;
 };
+
+
+struct TensorArray {
+  Kokkos::View<double**> data;
+  int dim;
+  int rank;
+
+  Kokkos::View<double*> operator()(int i) {
+    return Kokkos::subview(data, i, Kokkos::ALL);
+  }
+
+  WhetStone::Tensor getTensor(int i) {
+    return WhetStone::Tensor(dim, rank, this->operator()(i));
+  }
+};
+
+
+
+
 
 
 // non-member functions
