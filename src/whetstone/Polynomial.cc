@@ -430,13 +430,14 @@ void Polynomial::ChangeCoordinates(
   }
 
   else if (dnew == 2) {
-    tmp(0) = coefs_(0);
     if (order_ == 0) {
+      tmp(0) = coefs_(0);
       *this = tmp;
       return;
     }
 
     if (order_ == 1) {
+      tmp(0) = coefs_(0);
       for (int i = 0; i < 2; ++i) {
         tmp(i + 1) = coefs_(1) * B[i][0] + coefs_(2) * B[i][1] + coefs_(3) * B[i][2];
       }

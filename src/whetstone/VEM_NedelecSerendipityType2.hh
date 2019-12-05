@@ -131,7 +131,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
 
       for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
         const int* jndex = jt.multi_index();
-        Polynomial emono(d, jndex, tau[k] / len);
+        Polynomial emono(d - 1, jndex, tau[k] / len);
         emono.InverseChangeCoordinates(xe, tau_edge);  
 
         polys[0] = &cmono;
