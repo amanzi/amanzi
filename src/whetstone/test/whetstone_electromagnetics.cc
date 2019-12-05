@@ -167,7 +167,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   T(1, 0) = 1.0;
   T(2, 2) = 1.0;
 
-  for (int method = 0; method < 4; method++) {
+  for (int method = 0; method < 5; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {

@@ -529,5 +529,6 @@ TEST(REMAP_GEOMETRIC_CONSERVATION_LAW_REINIT) {
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   double dT(0.025 * nloop), T1(1.0 / nloop);
   RemapGCLr(rk_method, "", 8,8,8, dT,   deform, nloop, T1);
+  // RemapGCLr(rk_method, "", 16,16,16, dT,   deform, nloop, T1);
 }
 

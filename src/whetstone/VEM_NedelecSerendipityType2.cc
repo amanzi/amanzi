@@ -130,7 +130,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial cmono(d_, index, factor);
+    Monomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
     int row(0);

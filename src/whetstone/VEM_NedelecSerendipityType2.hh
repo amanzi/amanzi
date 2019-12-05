@@ -26,6 +26,7 @@
 #include "DenseMatrix.hh"
 #include "DeRham_Edge.hh"
 #include "MFD3D.hh"
+#include "Monomial.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
@@ -117,7 +118,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial cmono(d, index, factor);
+    Monomial cmono(d, index, factor);
     cmono.set_origin(mymesh->cell_centroid(c));
 
     int row(0);
@@ -152,7 +153,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
 
   NT.Transpose(N);
   auto NN = NT * N;
-  NN.InverseMoorePenrose();
+  NN.InverseSPD();
 
   Tensor Kinv(K);
   Kinv.Inverse();

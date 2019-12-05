@@ -136,6 +136,10 @@ class Polynomial : public PolynomialBase {
   Polynomial Laplacian();
 };
 
+
+// non-member function
+// void NextBinomialExpansion(DenseVector
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

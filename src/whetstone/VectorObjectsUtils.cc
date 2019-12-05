@@ -37,6 +37,7 @@ VectorPolynomial Gradient(const Polynomial& p)
       const int* idx = it.multi_index();
       int n = it.PolynomialPosition();
       double val = p(n);
+      if (val == 0.0) continue;
 
       for (int i = 0; i < d; ++i) {
         for (int j = 0; j < d; ++j) index[j] = idx[j];

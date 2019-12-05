@@ -281,7 +281,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         factor = vbasisf[i].monomial_scales()[jt.MonomialSetOrder()];
-        Polynomial fmono(d_ - 1, jndex, factor);
+        Monomial fmono(d_ - 1, jndex, factor);
 
         polys[0] = &cmono2D;
         polys[1] = &fmono;

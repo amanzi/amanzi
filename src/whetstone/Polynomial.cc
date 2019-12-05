@@ -271,22 +271,22 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       Polynomial tmp(d_, k);
       for (int i0 = 0; i0 <= index[0]; ++i0) {
         idx[0] = i0;
-        double coef0 = powers[0][index[0]](i0); 
+        double coef0 = coef * powers[0][index[0]](i0); 
 
         for (int i1 = 0; i1 <= index[1]; ++i1) {
           idx[1] = i1;
-          double coef1 = powers[1][index[1]](i1); 
+          double coef1 = coef0 * powers[1][index[1]](i1); 
 
           if (d_ == 2) {
             int pos = PolynomialPosition(d_, idx);
-            tmp(pos) = coef * coef0 * coef1;
+            tmp(pos) = coef1;
           } else {
             for (int i2 = 0; i2 <= index[2]; ++i2) {
               idx[2] = i2;
-              double coef2 = powers[2][index[2]](i2); 
+              double coef2 = coef1 * powers[2][index[2]](i2); 
 
               int pos = PolynomialPosition(d_, idx);
-              tmp(pos) = coef * coef0 * coef1 * coef2;
+              tmp(pos) = coef2;
             }
           }
         }
@@ -315,7 +315,17 @@ Polynomial Polynomial::ChangeOrigin(
   if (order == 0) {
     poly(0) = coef;
   }
-  else if (order > 0) {
+  else if (order == 1) {
+    const int* index = mono.multi_index();
+    int pos = MonomialSetPosition(d_, index);
+    poly(pos) = coef;
+
+    for (int i = 0; i < d; ++i) {
+      poly(0) += origin[i] - mono.origin()[i];
+    }
+    poly(0) *= coef;
+  }
+  else if (order > 1) {
     AmanziGeometry::Point shift(origin - mono.origin());
     const int* index = mono.multi_index();
 
