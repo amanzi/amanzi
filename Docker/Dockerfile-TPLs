@@ -87,6 +87,12 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
 RUN echo $LD_LIBRARY_PATH
 
+# Set path to pick up any tools installed during bootstrap
+ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
+RUN echo $PATH
+
 # Unset proxy
-RUN unset https_proxy && unset http_proxy
+ENV https_proxy= \
+    http_proxy= 
+
 
