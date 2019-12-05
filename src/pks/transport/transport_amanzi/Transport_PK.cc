@@ -685,16 +685,7 @@ double Transport_PK_ATS::StableTimeStep()
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
   Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh_->cell_map(false)));
-  
-  // double flux_next_norm=0., flux_norm=0.;
-  // flux_->NormInf(&flux_next_norm);
-  // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm); 
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
-  //   //if (flux_key_=="surface-mass_flux"){
-  //     *vo_->os()<<"Stable step: "<<flux_key_<<" ||flux_next||="<<flux_next_norm<<" ||flux||="<<flux_norm<<"\n";
-  //     //}
-  // }
-  
+   
   IdentifyUpwindCells();
 
   tcc = S_->GetFieldData(tcc_key_, passwd_);
@@ -761,19 +752,39 @@ double Transport_PK_ATS::StableTimeStep()
 
     int cmin_dt_tmp = cmin_dt_unique;
     comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
+    int min_pid=-1;
 
-    std::cout <<name_<<" pid: "<<comm.MyPID()<<" + "<<cmin_dt_unique<<" "<<cell_map->GID(cmin_dt)<<" "<<cmin_dt<<"\n";
+    double tmp_package[6];
 
     if (cell_map->GID(cmin_dt) == cmin_dt_unique) {
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      std::cout<<name_ <<": pid "<< comm.MyPID()<< " : cell " << cmin_dt << " has smallest dt, " << p[0] << ", " << p[1];
-      if (p.dim() == 3) std::cout << ", " << p[2];
-      std::cout << " "<< std::endl;
-      std::cout <<name_<< ": -  min dt:  water content: "<<ws_min_dt<<" out flux "<<outflux_min_dt<<"\n";
-			   
+      min_pid = comm.MyPID();
+      tmp_package[0] = ws_min_dt;
+      tmp_package[1] = outflux_min_dt;
+      tmp_package[2] = p[0];
+      tmp_package[3] = p[1];
+      if (p.dim() == 3) tmp_package[4] = p[2];
+      else tmp_package[4] = 0.;
+      tmp_package[5] = p.dim();
+
     }
+
+    int min_pid_tmp = min_pid;
+    comm.MaxAll(&min_pid_tmp, &min_pid, 1);
+    
+    comm.Broadcast(tmp_package, 6, min_pid);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+
+    *vo_->os() << "Stable time step "<<dt_<< " is computed at ("<< tmp_package[2]<<", " <<tmp_package[3];
+    if (fabs(3 - tmp_package[5]) <1e-10) *vo_->os()<<", "<<tmp_package[4];
+    *vo_->os() <<")"<<std::endl;
+    
+    *vo_->os() << "Stable time step "<<dt_<< " is limited by saturation/ponded_depth "<<tmp_package[0]<<" and "
+	       << "output flux "<<tmp_package[1]<<std::endl;
+
   }
     
 										    
@@ -1746,10 +1757,6 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
     }
   }
 
-  // std::cout<<tcc_w_src_vec<<"\n";
-  // S_->WriteStatistics(vo_); 
-  // exit(0);
-
 }
 
 void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
@@ -1760,7 +1767,7 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
   double t0 = S_->intermediate_time();
   int num_vectors = tcc.NumVectors();
   int nsrcs = srcs_.size();
-  Key coupled_flux = "surface-surface_subsurface_flux";
+
 
   for (int m = 0; m < nsrcs; m++) {    
     srcs_[m]->Compute(t0, t0); 
