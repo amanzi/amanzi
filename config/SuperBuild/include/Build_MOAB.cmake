@@ -15,7 +15,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${MOAB_VERSION_MAJOR} ${MOAB_VERSION_MINOR} ${MOAB_VERSION_PATCH})
 
 # --- Build common compiler and link flags
-
 # Build compiler flag strings for C
 include(BuildWhitespaceString)
 build_whitespace_string(moab_cflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS})
@@ -43,6 +42,7 @@ build_whitespace_string(moab_ldflags
                         -lz
                         ${moab_shared_dir})
 
+# --- Define the arguments passed to CMake.
 # --- Add external project and tie to the MOAB build target
 # Some CMake files are missing
 #                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
@@ -60,6 +60,21 @@ build_whitespace_string(moab_ldflags
 #                                     -DENABLE_NETCDF:BOOL=TRUE
 #                                     -DNETCDF_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
 #                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+
+# --- Patch the original code
+set(MOAB_patch_file moab-configure.patch)
+set(MOAB_sh_patch ${MOAB_prefix_dir}/moab-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.sh.in
+               ${MOAB_sh_patch}
+               @ONLY)
+# configure the CMake patch step
+set(MOAB_cmake_patch ${MOAB_prefix_dir}/moab-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.cmake.in
+               ${MOAB_cmake_patch}
+               @ONLY)
+# set the patch command
+set(MOAB_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MOAB_cmake_patch})
+
 ExternalProject_Add(${MOAB_BUILD_TARGET}
                     DEPENDS   ${MOAB_PACKAGE_DEPENDS}    # Package dependency target
                     TMP_DIR   ${MOAB_tmp_dir}            # Temporary files directory
@@ -68,6 +83,8 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}     
                     URL          ${MOAB_URL}             # URL may be a web site OR a local file
                     URL_MD5      ${MOAB_MD5_SUM}         # md5sum of the archive file
+                    # -- Patch 
+                    PATCH_COMMAND ${MOAB_PATCH_COMMAND}  # Modifications to source
                     # -- Configure
                     SOURCE_DIR   ${MOAB_source_dir}      # Source directory
                     CONFIGURE_COMMAND
