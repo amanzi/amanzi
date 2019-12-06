@@ -382,12 +382,12 @@ Polynomial Polynomial::ChangeOrigin(
 double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(coefs_(0));
+  if (order_ == 0) return sum;
+
   AmanziGeometry::Point dx(xp - origin_);
   
-  if (order_ > 0) {
-    for (int i = 0; i < d_; ++i) {
-      sum += dx[i] * coefs_(i + 1);
-    }
+  for (int i = 0; i < d_; ++i) {
+    sum += dx[i] * coefs_(i + 1);
   }
 
   for (auto it = begin(2); it < end(); ++it) {
@@ -507,6 +507,12 @@ void Polynomial::ChangeCoordinates(
 void Polynomial::InverseChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
+  // constant is not changing  
+  if (order_ == 0) {
+    origin_ = x0;
+    return;
+  }
+
   int dnew = x0.dim();
 
   // new polynomial will be centered at x0
