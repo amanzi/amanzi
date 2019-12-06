@@ -47,6 +47,7 @@ class MyRemapDGr : public Operators::RemapDG<TreeVector> {
     : RemapDG<TreeVector>(mesh0, mesh1, plist),
       T1_(T1),
       l2norm_(-1.0),
+      tini_(0.0),
       tprint_(0.0),
       dt_output_(0.1) {};
   ~MyRemapDGr() {};
