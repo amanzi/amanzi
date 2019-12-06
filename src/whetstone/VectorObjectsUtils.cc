@@ -44,8 +44,8 @@ VectorPolynomial Gradient(const Polynomial& p)
 
         if (index[i] > 0) {
           index[i]--;
-          int m = MonomialSetPosition(d, index);
-          poly[i](k - 1, m) = val * idx[i];
+          int m = PolynomialPosition(d, index);
+          poly[i](m) = val * idx[i];
         }
       }
     }
