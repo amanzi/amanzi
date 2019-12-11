@@ -123,7 +123,7 @@ TEST(DG3D_MASS_MATRIX)
     if (k > 0) {
       DenseVector v1(nk), v2(nk), v3(nk);
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
       v1(1) = 0.5;
       v1(2) = 1.0;
@@ -196,13 +196,13 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
     DenseVector v(nk), av(nk);
     const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
 
-    v.PutScalar(0.0);
+    v.putScalar(0.0);
     v(0) = xc[0] + 2 * xc[1];
     v(1) = 1.0 / 1.6501110800;
     v(2) = 2.0 / 2.6871118178;
 
     M1.Multiply(v, av, false);
-    v.Dot(av, &tmp);
+    v.dot(av, &tmp);
     integral[k] = tmp;
 
     // method 2 for calculating mass matrix
@@ -328,7 +328,7 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION)
 
     // check conservation law
     DenseVector e(nk), b(nk);
-    e.PutScalar(1.0);
+    e.putScalar(1.0);
 
     A0.Multiply(e, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12);
@@ -482,7 +482,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
       double scale = std::pow(mesh->cell_volume(0, false), 0.5);
 
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
@@ -589,7 +589,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
       double scale = std::pow(mesh->cell_volume(0, false), 1.0 / 3);
 
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;

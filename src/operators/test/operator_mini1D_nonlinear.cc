@@ -58,7 +58,7 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     op_->UpdateMatrices();
     op_->ApplyBCs(bcl_, type_l_, bcr_, type_r_);
 
-    op_->apply(*u, *f);
+    op_->Apply(*u, *f);
     f->update(-1.0, op_->rhs(), 1.0);
 
     // accumulation term to residual
@@ -66,7 +66,7 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
       for (int i = 0; i < ncells; ++i) {
         double s0 = 1.0 + std::pow((*u0_)(i), 2);
         double s1 = 1.0 + std::pow((*u)(i), 2);
-        (*f)(i) += (s1 - s0) * op_->mesh_cell_volume(i, false) / dt_;
+        (*f)(i) += (s1 - s0) * op_->mesh_cell_volume(i) / dt_;
       }
     }
   }
@@ -74,16 +74,14 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
   int ApplyPreconditioner(const Teuchos::RCP<const DenseVector>& u,
                           const Teuchos::RCP<DenseVector>& hu)
   {
-    op_->applyInverse(*u, *hu);
+    op_->ApplyInverse(*u, *hu);
     return 0;
   }
 
   double ErrorNorm(const Teuchos::RCP<const DenseVector>& u,
                    const Teuchos::RCP<const DenseVector>& du)
   {
-    double tmp;
-    tmp = du->normInf();
-    return tmp;
+    return du->normInf();
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const DenseVector>& u)
@@ -166,7 +164,7 @@ MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
     // create right-hand side
     for (int i = 0; i < ncells; ++i) {
       double xc = op->mesh_cell_centroid(i);
-      double hc = op->mesh_cell_volume(i, false);
+      double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = -(10 * std::pow(xc, 4) + 2) * hc;
     }
 
@@ -181,7 +179,8 @@ MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
 
     // Amanzi::AmanziSolvers::SolverNKA<DenseVector, int> newton(plist);
     Amanzi::AmanziSolvers::SolverNewton<DenseVector, int> newton(plist);
-    newton.Init(fn, 1);
+    Teuchos::RCP<int> v = Teuchos::rcp(new int(1)); 
+    newton.Init(fn, v);
 
     // solve the problem
     newton.Solve(sol);
@@ -192,7 +191,7 @@ MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op->mesh_cell_volume(i, false);
+      hc = op->mesh_cell_volume(i);
       xc = op->mesh_cell_centroid(i);
       err = xc * xc - (*sol)(i);
 
@@ -265,7 +264,8 @@ MiniDiffusion1D_Transient(int type_l, int type_r)
   auto fn =
     Teuchos::rcp(new NonlinearProblem(op, dt, bcl, type_l, bcr, type_r));
   Amanzi::AmanziSolvers::SolverNewton<DenseVector, int> newton(plist);
-  newton.Init(fn, 1);
+  Teuchos::RCP<int> v = Teuchos::rcp(new int(1));
+  newton.Init(fn, v);
 
   while (t < t1 - dt / 2) {
     t += dt;
@@ -274,7 +274,7 @@ MiniDiffusion1D_Transient(int type_l, int type_r)
     // update right-hand side and boundary conditions
     for (int i = 0; i < ncells; ++i) {
       double xc = op->mesh_cell_centroid(i);
-      double hc = op->mesh_cell_volume(i, false);
+      double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = 2 * t * (std::pow(xc, 4) * (1.0 - 5 * t * t) - 1.0) * hc;
     }
     bcr = t;
@@ -289,7 +289,7 @@ MiniDiffusion1D_Transient(int type_l, int type_r)
   double hc, xc, err, pnorm(1.0), hnorm(1.0);
 
   for (int i = 0; i < ncells; ++i) {
-    hc = op->mesh_cell_volume(i, false);
+    hc = op->mesh_cell_volume(i);
     xc = op->mesh_cell_centroid(i);
     err = xc * xc - (*u1)(i);
 

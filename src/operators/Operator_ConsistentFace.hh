@@ -25,7 +25,7 @@ class Operator_ConsistentFace : public Operator {
  public:
   // main constructor
   //   The CVS is the domain and range of the operator
-  Operator_ConsistentFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator_ConsistentFace(const Teuchos::RCP<const CompositeSpace>& cvs,
                           Teuchos::ParameterList& plist)
     : Operator(cvs, plist,
                OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE)

@@ -26,9 +26,12 @@ class Op_Node_Node : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec)
     : Op(OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
   {
-    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
-    diag_shadow =
-      Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    // TODO add diag?
+    //diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    //diag_shadow =
+    //  Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    Kokkos::resize(diags,mesh->node_map(false)->getNodeNumElements (), nvec);
+    Kokkos::resize(diags_shadow,mesh->node_map(false)->getNodeNumElements (), nvec);  
   }
 
   virtual void
@@ -64,10 +67,10 @@ class Op_Node_Node : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
-      for (int k = 0; k != s_v.getNumVectors(); ++k) {
-        for (int i = 0; i != s_v.getLocalLength(); ++i) {
-          (*diag)[k][i] *= s_v[0][i];
+      const auto& s_v = scaling.ViewComponent("node", false);
+      for (int k = 0; k != s_v.extent(0); ++k) {
+        for (int i = 0; i != s_v.extent(1); ++i) {
+          diags(k,i) *= s_v(0,i);
         }
       }
     }

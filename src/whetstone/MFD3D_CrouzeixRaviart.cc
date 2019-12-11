@@ -461,7 +461,7 @@ MFD3D_CrouzeixRaviart::ProjectorCell_HO_(int c,
   } else if (order_ >= 2) {
     v4 = integrals_.poly().coefs();
     basis.ChangeBasisMyToNatural(v4);
-    v4.Reshape(nd);
+    v4.reshape(nd);
     uc(0) = vdof(row) - (v4 * v5) / volume;
   }
 
@@ -551,7 +551,7 @@ MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
       int md = poly.size();
       DenseVector v4(md), v5(md);
 
-      v4.PutScalar(0.0);
+      v4.putScalar(0.0);
       for (auto it = poly.begin(); it < poly.end(); ++it) {
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();

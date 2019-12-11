@@ -51,7 +51,7 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
     if (is_scalar_) {
       return rho_;
     } else {
-      return (*rho_cv_->ViewComponent("cell", true))[0][c];
+      return (rho_cv_->ViewComponent("cell", true))(c,0);
     }
   }
 

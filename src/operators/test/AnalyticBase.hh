@@ -133,12 +133,15 @@ inline
 void GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
-  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+  memcpy(val_tmp,val,n*sizeof(double)); 
+  //for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum") 
-    comm.SumAll(val_tmp, val, n);
-  else if (op == "max") 
-    comm.MaxAll(val_tmp, val, n);
+  if (op == "sum")
+    Teuchos::reduceAll(comm,Teuchos::REDUCE_SUM, 
+      *val_tmp, Teuchos::outArg(*val));
+  else if (op == "max")
+    Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX, 
+      *val_tmp, Teuchos::outArg(*val));
 
   delete[] val_tmp;
 }

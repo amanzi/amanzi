@@ -215,7 +215,7 @@ MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     GrammMatrix(poly, integrals_, basis, M);
     M.Multiply(v5, v4, false);
 
-    vdof.Reshape(ndof_f + ndof_c);
+    vdof.reshape(ndof_f + ndof_c);
     for (int n = ndof_cs; n < ndof_c; ++n) {
       vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c, false);
     }

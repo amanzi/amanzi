@@ -17,6 +17,7 @@
 #include <cmath>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
@@ -216,6 +217,8 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(const Vector& f,
     return criteria; // Zero solution satifies all criteria.
   }
 
+  Teuchos::RCP<int> t = Teuchos::rcp(new int(1)); 
+
   // Ignore all criteria if one iteration is enforced.
   if (!(criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     int ierr = CheckConvergence_(rnorm0, fnorm);
@@ -353,7 +356,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // calculate the first (num_ritz_ + l) rows of c.
   int i0(0);
   double tmp;
-  d.PutScalar(0.0);
+  d.putScalar(0.0);
   if (num_ritz_ == 0) {
     v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
     v_[0]->scale(1.0 / rnorm0);

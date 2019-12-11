@@ -98,7 +98,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // main virtual members
   // -- setup
   virtual void SetTensorCoefficient(
-      const TensorCoef_view_type& K) = 0;
+      const WhetStone::TensorArray& K) = 0;
   virtual void
   SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                        const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
@@ -125,7 +125,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // default implementation
   virtual void
-  Setup(const Kokkos::View<double**>& K,
+  Setup(const WhetStone::TensorArray& K,
         const Teuchos::RCP<const CompositeVector>& k,
         const Teuchos::RCP<const CompositeVector>& dkdp)
   {
@@ -143,7 +143,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
   // interface to solvers for treating nonlinear BCs.
-  // virtual double ComputeTransmissibility(int f) const = 0;
+  virtual double ComputeTransmissibility(int f) const = 0;
   // virtual double ComputeGravityFlux(int f) const = 0;
 
   // access
@@ -197,7 +197,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
  protected:
-  TensorCoef_view_type K_;
+  WhetStone::TensorArray K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation

@@ -158,7 +158,7 @@ AnalyticDGBase::ComputeCellError(const Amanzi::WhetStone::DG_Modal& dg,
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double volume = mesh_->cell_volume(c, false);
 
-    int nk = p.getNumVectors();
+    int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p[i][c];
 
@@ -236,7 +236,7 @@ AnalyticDGBase::ComputeCellErrorRemap(
     const Amanzi::AmanziGeometry::Point& yc = mesh1->cell_centroid(c);
     double volume = mesh1->cell_volume(c, false);
 
-    int nk = p.getNumVectors();
+    int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
     Amanzi::WhetStone::Polynomial poly;
     for (int i = 0; i < nk; ++i) data(i) = p[i][c];
@@ -291,12 +291,15 @@ inline void
 AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
-  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+  memcpy(val_tmp,val,n*sizeof(double)); 
+  //for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum")
-    mesh_->get_comm()->SumAll(val_tmp, val, n);
+    Teuchos::reduceAll(*mesh_->get_comm(),Teuchos::REDUCE_SUM, 
+      *val_tmp, Teuchos::outArg(*val));
   else if (op == "max")
-    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+    Teuchos::reduceAll(*mesh_->get_comm(),Teuchos::REDUCE_MAX, 
+      *val_tmp, Teuchos::outArg(*val));
 
   delete[] val_tmp;
 }

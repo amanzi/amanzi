@@ -122,6 +122,8 @@ TreeOperator::applyAssembled(const TreeVector& X, TreeVector& Y) const
   ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
   return ierr;
+#else 
+  return -1; 
 #endif
 }
 

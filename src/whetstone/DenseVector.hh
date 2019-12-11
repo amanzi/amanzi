@@ -20,6 +20,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "Teuchos_RCP.hpp"
 #include "lapack.hh"
 
 namespace Amanzi {
@@ -54,6 +55,11 @@ class DenseVector {
     }
   }
 
+  // TODO 
+  DenseVector(const Teuchos::RCP<const int > & map){
+
+  }
+
   ~DenseVector()
   {
     if (data_ != NULL) { delete[] data_; }
@@ -61,12 +67,12 @@ class DenseVector {
 
   // primary members
   // -- smart memory management: preserves data only for vector reduction
-  void Reshape(int mrow);
+  void reshape(int mrow);
 
   // -- initialization
   DenseVector& operator=(const DenseVector& B);
 
-  void PutScalar(double val)
+  void putScalar(double val)
   {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }
@@ -76,7 +82,7 @@ class DenseVector {
   const double& operator()(int i) const { return data_[i]; }
 
   // -- dot products
-  int Dot(const DenseVector& B, double* result)
+  int dot(const DenseVector& B, double* result)
   {
     if (m_ != B.m_) return -1;
 
@@ -149,7 +155,7 @@ class DenseVector {
 
   // compatibility members
   // -- for nonlinear solvers: this = sa * A + sthis * this
-  DenseVector& Update(double sa, const DenseVector& A, double sthis)
+  DenseVector& update(double sa, const DenseVector& A, double sthis)
   {
     const double* dataA = A.Values();
     for (int i = 0; i < m_; ++i) data_[i] = sa * dataA[i] + sthis * data_[i];
@@ -157,7 +163,7 @@ class DenseVector {
   }
 
   // -- for nonlinear solvers: this = sa * A + sb * B + sthis * this
-  DenseVector& Update(double sa, const DenseVector& A, double sb,
+  DenseVector& update(double sa, const DenseVector& A, double sb,
                       const DenseVector& B, double sthis)
   {
     const double* dataA = A.Values();
@@ -169,7 +175,7 @@ class DenseVector {
   }
 
   // -- scale
-  void Scale(double val)
+  void scale(double val)
   {
     for (int i = 0; i < m_; ++i) data_[i] *= val;
   }
@@ -189,20 +195,21 @@ class DenseVector {
   }
 
   // First level routines
-  void Norm2(double* result) const
+  double norm2() const
   {
-    *result = 0.0;
-    for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
-    *result = std::pow(*result, 0.5);
+    double result = 0.0;
+    for (int i = 0; i < m_; i++) result += data_[i] * data_[i];
+    return std::pow(result, 0.5);
   }
 
   // -- we use 'inf' instead of 'max' for compatibility with solvers
-  void NormInf(double* result) const
+  double normInf() const
   {
-    *result = 0.0;
+    double result = 0.0;
     for (int i = 0; i < m_; ++i) {
-      *result = std::max(*result, std::fabs(data_[i]));
+      result = std::max(result, std::fabs(data_[i]));
     }
+    return result; 
   }
 
   void SwapRows(int m1, int m2)
@@ -212,7 +219,12 @@ class DenseVector {
     data_[m1] = tmp;
   }
 
+  const Teuchos::RCP<const int>& getMap() const {
+    return map_;
+  }
+
  private:
+  Teuchos::RCP<const int> map_;
   int m_, mem_;
   double* data_;
 };

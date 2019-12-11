@@ -25,7 +25,7 @@ class Operator_Node : public Operator {
  public:
   // main constructor
   //   The CVS is the domain and range of the operator
-  Operator_Node(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator_Node(const Teuchos::RCP<const CompositeSpace>& cvs,
                 Teuchos::ParameterList& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE)
   {

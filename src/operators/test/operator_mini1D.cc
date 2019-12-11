@@ -67,7 +67,7 @@ MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r)
     WhetStone::DenseVector& rhs = op.rhs();
     for (int i = 0; i < ncells; ++i) {
       double xc = op.mesh_cell_centroid(i);
-      double hc = op.mesh_cell_volume(i, false);
+      double hc = op.mesh_cell_volume(i);
       rhs(i) = -12.0 * xc * hc;
     }
 
@@ -76,7 +76,7 @@ MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r)
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.applyInverse(rhs, sol);
+    op.ApplyInverse(rhs, sol);
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
@@ -84,7 +84,7 @@ MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r)
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op.mesh_cell_volume(i, false);
+      hc = op.mesh_cell_volume(i);
       xc = op.mesh_cell_centroid(i);
       err = xc * xc * xc - sol(i);
 
@@ -157,7 +157,7 @@ MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r)
     WhetStone::DenseVector& rhs = op.rhs();
     for (int i = 0; i < ncells; ++i) {
       double xc = op.mesh_cell_centroid(i);
-      double hc = op.mesh_cell_volume(i, false);
+      double hc = op.mesh_cell_volume(i);
       rhs(i) = -(4 * xc + 2.0) * hc;
     }
 
@@ -166,7 +166,7 @@ MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r)
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.applyInverse(rhs, sol);
+    op.ApplyInverse(rhs, sol);
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
@@ -174,7 +174,7 @@ MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r)
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op.mesh_cell_volume(i, false);
+      hc = op.mesh_cell_volume(i);
       xc = op.mesh_cell_centroid(i);
       err = xc * xc - sol(i);
 

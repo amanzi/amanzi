@@ -27,11 +27,27 @@ class Op_Cell_Node : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
   {
-    WhetStone::DenseMatrix null_matrix;
-    matrices.resize(
-      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED),
-      null_matrix);
-    matrices_shadow = matrices;
+    //WhetStone::DenseMatrix null_matrix;
+    //matrices.resize(
+    //  mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED),
+    //  null_matrix);
+    //matrices_shadow = matrices;
+    data = Kokkos::View<double**>(name, 
+      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), 1);
+    shadow = Kokkos::View<double**>(name, 
+      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), 1);
+  }
+
+  virtual void
+  getLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("cell", false);
+    Kokkos::parallel_for(
+        "Op_Cell_Cell::getLocalDiagCopy",
+        Xv.extent(0),
+        KOKKOS_LAMBDA(const int i) {
+          Xv(i,0) += data(i,0);
+        });
   }
 
   virtual void
@@ -68,16 +84,17 @@ class Op_Cell_Node : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
-      AmanziMesh::Entity_ID_List nodes;
+      const auto& s_n = scaling.ViewComponent("node", true);
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
 
-      for (int c = 0; c != matrices.size(); ++c) {
-        WhetStone::DenseMatrix& Acell = matrices[c];
-        mesh_->cell_get_nodes(c, &nodes);
+      for (int c = 0; c != data.extent(0); ++c) {
+        // TODO create matrix based on view
+        //WhetStone::DenseMatrix& Acell = data[c];
+        mesh->cell_get_nodes(c, nodes);
 
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) {
-            Acell(n, m) *= s_n[0][nodes[n]];
+            //Acell(n, m) *= s_n[0][nodes[n]];
           }
         }
       }

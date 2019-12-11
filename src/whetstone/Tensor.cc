@@ -11,7 +11,7 @@
 
   Tensors of rank 1 are numbers in all dimensions.
   Tensors of rank 2 are square matrices in all dimensions.
-  Only symmetric tensors of rank 4 are are considered here.
+  Only symmetric tensors of rank 4 are considered here.
 */
 
 #include <iostream>
@@ -31,47 +31,25 @@ Tensor::Tensor(const Tensor& T)
 {
   int d = T.dimension();
   int rank = T.rank();
-  double* data = T.data();
+  Kokkos::View<double*> data = T.data(); 
 
   if (d && rank) {
-    data_ = NULL;
     int mem = Init(d, rank);
-    for (int i = 0; i < mem; i++) data_[i] = data[i];
+    Kokkos::deep_copy(data_,data); 
   } else {
     d_ = rank_ = size_ = 0;
-    data_ = NULL;
   }
 }
-
-
-/* ******************************************************************
- * Constructor.
- * Warining: no check of data validity is performed.
- ****************************************************************** */
-Tensor::Tensor(int d, int rank, const double* data)
-{
-  size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
-  int mem = size_ * size_;
-
-  data_ = new double[mem];
-
-  d_ = d;
-  rank_ = rank;
-  for (int i = 0; i < mem; i++) data_[i] = data[i];
-}
-
 
 /* ******************************************************************
  * Initialization of a tensor of rank 1, 2 or 4.
  ****************************************************************** */
-int
-Tensor::Init(int d, int rank)
+int Tensor::Init(int d, int rank)
 {
   size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
   int mem = size_ * size_;
 
-  if (data_) delete[] data_;
-  data_ = new double[mem];
+  Kokkos::resize(data_,mem); 
 
   d_ = d;
   rank_ = rank;
@@ -85,9 +63,9 @@ Tensor::Init(int d, int rank)
  * Assign constant value to the tensor entries
  ****************************************************************** */
 void
-Tensor::PutScalar(double val)
+Tensor::putScalar(double val)
 {
-  if (!data_) return;
+  if (data_.extent(0) != size_*size_) return;
 
   size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
   int mem = size_ * size_;
@@ -131,8 +109,8 @@ Tensor::Inverse()
   } else {
     int info, ipiv[size_];
     double work[size_];
-    DGETRF_F77(&size_, &size_, data_, &size_, ipiv, &info);
-    DGETRI_F77(&size_, data_, &size_, ipiv, work, &size_, &info);
+    DGETRF_F77(&size_, &size_, data_ptr(), &size_, ipiv, &info);
+    DGETRI_F77(&size_, data_ptr(), &size_, ipiv, work, &size_, &info);
   }
 }
 
@@ -154,7 +132,7 @@ Tensor::PseudoInverse()
     double S[n], work[lwork];
 
     Tensor T(*this);
-    DSYEV_F77("V", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("V", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);
 
     // pseudo-invert diagonal matrix S
     double norm_inf(fabs(S[0]));
@@ -190,7 +168,7 @@ Tensor
 Tensor::Cofactors() const
 {
   Tensor C(d_, rank_);
-  double* dataC = C.data();
+  Kokkos::View<double*> dataC = C.data();
 
   if (size_ == 1) {
     dataC[0] = 1.0;
@@ -325,7 +303,7 @@ Tensor::SpectralBounds(double* lower, double* upper) const
     double S[n], work[lwork];
 
     Tensor T(*this);
-    DSYEV_F77("N", "U", &n, T.data(), &n, S, work, &lwork, &info);
+    DSYEV_F77("N", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);
     *lower = S[0];
     *upper = S[n - 1];
   }
@@ -358,7 +336,7 @@ Tensor::operator+=(double c)
 Tensor&
 Tensor::operator-=(const Tensor& T)
 {
-  double* data = T.data();
+  Kokkos::View<double*> data = T.data(); 
   for (int i = 0; i < size_ * size_; ++i) data_[i] -= data[i];
   return *this;
 }
@@ -372,7 +350,7 @@ Tensor::operator=(const Tensor& T)
 {
   int d = T.dimension();
   int rank = T.rank();
-  double* data = T.data();
+  Kokkos::View<double*> data = T.data(); 
 
   int mem = Init(d, rank);
   for (int i = 0; i < mem; i++) data_[i] = data[i];
@@ -380,35 +358,7 @@ Tensor::operator=(const Tensor& T)
 }
 
 
-/* ******************************************************************
- * First convolution operation for tensors of rank 1 and 2.
- ****************************************************************** */
-AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p)
-{
-  int rank = T.rank();
-  int d = T.dimension();
-  double* data = T.data();
 
-  AmanziGeometry::Point p2(p.dim());
-  if (rank == 1) {
-    p2 = data[0] * p;
-    return p2;
-
-  } else if (rank == 2) {
-    p2.set(0.0);
-    for (int i = 0; i < d; i++) {
-      for (int j = 0; j < d; j++) {
-        p2[j] += (*data) * p[i];
-        data++;
-      }
-    }
-    return p2;
-
-  } else if (rank == 4) {
-    return p; // undefined operation (lipnikov@lanl.gov)
-  }
-  return p;
-}
 
 
 /* ******************************************************************
@@ -418,14 +368,15 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 {
   int d = T1.dimension(); // the dimensions should be equals
   int rank1 = T1.rank(), rank2 = T2.rank();
-  double *data1 = T1.data(), *data2 = T2.data();
+  Kokkos::View<double*> data1 = T1.data();
+  Kokkos::View<double*> data2 = T2.data();
 
   Tensor T3;
 
   if (rank1 == 4 && rank2 == 2) {
     int n = d * (d + 1) / 2;
-    double* tmp1 = new double[n];
-    double* tmp2 = new double[n];
+    Kokkos::View<double*> tmp1("tmp1",n);
+    Kokkos::View<double*> tmp2("tmp2",n);
 
     tmp1[0] = data2[0];
     tmp1[1] = data2[d + 1];
@@ -457,17 +408,14 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
       T3(0, 2) = T3(2, 0) = tmp2[5];
     }
 
-    delete[] tmp1;
-    delete[] tmp2;
-
   } else if (rank1 == 1) {
     int mem = T3.Init(d, rank2);
-    double* data3 = T3.data();
+    Kokkos::View<double*> data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data2[i] * data1[0];
 
   } else if (rank2 == 1) {
     int mem = T3.Init(d, rank1);
-    double* data3 = T3.data();
+    Kokkos::View<double*> data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data1[i] * data2[0];
 
   } else if (rank2 == 2) {
@@ -484,13 +432,17 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 }
 
 
+
+
+
 /* ******************************************************************
  * Dot product of tensors of equal rank.
  ****************************************************************** */
 double
 DotTensor(const Tensor& T1, const Tensor& T2)
 {
-  double *data1 = T1.data(), *data2 = T2.data();
+  Kokkos::View<double*> data1 = T1.data(); 
+  Kokkos::View<double*> data2 = T2.data(); 
   int mem = T1.size() * T1.size();
 
   double s(0.0);
@@ -505,7 +457,7 @@ DotTensor(const Tensor& T1, const Tensor& T2)
 void
 Tensor::MakeDiagonal(double s)
 {
-  if (!data_) return;
+  if (data_.extent(0) != size_*size_) return;
 
   int mem = size_ * size_;
   for (int i = 1; i < mem; i++) data_[i] = 0.0;
@@ -565,7 +517,7 @@ operator<<(std::ostream& os, const Tensor& T)
 void
 TensorToVector(const Tensor& T, DenseVector& v)
 {
-  const double* data1 = T.data();
+  const Kokkos::View<double*> data1 = T.data();
   double* data2 = v.Values();
 
   if (T.rank() == 2) {
@@ -574,7 +526,7 @@ TensorToVector(const Tensor& T, DenseVector& v)
   } else if (T.rank() == 1) {
     int d = T.dimension();
     int mem = WHETSTONE_TENSOR_SIZE[d - 1][1]; // rank 2
-    v.PutScalar(0.0);
+    v.putScalar(0.0);
     for (int i = 0; i < mem * mem; i += d + 1) data2[i] = data1[0];
   }
 }
@@ -585,7 +537,7 @@ VectorToTensor(const DenseVector& v, Tensor& T)
   AMANZI_ASSERT(v.NumRows() == T.size() * T.size());
 
   const double* data1 = v.Values();
-  double* data2 = T.data();
+  Kokkos::View<double*> data2 = T.data();
   for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
 }
 

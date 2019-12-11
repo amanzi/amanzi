@@ -63,7 +63,7 @@ class PDE_DiffusionFV : public PDE_Diffusion {
   // -- setup
   using PDE_Diffusion::Setup;
   virtual void SetTensorCoefficient(
-      const TensorCoef_view_type& K) override;
+      const WhetStone::TensorArray& K) override;
   virtual void SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -96,15 +96,15 @@ class PDE_DiffusionFV : public PDE_Diffusion {
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  // virtual double ComputeTransmissibility(int f) const override;
+  virtual double ComputeTransmissibility(int f) const override;
   // virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
- protected:
+ public:
   void ComputeTransmissibility_();
-
+protected:
   void AnalyticJacobian_(const CompositeVector& solution);
 
   // virtual void

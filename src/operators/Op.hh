@@ -111,6 +111,9 @@ struct Op {
   // diagonal matrix
   std::string schema_string;
 
+  Kokkos::View<double**> diags; 
+  Kokkos::View<double**> diags_shadow; 
+
   Kokkos::View<double**> data;
   Kokkos::View<double**> shadow;
   Kokkos::View<int*> shadow_indices;

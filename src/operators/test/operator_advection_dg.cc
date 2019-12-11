@@ -23,6 +23,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "AmanziComm.hh"
 #include "Explicit_TI_RK.hh"
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"

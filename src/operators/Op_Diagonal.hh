@@ -32,15 +32,17 @@ class Op_Diagonal : public Op {
               std::string col_compname,
               std::shared_ptr<const std::vector<std::vector<int>>>& row_inds,
               std::shared_ptr<const std::vector<std::vector<int>>>& col_inds)
-    : Op(OPERATOR_SCHEMA_INDICES, name),
+    : Op(OPERATOR_SCHEMA_INDICES, name, Teuchos::null),
       row_compname_(row_compname),
       col_compname_(col_compname),
       row_inds_(row_inds),
       col_inds_(col_inds)
   {
-    WhetStone::DenseMatrix null_matrix;
-    matrices.resize(row_inds->size(), null_matrix);
-    matrices_shadow = matrices;
+    //WhetStone::DenseMatrix null_matrix;
+    //matrices.resize(row_inds->size(), null_matrix);
+    //matrices_shadow = matrices;
+    data = Kokkos::View<double**>(name, row_inds->size(), 1);
+    shadow = Kokkos::View<double**>(name, row_inds->size(), 1);
   }
   ~Op_Diagonal(){};
 

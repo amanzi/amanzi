@@ -30,7 +30,7 @@ class Monomial : public PolynomialBase {
  public:
   Monomial()
   {
-    coefs_.Reshape(1);
+    coefs_.reshape(1);
     coefs_(0) = 0.0;
   }
   Monomial(int d, const int* multi_index, double coef)
@@ -41,7 +41,7 @@ class Monomial : public PolynomialBase {
       multi_index_[i] = multi_index[i];
       order_ += multi_index_[i];
     }
-    coefs_.Reshape(1);
+    coefs_.reshape(1);
     coefs_(0) = coef;
   }
   ~Monomial(){};
@@ -68,7 +68,7 @@ Monomial::ExpandCoefficients() const
 {
   int size = PolynomialSpaceDimension(d_, order_);
   DenseVector coefs(size);
-  coefs.PutScalar(0.0);
+  coefs.putScalar(0.0);
 
   int l = PolynomialPosition(d_, multi_index_);
   coefs(l) = coefs_(0);

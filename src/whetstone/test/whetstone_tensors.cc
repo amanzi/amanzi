@@ -46,7 +46,7 @@ TEST(TENSOR_CONSTRUCTOR)
 
   std::cout << "Test: Construction of Tensors rank 2" << std::endl;
 
-  double data[4];
+  Kokkos::View<double*> data;
 
   Tensor T1;
   Tensor T2a(2, 1), T2b(2, 2), T2c(3, 1), T2d(3, 2), T2e(2, 4);

@@ -25,6 +25,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "Tensor.hh"
+#include "AmanziComm.hh"
 
 // Amanzi::Operators
 #include "Operator_FaceCell.hh"
@@ -69,24 +70,27 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient.
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  WhetStone::TensorArray K; 
+  //Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+  //  Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned =
     mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost =
     mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  K.resize(ncells_owned,2); 
+
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
-    K->push_back(Kc);
+    K.addTensor(c,Kc);
   }
 
   // create boundary data
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  Kokkos::View<int*> bc_model = bc->bc_model();
+  Kokkos::View<double*> bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -103,19 +107,20 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
   cvs->SetMesh(mesh)->SetGhosted(true);
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  Teuchos::RCP<const CompositeSpace> cs = cvs->CreateSpace(); 
 
   // create velocity field
-  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
-  Epetra_MultiVector& uf = *u->ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cs));
+  MultiVectorView_type<AmanziDefaultDevice> uf = u->ViewComponent("face");
   int nfaces =
     mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
-  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * mesh->face_normal(f); }
+  for (int f = 0; f < nfaces; f++) { uf(f,0) = vel * mesh->face_normal(f); }
 
   // create the global op
   Teuchos::ParameterList plist1;
   Teuchos::RCP<Operator> global_op =
-    Teuchos::rcp(new Operator_FaceCell(cvs, plist1));
+    Teuchos::rcp(new Operator_FaceCell(cs, plist1));
 
   // create advection operator
   Teuchos::ParameterList alist;
@@ -143,7 +148,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
   // make reverse assembling: diffusion + advection
   Teuchos::ParameterList plist2;
   Teuchos::RCP<Operator> global_op2 =
-    Teuchos::rcp(new Operator_FaceCell(cvs, plist2));
+    Teuchos::rcp(new Operator_FaceCell(cs, plist2));
 
   Teuchos::ParameterList olist2 =
     plist.sublist("PK operator").sublist("diffusion operator mfd");
@@ -167,12 +172,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE)
   global_op2->AssembleMatrix();
 
   // compare matrices
-  int n, nrows = global_op->A()->NumMyRows();
+  int n, nrows = global_op->A()->getNodeNumRows();
 
   for (int i = 0; i < nrows; ++i) {
-    double *val2, *val4;
-    global_op->A()->ExtractMyRowView(i, n, val2);
-    global_op2->A()->ExtractMyRowView(i, n, val4);
+    const Amanzi::double_type *val2, *val4;
+    const Amanzi::LO* ords1,* ords2; 
+    global_op->A()->getLocalRowViewRaw(i, n, ords1,  val2);
+    global_op2->A()->getLocalRowViewRaw(i, n, ords2, val4);
     for (int k = 0; k < n; ++k) CHECK_CLOSE(val2[k], val4[k], 1e-10);
   }
 }
@@ -208,24 +214,25 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  WhetStone::TensorArray K;
   int ncells_owned =
     mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost =
     mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  K.resize(ncells_owned,2);
+
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
-    K->push_back(Kc);
+    K.addTensor(c,Kc);
   }
 
   // create boundary data
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  Kokkos::View<int*> bc_model = bc->bc_model();
+  Kokkos::View<double*> bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -242,19 +249,20 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   cvs->SetMesh(mesh)->SetGhosted(true);
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  Teuchos::RCP<const CompositeSpace> cs = cvs->CreateSpace(); 
 
   // create velocity field
-  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
-  Epetra_MultiVector& uf = *u->ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cs));
+  MultiVectorView_type<AmanziDefaultDevice> uf = u->ViewComponent("face");
   int nfaces =
     mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
-  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * mesh->face_normal(f); }
+  for (int f = 0; f < nfaces; f++) { uf(f,0) = vel * mesh->face_normal(f); }
 
   // create the global op
   Teuchos::ParameterList plist1;
   Teuchos::RCP<Operator> global_op =
-    Teuchos::rcp(new Operator_Cell(cvs, plist1, OPERATOR_SCHEMA_DOFS_CELL));
+    Teuchos::rcp(new Operator_Cell(cs, plist1, OPERATOR_SCHEMA_DOFS_CELL));
 
   // create advection operator
   Teuchos::ParameterList alist;
@@ -282,7 +290,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   // make reverse assembling: diffusion + advection
   Teuchos::ParameterList plist2;
   Teuchos::RCP<Operator> global_op2 =
-    Teuchos::rcp(new Operator_Cell(cvs, plist2, OPERATOR_SCHEMA_DOFS_CELL));
+    Teuchos::rcp(new Operator_Cell(cs, plist2, OPERATOR_SCHEMA_DOFS_CELL));
 
   Teuchos::ParameterList olist2 =
     plist.sublist("PK operator").sublist("diffusion operator fv");
@@ -306,12 +314,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV)
   global_op2->AssembleMatrix();
 
   // compare matrices
-  int n, nrows = global_op->A()->NumMyRows();
+  int n, nrows = global_op->A()->getNodeNumRows();
 
   for (int i = 0; i < nrows; ++i) {
-    double *val2, *val4;
-    global_op->A()->ExtractMyRowView(i, n, val2);
-    global_op2->A()->ExtractMyRowView(i, n, val4);
+    const Amanzi::double_type *val2, *val4;
+    const Amanzi::LO* ords1,* ords2; 
+    global_op->A()->getLocalRowViewRaw(i, n, ords1, val2);
+    global_op2->A()->getLocalRowViewRaw(i, n, ords2, val4);
     for (int k = 0; k < n; ++k) CHECK_CLOSE(val2[k], val4[k], 1e-10);
   }
 }

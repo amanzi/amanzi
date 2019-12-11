@@ -195,7 +195,7 @@ MFD3D_Generalized_Diffusion::StiffnessMatrix(int c, const Tensor& K,
 
   // populate areas
   DenseVector area(nx), area_div(nx);
-  area_div.PutScalar(0.0);
+  area_div.putScalar(0.0);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);

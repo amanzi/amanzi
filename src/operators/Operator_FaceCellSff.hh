@@ -24,7 +24,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
  public:
   // main constructor
   //   The CVS is the domain and range of the operator
-  Operator_FaceCellSff(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator_FaceCellSff(const Teuchos::RCP<const CompositeSpace>& cvs,
                        Teuchos::ParameterList& plist)
     : Operator_FaceCell(cvs, plist)
   {

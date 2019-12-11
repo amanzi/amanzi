@@ -107,7 +107,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   virtual void Init(Teuchos::ParameterList& plist);
 
   virtual void SetTensorCoefficient(
-    const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+    const WhetStone::TensorArray& K) override;
   virtual void SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -165,18 +165,18 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // Developments
   // -- working with consistent faces
   virtual int UpdateConsistentFaces(CompositeVector& u) override;
-  Teuchos::RCP<const Operator> consistent_face_operator() const
-  {
-    return consistent_face_op_;
-  }
-  Teuchos::RCP<Operator> consistent_face_operator()
-  {
-    return consistent_face_op_;
-  }
+  //Teuchos::RCP<const Operator> consistent_face_operator() const
+  //{
+  //  return consistent_face_op_;
+  //}
+  //Teuchos::RCP<Operator> consistent_face_operator()
+  //{
+  //  return consistent_face_op_;
+  //}
 
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
+  //virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }
@@ -202,14 +202,14 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                            const Teuchos::Ptr<const CompositeVector>& u,
                            const Teuchos::Ptr<const CompositeVector>& factor);
 
-  void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
-                       const Teuchos::Ptr<const BCs>& bc_test, bool primary,
+  void ApplyBCs_Mixed_(const Teuchos::Ptr<BCs>& bc_trial,
+                       const Teuchos::Ptr<BCs>& bc_test, bool primary,
                        bool eliminate, bool essential_eqn);
-  void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
-                      const Teuchos::Ptr<const BCs>& bc_test, bool primary,
+  void ApplyBCs_Cell_(const Teuchos::Ptr<BCs>& bc_trial,
+                      const Teuchos::Ptr<BCs>& bc_test, bool primary,
                       bool eliminate, bool essential_eqn);
-  void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
-                       const Teuchos::Ptr<const BCs>& bc_n, bool primary,
+  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
+                       const Teuchos::Ptr<BCs>& bc_n, bool primary,
                        bool eliminate, bool essential_eqn);
 
  protected:

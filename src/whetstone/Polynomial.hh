@@ -54,7 +54,7 @@ class Polynomial : public PolynomialBase {
 
   // initialization options
   // -- reset all coefficients to a scalar
-  void PutScalar(double val) { coefs_.PutScalar(val); }
+  void PutScalar(double val) { coefs_.putScalar(val); }
 
   // modifiers
   // -- polynomial is recalculated
@@ -71,8 +71,7 @@ class Polynomial : public PolynomialBase {
   // -- polynomial norms (we use 'inf' instead of 'max' for uniformity)
   double NormInf() const
   {
-    double tmp;
-    coefs_.NormInf(&tmp);
+    double tmp = coefs_.normInf();
     return tmp;
   }
 

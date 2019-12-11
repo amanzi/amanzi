@@ -76,7 +76,7 @@ struct Maps {
 TEST(SUPERMAP_COPY_INVERTIBLE)
 {
   Maps maps;
-  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(*maps.tvs));
+  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(maps.tvs));
 
   // initialize randomly
   tv->SubVector(0)->Data()->Random();
@@ -85,7 +85,7 @@ TEST(SUPERMAP_COPY_INVERTIBLE)
   Epetra_Vector vec(*maps.map->getMap());
 
   // copy forward, backward
-  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(*maps.tvs));
+  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(maps.tvs));
   int ierr = CopyTreeVectorToSuperVector(*maps.map, *tv, vec);
   CHECK(!ierr);
 

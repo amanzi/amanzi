@@ -27,11 +27,15 @@ class Op_Cell_Face : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE, name, mesh)
   {
-    WhetStone::DenseMatrix null_matrix;
-    matrices.resize(
-      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED),
-      null_matrix);
-    matrices_shadow = matrices;
+    //WhetStone::DenseMatrix null_matrix;
+    //matrices.resize(
+    //  mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED),
+    //  null_matrix);
+    //matrices_shadow = matrices;
+    data = Kokkos::View<double**>(name, 
+      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), 1);
+    shadow = Kokkos::View<double**>(name, 
+      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), 1);
   }
 
   virtual void
@@ -66,17 +70,19 @@ class Op_Cell_Face : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
+    const Amanzi::AmanziMesh::Mesh* m = mesh.get();
     if (scaling.HasComponent("face")) {
-      const Epetra_MultiVector& s_f = *scaling.ViewComponent("face", true);
-      AmanziMesh::Entity_ID_List faces;
-      for (int c = 0; c != matrices.size(); ++c) {
-        mesh_->cell_get_faces(c, &faces);
-        for (int n = 0; n != faces.size(); ++n) {
-          for (int m = 0; m != faces.size(); ++m) {
-            matrices[c](n, m) *= s_f[0][faces[n]];
+      auto s_f = scaling.ViewComponent("face", true);
+      Kokkos::parallel_for(s_f.extent(0),
+        KOKKOS_LAMBDA(const int c){
+          Kokkos::View<AmanziMesh::Entity_ID*> faces;
+          m->cell_get_faces(c, faces);
+          for (int n = 0; n != faces.extent(0); ++n) {
+            for (int m = 0; m != faces.extent(0); ++m) {
+              data(n, m) *= s_f(0,faces[n]);
+            }
           }
-        }
-      }
+        }); 
     }
   }
 };

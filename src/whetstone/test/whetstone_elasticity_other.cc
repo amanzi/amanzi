@@ -81,8 +81,8 @@ TEST(DIFFUSION_STOKES_2D)
   Point p(d);
 
   DenseVector ax(nrows), ay(nrows);
-  ax.PutScalar(0.0);
-  ay.PutScalar(0.0);
+  ax.putScalar(0.0);
+  ay.putScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes(i);
     mesh->node_get_coordinates(v, &p);

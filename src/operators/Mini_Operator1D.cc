@@ -29,11 +29,11 @@ Mini_Operator1D::Init(std::shared_ptr<const WhetStone::DenseVector> mesh)
   int ncells = mesh_->NumRows() - 1;
   AMANZI_ASSERT(ncells > 0);
 
-  diag_.Reshape(ncells);
-  up_.Reshape(ncells);
-  down_.Reshape(ncells);
+  diag_.reshape(ncells);
+  up_.reshape(ncells);
+  down_.reshape(ncells);
 
-  rhs_.Reshape(ncells);
+  rhs_.reshape(ncells);
   rhs_.putScalar(0.0);
 }
 
@@ -60,7 +60,7 @@ Mini_Operator1D::AddAccumulationTerm(const WhetStone::DenseVector& s0,
 {
   int ncells = diag_.NumRows();
   for (int i = 0; i < ncells; ++i) {
-    double h = mesh_cell_volume(i, false);
+    double h = mesh_cell_volume(i);
     diag_(i) += s1(i) * h / dt;
     rhs_(i) += s0(i) * sol(i) * h / dt;
   }
@@ -71,7 +71,7 @@ Mini_Operator1D::AddAccumulationTerm(const WhetStone::DenseVector& s1)
 {
   int ncells = diag_.NumRows();
   for (int i = 0; i < ncells; ++i) {
-    diag_(i) += s1(i) * mesh_cell_volume(i, false);
+    diag_(i) += s1(i) * mesh_cell_volume(i);
   }
 }
 

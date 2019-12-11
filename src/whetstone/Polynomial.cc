@@ -27,8 +27,8 @@ namespace WhetStone {
 Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
-  coefs_.Reshape(size_);
-  coefs_.PutScalar(0.0);
+  coefs_.reshape(size_);
+  coefs_.putScalar(0.0);
 }
 
 
@@ -54,8 +54,8 @@ Polynomial::Polynomial(int d, const int* multi_index, double factor)
   for (int i = 0; i < d_; ++i) order_ += multi_index[i];
 
   size_ = PolynomialSpaceDimension(d_, order_);
-  coefs_.Reshape(size_);
-  coefs_.PutScalar(0.0);
+  coefs_.reshape(size_);
+  coefs_.putScalar(0.0);
 
   int l = PolynomialPosition(d_, multi_index);
   coefs_(l) = factor;
@@ -85,8 +85,8 @@ Polynomial::Polynomial(const Monomial& mono)
   origin_ = mono.origin();
 
   size_ = PolynomialSpaceDimension(d_, order_);
-  coefs_.Reshape(size_);
-  coefs_.PutScalar(0.0);
+  coefs_.reshape(size_);
+  coefs_.putScalar(0.0);
 
   int l = PolynomialPosition(d_, mono.multi_index());
   coefs_(l) = mono.coefs()(0);
@@ -108,7 +108,7 @@ Polynomial::Polynomial(int d, int order,
   AMANZI_ASSERT(size_ == xyz.size());
   AMANZI_ASSERT(size_ == values.NumRows());
 
-  coefs_.Reshape(size_);
+  coefs_.reshape(size_);
 
   if (order == 0) {
     coefs_(0) = values(0);
@@ -154,22 +154,22 @@ Polynomial::Reshape(int d, int order, bool reset)
     origin_ = AmanziGeometry::Point(d);
 
     size_ = PolynomialSpaceDimension(d_, order_);
-    coefs_.Reshape(size_);
-    coefs_.PutScalar(0.0);
+    coefs_.reshape(size_);
+    coefs_.putScalar(0.0);
   } else if (order_ != order) {
     int size = size_;
 
     order_ = order;
     size_ = PolynomialSpaceDimension(d_, order_);
-    coefs_.Reshape(size_);
+    coefs_.reshape(size_);
 
     if (reset) {
-      coefs_.PutScalar(0.0);
+      coefs_.putScalar(0.0);
     } else {
       for (int i = size; i < size_; ++i) coefs_(i) = 0.0;
     }
   } else if (reset) {
-    coefs_.PutScalar(0.0);
+    coefs_.putScalar(0.0);
   }
 }
 
@@ -284,7 +284,7 @@ Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
       for (int k = 0; k <= order_; ++k) {
         DenseVector& dv = powers[i][k];
-        dv.Reshape(k + 1);
+        dv.reshape(k + 1);
 
         int cnk(1);
         double val(1.0), a(shift[i]);
@@ -363,7 +363,7 @@ Polynomial::ChangeOrigin(const Monomial& mono,
     std::vector<DenseVector> powers(d);
 
     for (int i = 0; i < d; ++i) {
-      powers[i].Reshape(index[i] + 1);
+      powers[i].reshape(index[i] + 1);
 
       int cnk(1);
       double val(1.0), a(shift[i]);

@@ -170,7 +170,7 @@ MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N,
     double s = Tinv(0, 0);
     for (int i = 0; i < nrows * nd; i++) data_RT[i] = data_N[i] * s;
   } else if (Tinv.rank() == 4) {
-    DenseMatrix Ttmp(nd, nd, Tinv.data(), WHETSTONE_DATA_ACCESS_VIEW);
+    DenseMatrix Ttmp(nd, nd, Tinv.data_ptr(), WHETSTONE_DATA_ACCESS_VIEW);
     MatrixMatrixProduct_(R, Ttmp, false, RT);
   }
   DenseMatrix AcAc(nrows, nrows);

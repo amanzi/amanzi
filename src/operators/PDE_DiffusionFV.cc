@@ -147,7 +147,7 @@ PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
 
 void
 PDE_DiffusionFV::SetTensorCoefficient(
-    const TensorArray& K)
+    const WhetStone::TensorArray& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -525,31 +525,32 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   {
     auto trans_f = transmissibility_->ViewComponent("face", true);
   
-    Kokkos::parallel_for(
-        "PDE_DiffusionFV::ComputeTransmissibility",
-        ncells_owned,
-        KOKKOS_LAMBDA(const int& c) {
-        
-          AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<AmanziGeometry::Point*> bisectors;
-          mesh_p->cell_get_faces_and_bisectors(c, faces, bisectors);
+    for(int c = 0 ; c < ncells_owned; ++c){
+    //Kokkos::parallel_for(
+    //    "PDE_DiffusionFV::ComputeTransmissibility",
+    //    ncells_owned,
+    //    KOKKOS_LAMBDA(const int& c) {
+      AmanziMesh::Entity_ID_View faces;
+      Kokkos::View<AmanziGeometry::Point*> bisectors;
+      mesh_p->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc = K_.getTensor(i);
-          
-          Kokkos::parallel_for(
-              faces.extent(0),
-              (=) (const int& i) {
-                auto f = faces(i);
-                const AmanziGeometry::Point& a = bisectors(i);
-                const AmanziGeometry::Point& normal = mesh_p->face_normal(f);
+      WhetStone::Tensor Kc = K_.getTensor(c);
+      
+      Kokkos::parallel_for(
+        faces.extent(0),
+        KOKKOS_LAMBDA (const int& i) {
+          auto f = faces(i);
+          const AmanziGeometry::Point& a = bisectors(i);
+          const AmanziGeometry::Point& normal = mesh_p->face_normal(f);
 
-                double s = mesh_p->face_area(f) / AmanziGeometry::norm(a);
+          double s = mesh_p->face_area(f) / AmanziGeometry::norm(a);
 
-                double perm = ((Kc * a) * normal) * s;
-                double dxn = a * normal;
-                Kokkos::atomic_add(&trans_f(f,0), fabs(dxn / perm));
-              });
-        });
+          double perm = ((Kc * a) * normal) * s;
+          double dxn = a * normal;
+          Kokkos::atomic_add(&trans_f(f,0), fabs(dxn / perm));
+      });
+    }
+        //});
   }
   transmissibility_->GatherGhostedToMaster(Tpetra::ADD);
   transmissibility_->reciprocal(*transmissibility_);

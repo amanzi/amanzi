@@ -21,7 +21,7 @@ namespace WhetStone {
  * Smart memory management: preserves data only for vector reduction
  ****************************************************************** */
 void
-DenseVector::Reshape(int mrow)
+DenseVector::reshape(int mrow)
 {
   m_ = mrow;
 

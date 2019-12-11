@@ -419,7 +419,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR)
 
   MFD3D_CrouzeixRaviart mfd(plist, mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>(3);
-  moments->PutScalar(0.0);
+  moments->putScalar(0.0);
   (*moments)(2) = 1.0 / 15;
 
   mfd.set_order(3);
