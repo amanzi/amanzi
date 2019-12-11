@@ -173,13 +173,9 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
   num_itrs_ = 0;
   pc_calls_ = 0;
 
-  std::cout<<"Before vector"<<std::endl;
-
   // create storage
   auto r = Teuchos::rcp(new Vector(u->getMap()));
   auto du = Teuchos::rcp(new Vector(u->getMap()));
-
-  std::cout<<"Vecotr created in newton"<<std::endl;
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
