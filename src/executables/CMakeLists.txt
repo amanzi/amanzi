@@ -151,6 +151,7 @@ endif()
 
 
 
+#target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS} hdf5::hdf5_hl-static)
 target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS})
 install(TARGETS ats DESTINATION bin)
 

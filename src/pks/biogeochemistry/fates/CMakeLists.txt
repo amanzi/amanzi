@@ -5,6 +5,7 @@
 
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/biogeochemistry/bgc_simple/)
 
 add_library(pk_veg
   fates_pk.cc

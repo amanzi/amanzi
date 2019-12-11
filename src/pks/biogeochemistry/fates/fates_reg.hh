@@ -11,7 +11,7 @@
 #include "fates_pk.hh"
 
 namespace Amanzi {
-namespace Vegetation {
+namespace BGC {
 
 RegisteredPKFactory<FATES_PK>
 FATES_PK::reg_("FATES");
