@@ -33,6 +33,7 @@ class DenseVector {
   explicit DenseVector(int mrow) : m_(mrow), mem_(mrow)
   {
     data_ = new double[mem_];
+    map_ = Teuchos::rcp(new int(mem_)); 
   }
 
   DenseVector(int mrow, double* data)
@@ -41,6 +42,7 @@ class DenseVector {
     mem_ = mrow;
     data_ = new double[mem_];
     for (int i = 0; i < m_; i++) data_[i] = data[i];
+    map_ = Teuchos::rcp(new int(mem_)); 
   }
 
   DenseVector(const DenseVector& B)
@@ -53,11 +55,17 @@ class DenseVector {
       const double* dataB = B.Values();
       for (int i = 0; i < m_; i++) data_[i] = dataB[i];
     }
+    map_ = Teuchos::rcp(new int(mem_)); 
   }
 
-  // TODO 
-  DenseVector(const Teuchos::RCP<const int > & map){
-
+  DenseVector(const Teuchos::RCP<const int>& map){
+    map_ = map; 
+    mem_ = *(map.get()); 
+    m_ = mem_; 
+    data_ = NULL; 
+    if(m_ > 0){
+      data_ = new double[mem_]; 
+    }
   }
 
   ~DenseVector()

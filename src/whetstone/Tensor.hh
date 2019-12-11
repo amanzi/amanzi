@@ -101,9 +101,6 @@ class Tensor {
  private:
   int d_, rank_, size_;
   Kokkos::View<double*> data_;
-
-  Kokkos::View<double*> tmp1_; 
-  Kokkos::View<double*> tmp2_; 
 };
 
 // Tensor Array structure
