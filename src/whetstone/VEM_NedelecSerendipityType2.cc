@@ -141,9 +141,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
       double length = mesh_->edge_length(e);
       std::vector<AmanziGeometry::Point> tau_edge(1, tau);
 
-      // order 0 scheme
-      // for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / length;
-
       for (auto it = pe.begin(); it < pe.end(); ++it) {
         const int* index = it.multi_index();
         Polynomial emono(d_ - 2, index, tau[k] / length);
@@ -199,15 +196,20 @@ int VEM_NedelecSerendipityType2::L2consistency(
   }
 
   // -- L2-projector in cell
-  DenseMatrix MG(ndc, ndc), NT, L2c;
-  GrammMatrix(numi, order_, integrals_, basis, MG);
+  Tensor Idc(d_, 2);
+  Idc.MakeDiagonal(1.0);
+
+  DenseMatrix MGc, vMGc, NT, L2c;
+  integrals_.set_id(c);
+  GrammMatrix(numi, order_, integrals_, basis, MGc);
+  vMGc = Idc ^ MGc;
 
   NT.Transpose(N);
   auto NN = NT * N;
   NN.InverseMoorePenrose();
   L2c = NN * NT;
 
-  // contributions of least square projectors on faces
+  // assemble matrix R
   DenseMatrix R(ndof_S, ndc * d_);
   R.PutScalar(0.0);
 
@@ -226,6 +228,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
     Polynomial p2;
     VectorDecomposition3DCurl(q, k, p1, p2);
 
+    // contributions of least square projectors on faces
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       double area = mesh_->face_area(f);
@@ -256,16 +259,18 @@ int VEM_NedelecSerendipityType2::L2consistency(
       auto v = ExpandCoefficients(p2D);
       v /= area;
 
+      int stride1 = v.NumRows() / (d_ - 1);
+      int stride2 = PolynomialSpaceDimension(d_ - 1, order_ + 1);
+      v.Regroup(stride1, stride2);
+
       // calculate one factor in the L2 inner product
       vbasisf[n].ChangeBasisNaturalToMy(v, d_ - 1);
+
       vMGf[n].Multiply(v, w, false);
 
-      // reduce polynomial degree of the vector of coefficients by 1
-      int s(0), stride(krows / (d_ - 1));
-      for (int i = 0; i < d_ - 1; ++i) {
-        for (int j = 0; j < ndf; ++j) w(s++) = w(i * stride + j);
-      }
-      w.Reshape(s);
+      // reduce polynomial degree by one
+      stride1 = nrows / (d_ - 1);
+      w.Regroup(stride2, stride1);
 
       vL2f[n].Multiply(w, p0v, true);
 
@@ -273,27 +278,42 @@ int VEM_NedelecSerendipityType2::L2consistency(
         R(map[i], col) += p0v(i) * fdirs[n];
       }
     }
+
+    // contributions of the least square projector in cell
+    if (order_ > 0) {
+      int nrows = L2c.NumRows(); 
+      int ncols = L2c.NumCols(); 
+      WhetStone::DenseVector w(nrows), p2v(ncols);
+
+      VectorPolynomial p3D = xyz * p2;
+      auto v = ExpandCoefficients(p3D);
+
+      int stride1 = v.NumRows() / d_;
+      int stride2 = ndc;
+      v.Regroup(stride1, stride2);
+
+      vMGc.Multiply(v, w, false);
+      L2c.Multiply(w, p2v, true);
+
+      for (int i = 0; i < ncols; ++i) {
+        R(i, col) += p2v(i);
+      }
+    }
   }
 
   // DenseMatrix X;
   // X.Transpose(N);
-  // std::cout << X * R << std::endl;
+  // PrintMatrix(X * R, "%12.5f", 3 * X.NumRows() / d_);
 
   // calculate Mc = R (R^T N)^{-1} R^T 
-  AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
+  DenseMatrix RT;
+  RT.Transpose(R);
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  for (int i = 0; i < nedges; i++) {
-    for (int k = 0; k < d_; ++k) v1[k] = R(i, k);
-    v2 = Kinv * v1;
-
-    for (int j = i; j < nedges; j++) {
-      for (int k = 0; k < d_; ++k) v3[k] = R(j, k);
-      Mc(i, j) = (v2 * v3) / volume;
-    }
-  }
+  MGc.InverseSPD();
+  Mc = R * ((Idc * Kinv) ^ MGc) * RT;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -311,6 +331,33 @@ int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix&
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Projector on a mesh face.
+****************************************************************** */
+void VEM_NedelecSerendipityType2::ProjectorFace_(
+    int f, const std::vector<VectorPolynomial>& ve,
+    const ProjectorType type, const Polynomial* moments, VectorPolynomial& uf)
+{
+  const auto& xf = mesh_->face_centroid(f);
+  const auto& normal = mesh_->face_normal(f);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+
+  std::vector<VectorPolynomial> vve;
+  for (int i = 0; i < ve.size(); ++i) {
+    auto tmp = ProjectVectorPolynomialOnManifold(ve[i], xf, *coordsys->tau());
+    vve.push_back(tmp);
+  }
+
+  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
+  uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
+  for (int i = 0; i < uf.NumRows(); ++i) {
+    uf[i].InverseChangeCoordinates(xf, *coordsys->tau());  
+  }
 }
 
 }  // namespace WhetStone

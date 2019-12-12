@@ -248,6 +248,10 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_2D) {
     auto p3 = Rot2D(p1) + p4;
     p3 -= q;
     CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
+
+    // re-group coefficients
+    auto v = ExpandCoefficients(q);
+    v.Regroup(6, 10);
   }
 }
 

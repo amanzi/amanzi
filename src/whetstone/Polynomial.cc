@@ -507,13 +507,14 @@ void Polynomial::ChangeCoordinates(
 void Polynomial::InverseChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
+  int dnew = x0.dim();
+
   // constant is not changing  
   if (order_ == 0) {
     origin_ = x0;
+    d_ = dnew;
     return;
   }
-
-  int dnew = x0.dim();
 
   // new polynomial will be centered at x0
   Polynomial tmp(dnew, order_);

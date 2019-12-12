@@ -33,6 +33,7 @@
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "Polynomial.hh"
+#include "VEM_NedelecSerendipityType2.hh"
 
 
 /* **************************************************************** */
@@ -1015,3 +1016,134 @@ TEST(SERENDIPITY_PROJECTORS_CUBE_PK_SURFACE) {
   Projector3DLagrangeSerendipitySurface("test/cube_unit.exo");
   Projector3DLagrangeSerendipitySurface("test/cube_unit_rotated.exo");
 }
+
+
+/* **************************************************************** */
+void Projector3DNedelecSerendipitySurface(const std::string& filename)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO Serendipity Nedelec projectors on surface for " << filename << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+ 
+  int c(0);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+  VEM_NedelecSerendipityType2 vem(plist, mesh);
+
+  std::vector<int> edirs;
+  Entity_ID_List faces, edges;
+
+  mesh->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  for (int m = 0; m < nfaces; ++m) {
+    int f = faces[m];
+    double area = mesh->face_area(f);
+    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+    mesh->face_get_edges_and_dirs(f, &edges, &edirs);
+    int nedges = edges.size();
+    std::vector<VectorPolynomial> ve(nedges);
+
+    for (int k = 0; k < 2; ++k) {
+      for (int n = 0; n < nedges; ++n) {
+        ve[n].Reshape(3, 3, k);
+        for (int i = 0; i < 3; ++i) {
+          ve[n][i](0) = i + 1.0;
+          if (k > 0) {
+            ve[n][i](i + 1) = i + 1;
+          }
+        }
+        ve[n] = ve[n] ^ normal;
+      }
+
+      VectorPolynomial uf;
+
+      vem.set_order(k);
+      vem.L2Face(f, ve, NULL, uf);
+      uf.ChangeOrigin(AmanziGeometry::Point(3));
+
+      VectorPolynomial tmp(3, 2, 0);
+      tmp[0] = ve[0] * (*coordsys->tau())[0];
+      tmp[1] = ve[0] * (*coordsys->tau())[1];
+      uf -= tmp;
+      CHECK(uf.NormInf() < 4e-10);
+    }
+  }
+}
+
+
+TEST(SERENDIPITY_PROJECTORS_CUBE_NEDELEC_SURFACE) {
+  Projector3DNedelecSerendipitySurface("test/cube_unit.exo");
+}
+
+
+/* **************************************************************** */
+void Projector3DNedelecSerendipity(const std::string& filename)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO Serendipity Nedelec projectors for " << filename << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+ 
+  int c(0);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+  VEM_NedelecSerendipityType2 vem(plist, mesh);
+
+  std::vector<int> edirs;
+  Entity_ID_List edges;
+
+  mesh->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  for (int k = 0; k < 2; ++k) {
+    std::vector<VectorPolynomial> ve(nedges);
+
+    for (int n = 0; n < nedges; ++n) {
+      ve[n].Reshape(3, 3, k);
+      for (int i = 0; i < 3; ++i) {
+        ve[n][i](0) = i + 1.0;
+        if (k > 0) {
+          ve[n][i](i + 1) = i + 1;
+          ve[n][i](3 - i) = 3 - i;
+        }
+      }
+    }
+
+    VectorPolynomial uc;
+
+    vem.set_order(k);
+    vem.L2Cell(c, ve, ve, NULL, uc);
+    uc.ChangeOrigin(AmanziGeometry::Point(3));
+
+    uc -= ve[0];
+    CHECK(uc.NormInf() < 4e-10);
+  }
+}
+
+
+TEST(SERENDIPITY_PROJECTORS_CUBE_NEDELEC) {
+  Projector3DNedelecSerendipity("test/cube_unit.exo");
+}
+
+

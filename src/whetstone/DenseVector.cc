@@ -70,11 +70,48 @@ void DenseVector::Reshape(int mrow)
     int mem_next_ = 2 * m_;
     double* data_tmp = new double[mem_next_];
     if (data_ != NULL) {
-      for (int i = 0; i < mem_; i++) data_tmp[i] = data_[i];
+      // it is dangerous to not initialize reshaped data to zero
+      for (int i = 0; i < mem_; ++i) data_tmp[i] = data_[i];
+      for (int i = mem_; i < m_; ++i) data_tmp[i] = 0.0;
       delete [] data_;
     }
     mem_ = mem_next_;
     data_ = data_tmp;
+  }
+}
+
+
+/* ******************************************************************
+* Consequitive groups of size stride1 are copied to groups of size
+* stride2. Gaps are filled with 0. Incomplete last group is lost.
+****************************************************************** */
+void DenseVector::Regroup(int stride1, int stride2) 
+{
+  if (data_ == NULL) return;
+
+  int ngroups = m_ / stride1;
+  m_ = stride2 * ngroups;
+
+  double* data_tmp;
+  if (mem_ < m_)  {
+    data_tmp = new double[m_];
+  } else {
+    data_tmp = data_;
+  }
+
+  int stride = std::min(stride1, stride2);
+  for (int n = 0; n < ngroups; ++n) {
+    int i1 = n * stride1;
+    int i2 = n * stride2;
+
+    for (int i = 0; i < stride; ++i) data_tmp[i2 + i] = data_[i1 + i]; 
+    for (int i = stride; i < stride2; ++i) data_tmp[i2 + i] = 0.0; 
+  }
+
+  if (mem_ < m_) {
+    delete [] data_;
+    data_ = data_tmp;
+    mem_ = m_;
   }
 }
 

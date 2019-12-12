@@ -158,8 +158,8 @@ if (BUILD_TESTS)
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
                                         test/whetstone_maps.cc
-                                        test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc
+                                        test/whetstone_projectors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex

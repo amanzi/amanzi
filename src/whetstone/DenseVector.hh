@@ -39,6 +39,7 @@ class DenseVector {
   // primary members 
   // -- smart memory management: preserves data only for vector reduction
   void Reshape(int mrow);
+  void Regroup(int stride1, int stride2);
 
   // -- initialization
   DenseVector& operator=(const DenseVector& B);

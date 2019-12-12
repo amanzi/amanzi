@@ -124,6 +124,25 @@ class VectorObjects {
     return tmp;
   }
 
+  friend VectorObjects<T> operator^(const VectorObjects<T>& vp1, const AmanziGeometry::Point& p2) {
+    int d = vp1[0].dimension();
+
+    AMANZI_ASSERT(d == 3);
+    AMANZI_ASSERT(vp1.NumRows() == d);
+
+    VectorObjects<T> tmp(d, d, 0);
+    tmp[0] = vp1[1] * p2[2] - vp1[2] * p2[1];
+    tmp[1] = vp1[2] * p2[0] - vp1[0] * p2[2];
+    tmp[2] = vp1[0] * p2[1] - vp1[1] * p2[0];
+    tmp.set_origin(vp1[0].origin());
+
+    return tmp;
+  }
+
+  friend VectorObjects<T> operator^(const AmanziGeometry::Point& p1, const VectorObjects<T>& vp2) {
+    return vp2 ^ p1;
+  }
+
   // iterators require specialization
   VectorObjectsIterator<T> begin() {
     int order = (NumRows() > 0) ? polys_[0].order() : 0;
