@@ -15,6 +15,7 @@
 #ifndef AMANZI_WHETSTONE_VECTOR_OBJECTS_UTILS_HH_
 #define AMANZI_WHETSTONE_VECTOR_OBJECTS_UTILS_HH_
 
+#include "DenseMatrix.hh"
 #include "Polynomial.hh"
 #include "SpaceTimePolynomial.hh"
 #include "VectorObjects.hh"
@@ -31,6 +32,9 @@ Polynomial Curl2D(const VectorPolynomial& p);
 VectorPolynomial Rot2D(const Polynomial& p);
 
 Polynomial Divergence(const VectorObjects<Polynomial>& vp);
+
+// matrix form of differential operators
+DenseMatrix Curl3DMatrix(int d, int order);
 
 // vector decompositions
 // -- q_k = curl(p_k ^ x) + x . p_{k-1}

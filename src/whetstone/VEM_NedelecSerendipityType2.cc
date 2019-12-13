@@ -301,9 +301,9 @@ int VEM_NedelecSerendipityType2::L2consistency(
     }
   }
 
-  // DenseMatrix X;
-  // X.Transpose(N);
-  // PrintMatrix(X * R, "%12.5f", 3 * X.NumRows() / d_);
+  DenseMatrix X;
+  X.Transpose(N);
+  PrintMatrix(X * R, "%12.5f", X.NumRows());
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;

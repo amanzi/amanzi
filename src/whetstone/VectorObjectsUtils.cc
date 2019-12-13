@@ -77,26 +77,59 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 /* ******************************************************************
 * Curl in 3D: vector function -> vector function
 ****************************************************************** */
-VectorPolynomial Curl3D(const VectorPolynomial& p)
+VectorPolynomial Curl3D(const VectorPolynomial& vp)
 {
-  int d = p[0].dimension();
-  int m = p.NumRows();
+  int d = vp[0].dimension();
+  int m = vp.NumRows();
   AMANZI_ASSERT(d == m && d == 3);
 
-  // gradient of vector polynomial: poor efficiency FIXME
-  std::vector<VectorPolynomial> grad(d);
+  VectorPolynomial curl(d, d, 0);
+  curl.set_origin(vp[0].origin());
 
-  for (int i = 0; i < d; ++i) { 
-    grad[i] = Gradient(p[i]);
+  for (int i = 0; i < d; ++i) {
+    int j = (i + 1) % d;
+    int k = (i + 2) % d;
+
+    int order = std::max(vp[j].order(), vp[k].order());
+    order = std::max(0, order - 1);
+    curl[i].Reshape(d, order, true);
   }
 
-  // assemble curl
-  VectorPolynomial tmp(d, d);
-  tmp[0] = grad[2][1] - grad[1][2];
-  tmp[1] = grad[0][2] - grad[2][0];
-  tmp[2] = grad[1][0] - grad[0][1];
+  int index[3];
+  for (int i = 0; i < d; ++i) {
+    int j = (i + 1) % d;
+    int k = (i + 2) % d;
 
-  return tmp;
+    for (auto it = vp[i].begin(); it < vp[i].end(); ++it) {
+      int m = it.MonomialSetOrder();
+      if (m > 0) {
+        const int* idx = it.multi_index();
+        for (int l = 0; l < d; ++l) index[l] = idx[l];
+
+        // j-component is update by d u_i / d x_k
+        if (index[k] > 0) {
+          int n = it.PolynomialPosition();
+
+          index[k]--;
+          int pos = MonomialSetPosition(d, index);
+          curl[j](m - 1, pos) += vp[i](n) * idx[k];
+          
+          index[k]++;
+        }
+
+        // k-component is update by -d u_i / d x_j
+        if (index[j] > 0) {
+          int n = it.PolynomialPosition();
+
+          index[j]--;
+          int pos = MonomialSetPosition(d, index);
+          curl[k](m - 1, pos) -= vp[i](n) * idx[j];
+        }
+      }
+    }
+  }
+
+  return curl;
 }
 
 
@@ -177,6 +210,69 @@ Polynomial Divergence(const VectorPolynomial& vp)
   }
 
   return div;
+}
+
+
+/* ******************************************************************
+* Matrix of a 3D curl operator
+****************************************************************** */
+DenseMatrix Curl3DMatrix(int d, int order)
+{
+  // dimensions of the curl-matrix
+  int nd0 = PolynomialSpaceDimension(d, order - 1);
+  int nd1 = PolynomialSpaceDimension(d, order);
+
+  int nrows(0), ncols(0);
+  int offset_rows[3], offset_cols[3];
+
+  for (int i = 0; i < d; ++i) {
+    offset_rows[i] = nrows;
+    offset_cols[i] = ncols;
+
+    nrows += nd0;
+    ncols += nd1;
+  }
+
+  DenseMatrix curl(nrows, ncols);
+  curl.PutScalar(0.0);
+
+  // populate with cofficients for partial derivatives
+  PolynomialIterator it0(d), it1(d);
+  it0.begin(0);
+  it1.begin(order + 1);
+
+  int index[3];
+  for (int i = 0; i < d; ++i) {
+    int j = (i + 1) % d;
+    int k = (i + 2) % d;
+
+    for (auto it = it0; it < it1; ++it) {
+      int m = it.PolynomialPosition();
+      if (m > 0) {
+        int col = offset_cols[i] + m;
+
+        const int* idx = it.multi_index();
+        for (int l = 0; l < d; ++l) index[l] = idx[l];
+
+        // j-component is update by d u_i / d x_k
+        if (index[k] > 0) {
+          index[k]--;
+          int row = offset_rows[j] + PolynomialPosition(d, index);
+          curl(row, col) += idx[k];
+          index[k]++;
+        }
+
+        // k-component is update by -d u_i / d x_j
+        if (index[j] > 0) {
+          index[j]--;
+          int row = offset_rows[k] + PolynomialPosition(d, index);
+          curl(row, col) -= idx[j];
+        }
+      }
+    }
+  }
+
+  return curl;
 }
 
 

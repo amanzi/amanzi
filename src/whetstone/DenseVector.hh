@@ -106,7 +106,9 @@ class DenseVector {
     return tmp;
   }
 
-  // -- vector type behaviour (no checks for compatiility) 
+  friend DenseVector operator+(const DenseVector& v1, const DenseVector& v2);
+  friend DenseVector operator-(const DenseVector& v1, const DenseVector& v2);
+
   DenseVector& operator+=(const DenseVector& v) {
     const double* datav = v.Values();  
     for (int i = 0; i < m_; ++i) data_[i] += datav[i];

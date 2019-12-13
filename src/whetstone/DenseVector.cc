@@ -138,6 +138,45 @@ DenseVector& DenseVector::operator=(const DenseVector& B)
 
 
 /* ******************************************************************
+* Ring algebra
+****************************************************************** */
+DenseVector operator+(const DenseVector& v1, const DenseVector& v2)
+{
+  DenseVector tmp(v1);
+  double* data = tmp.Values();
+  const double* data1 = v1.Values();
+  const double* data2 = v2.Values();
+
+  for (int i = 0; i < tmp.NumRows(); ++i) {
+    *data = *data1 + *data2;
+    data++;
+    data1++;
+    data2++;
+  }
+
+  return tmp;
+}
+
+
+DenseVector operator-(const DenseVector& v1, const DenseVector& v2)
+{
+  DenseVector tmp(v1);
+  double* data = tmp.Values();
+  const double* data1 = v1.Values();
+  const double* data2 = v2.Values();
+
+  for (int i = 0; i < tmp.NumRows(); ++i) {
+    *data = *data1 - *data2;
+    data++;
+    data1++;
+    data2++;
+  }
+
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Vector based initialization. The size of the vector is not changed!
 ****************************************************************** */
 void DenseVector::PutVector(const DenseVector& v, double val)

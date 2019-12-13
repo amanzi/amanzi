@@ -1031,8 +1031,8 @@ void Projector3DNedelecSerendipitySurface(const std::string& filename)
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
  
   int c(0);
   Teuchos::ParameterList plist;
@@ -1040,7 +1040,8 @@ void Projector3DNedelecSerendipitySurface(const std::string& filename)
   VEM_NedelecSerendipityType2 vem(plist, mesh);
 
   std::vector<int> edirs;
-  Entity_ID_List faces, edges;
+  Entity_ID_List faces, edges, nodes;
+  AmanziGeometry::Point xp(3);
 
   mesh->cell_get_faces(c, &faces);
   int nfaces = faces.size();
@@ -1074,18 +1075,26 @@ void Projector3DNedelecSerendipitySurface(const std::string& filename)
       vem.L2Face(f, ve, NULL, uf);
       uf.ChangeOrigin(AmanziGeometry::Point(3));
 
+      // verificaton
+      double err;
       VectorPolynomial tmp(3, 2, 0);
       tmp[0] = ve[0] * (*coordsys->tau())[0];
       tmp[1] = ve[0] * (*coordsys->tau())[1];
-      uf -= tmp;
-      CHECK(uf.NormInf() < 4e-10);
+
+      mesh->face_get_nodes(f, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) {
+        mesh->node_get_coordinates(nodes[i], &xp);
+        auto dval = uf.Value(xp) - tmp.Value(xp);
+        dval.NormInf(&err);
+        CHECK(err < 1e-10);
+      }
     }
   }
 }
 
 
 TEST(SERENDIPITY_PROJECTORS_CUBE_NEDELEC_SURFACE) {
-  Projector3DNedelecSerendipitySurface("test/cube_unit.exo");
+  Projector3DNedelecSerendipitySurface("test/cube_unit_rotated.exo");
 }
 
 
@@ -1143,7 +1152,8 @@ void Projector3DNedelecSerendipity(const std::string& filename)
 
 
 TEST(SERENDIPITY_PROJECTORS_CUBE_NEDELEC) {
-  Projector3DNedelecSerendipity("test/cube_unit.exo");
+  Projector3DNedelecSerendipity("test/cube_unit_rotated.exo");
+  Projector3DNedelecSerendipity("test/dodecahedron.exo");
 }
 
 

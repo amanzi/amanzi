@@ -277,7 +277,7 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
 
     VectorDecomposition3DCurl(mono, k, p1, p2);
 
-    // verify 
+    // verify vector decomposition
     VectorPolynomial x(3, 3, 1);
     x[0](1) = 1.0;
     x[1](2) = 1.0;
@@ -286,9 +286,48 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
     auto p4 = x;
     for (int i = 0; i < 3; ++i) p4[i] *= p2;
 
-    auto p3 = Curl3D(p1 ^ x) + p4;
+    auto p5 = p1 ^ x;
+    auto p6 = Curl3D(p5);
+    auto p3 = p6 + p4;
     p3[k] -= Polynomial(mono);
     CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
   }
+}
+
+
+/* ****************************************************************
+* Test of matrix form of curl operator
+**************************************************************** */
+TEST(CURL3D_MATRIX_FORM) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "\nMatrix representation of 3D culr operator..." << std::endl; 
+
+  VectorPolynomial q(3, 3, 2);
+
+  for (auto it = q.begin(); it < q.end(); ++it) {
+    int k = it.VectorComponent();
+    int n = it.PolynomialPosition();
+    q[k](n) = k + n;
+  }
+
+  auto p = Curl3D(q);
+
+  auto A = Curl3DMatrix(3, 2);
+  auto vq = ExpandCoefficients(q);
+  auto vp = ExpandCoefficients(p);
+
+  DenseVector tmp(vp);
+  A.Multiply(vq, tmp, false);
+  vp -= tmp;
+
+  double err, norm;
+  vp.NormInf(&err);
+  tmp.NormInf(&norm);
+
+  CHECK_CLOSE(0.0, err, 1e-12);
+  // PrintMatrix(A);
 }
 

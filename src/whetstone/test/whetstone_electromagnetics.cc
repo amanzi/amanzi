@@ -225,13 +225,14 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 }
 
 TEST(MASS_MATRIX_3D_CUBE) {
-  MassMatrix3D("", 12);
+  // MassMatrix3D("test/cube_unit_rotated.exo", 12);
+  MassMatrix3D("test/one_trapezoid.exo", 12);
 exit(0);
 }
 
 /*
 TEST(MASS_MATRIX_3D_CUBE_ROTATED) {
-  MassMatrix3D("test/cube_unit_rotated.exo", 12);
+  MassMatrix3D("", 12);
 }
 
 TEST(MASS_MATRIX_3D_HEX) {

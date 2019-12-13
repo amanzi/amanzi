@@ -220,6 +220,7 @@ inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
 inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0) {
   int m = A.NumRows();
   int n = A.NumCols();
+  printf("Matrix: %d x %d:\n", m, n);
   
   if (mmax > 0) {
     m = std::min(mmax, m);
