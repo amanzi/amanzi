@@ -72,10 +72,6 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[2];
   surf_energy_pk_ = sub_pks_[3];
 
-
-  // call the subsurface setup, which calls the sub-pk's setups and sets up
-  // the subsurface block operator
-  MPCSubsurface::Setup(S);
   
   // Create the dE_dp block, which will at least have a CELL-based diagonal
   // entry (from subsurface dE/dp) and a FACE-based diagonal entry (from
@@ -88,16 +84,28 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   //     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1)
   //     ->AddComponent("cell", AmanziMesh::CELL, 1);  
   Teuchos::ParameterList plist;
-  const CompositeVectorSpace& cvs = domain_flow_pk_->preconditioner()->DomainMap();
- 
-  if (cvs.HasComponent("face")){
-    dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(Teuchos::rcpFromRef(cvs), plist));
-  }else if (cvs.HasComponent("boundary_face")){
-    int global_op_schema = Operators::OPERATOR_SCHEMA_DOFS_CELL|Operators::OPERATOR_SCHEMA_DOFS_BNDFACE;
-    dE_dp_block_ = Teuchos::rcp(new Operators::Operator_CellBndFace(Teuchos::rcpFromRef(cvs), plist, global_op_schema));
+  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+
+
+  std::string pk0_method = pks_list_->sublist(names[0]).sublist("diffusion").get<std::string>("discretization primary");
+  std::string pk1_method = pks_list_->sublist(names[1]).sublist("diffusion").get<std::string>("discretization primary");
+  if ((pk0_method == "nlfv: bnd_faces")&&(pk1_method == "nlfv: bnd_faces")){
+    cvs->SetMesh(domain_mesh_)->SetGhosted()
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);  
+  }else{
+    cvs->SetMesh(domain_mesh_)->SetGhosted()
+      ->AddComponent("face", AmanziMesh::BOUNDARY_FACE, 1)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);  
   }
   
+  dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(cvs, plist));
+  
+  // call the subsurface setup, which calls the sub-pk's setups and sets up
+  // the subsurface block operator
+  MPCSubsurface::Setup(S);
 
+  
 
   // require the coupling fields, claim ownership
   S->RequireField(mass_exchange_key_, name_)
