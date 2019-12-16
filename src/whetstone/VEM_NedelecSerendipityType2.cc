@@ -93,7 +93,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
   // selecting regularized basis (parameter integrals_ is not used)
   Basis_Regularized<AmanziMesh::Mesh> basis;
-  basis.Init(mesh_, c, order_, integrals_.poly());
+  basis.Init(mesh_, c, order_ + 1, integrals_.poly());
 
   // pre-calculate integrals of monomials 
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
@@ -199,17 +199,27 @@ int VEM_NedelecSerendipityType2::L2consistency(
   Tensor Idc(d_, 2);
   Idc.MakeDiagonal(1.0);
 
-  DenseMatrix MGc, vMGc, NT, L2c;
+  DenseMatrix MGc, sMGc, rMGc, NT, L2c;
   integrals_.set_id(c);
-  GrammMatrix(numi, order_, integrals_, basis, MGc);
-  vMGc = Idc ^ MGc;
+  GrammMatrix(numi, order_ + 1, integrals_, basis, MGc);
+  sMGc = MGc.SubMatrix(0, ndc, 0, ndc);
 
   NT.Transpose(N);
   auto NN = NT * N;
   NN.InverseMoorePenrose();
   L2c = NN * NT;
 
+  // -- curl matrix combined with L2 projector
+  {
+    int mdc = PolynomialSpaceDimension(d_, order_ - 1);
+    auto C = Curl3DMatrix(d_, order_);
+    auto Mtmp = MGc.SubMatrix(0, MGc.NumRows(), 0, mdc);
+    rMGc = (Idc ^ Mtmp) * C * L2c;
+  }
+
+  // -----------------
   // assemble matrix R
+  // ------------------
   DenseMatrix R(ndof_S, ndc * d_);
   R.PutScalar(0.0);
 
@@ -228,7 +238,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
     Polynomial p2;
     VectorDecomposition3DCurl(q, k, p1, p2);
 
-    // contributions of least square projectors on faces
+    // contributions from faces: int_f (p1^x^n . Pi_f(v))
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       double area = mesh_->face_area(f);
@@ -279,7 +289,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
       }
     }
 
-    // contributions of the least square projector in cell
+    // first contribution from cell: int_c ((p2 x) . Pi_c(v))
     if (order_ > 0) {
       int nrows = L2c.NumRows(); 
       int ncols = L2c.NumCols(); 
@@ -292,11 +302,33 @@ int VEM_NedelecSerendipityType2::L2consistency(
       int stride2 = ndc;
       v.Regroup(stride1, stride2);
 
-      vMGc.Multiply(v, w, false);
+      sMGc.BlockMultiply(v, w, false);
       L2c.Multiply(w, p2v, true);
 
+      double factor = basis.monomial_scales()[1];
       for (int i = 0; i < ncols; ++i) {
-        R(i, col) += p2v(i);
+        R(i, col) += p2v(i) / factor;
+      }
+    }
+
+    // second contribution from cell: int_c (p1^x . curl Pi_c(v))
+    if (order_ > 0) {
+      int nrows = rMGc.NumRows(); 
+      int ncols = rMGc.NumCols(); 
+      WhetStone::DenseVector p1v(ncols);
+
+      VectorPolynomial p3D = p1 ^ xyz;
+      auto v = ExpandCoefficients(p3D);
+
+      int stride1 = v.NumRows() / d_;
+      int stride2 = nrows / d_;
+      v.Regroup(stride1, stride2);
+
+      rMGc.Multiply(v, p1v, true);
+
+      double factor = basis.monomial_scales()[1];
+      for (int i = 0; i < ncols; ++i) {
+        R(i, col) += p1v(i) / factor;
       }
     }
   }
@@ -312,8 +344,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  MGc.InverseSPD();
-  Mc = R * ((Idc * Kinv) ^ MGc) * RT;
+  sMGc.InverseSPD();
+  Mc = R * ((Idc * Kinv) ^ sMGc) * RT;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

@@ -112,6 +112,7 @@ class DenseMatrix {
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   // calculates B = *this * A
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
+  int BlockMultiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
   void PutScalar(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
@@ -195,6 +196,9 @@ class DenseMatrix {
 
   // -- permutations
   void SwapColumns(int n1, int n2);
+
+ private:
+  int Multiply_(const double* A, int nrowsA, double* B, int nrowsB, bool transpose) const;
 
  private:
   int m_, n_, mem_, access_;

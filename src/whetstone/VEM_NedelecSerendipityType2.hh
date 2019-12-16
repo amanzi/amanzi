@@ -71,6 +71,13 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   // access
   PolynomialOnMesh& integrals() { return integrals_; }
 
+  // support
+  template<class MyMesh>
+  void CalculateDOFsOnBoundary(
+      const Teuchos::RCP<const MyMesh>& mymesh, 
+      int c, const std::vector<VectorPolynomial>& ve,
+      const std::vector<VectorPolynomial>& vf, DenseVector& vdof);
+
  protected:
   template<typename MyMesh>
   int L2consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
@@ -87,12 +94,6 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   void ProjectorFace_(int f, const std::vector<VectorPolynomial>& ve,
                       const ProjectorType type,
                       const Polynomial* moments, VectorPolynomial& uf);
-
-  template<class MyMesh>
-  void CalculateDOFsOnBoundary_(
-      const Teuchos::RCP<const MyMesh>& mymesh, 
-      int c, const std::vector<VectorPolynomial>& ve,
-      const std::vector<VectorPolynomial>& vf, DenseVector& vdof);
 
  protected:
   using MFD3D::mesh_;
@@ -250,7 +251,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
   DenseVector v1(ncols), v3(std::max(1, ndof_cs)), v5(ncols);
 
   DenseVector vdof(ndof_s + ndof_cs);
-  CalculateDOFsOnBoundary_<MyMesh>(mymesh, c, ve, vf, vdof);
+  CalculateDOFsOnBoundary<MyMesh>(mymesh, c, ve, vf, vdof);
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
@@ -285,7 +286,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
 * Calculate boundary degrees of freedom in 2D and 3D.
 ****************************************************************** */
 template<class MyMesh>
-void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary_(
+void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
     const Teuchos::RCP<const MyMesh>& mymesh, 
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf, DenseVector& vdof)

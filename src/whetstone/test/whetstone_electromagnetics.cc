@@ -56,9 +56,9 @@ TEST(MASS_MATRIX_2D) {
   MFD3D_Electromagnetics mfd(plist, mesh);
   VEM_NedelecSerendipityType2 vem(plist, mesh);
 
-  int cell = 0;
+  int c = 0;
   AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  mesh->cell_get_edges(c, &edges);
 
   int nedges = edges.size();
 
@@ -72,24 +72,24 @@ TEST(MASS_MATRIX_2D) {
     DenseMatrix M;
 
     if (method == 0) {
-      mfd.MassMatrix(cell, T, M);
+      mfd.MassMatrix(c, T, M);
     } else if (method == 1) {
-      mfd.MassMatrixOptimized(cell, T, M);
+      mfd.MassMatrixOptimized(c, T, M);
     } else if (method == 2) {
-      mfd.MassMatrixInverse(cell, T, M);
+      mfd.MassMatrixInverse(c, T, M);
       M.Inverse();
     } else if (method == 3) {
-      mfd.MassMatrixInverseOptimized(cell, T, M);
+      mfd.MassMatrixInverseOptimized(c, T, M);
       M.Inverse();
     } else if (method == 4) {
       vem.set_order(0);
-      vem.MassMatrix(cell, T, M);
+      vem.MassMatrix(c, T, M);
     } else if (method == 5) {
       vem.set_order(1);
-      vem.MassMatrix(cell, T, M);
+      vem.MassMatrix(c, T, M);
     }
 
-    printf("Mass matrix for cell %3d method=%d\n", cell, method);
+    printf("Mass matrix for cell %3d method=%d\n", c, method);
     int nrows = M.NumRows();
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++ ) printf("%9.5f ", M(i, j)); 
@@ -100,25 +100,37 @@ TEST(MASS_MATRIX_2D) {
     for (int i = 0; i < nrows; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    WhetStone::DenseVector u(nrows), v(nrows), w(nrows);
-    u.PutScalar(0.0);
-    v.PutScalar(0.0);
+    int k = (method == 5) ? 1 : 0;
+    std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges);
+    for (int i = 0; i < nedges; ++i) {
+      uf[i].Reshape(2, 2, 0);
+      uf[i][0](0) = 1.0;
 
-    int stride = (method == 5) ? 2 : 1;
-    for (int k = 0, i = 0; i < nedges; ++i, k += stride) {
-      int e = edges[i];
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      u(k) = tau[0] / mesh->edge_length(e);
-      v(k) = tau[1] / mesh->edge_length(e);
+      vf[i].Reshape(2, 2, 0);
+      vf[i][1](0) = 1.0;
+
+      wf[i].Reshape(2, 2, k);
+      wf[i][0](k) = 1.0;
     }
 
-    double volume = mesh->cell_volume(cell); 
-    M.Multiply(u, w, false);
-    double vxx = u * w;
-    double vxy = v * w;
+    WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
 
-    CHECK_CLOSE(volume, vxx, 1e-10);
-    CHECK_CLOSE(-volume, vxy, 1e-10);
+    M.Multiply(w, a, false);
+    double vxx = u * a;
+    double vxy = v * a;
+
+    double volume = mesh->cell_volume(c); 
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    if (method != 5) {
+      CHECK_CLOSE(volume, vxx, 1e-10);
+      CHECK_CLOSE(-volume, vxy, 1e-10);
+    } else {
+      CHECK_CLOSE(volume * xc[0], vxx, 1e-10);
+      CHECK_CLOSE(-volume * xc[0], vxy, 1e-10);
+    }
   }
 }
 
@@ -145,7 +157,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
   RCP<Mesh> mesh;
   if (mesh_file == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
   else 
     mesh = meshfactory.create(mesh_file, true, true); 
  
@@ -155,9 +167,9 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   MFD3D_Electromagnetics mfd(plist, mesh);
   VEM_NedelecSerendipityType2 vem(plist, mesh);
 
-  int cell = 0;
+  int c = 0;
   AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  mesh->cell_get_edges(c, &edges);
 
   int nedges = edges.size();
 
@@ -172,21 +184,21 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     DenseMatrix M;
 
     if (method == 0) {
-      mfd.MassMatrix(cell, T, M);
+      mfd.MassMatrix(c, T, M);
     } else if (method == 1) {
-      mfd.MassMatrixOptimized(cell, T, M);
+      mfd.MassMatrixOptimized(c, T, M);
     } else if (method == 2) {
-      mfd.MassMatrixInverse(cell, T, M);
+      mfd.MassMatrixInverse(c, T, M);
       M.Inverse();
     } else if (method == 3) {
-      mfd.MassMatrixInverseOptimized(cell, T, M);
+      mfd.MassMatrixInverseOptimized(c, T, M);
       M.Inverse();
     } else if (method == 4) {
       vem.set_order(0);
-      vem.MassMatrix(cell, T, M);
+      vem.MassMatrix(c, T, M);
     } else if (method == 5) {
       vem.set_order(1);
-      vem.MassMatrix(cell, T, M);
+      vem.MassMatrix(c, T, M);
     }
 
     int nrows = M.NumRows();
@@ -202,37 +214,52 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     for (int i = 0; i < nrows; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    WhetStone::DenseVector u(nrows), v(nrows), w(nrows);
-    u.PutScalar(0.0);
-    v.PutScalar(0.0);
+    std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
 
-    int stride = (method == 5) ? 2 : 1;
-    for (int k = 0, i = 0; i < nedges; ++i, k += stride) {
-      int e = edges[i];
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      u(k) = tau[0] / mesh->edge_length(e);
-      v(k) = tau[1] / mesh->edge_length(e);
+    int k = (method == 5) ? 1 : 0;
+    for (int i = 0; i < nedges; ++i) {
+      uf[i].Reshape(3, 3, 0);
+      uf[i][0](0) = 1.0;
+      uf[i].set_origin(xc);
+
+      vf[i].Reshape(3, 3, 0);
+      vf[i][1](0) = 1.0;
+      vf[i].set_origin(xc);
+
+      wf[i].Reshape(3, 3, k);
+      wf[i][0](k) = 1.0;
+      wf[i].set_origin(xc);
     }
 
-    double volume = mesh->cell_volume(cell); 
-    M.Multiply(u, w, false);
-    double vxx = u * w;
-    double vxy = v * w;
+    WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
+    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
 
-    CHECK_CLOSE(volume, vxx, 1e-10);
-    CHECK_CLOSE(-volume, vxy, 1e-10);
+    M.Multiply(w, a, false);
+    double vx1 = u * a;
+    double vy1 = v * a;
+    double vxx = w * a;
+
+    double volume = mesh->cell_volume(c); 
+    if (method != 5) {
+      CHECK_CLOSE(volume, vx1, 1e-10);
+      CHECK_CLOSE(-volume, vy1, 1e-10);
+    } else {
+      CHECK_CLOSE(0.0, vx1, 1e-10);
+      CHECK_CLOSE(0.0, vy1, 1e-10);
+      CHECK_CLOSE(vem.integrals().poly()(4), vxx, 1e-10 * vxx);
+    }
   }
 }
 
 TEST(MASS_MATRIX_3D_CUBE) {
-  // MassMatrix3D("test/cube_unit_rotated.exo", 12);
-  MassMatrix3D("test/one_trapezoid.exo", 12);
-exit(0);
+  MassMatrix3D("", 12);
 }
 
-/*
 TEST(MASS_MATRIX_3D_CUBE_ROTATED) {
-  MassMatrix3D("", 12);
+  MassMatrix3D("test/cube_unit_rotated.exo", 12);
 }
 
 TEST(MASS_MATRIX_3D_HEX) {
@@ -246,7 +273,6 @@ TEST(MASS_MATRIX_3D_24SIDED) {
 TEST(MASS_MATRIX_3D_DODECAHEDRON) {
   MassMatrix3D("test/dodecahedron.exo", 10);
 }
-*/
 
 
 /* ******************************************************************

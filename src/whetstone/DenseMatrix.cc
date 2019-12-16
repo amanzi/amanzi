@@ -331,6 +331,56 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
   int mrowsA = A.NumRows();
   int mrowsB = B.NumRows();
 
+  return Multiply_(dataA, mrowsA, dataB, mrowsB, transpose);
+}
+
+
+/* ******************************************************************
+* Block matrix-vector product: single matrix, multiple subvectors.
+****************************************************************** */
+int DenseMatrix::BlockMultiply(const DenseVector& A, DenseVector& B, bool transpose) const
+{
+  const double* dataA = A.Values();
+  double* dataB = B.Values();
+
+  int mrowsA = A.NumRows();
+  int mrowsB = B.NumRows();
+
+  int k1, k2;
+  if (! transpose) {
+    if (mrowsA % n_ != 0) return 1;
+    if (mrowsB % m_ != 0) return 1;
+
+    k1 = mrowsA / n_;
+    k2 = mrowsB / m_;
+  } else {
+    if (mrowsA % m_ != 0) return 1;
+    if (mrowsB % n_ != 0) return 1;
+
+    k1 = mrowsA / m_;
+    k2 = mrowsB / n_;
+  }
+  if (k1 != k2) return 1;
+
+  mrowsA /= k1;
+  mrowsB /= k2;
+
+  int i(0);
+  for (int k = 0; k < k1; ++k) {
+    i |= Multiply_(dataA, mrowsA, dataB, mrowsB, transpose);
+    dataA += mrowsA;
+    dataB += mrowsB;
+  }
+  return i;
+}
+
+
+/* ******************************************************************
+* Matrix-vector product. The matrix is ordered by columns.
+****************************************************************** */
+int DenseMatrix::Multiply_(
+    const double* A, int mrowsA, double* B, int mrowsB, bool transpose) const
+{
   if (! transpose) {
     if (n_ != mrowsA || m_ != mrowsB) return 1;
 
@@ -338,10 +388,10 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
       const double* tmpM = data_ + i;
       double s(0.0);
       for (int j = 0; j < n_; j++) {
-        s += (*tmpM) * dataA[j];
+        s += (*tmpM) * A[j];
         tmpM += m_;
       }
-      dataB[i] = s;
+      B[i] = s;
     } 
   } else {
     if (m_ != mrowsA || n_ != mrowsB) return 1;
@@ -350,10 +400,10 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
     for (int i = 0; i < n_; i++) {
       double s(0.0);
       for (int j = 0; j < m_; j++) {
-        s += (*tmpM) * dataA[j];
+        s += (*tmpM) * A[j];
         tmpM++;
       }
-      dataB[i] = s;
+      B[i] = s;
     }
   }
 

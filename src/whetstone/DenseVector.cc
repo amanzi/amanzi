@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Replacement of linear vectors. It may go away after code upgrade.
+  Ring algebra of linear vectors and more.
 */
 
 #include "DenseVector.hh"

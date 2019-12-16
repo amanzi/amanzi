@@ -9,8 +9,10 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Vector of objects that admit a ring algebra. Possible values 
+  Vector of objects that admit a ring algebra. Current used values 
   for the template parameter are Polynomial and SpaceTimePolynomial.
+  In addition to the conventional ring algebra operations, a few
+  additional functions are need from the template class.
 */ 
 
 #ifndef AMANZI_WHETSTONE_VECTOR_OBJECTS_HH_
@@ -47,7 +49,7 @@ class VectorObjects {
   }
   ~VectorObjects() {};
 
-  // reshape polynomial with erase (optionally) memory
+  // reshape polynomial and zero-out (optionally) memory
   void Reshape(int d, int m, int order, bool reset = false) {
     d_ = d;
     polys_.resize(m);
@@ -156,7 +158,7 @@ class VectorObjects {
     return it.end();
   }
 
-  // change the coordinate system
+  // change of the coordinate system
   void set_origin(const AmanziGeometry::Point& origin) {
     for (int i = 0; i < NumRows(); ++i) polys_[i].set_origin(origin);
   }
@@ -173,54 +175,49 @@ class VectorObjects {
     return val;
   }
 
-  // product vp * p 
+  // generaization of the ring algebra
+  // -- product vp * p 
   friend VectorObjects<T> operator*(const VectorObjects<T>& vp, const T& poly) {
     VectorObjects<T> tmp(vp);
     for (int i = 0; i < tmp.NumRows(); ++i) tmp[i] *= poly;
     return tmp;
   }
 
-  // dot product vp * p
-  friend T operator*(const VectorObjects<T>& poly, const AmanziGeometry::Point& p) {
-    AMANZI_ASSERT(poly.NumRows() == p.dim());
+  // -- dot product vp * p
+  friend T operator*(const VectorObjects<T>& vp, const AmanziGeometry::Point& p) {
+    AMANZI_ASSERT(vp.NumRows() == p.dim());
 
-    T tmp(poly[0] * p[0]);
-
-    for (int i = 1; i < p.dim(); ++i) {
-      tmp += poly[i] * p[i];
-    }
+    T tmp(vp[0] * p[0]);
+    for (int i = 1; i < p.dim(); ++i) tmp += vp[i] * p[i];
     return tmp;
   }
 
-  // product T * vp
-  friend VectorObjects<T> operator*(const Tensor& K, const VectorObjects<T>& poly) {
+  // -- product T * vp
+  friend VectorObjects<T> operator*(const Tensor& K, const VectorObjects<T>& vp) {
     int d(K.dimension());
     VectorObjects<T> tmp(d, d, 0);
 
     if (K.rank() == 1) {
-      tmp = poly;
+      tmp = vp;
       tmp *= K(0, 0);
     } else {
-      tmp.set_origin(poly[0].origin());
+      tmp.set_origin(vp[0].origin());
 
       for (int i = 0; i < d; ++i) {
         for (int j = 0; j < d; ++j) {
-          tmp[i] += K(i, j) * poly[j];
+          tmp[i] += K(i, j) * vp[j];
         }
       }
     }
     return tmp;
   }
 
-  // dot product v1 * v2
+  // -- dot product v1 * v2
   friend T operator*(const VectorObjects<T>& v1, const VectorObjects<T>& v2) {
     AMANZI_ASSERT(v1.NumRows() == v2.NumRows());
 
     T tmp(v1[0] * v2[0]);
-
-    for (int i = 1; i < v1.NumRows(); ++i) {
-      tmp += v1[i] * v2[i];
-    }
+    for (int i = 1; i < v1.NumRows(); ++i) tmp += v1[i] * v2[i];
     return tmp;
   }
 

@@ -377,24 +377,31 @@ VectorPolynomial ProjectVectorPolynomialOnManifold(
 
 
 /* ******************************************************************
-* Return vector of coefficients in the same order as iterator does
+* Return vector of coefficients. Blocks of fixed size are alloced
+* for vector components which is due to discretization requirements.
 ****************************************************************** */
 DenseVector ExpandCoefficients(VectorPolynomial& vp)
 {
   int m(0);
   for (int k= 0; k < vp.NumRows(); ++k) {
-    m += vp[k].size();
+    m = std::max(m, vp[k].size());
   }
+  int mrows = m * vp.NumRows();
 
-  DenseVector tmp(m);
+  DenseVector tmp(mrows);
   double* vdata = tmp.Values();
 
   for (int k= 0; k < vp.NumRows(); ++k) {
     const double* data = vp[k].coefs().Values();
-    for (int i = 0; i < vp[k].size(); ++i) {
+    int size = vp[k].size();
+    for (int i = 0; i < size; ++i) {
       *vdata = *data;
       vdata++;
       data++;
+    }
+    for (int i = size; i < m; ++i) {
+      *vdata = 0.0;
+      vdata++;
     }
   }
 
