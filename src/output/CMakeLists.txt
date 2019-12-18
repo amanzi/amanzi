@@ -47,6 +47,12 @@ endif(ENABLE_Silo)
 file(GLOB output_source_files "gmv*.c" "GMV*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
+if (ENABLE_Silo)
+  list(APPEND output_source_files "OutputSilo.cc")
+  list(APPEND output_tpl_list ${Silo_LIBRARIES})
+  add_definitions(-DENABLE_Silo)
+endif(ENABLE_Silo)
+
 # HDF5 serial test, HDF5 now required so always enables
 file(GLOB hdf5_source "HDF5Mesh*.cc")
 list(APPEND output_source_files "${hdf5_source}")
@@ -56,12 +62,6 @@ file(GLOB hdf5mpi_source "HDF5_MPI*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_source_files "OutputXDMF.cc")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
-
-if (ENABLE_Silo)
-  list(APPEND output_source_files "OutputSilo.cc")
-  list(APPEND output_tpl_list ${Silo_LIBRARIES})
-  add_definitions(-DENABLE_Silo)
-endif(ENABLE_Silo)
 
 file(GLOB output_inc_files "*.h*")
 
