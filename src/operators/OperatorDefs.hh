@@ -113,9 +113,10 @@ const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
 // stencil for calculating limiting bounds
 const int OPERATOR_LIMITER_STENCIL_N2C = 10;
-const int OPERATOR_LIMITER_STENCIL_F2C = 20;
-const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 30;
-const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 31;
+const int OPERATOR_LIMITER_STENCIL_E2C = 20;
+const int OPERATOR_LIMITER_STENCIL_F2C = 30;
+const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 40;
+const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 41;
 
 }  // namespace Operators
 }  // namespace Amanzi

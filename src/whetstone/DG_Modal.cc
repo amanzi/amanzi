@@ -467,8 +467,10 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
-  Polynomial poly(d_, order_);
-  int size = poly.size();
+  int size = PolynomialSpaceDimension(d_, order_);
+  PolynomialIterator it0(d_), it1(d_);
+  it0.begin(0); 
+  it1.begin(order_ + 1);
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -520,7 +522,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     un_tmp = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys_tmp);
   }
 
-  for (auto it = poly.begin(); it < poly.end(); ++it) {
+  for (auto it = it0; it < it1; ++it) {
     const int* idx0 = it.multi_index();
     int k = PolynomialPosition(d_, idx0);
 
@@ -543,7 +545,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       polys1[0] = &p1_tmp;
     }
 
-    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
+    for (auto jt = it0; jt < it1; ++jt) {
       const int* idx1 = jt.multi_index();
       int l = PolynomialPosition(d_, idx1);
 

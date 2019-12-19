@@ -530,7 +530,7 @@ option(ENABLE_Silo "Build Amanzi with Silo output options" OFF)
 if (ENABLE_Silo)
   find_package(Silo REQUIRED)
 
-  if (SILO_FOUND)
+  if (Silo_FOUND)
     message(STATUS "Silo Package information")
     message(STATUS "\tSilo_INCLUDE_DIR  = ${Silo_INCLUDE_DIR}")
     message(STATUS "\tSilo_INCLUDE_DIRS = ${Silo_INCLUDE_DIRS}")

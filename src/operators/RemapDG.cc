@@ -149,8 +149,10 @@ void RemapDG<TreeVector>::FunctionalTimeDerivative(
   auto tmp = *f.SubVector(1)->Data();
   op_flux_->global_operator()->Apply(ones, tmp);
 
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(0.0);
+  // op_reac_->Setup(det_, false);
+  // op_reac_->UpdateMatrices(0.0);
+  op_reac_->Setup(Teuchos::null);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
@@ -176,10 +178,11 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
     (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
   }
 
+  // discrete volume conservation law: new approach
   op_reac_->Setup(jac_, false);
   op_reac_->UpdateMatrices();
 
-  // discrete volume conservation law
+  // discrete volume conservation law: old approach
   // op_reac_->Setup(det_, false);
   // op_reac_->UpdateMatrices(t);
 
@@ -187,6 +190,38 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *field_);
+
+  // limit non-conservative field and update the conservative field
+  if (is_limiter_) {
+    // -- save original field and limit it
+    auto& field_c = *field_->ViewComponent("cell");
+    auto orig_c = field_c;
+
+    ApplyLimiter(t, *field_);
+
+    // -- recover original mass matrices FIXME (lipnikov@lanl.gov)
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+
+    // -- shift mean values
+    auto& climiter = *limiter_->limiter();
+    auto& u_c = *u.SubVector(0)->Data()->ViewComponent("cell");
+    int nk = u_c.NumVectors();
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double a = climiter[c];
+      if (a < 1.0) {
+        double mass(0.0);
+        for (int i = 0; i < nk; ++i) {
+          mass += matrices[c](i, 0) * orig_c[i][c];
+        }
+
+        field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
+      }
+    }
+
+    // -- update conservative field
+    op_reac_->global_operator()->Apply(*field_, *u.SubVector(0)->Data());
+  }
 }
 
 
