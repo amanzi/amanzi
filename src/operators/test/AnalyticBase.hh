@@ -36,8 +36,10 @@
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 
-#include "Epetra_MultiVector.h"
+#include "Teuchos_CommHelpers.hpp"
 
+#include "AmanziTypes.hh"
+#include "AmanziVector.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
@@ -151,7 +153,7 @@ void GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 inline
 void ComputeCellError(const AnalyticBase& ana,
                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                      const Epetra_MultiVector& p,
+                      const MultiVector_type& p_vec,
                       double t,
                       double& pnorm, double& l2_err, double& inf_err)
 {
@@ -160,15 +162,16 @@ void ComputeCellError(const AnalyticBase& ana,
   inf_err = 0.0;
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto p = p_vec.getLocalViewHost();
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double tmp = ana.pressure_exact(xc, t);
     double volume = mesh->cell_volume(c);
 
-    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] <<
+    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p(c,0) <<
     // std::endl;
-    l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
-    inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
+    l2_err += std::pow(tmp - p(c,0), 2.0) * volume;
+    inf_err = std::max(inf_err, fabs(tmp - p(c,0)));
     pnorm += std::pow(tmp, 2.0) * volume;
   }
 #ifdef HAVE_MPI
@@ -187,13 +190,14 @@ void ComputeCellError(const AnalyticBase& ana,
 inline
 void ComputeFaceError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-        Epetra_MultiVector& u, double t,
+        const MultiVector_type& u_vec, double t,
         double& unorm, double& l2_err, double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
+  auto u = u_vec.getLocalViewHost();
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh->face_area(f);
@@ -202,11 +206,11 @@ void ComputeFaceError(const AnalyticBase& ana,
     const AmanziGeometry::Point& velocity = ana.velocity_exact(xf, t);
     double tmp = velocity * normal;
 
-    l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
-    inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
+    l2_err += std::pow((tmp - u(f,0)) / area, 2.0);
+    inf_err = std::max(inf_err, fabs(tmp - u(f,0)) / area);
     unorm += std::pow(tmp / area, 2.0);
-    // if ((tmp - u[0][f]) / area > 1.e-4)
-    //   std::cout << f << " xf=" << xf << " u=" << u[0][f] << " u_ex=" << tmp << std::endl;
+    // if ((tmp - u(f,0)) / area > 1.e-4)
+    //   std::cout << f << " xf=" << xf << " u=" << u(f,0) << " u_ex=" << tmp << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &unorm, 1);
@@ -224,7 +228,7 @@ void ComputeFaceError(const AnalyticBase& ana,
 inline
 void ComputeNodeError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-        Epetra_MultiVector& p, double t,
+        const MultiVector_type& p_vec, double t,
         double& pnorm, double& l2_err, double& inf_err, double& hnorm, double& h1_err)
 {
   pnorm = 0.0;
@@ -241,37 +245,38 @@ void ComputeNodeError(const AnalyticBase& ana,
   WhetStone::MFD3D_Lagrange mfd(plist, mesh);
 
   WhetStone::Polynomial poly(ana.dimension(), 1);
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  auto p = p_vec.getLocalViewHost();
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
-    mesh->cell_get_nodes(c, &nodes);
+    mesh->cell_get_nodes(c, nodes);
     int nnodes = nodes.size();
     std::vector<WhetStone::Polynomial> cell_solution(nnodes);
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
       cell_solution[k].Reshape(ana.dimension(), 0);
-      cell_solution[k](0) = p[0][v];
+      cell_solution[k](0) = p(v,0);
 
       mesh->node_get_coordinates(v, &xv);
       double tmp = ana.pressure_exact(xv, t);
 
-      if (std::abs(tmp - p[0][v]) > .01) {
+      if (std::abs(tmp - p(v,0)) > .01) {
         AmanziGeometry::Point xv2(2);
         mesh->node_get_coordinates(v, &xv2);
-        // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
+        // std::cout << v << " at " << xv << " error: " << tmp << " " << p(v,0) << std::endl;
       }
-      l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
-      inf_err = std::max(inf_err, fabs(tmp - p[0][v]));
+      l2_err += std::pow(tmp - p(v,0), 2.0) * volume / nnodes;
+      inf_err = std::max(inf_err, fabs(tmp - p(v,0)));
       pnorm += std::pow(tmp, 2.0) * volume / nnodes;
     }
 
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     const AmanziGeometry::Point& grad_exact = ana.gradient_exact(xc, t);
-    mfd.L2Cell(c, cell_solution, cell_solution, NULL, poly);
+    mfd.L2Cell(c, cell_solution, NULL, poly);
     for (int k = 0; k < ana.dimension(); ++k) grad[k] = poly(k + 1);
 
     h1_err += L22(grad - grad_exact) * volume;
@@ -298,7 +303,7 @@ void ComputeNodeError(const AnalyticBase& ana,
 inline
 void ComputeEdgeError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,    
-                      Epetra_MultiVector& p, double t,
+                      const MultiVector_type& p_vec, double t,
                       double& pnorm, double& l2_err, double& inf_err,
                       double& hnorm, double& h1_err)
 {
@@ -310,27 +315,28 @@ void ComputeEdgeError(const AnalyticBase& ana,
 
   AmanziGeometry::Point grad(ana.dimension());
 
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_View edges;
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  auto p = p_vec.getLocalViewHost();
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
-    mesh->cell_get_edges(c, &edges);
+    mesh->cell_get_edges(c, edges);
     int nedges = edges.size();
     std::vector<double> cell_solution(nedges);
 
     for (int k = 0; k < nedges; k++) {
       int e = edges[k];
-      cell_solution[k] = p[0][e];
+      cell_solution[k] = p(e,0);
 
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
       double tmp = ana.pressure_exact(xe, t);
-      l2_err += std::pow(tmp - p[0][e], 2.0) * volume / nedges;
-      inf_err = std::max(inf_err, fabs(tmp - p[0][e]));
+      l2_err += std::pow(tmp - p(e,0), 2.0) * volume / nedges;
+      inf_err = std::max(inf_err, fabs(tmp - p(e,0)));
       pnorm += std::pow(tmp, 2.0) * volume / nedges;
-      // std::cout << e << " at " << xe << " error: " << tmp << " " << p[0][e]
+      // std::cout << e << " at " << xe << " error: " << tmp << " " << p(e,0)
       // << std::endl;
     }
   }
@@ -350,7 +356,7 @@ void ComputeEdgeError(const AnalyticBase& ana,
 inline
 void ComputeEdgeMomentsError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             Epetra_MultiVector& p, double t, int ngauss, 
+                             const MultiVector_type& p_vec, double t, int ngauss, 
                              double& pnorm, double& l2_err, double& inf_err)
 {
   pnorm = 0.0;
@@ -359,14 +365,15 @@ void ComputeEdgeMomentsError(const AnalyticBase& ana,
 
   AmanziMesh::Entity_ID n0, n1;
   AmanziGeometry::Point x0(ana.dimension()), x1(ana.dimension()), xv(ana.dimension());
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_View edges;
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  auto p = p_vec.getLocalViewHost();
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
-    mesh->cell_get_edges(c, &edges);
+    mesh->cell_get_edges(c, edges);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {
@@ -386,11 +393,11 @@ void ComputeEdgeMomentsError(const AnalyticBase& ana,
         s1 += gw * ana.pressure_exact(xv, t) * (0.5 - gp);
       } 
 
-      l2_err += std::pow(s0 - p[0][e], 2.0) * volume / nedges;
-      inf_err = std::max(inf_err, fabs(s0 - p[0][e]));
+      l2_err += std::pow(s0 - p(e,0), 2.0) * volume / nedges;
+      inf_err = std::max(inf_err, fabs(s0 - p(e,0)));
       pnorm += std::pow(s0, 2.0) * volume / nedges;
       // std::cout << e << " at " << (x0 + x1) / 2 << " error: " << s0 << " " <<
-      // p[0][e] << std::endl;
+      // p(e,0) << std::endl;
     }
   }
 #ifdef HAVE_MPI

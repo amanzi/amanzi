@@ -1,14 +1,21 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  Linear solution for problem with constant tensorial coefficient
+  working in 2D and 3D
+  Solution: p = x + 2y - gy y
+  Diffusion: K = [1   0.1]
+                 [0.1   3]
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
+*/
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
 #define AMANZI_OPERATOR_ANALYTIC_02_HH_
@@ -35,13 +42,15 @@ class Analytic02 : public AnalyticBase {
   Amanzi::WhetStone::Tensor
   TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override{
     Amanzi::WhetStone::Tensor K(d_, 2);
-    K(0, 0) = 1.0;
-    K(1, 1) = 3.0;
-    K(0, 1) = 0.1;
-    K(1, 0) = 0.1;
-    if (d_ == 3) K(2, 2) = 1.0;
-
-    return K;
+    if (K_.size() == 0) {
+      K(0, 0) = 1.0;
+      K(1, 1) = 3.0;
+      K(0, 1) = 0.1;
+      K(1, 0) = 0.1;
+      if (d_ == 3) K(2, 2) = 1.0;
+      return K;
+    }
+    return K_;
   }
 
   double
@@ -67,7 +76,9 @@ class Analytic02 : public AnalyticBase {
 
  private:
   double g_;
+  Amanzi::WhetStone::Tensor K_;
   Amanzi::AmanziGeometry::Point v_;
 };
 
 #endif
+
