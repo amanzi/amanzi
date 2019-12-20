@@ -6493,6 +6493,27 @@ limited to file name generation and writing frequency, by numerical cycle number
 In this example, walkabout data files are written when the cycle number is 
 a multiple of 100.
 
+Mesh Info
+---------
+
+A user may request to dump mehs information. Mesh information includes coordinates of cell centroids
+written is the order consistent with all output fields.
+
+
+* `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
+
+  .. code-block:: xml
+                  
+ <ParameterList>  <!-- parent list -->                
+ <ParameterList name="mesh info">
+    <Parameter name="filename" type="string" value="centroids"/>
+  </ParameterList>
+
+  <ParameterList name="mesh info fracture">
+    <Parameter name="filename" type="string" value="centroids_fracture"/>
+  </ParameterList>
+  </ParameterList>
+
 
 Input data
 ==========

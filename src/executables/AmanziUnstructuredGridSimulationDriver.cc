@@ -318,11 +318,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
         }
       }  // if verify
     }  // if verify_mesh_param
-    if (expert_mesh_params.isSublist("mesh info")) {
-      Teuchos::ParameterList mesh_info_list = expert_mesh_params.sublist("mesh info");
-      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm));
-      mesh_info->WriteMeshCentroids(*mesh);
-    }
   }
 
 
