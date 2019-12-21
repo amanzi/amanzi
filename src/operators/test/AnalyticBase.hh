@@ -75,7 +75,9 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   }
 
   // interface to function
-  virtual double Value(const Amanzi::AmanziGeometry::Point& p) const { return pressure_exact(p, 0.0); }
+  virtual double Value(const Amanzi::AmanziGeometry::Point& p, double t) const {
+     return pressure_exact(p, 0.0);
+  }
 
   // error calculation
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);

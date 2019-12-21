@@ -8,7 +8,7 @@
   provided in the top-level COPYRIGHT file.
 
   Virtual class for continuous functions. It has limited interface
-  compared to class Amanzi::Function
+  compared to class Amanzi::Function.
 */
 
 #ifndef AMANZI_WHETSTONE_FUNCTION_HH_
@@ -24,7 +24,7 @@ class WhetStoneFunction {
   WhetStoneFunction() {};
   virtual ~WhetStoneFunction() {};
 
-  virtual double Value(const AmanziGeometry::Point& xp) const = 0;
+  virtual double Value(const AmanziGeometry::Point& xp, double t) const = 0;
 };
 
 } // namespace WhetStone

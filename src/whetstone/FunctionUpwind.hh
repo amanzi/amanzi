@@ -24,8 +24,8 @@ class FunctionUpwindPlus : public WhetStoneFunction {
   FunctionUpwindPlus(const WhetStoneFunction* f) : f_(f) {};
   ~FunctionUpwindPlus() {};
 
-  virtual double Value(const AmanziGeometry::Point& xp) const {
-    return std::max(f_->Value(xp), 0.0);
+  virtual double Value(const AmanziGeometry::Point& xp, double t) const {
+    return std::max(f_->Value(xp, t), 0.0);
   }
 
  private:
@@ -38,8 +38,8 @@ class FunctionUpwindMinus : public WhetStoneFunction {
   FunctionUpwindMinus(const WhetStoneFunction* f) : f_(f) {};
   ~FunctionUpwindMinus() {};
 
-  virtual double Value(const AmanziGeometry::Point& xp) const {
-    return std::min(f_->Value(xp), 0.0);
+  virtual double Value(const AmanziGeometry::Point& xp, double t) const {
+    return std::min(f_->Value(xp, t), 0.0);
   }
 
  private:

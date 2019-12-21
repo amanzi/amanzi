@@ -29,6 +29,10 @@ class PolynomialBase : public WhetStoneFunction {
   PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d) {};
   virtual ~PolynomialBase() {};
 
+  // function interface
+  virtual double Value(const AmanziGeometry::Point& xp, double t) const { return Value(xp); }
+  virtual double Value(const AmanziGeometry::Point& xp) const = 0;
+
   // convert to regular vector
   virtual DenseVector ExpandCoefficients() const = 0;
 

@@ -33,7 +33,7 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // interface to function (dummy implementation)
-  virtual double Value(const Amanzi::AmanziGeometry::Point& p) const { return 0.0; }
+  virtual double Value(const Amanzi::AmanziGeometry::Point& p, double t) const override { return 0.0; }
 
   // error calculation
   void ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);

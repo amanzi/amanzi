@@ -285,7 +285,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsEdge(
 
     double a(q1d_weights[m][n]);
     for (int i = 0; i < funcs.size(); ++i) {
-      a *= funcs[i]->Value(xm);
+      a *= funcs[i]->Value(xm, q1d);
     }
     integral += a;      
   }
@@ -525,7 +525,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTriangle_(
 
     double a(q2d_weights[n]);
     for (int i = 0; i < funcs.size(); ++i) {
-      a *= funcs[i]->Value(ym);
+      a *= funcs[i]->Value(ym, 0.0);
     }
     integral += a;      
   }
@@ -562,7 +562,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTetrahedron_(
 
     double a(q3d_weights[n]);
     for (int i = 0; i < funcs.size(); ++i) {
-      a *= funcs[i]->Value(ym);
+      a *= funcs[i]->Value(ym, 0.0);
     }
     integral += a;      
   }

@@ -46,7 +46,11 @@ class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
   MyFunction(AnalyticDG02* ana) : ana_(ana) {};
   ~MyFunction() {};
 
-  virtual double Value(const Amanzi::AmanziGeometry::Point& x) const override { return (ana_->Tensor(x, 0.0))(0, 0); }
+  virtual double Value(const Amanzi::AmanziGeometry::Point& x, double t) const override {
+    return (ana_->Tensor(x, 0.0))(0, 0);
+  }
+
+ private:
   AnalyticDG02* ana_;
 };
 

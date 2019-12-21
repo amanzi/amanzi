@@ -216,8 +216,9 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 * Test of 2D DG stiffness matrices
 **************************************************************** */
 class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
-  double Value(const Amanzi::AmanziGeometry::Point& x) const { return 1.0; }
+  double Value(const Amanzi::AmanziGeometry::Point& x, double t) const { return 1.0; }
 };
+
 
 TEST(DG2D_STIFFNESS_MATRIX) {
   using namespace Amanzi;
@@ -748,14 +749,14 @@ TEST(UPWIND_FUNCTION) {
   AmanziGeometry::Point x1(-1.0, 0.0), x2(1.0, 0.0);
   {
     FunctionUpwindPlus f(&un);
-    CHECK_CLOSE(0.0, f.Value(x1), 1e-12);
-    CHECK_CLOSE(1.0, f.Value(x2), 1e-12);
+    CHECK_CLOSE(0.0, f.Value(x1, 0.0), 1e-12);
+    CHECK_CLOSE(1.0, f.Value(x2, 0.0), 1e-12);
   }
 
   {
     FunctionUpwindMinus f(&un);
-    CHECK_CLOSE(-1.0, f.Value(x1), 1e-12);
-    CHECK_CLOSE( 0.0, f.Value(x2), 1e-12);
+    CHECK_CLOSE(-1.0, f.Value(x1, 0.0), 1e-12);
+    CHECK_CLOSE( 0.0, f.Value(x2, 0.0), 1e-12);
   }
 }
 

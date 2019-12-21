@@ -31,13 +31,14 @@
 #include "errors.hh"
 
 #include "Basis_Regularized.hh"
+#include "FunctionPower.hh"
 #include "GrammMatrix.hh"
-#include "VectorObjectsUtils.hh"
-#include "VEM_NedelecSerendipityType2.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
 #include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
+#include "VectorObjectsUtils.hh"
+#include "VEM_NedelecSerendipityType2.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -99,7 +100,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const WhetStoneFunction*> funcs(2);
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
   Polynomial pc(d_, order_), pf(d_ - 1, order_), pe(d_ - 2, order_);
@@ -125,11 +126,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
   N.Reshape(ndof_S, ndc * d_);
 
   for (auto it = it0; it < it1; ++it) { 
+    int m = it.MonomialSetOrder();
     int k = it.VectorComponent();
     int col = it.VectorPolynomialPosition();
 
     const int* index = it.multi_index();
-    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+    double factor = basis.monomial_scales()[m];
     Monomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -139,17 +141,15 @@ int VEM_NedelecSerendipityType2::L2consistency(
       const auto& xe = mesh_->edge_centroid(e);
       const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
       double length = mesh_->edge_length(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
 
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial emono(d_ - 2, index, tau[k] / length);
-        emono.InverseChangeCoordinates(xe, tau_edge);  
+      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
+        int m2 = jt.MonomialSetOrder();
+        FunctionPower efunc(tau[k] / length, m2);
 
-        polys[0] = &cmono;
-        polys[1] = &emono;
+        funcs[0] = &cmono;
+        funcs[1] = &efunc;
 
-        N(row, col) = numi.IntegratePolynomialsEdge(e, polys) / length;
+        N(row, col) = numi.IntegrateFunctionsEdge(e, funcs, m + m2) / length;
         row++;
       }
     }
@@ -333,9 +333,9 @@ int VEM_NedelecSerendipityType2::L2consistency(
     }
   }
 
-  DenseMatrix X;
-  X.Transpose(N);
-  PrintMatrix(X * R, "%12.5f", X.NumRows());
+  // DenseMatrix X;
+  // X.Transpose(N);
+  // PrintMatrix(X * R, "%12.5f", X.NumRows());
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;
