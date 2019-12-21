@@ -184,6 +184,9 @@
       <num_digits>5</num_digits>
       <cycle_macros>Every10Cycles</cycle_macros>
     </vis>
+    <mesh_info>
+      <filename>centroids</filename>
+    </mesh_info>
   </output>
 </amanzi_input>
  

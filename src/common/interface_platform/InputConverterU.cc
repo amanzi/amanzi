@@ -115,6 +115,12 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
       out_list.sublist("visualization data fracture")
           .set<std::string>("file name base", name + "_fracture");
     }
+
+    if (io_mesh_info_) {
+      out_list.sublist("mesh info fracture") = out_list.sublist("mesh info");
+      std::string filename = out_list.sublist("mesh info").get<std::string>("filename");
+      out_list.sublist("mesh info fracture").set<std::string>("filename", filename + "_fracture");
+    }
   }
 
   // -- final I/O

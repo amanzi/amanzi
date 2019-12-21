@@ -4525,7 +4525,7 @@ the coefficients, long time series can be safely interpolated.
 
 Note this expects and HDF5 file laid out as:
 
-.. code-block:: 
+.. code-block:: text
 
    precipitation_rain.h5
    | time (NTIMES 1D array)
@@ -4536,6 +4536,7 @@ Note this expects and HDF5 file laid out as:
    |  | 1 (NX x NY 2D array)
    |  | ...
    |  | NTIMES (NX x NY 2D array)
+
 
 Smooth step function
 ....................
@@ -6493,19 +6494,20 @@ limited to file name generation and writing frequency, by numerical cycle number
 In this example, walkabout data files are written when the cycle number is 
 a multiple of 100.
 
-Mesh Info
+
+Mesh info
 ---------
 
-A user may request to dump mehs information. Mesh information includes coordinates of cell centroids
+A user may request to dump mesh information. Mesh information includes coordinates of cell centroids
 written is the order consistent with all output fields.
 
 
 * `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
 
-  .. code-block:: xml
+.. code-block:: xml
                   
- <ParameterList>  <!-- parent list -->                
- <ParameterList name="mesh info">
+  <ParameterList>  <!-- parent list -->                
+  <ParameterList name="mesh info">
     <Parameter name="filename" type="string" value="centroids"/>
   </ParameterList>
 
