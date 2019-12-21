@@ -31,6 +31,7 @@ known_fortran_compilers="gfortran ifort"
 # Directory information
 start_directory=$PWD
 amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
+ats_source_dir="${amanzi_source_dir}/src/physics/ats"
 
 # ASCEM Web address
 ascem_protocol=https
@@ -123,6 +124,7 @@ mstk_mesh=$TRUE
 moab_mesh=$FALSE
 # -- tools
 amanzi_branch=
+ats_branch=
 ccse_tools=$FALSE
 spacedim=2
 test_suite=$FALSE
@@ -309,12 +311,14 @@ Configuration:
   --opt                   build optimized TPLs and Amanzi binaries. This the default
                           configuration.
 
-  --relwithdebinfo		  build optimized TPLs and Amanzi binaries with debug info
-			  (for profiling)
+  --relwithdebinfo        build optimized TPLs and Amanzi binaries with debug info
+                          (for profiling)
 
   --debug                 build debug TPLs and Amanzi binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
+
+  --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
@@ -343,8 +347,8 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
-  amanzi_physics	  build Amanzi native physics package ['"${amanzi_physics}"']
-  ats_physics		  build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
+  amanzi_physics          build Amanzi native physics package ['"${amanzi_physics}"']
+  ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -534,7 +538,7 @@ List of INPUT parameters
 
       --prefix=*)
                  tmp=`parse_option_with_equal "${opt}" 'prefix'`
-		 prefix=`make_fullpath ${tmp}`
+                 prefix=`make_fullpath ${tmp}`
                  ;;
 
       --parallel=[0-9]*)
@@ -589,6 +593,10 @@ List of INPUT parameters
 
       --branch=*)
                  amanzi_branch=`parse_option_with_equal "${opt}" 'branch'`
+                 ;;
+
+      --branch_ats=*)
+                 ats_branch=`parse_option_with_equal "${opt}" 'branch_ats'`
                  ;;
 
       --spacedim=*)
@@ -663,7 +671,7 @@ List of INPUT parameters
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
                  XSDK=TRUE
-		 ;;
+                 ;;
 
       --amanzi-build-dir=*)
                  tmp=`parse_option_with_equal "${opt}" 'amanzi-build-dir'`
@@ -720,7 +728,7 @@ List of INPUT parameters
 
       --print)
                  print_exit=${TRUE}
-		 ;;
+                 ;;
 
        *)
                  error_message "'${opt}' is an unknown option or an option missing a value"
@@ -964,6 +972,20 @@ function git_change_branch()
   cd ${save_dir}
 }
 
+function git_change_branch_ats()
+{
+  atsbranch=$1
+  save_dir=`pwd`
+  cd ${ats_source_dir}
+  status_message "In ${ats_source_dir} checking out ATS branch ${atsbranch}"
+  ${git_binary} checkout ${atsbranch}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to update ATS at ${ats_source_dir} to branch ${atsbranch}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+}
+
 function git_submodule_clone()
 {
   submodule_name=$1
@@ -1049,18 +1071,18 @@ function check_Spack
 
       pwd_save=`pwd`
       if [ ! -e ${tpl_install_prefix} ]; then
-	  mkdir_now ${tpl_install_prefix}
+        mkdir_now ${tpl_install_prefix}
       fi
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       
 
       if [ ${xsdk} == ${TRUE} ]; then
-	  cd ${tpl_install_prefix}/spack/bin
-	  #git checkout 9e95e83
-	  #git pull
-	  status_message "Installing xSDK..."
-	  ./spack install xsdk@0.3.0
+        cd ${tpl_install_prefix}/spack/bin
+        #git checkout 9e95e83
+        #git pull
+        status_message "Installing xSDK..."
+        ./spack install xsdk@0.3.0
       fi
       cd ${pwd_save}
     fi
@@ -1627,7 +1649,12 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
         error_message "amanzi_physics and ats_physics are currently incompatible -- enable only one."
         exit_now 30
     fi
+
     git_submodule_clone "src/physics/ats"
+
+    if [ ! -z "${ats_branch}" ]; then
+    git_change_branch_ats ${ats_branch}
+    fi
 fi
 
 
