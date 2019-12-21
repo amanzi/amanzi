@@ -39,6 +39,7 @@
 #include "TreeVector.hh"
 #include "State.hh"
 #include "Visualization.hh"
+#include "MeshInfo.hh"
 
 // MPC
 #include "CycleDriver.hh"
@@ -212,6 +213,16 @@ void CycleDriver::Setup() {
         fail_vis->CreateFiles();
         failed_visualization_.push_back(fail_vis);
       }
+    }
+    std::string plist_name = "mesh info " + mesh->first;
+    // in the case of just a domain mesh, we want to allow no name.
+    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
+      plist_name = "mesh info";
+    }
+    if (glist_->isSublist(plist_name)) {
+      auto& mesh_info_list = glist_->sublist(plist_name);
+      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm_));
+      mesh_info->WriteMeshCentroids(*(mesh->second.first));
     }
   }
 

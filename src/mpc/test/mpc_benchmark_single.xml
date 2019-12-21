@@ -19,6 +19,14 @@
     <Parameter name="write partitions" type="bool" value="true"/>    
   </ParameterList>
 
+  <ParameterList name="mesh info">
+    <Parameter name="filename" type="string" value="centroids"/>
+  </ParameterList>
+
+  <ParameterList name="mesh info fracture">
+    <Parameter name="filename" type="string" value="centroids_fracture"/>
+  </ParameterList>
+
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">

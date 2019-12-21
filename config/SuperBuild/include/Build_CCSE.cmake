@@ -161,7 +161,7 @@ if (ENABLE_CCSE_TOOLS)
   add_custom_command(TARGET ${CCSE_BUILD_TARGET}
                      POST_BUILD
                      COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} BOXLIB_f2py_f90=${RAW_Fortran_COMPILER} CC=${RAW_C_COMPILER} CXX=${RAW_CXX_COMPILER} 3>&2 2>&1 > ${CCSE_stamp_dir}/CCSE-tools-build.log
-                     COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
+                     COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.*so ${TPL_INSTALL_PREFIX}/lib/fsnapshot.so
                      DEPENDS ${CCSE_BUILD_TARGET}
                      WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
 

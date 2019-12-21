@@ -233,6 +233,28 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     out_list.sublist("checkpoint data") = chkPL;
   }
 
+  // get output->mesh info - this node must exist ONCE
+  node = GetUniqueElementByTagsString_("output, mesh_info", flag);
+
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
+    io_mesh_info_ = true;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating output: additional mesh information" << std::endl;
+
+    Teuchos::ParameterList chkPL;
+    DOMNodeList* children = node->getChildNodes();
+    for (int j = 0; j < children->getLength(); j++) {
+      DOMNode* jnode = children->item(j) ;
+      tagname = mm.transcode(jnode->getNodeName());
+      text = mm.transcode(jnode->getTextContent());
+
+      if (strcmp(tagname, "filename") == 0) {
+        chkPL.set<std::string>("filename", output_prefix_ + TrimString_(text));
+      }
+    }
+    out_list.sublist("mesh info") = chkPL;
+  }
+
   // get output->walkabout node - this node must exist ONCE
   node = GetUniqueElementByTagsString_("output, walkabout", flag);
 

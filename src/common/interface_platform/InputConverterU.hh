@@ -47,7 +47,8 @@ class InputConverterU : public InputConverter {
       ic_time_(0.0),
       ic_time_flow_(0.0),
       output_prefix_(""),
-      io_walkabout_(false) {};
+      io_walkabout_(false),
+      io_mesh_info_(false) {};
 
   explicit InputConverterU(const std::string& input_filename, 
                            xercesc::DOMDocument* input_doc,
@@ -65,7 +66,8 @@ class InputConverterU : public InputConverter {
       ic_time_(0.0),
       ic_time_flow_(0.0),
       output_prefix_(output_prefix),
-      io_walkabout_(false) {};
+      io_walkabout_(false),
+      io_mesh_info_(false) {};
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -230,7 +232,7 @@ class InputConverterU : public InputConverter {
 
   // global output parameters
   std::string output_prefix_;
-  bool io_walkabout_;
+  bool io_walkabout_, io_mesh_info_;
 
   // global names for visualization
   std::vector<std::string> material_regions_;
