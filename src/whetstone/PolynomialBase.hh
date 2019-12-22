@@ -110,7 +110,7 @@ int PolynomialPosition(int d, const int* multi_index)
 }
 
 
-// calculate order of polynomial space from given dspace dimension 
+// calculate order of polynomial space from given space dimension 
 inline
 int PolynomialSpaceOrder(int d, int nk)
 {

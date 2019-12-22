@@ -82,6 +82,7 @@ add_amanzi_library(whetstone
                            MFD3D_LagrangeSerendipity.hh
                            nlfv.hh
                            NumericalIntegration.hh
+                           PascalTriangle.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh

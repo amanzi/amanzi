@@ -17,6 +17,7 @@
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "Monomial.hh"
+#include "PascalTriangle.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -228,73 +229,44 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 {
   AmanziGeometry::Point shift(origin - origin_);
 
+  AMANZI_ASSERT(order_ < 10);
+
   if (order_ == 1) {
     for (int i = 0; i < d_; ++i) {
       coefs_(0) += coefs_(i + 1) * shift[i];
     }
   } else if (order_ > 1) {
-    if (AmanziGeometry::L22(shift) == 0.0) return;
-
-    // create powers (x_i - o_i)^k
-    // FIXME: cost could be reduced using split Cnk * a^k
-    std::vector<std::vector<DenseVector> > powers(d_);
+    int idx[3];
 
     for (int i = 0; i < d_; ++i) {
-      powers[i].resize(order_ + 1);
+      double a = shift[i];
+      if (a == 0.0) continue;
 
-      for (int k = 0; k <= order_; ++k) {
-        DenseVector& dv = powers[i][k];
-        dv.Reshape(k + 1);
+      std::vector<double> power(order_);
+      double val(a);
+      for (int n = 0; n < order_; ++n) {
+        power[n] = val;
+        val *= a;
+      }
 
-        int cnk(1);
-        double val(1.0), a(shift[i]);
-        for (int n = 0; n <= k; ++n) {
-          dv(k - n) = val * cnk;
-          cnk *= k - n;
-          cnk /= n + 1;
-          val *= a;
+      for (auto it = begin(); it < end(); ++it) {
+        int m = it.MonomialSetOrder();
+        double coef = coefs_(it.PolynomialPosition());
+        if (coef == 0.0) continue;
+
+        const int* index = it.multi_index();
+        for (int k = 0; k < d_; ++k) idx[k] = index[k];
+
+        // product of x_i^k -> (x_i + a)^k
+        int l = index[i] - 1; 
+        int s = PolynomialSpaceDimension(2, l + 1) - 1;
+        for (int k = 0; k < index[i]; ++k) {
+          idx[i] = k;
+          int pos = PolynomialPosition(d_, idx);
+          coefs_(pos) += coef * pascal_triangle[s--] * power[l--];
         }
       }
     }
-
-    // iterate over polynomial and sum up products
-    Polynomial rebased(d_, order_);
-    for (auto it = begin(); it < end(); ++it) {
-      int k = it.MonomialSetOrder();
-      int m = it.PolynomialPosition();
-      double coef = coefs_(m);
-      if (coef == 0.0) continue;
-
-      const int* index = it.multi_index();
-      // product of (x-a)^i (y-b)^j (z-c)^k
-      int idx[3];
-      Polynomial tmp(d_, k);
-      for (int i0 = 0; i0 <= index[0]; ++i0) {
-        idx[0] = i0;
-        double coef0 = coef * powers[0][index[0]](i0); 
-
-        for (int i1 = 0; i1 <= index[1]; ++i1) {
-          idx[1] = i1;
-          double coef1 = coef0 * powers[1][index[1]](i1); 
-
-          if (d_ == 2) {
-            int pos = PolynomialPosition(d_, idx);
-            tmp(pos) = coef1;
-          } else {
-            for (int i2 = 0; i2 <= index[2]; ++i2) {
-              idx[2] = i2;
-              double coef2 = coef1 * powers[2][index[2]](i2); 
-
-              int pos = PolynomialPosition(d_, idx);
-              tmp(pos) = coef2;
-            }
-          }
-        }
-      }
-      rebased += tmp;
-    }
-    
-    *this = rebased;
   }
   origin_ = origin;   
 }

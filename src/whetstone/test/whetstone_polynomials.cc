@@ -120,6 +120,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   AmanziGeometry::Point origin(0.5, 0.3, 0.2);
   q.Reshape(3, 2);
   val = q.Value(xyz);
+
   q.ChangeOrigin(origin);
   std::cout << "Changed origin of polynomial q\n" << q << std::endl; 
   CHECK_CLOSE(val, q.Value(xyz), 1e-10);
