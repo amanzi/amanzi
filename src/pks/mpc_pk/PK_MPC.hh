@@ -74,9 +74,12 @@ class PK_MPC : virtual public PK {
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
                                  TreeVector& soln) {} ;
 
+  int num_sub_pks() {return sub_pks_.size();}
   // -- identifier accessor
   std::string name() const { return name_; }
-
+  virtual Teuchos::RCP<PK_Base> get_subpk(int i);
+    
+  
  protected:
   // identifier
   std::string name_;
@@ -206,6 +209,18 @@ void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<const State>& S,
   }
 
 };
+
+
+template <class PK_Base>
+Teuchos::RCP<PK_Base> PK_MPC<PK_Base> :: get_subpk(int i){
+
+  if (i >= sub_pks_.size()) {
+    return Teuchos::null;
+  }else{
+    return sub_pks_.at(i);
+  }
+
+}  
 
 }  // namespace Amanzi
 

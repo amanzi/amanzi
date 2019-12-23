@@ -16,6 +16,7 @@
 #endif
 
 #include "ReactiveTransport_PK.hh"
+#include "CoupledReactiveTransport_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
 #include "TransportMatrixFractureImplicit_PK.hh"
 
@@ -30,7 +31,8 @@ RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy ma
 RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
 
 RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_("transport matrix fracture");  
-RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");  
+RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");
+RegisteredPKFactory<CoupledReactiveTransport_PK> CoupledReactiveTransport_PK::reg_("coupled reactive transport");    
 
 }  // namespace Amanzi
 

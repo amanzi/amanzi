@@ -62,7 +62,8 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
-      ReactiveTransport_PK.hh)
+      ReactiveTransport_PK.hh
+      CoupledReactiveTransport_PK.hh)
 
   set(mpc_tree_src_files 
       PK_MPCWeak.cc 
@@ -73,7 +74,8 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
-      ReactiveTransport_PK.cc)
+      ReactiveTransport_PK.cc
+      CoupledReactiveTransport_PK.cc)
 
    set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
    add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
