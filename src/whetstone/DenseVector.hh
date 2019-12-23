@@ -41,9 +41,11 @@ class DenseVector {
   void Reshape(int mrow);
   void Regroup(int stride1, int stride2);
 
-  // -- initialization
-  DenseVector& operator=(const DenseVector& B);
+  // -- assignment operators
+  DenseVector& operator=(const DenseVector& other);
+  DenseVector& operator=(DenseVector&& other) noexcept;
 
+  // -- initialization
   void PutScalar(double val) {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }

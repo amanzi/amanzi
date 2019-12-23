@@ -117,23 +117,35 @@ void DenseVector::Regroup(int stride1, int stride2)
 
 
 /* ******************************************************************
-* Assignment operator
+* Assignment operators
 ****************************************************************** */
-DenseVector& DenseVector::operator=(const DenseVector& B)
+DenseVector& DenseVector::operator=(const DenseVector& other)
 {
-  if (this != &B) {
-    if (mem_ < B.m_) {
+  if (this != &other) {
+    if (mem_ < other.m_) {
       if (data_ != NULL) {
         delete [] data_;
       }
-      data_ = new double[B.m_];
-      mem_ = B.m_;
+      data_ = new double[other.m_];
+      mem_ = other.m_;
     }
-    m_ = B.m_;
-    const double *b = B.Values();
+    m_ = other.m_;
+    const double *b = other.Values();
     for (int i = 0; i < m_; ++i) data_[i] = b[i];
   }
-  return (*this);
+  return *this;
+}
+
+
+DenseVector& DenseVector::operator=(DenseVector&& other) noexcept
+{
+  if (this != &other) {
+    m_ = other.m_;
+    mem_ = other.mem_;
+    data_ = other.data_;
+    other.data_ = NULL;
+  }
+  return *this;
 }
 
 

@@ -78,6 +78,33 @@ Polynomial::Polynomial(const Polynomial& poly)
 
 
 /* ******************************************************************
+* Assignement operators
+****************************************************************** */
+Polynomial& Polynomial::operator=(const Polynomial& poly)
+{
+  d_ = poly.dimension();
+  order_ = poly.order();
+  origin_ = poly.origin();
+  size_ = poly.size();
+  coefs_ = poly.coefs();
+
+  return *this;
+}
+
+
+Polynomial& Polynomial::operator=(Polynomial&& poly) noexcept
+{
+  d_ = poly.dimension();
+  order_ = poly.order();
+  origin_ = poly.origin();
+  size_ = poly.size();
+  coefs_ = std::move(poly.coefs());
+
+  return *this;
+}
+
+
+/* ******************************************************************
 * Constructor of a polynomial from a monomial.
 ****************************************************************** */
 Polynomial::Polynomial(const Monomial& mono)
@@ -398,7 +425,7 @@ void Polynomial::ChangeCoordinates(
   else if (dnew == 2) {
     if (order_ == 0) {
       tmp(0) = coefs_(0);
-      *this = tmp;
+      *this = std::move(tmp);
       return;
     }
 
@@ -407,7 +434,7 @@ void Polynomial::ChangeCoordinates(
       for (int i = 0; i < 2; ++i) {
         tmp(i + 1) = coefs_(1) * B[i][0] + coefs_(2) * B[i][1] + coefs_(3) * B[i][2];
       }
-      *this = tmp;
+      *this = std::move(tmp);
       return;
     }
 
@@ -470,7 +497,7 @@ void Polynomial::ChangeCoordinates(
     }
   }  
   
-  *this = tmp;
+  *this = std::move(tmp);
 }
 
 

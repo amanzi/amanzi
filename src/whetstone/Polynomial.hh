@@ -49,6 +49,10 @@ class Polynomial : public PolynomialBase {
              const std::vector<AmanziGeometry::Point>& xyz, 
              const DenseVector& values);
 
+  // assignment operators
+  Polynomial& operator=(const Polynomial& poly);
+  Polynomial& operator=(Polynomial&& poly) noexcept;
+
   // reshape polynomial and erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
 
