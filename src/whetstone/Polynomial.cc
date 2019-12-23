@@ -601,7 +601,7 @@ void Polynomial::InverseChangeCoordinates(
     }
   } 
   
-  *this = tmp;
+  *this = std::move(tmp);
 }
 
 

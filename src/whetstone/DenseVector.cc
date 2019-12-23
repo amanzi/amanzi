@@ -34,16 +34,25 @@ DenseVector::DenseVector(int mrow, double* data)
 }
 
 
-DenseVector::DenseVector(const DenseVector& B)
+DenseVector::DenseVector(const DenseVector& other)
 { 
-  m_ = B.NumRows();
+  m_ = other.NumRows();
   mem_ = m_;
   data_ = NULL;
   if (m_ > 0) {
     data_ = new double[m_];
-    const double* dataB = B.Values();
+    const double* dataB = other.Values();
     for (int i = 0; i < m_; i++) data_[i] = dataB[i];
   }
+}
+
+
+DenseVector::DenseVector(DenseVector&& other)
+{ 
+  m_ = other.m_;
+  mem_ = other.mem_;
+  data_ = other.data_;
+  other.data_ = NULL;
 }
 
 

@@ -73,16 +73,30 @@ DenseMatrix::DenseMatrix(int mrow, int ncol, double* data, int data_access)
 /* ******************************************************************
 * Copy constructor creates an new matrix.
 ****************************************************************** */
-DenseMatrix::DenseMatrix(const DenseMatrix& B)
+DenseMatrix::DenseMatrix(const DenseMatrix& other)
 {
-  m_ = B.NumRows();
-  n_ = B.NumCols();
+  m_ = other.NumRows();
+  n_ = other.NumCols();
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 
   mem_ = m_ * n_;
   data_ = new double[mem_];
-  const double* dataB = B.Values();
+  const double* dataB = other.Values();
   for (int i = 0; i < mem_; i++) data_[i] = dataB[i];
+}
+
+
+/* ******************************************************************
+* Move constructor re-assigns memory
+****************************************************************** */
+DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept
+{
+  m_ = other.m_;
+  n_ = other.n_;
+  mem_ = other.mem_;
+  access_ = other.access_;
+  data_ = other.data_;
+  other.data_ = NULL;
 }
 
 
@@ -112,6 +126,42 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
       tmpB++;
     }
   }
+}
+
+
+/* ******************************************************************
+* Assignment operators
+****************************************************************** */
+DenseMatrix& DenseMatrix::operator=(const DenseMatrix& other)
+{
+  if (this != &other) {
+    if (mem_ < other.m_ * other.n_) {
+      if (data_ != NULL) {
+        delete [] data_;
+      }
+      mem_ = other.m_ * other.n_;
+      data_ = new double[mem_];
+    }
+    n_ = other.n_;
+    m_ = other.m_;
+    const double *b = other.Values();
+    for (int i = 0; i < m_ * n_; i++) data_[i] = b[i];
+  }
+  return *this;
+}
+
+
+DenseMatrix& DenseMatrix::operator=(DenseMatrix&& other) noexcept
+{
+  if (this != &other) {
+    n_ = other.n_;
+    m_ = other.m_;
+    mem_ = other.mem_;
+    access_ = other.access_;
+    data_ = other.data_;
+    other.data_ = NULL;
+  }
+  return *this;
 }
 
 

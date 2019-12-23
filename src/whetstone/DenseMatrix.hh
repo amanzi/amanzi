@@ -35,10 +35,15 @@ class DenseMatrix {
   DenseMatrix();
   DenseMatrix(int mrow, int ncol);  // memory is not initialized
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
-  DenseMatrix(const DenseMatrix& B);
+  DenseMatrix(const DenseMatrix& other);
+  DenseMatrix(DenseMatrix&& other) noexcept;
   DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
   ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
+  // assignment operators
+  DenseMatrix& operator=(const DenseMatrix& other);
+  DenseMatrix& operator=(DenseMatrix&& other) noexcept;
+
   // primary members 
   // -- reshape can be applied only to a matrix that owns data
   // -- data are not remapped to the new matrix shape
@@ -46,23 +51,6 @@ class DenseMatrix {
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
   const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
-
-  DenseMatrix& operator=(const DenseMatrix& B) {
-    if (this != &B) {
-      if (mem_ < B.m_ * B.n_) {
-        if (data_ != NULL) {
-          delete [] data_;
-        }
-        mem_ = B.m_ * B.n_;
-        data_ = new double[mem_];
-      }
-      n_ = B.n_;
-      m_ = B.m_;
-      const double *b = B.Values();
-      for (int i = 0; i < m_ * n_; i++) data_[i] = b[i];
-    }
-    return (*this);
-  }
 
   DenseMatrix& operator=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
@@ -123,10 +111,10 @@ class DenseMatrix {
   int NumCols() const { return n_; }
   int memory() const { return mem_; }
 
-  inline double* Values() { return data_; }
-  inline double* Value(int i, int j)  { return data_ + j * m_ + i; } 
-  inline const double* Values() const { return data_; }
-  inline const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
+  double* Values() { return data_; }
+  double* Value(int i, int j)  { return data_ + j * m_ + i; } 
+  const double* Values() const { return data_; }
+  const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const DenseMatrix& A) {

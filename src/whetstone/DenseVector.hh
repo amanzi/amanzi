@@ -31,7 +31,8 @@ class DenseVector {
   DenseVector() : m_(0), mem_(0), data_(NULL) {};
   explicit DenseVector(int mrow);
   DenseVector(int mrow, double* data);
-  DenseVector(const DenseVector& B);
+  DenseVector(const DenseVector& other);
+  DenseVector(DenseVector&& other);
   DenseVector(const std::vector<double>& B);
 
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
