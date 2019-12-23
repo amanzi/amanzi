@@ -237,12 +237,12 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
     }
   } else if (order_ > 1) {
     int idx[3];
+    std::vector<double> power(order_);
 
     for (int i = 0; i < d_; ++i) {
       double a = shift[i];
       if (a == 0.0) continue;
 
-      std::vector<double> power(order_);
       double val(a);
       for (int n = 0; n < order_; ++n) {
         power[n] = val;
@@ -250,7 +250,6 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       }
 
       for (auto it = begin(); it < end(); ++it) {
-        int m = it.MonomialSetOrder();
         double coef = coefs_(it.PolynomialPosition());
         if (coef == 0.0) continue;
 
@@ -298,47 +297,30 @@ Polynomial Polynomial::ChangeOrigin(
     poly(0) *= coef;
   }
   else if (order > 1) {
+    int idx[3];
     AmanziGeometry::Point shift(origin - mono.origin());
     const int* index = mono.multi_index();
 
-    // create powers (x_i - o_i)^k
-    std::vector<DenseVector> powers(d);
+    for (int i = 0; i < d_; ++i) {
+      double a = shift[i];
+      if (a == 0.0) continue;
 
-    for (int i = 0; i < d; ++i) {
-      powers[i].Reshape(index[i] + 1);
-
-      int cnk(1);
-      double val(1.0), a(shift[i]);
-      for (int n = 0; n <= index[i]; ++n) {
-        powers[i](index[i] - n) = val * cnk;
-        cnk *= index[i] - n;
-        cnk /= n + 1;
+      std::vector<double> power(order_);
+      double val(a);
+      for (int n = 0; n < order_; ++n) {
+        power[n] = val;
         val *= a;
       }
-    }
 
-    // product of (x-a)^k (y-b)^l (z-c)^m
-    int idx[3];
-    for (int i0 = 0; i0 <= index[0]; ++i0) {
-      idx[0] = i0;
-      double coef0 = powers[0](i0); 
+      for (int k = 0; k < d_; ++k) idx[k] = index[k];
 
-      for (int i1 = 0; i1 <= index[1]; ++i1) {
-        idx[1] = i1;
-        double coef1 = powers[1](i1); 
-
-        if (d == 2) {
-          int pos = MonomialSetPosition(d_, idx);
-          poly(i0 + i1, pos) = coef * coef0 * coef1;
-        } else {
-          for (int i2 = 0; i2 <= index[2]; ++i2) {
-            idx[2] = i2;
-            double coef2 = powers[2](i2); 
-
-            int pos = MonomialSetPosition(d_, idx);
-            poly(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
-          }
-        }
+      // product of x_i^k -> (x_i + a)^k
+      int l = index[i] - 1; 
+      int s = PolynomialSpaceDimension(2, l + 1) - 1;
+      for (int k = 0; k < index[i]; ++k) {
+        idx[i] = k;
+        int pos = PolynomialPosition(d_, idx);
+        poly(pos) += coef * pascal_triangle[s--] * power[l--];
       }
     }
   }
@@ -380,14 +362,16 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 
 /* ******************************************************************
-* Change of coordinates: x = x0 + B * s 
-* Note: the resulting polynomial is centered at the new local origin.
+* Change of coordinates: x = x0 + B * s, where s has lower topological
+* dimension than x0. The resulting polynomial is centered at the new 
+* local zero origin.
 ****************************************************************** */
 void Polynomial::ChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
   int dnew = B.size();
-  AMANZI_ASSERT(dnew > 0);
+  AMANZI_ASSERT(dnew > 0 && dnew < 4);
+  AMANZI_ASSERT(order_ < 10);
 
   // center polynomial at x0
   ChangeOrigin(x0);
@@ -427,42 +411,61 @@ void Polynomial::ChangeCoordinates(
       return;
     }
 
-    Polynomial poly0(dnew, 1), poly1(dnew, 1), poly2(dnew, 1);
+    // computation of product of three binomials
+    int index[3], n = order_ + 1;
+    std::vector<double> power0a(n), power1a(n), power2a(n);
+    std::vector<double> power0b(n), power1b(n), power2b(n);
 
-    poly0(1) = B[0][0];
-    poly0(2) = B[1][0];
+    double a0, a1, a2, v0a(1.0), v1a(1.0), v2a(1.0), v0b(1.0), v1b(1.0), v2b(1.0);
+    for (int i = 0; i < n; ++i) {
+      power0a[i] = v0a;
+      power0b[i] = v0b;
 
-    poly1(1) = B[0][1];
-    poly1(2) = B[1][1];
+      power1a[i] = v1a;
+      power1b[i] = v1b;
 
-    poly2(1) = B[0][2];
-    poly2(2) = B[1][2];
+      power2a[i] = v2a;
+      power2b[i] = v2b;
 
-    // lazy computation of powers of three binomials
-    Polynomial one(dnew, 0);
-    one(0) = 1.0;
+      v0a *= B[0][0];
+      v0b *= B[1][0];
 
-    std::vector<Polynomial> power0, power1, power2;
-    power0.push_back(one);
-    power1.push_back(one);
-    power2.push_back(one);
+      v1a *= B[0][1];
+      v1b *= B[1][1];
+
+      v2a *= B[0][2];
+      v2b *= B[1][2];
+    }
 
     for (auto it = begin(); it < end(); ++it) {
       double coef = coefs_(it.PolynomialPosition());
+      if (coef == 0.0) continue;
 
-      if (coef != 0.0) {
-        const int* idx = it.multi_index();
+      int m = it.MonomialSetOrder();
+      const int* idx = it.multi_index();
+      int s0 = PolynomialSpaceDimension(2, idx[0] - 1);
+      int s1 = PolynomialSpaceDimension(2, idx[1] - 1);
+      int s2 = PolynomialSpaceDimension(2, idx[2] - 1);
 
-        for (int k = power0.size() - 1; k < idx[0]; ++k)
-           power0.push_back(power0[k] * poly0);
+      for (int i0 = 0; i0 <= idx[0]; ++i0) {
+        // using mirrow symmetry of Pascal's triangle
+        int j0 = idx[0] - i0;
+        a0 = coef * pascal_triangle[s0 + i0] * power0a[i0] * power0b[j0];
 
-        for (int k = power1.size() - 1; k < idx[1]; ++k)
-           power1.push_back(power1[k] * poly1);
+        for (int i1 = 0; i1 <= idx[1]; ++i1) {
+          int j1 = idx[1] - i1;
+          a1 = a0 * pascal_triangle[s1 + i1] * power1a[i1] * power1b[j1];
 
-        for (int k = power2.size() - 1; k < idx[2]; ++k)
-           power2.push_back(power2[k] * poly2);
+          for (int i2 = 0; i2 <= idx[2]; ++i2) {
+            int j2 = idx[2] - i2;
+            a2 = a1 * pascal_triangle[s2 + i2] * power2a[i2] * power2b[j2];
 
-        tmp += (coef * power0[idx[0]]) * power1[idx[1]] * power2[idx[2]];        
+            index[0] = i0 + i1 + i2;
+            index[1] = m - index[0];
+            int pos = PolynomialPosition(dnew, index);
+            tmp(pos) += a2;
+          }
+        }
       }
     }
   }  

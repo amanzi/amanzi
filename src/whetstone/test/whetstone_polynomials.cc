@@ -125,7 +125,12 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   std::cout << "Changed origin of polynomial q\n" << q << std::endl; 
   CHECK_CLOSE(val, q.Value(xyz), 1e-10);
 
-  // trace of a 2D polynomial
+  // assignement small to large
+  q1.Reshape(2, 3, true);
+  q2.Reshape(2, 2, true);
+  q1 = q2;
+
+  // trace of a 2D polynomial on a line (x0, tau1)
   Polynomial p2d(2, 3);
 
   for (auto it = p2d.begin(); it < p2d.end(); ++it) {
@@ -137,25 +142,35 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     p2d(m, k) = pos;
   }
   AmanziGeometry::Point x0(0.0, 0.0), v1(1.0, 1.0);
-  std::vector<AmanziGeometry::Point> tau;
-  tau.push_back(v1);
+  std::vector<AmanziGeometry::Point> tau1;
+  tau1.push_back(v1);
 
   Polynomial p1d(p2d);
-  p1d.ChangeCoordinates(x0, tau);
-  std::cout << "tau[0]=" << tau[0] << std::endl;
-  std::cout << "Before ChangeCoordinates: " << p2d << std::endl;
-  std::cout << "After ChangeCoordinates: " << p1d << std::endl;
+  p1d.ChangeCoordinates(x0, tau1);
+  std::cout << "2D coordinate change: tau[0]=" << tau1[0] << std::endl;
+  std::cout << p2d << p1d << std::endl;
 
   p2d.set_origin(AmanziGeometry::Point(1.0, 1.0));
   p1d = p2d;
-  p1d.ChangeCoordinates(x0, tau);
-  std::cout << "Before ChangeCoordinates: " << p2d << std::endl;
-  std::cout << "After ChangeCoordinates: " << p1d << std::endl;
+  p1d.ChangeCoordinates(x0, tau1);
+  std::cout << p2d << p1d << std::endl;
 
-  // assignement small to large
-  q1.Reshape(2, 3, true);
-  q2.Reshape(2, 2, true);
-  q1 = q2;
+  // trace of a 3D polynomial on a plane (y0, tau2)
+  Polynomial p3d(3, 3);
+
+  for (auto it = p3d.begin(); it < p3d.end(); ++it) {
+    int pos = it.PolynomialPosition();
+    p3d(pos) = pos;
+  }
+  AmanziGeometry::Point y0(0.0, 0.0, 0.0);
+  std::vector<AmanziGeometry::Point> tau2;
+  tau2.push_back(AmanziGeometry::Point(1.0, 1.5, 0.0));
+  tau2.push_back(AmanziGeometry::Point(2.0,-1.2, 0.0));
+
+  p2d = p3d;
+  p2d.ChangeCoordinates(y0, tau2);
+  std::cout << "3D coordinate change: tau[0]=" << tau2[0] << "  tau[1]=" << tau2[1] << std::endl;
+  std::cout << p3d << p2d << std::endl;
 }
 
 
