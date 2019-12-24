@@ -343,10 +343,6 @@ TEST(REMAP_GEOMETRIC_CONSERVATION_LAW) {
 
   double dT(0.1);
   RemapGCL(rk_method, "test/median15x16.exo",   16,1,0, dT/2, deform);
-
-  dT = 0.025;
-  RemapGCL(rk_method, "test/prism10.exo", 10,1,1, dT,   deform);
-  RemapGCL(rk_method, "test/prism20.exo", 20,1,1, dT/2, deform);
   /*
   RemapGCL(rk_method, "test/median32x33.exo",   32,1,0, dT/4, deform);
   RemapGCL(rk_method, "test/median63x64.exo",   64,1,0, dT/8, deform);
