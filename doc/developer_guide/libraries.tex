@@ -5,7 +5,7 @@
 \section{Selected Amanzi libraries}
 
 This section describes selected Amanzi libraries, their limitations and possible 
-ways for extentions.
+ways for extensions.
 
 \subsection{WhetStone}
 This is a low-level library that implements primarily local matrices for 
@@ -36,7 +36,7 @@ for (auto it = poly.begin(); it < poly.end(); ++it) {
 }
 \end{lstlisting}
 Each step of this loop extracts information about monomial $c_i \,x^{idx_0} y^{idx_1} z^{idx_2}$
-of order $k= idx_0 + idx_1 + idx_2$ in a quadratic polynomial.
+of degree $k= idx_0 + idx_1 + idx_2$ in a quadratic polynomial.
 
 Quadrature rules on simplexes have positive weights for stability of numerical schemes. 
 Integration formulas based on Euler's homogeneous theorem can be used for integrating
@@ -49,7 +49,7 @@ This is used in (a) hierarchical construction of high-order virtual element and 
 schemes, and (b) projection of polynomials on a low-dimension manifold and an reserve (non-unique)
 lifting operation.
 
-Finally library {\it WhetStone} contains a factory of discretization schemes that could
+Finally this library contains a factory of discretization schemes that could
 be extended by including users schemes via a simple interface.
 Example of such an extension is available in directory {\it operators/test}.
 
@@ -117,7 +117,7 @@ which may now take local indices from the ghosted map, not the true row map.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{PKs}
 This library provides plausibly abstract classes for implementation of 
-boundary conditions and source terms in the physical PKs.
+boundary conditions and source terms in the physical PKs, see Fig.~\ref{fig:pks}.
 
 Multiple subdirectories contain implementation of various process kernels and MPC PKs.
 A PK factory is used for self-registering of PKs from the global input spec.
@@ -141,6 +141,14 @@ Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
 \end{lstlisting}
 
 
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[height=0.9\textheight]{figs/pks.png}
+\caption{Partial dependency tree for library PKs.\label{fig:pks}}
+\end{center}
+\end{figure}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \subsection{General purpose factory}
@@ -161,7 +169,7 @@ To do the second, this registration must NOT be done in the factory's source cod
 
 This is made a little easier by the fact that nearly all of these things
 will be constructed using a single interface for the constructor, which
-(explicitly) takes a single argument -- a {\tt ParameterList} -- and
+(explicitly) takes a single argument -- a variable of class {\tt ParameterList} -- and
 parses that list for its actual parameters.  While it is usually a good
 idea to have a factory take the input list, do the parsing, and call the
 model's constructor with the parameters, that would require every model
@@ -177,7 +185,7 @@ single base class.  Implementations of that base class then "register"
 themselves with the factory instance (which is stored statically since we
 cannot correctly manage the cleanup).  This factory assumes all
 constructors for all implementations of all base classes take a single
-{\tt ParameterList} as an argument. 
+variable of class {\tt ParameterList} as an argument. 
 An EOS example:
 \begin{lstlisting}
 // eos_factory.cc  (no .hh file necessary)

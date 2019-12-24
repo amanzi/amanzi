@@ -4,23 +4,24 @@
 
 \section{Design of Amanzi}
 
-The design principles described below are about the code modularity and extensibility.
+In short, the guiding  principles described below are related to code readability,
+modularity, and extensibility.
 We follow closely, but not exactly, the Google C++ coding style.
-We describe high-level principle here and elaborate some of them in the
-Section~3.
-To distinguish between a {\tt Class} name, its {\it Methods()}, and its 
-{\it variables}, we use different fonts. 
-Global {\it CONSTANTS} are capitalized.
+In this section, we describe high-level principles and elaborate some of them 
+in the subsequent section.
+We use different fonts to distinguish between a {\tt Class} name, its {\it Methods()}, 
+and its {\it variables}. 
+Global {\rm CONSTANTS} are capitalized.
 
-\underline{Disclaimer}. It is normal that Amanzi's initial code implementation of models 
-and algorithms does not always comply with all design principles, but it is getting there 
-with each code re-factory.
+\underline{Disclaimer}. Amanzi's initial code implementation of new models 
+and algorithms does not always comply with the formulated design principles, but 
+it is getting there with each code re-factory.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State}
 State is a simple data manager. 
-It allows process kernels to require, read, and write various variables (such as physical fields).
+It allows process kernels (PK) to require, read, and write various variables (such as physical fields).
 It guarantees data protection by providing both const and non-const data pointers for variables.
 It provides some initialization capability -- this is where all independent variables can be 
 initialized -- since independent variables are typically owned by the state, not by a process kernel.
@@ -37,6 +38,7 @@ Each PK may represent a single equation (e.g. the Poisson equation for the Darcy
 or system of strongly connected equations (e.g. the Navier-Stokes flow).
 
 An MPC PK couples multiple physical processes which have their respected PKs.
+One example is the Darcy flow and dispersive transport of chemical components.
 An MPC PK may often be fully automated with no knowledge of the underlying PKs.
 Since an MPC PK has the same interface as a PK, it is also a process kernel which
 allows us to build a hierarchy of physical models with various degree of coupling
@@ -51,13 +53,13 @@ The available variable evaluators are classified as follows:
 \begin{enumerate}
 \item Independent variable evaluators are the user-provided functions of spatial and temporal coordinates
       and has no dependencies.
-      They could be used to compute boundary terms, source terms, and initial conditions. 
+      They could be used to compute (analytic or tabulated) boundary conditions, source terms, and initial conditions. 
 \item Primary variable evaluators are related to the fields solved for within a PK.
       Examples are pressure and temperature fields.
       Typically these evaluators are used internally to track change in fields state and inform the 
       dependency tree about this.
 \item Secondary variable evaluators are derived either from primary variable evaluators or other secondary variables. 
-      There are two types of the secondary variable evaluators used to evaluate either a single or multiple variable.
+      There are two types of the secondary variable evaluators used to evaluate either a single or multiple variables.
       A model for a secondary variable can be anything from a constitutive relation to a discrete operator
       (apply a divergence operator to a velocity given a mesh and discretization) 
       to a summation operator (add the divergence of Darcy fluxes to a source term to determine the mass balance).
@@ -84,19 +86,21 @@ For more details, we refer to \cite{coon2016managing}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{CompositeVector}
 Class {\tt CompositeVector} is an implementation of an improved
-{\tt Epetra\_MultiVector} which spans multiple components and knows how to
+{\tt Epetra\_MultiVector} (from Trilinos suite of packages) which spans multiple components and knows how to
 communicate itself.
 A composite vector is a collection of vectors defined on a common mesh and
 communicator. 
 Each vector, or component, has a name (typically, a mesh entity)
 and a number of degrees of freedom.  
 This meta data is stored in class {\tt CompositeVectorSpace}.
+For instance, the field {\it total\_component\_concentration} is the cell-centered field with 
+as many degrees of freedom as there exist chemical components.
 
-Ghost cell updates are managed by the {\tt CompositeVector}. 
-The design of this pattern is prompted by two things:
+Ghost cell updates are managed by the class {\tt CompositeVector}. 
+Design of the parallel communication strategy is driven by two observations:
 \begin{itemize}
 \item The need for updated ghost cell information is typically known by the
-      user just prior to being used, not just after the non-ghost values are
+      user just prior to being used, not just after the master values are
       updated.
 \item Occasionally multiple functions need ghost values, but no changes to
       owned data have been made between these functions.  However, it is not
@@ -123,20 +127,20 @@ The following modifications tag the flag:
 \item Any of the usual {\it PutScalar()}, {\it Apply()}, etc methods.
 \item Non-const calls of {\it ViewComponent()}.
 \item Call of {\it GatherMasterToGhosted()} and {\it ChangedValues()}.
-\item {\it Scatter()} called in a non-INSERT mode.
+\item {\it Scatter()} called in a non-{\rm INSERT} mode.
 \end{enumerate}
 
 There exist known ways to break this paradigm. 
 One is to store a non-const pointer to the underlying {\tt Epetra\_MultiVector}.
-The fix is simple as this: NEVER store a pointer to the underlying data, 
-just keep pointers to the CompositeVector itself.
+The fix is simple as this: \underline{never} store a pointer to the underlying data, 
+just keep pointers to the composite vector itself.
 
-The other one is when one grabs a non-const pointer, call {\it Scatter()}, then 
-change the values of the local data.  
+The other one is when one grabs a non-const pointer, calls {\it Scatter()}, then 
+changes the values of the local data.  
 This is the nasty one, because it is both subtle and reasonable usage.
 When you access a non-const pointer, the data is flagged as changed.
-Then you call {\it Scatter()}, the data is flagged as unchanged.
-Then you change the data from your old non-const pointer, and the data is changed, but not flagged.
+Then you call {\it Scatter()} and the data is flagged as unchanged.
+Then you change the data from your old non-const pointer, so that the data is changed, but not flagged.
 The first fix is to always call {\it ViewComponent()} after {\it Scatter()} and before changing values.
 Another way to protect yourself is to put non-const references in their own scope.
 For instance, the following practice is encourage:
@@ -162,21 +166,21 @@ The final way to break the parallel machinery is to use {\it const\_cast()} and
 then change the values.
 Const-correctness is your friend. Keep your PKs const-correct, and you will never have this problem.
 
-Note that non-INSERT modes of scatter are never skipped because of the flag state, 
+Note that the non-{\rm INSERT} modes of scatter are never skipped because of the flag state, 
 and the flag is always tagged as changed.  
 This is because subsequent calls with different modes would break the code.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{TreeVector}
-Class {\tt TreeVector} implements a nested, hierarchical data structure 
+The class {\tt TreeVector} implements a nested, hierarchical data structure 
 that mimics that for PK hierarchies.
 It is an extendable collection of composite vectors.
 This vector allows each physical PK to use composite vector to store 
-their solution, and allows MPCs to push back {\tt TreeVectors} in a tree format.
+their solution, and allows MPCs to push back vectors in a tree format.
 
-This vector provides the standard vector interface and may be used with
-time integrators and nonlinear solvers.
+This class provides the standard vector interface (extended ring algebra) and 
+may be used with time integrators and nonlinear solvers.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -186,10 +190,11 @@ functionalities that are frequently placed in a single class in other
 C++ packages.
 
 \begin{enumerate}
-\item Containers of local matrices ({\tt Ops}) and data layout {\tt schemas}.
+\item Containers of local matrices (classes prefixed with {\tt Op}) and 
+      data layout {\it schemas}.
 
 \item Linear operators and elemental operations with them: assembly of a global 
-      matrix, matrix-vector product, inversion, and calculation of the Schur complement.
+      matrix (e.g. Jacobian), matrix-vector product, inversion, and calculation of the Schur complement.
 
 \item Discrete PDEs: populate values in local matrices, add nonlinear 
 coefficients, create specialized preconditioners, and impose special
@@ -198,44 +203,51 @@ boundary conditions.
 
 
 \subsubsection{Op}
-Op is a container of local matrices.
-A series of {\tt Op\_BASE\_DOFS} classes (e.g. {\tt Op\_Cell\_FaceCell} and 
-{\tt Op\_Cell\_Schema}) handle data layout. 
+Class {\tt Op\_*} is a container of local matrices.
+A series of such classes (e.g. {\tt Op\_Cell\_FaceCell} and {\tt Op\_Cell\_Schema}) handle data layout. 
+The second word in the class name indicates the container size (the number of mesh cells here).
+The third word specifies location of degrees of freedom: in cells and on faces in the first example;
+specified by a complex schema in the second example.
 These are really just structs of vectors of
 dense matrices of doubles, and simply provide a type.
 They are derived from the virtual class {\tt Op}.
 
 A key concept of an {\tt Op} is the schema. 
-A schema includes at least one enum representing the dofs associated
-with the Operator's domain and range. A single schema is a major limitation 
-since it implies $X=Y$.
+The old design of the schema includes one enum representing the dofs associated
+with the Operator's domain and range, and one enum for the contained size. 
+This is a major limitation for implementing complex discretization schemes.
+Also a single schema implies that the domain and range of the operator are the same.
 The new design (which is backward compatible) includes two schemas that are also more 
-detailed. A list of enums allows us to represent various collections of 
-degrees of freedom including derivatives and vector components.
-The new schema includes also information of the geometric entity over which the local 
+detailed. A the first enum is replaced with the list of enums to represent various 
+possible collections of degrees of freedom including non-standard degrees of freedom 
+as as derivatives and moments.
+Additional list specifies multiplicity of these degrees of freedom.
+The second enum in the new schema specifies (as before) the geometric entity over which the local 
 matrices are assembled.
 
-This design enables a few things for future code development.
-For instance, it should make creating surface matrices, and then assembling into a 
-subsurface matrix doable by introducing a new {\tt Op} class with a simple schema
-or using class {\tt Op\_Cell\_Schema} with a complex schema. 
-It also makes it trivial to assemble a global matrix (e.g. in a coupled flow-energy system)
+Existence of two (simple and complex) schemas provides some flexibility for code development.
+For instance, a developed could create surface matrices, and then assemble them into a 
+subsurface matrix by introducing a new {\tt Op} class (for surface discretization) with a simple schema.
+Alternatively, it could be done using the class {\tt Op\_Cell\_Schema} with a complex schema. 
+
+The general schema makes it trivial to assemble a global matrix (e.g. in a coupled flow-energy system)
 from sub-block operators.
 Finally, the new schema supports rectangular matrices which is useful for saddle-point 
 type systems.
 
-{\tt Ops} work via a visitor pattern.
+{\tt Op\_*} works via a visitor pattern.
 Matrix assembly, {\it Apply()}, application of boundary conditions, and symbolic assembly 
 are implemented by the virtual class {\tt Operator} calling a dispatch to the 
-virtual class {\tt Op}, which then dispatches back to the derived class Operator so that
-type information of both the Operator (i.e. global matrix info) and 
-the {\tt Op} (i.e. local matrix info) are known.
+virtual class {\tt Op}, which then dispatches back to the derived class {\tt Operator\_*} so that
+type information of both the {\tt Operator\_*} (i.e. global matrix info) and 
+the {\tt Op\_*} (i.e. local matrix info) are known.
 
-A single {\tt Op} can be shared by {\tt Operators}. 
+A container of local matrices (i.e. instantiation of a {\tt Op\_*}) 
+can be shared by multiple {\tt Operator\_*}. 
+Sharing is indicated by the variable {\it ops\_properties}. 
 In combination with {\it CopyShadowToMaster()} and {\it Rescale()},
 a developer has a room for a variety of optimized implementations.
-The key variable is {\it ops\_properties}. The key parameters have prefix
-{\it OPERATOR\_PROPERTY} and described in file {\it Operators\_Defs.hh}.
+The key parameters have prefix {\rm OPERATOR\_PROPERTY} and described in file {\it Operators\_Defs.hh}.
 
 
 \subsubsection{Operator}
@@ -243,7 +255,7 @@ An operator represents a map from linear space $X$ to linear space $Y$.
 Typically, this map is a linear map; however, it can be used also to calculate
 a nonlinear residual. 
 The spaces $X$ and $Y$ are coded using class {\tt CompositeVectorSpace}.
-A few maps concrete maps $X \to Y$ are already implemenetd in the code.
+A few concrete maps $X \to Y$ are already implemented in the code.
 
 Typically the forward operator is applied using only local Ops.
 The inverse operator typically requires assembling a matrix, which 
@@ -251,14 +263,15 @@ may represent the entire operator or may be only its Schur complement.
 
 The class {\tt Operator} performs actions summarized in the second bullet above. 
 Amanzi has a few derived classes such as {\tt Operator\_Cell}, {\tt Operator\_Node}, 
-{\tt Operator\_FaceCellSff}, where the suffix {\tt \_X} indicates the map, see
-class {{\tt Operator\_Schema}.
-They are derived from the virtual class {\tt Operator} which stores a
-schema and a pointer to the global operator.
+{\tt Operator\_FaceCellSff}, where the suffix {\tt \_X} indicates the specific map,
+see class {{\tt Operator\_Schema} for a general map.
+These classes are derived from the virtual class {\tt Operator} which stores a
+schema and a pointer to a global operator.
 
 Concrete maps use the old schema which is an integer variable.
-Their are now superseded by the new flexible schema which is a class varable.
-Each operator stores a list of containers of local matrices, variables of class {\tt Op}.
+Their are now superseded by the new flexible schema which is a class variable.
+Each operator stores a list of containers of local matrices, more precisely 
+a list of pointers to the variables of class {\tt Op}.
 
 The only potentially confusing part is the use of the visitor pattern (i.e. double 
 dispatch in this case) to resolve all types.  
@@ -292,18 +305,18 @@ AssembleMatrixOp(Op_Cell_FaceCell& op, Matrix& A) {
 \end{lstlisting}
 
 The reason for the double dispatch is to get the types specifically
-without a ton of statements like this one "if (schema $|$ XX \&\& schema $|$ YY) 
+without a ton of statements like this one "if (schema == schema1) 
 \{ assemble one way \} else \{ assemble another way\}".
 
 
 \subsubsection{PDE}
-A "discrete" PDE consists of (a) a single global operatorr, (2) an 
+A "discrete" PDE consists of (a) a single global operator, (2) an 
 optional global assembled matrix, and (3) an un-ordered additive collection of 
-lower-rank (or equal) local operators, hereiafter called i{\it ops}. 
+lower-rank (or equal rank) local operators, hereafter called {\it ops}. 
 During its construction, a PDE can grow by assimilating more {\it ops}. 
-The global operator knows how to peform the matrix-vector product, the member function 
-is called {\it Apply()}, and assemble {\it ops} into a global matrix.
-Each {\tt PDE\_X} class knows how to apply boundary conditions and to create a preconditioner.
+The global operator knows how (a) to perform the matrix-vector product, 
+the corresponding function is called {\it Apply()}, and (b) to assemble {\it ops} into a global matrix.
+Each {\tt PDE\_*} class knows how to apply boundary conditions and to create a preconditioner.
 
 The classes {\tt PDE\_Diffusion}, {\tt PDE\_Advection},{\tt PDE\_Accumulation}, etc create 
 operators of the specified type (for instance 
@@ -312,18 +325,18 @@ apply boundary conditions.
 They are in some sense physics based generalization of operators and may perform complex actions
 such as an approximation of Newton correction terms.
 
-A collection of PDE that store a pointer to the same global operator form an additive PDE.
-Application of boundary conditions is done independently by each PDE in this collection 
-using a single right-hand side vector.
+A collection of PDEs that store a pointer to the same global operator form an additive PDE.
+Application of boundary conditions is done independently by each PDE in this collection.
+The result is gathered into a single right-hand side vector.
 
 
 Discretization of a simple 
 PDE (i.e. diffusion) is not done directly. 
 Instead, a helper class that contains methods for creating and populating 
 the {\it ops} within the {\tt Operator} is used. 
-The helper class can be used to discretize a simple PDE, such as the diffusion equation
-A more complex PDEs, such as the advection-diffusion equation, can be discretized 
-by creating two "discrete" PDEs for diffsuion and advection processes.
+The helper class can be used to discretize a simple PDE, such as the diffusion equation.
+A more complex PDE, such as the advection-diffusion equation, can be discretized 
+by creating two "discrete" PDEs for diffusion and advection processes.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -331,19 +344,18 @@ by creating two "discrete" PDEs for diffsuion and advection processes.
 Class {\tt TreeOperator} is the block analogue of linear operators and 
 provides a linear operator acting on a {\tt TreeVectorSpace}. 
 In short, it is a matrix of operators.
-
 Currently this structure is used for things like multi-phased flows, 
-thermal Richards, coupled matrix-fracture flow, etc.
+thermal Richards, coupled matrix-fracture flow and transport, etc.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Linear solvers}
 Native and third-party solvers are handled through a single factory and 
-uniform interface.
+the uniform interface.
 Direct and iterative solvers from Trilinos is a part of this factory.
-Native re-implementation of some iterative solvers available in Trilinos
+Native re-implementation of some iterative solvers supplied by Trilinos
 is due to lack of capabilities needed for subsurface solvers.
-Example is the neccisety to perform at least one iteration even when
+One example is the neccisety to perform at least one iteration even when
 a norm of the linear residual is below the requested tolerance.
 
 
