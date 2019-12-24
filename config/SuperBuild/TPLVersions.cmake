@@ -130,6 +130,7 @@
 #                - update Alquimia to 1.0.6-rc
 #   0.96.3       - update HDF5 to 1.10.5
 #   0.96.4       - update MSTK to 3.2.1
+#   0.96.5       - update HDF5 to 1.10.6
 
 include(CMakeParseArguments)
 
@@ -182,7 +183,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 96)
-set(AMANZI_TPLS_VERSION_PATCH 4)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -297,12 +298,12 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 #
 set(HDF5_VERSION_MAJOR 1)
 set(HDF5_VERSION_MINOR 10)
-set(HDF5_VERSION_PATCH 5)
+set(HDF5_VERSION_PATCH 6)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        e115eeb66e944fa7814482415dd21cc4)
+set(HDF5_MD5_SUM        37f3089e7487daf0890baf3d3328e54a)
 
 
 #
