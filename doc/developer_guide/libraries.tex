@@ -8,11 +8,15 @@ This section describes selected Amanzi libraries, their limitations and possible
 ways for extensions.
 
 \subsection{WhetStone}
-This is a low-level library that implements primarily local matrices for 
-various discretizations schemes. 
-Conceptual design of this part of the library is presented in Fig.~\ref{fig:whetstone}.
-Classes derived from class {\tt MFD3D} cover a huge spectrum of elliptic
-equations.
+This library implements primarily local matrices for 
+various discretizations frameworks including finite volumes, nonlinear finite volumes,
+mimetic finite differences, virtual elements, and discontinuous Galerkin.
+Conceptual design of a part of the library is presented in Fig.~\ref{fig:whetstone}.
+Classes derived from class {\tt MFD3D} cover a huge spectrum of PDEs.
+
+The library is under extensive development.
+At the moment, there exist both a unified approach to discretization schemes of arbitrary
+order and the optimized implementation of the low-order schemes.
 
 Additional functionality included in this library supports
 \begin{enumerate}
@@ -140,6 +144,39 @@ template<>
 Amanzi::RegisteredPKFactory<DerivedPK> DerivedPK::factory_("pk unique id");
 \end{lstlisting}
 
+
+Each PK must implement the standard PK interface, as well as interfaces to either 
+an explicit time integrator or an implicit solver.
+A few comments are below, see the code for the complete description of these interfaces:
+\begin{itemize}
+\item Function {\it Setup()} is used to create fields (e.g. pressure), field evaluators
+      (e.g. water content), and variables (e.g.
+      absolute permeability) and to register them with the state.
+      This function should avoid any initialization work unless it is really needed
+      for the state registration process.
+
+\item Function {\it Initialize()} is used to initialize primary state fields for the PK,
+      and miscalleneous structures for discrete PDE operators, time integrators, 
+      boundary conditions, source terms, etc.
+
+\item Function {\it AdvanceStep()} is used to advance PK from time one time step to another.
+      For an implicit time discretization, it calls an implicit solver.
+      For an explicit time discretization, it calls a Runge-Kutta solver or any other ODE
+      integrator.
+
+\item Function {\it CommitStep()} is used to update any needed secondary variables at 
+      the next time slice under assumption that the time step was sucessful. 
+
+\item Function {\it FunctionalResidual()} is a part of the implict solver interface.
+      It computes the non-linear functional at the given solution approximation.
+
+\item Function {\it ModifyPredictor()} is a part of the implict solver interface.
+      It modifies optionally the extrapolated guess for the predictor that is going to 
+      be used as a starting value for the nonlinear solve in the time integrator.
+
+\item Function {\it FunctionalTimeDerivative()} is a part of the explicit time integration
+      interface. It calculates the right-hand side of an ODE system at the given state vector.
+\end{itemize}
 
 \begin{figure}[h!]
 \begin{center}
