@@ -236,26 +236,6 @@ if (Trilinos_FOUND)
     endforeach()
   endforeach()
 
-  # Now check optional Trilinos packages
-
-  # STK - mesh 
-  if (ENABLE_STK_Mesh)
-    find_package(STK
-                 NO_MODULE
-                 HINTS ${Trilinos_INSTALL_PREFIX}
-                 PATH_SUFFIXES include lib)
-    if (STK_FOUND)
-      message(STATUS "Located Trilinos package STK: ${STK_DIR}")
-      trilinos_package_enabled_tpls(STK)
-      foreach( _inc "${STK_TPL_INCLUDE_DIRS}")
-        list(APPEND STK_INCLUDE_DIRS "${_inc}")
-      endforeach()
-    else()  
-      message(WARNING "Could not locate STK in ${Trilinos_DIR}. Will not enable STK_Mesh")
-      set(ENABLE_STK_Mesh OFF CACHE BOOL "Disable STK Mesh capability" FORCE)
-    endif()
-  endif()
-
   # Zoltan - required by MSTK mesh class 
   if (ENABLE_MSTK_Mesh)
     find_package(Zoltan
@@ -443,7 +423,6 @@ endif()
 # Enable ALL possible mesh frameworks
 #option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
 #if(ENABLE_ALL_Mesh)
-#   set(ENABLE_STK_Mesh ON)
 #   set(ENABLE_MOAB_Mesh ON)
 #   set(ENABLE_MSTK_Mesh ON)
 #endif()    
@@ -451,26 +430,6 @@ endif()
 #                 ENABLE_ALL_Mesh
 #                 "Build all available mesh frameworks"
 #                )    
-
-
-##############################################################################
-# STK - Sierra Mesh Tool Kit part of Trilinos
-##############################################################################
-option(ENABLE_STK_Mesh "Build Amanzi with the STK mesh framework" OFF)
-add_feature_info(STK_Mesh
-                 ENABLE_STK_Mesh
-                 "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
-                 )
-
-if (STK_MESH_FOUND)
-  message(STATUS "STK_Mesh Package information")
-  message(STATUS "\tSTK_Mesh_INCLUDE_DIR  = ${STK_Mesh_INCLUDE_DIR}")
-  message(STATUS "\tSTK_Mesh_INCLUDE_DIRS = ${STK_Mesh_INCLUDE_DIRS}")
-  message(STATUS "\tSTK_Mesh_LIBRARY_DIR  = ${STK_Mesh_LIBRARY_DIR}")
-  message(STATUS "\tSTK_Mesh_LIBRARY      = ${STK_Mesh_LIBRARY}")
-  message(STATUS "\tSTK_Mesh_LIBRARIES    = ${STK_Mesh_LIBRARIES}")
-  message(STATUS "")
-endif()
 
 
 ##############################################################################

@@ -9,8 +9,7 @@
 // Base mesh class for Amanzi
 //
 // Use the associated mesh factory to create an instance of a
-// derived class based on a particular mesh framework (like MSTK,
-// STKmesh etc.)
+// derived class based on a particular mesh framework (like MSTK, MOAB, etc)
 //
 // Design documentation:
 //

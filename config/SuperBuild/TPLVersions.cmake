@@ -131,6 +131,8 @@
 #   0.96.3       - update HDF5 to 1.10.5
 #   0.96.4       - update MSTK to 3.2.1
 #   0.96.5       - update HDF5 to 1.10.6
+#   0.96.6       - update Nanoflann to 1.3.1
+#                - update Trilinos to 55a7599733 (Nov11, 2019, also 12.18.1)
 
 include(CMakeParseArguments)
 
@@ -183,7 +185,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 96)
-set(AMANZI_TPLS_VERSION_PATCH 5)
+set(AMANZI_TPLS_VERSION_PATCH 6)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -277,7 +279,7 @@ set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR}.${UnitT
 set(UnitTest_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.tgz)
 set(UnitTest_SAVEAS_FILE    ${UnitTest_ARCHIVE_FILE})
-set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d) 
+set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d) 
 
 #
 # TPL: Boost
@@ -337,10 +339,10 @@ set(NetCDF_Fortran_MD5_SUM        8b5df466425a209b773c8343fe32e371)
 set(ASCEMIO_VERSION_MAJOR 2)
 set(ASCEMIO_VERSION_MINOR 2)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
-set(ASCEMIO_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(ASCEMIO_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_SAVEAS_FILE    ${ASCEMIO_ARCHIVE_FILE})
-set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
+set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
 
 #
 # TPL: MSTK
@@ -443,15 +445,14 @@ set(PETSc_MD5_SUM        c5f8e3aa0bed20a8ab685fb809950fce)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 14)
-set(Trilinos_VERSION_PATCH 0bf557717e-Jun17)
+set(Trilinos_VERSION_MINOR 18)
+set(Trilinos_VERSION_PATCH 55a7599733-Nov11)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "0bf557717ec1cf692828e250f95c1dcaba4f01c9")
+set(Trilinos_GIT_TAG        "55a75997332636a28afc9db1aee4ae46fe8d93e7")
 
 #
 # TPL: SEACAS
@@ -520,10 +521,10 @@ set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
 #
 set(Nanoflann_VERSION_MAJOR 1)
 set(Nanoflann_VERSION_MINOR 3)
-set(Nanoflann_VERSION_PATCH 0)
+set(Nanoflann_VERSION_PATCH 1)
 set(Nanoflann_VERSION  ${Nanoflann_VERSION_MAJOR}.${Nanoflann_VERSION_MINOR}.${Nanoflann_VERSION_PATCH})
 set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
-set(Nanoflann_MD5_SUM       c9836578e97fca4f05335699b8394b4d)
+set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
 

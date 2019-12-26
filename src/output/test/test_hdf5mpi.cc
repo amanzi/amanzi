@@ -12,10 +12,6 @@ TEST(HDF5_MPI) {
   std::string hdf5_datafile1 = "new_data_mpi";
   std::string hdf5_datafile2 = "new_restart_mpi";
   
-  //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
-  //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
-  //                                        1, comm));
-  
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, 
@@ -23,9 +19,6 @@ TEST(HDF5_MPI) {
   unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL, 
                                               Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-  //Teuchos::RCP<Mesh_maps_base> Mesh(new STK_mesh::Mesh_maps_stk(0.0, 0.0, 0.0,
-  //			            1.0, 1.0, 1.0, 4, 1, 1, comm));
-  //STK_mesh::Mesh_maps_stk Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
   //unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, Parallel_type::OWNED);
   //unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, Parallel_type::OWNED);
 
