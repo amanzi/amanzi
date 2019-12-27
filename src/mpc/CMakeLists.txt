@@ -165,7 +165,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_flow_transport_implicit.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
+    add_amanzi_test(mpc_coupled_reative_transport mpc_coupled_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmark
     add_amanzi_test(mpc_benchmark_single mpc_benchmark_single
                     KIND      int
                     NPROC     3
