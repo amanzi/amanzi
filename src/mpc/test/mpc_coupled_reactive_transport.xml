@@ -32,19 +32,19 @@
     </ParameterList>
     <ParameterList name="SurfaceInlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.0,90.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,  0.0, 90.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{0.0,100.0,100.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceOutlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0,0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0,0.0,10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,   0.0,   0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
@@ -246,7 +246,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0e-06"/>
+                  <Parameter name="value" type="double" value="1.0e-06"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -256,7 +256,7 @@
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-1.0e-06"/>
+                  <Parameter name="value" type="double" value="-2.0e-06"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -274,7 +274,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="4.0e-06"/>
+                  <Parameter name="value" type="double" value="1.0e-06"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -284,7 +284,7 @@
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-1.0e-06"/>
+                  <Parameter name="value" type="double" value="-2.0e-06"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
