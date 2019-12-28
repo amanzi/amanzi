@@ -39,8 +39,25 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
 // -----------------------------------------------------------------------------
 void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  Amanzi::PK_MPCAdditive<PK>::Setup(S);
-  
+  mesh_domain_ = S->GetMesh();
+  mesh_fracture_ = S->GetMesh("fracture");
+
+  // darcy fluxes use non-uniform distribution of DOFs
+  // -- darcy flux for matrix
+  if (!S->HasField("darcy_flux")) {
+    auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
+    auto mmap = cvs->Map("face", false);
+    auto gmap = cvs->Map("face", true);
+    S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
+      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+  }
+
+  // -- darcy flux for fracture
+  if (!S->HasField("fracture-darcy_flux")) {
+    auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
+  }
+
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
   auto ic = coupled_chemistry_pk_->begin();
@@ -52,6 +69,8 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     }
   }
 #endif
+
+  Amanzi::PK_MPCAdditive<PK>::Setup(S);
 }
 
 

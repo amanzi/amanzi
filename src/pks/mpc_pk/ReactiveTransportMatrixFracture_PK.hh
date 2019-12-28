@@ -19,12 +19,15 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "PDE_DiffusionFracturedMatrix.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_MPCAdditive.hh"
 #include "PK_MPCWeak.hh"
-#include "TransportMatrixFracture_PK.hh"
+
+// Amanzi::MPC
 #include "ChemistryMatrixFracture_PK.hh"
+#include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
 
@@ -51,6 +54,8 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
   std::string name() override { return "reactive transport matrix fracture";}
 
  protected:  
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
+
   Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
   Teuchos::RCP<PK_MPC<PK> > coupled_transport_pk_;
 
