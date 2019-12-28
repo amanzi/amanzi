@@ -164,7 +164,7 @@ message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
 message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
-message(STATUS "\tHDF5_HL_LIBRARIES    = ${HDF5_HL_LIBRARIES}")
+message(STATUS "\tHDF5_HL_LIBRARIES = ${HDF5_HL_LIBRARIES}")
 message(STATUS "")
 
 ##############################################################################
