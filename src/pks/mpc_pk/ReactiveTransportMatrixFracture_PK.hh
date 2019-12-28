@@ -24,7 +24,7 @@
 #include "PK_MPCAdditive.hh"
 #include "PK_MPCWeak.hh"
 #include "TransportMatrixFracture_PK.hh"
-#include "Chemistry_PK.hh"
+#include "ChemistryMatrixFracture_PK.hh"
 
 namespace Amanzi {
 
@@ -40,20 +40,20 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
 
   // PK methods
   // -- dt is the minimum of the sub pks
-  virtual double get_dt();
-  virtual void set_dt(double dt);
+  virtual double get_dt() override;
+  virtual void set_dt(double dt) override;
 
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
 
   // -- advance each sub pk from t_old to t_new.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  std::string name() { return "reactive transport matrix fracture";}
+  std::string name() override { return "reactive transport matrix fracture";}
 
  protected:  
-  Teuchos::RCP<PK_MPCWeak> coupled_transport_pk_;
-  Teuchos::RCP<PK_MPCWeak> coupled_chemistry_pk_;
-  
+  Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
+  Teuchos::RCP<PK_MPC<PK> > coupled_transport_pk_;
+
   // factory registration
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;
 

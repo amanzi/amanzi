@@ -142,10 +142,10 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // generic linear solver
   if (ti_list_ != Teuchos::null) {
+    // preconditioner
     if (ti_list_->isParameter("linear solver"))
       solver_name_ = ti_list_->get<std::string>("linear solver");
 
-    // preconditioner
     if (ti_list_->isParameter("preconditioner")) {
       std::string name = ti_list_->get<std::string>("preconditioner");
       Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);

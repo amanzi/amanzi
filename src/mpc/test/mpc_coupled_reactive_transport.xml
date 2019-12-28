@@ -104,7 +104,7 @@
             </ParameterList>
 
             <ParameterList name="coupled transport">
-              <Parameter name="PK type" type="string" value="transport matrix fracture"/>
+              <Parameter name="PK type" type="string" value="transport matrix fracture implicit"/>
               <ParameterList name="transport matrix">
                 <Parameter name="PK type" type="string" value="transport implicit"/>
               </ParameterList>
@@ -447,7 +447,27 @@
     <ParameterList name="coupled transport">
       <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <!--ParameterList name="time integrator"-->
+
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{}"/>
+        <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.5"/>
+            <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
+            <Parameter name="max time step" type="double" value="6.0e+10"/>
+            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

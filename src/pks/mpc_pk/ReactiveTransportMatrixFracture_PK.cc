@@ -29,8 +29,8 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
     const Teuchos::RCP<TreeVector>& soln) :
     PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
-  coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<PK_MPCWeak>(sub_pks_[0]);
-  coupled_transport_pk_ = Teuchos::rcp_dynamic_cast<PK_MPCWeak>(sub_pks_[1]);
+  coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[0]);
+  coupled_transport_pk_ = Teuchos::rcp_dynamic_cast<PK_MPC<PK> >(sub_pks_[1]);
 }
 
 
@@ -60,8 +60,8 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 // -----------------------------------------------------------------------------
 double ReactiveTransportMatrixFracture_PK::get_dt()
 {
-  double dTtran = coupled_transport_pk_->get_dt();
-  double dTchem = coupled_chemistry_pk_->get_dt();
+  double dTchem = sub_pks_[0]->get_dt();
+  double dTtran = sub_pks_[1]->get_dt();
 
   if (!chem_step_succeeded_ && (dTchem / dTtran > 0.99)) {
     dTchem *= 0.5;
@@ -78,8 +78,8 @@ double ReactiveTransportMatrixFracture_PK::get_dt()
 // -----------------------------------------------------------------------------
 void ReactiveTransportMatrixFracture_PK::set_dt(double dt)
 {
-  coupled_chemistry_pk_->set_dt(dt);
-  coupled_transport_pk_->set_dt(dt);
+  sub_pks_[0]->set_dt(dt);
+  sub_pks_[1]->set_dt(dt);
 }
 
 
@@ -89,37 +89,37 @@ void ReactiveTransportMatrixFracture_PK::set_dt(double dt)
 bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
     double t_old, double t_new, bool reinit)
 {
-  bool fail = false;
-  chem_step_succeeded_ = false;
+  bool fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
+  if (fail) return fail;
 
+  // save copy of fields (FIXME)
+  Teuchos::RCP<Epetra_MultiVector> tcc_m_copy, tcc_f_copy;
+  tcc_m_copy = Teuchos::rcp(new Epetra_MultiVector(
+      *S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
+  tcc_f_copy = Teuchos::rcp(new Epetra_MultiVector(
+      *S_->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell", true)));
 
-  /*
-  // First we do a transport step.
-  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
-
-  // Right now transport step is always succeeded.
-  if (!pk_fail) {
-    *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
-  } else {
-    Errors::Message message("MPC: Transport PK returned an unexpected error.");
-    Exceptions::amanzi_throw(message);
-  }
-
-  // Second, we do a chemistry step.
   try {
-    chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
+    std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
+    for (auto ic = coupled_chemistry_pk_->begin(); ic != coupled_chemistry_pk_->end(); ++ic) { 
+      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+      subpks.push_back(ic1);
+    }
+    
+    subpks[0]->set_aqueous_components(tcc_m_copy);
+    subpks[1]->set_aqueous_components(tcc_f_copy);
 
-    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
-    chem_step_succeeded_ = true;
+    fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
  
     *S_->GetFieldData("total_component_concentration", "state")
-       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+      ->ViewComponent("cell", true) = *subpks[0]->aqueous_components();
+
+    *S_->GetFieldData("fracture-total_component_concentration", "state")
+      ->ViewComponent("cell", true) = *subpks[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;
   }
-  */
-
 
   return fail;
 };
