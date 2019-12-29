@@ -58,6 +58,19 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
+  // evaluators in fracture
+  Teuchos::ParameterList& elist = S->FEList();
+  Teuchos::ParameterList& ilist = S->ICList();
+
+  double rho = ilist.sublist("fluid_density").get<double>("value");
+  elist.sublist("fracture-mass_density_liquid").sublist("function").sublist("All")
+      .set<std::string>("region", "All")
+      .set<std::string>("component", "cell")
+      .sublist("function").sublist("function-constant")
+      .set<double>("value", rho);
+  elist.sublist("fracture-mass_density_liquid")
+        .set<std::string>("field evaluator type", "independent variable");
+
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
   auto ic = coupled_chemistry_pk_->begin();

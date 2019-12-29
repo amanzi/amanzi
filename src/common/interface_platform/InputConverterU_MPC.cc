@@ -938,9 +938,16 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
       }
-      else if (it->first == "flow and transport in matrix fracture") {
+      else if (it->first == "coupled flow and transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("coupled flow");
+        pk_names.push_back("coupled transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
+      else if (it->first == "coupled reactive transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled chemistry");
         pk_names.push_back("coupled transport");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);

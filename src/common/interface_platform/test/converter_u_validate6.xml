@@ -528,6 +528,11 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="coupled reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{coupled chemistry, coupled transport}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+
     <ParameterList name="coupled chemistry">
       <Parameter name="PKs order" type="Array(string)" value="{chemistry matrix, chemistry fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
