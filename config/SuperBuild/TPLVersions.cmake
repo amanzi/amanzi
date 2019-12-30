@@ -130,9 +130,11 @@
 #                - update Alquimia to 1.0.6-rc
 #   0.96.3       - update HDF5 to 1.10.5
 #   0.96.4       - update MSTK to 3.2.1
-#   0.96.5       - update HDF5 to 1.10.6
-#   0.96.6       - update Nanoflann to 1.3.1
+#   0.97.0       - update HDF5 to 1.10.6
+#                - update Nanoflann to 1.3.1
 #                - update Trilinos to 55a7599733 (Nov11, 2019, also 12.18.1)
+#                - update NetCDF-C to 4.7.3
+#                - update NetCDF-Fortran to 4.5.2
 
 include(CMakeParseArguments)
 
@@ -184,8 +186,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 96)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_MINOR 97)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -313,25 +315,25 @@ set(HDF5_MD5_SUM        37f3089e7487daf0890baf3d3328e54a)
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 7)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        e4a6c74c9591ec8036587ca51130f878)
+set(NetCDF_MD5_SUM        5ebcafd3fee1d48559687b5ace414fe8)
 
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 4)
-set(NetCDF_Fortran_VERSION_PATCH 5)
+set(NetCDF_Fortran_VERSION_MINOR 5)
+set(NetCDF_Fortran_VERSION_PATCH 2)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        8b5df466425a209b773c8343fe32e371) 
+set(NetCDF_Fortran_MD5_SUM        759402703585d12f84667716887c42df) 
 
 #
 # ASCEM-IO
