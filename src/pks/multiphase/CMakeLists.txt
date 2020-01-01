@@ -48,17 +48,10 @@ include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
-# Multiphase registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE Reduced2p2c_PK_reg.hh
-  LISTNAME   MULTIPHASE_REGISTRATIONS)
-
-
-#
 # Library: multiphase 
 #
-set(multiphase_src_files CompW.cc CompW_TI.cc CompH.cc CompH_TI.cc
+set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
+                         CompW.cc CompW_TI.cc CompH.cc CompH_TI.cc
                          GasConstraint.cc
                          Reduced2p2c_PK.cc
                          MPCoeff.cc
@@ -76,6 +69,7 @@ add_amanzi_library(multiphase
 # Install Targets
 #
 set(multiphase_inc_files 
+  Multipahase_PK.hh
   CompW.hh
   CompH.hh
   GasConstraint.hh
@@ -85,8 +79,7 @@ set(multiphase_inc_files
   WaterRetentionModel.hh
   WRM_Simple.hh
   WRM_VanGenuchten.hh
-  WRM_BrooksCorey.hh
-  )  
+  WRM_BrooksCorey.hh)  
 
 add_install_include_file(${multiphase_inc_files})
 
@@ -113,6 +106,11 @@ if (BUILD_TESTS)
   add_amanzi_test(test_reduced_2p2c test_reduced_2p2c
                   KIND      int
                   SOURCE    test/Main.cc test/test_reduced_2p2c.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_model1 multipase_model1
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_model1.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

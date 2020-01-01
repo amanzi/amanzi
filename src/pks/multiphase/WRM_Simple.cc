@@ -48,6 +48,8 @@ double WRM_Simple::k_relative(double Sw, std::string phase_name)
     msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
     Exceptions::amanzi_throw(msg);
   }
+
+  return 0.0;
 }
 
 
