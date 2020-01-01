@@ -6,15 +6,19 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Darcy PK registration.
+  Self-registering factory for flow PKs.
 */
 
 #include "Darcy_PK.hh"
+#include "Richards_PK.hh"
+#include "VWContentEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 RegisteredPKFactory<Darcy_PK> Darcy_PK::reg_("darcy");
+RegisteredPKFactory<Richards_PK> Richards_PK::reg_("richards");
+Utils::RegisteredFactory<FieldEvaluator, VWContentEvaluator> VWContentEvaluator::reg_("water content");
 
 }  // namespace Amanzi
 }  // namespace Flow
