@@ -358,9 +358,11 @@ if (BUILD_TESTS)
                                         test/operator_remap_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
+    add_amanzi_test(operators_remap_gcl operators_remap_gcl
                     KIND unit
+                    NPROCS 3
                     SOURCE test/Main.cc test/operator_remap_gcl.cc
+                                        test/operator_remap_gcl_reinit.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test

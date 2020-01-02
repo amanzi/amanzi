@@ -67,7 +67,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
     if (d_ == 2) return H1consistency2D_<AmanziMesh::Mesh>(mesh_, c, T, N, Ac);
-    return H1consistency3D_(c, T, N, Ac);
+    return H1consistency3D_(c, T, N, Ac, true);
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
@@ -106,7 +106,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   int H1consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
                        int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac, bool doAc);
 
  private:
   void ProjectorCell_(int c, const std::vector<Polynomial>& ve,

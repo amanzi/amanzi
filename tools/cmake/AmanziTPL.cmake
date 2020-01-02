@@ -134,8 +134,14 @@ endif()
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
-
+if (BUILD_SHARED_LIBS)
+  set(HDF5_USE_STATIC_LIBRARIES OFF)
+else()    
+  set(HDF5_USE_STATIC_LIBRARIES ON)
+endif()
+  
 find_package(HDF5 1.10.0 REQUIRED COMPONENTS C HL)
+
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "
@@ -158,6 +164,7 @@ message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
 message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
+message(STATUS "\tHDF5_HL_LIBRARIES    = ${HDF5_HL_LIBRARIES}")
 message(STATUS "")
 
 ##############################################################################
@@ -523,7 +530,7 @@ option(ENABLE_Silo "Build Amanzi with Silo output options" OFF)
 if (ENABLE_Silo)
   find_package(Silo REQUIRED)
 
-  if (SILO_FOUND)
+  if (Silo_FOUND)
     message(STATUS "Silo Package information")
     message(STATUS "\tSilo_INCLUDE_DIR  = ${Silo_INCLUDE_DIR}")
     message(STATUS "\tSilo_INCLUDE_DIRS = ${Silo_INCLUDE_DIRS}")

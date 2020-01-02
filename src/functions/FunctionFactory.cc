@@ -20,6 +20,7 @@
 #include "FunctionStandardMath.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionTabular.hh"
+#include "FunctionBilinearAndTime.hh"
 
 namespace Amanzi {
 
@@ -64,6 +65,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_standard_math(function_params);
       else if (function_type == "function-bilinear")
         f = create_bilinear(function_params);
+      else if (function_type == "function-bilinear-and-time")
+        f = create_bilinear_and_time(function_params);
       else if (function_type == "function-distance")
         f = create_distance(function_params);
       else if (function_type == "function-squaredistance")
@@ -585,4 +588,27 @@ Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params)
   }
   return f;
 }
+
+
+Function* FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
+{
+  std::string filename = params.get<std::string>("file");
+  std::string row_header = params.get<std::string>("row header");
+  std::string row_coordinate = params.get<std::string>("row coordinate", "x");
+  if (row_coordinate != "x" && row_coordinate != "y" && row_coordinate != "z") {
+    Errors::Message m("FunctionFactory: function-bilinear_and_time does not do bilinear in time.");
+    Exceptions::amanzi_throw(m);
+  }  
+  std::string col_header = params.get<std::string>("column header");
+  std::string col_coordinate = params.get<std::string>("column coordinate", "y");
+  if (col_coordinate != "x" && col_coordinate != "y" && col_coordinate != "z") {
+    Errors::Message m("FunctionFactory: function-bilinear_and_time does not do bilinear in time.");
+    Exceptions::amanzi_throw(m);
+  }  
+  std::string time_header = params.get<std::string>("time header");
+  std::string value_header = params.get<std::string>("value header");
+  return new FunctionBilinearAndTime(filename, time_header, row_header, row_coordinate,
+          col_header, col_coordinate, value_header);
+}
+
 }  // namespace Amanzi

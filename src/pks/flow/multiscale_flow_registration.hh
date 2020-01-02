@@ -12,14 +12,28 @@
 */
 
 #include "MultiscaleFlowPorosityFactory.hh"
+#include "MultiscaleFlowPorosity_DPM.hh"
+#include "MultiscaleFlowPorosity_GDPM.hh"
 
-// explicity instantitate the static data of factory
 namespace Amanzi {
 namespace Utils {
 
+// explicity instantitate the static data of factory
 template<>
 Factory<Flow::MultiscaleFlowPorosity>::map_type* Factory<Flow::MultiscaleFlowPorosity>::map_;
 
 }  // namespace Utils
 }  // namespace Amanzi
 
+
+namespace Amanzi {
+namespace Flow {
+
+Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM>
+    MultiscaleFlowPorosity_DPM::factory_("dual porosity");
+
+Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM>
+    MultiscaleFlowPorosity_GDPM::factory_("generalized dual porosity");
+
+}  // namespace Flow
+}  // namespace Amanzi

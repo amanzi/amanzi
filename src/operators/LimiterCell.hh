@@ -54,8 +54,8 @@ class LimiterCell {
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
-    AmanziMesh::Entity_ID_List ids(ncells_owned);
-    for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
+    AmanziMesh::Entity_ID_List ids(ncells_owned_);
+    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
     ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
   }
 
@@ -72,8 +72,8 @@ class LimiterCell {
   // -- apply limiter in spcified cells
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
-    AmanziMesh::Entity_ID_List ids(ncells_owned);
-    for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
+    AmanziMesh::Entity_ID_List ids(ncells_owned_);
+    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
     ApplyLimiter(ids, field, dg, bc_model, bc_value); 
   }
 
@@ -86,6 +86,9 @@ class LimiterCell {
       const Epetra_MultiVector& field, 
       const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
   Teuchos::RCP<CompositeVector> BoundsForFaces(
+      const Epetra_MultiVector& field,
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
+  Teuchos::RCP<CompositeVector> BoundsForEdges(
       const Epetra_MultiVector& field,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
   Teuchos::RCP<CompositeVector> BoundsForNodes(
@@ -157,8 +160,8 @@ class LimiterCell {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
-  int ncells_owned, nfaces_owned, nnodes_owned;
-  int ncells_wghost, nfaces_wghost, nnodes_wghost;
+  int ncells_owned_, nfaces_owned_, nedges_owned_, nnodes_owned_;
+  int ncells_wghost_, nfaces_wghost_, nedges_wghost_, nnodes_wghost_;
 
   Teuchos::RCP<const Epetra_MultiVector> field_;
   Teuchos::RCP<CompositeVector> gradient_, bounds_;

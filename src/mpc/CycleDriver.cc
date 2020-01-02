@@ -39,6 +39,7 @@
 #include "TreeVector.hh"
 #include "State.hh"
 #include "Visualization.hh"
+#include "MeshInfo.hh"
 
 // MPC
 #include "CycleDriver.hh"
@@ -213,6 +214,16 @@ void CycleDriver::Setup() {
         failed_visualization_.push_back(fail_vis);
       }
     }
+    std::string plist_name = "mesh info " + mesh->first;
+    // in the case of just a domain mesh, we want to allow no name.
+    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
+      plist_name = "mesh info";
+    }
+    if (glist_->isSublist(plist_name)) {
+      auto& mesh_info_list = glist_->sublist(plist_name);
+      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm_));
+      mesh_info->WriteMeshCentroids(*(mesh->second.first));
+    }
   }
 
 
@@ -221,8 +232,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("cycle driver")));
-  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times

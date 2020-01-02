@@ -47,6 +47,7 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
     : RemapDG<TreeVector>(mesh0, mesh1, plist),
       T1_(1.0),
       l2norm_(-1.0),
+      tini_(0.0),
       tprint_(0.0),
       dt_output_(0.1) {};
   ~MyRemapDG() {};
@@ -102,6 +103,7 @@ void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
 {
   double tglob = global_time(t);
   if (tglob >= tprint_) {
+    op_reac_->Setup(det_, false);
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
     for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
@@ -326,6 +328,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
            mass1 - mass0, 1.0 - area, 1.0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
+  CHECK_CLOSE(mass0, mass1, 1e-12);
 
   // initialize I/O
   Teuchos::ParameterList iolist;

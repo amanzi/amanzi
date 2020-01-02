@@ -79,7 +79,7 @@ std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
 int MFD3D_LagrangeAnyOrder::H1consistency3D_(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac, bool doAc)
 {
   Entity_ID_List nodes, edges, faces, fedges, fnodes, ids;
   std::vector<int> dirs, fdirs, map;
@@ -142,7 +142,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     mfd_surf.H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
     const DenseMatrix& Rf = mfd_surf.R();
     const DenseMatrix& Gf = mfd_surf.G();
-    auto integrals_f = mfd_surf.integrals();
+    auto& integrals_f = mfd_surf.integrals();
 
     NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
     numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);
@@ -221,7 +221,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
   // populate columns of matrices R and N 
   N.Reshape(ndof, nd);
-  Ac.Reshape(ndof, ndof);
 
   R_.Reshape(ndof, nd);
   G_.Reshape(nd, nd);
@@ -369,17 +368,20 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   // Gramm matrix for gradients of polynomials
   G_.Multiply(N, R_, true);
 
-  // calculate R inv(G) R^T
-  DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
-
   // to invert generate matrix, we add and subtruct positive number
   G_(0, 0) = 1.0;
   G_.InverseSPD();
   G_(0, 0) = 0.0;
-  RG.Multiply(R_, G_, false);
 
-  Rtmp.Transpose(R_);
-  Ac.Multiply(RG, Rtmp, false);
+  // calculate R inv(G) R^T
+  if (doAc) {
+    DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
+    Ac.Reshape(ndof, ndof);
+
+    RG.Multiply(R_, G_, false);
+    Rtmp.Transpose(R_);
+    Ac.Multiply(RG, Rtmp, false);
+  }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

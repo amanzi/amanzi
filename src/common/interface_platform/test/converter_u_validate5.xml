@@ -11,6 +11,14 @@
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 2, -1}"/>
   </ParameterList>
 
+  <ParameterList name="mesh info">
+    <Parameter name="filename" type="string" value="centroids"/>
+  </ParameterList>
+
+  <ParameterList name="mesh info fracture">
+    <Parameter name="filename" type="string" value="centroids_fracture"/>
+  </ParameterList>
+
   <ParameterList name="regions">
     <ParameterList name="All">
       <ParameterList name="region: box">

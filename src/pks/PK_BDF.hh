@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov, Ethan Coon
 
   This is a purely virtual base class for process kernels which use
-  time integrators.
+  (implicit) time integrators.
 */
 
 #ifndef AMANZI_PK_BDF_HH_

@@ -209,49 +209,8 @@ Polynomial& Polynomial::operator-=(const Polynomial& poly)
 
 Polynomial& Polynomial::operator*=(const Polynomial& poly)
 {
-  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
-  AMANZI_ASSERT(origin_ == poly.origin());
-
-  int order = poly.order();
-  if (order == 0) {
-    coefs_ *= poly(0);
-    return *this; 
-  }
-
-  if (order_ == 0) {
-    coefs_ = coefs_(0) * poly.coefs();
-    size_ = poly.size();
-    order_ = poly.order();
-    return *this; 
-  }
-
-  Polynomial arg1(*this);
-  const Polynomial* arg2 = &poly;
-  if (this == arg2) arg2 = &arg1; 
-
-  int order_prod = order_ + order;
-  Reshape(d_, order_prod, true);
-
-  int index[3];
-  for (auto it1 = arg1.begin(); it1 < arg1.end(); ++it1) {
-    const int* idx1 = it1.multi_index();
-    int n1 = it1.PolynomialPosition();
-    double val1 = arg1(n1);
-    if (val1 == 0.0) continue;
-
-    for (auto it2 = arg2->begin(); it2 < arg2->end(); ++it2) {
-      const int* idx2 = it2.multi_index();
-      int n2 = it2.PolynomialPosition();
-      double val2 = arg2->operator()(n2);
-
-      for (int i = 0; i < d_; ++i) {
-        index[i] = idx1[i] + idx2[i];
-      }
-      int l = PolynomialPosition(d_, index);
-      coefs_(l) += val1 * val2;
-    }
-  }
-
+  Polynomial tmp(*this);
+  *this = tmp * poly;
   return *this;
 }
 
@@ -672,6 +631,58 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
   } 
   os << "origin: " << p.origin() << std::endl;
   return os;
+}
+
+
+/* ******************************************************************
+* Friends: copy optimized product of polynomial
+****************************************************************** */
+Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2)
+{
+  int d = poly1.dimension();
+  AMANZI_ASSERT(d == poly2.dimension());  // FIXME
+  AMANZI_ASSERT(poly1.origin() == poly2.origin());
+
+  int order1 = poly1.order();
+  int order2 = poly2.order();
+  Polynomial tmp(d, order1 + order2);
+  tmp.set_origin(poly1.origin());
+
+  if (order1 == 0) {
+    for (int n = 0; n < tmp.size(); ++n) {
+      tmp(n) = poly1(0) * poly2(n);
+    }
+    return tmp; 
+  }
+
+  if (order2 == 0) {
+    for (int n = 0; n < tmp.size(); ++n) {
+      tmp(n) = poly2(0) * poly1(n);
+    }
+    return tmp; 
+  }
+
+  int index[3];
+  for (auto it1 = poly1.begin(); it1 < poly1.end(); ++it1) {
+    const int* idx1 = it1.multi_index();
+    int n1 = it1.PolynomialPosition();
+    double val1 = poly1(n1);
+    if (val1 == 0.0) continue;
+
+    for (auto it2 = poly2.begin(); it2 < poly2.end(); ++it2) {
+      const int* idx2 = it2.multi_index();
+      int n2 = it2.PolynomialPosition();
+      double val2 = poly2(n2);
+
+      for (int i = 0; i < d; ++i) {
+        index[i] = idx1[i] + idx2[i];
+      }
+      int l = PolynomialPosition(d, index);
+      tmp(l) += val1 * val2;
+    }
+  }
+
+  return tmp;
 }
 
 }  // namespace WhetStone

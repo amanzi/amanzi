@@ -49,7 +49,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
   // required members 
   // -- setup
-  void Setup(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
+  void Setup(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; Kpoly_ = Teuchos::null; Kpoly_st_ = Teuchos::null; }
 
   template<typename T>
   void Setup(const Teuchos::RCP<std::vector<T> >& K, bool reset);
@@ -96,6 +96,8 @@ template<>
 inline
 void PDE_Reaction::Setup<WhetStone::Polynomial>(
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K, bool reset) {
+  K_ = Teuchos::null;
+  Kpoly_st_ = Teuchos::null;
   Kpoly_ = K;
   coef_type_ = CoefType::POLYNOMIAL;
 }
@@ -104,6 +106,7 @@ template<>
 inline
 void PDE_Reaction::Setup<WhetStone::SpaceTimePolynomial>(
     const Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
+  K_ = Teuchos::null;
   Kpoly_st_ = K;
   coef_type_ = CoefType::VECTOR_SPACETIME_POLYNOMIAL;
   if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
