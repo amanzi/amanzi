@@ -47,7 +47,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   if (MyPID == 0) std::cout << "Test: multiphase component pk, uniform rectangular mesh" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/test_reduced_2p2c.xml";
+  std::string xmlFileName = "test/multiphase_reduced_2p2c.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   Teuchos::ParameterList pk_tree_list = plist->sublist("PK Tree");
@@ -180,7 +180,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   Epetra_MultiVector& hydrogen_density = *soln->SubVector(2)->Data()->ViewComponent("cell", false);
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"test_reduced_2p2c.gmv");
+    GMV::open_data_file(*mesh, (std::string)"multiphase_reduced_2p2c.gmv");
     GMV::start_data();
     GMV::write_cell_data(pw, 0, "pressure_w");
     GMV::write_cell_data(pn, 0, "pressure_n");

@@ -209,13 +209,6 @@ void CompH_PK::InitializeFields()
     S_->GetField("diffusion tensor", passwd_)->set_initialized();
   }
 
-  if (S_->HasField("saturation_w")) {
-    if (!S_->GetField("saturation_w", passwd_)->initialized()) {
-      S_->GetFieldData("saturation_w", passwd_)->PutScalar(1.0);
-      S_->GetField("saturation_w", passwd_)->set_initialized();
-    }
-  }
-
   if (S_->HasField("saturation_n")) {
     if (!S_->GetField("saturation_n", passwd_)->initialized()) {
       S_->GetFieldData("saturation_n", passwd_)->PutScalar(0.0);

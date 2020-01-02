@@ -40,7 +40,7 @@
   </ParameterList>
 
   <ParameterList name="domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+    <Parameter isUsed="true" name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
   <ParameterList name="PKs"> <!-- no shift -->
@@ -323,6 +323,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList> 
+  </ParameterList>  <!-- PKs, no shift -->
 
   <ParameterList name="state">
     <ParameterList name="initial conditions">
@@ -341,7 +342,7 @@
       <ParameterList name="phase2_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
-      <ParameterList name="saturation_w">
+      <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -355,7 +356,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="pressure_water">
+      <ParameterList name="pressure_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -391,6 +392,24 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="total_component_concentration">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-20"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="mesh partitions">
@@ -399,7 +418,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  </ParameterList>  <!-- PKs, no shift -->
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">

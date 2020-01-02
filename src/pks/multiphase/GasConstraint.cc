@@ -14,22 +14,10 @@ GasConstraint::GasConstraint(Teuchos::ParameterList plist,
   ncp_type_ = plist_.get<std::string>("NCP function", "min");
   H_ = 7.65e-6;
   M_h_ = 2e-3;
-
-  if (!S->HasField("smoothing region")) {
-    S->RequireField("smoothing region", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
 }
 
-void GasConstraint::Initialize() {
-  if (S_->HasField("smoothing region")) {
-    if (!S_->GetField("smoothing region", passwd_)->initialized()) {
-      S_->GetFieldData("smoothing region", passwd_)->PutScalar(0.0);
-      S_->GetField("smoothing region", passwd_)->set_initialized();
-    }
-  }
-
-  // Initilize various common data depending on mesh and state.
+void GasConstraint::Initialize()
+{
   ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
@@ -71,7 +59,6 @@ void GasConstraint::FunctionalResidual(double t_old, double t_new,
   Teuchos::RCP<CompositeVector> pressure_n = Teuchos::rcp(new CompositeVector(*pressure_w));
   capillary_pressure_->Compute(*saturation_w);  
   pressure_n->Update(1.0, *capillary_pressure_->Pc(), 1.0);
-  //std::cout << "pressure_n: " << *pressure_n->ViewComponent("cell") << "\n";
 
   // create variables for active sets
   Teuchos::RCP<CompositeVector> active_p_g = Teuchos::rcp(new CompositeVector(rhl->Map()));
@@ -108,24 +95,19 @@ void GasConstraint::FunctionalResidual(double t_old, double t_new,
     msg << "Reduced2p2c_PK: unknown NCP function";
     Exceptions::amanzi_throw(msg);
   }
-  //std::cout << "Residual gas phase constraint: " << *f->Data()->ViewComponent("cell") << "\n";
 }
 
-void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVector> u, double dTp) {
-  //std::cout << "smoothing parameter mu: " << mu_ << "\n";
+void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVector> u, double dTp)
+{
   Teuchos::RCP<const CompositeVector> pressure_w = u->SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> saturation_w = u->SubVector(1)->Data();
   Teuchos::RCP<const CompositeVector> rhl = u->SubVector(2)->Data();
-  //std::cout << "pressure_w: " << *pressure_w->ViewComponent("cell") << "\n";
-  //std::cout << "saturation_w: " << *saturation_w->ViewComponent("cell") << "\n";
-  //std::cout << "rhl: " << *rhl->ViewComponent("cell") << "\n"; 
   double Cg = H_ * M_h_;
 
   // new nonwet pressure
   Teuchos::RCP<CompositeVector> pressure_n = Teuchos::rcp(new CompositeVector(*pressure_w));
   capillary_pressure_->Compute(*saturation_w);  
   pressure_n->Update(1.0, *capillary_pressure_->Pc(), 1.0);
-  //std::cout << "dPc_dS: \n";
   //capillary_pressure_->dPc_dS()->Print(std::cout);
 
   // create variables for active sets
@@ -212,7 +194,6 @@ void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVecto
     //    coef_df_dr_c[0][c] = - (func_b * factor - 1.0) / cell_volume;
     //  }
     //}
-    //std::cout << coef_df_ds_c << std::endl;
   } else {
     Errors::Message msg;
     msg << "Reduced2p2c_PK: unknown NCP function";
