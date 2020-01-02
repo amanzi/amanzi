@@ -25,7 +25,6 @@
 // Amanzi::Multiphase
 #include "CapillaryPressure.hh"
 #include "MultiphaseTypeDefs.hh"
-#include "WaterRetentionModel.hh"
 
 namespace Amanzi {
 namespace Multiphase {

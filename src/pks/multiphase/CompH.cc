@@ -734,20 +734,16 @@ void CompH_PK::ComputeBC_Pn()
 
   std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = coef_n_->WRM(); 
-  for (int mb = 0; mb < WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
-    AmanziMesh::Entity_ID_List::iterator i;
+  AmanziMesh::Entity_ID_List cells;
+  auto& wrm = coef_n_->wrm();
 
-    for (i = block.begin(); i != block.end(); i++) {
-      if (bc_model_p[*i] == Operators::OPERATOR_BC_DIRICHLET) {
-        bc_value_p_n[*i] = bc_value_p[*i] + WRM[mb]->capillaryPressure(bc_value_s[*i]);
-      } else {
-        // bc_value_p_n[*i] = bc_value_p[*i];
-        // do nothing for now
-      }
+  for (int f = 0; f != nfaces_owned_; ++f) {
+    if (bc_model_p[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
+      int mb = (*wrm->first)[c];
+      bc_value_p_n[f] = bc_value_p[f] + (wrm->second)[mb]->capillaryPressure(bc_value_s[f]);
     }
   }
 }

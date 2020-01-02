@@ -36,7 +36,7 @@
 #include "CapillaryPressure.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "MPCoeff.hh"
-#include "WaterRetentionModel.hh"
+#include "WRMmp.hh"
 
 namespace Amanzi {
 namespace Multiphase {

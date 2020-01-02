@@ -26,7 +26,7 @@ Authors: Quan Bui (mquanbui@math.umd.edu)
 //#include "tensor.hh"
 #include "VerboseObject.hh"
 
-#include "WaterRetentionModel.hh"
+#include "WRMmp.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
@@ -41,47 +41,41 @@ class CapillaryPressure {
   void Init(Teuchos::ParameterList& plist);
   void Compute(const CompositeVector& saturation_water);
 
-  //void Derive_dPc_dS(const Epetra_MultiVector& p, Epetra_MultiVector& dk);
-
-  double Value(int c, double Sw) const { return WRM_[(*map_c2mb_)[c]]->capillaryPressure(Sw); } 
+  /*
+  double Value(int c, double Sw) const { return wrm_[(*map_c2mb_)[c]]->capillaryPressure(Sw); } 
   double Value(int c, double Sw, const std::string name) const { 
     if (name == "capillary pressure"){
-      return WRM_[(*map_c2mb_)[c]]->capillaryPressure(Sw); 
+      return wrm_[(*map_c2mb_)[c]]->capillaryPressure(Sw); 
     } else if (name == "dPc_dS"){
-      return WRM_[(*map_c2mb_)[c]]->dPc_dS(Sw); 
+      return wrm_[(*map_c2mb_)[c]]->dPc_dS(Sw); 
     }
     return 0.0;
   }
 
   // hard-coded derivative wrt S2, must include -1
   double Derivative(int c, double Sw) const {
-    return - WRM_[(*map_c2mb_)[c]]->dPc_dS(Sw);
+    return -wrm_[(*map_c2mb_)[c]]->dPc_dS(Sw);
   }
+  */
 
   // access methods
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM() { return WRM_; }
+  Teuchos::RCP<WRMmpPartition>& wrm() { return wrm_; }
   
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() { return mesh_; }
   Teuchos::RCP<CompositeVector> dPc_dS() { return dPc_dS_; }
   Teuchos::RCP<CompositeVector> Pc() { return Pc_; }
 
-  const Epetra_IntVector& map_c2mb() { return *map_c2mb_; }
-
  private:
   void ProcessParameterList_(Teuchos::ParameterList& plist);
-  void PopulateMapC2MB_();
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<ParallelCommunication> pp_;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> > WRM_;
-  //double atm_pressure;
+  Teuchos::RCP<WRMmpPartition> wrm_;
 
   Teuchos::RCP<CompositeVector> Pc_;  // realitive permeability 
   Teuchos::RCP<CompositeVector> dPc_dS_;  // derivative of realitive permeability wrt saturation
-
-  Teuchos::RCP<Epetra_IntVector> map_c2mb_;  // cell->model map
 
  protected:
   VerboseObject* vo_;

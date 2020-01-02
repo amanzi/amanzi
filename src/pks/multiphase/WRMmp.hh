@@ -9,9 +9,9 @@
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
-  Abstract base class for water retention model for multiphase flow
-  Not complete yet, needs to modify to add Pc(S) dPc_dS. It is assumed
-  that the saturation S is the saturation of the wetting phase S = Sw
+  Abstract base class for water retention model for multiphase flow.
+  It is assumed that the saturation S is the saturation of the wetting
+  phase. i.e. S = Sw.
 */
 
 #ifndef AMANZI_MULTIPHASE_WATER_RETENTION_MODEL_HH_
@@ -22,22 +22,16 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class WaterRetentionModel {
+class WRMmp {
  public:
+  WRMmp() {};
+  virtual ~WRMmp() {};
+
   virtual double k_relative(double Sw, std::string phase_name) = 0;
-  virtual double saturation(double pc) { return 0.0; };
-  virtual double dSdPc(double pc) { return 0.0; };  // derivative of saturation w.r.t. to capillary pressure
   virtual double capillaryPressure(double s) = 0;
   virtual double dPc_dS(double s) = 0;
-  virtual double residualSaturation(std::string phase_name) = 0;
   virtual double dKdPc(double pc) { return 0.0; }
   virtual double dKdS(double Sw, std::string phase_name) = 0;
-
-  const std::string region() { return region_; };
-
- protected:
-  void set_region(std::string region) { region_ = region; };
-  std::string region_;
 };
 
 }  // namespace Flow

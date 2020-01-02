@@ -12,31 +12,43 @@
   for decoupled multiphase flow
 */
 
-#ifndef AMANZI_BROOKS_COREY_MODEL_HH_
-#define AMANZI_BROOKS_COREY_MODEL_HH_
+#ifndef AMANZI_WRM_MP_VAN_GENUCHTEN_HH_
+#define AMANZI_WRM_MP_VAN_GENUCHTEN_HH_
 
-#include "WaterRetentionModel.hh"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Factory.hh"
+
+#include "WRMmp.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class WRM_BrooksCorey : public WaterRetentionModel {
+class WRMmp_VanGenuchten : public WRMmp {
  public:
-  explicit WRM_BrooksCorey(std::string region, double S_rw, double S_rn, double pd, double lambda);
-  ~WRM_BrooksCorey() {};
+  WRMmp_VanGenuchten(Teuchos::ParameterList& plist);
+  ~WRMmp_VanGenuchten() {};
   
   // required methods from the base class
   double k_relative(double Sw, std::string phase_name);
   double capillaryPressure(double saturation);
   double dPc_dS(double saturation);
-  double residualSaturation(std::string phase_name);
   double dKdS(double Sw, std::string phase_name);
 
+  void Init_(double S_rw, double S_rn, double n, double Pr);
+
  private:
-  double S_rw_, S_rn_, pd_, lambda_;
+  double VGM(double Sn);
+  double mod_VGM(double Sn);
+  double deriv_VGM(double Sn);
+  double deriv_mod_VGM(double Sn);
+
+  double Pr_, S_rw_, S_rn_, n_, m_, eps_;
+
+  static Utils::RegisteredFactory<WRMmp, WRMmp_VanGenuchten> factory_;
 };
 
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
  
 #endif

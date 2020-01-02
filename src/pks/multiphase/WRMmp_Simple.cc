@@ -12,7 +12,9 @@
 #include <cmath>
 #include <string>
 #include "errors.hh"
-#include "WRM_Simple.hh"
+
+#include "MultiphaseDefs.hh"
+#include "WRMmp_Simple.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -20,9 +22,17 @@ namespace Multiphase {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
-WRM_Simple::WRM_Simple(const std::string region, double S_rw, double S_rn, double coef)
+WRMmp_Simple::WRMmp_Simple(Teuchos::ParameterList& plist)
 {
-  set_region(region);
+  double S_rw = plist.get<double>("residual saturation wet", FLOW_WRM_EXCEPTION);
+  double S_rn = plist.get<double>("residual saturation nonwet", FLOW_WRM_EXCEPTION);
+  double coef = plist.get<double>("coefficient", FLOW_WRM_EXCEPTION);
+
+  Init_(S_rw, S_rn, coef);
+}
+
+void WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
+{
   S_rw_ = S_rw;
   S_rn_ = S_rn;
   coef_ = coef;
@@ -33,7 +43,7 @@ WRM_Simple::WRM_Simple(const std::string region, double S_rw, double S_rn, doubl
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRM_Simple::k_relative(double Sw, std::string phase_name)
+double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
 {
   Errors::Message msg;
   double Swe = 0.0;
@@ -56,7 +66,7 @@ double WRM_Simple::k_relative(double Sw, std::string phase_name)
 /* ******************************************************************
 * Derivative of Relative permeability wrt wetting saturation formula.                                          
 ****************************************************************** */
-double WRM_Simple::dKdS(double Sw, std::string phase_name)
+double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
 {
   Errors::Message msg;
   double Swe = 0.0;
@@ -79,7 +89,7 @@ double WRM_Simple::dKdS(double Sw, std::string phase_name)
 * Capillary Pressure formula. Assume the formula based on saturation
 * of the wetting phase Sw.
 ****************************************************************** */
-double WRM_Simple::capillaryPressure(double Sw)
+double WRMmp_Simple::capillaryPressure(double Sw)
 {
   /*
   double gamma = 3.0;
@@ -97,7 +107,7 @@ double WRM_Simple::capillaryPressure(double Sw)
 * Derivative of capillary pressure formula. Hard-coded Brooks-Corey
 * with Pd = 1, gamma = 3. Assume the saturation is of the wetting phase
 ****************************************************************** */
-double WRM_Simple::dPc_dS(double Sw)
+double WRMmp_Simple::dPc_dS(double Sw)
 {
   /*
   double gamma = 3.0;
@@ -109,23 +119,6 @@ double WRM_Simple::dPc_dS(double Sw)
   return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
 }
 
-
-/* ******************************************************************
-* Return irreducible residual saturation of the phase.                                          
-****************************************************************** */
-double WRM_Simple::residualSaturation(std::string phase_name)
-{ 
-  if (phase_name == "wetting") {
-    return S_rw_;
-  } else if (phase_name == "non wetting") {
-    return S_rn_;
-  } else {
-    Errors::Message msg;
-    msg << "Unknown phase " << phase_name << ". Options are <wetting> and <non wetting>.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
 

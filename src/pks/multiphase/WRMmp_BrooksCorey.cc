@@ -11,8 +11,10 @@
 
 #include <cmath>
 #include <string>
+
 #include "errors.hh"
-#include "WRM_BrooksCorey.hh"
+#include "MultiphaseDefs.hh"
+#include "WRMmp_BrooksCorey.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -20,9 +22,18 @@ namespace Multiphase {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
-WRM_BrooksCorey::WRM_BrooksCorey(const std::string region, double S_rw, double S_rn, double pd, double lambda)
+WRMmp_BrooksCorey::WRMmp_BrooksCorey(Teuchos::ParameterList& plist)
 {
-  set_region(region);
+  double S_rw = plist.get<double>("residual saturation wet", FLOW_WRM_EXCEPTION);
+  double S_rn = plist.get<double>("residual saturation nonwet", FLOW_WRM_EXCEPTION);
+  double pd = plist.get<double>("entry pressure", FLOW_WRM_EXCEPTION);
+  double lambda = plist.get<double>("brooks corey lambda", FLOW_WRM_EXCEPTION);
+
+  Init_(S_rw, S_rn, pd, lambda);
+}
+
+void WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda)
+{
   S_rw_ = S_rw;
   S_rn_ = S_rn;
   pd_ = pd;
@@ -30,28 +41,7 @@ WRM_BrooksCorey::WRM_BrooksCorey(const std::string region, double S_rw, double S
 }
 
 
-/* ******************************************************************
-* Relative permeability formula.                                          
-****************************************************************** */
-/*
-double WRM_BrooksCorey::k_relative(double Sw, std::string phase_name)
-{
-  Errors::Message msg;
-  double Swe = 0.0;
-  Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "wetting") {
-    return pow(Swe, 2.0);
-  }
-  else if (phase_name == "non wetting") {
-    return pow(1.0 - Swe, 2.0);
-  }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-*/
-double WRM_BrooksCorey::k_relative(double Sw, std::string phase_name)
+double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
 {
   Errors::Message msg;
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
@@ -81,30 +71,10 @@ double WRM_BrooksCorey::k_relative(double Sw, std::string phase_name)
 }
 
 
-/* ******************************************************************
-* Derivative of Relative permeability wrt wetting saturation formula.                                          
-****************************************************************** */
-/*
-double WRM_BrooksCorey::dKdS(double Sw, std::string phase_name)
-{
-  Errors::Message msg;
-  double Swe = 0.0;
-  double factor = 1.0/(1.0 - S_rw_ - S_rn_);
-  Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "wetting") {
-    return 2.0 * Swe * factor;
-  }
-  else if (phase_name == "non wetting") {
-    return - 2.0 * (1.0 - Swe) * factor;
-  }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-*/
-
-double WRM_BrooksCorey::dKdS(double Sw, std::string phase_name)
+/* *********************************************************************
+* TBW
+***********************************************************************/
+double WRMmp_BrooksCorey::dKdS(double Sw, std::string phase_name)
 {
   Errors::Message msg;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
@@ -126,7 +96,7 @@ double WRM_BrooksCorey::dKdS(double Sw, std::string phase_name)
 /* *********************************************************************
 * Capillary Pressure formula. Cut off capillary pressure for small Swe
 ***********************************************************************/
-double WRM_BrooksCorey::capillaryPressure(double Sw)
+double WRMmp_BrooksCorey::capillaryPressure(double Sw)
 {
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   if (Swe > 1e-12) {
@@ -140,7 +110,7 @@ double WRM_BrooksCorey::capillaryPressure(double Sw)
 /* ******************************************************************
 * Derivative of capillary pressure formula.
 ****************************************************************** */
-double WRM_BrooksCorey::dPc_dS(double Sw)
+double WRMmp_BrooksCorey::dPc_dS(double Sw)
 {
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
@@ -151,23 +121,6 @@ double WRM_BrooksCorey::dPc_dS(double Sw)
   }
 }
 
-
-/* ******************************************************************
-* Return irreducible residual saturation of the phase.                                          
-****************************************************************** */
-double WRM_BrooksCorey::residualSaturation(std::string phase_name)
-{ 
-  if (phase_name == "wetting") {
-    return S_rw_;
-  } else if (phase_name == "non wetting") {
-    return S_rn_;
-  } else {
-    Errors::Message msg;
-    msg << "Unknown phase " << phase_name << ". Options are <wetting> and <non wetting>.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
 

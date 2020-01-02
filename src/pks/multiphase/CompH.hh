@@ -36,7 +36,7 @@ Authors: Quan Bui (mquanbui@math.umd.edu)
 #include "CapillaryPressure.hh"
 #include "MPCoeff.hh"
 #include "MultiphaseTypeDefs.hh"
-#include "WaterRetentionModel.hh"
+#include "WRMmp.hh"
 
 namespace Amanzi {
 namespace Multiphase {

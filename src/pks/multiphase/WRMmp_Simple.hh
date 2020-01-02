@@ -15,25 +15,32 @@
 #ifndef AMANZI_SIMPLE_MODEL_HH_
 #define AMANZI_SIMPLE_MODEL_HH_
 
-#include "WaterRetentionModel.hh"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Factory.hh"
+
+#include "WRMmp.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class WRM_Simple : public WaterRetentionModel {
+class WRMmp_Simple : public WRMmp {
  public:
-  explicit WRM_Simple(std::string region, double S_rw, double S_rn, double coef);
-  ~WRM_Simple() {};
+  WRMmp_Simple(Teuchos::ParameterList& plist);
+  ~WRMmp_Simple() {};
   
   // required methods from the base class
   double k_relative(double Sw, std::string phase_name);
   double capillaryPressure(double saturation);
   double dPc_dS(double saturation);
-  double residualSaturation(std::string phase_name);
   double dKdS(double Sw, std::string phase_name);
+
+  void Init_(double S_rw, double S_rn, double coef);
 
  private:
   double S_rw_, S_rn_, coef_, exponent_;
+
+  static Utils::RegisteredFactory<WRMmp, WRMmp_Simple> factory_;
 };
 
 }  // namespace Flow

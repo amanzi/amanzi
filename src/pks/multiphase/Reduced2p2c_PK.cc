@@ -260,9 +260,6 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // tell the caller what time step we actually took
   dT_actual = dT;
   
-  //dt_tuple times(time, dT);
-  //ti_specs_->dT_history.push_back(times);
-
   nl_itrs_ = 0;
   ti_specs_->num_itrs++;
   dT = dTnext;
