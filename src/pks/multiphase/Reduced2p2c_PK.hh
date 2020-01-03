@@ -20,8 +20,8 @@
 #include "TreeOperator.hh"
 
 // Amanzi::Multiphase
-#include "CompW.hh"
-#include "CompH.hh"
+#include "CompW_PK.hh"
+#include "CompH_PK.hh"
 #include "GasConstraint.hh"
 
 namespace Amanzi {

@@ -51,7 +51,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: multiphase 
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
-                         CompW.cc CompW_TI.cc CompH.cc CompH_TI.cc
+                         CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
                          GasConstraint.cc
                          Reduced2p2c_PK.cc
                          MPCoeff.cc
@@ -71,8 +71,8 @@ add_amanzi_library(multiphase
 set(multiphase_inc_files 
   Multipahase_PK.hh
   ModelMeshPartition.hh
-  CompW.hh
-  CompH.hh
+  CompW_PK.hh
+  CompH_PK.hh
   GasConstraint.hh
   Reduced2p2c_PK.hh
   MPCoeff.hh
