@@ -564,7 +564,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
-    if (!flag) continue;
+    if (!flag) {
+      inode = inode->getNextSibling();
+      continue;
+    }
 
     // process a group of similar elements defined by the first element
     // -- get BC type 
