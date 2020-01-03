@@ -144,7 +144,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   }
 
   // check if we need to write a dispersivity sublist
-  bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;
+  node = doc_->getElementsByTagName(mm.transcode("materials"))->item(0);
+  bool dispersion = (doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0) ||
+                    (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
   if (dispersion && domain == "matrix") {
@@ -160,16 +162,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "material") != 0) continue;
 
-      std::string mat_name = GetAttributeValueS_(inode, "name");
-
-      // -- regions
-      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
-      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
-
-      Teuchos::ParameterList& tmp_list = mat_list.sublist(mat_name);
-      tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
-
       // -- dispersion tensor
+      Teuchos::ParameterList tmp_list;
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, dispersion_tensor", flag);
       if (flag) {
         double al, alh, alv, at, ath, atv;
@@ -221,6 +215,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       if (flag) {
         double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
         tmp_list.set<double>("gaseous tortuosity", val);
+      }
+
+      if (tmp_list.numParams() > 0) { 
+        node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+        std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+        tmp_list.set<Teuchos::Array<std::string> >("regions", regions);
+
+        std::string mat_name = GetAttributeValueS_(inode, "name");
+        mat_list.sublist(mat_name) = tmp_list;
       }
     }
   }
