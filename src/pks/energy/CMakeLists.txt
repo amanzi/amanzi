@@ -39,63 +39,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
-# Energy registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE TCMFactory_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE TCM_PetersLidard_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE TCM_WetDry_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE energy_tcm_registration.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  INSTALL    True
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE IEMEvaluator_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEMFactory_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEM_Linear_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEM_WaterVaporEvaluator_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE energy_iem_registration.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  INSTALL    True
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE EnergyOnePhase_PK_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE EnergyTwoPhase_PK_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE pks_energy_registration.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  INSTALL    True
-  )
-
-#
 # Library: energy
 #
 set(energy_src_files Energy_PK.cc

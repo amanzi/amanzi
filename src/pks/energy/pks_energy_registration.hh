@@ -6,18 +6,19 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon
 
-  The internal energy model evaluator simply calls the IEM with
-  the correct arguments.
+  Self-registering factory of models for energy PK.
 */
 
-#include "IEM_WaterVaporEvaluator.hh"
+#include "EnergyOnePhase_PK.hh"
+#include "EnergyTwoPhase_PK.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
+RegisteredPKFactory<EnergyOnePhase_PK> EnergyOnePhase_PK::reg_("one-phase energy");
+RegisteredPKFactory<EnergyTwoPhase_PK> EnergyTwoPhase_PK::reg_("two-phase energy");
 
 }  // namespace Energy
 }  // namespace Amanzi
