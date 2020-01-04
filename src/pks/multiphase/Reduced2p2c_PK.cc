@@ -286,8 +286,8 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     comp_w_pk_->UpdatePreconditioner(t, up, h);
     comp_h_pk_->UpdatePreconditioner(t, up, h);
   } else {
-    comp_w_pk_->NumericalJacobian(0.0, h, up, 1e-12);
-    comp_h_pk_->NumericalJacobian(0.0, h, up, 1e-12);
+    // comp_w_pk_->NumericalJacobian(0.0, h, up, 1e-12);
+    // comp_h_pk_->NumericalJacobian(0.0, h, up, 1e-12);
   }
   gas_constraint_pk_->UpdatePreconditioner(t, up, h);
 

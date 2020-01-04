@@ -113,8 +113,6 @@ public:
 public:
   double dT, dT_actual, dTnext, T_physics;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
-  //Teuchos::ParameterList linear_operator_list_;
-  //Teuchos::ParameterList pc_list_;
   Teuchos::RCP<Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<Teuchos::ParameterList> pc_list_;
   Teuchos::RCP<Teuchos::ParameterList> cpr_list_;
@@ -173,10 +171,9 @@ private:
   AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> factory_tree;
 
   static RegisteredPKFactory<Reduced2p2c_PK> reg_;
-
 };
 
-}  // namespase Flow
+}  // namespase Multiphase
 }  // namespace Amanzi
 
 #endif

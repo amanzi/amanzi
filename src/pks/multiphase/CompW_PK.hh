@@ -120,8 +120,6 @@ public:
   // state.
   virtual void ChangedSolution() override {};
 
-  void NumericalJacobian(double t_old, double t_new, Teuchos::RCP<const TreeVector> u, double eps);
-
   // methods to compute boundary and source terms
   void AddSourceTerms(CompositeVector& rhs) {};
   void ComputeBCs();
