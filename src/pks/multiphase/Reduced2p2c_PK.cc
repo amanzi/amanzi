@@ -63,11 +63,6 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
 }
 
 
-Reduced2p2c_PK::~Reduced2p2c_PK() {
-  // Do nothing for now
-}
-
-
 void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   rhs_ = Teuchos::rcp(new TreeVector());
@@ -167,29 +162,6 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   else 
     solver_tree_ = factory_tree.Create(linear_solver_name_, *linear_operator_list_, tree_op_);
 
-  // Initialize coarse indices array
-  coarse_indices_array_ = new int[9];
-  coarse_indices_array_[0] = 1;
-  coarse_indices_array_[1] = 1;
-  coarse_indices_array_[2] = 1;
-  coarse_indices_array_[3] = 1;
-  coarse_indices_array_[4] =-1;
-  coarse_indices_array_[5] = 0;
-  coarse_indices_array_[6] =-1;
-  coarse_indices_array_[7] = 0;
-  coarse_indices_array_[8] = 0;
-
-  coarse_indices_array_two_level_ = new int[9];
-  coarse_indices_array_two_level_[0] = 1;
-  coarse_indices_array_two_level_[1] = 1;
-  //coarse_indices_array_two_level_[2] = 1;
-  coarse_indices_array_two_level_[3] = 1;
-  coarse_indices_array_two_level_[4] = -1;
-  // coarse_indices_array_two_level_[5] = 0;
-  coarse_indices_array_two_level_[6] = -1;
-  coarse_indices_array_two_level_[7] = 0;
-  // coarse_indices_array_two_level_[8] = 0;
-
   Teuchos::OSTab tab = vo_->getOSTab();
   *vo_->os() << std::endl;
   std::string method_name = "Direct application of " + pc_all_name_;
@@ -285,22 +257,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   gas_constraint_pk_->UpdatePreconditioner(t, up, h);
 
-  if (pc_list_->sublist(pc_all_name_).get<std::string>("preconditioner type") == "systg") {
-    Teuchos::ParameterList& systg_list =  pc_list_->sublist(pc_all_name_).sublist("systg parameters");
-    std::cout << "mu_k = " << mu_k << std::endl;
-    if (std::abs(mu_k) < 1e-15) {
-      systg_list.set("max coarse levels", 3);
-      systg_list.set("inactive gas indices", gas_constraint_pk_->getInactiveGasIndices());
-      systg_list.set("number of inactive cells", gas_constraint_pk_->getNumInactiveCells());
-      systg_list.set("coarse indices array", coarse_indices_array_);
-    } else {
-      systg_list.set("max coarse levels", 2);
-      systg_list.set("inactive gas indices", gas_constraint_pk_->getInactiveGasIndices());
-      systg_list.set("number of inactive cells", 0);
-      systg_list.set("coarse indices array", coarse_indices_array_two_level_);
-    }
-  }
-
   if (cpr_enhanced_) {
     comb_tree_op_->SymbolicAssembleMatrix();
     comb_tree_op_->AssembleMatrix();
@@ -310,28 +266,7 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   } else {
     tree_op_->SymbolicAssembleMatrix();
     tree_op_->AssembleMatrix();
-    //EpetraExt::RowMatrixToMatlabFile(file_name.c_str(), *tree_op_->A());
-    /*
-    if (gas_constraint_pk_->getNumCells() < 2000) {
-      Teuchos::RCP<Epetra_Vector> diag_values = Teuchos::rcp(new Epetra_Vector(tree_op_->A()->RowMap()));
-      tree_op_->A()->ExtractDiagonalCopy(*diag_values);
-      Teuchos::RCP<Epetra_Vector> shift_values = Teuchos::rcp(new Epetra_Vector(*diag_values));
-      shift_values->PutScalar(0.0);
-      for (int i = 0; i < shift_values->MyLength(); i++) {
-        if ((i % 3) == 0) {
-          (*shift_values)[i] = 1.0e-3;
-        }
-      }
-      diag_values->Update(1.0, *shift_values, 1.0);
-      int err = tree_op_->A()->ReplaceDiagonalValues(*diag_values);
-      ASSERT(err == 0);
-    }
-    */
-    //tree_op_->InitPreconditioner(pc_all_name_, *pc_list_);
   }
-
-  // tree_op_->SymbolicAssembleMatrix();
-  // tree_op_->AssembleMatrix();
 }
 
 
@@ -413,20 +348,6 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
     *pu = pu_temp;
     if (ierr > 0) ln_itrs_ += solver_tree_->num_itrs();
   }
-
-  //AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> factory;
-  //Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::TreeOperator, TreeVector, TreeVectorSpace> >
-  //    solver = factory.Create("GMRES", *linear_operator_list_, tree_op_);
-  //solver->ApplyInverse(*u, *pu);
-  //ln_itrs_ += solver->num_itrs();
-
-  //tree_op_->ApplyInverse(*u, *pu);
-
-  /*
-  Teuchos::RCP<TreeVector> out = Teuchos::rcp(new TreeVector(*u));
-  out->PutScalar(0.0);
-  tree_op_->Apply(*pu, *out);
-  */
 
   return ierr;
 }

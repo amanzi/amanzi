@@ -1,6 +1,6 @@
 <ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="phase-transition-1d"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 1.5768e11, -1.0}"/>
   </ParameterList>
 
@@ -70,22 +70,6 @@
           <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
         </ParameterList>
 
-	      <!--
-        <Parameter name="solver type" type="string" value="nka"/>
-        <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1e-6"/>
-          <Parameter name="limit iterations" type="int" value="50"/>
-          <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-          <Parameter name="diverged l2 tolerance" type="double" value="1e+5"/>
-          <Parameter name="max du growth factor" type="double" value="1e+5"/>
-          <Parameter name="max divergent iterations" type="int" value="10"/>
-          <Parameter name="max nka vectors" type="int" value="1000"/>
-          <Parameter name="modify correction" type="bool" value="false"/>
-          <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-          </ParameterList>
-        </ParameterList>
-        -->
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>

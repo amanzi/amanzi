@@ -34,7 +34,7 @@ public:
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln);
 
-  ~Reduced2p2c_PK();
+  ~Reduced2p2c_PK() {};
 
   // New interface for a PK
   virtual void Setup(const Teuchos::Ptr<State>& S) override {};
@@ -130,8 +130,6 @@ private:
   std::string pc_all_name_, linear_solver_name_;
   std::vector<std::string> pc_block_names_;
   std::vector<int> phase_idx;
-  int* coarse_indices_array_;
-  int* coarse_indices_array_two_level_;
   double mu_;
 
   // solution vectors
