@@ -30,7 +30,7 @@
 #include "OperatorDefs.hh"
 
 // Multiphase
-#include "Multiphase_PK.hh"
+#include "MultiphaseReduced_PK.hh"
 
 
 /* **************************************************************** */
@@ -66,7 +66,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Multiphase_PK> MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MultiphaseReduced_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();

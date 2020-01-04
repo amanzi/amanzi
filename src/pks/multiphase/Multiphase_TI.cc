@@ -87,22 +87,15 @@ Multiphase_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 {
   Teuchos::RCP<CompositeVector> rho_next = Teuchos::rcp(new CompositeVector(*u->SubVector(2)->Data()));
   rho_next->Update(-1.0, *du->SubVector(2)->Data(), 1.0);
-  ClipConcentration_(rho_next);
-  du->SubVector(2)->Data()->Update(1.0, *u->SubVector(2)->Data(), -1.0, *rho_next, 0.0);
 
-  return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
-}
-
-
-/********************************************************************
-* Helper function for modifying correction.
-****************************************************************** */
-void Multiphase_PK::ClipConcentration_(Teuchos::RCP<CompositeVector> rho)
-{
-  Epetra_MultiVector& rho_c = *rho->ViewComponent("cell");
+  Epetra_MultiVector& rho_c = *rho_next->ViewComponent("cell");
   for (int c = 0; c < rho_c.MyLength(); c++) {
     rho_c[0][c] = std::max(0.0, rho_c[0][c]);
   }
+
+  du->SubVector(2)->Data()->Update(1.0, *u->SubVector(2)->Data(), -1.0, *rho_next, 0.0);
+
+  return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
 }
 
 }  // namespace Multiphase

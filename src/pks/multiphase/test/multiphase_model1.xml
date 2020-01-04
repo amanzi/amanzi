@@ -50,8 +50,9 @@
     <Parameter name="preconditioner" type="string" value="Euclid"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
     <Parameter name="number aqueous components" type="int" value="1"/>
+    <Parameter name="number gaseous components" type="int" value="0"/>
 
-    <Parameter name="component names" type="Array(string)" value="{O2}"/>
+    <Parameter name="primary component names" type="Array(string)" value="{O2}"/>
 
     <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
     <Parameter name="atmospheric pressure" type="double" value="0.0"/>

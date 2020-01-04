@@ -48,6 +48,8 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
+                         MultiphaseReduced_PK.cc
+                         Multiphase_Utils.cc
                          WRMmp_Simple.cc WRMmp_VanGenuchten.cc WRMmp_BrooksCorey.cc
                          #
                          CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
@@ -68,6 +70,8 @@ add_amanzi_library(multiphase
 #
 set(multiphase_inc_files 
   Multipahase_PK.hh
+  MultiphaseReduced_PK.hh
+  Multiphase_Utils.hh
   ModelMeshPartition.hh
   MultiphaseBoundaryFunction.hh
   WRMmp.hh

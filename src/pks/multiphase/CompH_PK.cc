@@ -28,6 +28,7 @@
 
 // Amanzi::Multiphase
 #include "CompH_PK.hh"
+#include "Multiphase_Utils.hh"
 #include "MultiphaseDefs.hh"
 
 // namespace
@@ -383,7 +384,7 @@ void CompH_PK::InitializeComponent()
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);
   D1_.resize(ncells_wghost_);
-  SetAbsolutePermeabilityTensor();
+  ConvertFieldToTensor(S_, dim_, "permeability", K_);
   SetDiffusionTensor();
 
   /*
@@ -535,42 +536,6 @@ void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   // write hydrogen density in liquid to state
   CompositeVector& rhl = *S_->GetFieldData("hydrogen density liquid", passwd_);
   rhl = *soln_->SubVector(2)->Data();
-}
-
-
-/* ******************************************************************
-*  Temporary convertion from double to tensor.                                               
-****************************************************************** */
-void CompH_PK::SetAbsolutePermeabilityTensor()
-{
-  const CompositeVector& cv = *S_->GetFieldData("permeability");
-  cv.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
-
-  if (dim_ == 2) {
-    for (int c = 0; c < K_.size(); c++) {
-      if (perm[0][c] == perm[1][c]) {
-        K_[c].Init(dim_, 1);
-        K_[c](0, 0) = perm[0][c];
-      } else {
-        K_[c].Init(dim_, 2);
-        K_[c](0, 0) = perm[0][c];
-        K_[c](1, 1) = perm[1][c];
-      }
-    }    
-  } else if (dim_ == 3) {
-    for (int c = 0; c < K_.size(); c++) {
-      if (perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
-        K_[c].Init(dim_, 1);
-        K_[c](0, 0) = perm[0][c];
-      } else {
-        K_[c].Init(dim_, 2);
-        K_[c](0, 0) = perm[0][c];
-        K_[c](1, 1) = perm[1][c];
-        K_[c](2, 2) = perm[2][c];
-      }
-    }        
-  }
 }
 
 

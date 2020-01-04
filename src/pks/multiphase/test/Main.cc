@@ -4,7 +4,7 @@
 
 #include "VerboseObject_objs.hh"
 #include "state_evaluators_registration.hh"
-#include "wrm_multiphase_registration.hh"
+#include "wrmmp_registration.hh"
 
 int main(int argc, char *argv[])
 {
