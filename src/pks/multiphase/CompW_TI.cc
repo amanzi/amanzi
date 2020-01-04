@@ -200,14 +200,6 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   cvs.SetOwned(false);
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
-  /*
-  *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
-  //DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
-  //                               bc_model_, bc_value_s_);
-  CoefUpwindFn1 func3 = &MPCoeff::ValuePrimaryVar;
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, bc_value_s_,
-                     *s_with_face, *s_with_face, func3);
-  */
   s_with_face->PutScalar(-dTp*phi_);
 
   tmp_flux_->PutScalar(0.0);

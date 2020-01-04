@@ -218,8 +218,6 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   cvs.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
-  //DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
-  //                               bc_model_, bc_value_s_);
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *s_with_face);
   s_with_face->Scale(dTp*phi_);
 

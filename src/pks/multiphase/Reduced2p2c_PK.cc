@@ -58,11 +58,6 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
   // verbose object
   vo_ = new VerboseObject("Reduced2p2c::", *mpmc_list_);
 
-  Amanzi::timer_manager.add("UpdatePreconditioner", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("ApplyPreconditioner", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("PreconditionerSetup", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("PreconditionerSolve", Amanzi::Timer::ACCUMULATE);
-
   accumulateSolveTime_ = 0.0;
   accumulateSetupTime_ = 0.0;
 }
@@ -280,7 +275,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     gas_constraint_pk_->setMu(mu_k);
   }
   nl_itrs_++;
-  Amanzi::timer_manager.start("UpdatePreconditioner");
 
   if (jacobian_type_ == "analytic") {
     comp_w_pk_->UpdatePreconditioner(t, up, h);
@@ -338,7 +332,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // tree_op_->SymbolicAssembleMatrix();
   // tree_op_->AssembleMatrix();
-  Amanzi::timer_manager.stop("UpdatePreconditioner");
 }
 
 
@@ -363,8 +356,6 @@ int Reduced2p2c_PK::ApplyJacobian(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 
 int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu)
 {
-  Amanzi::timer_manager.start("ApplyPreconditioner");
-
   /*if (ln_itrs_ == 0)*/ pu->PutScalar(0.0);
   TreeVector pu_temp = *pu;
   num_mat_++;
@@ -381,12 +372,8 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   }
   else {
     //EpetraExt::RowMatrixToMatlabFile(file_name.c_str(), *tree_op_->A());
-    Amanzi::timer_manager.start("PreconditionerSetup");
     tree_op_->InitPreconditioner(pc_all_name_, *pc_list_);
-    Amanzi::timer_manager.stop("PreconditionerSetup");
-    Amanzi::timer_manager.start("PreconditionerSolve");
     ierr = solver_tree_->ApplyInverse(*u, *pu);
-    Amanzi::timer_manager.stop("PreconditionerSolve");
     if (ierr > 0) 
       ln_itrs_ += solver_tree_->num_itrs();
     else {
@@ -441,7 +428,6 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   tree_op_->Apply(*pu, *out);
   */
 
-  Amanzi::timer_manager.stop("ApplyPreconditioner");
   return ierr;
 }
 
