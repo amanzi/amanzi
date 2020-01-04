@@ -291,13 +291,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   gas_constraint_pk_->UpdatePreconditioner(t, up, h);
 
-  /*
-  std::cout << "Inactive gas indices \n";
-  for (int i=0; i < gas_constraint_pk_->getNumCells(); i++) {
-    std::cout << *(gas_constraint_pk_->getInactiveGasIndices() + i) << "\n";
-  }
-  */
-
   if (pc_list_->sublist(pc_all_name_).get<std::string>("preconditioner type") == "systg") {
     Teuchos::ParameterList& systg_list =  pc_list_->sublist(pc_all_name_).sublist("systg parameters");
     std::cout << "mu_k = " << mu_k << std::endl;
@@ -414,7 +407,6 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 
       file_name = "inactiveIdx_" + ss.str() + ".txt";
       file_out.open(file_name.c_str());
-      //std::cout << "Inactive gas indices \n";
       file_out << gas_constraint_pk_->getNumInactiveCells() << std::endl;
       for (int i=0; i < gas_constraint_pk_->getNumInactiveCells(); i++) {
         file_out << *(gas_constraint_pk_->getInactiveGasIndices() + i) << std::endl;
@@ -523,8 +515,6 @@ void Reduced2p2c_PK::ClipConcentration(Teuchos::RCP<CompositeVector> rho)
 **************************************************************** */
 void Reduced2p2c_PK::ProcessSublistTimeInterval(
   Teuchos::ParameterList& ti_list,  TI_Specs& ti_specs){
-
-  //std::cout << "ti_list: \n" << ti_list << "\n";
 
   ti_specs.ti_list_ptr_ = &ti_list;
   std::string ti_method_name = ti_list.get<std::string>("time integration method", "none");

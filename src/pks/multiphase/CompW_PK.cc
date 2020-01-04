@@ -353,15 +353,11 @@ void CompW_PK::InitializeComponent()
                                             .sublist("diffusion operator")
                                             .sublist("upwind");
 
-  // Operators::UpwindFactory<RelativePermeability> upwind_factory;
-  // upwind_n_ = upwind_factory.Create(mesh_, rel_perm_w_, upw_list);
-
   upwind_w_ = Teuchos::rcp(new Operators::UpwindFlux<MPCoeff>(mesh_, rel_perm_w_));
   upwind_w_->Init(upw_list);
 
   // init upwind_velocity
   upwind_vw_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_wet", passwd_)));
-
   tmp_flux_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_wet", passwd_)));
 } 
 
@@ -371,7 +367,6 @@ void CompW_PK::InitializeComponent()
 ****************************************************************** */
 void CompW_PK::InitNextTI()
 {
-  // initialize operators
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > D1ptr = Teuchos::rcpFromRef(D1_);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, rel_perm_w_->Krel(), Teuchos::null);
@@ -380,21 +375,12 @@ void CompW_PK::InitNextTI()
   op2_matrix_->Setup(D1ptr, Teuchos::null, Teuchos::null);
   op2_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  if (jacobian_type_ == "numerical")
+  if (jacobian_type_ == "numerical") {
     for (int ii = 0; ii < ops_.size(); ii++) {
       ops_[ii]->Setup(Kptr, rel_perm_w_->Krel(), Teuchos::null);
       ops_[ii]->UpdateMatrices(Teuchos::null, Teuchos::null);
     }
-  //op1_preconditioner_->Setup(Kptr, rel_perm_w_->Krel(), Teuchos::null);
-  //op1_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // Advection
-  //op2_preconditioner_->Setup(*upwind_vw_);
-  //op2_preconditioner_->UpdateMatrices(*rel_perm_w_->dKdS());
-
-  // diffusion hydrogen
-  //op3_preconditioner_->Setup(Kptr, Teuchos::null, Teuchos::null);
-  //op3_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
 }
 
 
@@ -423,11 +409,11 @@ void CompW_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 
   auto phase1_flux = S_->GetFieldData("velocity_wet", passwd_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->Init();
+  op1_matrix_->global_operator()->Init();
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, rel_perm_w_->Krel(), Teuchos::null);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true ,true);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateFlux(p1.ptr(), phase1_flux.ptr());
+  op1_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op1_matrix_->ApplyBCs(true, true ,true);
+  op1_matrix_->UpdateFlux(p1.ptr(), phase1_flux.ptr());
 }
 
 
@@ -546,4 +532,4 @@ void CompW_PK::DeriveFaceValuesFromCellValues(
 }
 
 }  // namespace Flow
-} // End namespace Amanzi
+}  // namespace Amanzi

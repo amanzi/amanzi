@@ -387,12 +387,6 @@ void CompH_PK::InitializeComponent()
   ConvertFieldToTensor(S_, dim_, "permeability", K_);
   ConvertFieldToTensor(S_, dim_, "diffusion tensor", D1_);
 
-  /*
-  if (src_sink_distribution_ & Amanzi::CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
-  */
-
   // Select a proper matrix class. 
   Teuchos::ParameterList& tmp_list = comp_list_->sublist("operators").sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
@@ -441,10 +435,6 @@ void CompH_PK::InitializeComponent()
                                                .sublist("diffusion operator")
                                                .sublist("upwind");
 
-  // Operators::UpwindFactory<MPCoeff> upwind_factory;
-  // upwind_n_ = upwind_factory.Create(mesh_, coef_n_, upw_list);
-  // upwind_n_ = upwind_factory.Create(mesh_, coef_w_, upw_list);
-
   upwind_n_ = Teuchos::rcp(new Operators::UpwindFlux<MPCoeff>(mesh_, coef_n_));
   upwind_n_->Init(upw_list);
   upwind_w_ = Teuchos::rcp(new Operators::UpwindFlux<MPCoeff>(mesh_, coef_w_));
@@ -464,7 +454,6 @@ void CompH_PK::InitializeComponent()
 ****************************************************************** */
 void CompH_PK::InitNextTI()
 {
-  // initialize operators
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > D1ptr = Teuchos::rcpFromRef(D1_);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Krel(), Teuchos::null);
