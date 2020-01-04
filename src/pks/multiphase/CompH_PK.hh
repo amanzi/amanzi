@@ -120,7 +120,6 @@ class CompH_PK: public PK_PhysicalBDF {
   void NumericalJacobian(double t_old, double t_new, Teuchos::RCP<const TreeVector> u, double eps);
 
   // methods to compute boundary and source terms
-  void SetDiffusionTensor();
   void AddSourceTerms(CompositeVector& rhs) {};
   void ComputeBCs(bool stop);
   void ComputeBC_Pn(); 

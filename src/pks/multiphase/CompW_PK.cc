@@ -313,7 +313,7 @@ void CompW_PK::InitializeComponent()
   K_.resize(ncells_wghost_);
   D1_.resize(ncells_wghost_);
   ConvertFieldToTensor(S_, dim_, "permeability", K_);
-  SetDiffusionTensor();
+  ConvertFieldToTensor(S_, dim_, "diffusion tensor", D1_);
 
   // Select a proper matrix class. 
   Teuchos::ParameterList& tmp_list = comp_list_->sublist("operators").sublist("diffusion operator");
@@ -428,42 +428,6 @@ void CompW_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true ,true);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateFlux(p1.ptr(), phase1_flux.ptr());
-}
-
-
-/* ******************************************************************
-*  Temporary convertion from double to tensor.                                               
-****************************************************************** */
-void CompW_PK::SetDiffusionTensor()
-{
-  const CompositeVector& cv1 = *S_->GetFieldData("diffusion tensor");
-  cv1.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm1 = *cv1.ViewComponent("cell", true);
-
-  if (dim_ == 2) {
-    for (int c = 0; c < D1_.size(); c++) {
-      if (perm1[0][c] == perm1[1][c]) {
-        D1_[c].Init(dim_, 1);
-        D1_[c](0, 0) = perm1[0][c];
-      } else {
-        D1_[c].Init(dim_, 2);
-        D1_[c](0, 0) = perm1[0][c];
-        D1_[c](1, 1) = perm1[1][c];
-      }
-    }    
-  } else if (dim_ == 3) {
-    for (int c = 0; c < D1_.size(); c++) {
-      if (perm1[0][c] == perm1[1][c] && perm1[0][c] == perm1[2][c]) {
-        D1_[c].Init(dim_, 1);
-        D1_[c](0, 0) = perm1[0][c];
-      } else {
-        D1_[c].Init(dim_, 2);
-        D1_[c](0, 0) = perm1[0][c];
-        D1_[c](1, 1) = perm1[1][c];
-        D1_[c](2, 2) = perm1[2][c];
-      }
-    }        
-  }
 }
 
 

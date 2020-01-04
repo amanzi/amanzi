@@ -385,7 +385,7 @@ void CompH_PK::InitializeComponent()
   K_.resize(ncells_wghost_);
   D1_.resize(ncells_wghost_);
   ConvertFieldToTensor(S_, dim_, "permeability", K_);
-  SetDiffusionTensor();
+  ConvertFieldToTensor(S_, dim_, "diffusion tensor", D1_);
 
   /*
   if (src_sink_distribution_ & Amanzi::CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -536,42 +536,6 @@ void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   // write hydrogen density in liquid to state
   CompositeVector& rhl = *S_->GetFieldData("hydrogen density liquid", passwd_);
   rhl = *soln_->SubVector(2)->Data();
-}
-
-
-/* ******************************************************************
-*  Temporary convertion from double to tensor.                                               
-****************************************************************** */
-void CompH_PK::SetDiffusionTensor()
-{
-  const CompositeVector& cv1 = *S_->GetFieldData("diffusion tensor");
-  cv1.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm1 = *cv1.ViewComponent("cell", true);
-
-  if (dim_ == 2) {
-    for (int c = 0; c < D1_.size(); c++) {
-      if (perm1[0][c] == perm1[1][c]) {
-        D1_[c].Init(dim_, 1);
-        D1_[c](0, 0) = perm1[0][c];
-      } else {
-        D1_[c].Init(dim_, 2);
-        D1_[c](0, 0) = perm1[0][c];
-        D1_[c](1, 1) = perm1[1][c];
-      }
-    }    
-  } else if (dim_ == 3) {
-    for (int c = 0; c < D1_.size(); c++) {
-      if (perm1[0][c] == perm1[1][c] && perm1[0][c] == perm1[2][c]) {
-        D1_[c].Init(dim_, 1);
-        D1_[c](0, 0) = perm1[0][c];
-      } else {
-        D1_[c].Init(dim_, 2);
-        D1_[c](0, 0) = perm1[0][c];
-        D1_[c](1, 1) = perm1[1][c];
-        D1_[c](2, 2) = perm1[2][c];
-      }
-    }        
-  }
 }
 
 
