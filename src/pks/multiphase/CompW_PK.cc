@@ -26,7 +26,7 @@
 #include "PK_DomainFunctionFactory.hh"
 
 // Amanzi::Multiphase
-#include "CompW.hh"
+#include "CompW_PK.hh"
 #include "MultiphaseDefs.hh"
 
 // namespace

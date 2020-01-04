@@ -53,6 +53,10 @@
 
     <Parameter name="component names" type="Array(string)" value="{O2}"/>
 
+    <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
+    <Parameter name="atmospheric pressure" type="double" value="0.0"/>
+    <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
       <Parameter name="global solve" type="bool" value="true"/>
@@ -118,101 +122,45 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Component 1">
-      <Parameter name="component name" type="string" value="water"/>
-      <Parameter name="component id" type="int" value="1"/>
-
-      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
-
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="low"/>
-      </ParameterList>
-
-      <ParameterList name="operators">
-        <ParameterList name="advection operator">
-          <Parameter name="discretization primary" type="string" value="upwind"/>
-          <Parameter name="reconstruction order" type="int" value="0"/>
-        </ParameterList>
-        <ParameterList name="diffusion operator">
-          <ParameterList name="upwind">
-            <Parameter name="upwind method" type="string" value="standard"/>
-            <ParameterList name="upwind standard parameters">
-               <Parameter name="tolerance" type="double" value="1e-12"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="fv: default"/>
-            <Parameter name="discretization secondary" type="string" value="fv: default"/>
-            <Parameter name="schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="upwind" type="string" value="with flux"/>
-          </ParameterList>
-          <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="fv: default"/>
-            <Parameter name="discretization secondary" type="string" value="fv: default"/>
-            <Parameter name="schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="upwind" type="string" value="with flux"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="boundary conditions">
-        <ParameterList name="pressure">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e6"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="mass flux total">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="saturation">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary saturation">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="hydrogen density">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary hydrogen density">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="source terms">
-        <ParameterList name="SRC 1">
-          <Parameter name="regions" type="Array(string)" value="{All}"/>
+    <ParameterList name="boundary conditions">
+      <ParameterList name="pressure">
+        <ParameterList name="BC 1">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="submodel" type="string" value="intergrand"/>
-          <ParameterList name="sink">
+          <ParameterList name="boundary pressure">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="1.0e6"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mass flux total">
+        <ParameterList name="BC 2">
+          <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="outward mass flux">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="saturation">
+        <ParameterList name="BC 3">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="boundary saturation">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="hydrogen density">
+        <ParameterList name="BC 4">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="boundary hydrogen density">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="0.0"/>
             </ParameterList>
@@ -220,105 +168,47 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    
-    <ParameterList name="Component 2">
-      <Parameter name="component name" type="string" value="hydrogen"/>
-      <Parameter name="component id" type="int" value="2"/>
-      <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
 
-      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
-
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="low"/>
-      </ParameterList>
-
-      <ParameterList name="operators">
-        <ParameterList name="advection operator">
-          <Parameter name="discretization primary" type="string" value="upwind"/>
-          <Parameter name="reconstruction order" type="int" value="0"/>
-        </ParameterList>
-        <ParameterList name="diffusion operator">
-          <ParameterList name="upwind">
-            <Parameter name="upwind method" type="string" value="standard"/>
-            <ParameterList name="upwind standard parameters">
-               <Parameter name="tolerance" type="double" value="1e-12"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="fv: default"/>
-            <Parameter name="discretization secondary" type="string" value="fv: default"/>
-            <Parameter name="schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="gravity" type="bool" value="false"/>
-          </ParameterList>
-          <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="fv: default"/>
-            <Parameter name="discretization secondary" type="string" value="fv: default"/>
-            <Parameter name="schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-            <Parameter name="gravity" type="bool" value="false"/>
+    <ParameterList name="source terms">
+      <ParameterList name="SRC 1">
+        <Parameter name="regions" type="Array(string)" value="{All}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <Parameter name="submodel" type="string" value="intergrand"/>
+        <ParameterList name="sink">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
 
-      <ParameterList name="boundary conditions">
-        <ParameterList name="pressure">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e6"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="mass flux total">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="saturation">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary saturation">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="hydrogen density">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary hydrogen density">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+    <ParameterList name="operators">
+      <ParameterList name="advection operator">
+        <Parameter name="discretization primary" type="string" value="upwind"/>
+        <Parameter name="reconstruction order" type="int" value="0"/>
       </ParameterList>
-
-      <ParameterList name="source terms">
-        <ParameterList name="SRC 1">
-          <Parameter name="regions" type="Array(string)" value="{All}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="submodel" type="string" value="intergrand"/>
-          <ParameterList name="sink">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
-            </ParameterList>
+      <ParameterList name="diffusion operator">
+        <ParameterList name="upwind">
+          <Parameter name="upwind method" type="string" value="standard"/>
+          <ParameterList name="upwind standard parameters">
+             <Parameter name="tolerance" type="double" value="1e-12"/>
           </ParameterList>
+        </ParameterList>
+        <ParameterList name="matrix">
+          <Parameter name="discretization primary" type="string" value="fv: default"/>
+          <Parameter name="discretization secondary" type="string" value="fv: default"/>
+          <Parameter name="schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="gravity" type="bool" value="false"/>
+          <Parameter name="upwind" type="string" value="with flux"/>
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          <Parameter name="discretization primary" type="string" value="fv: default"/>
+          <Parameter name="discretization secondary" type="string" value="fv: default"/>
+          <Parameter name="schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="gravity" type="bool" value="false"/>
+          <Parameter name="upwind" type="string" value="with flux"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

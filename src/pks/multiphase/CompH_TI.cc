@@ -11,7 +11,7 @@
 */
 
 // include stuff
-#include "CompH.hh"
+#include "CompH_PK.hh"
 #include "Epetra_Vector.h"
 #include "Op.hh"
 

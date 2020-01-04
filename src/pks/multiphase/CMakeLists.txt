@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #   Multiphase process kernel
@@ -18,44 +16,44 @@ include(TestManager)
 # through these variables.
 project(MULTIPHASE)
 
-# Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
-include_directories(${ATK_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
-include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
-include_directories(${PKS_SOURCE_DIR})
-include_directories(${MPC_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${FLOW_SOURCE_DIR})
-include_directories(${MULTIPHASE_SOURCE_DIR})
-
-
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
+# Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${FLOW_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MPC_SOURCE_DIR})
+include_directories(${MULTIPHASE_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
+
 #
 # Library: multiphase 
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
+                         MultiphaseBoundaryFunction.cc
+                         WRMmp_Simple.cc WRMmp_VanGenuchten.cc WRMmp_BrooksCorey.cc
+                         #
                          CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
                          GasConstraint.cc
                          Reduced2p2c_PK.cc
                          MPCoeff.cc
-                         WRMmp_Simple.cc WRMmp_VanGenuchten.cc WRMmp_BrooksCorey.cc
                          CapillaryPressure.cc
                          )
 
@@ -71,16 +69,18 @@ add_amanzi_library(multiphase
 set(multiphase_inc_files 
   Multipahase_PK.hh
   ModelMeshPartition.hh
+  MultiphaseBoundaryFunction.hh
+  WRMmp.hh
+  WRMmp_Simple.hh
+  WRMmp_VanGenuchten.hh
+  WRMmp_BrooksCorey.hh
+  #
   CompW_PK.hh
   CompH_PK.hh
   GasConstraint.hh
   Reduced2p2c_PK.hh
   MPCoeff.hh
-  CapillaryPressure.hh
-  WRMmp.hh
-  WRMmp_Simple.hh
-  WRMmp_VanGenuchten.hh
-  WRMmp_BrooksCorey.hh)  
+  CapillaryPressure.hh)
 
 add_install_include_file(${multiphase_inc_files})
 
