@@ -82,6 +82,7 @@ set(flow_inc_files
   IEMFactory.hh
   IEMEvaluator.hh
   energy_iem_registration.hh
+  energy_tcm_registration.hh
   TotalEnergyEvaluator.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh
