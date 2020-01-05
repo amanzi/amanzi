@@ -35,15 +35,30 @@ MultiphaseReduced_PK::MultiphaseReduced_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */
-void MultiphaseReduced_PK::InitializeSolution()
+void MultiphaseReduced_PK::InitSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(tcc_key_);
+  soln_names_.push_back(xl_key_);
   soln_names_.push_back(saturation_liquid_key_);
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto field = Teuchos::rcp(new TreeVector());
     soln_->PushBack(field);
     field->SetData(S_->GetFieldData(soln_names_[i], passwd_));
+  }
+}
+
+
+/* ******************************************************************* 
+* Create matrix structure of operators
+******************************************************************* */
+void MultiphaseReduced_PK::InitPreconditioner()
+{
+  eval_acc_.push_back(eval_water_content_);
+  eval_adv_.push_back(Teuchos::null);
+  eval_diff_.push_back(Teuchos::null);
+
+  for (int i = 0; i < num_primary_; ++i) {
+    eval_acc_.push_back(eval_component_content_);
   }
 }
 
@@ -56,8 +71,8 @@ void MultiphaseReduced_PK::PopulateBCs()
   auto& bc_model_p = op_bcs_[0]->bc_model();
   auto& bc_value_p = op_bcs_[0]->bc_value();
 
-  auto& bc_model_tcc = op_bcs_[1]->bc_model();
-  auto& bc_value_tcc = op_bcs_[1]->bc_value_vector(num_primary_);
+  auto& bc_model_x = op_bcs_[1]->bc_model();
+  auto& bc_value_x = op_bcs_[1]->bc_value_vector(num_primary_);
 
   auto& bc_model_s = op_bcs_[2]->bc_model();
   auto& bc_value_s = op_bcs_[2]->bc_value();
@@ -68,8 +83,8 @@ void MultiphaseReduced_PK::PopulateBCs()
     bc_model_p[n] = Operators::OPERATOR_BC_NONE;
     bc_value_p[n] = 0.0;
 
-    bc_model_tcc[n] = Operators::OPERATOR_BC_NONE;
-    for (int i = 0; i < num_primary_; ++i) bc_value_tcc[n][i] = 0.0;
+    bc_model_x[n] = Operators::OPERATOR_BC_NONE;
+    for (int i = 0; i < num_primary_; ++i) bc_value_x[n][i] = 0.0;
 
     bc_model_s[n] = Operators::OPERATOR_BC_NONE;
     bc_value_s[n] = 0.0;
@@ -91,13 +106,6 @@ void MultiphaseReduced_PK::PopulateBCs()
         bc_value_s[f] = it->second[0];
       }
     }
-
-    if (bcs_[i]->bc_name() == "hydrogen density") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_value_tcc[f][0] = it->second[0];
-      }
-    }
   }
 
   // mark missing boundary conditions as zero flux conditions 
@@ -113,7 +121,7 @@ void MultiphaseReduced_PK::PopulateBCs()
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_p[f] = 0.0;
         bc_value_s[f] = 0.0;
-        bc_value_tcc[f][0] = 0.0;
+        bc_value_x[f][0] = 0.0;
       }
 
       missed_bc_faces_++;
@@ -121,7 +129,7 @@ void MultiphaseReduced_PK::PopulateBCs()
   }
 
   bc_model_s = bc_model_p;
-  bc_model_tcc = bc_model_p;
+  bc_model_x = bc_model_p;
 }
 
 }  // namespace Multiphase

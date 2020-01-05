@@ -157,17 +157,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="hydrogen density">
-        <ParameterList name="BC 4">
-          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <ParameterList name="boundary hydrogen density">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="source terms">
@@ -284,7 +273,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="total_component_concentration">
+      <ParameterList name="mole_fraction_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>

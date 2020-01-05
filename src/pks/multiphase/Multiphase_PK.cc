@@ -46,6 +46,7 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
   S_(S),
   soln_(soln),
   passwd_("multiphase"),
+  num_phases_(2),
   num_itrs_(0)
 {
   std::string pk_name = pk_tree.name();
@@ -77,7 +78,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // keys
   pressure_liquid_key_ = Keys::getKey(domain_, "pressure_liquid"); 
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
+  xl_key_ = Keys::getKey(domain_, "mole_fraction_liquid"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
@@ -91,12 +92,12 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   S->RequireField(pressure_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // tcc is the primary solution
+  // liquid mole fraction is the primary solution
   component_names_ = mp_list_->template get<Teuchos::Array<std::string> >("primary component names").toVector();
   std::vector<std::vector<std::string> > subfield_names(1);
   subfield_names[0] = component_names_;
 
-  S->RequireField(tcc_key_, passwd_, subfield_names)
+  S->RequireField(xl_key_, passwd_, subfield_names)
     ->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
 
@@ -148,7 +149,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // vector of primary variables
-  InitializeSolution();
+  InitSolutionVector();
 
   // boundary conditions
   Teuchos::RCP<MultiphaseBoundaryFunction> bc;
@@ -220,7 +221,8 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   PopulateBCs();
 
-  // matrix
+  // matrix is used to eleviate calculation of residual. It is the mathematical
+  // representation of differential operators
   auto& opd_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   auto& opa_list = mp_list_->sublist("operators").sublist("advection operator").sublist("matrix");
 
@@ -228,48 +230,41 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
 
   // -- liquid pressure is always go first
-  auto op0 = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, mesh_, 1.0, gravity_));
-  op0->SetBCs(op_bcs_[0], op_bcs_[0]);
-  op_matrix_->SetOperatorBlock(0, 0, op0->global_operator());
+  auto opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, mesh_, 1.0, gravity_));
+  opd->SetBCs(op_bcs_[0], op_bcs_[0]);
+  op_matrix_->SetOperatorBlock(0, 0, opd->global_operator());
 
   // -- chemical components go second
   for (int i = 0; i < num_primary_; ++i) {
-    auto op1 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-    op1->SetBCs(op_bcs_[i + 1], op_bcs_[i + 1]);
-    op_matrix_->SetOperatorBlock(i + 1, i + 1, op1->global_operator());
+    auto opa = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
+    opa->SetBCs(op_bcs_[i + 1], op_bcs_[i + 1]);
+
+    opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, opa->global_operator()));
+    op_matrix_->SetOperatorBlock(i + 1, i + 1, opa->global_operator());
   }
 
-  // preconditioner
-  // -- liquid pressure is always go first
-  auto op00 = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, mesh_, 1.0, gravity_));
-  op00->SetBCs(op_bcs_[0], op_bcs_[0]);
-  op_preconditioner_->SetOperatorBlock(0, 0, op00->global_operator());
+  // preconditioner is reflects equations of states and is model-specific
+  InitPreconditioner();
 
-  auto op0n = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-  op0n->SetBCs(op_bcs_[0], op_bcs_[2]);
-  op_preconditioner_->SetOperatorBlock(0, num_primary_, op0n->global_operator());
-
-  // -- chemical components go second
-  for (int i = 0; i < num_primary_; ++i) {
-    auto op10 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-    op10->SetBCs(op_bcs_[1], op_bcs_[0]);
-    op_preconditioner_->SetOperatorBlock(1, 0, op10->global_operator());
-
-    auto op11 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-    op11->SetBCs(op_bcs_[1], op_bcs_[1]);
-    op_preconditioner_->SetOperatorBlock(i + 1, i + 1, op11->global_operator());
-
-    auto op1n = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-    op1n->SetBCs(op_bcs_[1], op_bcs_[2]);
-    op_preconditioner_->SetOperatorBlock(1, num_primary_, op1n->global_operator());
+  for (int i = 0; i < num_primary_ + 1; ++i) {
+    auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+    if (eval_adv_[i] != Teuchos::null) {
+      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, op->global_operator()));
+      tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
+    }
+    if (eval_diff_[i] != Teuchos::null) {
+      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opd_list, op->global_operator()));
+      tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
+    }
+    op_preconditioner_->SetOperatorBlock(i, i, op->global_operator());
   }
 
   for (int i = 0; i < num_primary_ + 2; ++i) {
-    auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    op2->SetBCs(op_bcs_[2], op_bcs_[i]);
-    op_preconditioner_->SetOperatorBlock(num_primary_, i, op2->global_operator());
+    auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+    op->SetBCs(op_bcs_[2], op_bcs_[i]);
+    op_preconditioner_->SetOperatorBlock(num_primary_, i, op->global_operator());
   }
-
+  
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   AMANZI_ASSERT(ti_method_name == "BDF1");
@@ -337,8 +332,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
  *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
- *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
- *S_->GetFieldData(tcc_key_, passwd_) = *soln_->SubVector(2)->Data();
+ *S_->GetFieldData(xl_key_, passwd_) = *soln_->SubVector(1)->Data();
+ *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
 }
 
 }  // namespace Multiphase

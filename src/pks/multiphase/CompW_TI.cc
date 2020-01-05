@@ -91,10 +91,6 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   op2_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2_matrix_->ApplyBCs(true, true, true);
 
-  // Update source term
-  // Teuchos::RCP<CompositeVector> rhs = ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->rhs();
-  // if (src_sink_ != NULL) AddSourceTerms(*rhs);
-  
   Teuchos::RCP<CompositeVector> f1 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   Teuchos::RCP<CompositeVector> f2 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->ComputeNegativeResidual(*pressure_w, *f1);

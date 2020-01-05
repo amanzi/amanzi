@@ -9,8 +9,11 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Reduced multiphase model: H2O is only in liquid phase.
-  Solution vectors: pressure, tcc, saturation.
+  Reduced multiphase model: 
+    - water is only in liquid phase
+    - water density is constant
+    - porosity is constant
+  Solution vectors: pressure (l), mole fraction, saturation (l).
 */
 
 #ifndef AMANZI_MULTIPHASE_REDUCED_PK_HH_
@@ -37,7 +40,8 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   virtual std::string name() override { return "multiphase reduced"; }
 
   // interface multiphase models
-  virtual void InitializeSolution() override;
+  virtual void InitSolutionVector() override;
+  virtual void InitPreconditioner() override;
   virtual void PopulateBCs() override;
 
  private:

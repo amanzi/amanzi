@@ -19,6 +19,7 @@
 #include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "BDFFnBase.hh"
+#include "FieldEvaluator.hh"
 #include "LinearOperator.hh"
 #include "PK_PhysicalBDF.hh"
 #include "State.hh"
@@ -94,7 +95,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void ChangedSolution() override {};
 
   // multiphase submodels
-  virtual void InitializeSolution() = 0;
+  virtual void InitSolutionVector() = 0;
+  virtual void InitPreconditioner() = 0;
   virtual void PopulateBCs() = 0;
 
  protected:
@@ -111,13 +113,18 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::vector<std::string> soln_names_;
   std::vector<std::string> component_names_; 
   int num_aqueous_, num_gaseous_, num_primary_;
+  int num_phases_;
+
+  // field
+  Teuchos::RCP<FieldEvaluator> eval_water_content_, eval_component_content_;
 
   // keys
-  std::string pressure_liquid_key_, tcc_key_, saturation_liquid_key_;
+  std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
   std::string permeability_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
+  std::vector<Teuchos::RCP<FieldEvaluator> > eval_acc_, eval_adv_, eval_diff_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
