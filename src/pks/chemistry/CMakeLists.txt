@@ -47,9 +47,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 #
 set(chem_inc_files 
                    Alquimia_PK.hh
-                   Alquimia_PK_reg.hh
                    Amanzi_PK.hh
-                   Amanzi_PK_reg.hh
                    Chemistry_PK.hh
                    pks_chemistry_registration.hh
 )
