@@ -88,12 +88,12 @@ void MultiphaseReduced_PK::InitSolutionVector()
 ******************************************************************* */
 void MultiphaseReduced_PK::InitPreconditioner()
 {
-  eval_acc_.push_back(eval_tws_);
-  eval_adv_.push_back(Teuchos::null);
-  eval_diff_.push_back(Teuchos::null);
+  eval_acc_.push_back("total_water_storage");
+  eval_adv_.push_back("");
+  eval_diff_.push_back("");
 
   for (int i = 0; i < num_primary_; ++i) {
-    eval_acc_.push_back(eval_tcs_);
+    eval_acc_.push_back("total_component_storage");
   }
 }
 

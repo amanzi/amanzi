@@ -25,6 +25,7 @@
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "RelPermEvaluator.hh"
 
 // Multiphase
 #include "CapillaryPressure.hh"
@@ -83,6 +84,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  relperm_liquid_key_ = Keys::getKey(domain_, "rel_permeability_liquid"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   // register non-standard fields
@@ -120,6 +122,18 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator("capillary_pressure", eval);
   }
 
+  // relative permeability of liquid phase
+  S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  Teuchos::ParameterList elist;
+  elist.set<std::string>("my key", relperm_liquid_key_)
+       .set<std::string>("saturation key", saturation_liquid_key_)
+       .set<std::string>("phase name", "liquid");
+
+  auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+  S->SetFieldEvaluator("rel_permeability_liquid", eval);
+
   // material properties
   if (!S->HasField(permeability_key_)) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -130,6 +144,13 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
+  // fields from previous time step
+  if (!S->HasField("prev_total_water_storage")) {
+    S->RequireField("prev_total_water_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField("prev_total_water_storage", passwd_)->set_io_vis(false);
+  }
 }
 
 
@@ -138,8 +159,11 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 ****************************************************************** */
 void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
   ncp_ = mp_list_->get<std::string>("NCP function", "min");
-  mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
+  smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
   // H_ = mp_list_->get<double>("Henry law constants", 7.65e-6);
   num_aqueous_ = mp_list_->get<int>("number aqueous components");
   num_gaseous_ = mp_list_->get<int>("number gaseous components");
@@ -157,6 +181,9 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                                            // are not sure if gravity_data is an
                                            // array or vector
   g_ = fabs(gravity_[dim_ - 1]);
+
+  rho_ = *S->GetScalarData("fluid_density");
+  mu_ = *S->GetScalarData("fluid_viscosity");
 
   // process CPR list
   cpr_enhanced_ = mp_list_->isSublist("CPR enhancement");
@@ -252,11 +279,11 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   for (int i = 0; i < num_primary_ + 1; ++i) {
     auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    if (eval_adv_[i] != Teuchos::null) {
+    if (eval_adv_[i] != "") {
       auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, op->global_operator()));
       tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
     }
-    if (eval_diff_[i] != Teuchos::null) {
+    if (eval_diff_[i] != "") {
       auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opd_list, op->global_operator()));
       tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
     }
@@ -291,6 +318,14 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   K_.resize(ncells_wghost_);
   ConvertFieldToTensor(S_, dim_, "permeability", K_);
+
+  // upwind operator with a face model (FIXME)
+  auto upw_list = mp_list_->sublist("operators")
+                           .sublist("diffusion operator")
+                           .sublist("upwind");
+
+  upwind_ = Teuchos::rcp(new Operators::UpwindFlux<int>(mesh_, Teuchos::null));
+  upwind_->Init(upw_list);
 }
 
 
@@ -335,9 +370,9 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
- *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
- *S_->GetFieldData(xl_key_, passwd_) = *soln_->SubVector(1)->Data();
- *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
+  *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
+  *S_->GetFieldData(xl_key_, passwd_) = *soln_->SubVector(1)->Data();
+  *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
 }
 
 }  // namespace Multiphase

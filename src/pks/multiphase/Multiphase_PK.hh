@@ -21,10 +21,13 @@
 #include "BDFFnBase.hh"
 #include "FieldEvaluator.hh"
 #include "LinearOperator.hh"
+#include "PDE_DiffusionFVwithGravity.hh"
 #include "PK_PhysicalBDF.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "TreeOperator.hh"
 #include "TreeVector.hh"
+#include "UpwindFlux.hh"
 
 // Multiphase
 #include "MultiphaseBoundaryFunction.hh"
@@ -102,6 +105,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
  protected:
   Key domain_;  // computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_; 
+  int ncells_owned_, ncells_wghost_;
   int dim_;
 
   Teuchos::RCP<State> S_;
@@ -115,23 +119,30 @@ class Multiphase_PK: public PK_PhysicalBDF {
   int num_aqueous_, num_gaseous_, num_primary_;
   int num_phases_;
 
-  // field
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
+
+  // variable evaluators
   Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
   // keys
   std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
-  std::string permeability_key_, porosity_key_;
+  std::string permeability_key_, relperm_liquid_key_, porosity_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
-  std::vector<Teuchos::RCP<FieldEvaluator> > eval_acc_, eval_adv_, eval_diff_;
+  std::vector<Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> > pde_matrix_diff_;
+  std::vector<std::string> eval_acc_, eval_adv_, eval_diff_;   // evaluator names
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // physical parameters
+  double mu_, rho_;
   std::vector<WhetStone::Tensor> K_;
+
+  // upwind
+  Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
 
   // io
   Utils::Units units_;
@@ -139,7 +150,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
  private:
   std::string ncp_;
-  double mu_;  // smoothing parameter
+  double smooth_mu_;  // smoothing parameter
 
   // solvers and preconditioners
   bool cpr_enhanced_;
@@ -159,10 +170,25 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
 
   // miscaleneous
-  int ncells_wghost_;
   AmanziGeometry::Point gravity_;
   double g_;
 };
+
+
+// non-member function
+inline
+Teuchos::RCP<CompositeVector> CreateSimpleCV(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
+    const AmanziMesh::Entity_kind& kind)
+{
+  CompositeVectorSpace cvs; 
+  cvs.SetMesh(mesh_)->SetGhosted(true);
+
+  if (kind == AmanziMesh::FACE) 
+    cvs.SetGhosted(false)->AddComponent("face", kind, 1);
+
+  return Teuchos::rcp(new CompositeVector(cvs));
+}
 
 }  // namespace Multiphase
 }  // namespace Amanzi

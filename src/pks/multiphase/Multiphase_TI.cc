@@ -18,6 +18,7 @@
 
 // Multiphase
 #include "Multiphase_PK.hh"
+#include "TotalComponentStorage.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -30,10 +31,58 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
                                        Teuchos::RCP<TreeVector> u_new,
                                        Teuchos::RCP<TreeVector> f) 
 {
-  // comp_w_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(0));
-  // comp_h_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(1));
-  // gas_constraint_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(2));
-  // rhs_ = f;
+  double dtp = t_new - t_old;
+
+  // trigger update of primary variables
+  saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
+
+  // water component
+  // -- init with diffusion operator for water
+  const auto& u0 = u_new->SubVector(0)->Data();
+  CompositeVector f1(*u0);
+
+  // -- upwind relative permeability
+  S_->GetFieldEvaluator(relperm_liquid_key_)->HasFieldChanged(S_.ptr(), "multiphase");
+  const auto& relperm = *S_->GetFieldData(relperm_liquid_key_);
+
+  auto relperm_upw = CreateSimpleCV(mesh_, AmanziMesh::FACE);
+  upwind_->Compute(relperm, relperm, op_bcs_[0]->bc_model(), *relperm_upw);
+  relperm_upw->Scale(rho_/mu_);
+
+  // -- create operator
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
+  const auto& rho = S_->GetFieldData("molar_density_liquid");
+
+  auto pde = pde_matrix_diff_[0];
+  pde->Setup(Kptr, relperm_upw, Teuchos::null, rho, gravity_);
+  pde->global_operator()->Init();
+  pde->ApplyBCs(true, true, true);
+  pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde->global_operator()->ComputeNegativeResidual(*u0, f1);
+  u0->Update(1.0, f1, 0.0);
+ 
+  // init with advection operator for 
+
+  // add accumulation term
+  for (int i = 0; i < num_primary_ + 1; ++i) {
+    std::string name = eval_acc_[i];
+    std::string prev_name = "prev_" + name;
+    if (name == "") continue;
+
+    auto eval = S_->GetFieldEvaluator(name);
+    if (i > 0) Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_component_id(i - 1);
+
+    eval->HasFieldChanged(S_.ptr(), "multiphase");
+    const auto& total_c = *S_->GetFieldData(name)->ViewComponent("cell");
+    const auto& total_prev_c = *S_->GetFieldData(prev_name)->ViewComponent("cell");
+
+    auto& f_c = *f->SubVector(i)->Data()->ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double factor = mesh_->cell_volume(c) / dtp;
+      f_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
+    }
+  }
 }
 
 
