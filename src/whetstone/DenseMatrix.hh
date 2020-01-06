@@ -47,7 +47,7 @@ class DenseMatrix {
   // primary members
   // -- reshape can be applied only to a matrix that owns data
   // -- data are not remapped to the new matrix shape
-  void Reshape(int mrow, int ncol);
+  void reshape(int mrow, int ncol);
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
   const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
@@ -103,7 +103,7 @@ class DenseMatrix {
   // calculates B = *this * A
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
-  void PutScalar(double val)
+  void putScalar(double val)
   {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
   }

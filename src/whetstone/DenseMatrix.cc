@@ -119,7 +119,7 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
  * Smart memory management. Data destroyed in general.
  ****************************************************************** */
 void
-DenseMatrix::Reshape(int mrow, int ncol)
+DenseMatrix::reshape(int mrow, int ncol)
 {
   AMANZI_ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
 
@@ -313,7 +313,7 @@ DenseMatrix::Transpose(const DenseMatrix& A)
   const double* dataA = A.Values();
   int mrowsA = A.NumRows(), ncolsA = A.NumCols();
 
-  Reshape(ncolsA, mrowsA);
+  reshape(ncolsA, mrowsA);
 
   for (int j = 0; j < ncolsA; ++j) {
     for (int i = 0; i < mrowsA; ++i) {

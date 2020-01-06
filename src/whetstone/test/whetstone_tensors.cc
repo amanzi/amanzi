@@ -1,5 +1,5 @@
 /*
-  The idcsretization component of Amanzi.
+  The discretization component of Amanzi.
   License: BSD
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
