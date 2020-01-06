@@ -18,12 +18,10 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
+#include "DenseMatrix.hh"
 #include "LinearOperator.hh"
 #include "LinearOperatorDefs.hh"
 
@@ -82,7 +80,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs,
                       int criteria) const;
 
-  void ComputeSolution_(Vector& x, int k, Teuchos::SerialDenseMatrix<int,double>& T, double* s,
+  void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
                         Vector& p, Vector& r) const;
   void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
 
@@ -101,7 +99,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   mutable std::vector<Teuchos::RCP<Vector>> v_;
-  mutable Teuchos::SerialDenseMatrix<int,double> Hu_; // upper Hessenberg matrix
+  mutable WhetStone::DenseMatrix Hu_; // upper Hessenberg matrix
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
@@ -188,7 +186,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(const Vector& f,
   Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
-  Teuchos::SerialDenseMatrix<int,double> T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_ = 0;
 
   double fnorm;
@@ -318,8 +316,8 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
-  Teuchos::SerialDenseVector<int,double> d(krylov_dim_ + 1), g(krylov_dim_);
-  Teuchos::SerialDenseMatrix<int,double> T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
+  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
 
   double fnorm;
   fnorm = f.norm2();
@@ -372,7 +370,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // set the leading diagonal block of T
-  T.putScalar(0.0);
+  T.PutScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
     for (int j = 0; j < num_ritz_; ++j) { T(i, j) = Hu_(i, j); }
   }
@@ -403,27 +401,26 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // Solve the least-square problem min_d ||T d - c||.
-  Teuchos::SerialDenseMatrix<int,double> Ttmp(Teuchos::Copy, T);
+  WhetStone::DenseMatrix Ttmp(T);
   int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
   int lwork(m * n);
-  Teuchos::SerialDenseVector<int,double> work(lwork);
+  WhetStone::DenseVector work(lwork);
 
-  Teuchos::LAPACK<int,double> lapack;
-  lapack.GELS(Teuchos::NO_TRANS,
-              m,
-              n,
-              nrhs,
-              Ttmp.values(),
-              m,
-              d.values(),
-              m,
-              work.values(),
-              lwork,
-              &info);
+  WhetStone::DGELS_F77("N",
+                       &m,
+                       &n,
+                       &nrhs,
+                       Ttmp.Values(),
+                       &m,
+                       d.Values(),
+                       &m,
+                       work.Values(),
+                       &lwork,
+                       &info);
 
   residual_ = fabs(d(n));
   num_itrs_total_ += krylov_dim_;
-  ComputeSolution_(x, d.values(), p, r);
+  ComputeSolution_(x, d.Values(), p, r);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << num_itrs_total_ << " ||r||=" << residual_
@@ -434,35 +431,33 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
 
   // Compute Schur vectors
   // -- allocate memory: Tm, Hm, and Vm
-  Teuchos::SerialDenseMatrix<int,double> Tm(Teuchos::Copy, T, krylov_dim_, krylov_dim_);
-  Teuchos::SerialDenseMatrix<int,double> Sm(Teuchos::Copy, Tm);
-  Teuchos::SerialDenseMatrix<int,double> Vr(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix Tm(T, 0, krylov_dim_, 0, krylov_dim_);
+  WhetStone::DenseMatrix Sm(Tm);
+  WhetStone::DenseMatrix Vr(krylov_dim_ + 1, krylov_dim_);
 
   // -- auxiliary vector g = Tm^{-T} e_m
-  int ipiv_d(krylov_dim_*krylov_dim_);
-  Teuchos::SerialDenseVector<int,double> ipiv(ipiv_d);
-  lapack.GETRF(krylov_dim_, krylov_dim_, Tm.values(), krylov_dim_, ipiv.values(), &info);
+  Tm.Inverse();
   for (int i = 0; i < krylov_dim_; ++i) g(i) = beta * Tm(krylov_dim_ - 1, i);
 
   // -- solve eigenvector problem
   for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
 
   double Vl[1];
-  Teuchos::SerialDenseVector<int,double> wr(krylov_dim_), wi(krylov_dim_);
-  lapack.GEEV('N',
-              'V',
-              n,
-              Sm.values(),
-              n,
-              wr.values(),
-              wi.values(),
-              Vl,
-              nrhs,
-              Vr.values(),
-              m,
-              work.values(),
-              lwork,
-              &info);
+  WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
+  WhetStone::DGEEV_F77("N",
+                       "V",
+                       &n,
+                       Sm.Values(),
+                       &n,
+                       wr.Values(),
+                       wi.Values(),
+                       Vl,
+                       &nrhs,
+                       Vr.Values(),
+                       &m,
+                       work.Values(),
+                       &lwork,
+                       &info);
 
   // -- select not more than (deflation_) Schur vectors and
   //    make them the first columns in Vr
@@ -477,7 +472,6 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
         imin = j;
       }
     }
-    
     wr.SwapRows(imin, i);
     wi.SwapRows(imin, i);
 
@@ -506,17 +500,17 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   for (int i = 0; i <= num_ritz_; ++i) { *(v_[i]) = *(vv[i]); }
 
   // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
-  Teuchos::SerialDenseMatrix<int,double> TVr(krylov_dim_ + 1, num_ritz_);
-  Teuchos::SerialDenseMatrix<int,double> VTVr(num_ritz_ + 1, num_ritz_);
+  WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
+  WhetStone::DenseMatrix VTVr(num_ritz_ + 1, num_ritz_);
 
-  Teuchos::SerialDenseMatrix<int,double> Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
-  Teuchos::SerialDenseMatrix<int,double> Vr2(krylov_dim_ + 1,
+  WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
+  WhetStone::DenseMatrix Vr2(krylov_dim_ + 1,
                              num_ritz_ + 1,
-                             Vr.values(),
+                             Vr.Values(),
                              WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
 
-  TVr.multiply(T, Vr1, false);
-  VTVr.multiply(Vr2, TVr, true);
+  TVr.Multiply(T, Vr1, false);
+  VTVr.Multiply(Vr2, TVr, true);
   Hu_ = VTVr;
 
   return LIN_SOLVER_MAX_ITERATIONS;
@@ -625,7 +619,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ApplyGivensRotation_(
 template <class Matrix, class Vector, class VectorSpace>
 void
 LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
-  Vector& x, int k, Teuchos::SerialDenseMatrix<int,double>& T, double* s, Vector& p,
+  Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector& p,
   Vector& r) const
 {
   for (int i = k; i >= 0; i--) {

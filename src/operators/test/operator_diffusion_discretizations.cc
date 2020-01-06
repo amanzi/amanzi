@@ -24,8 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "LinearOperatorPCG.hh"
-#include "LinearOperatorNKA.hh"
-//#include "LinearOperatorGMRES.hh"
+#include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
 // Operators

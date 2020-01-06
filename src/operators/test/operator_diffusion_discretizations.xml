@@ -40,8 +40,8 @@
     </ParameterList>
 
     <ParameterList name="GMRES">
-      <Parameter name="iterative method" type="string" value="nka"/>
-      <ParameterList name="nka parameters">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">

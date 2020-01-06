@@ -87,6 +87,7 @@ set(operators_link_libs
   mesh
   data_structures
   solvers
+  ${Teuchos_LIBRARIES}
   ${Tpetra_LIBRARIES}
   )
 
@@ -218,7 +219,8 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
+    message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
+    set(operators_test_link_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
 
     
     # Tests: diffusion
