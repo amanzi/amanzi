@@ -27,6 +27,7 @@
 #include "PK_DomainFunctionFactory.hh"
 
 // Multiphase
+#include "CapillaryPressure.hh"
 #include "ModelMeshPartition.hh"
 #include "Multiphase_PK.hh"
 #include "Multiphase_Utils.hh"
@@ -78,10 +79,11 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // keys
   pressure_liquid_key_ = Keys::getKey(domain_, "pressure_liquid"); 
-  xl_key_ = Keys::getKey(domain_, "mole_fraction_liquid"); 
+  xl_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   // register non-standard fields
   if (!S->HasField("gravity")) {
@@ -105,10 +107,28 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
+  // capillary pressure
+  auto wrm_list = Teuchos::sublist(mp_list_, "water retention models", true);
+  wrm_ = CreateModelPartition<WRMmp>(mesh_, wrm_list, "water retention model");
+
+  if (!S->HasField("capillary_pressure")) {
+    S->RequireField("capilalry_pressure", "capillary_pressure")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    auto eval = Teuchos::rcp(new CapillaryPressure(elist, wrm_));
+    S->SetFieldEvaluator("capillary_pressure", eval);
+  }
+
   // material properties
   if (!S->HasField(permeability_key_)) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim_);
+  }
+
+  if (!S->HasField(porosity_key_)) {
+    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 }
 
@@ -184,22 +204,6 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc = bc_factory.Create(spec, "boundary saturation", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("saturation");
-        bcs_.push_back(bc);
-      }
-    }
-  }
-
-  // -- hydrogen density
-  if (bc_list.isSublist("hydrogen density")) {
-    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
-
-    Teuchos::ParameterList& tmp_list = bc_list.sublist("hydrogen density");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "boundary hydrogen density", AmanziMesh::FACE, Teuchos::null);
-        bc->set_bc_name("hydrogen density");
         bcs_.push_back(bc);
       }
     }

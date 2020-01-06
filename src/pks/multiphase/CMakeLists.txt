@@ -50,14 +50,15 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
                          MultiphaseReduced_PK.cc
                          Multiphase_Utils.cc
+                         TotalWaterStorage.cc TotalComponentStorage.cc
                          WRMmp_Simple.cc WRMmp_VanGenuchten.cc WRMmp_BrooksCorey.cc
+                         CapillaryPressure.cc
                          #
                          CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
                          GasConstraint.cc
                          Reduced2p2c_PK.cc
                          MPCoeff.cc
-                         CapillaryPressure.cc
-                         )
+                         CapillaryPressureOld.cc)
 
 add_amanzi_library(multiphase 
                    SOURCE ${multiphase_src_files}
@@ -69,11 +70,13 @@ add_amanzi_library(multiphase
 # Install Targets
 #
 set(multiphase_inc_files 
+  CapillaryPressure.hh
   Multipahase_PK.hh
   MultiphaseReduced_PK.hh
   Multiphase_Utils.hh
   ModelMeshPartition.hh
   MultiphaseBoundaryFunction.hh
+  TotalWaterStorage.hh TotalComponentStorage.hh
   WRMmp.hh
   WRMmp_Simple.hh
   WRMmp_VanGenuchten.hh
@@ -83,8 +86,7 @@ set(multiphase_inc_files
   CompH_PK.hh
   GasConstraint.hh
   Reduced2p2c_PK.hh
-  MPCoeff.hh
-  CapillaryPressure.hh)
+  MPCoeff.hh)
 
 add_install_include_file(${multiphase_inc_files})
 

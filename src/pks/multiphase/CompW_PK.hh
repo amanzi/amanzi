@@ -33,7 +33,7 @@
 #include "UpwindFlux.hh"
 
 // Amanzi::MultiPhase
-#include "CapillaryPressure.hh"
+#include "CapillaryPressureOld.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "MPCoeff.hh"
 #include "WRMmp.hh"

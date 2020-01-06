@@ -33,7 +33,7 @@ Authors: Quan Bui (mquanbui@math.umd.edu)
 #include "UpwindFlux.hh"
 
 // Amanzi::Multiphase
-#include "CapillaryPressure.hh"
+#include "CapillaryPressureOld.hh"
 #include "MPCoeff.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "WRMmp.hh"
@@ -186,7 +186,7 @@ private:
 
   Teuchos::RCP<MPCoeff> coef_w_;
   Teuchos::RCP<MPCoeff> coef_n_;
-  Teuchos::RCP<CapillaryPressure> capillary_pressure_;
+  Teuchos::RCP<CapillaryPressureOld> capillary_pressure_;
 
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> op1_matrix_;
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> op2_matrix_;

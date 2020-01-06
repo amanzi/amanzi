@@ -23,7 +23,7 @@
 #include "TreeVector.hh"
 
 // Amanzi::Multiphase
-#include "CapillaryPressure.hh"
+#include "CapillaryPressureOld.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
@@ -85,7 +85,7 @@ private:
   // State and operators
   Teuchos::RCP<State> S_;
 
-  Teuchos::RCP<CapillaryPressure> capillary_pressure_;
+  Teuchos::RCP<CapillaryPressureOld> capillary_pressure_;
 
   Teuchos::RCP<Operators::PDE_Accumulation> op1_acc_;
   Teuchos::RCP<Operators::PDE_Accumulation> op2_acc_;

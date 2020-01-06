@@ -372,7 +372,7 @@ void CompH_PK::InitializeComponent()
   coef_n_ = Teuchos::rcp(new MPCoeff(mesh_));
   coef_w_->Init("wetting", wrm_list_);
   coef_n_->Init("non wetting", wrm_list_, Cg_);
-  capillary_pressure_ = Teuchos::rcp(new CapillaryPressure(mesh_));
+  capillary_pressure_ = Teuchos::rcp(new CapillaryPressureOld(mesh_));
   capillary_pressure_->Init(wrm_list_); 
 
   // create and ppulate boundary conditions

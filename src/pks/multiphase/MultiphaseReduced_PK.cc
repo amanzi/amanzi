@@ -18,6 +18,8 @@
 
 // Multiphase
 #include "MultiphaseReduced_PK.hh"
+#include "TotalComponentStorage.hh"
+#include "TotalWaterStorage.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -32,6 +34,38 @@ MultiphaseReduced_PK::MultiphaseReduced_PK(Teuchos::ParameterList& pk_tree,
     Multiphase_PK(pk_tree, glist, S, soln) {};
 
   
+/* ******************************************************************
+* Setup
+****************************************************************** */
+void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
+{
+  Multiphase_PK::Setup(S);
+
+  // conserved quantities
+  // -- total water storage
+  S->RequireField("total_water_storage", "total_water_storage")->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("my key", "total_water_storage")
+       .set<std::string>("saturation liquid key", saturation_liquid_key_)
+       .set<std::string>("porosity key", porosity_key_);
+  plist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+
+  eval_tws_ = Teuchos::rcp(new TotalWaterStorage(plist));
+  S->SetFieldEvaluator("total_water_storage", eval_tws_);
+
+  // -- total component storage is allocated for component set with a modifier function
+  S->RequireField("total_component_storage", "total_component_storage")->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  plist.set<std::string>("my key", "total_component_storage");
+
+  eval_tcs_ = Teuchos::rcp(new TotalComponentStorage(plist));
+  S->SetFieldEvaluator("total_component_storage", eval_tcs_);
+}
+
+
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */
@@ -40,6 +74,7 @@ void MultiphaseReduced_PK::InitSolutionVector()
   soln_names_.push_back(pressure_liquid_key_);
   soln_names_.push_back(xl_key_);
   soln_names_.push_back(saturation_liquid_key_);
+
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto field = Teuchos::rcp(new TreeVector());
     soln_->PushBack(field);
@@ -53,12 +88,12 @@ void MultiphaseReduced_PK::InitSolutionVector()
 ******************************************************************* */
 void MultiphaseReduced_PK::InitPreconditioner()
 {
-  eval_acc_.push_back(eval_water_content_);
+  eval_acc_.push_back(eval_tws_);
   eval_adv_.push_back(Teuchos::null);
   eval_diff_.push_back(Teuchos::null);
 
   for (int i = 0; i < num_primary_; ++i) {
-    eval_acc_.push_back(eval_component_content_);
+    eval_acc_.push_back(eval_tcs_);
   }
 }
 

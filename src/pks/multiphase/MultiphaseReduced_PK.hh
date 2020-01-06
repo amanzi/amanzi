@@ -20,6 +20,7 @@
 #define AMANZI_MULTIPHASE_REDUCED_PK_HH_
 
 // Amanzi
+#include "PK_Factory.hh"
 
 // Multiphase
 #include "Multiphase_PK.hh"
@@ -36,7 +37,8 @@ class MultiphaseReduced_PK: public Multiphase_PK {
 
   ~MultiphaseReduced_PK() {};
 
-  // interface for PKs
+  // modifying interface for PKs
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
   virtual std::string name() override { return "multiphase reduced"; }
 
   // interface multiphase models
@@ -46,6 +48,10 @@ class MultiphaseReduced_PK: public Multiphase_PK {
 
  private:
   int missed_bc_faces_;
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<MultiphaseReduced_PK> reg_;
 };
 
 }  // namespace Multiphase

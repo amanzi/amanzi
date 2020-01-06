@@ -1,16 +1,13 @@
 /*
-This is the multiphase component of the Amanzi code. 
+  MultiPhase PK
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-         Quan Bui (mquanbui@math.umd.edu)
-This file implements the main methods of the class for CapillaryPressure. 
-Unlike the one in Flow, this is specialized for multiphase. The capillary pressure 
-is computed from water saturation, instead of pressure (as in Richards).
+  Authors: Quan Bui (mquanbui@math.umd.edu)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "errors.hh"
@@ -23,59 +20,58 @@ namespace Amanzi {
 namespace Multiphase {
 
 /* ******************************************************************
-* Initialize internal data.
+* Simple constructor
 ****************************************************************** */
-void CapillaryPressure::Init(Teuchos::ParameterList& plist)
+CapillaryPressure::CapillaryPressure(Teuchos::ParameterList& plist,
+                                     Teuchos::RCP<WRMmpPartition> wrm) :
+    SecondaryVariableFieldEvaluator(plist),
+    wrm_(wrm)
 {
-  //atm_pressure = p0;
-  ProcessParameterList_(plist);
-
-  CompositeVectorSpace cvs; 
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs.SetOwned(false);
-  cvs.AddComponent("face", AmanziMesh::FACE, 1);
-
-  Pc_ = Teuchos::rcp(new CompositeVector(cvs));
-  dPc_dS_ = Teuchos::rcp(new CompositeVector(cvs));
-
-  Pc_->PutScalarMasterAndGhosted(0.0);
-  dPc_dS_->PutScalarMasterAndGhosted(0.0);
+  my_key_ = "capillary_pressure";
 }
 
 
 /* ******************************************************************
-* Defines relative permeability ONLY for cells.
+* Copy constructor.
 ****************************************************************** */
-void CapillaryPressure::Compute(const CompositeVector& saturation_water)
-{
-  const Epetra_MultiVector& Sw_cell = *saturation_water.ViewComponent("cell");
-  Epetra_MultiVector& Pc_cell = *Pc_->ViewComponent("cell");
-  Epetra_MultiVector& dPc_dS_cell = *dPc_dS_->ViewComponent("cell");
+Teuchos::RCP<FieldEvaluator> CapillaryPressure::Clone() const {
+  return Teuchos::rcp(new CapillaryPressure(*this));
+}
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+/* ******************************************************************
+* Required member function.
+****************************************************************** */
+void CapillaryPressure::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  const auto& sat_c = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  auto& result_c = *result->ViewComponent("cell", false);
+
+  int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    int mb = (*wrm_->first)[c];
-    double Sw = Sw_cell[0][c];
-    Pc_cell[0][c] = (wrm_->second)[mb]->capillaryPressure(Sw);
-    dPc_dS_cell[0][c] = (wrm_->second)[mb]->dPc_dS(Sw);
+    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat_c[0][c]);
   }
 }
 
 
 /* ******************************************************************
-* List to WRM models has to be provided.
+* Required member function.
 ****************************************************************** */
-void CapillaryPressure::ProcessParameterList_(Teuchos::ParameterList& plist)
+void CapillaryPressure::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("Multiphase::CapillaryPressure", vlist); 
+  const auto& sat_c = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  auto& result_c = *result->ViewComponent("cell", false);
 
-  auto wrm_list = Teuchos::rcp(new Teuchos::ParameterList(plist));
-  wrm_ = CreateModelPartition<WRMmp>(mesh_, wrm_list, "water retention model");
+  int ncells = result_c.MyLength();
+  for (int c = 0; c != ncells; ++c) {
+    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dPc_dS(sat_c[0][c]);
+  }
 }
 
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
 

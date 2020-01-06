@@ -116,11 +116,11 @@ class Multiphase_PK: public PK_PhysicalBDF {
   int num_phases_;
 
   // field
-  Teuchos::RCP<FieldEvaluator> eval_water_content_, eval_component_content_;
+  Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
   // keys
   std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
-  std::string permeability_key_;
+  std::string permeability_key_, porosity_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;

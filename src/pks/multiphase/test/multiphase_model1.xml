@@ -210,32 +210,15 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
-      <ParameterList name="porosity">
-        <Parameter name="value" type="double" value="0.15"/>
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
-      <ParameterList name="phase1_density">
-        <Parameter name="value" type="double" value="1.0e3"/>
-      </ParameterList>
-      <ParameterList name="phase1_viscosity">
+      <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
       </ParameterList>
-      <ParameterList name="phase2_viscosity">
+      <ParameterList name="gas_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
-      <ParameterList name="saturation_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="pressure_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -249,7 +232,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -272,8 +254,59 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
 
-      <ParameterList name="mole_fraction_liquid">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.15"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="field evaluator type" type="string" value="primary variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.8"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="998.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_fraction_liquid">
+        <Parameter name="field evaluator type" type="string" value="primary variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -283,7 +316,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-20"/>
+                  <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

@@ -40,7 +40,7 @@ void GasConstraint::Initialize()
   op3_acc_tmp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
 
   Teuchos::ParameterList& wrm_list = plist_.sublist("Water retention models");
-  capillary_pressure_ = Teuchos::rcp(new CapillaryPressure(mesh_));
+  capillary_pressure_ = Teuchos::rcp(new CapillaryPressureOld(mesh_));
   capillary_pressure_->Init(wrm_list); 
 }
 
