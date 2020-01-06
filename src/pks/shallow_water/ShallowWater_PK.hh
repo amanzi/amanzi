@@ -38,8 +38,9 @@ namespace ShallowWater {
     
 class ShallowWater_PK : public PK_Physical,
                         public PK_Explicit<Epetra_Vector> {
-                                 
-  public:
+                            
+ public:
+                            
     ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
@@ -59,7 +60,7 @@ class ShallowWater_PK : public PK_Physical,
     virtual void set_dt(double dt) {};
                      
     // Advance PK by step size dt.
-    virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) {};
+    virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
                             
     // Commit any secondary (dependent) variables.
     virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {};
@@ -69,8 +70,26 @@ class ShallowWater_PK : public PK_Physical,
     
     virtual std::string name() { return "Shallow water PK"; }
                             
-}
+  protected:
+    
+    Teuchos::RCP<Teuchos::ParameterList> glist_;
+    Teuchos::ParameterList ti_list_;
+    Teuchos::RCP<TreeVector> soln_;
+    Teuchos::RCP<State> S_;
+                            
+    double dummy_dt;
+    int step_count;
+                            
+  private:
+                            
+    // factory registration
+    static RegisteredPKFactory<ShallowWater_PK> reg_;
+                            
+};
     
     
 } // namespace ShallowWater
 } // namespace Amanzi
+
+#endif
+
