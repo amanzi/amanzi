@@ -26,6 +26,8 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 // Amanzi
+#include "AmanziTypes.hh"
+#include "AmanziComm.hh"
 #include "MeshFactory.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
@@ -77,7 +79,7 @@ struct DiffusionFixture {
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
   }
 
@@ -103,7 +105,7 @@ struct DiffusionFixture {
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
   }
 
@@ -114,17 +116,17 @@ struct DiffusionFixture {
     if (kind == AmanziMesh::CELL) {
       space.SetComponent("cell", AmanziMesh::CELL, 1);
       kr = space.Create();
-      auto& vec = *kr->ViewComponent("cell", true);
+      auto vec = kr->ViewComponent<AmanziDefaultHost>("cell", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
-        vec[0][i] = ana->ScalarDiffusivity(mesh->cell_centroid(i), 0.0);
+        vec(i,0) = ana->ScalarDiffusivity(mesh->cell_centroid(i), 0.0);
       }
 
     } else if (kind == AmanziMesh::FACE) {
       space.SetComponent("face", AmanziMesh::FACE, 1);
       kr = space.Create();
-      auto& vec = *kr->ViewComponent("face", true);
+      auto vec = kr->ViewComponent<AmanziDefaultHost>("face", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
-        vec[0][i] = ana->ScalarDiffusivity(mesh->face_centroid(i), 0.0);
+        vec(i,0) = ana->ScalarDiffusivity(mesh->face_centroid(i), 0.0);
       }
     }
     op->SetScalarCoefficient(kr, Teuchos::null);
@@ -135,11 +137,11 @@ struct DiffusionFixture {
     auto& bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
-      auto bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, false);
-      auto f_map = mesh->map(AmanziMesh::FACE, false);
+      const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
       
-      for (int bf=0; bf!=bf_map.NumMyElements(); ++bf) {
-        auto f = f_map.LID(bf_map.GID(bf));
+      for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
+        auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
       }
@@ -153,11 +155,11 @@ struct DiffusionFixture {
     auto& bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
-      auto bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, false);
-      auto f_map = mesh->map(AmanziMesh::FACE, false);
+      const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
       
-      for (int bf=0; bf!=bf_map.NumMyElements(); ++bf) {
-        auto f = f_map.LID(bf_map.GID(bf));
+      for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
+        auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
         auto fc = mesh->face_centroid(f);
         if (fc[0] < 1.e-6) {
           bool flag;
@@ -179,8 +181,8 @@ struct DiffusionFixture {
     symmetric = symmetric_;
     pc_name = pc_name_;
     global_op = op->global_operator();
-    solution = Teuchos::rcp(new CompositeVector(global_op->DomainMap()));
-    solution->PutScalar(0.);
+    solution = Teuchos::rcp(new CompositeVector(global_op->getDomainMap()));
+    solution->putScalar(0.);
     
     // get and assemble the global operator
     if (pc_name != "identity") {
@@ -194,12 +196,12 @@ struct DiffusionFixture {
     if (symmetric) {
       Teuchos::ParameterList lop_list = plist.sublist("solvers")
                                .sublist("AztecOO CG").sublist("pcg parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
       solver->Init(lop_list);
     } else {
       Teuchos::ParameterList lop_list = plist.sublist("solvers")
                                .sublist("GMRES").sublist("GMRES parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
       solver->Init(lop_list);
     }
 
@@ -209,15 +211,15 @@ struct DiffusionFixture {
   }
 
   void go(double tol=1.e-14) {
-    global_op->Init();
+    global_op->Zero();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
     CompositeVector& rhs = *global_op->rhs();
-    Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell", false);
+    auto rhs_c = rhs.ViewComponent<AmanziDefaultHost>("cell", false);
     for (int c=0; c!=mesh->num_entities(AmanziMesh::Entity_kind::CELL,
             AmanziMesh::Parallel_type::OWNED); ++c) {
       const auto& xc = mesh->cell_centroid(c);
-      rhs_c[0][c] += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
+      rhs_c(c,0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
     }
     
     op->ApplyBCs(true, true, true);
@@ -227,15 +229,15 @@ struct DiffusionFixture {
     }
     global_op->UpdatePreconditioner();
 
-    if (symmetric) {
-      // Test SPD properties of the preconditioner.
-      VerificationCV ver(global_op);
-      ver.CheckPreconditionerSPD();
-    }
+    // if (symmetric) {
+    //   // Test SPD properties of the preconditioner.
+    //   VerificationCV ver(global_op);
+    //   ver.CheckPreconditionerSPD();
+    // }
 
-    int ierr = solver->ApplyInverse(*global_op->rhs(), *solution);
+    int ierr = solver->applyInverse(*global_op->rhs(), *solution);
 
-    auto MyPID = comm->MyPID();
+    auto MyPID = comm->getRank();
     if (MyPID == 0) {
       std::cout << "pressure solve: ||r||=" << solver->residual() 
                 << " itr=" << solver->num_itrs()
@@ -245,15 +247,13 @@ struct DiffusionFixture {
     if (tol > 0.0) {
       // compute pressure error
       double pnorm(0.), pl2_err(0.), pinf_err(0.);
-      Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
-      ComputeCellError(*ana, mesh, p, 0.0, pnorm, pl2_err, pinf_err);
+      ComputeCellError(*ana, mesh, *solution, 0.0, pnorm, pl2_err, pinf_err);
 
       // calculate flux error
-      Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
       double unorm, ul2_err, uinf_err;
       
       op->UpdateFlux(solution.ptr(), flux.ptr());
-      ComputeFaceError(*ana, mesh, flx, 0.0, unorm, ul2_err, uinf_err);
+      ComputeFaceError(*ana, mesh, *flux, 0.0, unorm, ul2_err, uinf_err);
       //flux->Print(std::cout);
 
       if (MyPID == 0) {
@@ -281,7 +281,7 @@ struct DiffusionFixture {
   
   Teuchos::RCP<Operators::PDE_Diffusion> op;
   Teuchos::RCP<Operators::Operator> global_op;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace>> solver;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeSpace>> solver;
 };
 
 

@@ -1,38 +1,211 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Ethan Coon (coonet@ornl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
-
 #include "Mesh.hh"
+#include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 
+#include "CompositeVector.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
 #include "Schema.hh"
+#include "SuperMap.hh"
+#include "TreeVector.hh"
+#include "TreeVector_Utils.hh"
+#include "ParallelCommunication.hh"
 
 namespace Amanzi {
 namespace Operators {
 
+
 /* ******************************************************************
- * Estimate size of the matrix graph.
- ****************************************************************** */
-unsigned int
-MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
+* Convert composite vector to/from super vector.
+****************************************************************** */
+int CopyCompositeVectorToSuperVector(const SuperMap& smap,
+        const CompositeVector& cv, Epetra_Vector& sv, int block_num)
+{
+  for (const auto& compname : cv) {
+    if (smap.HasComponent(block_num, compname)) {
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        const auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) sv[inds[f]] = data[dofnum][f];
+      }
+    }
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
+* Copy super vector to composite vector, component-by-component.
+****************************************************************** */
+int CopySuperVectorToCompositeVector(const SuperMap& smap,
+        const Epetra_Vector& sv, CompositeVector& cv, int block_num)
+{
+  for (const auto& compname : cv) {
+    if (smap.HasComponent(block_num, compname)) {
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] = sv[inds[f]];
+      }
+    }
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
+* Add super vector to composite vector, component-by-component.
+****************************************************************** */
+int AddSuperVectorToCompositeVector(const SuperMap& smap,
+        const Epetra_Vector& sv, CompositeVector& cv, int block_num)
+{
+  for (const auto& compname : cv) {
+    if (smap.HasComponent(block_num, compname)) { 
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] += sv[inds[f]];
+      }
+    }
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
+*                        DEPRECATED
+* Copy super vector to composite vector: complex schema version.
+****************************************************************** */
+int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
+        Epetra_Vector& sv, const Schema& schema, int block_num)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    std::string name(schema.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
+      const std::vector<int>& inds = smap.Indices(block_num, name, k);
+      const Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+    }
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+*                        DEPRECATED
+* Copy super vector to composite vector: complex schema version
+****************************************************************** */
+int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
+        CompositeVector& cv, const Schema& schema, int block_num)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    std::string name(schema.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
+      const std::vector<int>& inds = smap.Indices(block_num, name, k);
+      Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+    }
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Nonmember: copy TreeVector to/from Super-vector
+****************************************************************** */
+int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
+                                Epetra_Vector& sv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return CopyCompositeVectorToSuperVector(map, *tv.Data(), sv, 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves_const(tv);
+    int block_num = 0;
+    for (const auto& sub_tv : sub_tvs) {
+      ierr |= CopyCompositeVectorToSuperVector(map, *sub_tv->Data(), sv, block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+
+int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
+                                TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return CopySuperVectorToCompositeVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (const auto& sub_tv : sub_tvs) {
+      ierr |= CopySuperVectorToCompositeVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+
+/* ******************************************************************
+* Add super vector to tree vector, subvector-by-subvector.
+****************************************************************** */
+int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
+                               TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return AddSuperVectorToCompositeVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (const auto& sub_tv : sub_tvs) {
+      ierr |= AddSuperVectorToCompositeVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+
+/* ******************************************************************
+* Estimate size of the matrix graph.
+****************************************************************** */
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL,
-                                          AmanziMesh::Parallel_type::OWNED);
-         ++c) {
+    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
       i = std::max(i, mesh.cell_get_num_faces(c));
     }
     row_size += 2 * i;
@@ -48,40 +221,84 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
     row_size += 8 * i;
   }
 
-  if (schema & OPERATOR_SCHEMA_INDICES) { row_size += 1; }
+  if (schema & OPERATOR_SCHEMA_INDICES) {
+    row_size += 1;
+  }
 
   return row_size * n_dofs;
-}
+}    
 
 
 /* ******************************************************************
- * Estimate size of the matrix graph: general version
- ****************************************************************** */
-unsigned int
-MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
+* Estimate size of the matrix graph: general version
+****************************************************************** */
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int ndofs;
-    if (it->kind == AmanziMesh::FACE) {
+    int num, ndofs;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::FACE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    } else if (it->kind == AmanziMesh::CELL) {
+    } else if (kind == AmanziMesh::CELL) {
       ndofs = 1;
-    } else if (it->kind == AmanziMesh::NODE) {
+    } else if (kind == AmanziMesh::NODE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    } else if (it->kind == AmanziMesh::EDGE) {
+    } else if (kind == AmanziMesh::EDGE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
     }
 
-    row_size += ndofs * it->num;
+    row_size += ndofs * num;
   }
 
   return row_size;
 }
 
 
+/* ******************************************************************
+* Generates a composite vestor space.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           const std::vector<std::string>& names,
+                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                           const std::vector<int>& num_dofs, bool ghosted)
+{
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh);
+  cvs->SetGhosted(ghosted);
 
-} // namespace Operators
-} // namespace Amanzi
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+
+  for (int i=0; i<locations.size(); ++i) {
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
+    mastermaps[names[i]] = master_mp;
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
+    ghostmaps[names[i]] = ghost_mp;
+  }
+       
+  cvs->SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
+  return cvs;
+}
+
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::string name,
+                           AmanziMesh::Entity_kind location,
+                           int num_dof, bool ghosted)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<AmanziMesh::Entity_kind> locations(1, location);
+  std::vector<int> num_dofs(1, num_dof);
+
+  return CreateCompositeVectorSpace(mesh, names, locations, num_dofs, ghosted);
+}
+
+}  // namespace Operators
+}  // namespace Amanzi

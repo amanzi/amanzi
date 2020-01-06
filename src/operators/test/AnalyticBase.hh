@@ -40,6 +40,7 @@
 
 #include "AmanziTypes.hh"
 #include "AmanziVector.hh"
+#include "CompositeVector.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
@@ -153,7 +154,7 @@ void GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 inline
 void ComputeCellError(const AnalyticBase& ana,
                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                      const MultiVector_type& p_vec,
+                      const CompositeVector& p_vec,
                       double t,
                       double& pnorm, double& l2_err, double& inf_err)
 {
@@ -162,7 +163,7 @@ void ComputeCellError(const AnalyticBase& ana,
   inf_err = 0.0;
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto p = p_vec.getLocalViewHost();
+  auto p = p_vec.ViewComponent<AmanziDefaultHost>("cell", false);
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double tmp = ana.pressure_exact(xc, t);
@@ -190,14 +191,14 @@ void ComputeCellError(const AnalyticBase& ana,
 inline
 void ComputeFaceError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-        const MultiVector_type& u_vec, double t,
+        const CompositeVector& u_vec, double t,
         double& unorm, double& l2_err, double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  auto u = u_vec.getLocalViewHost();
+  auto u = u_vec.ViewComponent<AmanziDefaultHost>("face", false);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh->face_area(f);
@@ -228,7 +229,7 @@ void ComputeFaceError(const AnalyticBase& ana,
 inline
 void ComputeNodeError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-        const MultiVector_type& p_vec, double t,
+        const CompositeVector& p_vec, double t,
         double& pnorm, double& l2_err, double& inf_err, double& hnorm, double& h1_err)
 {
   pnorm = 0.0;
@@ -248,7 +249,7 @@ void ComputeNodeError(const AnalyticBase& ana,
   AmanziMesh::Entity_ID_View nodes;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.getLocalViewHost();
+  auto p = p_vec.ViewComponent<AmanziDefaultHost>("node", false);
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
@@ -303,7 +304,7 @@ void ComputeNodeError(const AnalyticBase& ana,
 inline
 void ComputeEdgeError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,    
-                      const MultiVector_type& p_vec, double t,
+                      const CompositeVector& p_vec, double t,
                       double& pnorm, double& l2_err, double& inf_err,
                       double& hnorm, double& h1_err)
 {
@@ -319,7 +320,7 @@ void ComputeEdgeError(const AnalyticBase& ana,
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.getLocalViewHost();
+  auto p = p_vec.ViewComponent<AmanziDefaultHost>("edge", false);
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
@@ -356,7 +357,7 @@ void ComputeEdgeError(const AnalyticBase& ana,
 inline
 void ComputeEdgeMomentsError(const AnalyticBase& ana,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             const MultiVector_type& p_vec, double t, int ngauss, 
+                             const CompositeVector& p_vec, double t, int ngauss, 
                              double& pnorm, double& l2_err, double& inf_err)
 {
   pnorm = 0.0;
@@ -369,7 +370,7 @@ void ComputeEdgeMomentsError(const AnalyticBase& ana,
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.getLocalViewHost();
+  auto p = p_vec.ViewComponent<AmanziDefaultHost>("edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 

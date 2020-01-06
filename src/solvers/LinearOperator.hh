@@ -59,11 +59,11 @@ class LinearOperator {
   }
   virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
 
-  virtual const Teuchos::RCP<const VectorSpace>& getDomainMap() const
+  virtual const Teuchos::RCP<const VectorSpace> getDomainMap() const
   {
     return this->m_->getDomainMap();
   }
-  virtual const Teuchos::RCP<const VectorSpace>& getRangeMap() const
+  virtual const Teuchos::RCP<const VectorSpace> getRangeMap() const
   {
     return this->m_->getRangeMap();
   }

@@ -1,24 +1,23 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
 // Amanzi
-#include "CoordinateSystems.hh"
 #include "DG_Modal.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
 // Operators
+#include "InterfaceWhetStone.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
@@ -30,15 +29,23 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Initialization
- ****************************************************************** */
-void
-PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
+* Initialization
+****************************************************************** */
+void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 {
-  // create the local Op and register it with the global Operator
-  Schema my_schema;
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
-  my_schema.Init(schema_list, mesh_);
+
+  // parameters
+  // -- discretization details
+  Schema my_schema;
+  auto base = my_schema.StringToKind(schema_list.get<std::string>("base"));
+
+  matrix_ = plist.get<std::string>("matrix type");
+  method_order_ = schema_list.get<int>("method order", 0);
+  numi_order_ = plist.get<int>("quadrature order", method_order_);
+  
+  dg_ = Teuchos::rcp(new WhetStone::DG_Modal(schema_list, mesh_));
+  my_schema.Init(dg_, mesh_, base);
 
   local_schema_col_ = my_schema;
   local_schema_row_ = my_schema;
@@ -49,9 +56,10 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
     global_schema_row_ = my_schema;
 
     // build the CVS from the global schema
-    int nk = my_schema.begin()->num;
-    Teuchos::RCP<CompositeVectorSpace> cvs =
-      Teuchos::rcp(new CompositeVectorSpace());
+    int nk;
+    std::tie(std::ignore, std::ignore, nk) = *my_schema.begin();
+
+    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, nk);
 
@@ -72,8 +80,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- continuity terms
   Schema tmp_schema;
   Teuchos::ParameterList schema_copy = schema_list;
-  schema_copy.set<std::string>("base", "face");
-  tmp_schema.Init(schema_copy, mesh_);
+  tmp_schema.Init(dg_, mesh_, AmanziMesh::FACE);
 
   jump_up_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(jump_up_op_);
@@ -84,67 +91,43 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- stability jump term
   penalty_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(penalty_op_);
-
-  // parameters
-  // -- discretization details
-  method_ = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
-  matrix_ = plist.get<std::string>("matrix type");
-
-  dg_ = std::make_shared<WhetStone::DG_Modal>(plist, mesh_);
 }
 
 
 /* ******************************************************************
- * Setup methods: scalar coefficients
- ****************************************************************** */
-void
-PDE_DiffusionDG::SetProblemCoefficients(
-  const std::shared_ptr<std::vector<WhetStone::Tensor>>& Kc,
-  const std::shared_ptr<std::vector<double>>& Kf)
-{
-  Kc_ = Kc;
-  Kf_ = Kf;
-}
-
-
-/* ******************************************************************
- * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
- * on boundary faces.
- ****************************************************************** */
-void
-PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u)
+* Populate face-based 2x2 matrices on interior faces and 1x1 matrices
+* on boundary faces.
+****************************************************************** */
+void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                     const Teuchos::Ptr<const CompositeVector>& u)
 {
   WhetStone::DenseMatrix Acell, Aface;
 
   int d = mesh_->space_dimension();
   double Kf(1.0);
   AmanziMesh::Entity_ID_List cells;
-
-  WhetStone::Tensor Kc1(d, 1), Kc2(d, 1);
-  Kc1(0, 0) = 1.0;
-  Kc2(0, 0) = 1.0;
-
+  
+  // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
-    if (Kc_.get()) Kc1 = (*Kc_)[c];
-    dg_->StiffnessMatrix(c, Kc1, Acell);
+    interface_->StiffnessMatrix(c, Acell);
     local_op_->matrices[c] = Acell;
   }
 
+  // strenghen stability term
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
     dg_->FaceMatrixPenalty(f, Kf, Aface);
     penalty_op_->matrices[f] = Aface;
   }
 
+  // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (Kc_.get()) {
-      Kc1 = (*Kc_)[cells[0]];
-      if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]];
-    }
-    dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
+    int c1 = cells[0];
+    int c2 = (cells.size() > 1) ? cells[1] : c1;
+
+    interface_->FaceMatrixJump(f, c1, c2, Aface);
+
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;
 
@@ -155,14 +138,14 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 
 
 /* ******************************************************************
- * Apply boundary conditions to the local matrices.
- ****************************************************************** */
-void
-PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+* Apply boundary conditions to the local matrices.
+****************************************************************** */
+void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  AMANZI_ASSERT(bcs_trial_.size() > 0);
+
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  const std::vector<std::vector<double>>& bc_value =
-    bcs_trial_[0]->bc_value_vector();
+  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
   int nk = bc_value[0].size();
 
   Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
@@ -173,7 +156,7 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
-  WhetStone::NumericalIntegration numi(mesh_);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
@@ -182,20 +165,21 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal =
-        mesh_->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
       // set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
-      for (int i = 0; i < nk; ++i) { coef(i) = bc_value[f][i]; }
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
 
-      WhetStone::Polynomial pf(d, method_order_, coef);
+      WhetStone::Polynomial pf(d, method_order_, coef); 
       pf.set_origin(xf);
 
       // convert boundary polynomial to space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
 
-      // extract coefficients and update right-hand side
+      // extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];
       int nrows = Pcell.NumRows();
       int ncols = Pcell.NumCols();
@@ -206,32 +190,38 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];
-        Pcell.elementWiseMultiply(v, pv, false);
-        Jcell.elementWiseMultiply(v, jv, false);
+        Pcell.Multiply(v, pv, false);
+        Jcell.Multiply(v, jv, false);
 
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] += pv(i) + jv(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += pv(i) + jv(i);
+        }
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
-        Jcell.elementWiseMultiply(v, jv, false);
+        Jcell.Multiply(v, jv, false);
 
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] -= jv(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= jv(i);
+        }
 
-        Pcell.putScalar(0.0);
-        Jcell.putScalar(0.0);
-        jump_up_op_->matrices[f].putScalar(0.0);
+        Pcell.PutScalar(0.0);
+        Jcell.PutScalar(0.0);
+        jump_up_op_->matrices[f].PutScalar(0.0);
       }
     }
-  }
+  } 
 }
 
 
 /* ******************************************************************
- * Calculate mass flux from cell-centered data
- ****************************************************************** */
-void
-PDE_DiffusionDG::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
-                            const Teuchos::Ptr<CompositeVector>& flux)
-{}
+* Calculate mass flux from cell-centered data
+****************************************************************** */
+void PDE_DiffusionDG::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
+                                 const Teuchos::Ptr<CompositeVector>& flux)
+{
+}
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
+
+

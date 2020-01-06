@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -24,12 +23,14 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * System modification before solving the problem.
- * **************************************************************** */
-void
-PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
-                                         double dt)
+* System modification before solving the problem.
+* **************************************************************** */
+void PDE_MagneticDiffusion_TM::ModifyMatrices(
+   CompositeVector& E, CompositeVector& B, double dt)
 {
+  B.ScatterMasterToGhosted("face");
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_v = *global_op_->rhs()->ViewComponent("node", true);
 
@@ -38,12 +39,12 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    Acell.scale(dt / 2);
+    Acell.Scale(dt / 2);
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     mesh_->cell_get_nodes(c, &nodes);
 
     int nfaces = faces.size();
@@ -56,29 +57,30 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.elementWiseMultiply(v1, v2, false);
-    Ccell.elementWiseMultiply(v2, v3, true);
+    Mcell.Multiply(v1, v2, false);
+    Ccell.Multiply(v2, v3, true);
 
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
       rhs_v[0][v] += v3(n);
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 
 /* ******************************************************************
- * Solution postprocessing
- * **************************************************************** */
-void
-PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B,
-                                       double dt)
+* Solution postprocessing
+* **************************************************************** */
+void PDE_MagneticDiffusion_TM::ModifyFields(
+   CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
 
   Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-
+  
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, nodes;
 
@@ -87,7 +89,7 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B,
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     mesh_->cell_get_nodes(c, &nodes);
 
     int nfaces = faces.size();
@@ -100,7 +102,7 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B,
       v1(n) = Ev[0][v];
     }
 
-    Ccell.elementWiseMultiply(v1, v2, false);
+    Ccell.Multiply(v1, v2, false);
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
@@ -114,17 +116,15 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B,
 
 
 /* ******************************************************************
- * Apply boundary conditions to the local matrices. We always zero-out
- * matrix rows for essential test BCs. As to trial BCs, there are
- * options: (a) eliminate or not, (b) if eliminate, then put 1 on
- * the diagonal or not.
- ****************************************************************** */
-void
-PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate,
-                                   bool essential_eqn)
+* Apply boundary conditions to the local matrices. We always zero-out
+* matrix rows for essential test BCs. As to trial BCs, there are
+* options: (a) eliminate or not, (b) if eliminate, then put 1 on
+* the diagonal or not.
+****************************************************************** */
+void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_op_schema_ ==
-      (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE)) {
+  if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
+                         | OPERATOR_SCHEMA_DOFS_NODE)) {
     Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
@@ -139,31 +139,30 @@ PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate,
 
 
 /* ******************************************************************
- * Apply BCs on cell operators
- ****************************************************************** */
-void
-PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
-                                         const Teuchos::Ptr<const BCs>& bc_v,
-                                         bool primary, bool eliminate,
-                                         bool essential_eqn)
+* Apply BCs on cell operators
+****************************************************************** */
+void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_v,
+    bool primary, bool eliminate, bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List nodes, faces, cells;
   std::vector<int> fdirs;
 
-  global_op_->rhs()->putScalarGhosted(0.0);
-  Epetra_MultiVector& rhs_node =
-    *global_op_->rhs()->ViewComponent("node", true);
+  global_op_->rhs()->PutScalarGhosted(0.0);
+  Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   // calculate number of cells for each node
   // move to properties of BCs (lipnikov@lanl.gov)
-  int nnodes_wghost =
-    mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   std::vector<int> node_get_cells(nnodes_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    for (int n = 0; n < nnodes; ++n) { node_get_cells[nodes[n]]++; }
+    for (int n = 0; n < nnodes; ++n) {
+      node_get_cells[nodes[n]]++;
+    }
   }
 
   int nn(0), nm(0);
@@ -183,7 +182,7 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
       for (int n = 0; n != nnodes; ++n) {
         int v = nodes[n];
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-          if (flag) { // make a copy of elemental matrix
+          if (flag) {  // make a copy of elemental matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
@@ -196,11 +195,11 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
         double value = bc_value[v];
 
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-          if (flag) { // make a copy of cell-based matrix
+          if (flag) {  // make a copy of cell-based matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
-
+     
           if (eliminate) {
             for (int m = 0; m < nnodes; m++) {
               rhs_node[0][nodes[m]] -= Acell(m, n) * value;
@@ -215,18 +214,18 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
         }
       }
     }
-  }
+  } 
 
   global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 
 /* ******************************************************************
- * Calculates Ohmic heating
- ****************************************************************** */
-double
-PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
+* Calculates Ohmic heating
+****************************************************************** */
+double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 {
+  E.ScatterMasterToGhosted("node");
   const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
 
   AmanziMesh::Entity_ID_List nodes;
@@ -236,7 +235,7 @@ PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    double volume = mesh_->cell_volume(c, false);
+    double volume = mesh_->cell_volume(c);
     double tmp = volume / (*K_)[c](0, 0) / nnodes;
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
@@ -244,8 +243,11 @@ PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
     }
   }
 
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+
   return energy;
 }
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi

@@ -112,7 +112,7 @@ Note on implementation for discretization/framework developers:
 #include "Mesh.hh"
 #include "CompositeSpace.hh"
 #include "CompositeVector.hh"
-#include "DenseVector.hh"
+//#include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
@@ -128,17 +128,17 @@ class SuperMap;
 class MatrixFE;
 class GraphFE;
 class Op;
-class Op_Cell_FaceCell;
-class Op_Cell_Face;
+//class Op_Cell_FaceCell;
+//class Op_Cell_Face;
 class Op_Cell_Cell;
-class Op_Cell_Node;
+//class Op_Cell_Node;
 //class Op_Cell_Edge;
 //class Op_Cell_Schema;
-class Op_Diagonal;
+//class Op_Diagonal;
 class Op_Face_Cell;
 class Op_Face_CellBndFace;
 //class Op_Face_Schema;
-class Op_Node_Node;
+//class Op_Node_Node;
 //class Op_Edge_Edge;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
@@ -250,16 +250,15 @@ class Operator {
   int apply_calls() { return apply_calls_; }
 
   // block access
-  typedef std::vector<Teuchos::RCP<Op>>::const_iterator const_op_iterator;
-  const_op_iterator OpBegin() const { return ops_.begin(); }
-  const_op_iterator OpEnd() const { return ops_.end(); }
-  const_op_iterator
-  FindMatrixOp(int schema_dofs, int matching_rule, bool action) const;
+  typedef std::vector<Teuchos::RCP<Op> >::const_iterator const_op_iterator;
+  std::size_t size() const { return ops_.size(); }
+  const_op_iterator begin() const { return ops_.begin(); }
+  const_op_iterator end() const { return ops_.end(); }
+  const_op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action) const;
 
-  typedef std::vector<Teuchos::RCP<Op>>::iterator op_iterator;
-  op_iterator OpBegin() { return ops_.begin(); }
-  op_iterator OpEnd() { return ops_.end(); }
-  int OpSize() { return ops_.size(); }
+  typedef std::vector<Teuchos::RCP<Op> >::iterator op_iterator;
+  op_iterator begin() { return ops_.begin(); }
+  op_iterator end() { return ops_.end(); }
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate
@@ -269,15 +268,15 @@ class Operator {
 
  public:
   // // visit methods for Apply
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X,
-                     CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X,
-                    CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X,
-                    CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
   // virtual int
   // ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X,
   //                   CompositeVector& Y) const;
@@ -301,9 +300,9 @@ class Operator {
   // virtual int
   // ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X,
   //                   CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X,
-                    CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
 
   virtual int
   ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
@@ -312,8 +311,8 @@ class Operator {
   ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                     const CompositeVector& X, CompositeVector& Y) const;
 
-  virtual int ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
-                                 CompositeVector& Y) const;
+  // virtual int ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
+  //                               CompositeVector& Y) const;
 
   // visit methods for ApplyTranspose
   // virtual int
@@ -324,18 +323,18 @@ class Operator {
   //                            CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
   // virtual void
   // SymbolicAssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
   //                          GraphFE& graph, int my_block_row,
@@ -366,10 +365,10 @@ class Operator {
   // SymbolicAssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
   //                          GraphFE& graph, int my_block_row,
   //                          int my_block_col) const;
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
   virtual void
   SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
@@ -380,21 +379,21 @@ class Operator {
                            const SuperMap& map, GraphFE& graph,
                            int my_block_row, int my_block_col) const;
 
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
   // visit methods for assemble
-  virtual void
-  AssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
-                   MatrixFE& mat, int my_block_row, int my_block_col) const;
-  virtual void
-  AssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
-  virtual void
-  AssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
+  //                  MatrixFE& mat, int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
   // virtual void
   // AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map, MatrixFE& mat,
   //                  int my_block_row, int my_block_col) const;
@@ -418,9 +417,9 @@ class Operator {
   // virtual void
   // AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map, MatrixFE& mat,
   //                  int my_block_row, int my_block_col) const;
-  virtual void
-  AssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
   virtual void
   AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op, const SuperMap& map,
@@ -429,9 +428,9 @@ class Operator {
   AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op, const SuperMap& map,
                    MatrixFE& mat, int my_block_row, int my_block_col) const;
 
-  virtual void
-  AssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
   // local <-> global communications
   // virtual void

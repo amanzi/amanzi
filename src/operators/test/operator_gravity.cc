@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -26,6 +25,7 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "OperatorDefs.hh"
@@ -36,42 +36,35 @@
 #include "HeatConduction.hh"
 
 /* *****************************************************************
- * Comparison of gravity models with constant and vector density.
- ***************************************************************** */
-void
-RunTestGravity(std::string op_list_name)
-{
+* Comparison of gravity models with constant and vector density.
+***************************************************************** */
+void RunTestGravity(std::string op_list_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int getRank = comm->getRank();
-  if (getRank == 0)
-    std::cout << "\nTest: check gravity induced rhs" << std::endl;
+  int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout << "\nTest: check gravity induced rhs" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list =
-    plist.sublist("PK operator").sublist(op_list_name);
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(op_list_name);
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
 
   // create diffusion coefficient
-  int ncells =
-    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost =
-    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   const WhetStone::Tensor Kc(2, 1);
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
   for (int c = 0; c < ncells; c++) {
     Kc(0, 0) = 1.0 + fabs((mesh->cell_centroid(c))[0]);
@@ -81,8 +74,7 @@ RunTestGravity(std::string op_list_name)
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create homogeneous boundary data
-  Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -95,7 +87,7 @@ RunTestGravity(std::string op_list_name)
 
   double rho(2.0);
   Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
-  rho_cv->putScalar(2.0);
+  rho_cv->PutScalar(2.0);
 
   // we need flux and dummy solution to populate nonlinear coefficient
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
@@ -107,18 +99,16 @@ RunTestGravity(std::string op_list_name)
     flx[0][f] = velocity * normal;
   }
   CompositeVector u(cvs);
-
+  
   // create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
 
   // create upwind model
-  Teuchos::ParameterList& ulist =
-    plist.sublist("PK operator").sublist("upwind");
+  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
   UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
-  knc->UpdateValues(*flux, bc_model, bc_value); // argument is not used
-  ModelUpwindFn func = &HeatConduction::Conduction;
+  knc->UpdateValues(*flux, bc_model, bc_value);  // argument is not used
   upwind.Compute(*flux, u, bc_model, *knc->values());
 
   // create first diffusion operator using constant density
@@ -129,21 +119,20 @@ RunTestGravity(std::string op_list_name)
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector density
-  Teuchos::RCP<PDE_Diffusion> op2 =
-    opfactory.Create(op_list, mesh, bc, rho_cv, g);
+  Teuchos::RCP<PDE_Diffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
   op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // check norm of the right-hand sides
-  double a1, a2;
+  double a1, a2; 
   CompositeVector& rhs1 = *op1->global_operator()->rhs();
   CompositeVector& rhs2 = *op2->global_operator()->rhs();
 
-  a1 = rhs1.norm2();
-  a2 = rhs2.norm2();
+  rhs1.Norm2(&a1);
+  rhs2.Norm2(&a2);
 
-  if (getRank == 0) {
+  if (MyPID == 0) {
     std::cout << "||rhs1||=" << a1 << std::endl;
     std::cout << "||rhs2||=" << a2 << std::endl;
   }
@@ -152,14 +141,12 @@ RunTestGravity(std::string op_list_name)
 
 
 /* *****************************************************************
- * Two tests for MFD and FV methods.
- * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_GRAVITY_MFD)
-{
+* Two tests for MFD and FV methods.
+* **************************************************************** */
+TEST(OPERATOR_DIFFUSION_GRAVITY_MFD) {
   RunTestGravity("diffusion operator gravity mfd");
 }
 
-TEST(OPERATOR_DIFFUSION_GRAVITY_FV)
-{
+TEST(OPERATOR_DIFFUSION_GRAVITY_FV) {
   RunTestGravity("diffusion operator gravity fv");
 }

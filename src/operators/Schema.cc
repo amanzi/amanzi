@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
 
 #include <algorithm>
 #include <iostream>
@@ -21,62 +20,24 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Constructor takes the old schema as input.
- ****************************************************************** */
-void
-Schema::Init(Teuchos::ParameterList& plist,
-             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-{
-  Errors::Message msg;
-
-  if (plist.isParameter("base")) {
-    base_ = StringToKind(plist.get<std::string>("base"));
-  } else {
-    msg << "Parameter schema->base is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<std::string> name;
-  if (plist.isParameter("location")) {
-    name = plist.get<Teuchos::Array<std::string>>("location").toVector();
-  } else {
-    msg << "Parameter schema->location is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<std::string> type;
-  if (plist.isParameter("type")) {
-    type = plist.get<Teuchos::Array<std::string>>("type").toVector();
-  } else {
-    msg << "Parameter schema->type is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<int> ndofs;
-  if (plist.isParameter("number")) {
-    ndofs = plist.get<Teuchos::Array<int>>("number").toVector();
-  } else {
-    msg << "Parameter schema->number is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Populate schema and save it.
-  items_.clear();
-  for (int i = 0; i < name.size(); i++) {
-    AddItem(StringToKind(name[i]), StringToType(type[i]), ndofs[i]);
-  }
-
+* Constructor from a bilinear form
+****************************************************************** */
+void Schema::Init(Teuchos::RCP<const WhetStone::BilinearForm> form, 
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                  AmanziMesh::Entity_kind base)
+{ 
+  base_ = base;
+  items_ = form->schema();
   Finalize(mesh);
 }
 
 
 /* ******************************************************************
- * Backward compatibility: takes the old schema as input.
- ****************************************************************** */
-void
-Schema::Init(int i)
-{
-  base_ = AmanziMesh::CELL; // default
+* Backward compatibility: takes the old schema as input.
+****************************************************************** */
+void Schema::Init(int i)
+{ 
+  base_ = AmanziMesh::CELL;  // default
 
   if (i & OPERATOR_SCHEMA_BASE_NODE) {
     base_ = AmanziMesh::NODE;
@@ -90,99 +51,97 @@ Schema::Init(int i)
 
   items_.clear();
 
-  SchemaItem item;
   if (i & OPERATOR_SCHEMA_DOFS_NODE) {
-    item.set(AmanziMesh::NODE, DOF_Type::SCALAR, 1);
-    items_.push_back(item);
+    items_.push_back(std::make_tuple(AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_EDGE) {
-    item.set(AmanziMesh::EDGE, DOF_Type::SCALAR, 1);
-    items_.push_back(item);
+    items_.push_back(std::make_tuple(AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_FACE) {
-    item.set(AmanziMesh::FACE, DOF_Type::SCALAR, 1);
-    items_.push_back(item);
+    items_.push_back(std::make_tuple(AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_CELL) {
-    item.set(AmanziMesh::CELL, DOF_Type::SCALAR, 1);
-    items_.push_back(item);
+    items_.push_back(std::make_tuple(AmanziMesh::CELL, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    item.set(AmanziMesh::BOUNDARY_FACE, DOF_Type::SCALAR, 1);
-    items_.push_back(item);
+    items_.push_back(std::make_tuple(AmanziMesh::BOUNDARY_FACE, WhetStone::DOF_Type::SCALAR, 1));
   }
 }
 
 
 /* ******************************************************************
- * Backward compatibility: takes kind as input.
- ****************************************************************** */
-void
-Schema::Init(AmanziMesh::Entity_kind kind, int nvec)
+* Backward compatibility: takes kind as input.
+****************************************************************** */
+void Schema::Init(AmanziMesh::Entity_kind kind, int nvec) 
 {
   base_ = kind;
 
-  SchemaItem item;
-  item.set(kind, DOF_Type::SCALAR, nvec);
-
   items_.clear();
-  items_.push_back(item);
+  items_.push_back(std::make_tuple(kind, WhetStone::DOF_Type::SCALAR, nvec));
 }
 
 
 /* ******************************************************************
- * Compute offsets (starting position of DOF ids).
- ****************************************************************** */
-void
-Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+* Compute offsets (starting position of DOF ids).
+****************************************************************** */
+void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 {
   offset_.clear();
 
   int m(0);
   for (auto it = items_.begin(); it != items_.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
     offset_.push_back(m);
-    int nent = mesh->num_entities(it->kind, AmanziMesh::Parallel_type::OWNED);
-    m += nent * it->num;
+    int nent = mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
+    m += nent * num;
   }
 }
 
 
 /* ******************************************************************
- * Compute local (cell-based) offsets
- ****************************************************************** */
-// void
-// Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-//                       Kokkos::View<int*>& offset) const
-// {
-//   AmanziMesh::Entity_ID_List nodes, edges, faces;
+* Compute local (cell-based) offsets
+****************************************************************** */
+void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::vector<int>& offset) const
+{
+  AmanziMesh::Entity_ID_List nodes, edges, faces;
 
-//   offset.clear();
-//   offset.push_back(0);
+  offset.clear();
+  offset.push_back(0);
 
-//   int ndofs;
-//   for (auto it = items_.begin(); it != items_.end(); ++it) {
-//     if (it->kind == AmanziMesh::NODE) {
-//       mesh->cell_get_nodes(c, &nodes);
-//       ndofs = nodes.size();
-//     } else if (it->kind == AmanziMesh::EDGE) {
-//       mesh->cell_get_nodes(c, &edges);
-//       ndofs = edges.size();
-//     } else if (it->kind == AmanziMesh::FACE) {
-//       ndofs = mesh->cell_get_num_faces(c);
-//     } else if (it->kind == AmanziMesh::CELL) {
-//       ndofs = 1;
-//     }
+  int ndofs;
+  for (auto it = items_.begin(); it != items_.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
 
-//     offset.push_back(ndofs * it->num);
-//   }
-// }
+    if (kind == AmanziMesh::NODE) {
+      mesh->cell_get_nodes(c, &nodes);
+      ndofs = nodes.size();
+    }
+    else if (kind == AmanziMesh::EDGE) {
+      mesh->cell_get_nodes(c, &edges);
+      ndofs = edges.size();
+    }
+    else if (kind == AmanziMesh::FACE) {
+      ndofs = mesh->cell_get_num_faces(c);
+    }
+    else if (kind == AmanziMesh::CELL) {
+      ndofs = 1;
+    }
+
+    offset.push_back(ndofs * num);
+  }
+}
 
 
 /* ******************************************************************
- * Compatibility: returns old schema
- ****************************************************************** */
-int
-Schema::OldSchema() const
+* Compatibility: returns old schema
+****************************************************************** */
+int Schema::OldSchema() const
 {
   int i(0);
 
@@ -198,16 +157,19 @@ Schema::OldSchema() const
   }
 
   for (auto it = items_.begin(); it != items_.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
-      i += OPERATOR_SCHEMA_DOFS_NODE;
-    } else if (it->kind == AmanziMesh::EDGE) {
-      i += OPERATOR_SCHEMA_DOFS_EDGE;
-    } else if (it->kind == AmanziMesh::FACE) {
-      i += OPERATOR_SCHEMA_DOFS_FACE;
-    } else if (it->kind == AmanziMesh::CELL) {
-      i += OPERATOR_SCHEMA_DOFS_CELL;
-    } else if (it->kind == AmanziMesh::BOUNDARY_FACE) {
-      i += OPERATOR_SCHEMA_DOFS_BNDFACE;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, std::ignore) = *it;
+
+    if (kind == AmanziMesh::NODE) {
+      i += OPERATOR_SCHEMA_DOFS_NODE; 
+    } else if (kind == AmanziMesh::EDGE) {
+      i += OPERATOR_SCHEMA_DOFS_EDGE; 
+    } else if (kind == AmanziMesh::FACE) {
+      i += OPERATOR_SCHEMA_DOFS_FACE; 
+    } else if (kind == AmanziMesh::CELL) {
+      i += OPERATOR_SCHEMA_DOFS_CELL;     
+    } else if (kind == AmanziMesh::BOUNDARY_FACE) {
+      i += OPERATOR_SCHEMA_DOFS_BNDFACE;     
     }
   }
   return i;
@@ -215,10 +177,9 @@ Schema::OldSchema() const
 
 
 /* ******************************************************************
- * Returns standard name for geometric location of DOF.
- ****************************************************************** */
-std::string
-Schema::KindToString(AmanziMesh::Entity_kind kind) const
+* Returns standard name for geometric location of DOF.
+****************************************************************** */
+std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const 
 {
   if (kind == AmanziMesh::NODE) {
     return "node";
@@ -236,10 +197,9 @@ Schema::KindToString(AmanziMesh::Entity_kind kind) const
 
 
 /* ******************************************************************
- * Returns standard mesh id for geometric location of DOF.
- ****************************************************************** */
-AmanziMesh::Entity_kind
-Schema::StringToKind(std::string& name) const
+* Returns standard mesh id for geometric location of DOF.
+****************************************************************** */
+AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const 
 {
   if (name == "node") {
     return AmanziMesh::NODE;
@@ -254,37 +214,39 @@ Schema::StringToKind(std::string& name) const
 
 
 /* ******************************************************************
- * Returns standard mesh id for geometric location of DOF.
- ****************************************************************** */
-DOF_Type
-Schema::StringToType(std::string& name) const
+* Returns standard mesh id for geometric location of DOF.
+****************************************************************** */
+WhetStone::DOF_Type Schema::StringToType(std::string& name) const 
 {
   if (name == "scalar") {
-    return DOF_Type::SCALAR;
+    return WhetStone::DOF_Type::SCALAR;
   } else if (name == "vector") {
-    return DOF_Type::VECTOR;
+    return WhetStone::DOF_Type::VECTOR;
   } else if (name == "point") {
-    return DOF_Type::POINT;
+    return WhetStone::DOF_Type::POINT;
   } else if (name == "normal component") {
-    return DOF_Type::NORMAL_COMPONENT;
+    return WhetStone::DOF_Type::NORMAL_COMPONENT;
   } else if (name == "moment") {
-    return DOF_Type::MOMENT;
+    return WhetStone::DOF_Type::MOMENT;
   }
-  return DOF_Type::SCALAR;
+  return WhetStone::DOF_Type::SCALAR;
 }
 
 
 /* ******************************************************************
- * Auxiliary routine creates new name.
- ****************************************************************** */
-std::string
-Schema::CreateUniqueName() const
+* Auxiliary routine creates new name.
+****************************************************************** */
+std::string Schema::CreateUniqueName() const
 {
   std::string name(KindToString(base_)), c("_");
   for (auto it = items_.begin(); it != items_.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
     name.append(c);
-    name.append(KindToString(it->kind));
-    name.append(std::to_string(it->num));
+    name.append(KindToString(kind)); 
+    name.append(std::to_string(num)); 
     c = "+";
   }
 
@@ -292,5 +254,7 @@ Schema::CreateUniqueName() const
   return name;
 }
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
+
+
