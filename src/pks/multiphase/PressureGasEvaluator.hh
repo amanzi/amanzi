@@ -10,8 +10,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MULTIPHASE_CAPILLARY_PRESSURE_HH_
-#define AMANZI_MULTIPHASE_CAPILLARY_PRESSURE_HH_
+#ifndef AMANZI_MULTIPHASE_PRESSURE_GAS_EVALUATOR_HH_
+#define AMANZI_MULTIPHASE_PRESSURE_GAS_EVALUATOR_HH_
 
 #include <string>
 #include <vector>
@@ -29,9 +29,9 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class CapillaryPressure : public SecondaryVariableFieldEvaluator {
+class PressureGasEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  CapillaryPressure(Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm);
+  PressureGasEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm);
 
   // interface methods from FieldEvaluator
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -44,6 +44,8 @@ class CapillaryPressure : public SecondaryVariableFieldEvaluator {
 
  private:
   Teuchos::RCP<WRMmpPartition> wrm_;
+
+  std::string pressure_liquid_key_, saturation_liquid_key_;
 };
 
 }  // namespace Flow

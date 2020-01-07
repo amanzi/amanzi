@@ -24,9 +24,9 @@ namespace Multiphase {
 ****************************************************************** */
 WRMmp_Simple::WRMmp_Simple(Teuchos::ParameterList& plist)
 {
-  double S_rw = plist.get<double>("residual saturation wet", FLOW_WRM_EXCEPTION);
-  double S_rn = plist.get<double>("residual saturation nonwet", FLOW_WRM_EXCEPTION);
-  double coef = plist.get<double>("coefficient", FLOW_WRM_EXCEPTION);
+  double S_rw = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
+  double S_rn = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
+  double coef = plist.get<double>("coefficient", MULTIPHASE_WRM_EXCEPTION);
 
   Init_(S_rw, S_rn, coef);
 }
@@ -48,10 +48,10 @@ double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
   Errors::Message msg;
   double Swe = 0.0;
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "wetting") {
+  if (phase_name == "liquid") {
     return pow(Swe, 2.0);
   }
-  else if (phase_name == "non wetting") {
+  else if (phase_name == "gas") {
     return pow(1.0 - Swe, 2.0);
   }
   else {
@@ -72,10 +72,10 @@ double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
   double Swe = 0.0;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "wetting") {
+  if (phase_name == "liquid") {
     return 2.0 * Swe * factor;
   }
-  else if (phase_name == "non wetting") {
+  else if (phase_name == "gas") {
     return - 2.0 * (1.0 - Swe) * factor;
   }
   else {

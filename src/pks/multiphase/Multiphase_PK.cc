@@ -25,14 +25,15 @@
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "RelPermEvaluator.hh"
 
 // Multiphase
-#include "CapillaryPressure.hh"
 #include "ModelMeshPartition.hh"
 #include "Multiphase_PK.hh"
 #include "Multiphase_Utils.hh"
 #include "MultiphaseTypeDefs.hh"
+#include "PressureGasEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -87,14 +88,24 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   relperm_liquid_key_ = Keys::getKey(domain_, "rel_permeability_liquid"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
+  pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
+
   // register non-standard fields
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, dim_);
   } 
 
   // pressure as the primary solution
-  S->RequireField(pressure_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasField(pressure_liquid_key_)) {
+    S->RequireField(pressure_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", pressure_liquid_key_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(pressure_liquid_key_, eval);
+  }
 
   // liquid mole fraction is the primary solution
   component_names_ = mp_list_->template get<Teuchos::Array<std::string> >("primary component names").toVector();
@@ -109,17 +120,20 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // capillary pressure
+  // pressure gas
   auto wrm_list = Teuchos::sublist(mp_list_, "water retention models", true);
   wrm_ = CreateModelPartition<WRMmp>(mesh_, wrm_list, "water retention model");
 
-  if (!S->HasField("capillary_pressure")) {
-    S->RequireField("capilalry_pressure", "capillary_pressure")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(pressure_gas_key_)) {
+    S->RequireField(pressure_gas_key_, pressure_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    auto eval = Teuchos::rcp(new CapillaryPressure(elist, wrm_));
-    S->SetFieldEvaluator("capillary_pressure", eval);
+    elist.set<std::string>("pressure liquid key", pressure_liquid_key_)
+         .set<std::string>("saturation liquid key", saturation_liquid_key_);
+
+    auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
+    S->SetFieldEvaluator(pressure_gas_key_, eval);
   }
 
   // relative permeability of liquid phase
@@ -128,11 +142,11 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   Teuchos::ParameterList elist;
   elist.set<std::string>("my key", relperm_liquid_key_)
-       .set<std::string>("saturation key", saturation_liquid_key_)
+       .set<std::string>("saturation liquid key", saturation_liquid_key_)
        .set<std::string>("phase name", "liquid");
 
   auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
-  S->SetFieldEvaluator("rel_permeability_liquid", eval);
+  S->SetFieldEvaluator(relperm_liquid_key_, eval);
 
   // material properties
   if (!S->HasField(permeability_key_)) {
@@ -144,6 +158,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
+  // other fields
 
   // fields from previous time step
   if (!S->HasField("prev_total_water_storage")) {

@@ -219,7 +219,7 @@ void CompW_PK::InitializeComponent()
 
   // Initialize miscalleneous default parameters.
   ti_specs_ = NULL;
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control_ = MULTIPHASE_TI_ERROR_CONTROL_PRESSURE;
 
   src_sink_ = NULL;
   src_sink_distribution_ = 0;
@@ -307,7 +307,7 @@ void CompW_PK::InitializeComponent()
 
   // Create water retention models.
   rel_perm_w_ = Teuchos::rcp(new MPCoeff(mesh_));
-  rel_perm_w_->Init("wetting", wrm_list_);
+  rel_perm_w_->Init("liquid", wrm_list_);
 
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);

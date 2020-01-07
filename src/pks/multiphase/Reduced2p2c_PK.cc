@@ -144,14 +144,14 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   error_control_ = ti_specs_->error_control_options;
   if (error_control_ == 0) {
-    error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
-                     FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
+    error_control_ = MULTIPHASE_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                     MULTIPHASE_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
     ti_specs_->error_control_options = error_control_;
   }
   // set up new time integration or solver
   std::string ti_method_name(ti_specs_generic_.ti_method_name);
 
-  if (ti_specs_generic_.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+  if (ti_specs_generic_.ti_method == MULTIPHASE_TIME_INTEGRATION_BDF1) {
     Teuchos::ParameterList bdf1_list = ti_specs_generic_.ti_list_ptr_->sublist("BDF1");
     bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
@@ -215,7 +215,7 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bdf1_dae->SetInitialState(time, soln_, udot);
 
   bool fail = false;
-  if (ti_specs_->ti_method == FLOW_TIME_INTEGRATION_BDF1){
+  if (ti_specs_->ti_method == MULTIPHASE_TIME_INTEGRATION_BDF1){
     fail = bdf1_dae->TimeStep(dT, dTnext, soln_);
     if (fail) {
       dT = dTnext;
@@ -462,9 +462,9 @@ void Reduced2p2c_PK::ProcessSublistTimeIntegration(
         ti_specs.dTfactor = dtlist.get<double>("time step increase factor");
       } else if (dT_method_name == "adaptive") {
         dtlist = bdf1_list.sublist("timestep controller adaptive parameters");
-        ti_specs.dT_method = FLOW_DT_ADAPTIVE;
+        ti_specs.dT_method = MULTIPHASE_DT_ADAPTIVE;
       }
-      ti_specs.dTmax = dtlist.get<double>("max time step", FLOW_MAXIMUM_DT);
+      ti_specs.dTmax = dtlist.get<double>("max time step", MULTIPHASE_MAXIMUM_DT);
     }
 
     if (list.isSublist("initialization")) {
@@ -488,8 +488,8 @@ void Reduced2p2c_PK::ProcessSublistTimeIntegration(
     }
 
     // Picard sublist
-    ti_specs.max_itrs = bdf1_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
-    ti_specs.residual_tol = bdf1_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
+    ti_specs.max_itrs = bdf1_list.get<int>("maximum number of iterations", MULTIPHASE_TI_MAX_ITERATIONS);
+    ti_specs.residual_tol = bdf1_list.get<double>("convergence tolerance", MULTIPHASE_TI_NONLINEAR_RESIDUAL_TOLERANCE);
 
   } else if (name != "none") {
     msg << "\n MPMC PK: specified time integration sublist does not exist.";
@@ -506,13 +506,11 @@ void Reduced2p2c_PK::ProcessStringTimeIntegration(const std::string name, int* m
   Errors::Message msg;
 
   if (name == "Picard") {
-    *method = FLOW_TIME_INTEGRATION_PICARD;
+    *method = MULTIPHASE_TIME_INTEGRATION_PICARD;
   } else if (name == "backward Euler") {
-    *method = FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+    *method = MULTIPHASE_TIME_INTEGRATION_BACKWARD_EULER;
   } else if (name == "BDF1") {
-    *method = FLOW_TIME_INTEGRATION_BDF1;
-  } else if (name == "BDF2") {
-    *method = FLOW_TIME_INTEGRATION_BDF2;
+    *method = MULTIPHASE_TIME_INTEGRATION_BDF1;
   } else {
     msg << "MPMC PK: time integration method \"" << name.c_str() << "\" is not known.";
     Exceptions::amanzi_throw(msg);
@@ -578,11 +576,11 @@ void Reduced2p2c_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int
 
     for (int i=0; i < options.size(); i++) {
       if (options[i] == "pressure") {
-        *control += FLOW_TI_ERROR_CONTROL_PRESSURE;
+        *control += MULTIPHASE_TI_ERROR_CONTROL_PRESSURE;
       } else if (options[i] == "saturation") {
-        *control += FLOW_TI_ERROR_CONTROL_SATURATION;
+        *control += MULTIPHASE_TI_ERROR_CONTROL_SATURATION;
       } else if (options[i] == "residual") {
-        *control += FLOW_TI_ERROR_CONTROL_RESIDUAL;
+        *control += MULTIPHASE_TI_ERROR_CONTROL_RESIDUAL;
       } else {
         Errors::Message msg;
         msg << "MPMC PK: unknown error control option has been specified.";

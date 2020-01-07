@@ -24,10 +24,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class WRMmp_VanGenuchten : public WRMmp {
+class WRMmp_vanGenuchten : public WRMmp {
  public:
-  WRMmp_VanGenuchten(Teuchos::ParameterList& plist);
-  ~WRMmp_VanGenuchten() {};
+  WRMmp_vanGenuchten(Teuchos::ParameterList& plist);
+  ~WRMmp_vanGenuchten() {};
   
   // required methods from the base class
   double k_relative(double Sw, std::string phase_name);
@@ -45,7 +45,7 @@ class WRMmp_VanGenuchten : public WRMmp {
 
   double Pr_, S_rw_, S_rn_, n_, m_, eps_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_VanGenuchten> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
 };
 
 }  // namespace Multiphase

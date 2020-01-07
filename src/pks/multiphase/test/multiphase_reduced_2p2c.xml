@@ -431,19 +431,12 @@
 
     <ParameterList name="Water retention models">
       <ParameterList name="Water retention model for the whole domain">
-        <Parameter name="water retention model" type="string" value="Van Genuchten"/>
+        <Parameter name="water retention model" type="string" value="van Genuchten"/>
         <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="residual saturation wet" type="double" value="0.4"/>
-        <Parameter name="residual saturation nonwet" type="double" value="0.0"/>
-        <Parameter name="van genuchten n" type="double" value="1.49"/>
-        <Parameter name="van genuchten entry pressure" type="double" value="2.0e6"/>
-        <!--
-        <Parameter name="water retention model" type="string" value="Simple"/>
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="residual saturation wet" type="double" value="0.4"/>
-        <Parameter name="residual saturation nonwet" type="double" value="0.0"/>
-        <Parameter name="coefficient" type="double" value="2e6"/>
-        -->
+        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
+        <Parameter name="residual saturation gas" type="double" value="0.0"/>
+        <Parameter name="van Genuchten n" type="double" value="1.49"/>
+        <Parameter name="van Genuchten entry pressure" type="double" value="2.0e6"/>
       </ParameterList>
     </ParameterList>
   </ParameterList> <!-- End MPMC Specs -->

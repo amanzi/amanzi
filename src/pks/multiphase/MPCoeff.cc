@@ -112,7 +112,7 @@ void MPCoeff::Compute(
     double Sw = Sw_cell[0][c];
 
     double tmpRhoCell;
-    if (phase_ == "non wetting")
+    if (phase_ == "gas")
       tmpRhoCell = Cg_ * (primary_var_cell[0][c] + (wrm_->second)[mb]->capillaryPressure(Sw));
     else
       tmpRhoCell = primary_var_cell[0][c];

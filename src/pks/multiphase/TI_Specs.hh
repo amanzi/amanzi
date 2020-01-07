@@ -20,7 +20,7 @@ namespace Multiphase {
 class TI_Specs {
  public:
   TI_Specs() { 
-    ti_method = FLOW_TIME_INTEGRATION_BDF1;
+    ti_method = MULTIPHASE_TIME_INTEGRATION_BDF1;
     ti_method_name = "none";
     preconditioner_name = "undefined";
     num_itrs = max_itrs = 0;

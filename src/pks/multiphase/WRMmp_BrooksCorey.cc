@@ -24,10 +24,10 @@ namespace Multiphase {
 ****************************************************************** */
 WRMmp_BrooksCorey::WRMmp_BrooksCorey(Teuchos::ParameterList& plist)
 {
-  double S_rw = plist.get<double>("residual saturation wet", FLOW_WRM_EXCEPTION);
-  double S_rn = plist.get<double>("residual saturation nonwet", FLOW_WRM_EXCEPTION);
-  double pd = plist.get<double>("entry pressure", FLOW_WRM_EXCEPTION);
-  double lambda = plist.get<double>("brooks corey lambda", FLOW_WRM_EXCEPTION);
+  double S_rw = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
+  double S_rn = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
+  double pd = plist.get<double>("entry pressure", MULTIPHASE_WRM_EXCEPTION);
+  double lambda = plist.get<double>("brooks corey lambda", MULTIPHASE_WRM_EXCEPTION);
 
   Init_(S_rw, S_rn, pd, lambda);
 }
@@ -46,7 +46,7 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
   Errors::Message msg;
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   double Sne = 1.0 - Swe;
-  if (phase_name == "wetting") {
+  if (phase_name == "liquid") {
     if (Swe < -1e-12) {
       return 0.0;
     } else if (Swe > 1.0) {
@@ -55,7 +55,7 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
       return pow(Swe,(2.0+3.0*lambda_)/lambda_);
     }
   }
-  else if (phase_name == "non wetting") {
+  else if (phase_name == "gas") {
     if (Swe < -1e-12) {
       return 1.0;
     } else if (Swe > 1.0) {
@@ -79,10 +79,10 @@ double WRMmp_BrooksCorey::dKdS(double Sw, std::string phase_name)
   Errors::Message msg;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "wetting") {
+  if (phase_name == "liquid") {
     return factor*(2.0 + 3.0*lambda_)/lambda_ * pow(Swe, (2.0 + 3.0*lambda_)/lambda_ - 1.0);
   }
-  else if (phase_name == "non wetting") {
+  else if (phase_name == "gas") {
     return -(lambda_ + 2.0)/lambda_*factor*pow(1.0-Swe,2.0)*pow(Swe,(lambda_+2.0)/lambda_-1.0) - 
       2.0*factor*(1.0-Swe)*(1.0 - pow(Swe,(lambda_+2.0)/lambda_));
   }

@@ -77,11 +77,11 @@
     <ParameterList name="water retention models">
       <ParameterList name="WRM for All">
         <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="water retention model" type="string" value="Van Genuchten"/>
+        <Parameter name="water retention model" type="string" value="van Genuchten"/>
         <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
         <Parameter name="van Genuchten m" type="double" value="0.32886"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
-        <Parameter name="residual saturation" type="double" value="0.4"/>
+        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
       </ParameterList>
     </ParameterList>
@@ -219,6 +219,7 @@
       <ParameterList name="gas_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
+
       <ParameterList name="pressure_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -232,6 +233,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -305,6 +307,19 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="molar_density_gas">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="molar"/>
+        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+        <Parameter name="pressure key" type="string" value="pressure_gas"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="ideal gas"/>
+        </ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="molar_fraction_liquid">
         <Parameter name="field evaluator type" type="string" value="primary variable"/>
         <ParameterList name="function">
@@ -323,12 +338,31 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="temperature">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="300.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{All}"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 

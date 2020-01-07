@@ -282,7 +282,7 @@ void CompH_PK::InitializeComponent()
 
   // Initialize miscalleneous default parameters.
   ti_specs_ = NULL;
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control_ = MULTIPHASE_TI_ERROR_CONTROL_PRESSURE;
 
   src_sink_ = NULL;
   src_sink_distribution_ = 0;
@@ -370,8 +370,8 @@ void CompH_PK::InitializeComponent()
   // Create water retention models.
   coef_w_ = Teuchos::rcp(new MPCoeff(mesh_));
   coef_n_ = Teuchos::rcp(new MPCoeff(mesh_));
-  coef_w_->Init("wetting", wrm_list_);
-  coef_n_->Init("non wetting", wrm_list_, Cg_);
+  coef_w_->Init("liquid", wrm_list_);
+  coef_n_->Init("gas", wrm_list_, Cg_);
   capillary_pressure_ = Teuchos::rcp(new CapillaryPressureOld(mesh_));
   capillary_pressure_->Init(wrm_list_); 
 

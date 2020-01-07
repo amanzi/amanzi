@@ -127,6 +127,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // keys
   std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
   std::string permeability_key_, relperm_liquid_key_, porosity_key_;
+  std::string pressure_gas_key_, temperature_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
