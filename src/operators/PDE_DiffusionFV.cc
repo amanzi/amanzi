@@ -488,10 +488,6 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 {
   transmissibility_->putScalar(0.);
 
-  AmanziMesh::Entity_ID_View faces, cells;
-  Kokkos::View<AmanziGeometry::Point*> bisectors;
-  AmanziGeometry::Point a_dist;
-
   Kokkos::View<double**> K;
   int d, rank;
   if (K_.get()) {
@@ -500,7 +496,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     rank = K_->rank;
   } else {
     Kokkos::resize(K, ncells_owned, 1);
-    Kokkos::deep_copy(K, 1.0); // again, not sure this putScalar works/existss... --etc
+    Kokkos::deep_copy(K, 1.0); // again, not sure this putScalar works/exists... --etc
     d = mesh_->space_dimension();
     rank = 1;
   }
@@ -511,6 +507,8 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
         "PDE_DiffusionFV::ComputeTransmissibility",
         ncells_owned,
         KOKKOS_LAMBDA(const int c) {
+          AmanziMesh::Entity_ID_View faces;
+          Kokkos::View<AmanziGeometry::Point*> bisectors;
           mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
           int nfaces = faces.extent(0);
 

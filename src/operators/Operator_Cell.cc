@@ -52,17 +52,15 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  // not yet implemented --etc
-  AMANZI_ASSERT(false);
-  // // const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  // Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-
-  // for (int k = 0; k != Xc.NumVectors(); ++k) {
-  //   for (int c = 0; c != ncells_owned; ++c) {
-  //     Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
-  //   }
-  // }
-  // return 0;
+  auto Xc = X.ViewComponent<AmanziDefaultDevice>("cell");
+  auto Yc = Y.ViewComponent<AmanziDefaultDevice>("cell");
+  Kokkos::parallel_for(
+      "Operator_Cell::ApplyMatrixFreeOp Cell_Cell",
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>{ {0,0}, {Yc.extent(0), Yc.extent(1)} },
+      KOKKOS_LAMBDA(const int c, const int k) {
+        Yc(c,k) += Xc(c,k) * op.data(c,k);
+      });
+  return 0;
 }
 
 
@@ -75,19 +73,46 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 {
   // not yet implemented --etc
   AMANZI_ASSERT(false);
-  // AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.data.extent(0) == nfaces_owned);
   
-  // X.ScatterMasterToGhosted();
-  // const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+  X.ScatterMasterToGhosted();
+  Y.putScalarGhosted(0.);
 
-  // Y.PutScalarGhosted(0.);
-  // Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
+  {
+    auto Xc = X.ViewComponent<AmanziDefaultDevice>("cell", true);
+    auto Yc = Y.ViewComponent<AmanziDefaultDevice>("cell", true);
 
-  // AmanziMesh::Entity_ID_List cells;
+    typedef Kokkos::TeamPolicy<> TeamPolicy_type ;
+    typedef typename TeamPolicy_type::member_type Team_type ;
+
+    Kokkos::parallel_for( // loop over local matrices
+      "Operator_Cell::ApplyMatrixFreeOp Face_Cell",
+      TeamPolicy_type(op.data.extent(0), Kokkos::AUTO()),
+      KOKKOS_LAMBDA(Team_type team) {
+        const int f = team.team_rank();
+        AmanziMesh::Entity_ID_View cells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+        Kokkos::parallel_for( // loop over each row of the local matrix
+            //            "Operator_Cell::ApplyMatrixFreeOp Face_Cell MatMult Rows",
+            Kokkos::TeamThreadRange(team, cells.extent(0)),
+            [&] (const int& i) {
+              double sum;
+              Kokkos::parallel_reduce( // reduce over each column of the row
+                  //    "Operator_Cell::ApplyMatrixFreeOp Face_Cell MatMult Cols",
+                  Kokkos::ThreadVectorRange(team, cells.extent(0)),
+                  [=] (const int& j, double& psum) {
+                    psum += op.data(f,j+i*cells.extent(0)) * Xc(cells(j),0);
+                  }, sum);
+              // atomic add required as multiple local matrices may contribute
+              // to the same cell in Y.
+              Kokkos::atomic_add(&Yc(cells(i),0), sum);
+            });
+      });              
+
+  // OLD SIMPLE CODE for posterity!  Julien, help!
   // for (int f = 0; f != nfaces_owned; ++f) {
   //   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   //   int ncells = cells.size();
-
   //   WhetStone::DenseVector v(ncells), av(ncells);
   //   for (int n = 0; n != ncells; ++n) {
   //     v(n) = Xc[0][cells[n]];
@@ -100,9 +125,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   //     Yc[0][cells[n]] += av(n);
   //   }
   // }
-
-  // Y.GatherGhostedToMaster("cell",Add);
-  // return 0;
+  }
+  Y.GatherGhostedToMaster("cell");
+  return 0;
 }
 
 
