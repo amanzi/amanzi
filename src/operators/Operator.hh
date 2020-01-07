@@ -157,7 +157,8 @@ class Operator {
   // general operator (domain may differ from range)
   Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
            const Teuchos::RCP<const CompositeSpace>& cvs_col,
-           Teuchos::ParameterList& plist, const Schema& schema_row,
+           Teuchos::ParameterList& plist,
+           const Schema& schema_row,
            const Schema& schema_col);
 
   // bijective operator (domain = range)
@@ -185,15 +186,15 @@ class Operator {
   // -- wrapper
   virtual void SymbolicAssembleMatrix();
   // -- first dispatch
-  virtual void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
-                                      int my_block_row, int my_block_col) const;
+  // virtual void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
+  //                                     int my_block_row, int my_block_col) const;
 
   // actual assembly:
   // -- wrapper
   virtual void AssembleMatrix();
   // -- first dispatch
-  virtual void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                              int my_block_row, int my_block_col) const;
+  // virtual void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+  //                             int my_block_row, int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector

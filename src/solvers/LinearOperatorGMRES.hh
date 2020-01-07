@@ -370,7 +370,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // set the leading diagonal block of T
-  T.PutScalar(0.0);
+  T.putScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
     for (int j = 0; j < num_ritz_; ++j) { T(i, j) = Hu_(i, j); }
   }

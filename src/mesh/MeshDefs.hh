@@ -29,6 +29,7 @@ typedef int Set_ID;
 typedef LO Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef Kokkos::View<Entity_ID*> Entity_ID_View;
+typedef Kokkos::View<int*> Entity_Dir_View;
 
 // Recongnize special meshes
 enum Mesh_type {

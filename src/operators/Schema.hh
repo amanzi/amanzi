@@ -16,7 +16,8 @@
 #include <tuple>
 #include <vector>
 
-#include "BilinearForm.hh"
+#include "WhetStoneDefs.hh"
+//#include "BilinearForm.hh"
 #include "CompositeVectorSpace.hh"
 #include "Mesh.hh"
 #include "MeshDefs.hh"
@@ -38,9 +39,9 @@ class Schema {
   // member functions
   void Init(int schema_old);
   void Init(AmanziMesh::Entity_kind kind, int nvec);
-  void Init(Teuchos::RCP<const WhetStone::BilinearForm> form, 
-            Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-            AmanziMesh::Entity_kind base);
+  // void Init(Teuchos::RCP<const WhetStone::BilinearForm> form, 
+  //           Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+  //           AmanziMesh::Entity_kind base);
 
   void AddItem(AmanziMesh::Entity_kind kind, WhetStone::DOF_Type type, int num) {
     WhetStone::SchemaItem item(kind, type, num);
