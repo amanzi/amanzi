@@ -116,6 +116,9 @@ void Operator::SymbolicAssembleMatrix()
 {
   // NOTE: not yet implemented, as we have no preconditioner, and the user
   // shouldn't call this anyway (only the PC should!)
+  //
+  // What still needs to be implemented is GraphFE and MatrixFE (or ditch if no
+  // longer necessary) and the SymbolicAssemble sub-calls.
   AMANZI_ASSERT(false);
   // // Create the supermap given a space (set of possible schemas) and a
   // // specific schema (assumed/checked to be consistent with the space).
@@ -437,7 +440,7 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
   if (smap_.get() == nullptr) {
     if (plist.isParameter("preconditioner type") &&
         plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = createSuperMap(cvs_col_.ptr());
+      smap_ = createSuperMap(getDomainMap().ptr());
     } else {
       Errors::Message msg("Operator has no super map to be initialized.\n");
       Exceptions::amanzi_throw(msg);
@@ -488,6 +491,10 @@ void Operator::UpdatePreconditioner()
 * Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
+  if (!volume_included) {
+    Errors::Message msg("Operator::UpdateRHS expected volume_included == True in default implementation.");
+    Exceptions::amanzi_throw(msg);
+  }
   for (auto& it : *rhs_) {
     if (source.HasComponent(it)) {
       rhs_->GetComponent(it, false)->update(1.0, *source.GetComponent(it, false), 1.0);

@@ -46,7 +46,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementtion trick.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
 
   // access
   // -- global operator (collection of ops with Apply, etc)
@@ -60,14 +60,14 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   void set_local_op(const Teuchos::RCP<Op>& op);
   
  protected:
-  void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
-                             bool primary, bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
+  //                            bool primary, bool eliminate, bool essential_eqn);
   
-  void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op,
-                            bool primary, bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op,
+  //                           bool primary, bool eliminate, bool essential_eqn);
 
-  void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op,
-                             bool primary, bool eliminate, bool essential_eqn);
+  // void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op,
+  //                            bool primary, bool eliminate, bool essential_eqn);
 
  private:
   void PopulateDimensions_();
@@ -86,13 +86,13 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
 };
 
 
-// non-member functions
-Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+// // non-member functions
+// Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+//     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+//     const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+// Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+//     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 }  // namespace Operators
 }  // namespace Amanzi

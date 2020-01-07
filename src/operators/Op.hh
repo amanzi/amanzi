@@ -66,9 +66,26 @@ struct Op {
 
   // Clean the operator without destroying memory
   void Zero();
+  KOKKOS_INLINE_FUNCTION
+  void Zero(const int i) {
+    // NOTE this is probably currently illegal -- we must be able to do this within a parallel_for?
+    // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
+    for (int j=0; j!=data.extent(1); ++j) data(i,j) = 0.;
+  }
+
+    
 
   // Restore pristine value of the matrices, i.e. before BCs.
   virtual int CopyShadowToMaster();
+
+  KOKKOS_INLINE_FUNCTION
+  void CopyMasterToShadow(const int i) {
+    // NOTE this is probably currently illegal -- we must be able to do this within a parallel_for?
+    // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
+    for (int j=0; j!=data.extent(1); ++j) shadow(i,j) = data(i,j);
+  }
+  
+  
 
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule);

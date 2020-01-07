@@ -103,20 +103,35 @@ class PDE_DiffusionFV : public PDE_Diffusion {
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const override;
+  // virtual double ComputeTransmissibility(int f) const override;
   virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
+
+  Kokkos::View<const double**> ScalarCoefficientFaces(bool scatter) const {
+    Kokkos::View<const double**> k_face;
+    if (k_ != Teuchos::null) {
+      if (scatter) k_->ScatterMasterToGhosted("face");
+      if (k_->HasComponent("face")) {
+        k_face = k_->ViewComponent<AmanziDefaultDevice>("face", true);
+        return k_face;
+      }
+    }
+    Kokkos::resize(k_face, nfaces_wghost, 1);
+    Kokkos::deep_copy(k_face, 1.0); // surely this fails?  Looking for a putScalar()...
+    return k_face;
+  }
+
 
  protected:
   void ComputeTransmissibility_();
 
   void AnalyticJacobian_(const CompositeVector& solution);
 
-  virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
-      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
+  // virtual void ComputeJacobianLocal_(
+  //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
+  //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
  protected:
   Teuchos::ParameterList plist_;

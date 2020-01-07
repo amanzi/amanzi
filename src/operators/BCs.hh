@@ -115,16 +115,16 @@ class BCs {
   // velocity)
   BCs(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       AmanziMesh::Entity_kind kind,
-      DOF_Type type)
+      WhetStone::DOF_Type type)
     : mesh_(mesh), kind_(kind), type_(type){};
   ~BCs(){};
 
   // access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
-  DOF_Type type() const { return type_; }
+  WhetStone::DOF_Type type() const { return type_; }
 
-  Kokkos::View<int*>& bc_model()
+  Kokkos::View<int*> bc_model()
   {
     if (bc_model_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
@@ -133,7 +133,7 @@ class BCs {
     return bc_model_;
   }
 
-  Kokkos::View<double*>& bc_value()
+  Kokkos::View<double*> bc_value()
   {
     if (bc_value_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
@@ -142,7 +142,7 @@ class BCs {
     return bc_value_;
   }
 
-  Kokkos::View<double*>& bc_mixed()
+  Kokkos::View<double*> bc_mixed()
   {
     if (bc_mixed_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
@@ -151,7 +151,7 @@ class BCs {
     return bc_mixed_;
   }
 
-  Kokkos::View<AmanziGeometry::Point*>& bc_value_point()
+  Kokkos::View<AmanziGeometry::Point*> bc_value_point()
   {
     if (bc_value_point_.size() == 0) {
       AmanziGeometry::Point p(mesh_->space_dimension());
@@ -161,7 +161,7 @@ class BCs {
     return bc_value_point_;
   }
 
-  Kokkos::View<double**>& bc_value_vector(int n = 1)
+  Kokkos::View<double**> bc_value_vector(int n = 1)
   {
     if (bc_value_vector_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
@@ -170,22 +170,21 @@ class BCs {
     return bc_value_vector_;
   }
 
-  // Not obvious how this helps the interface...
-  // const std::vector<int>& bc_model() const { return bc_model_; }
-  // const std::vector<double>& bc_value() const { return bc_value_; }
-  // const std::vector<double>& bc_mixed() const { return bc_mixed_; }
-  // const std::vector<AmanziGeometry::Point>& bc_value_point() const
-  // {
-  //   return bc_value_point_;
-  // }
-  // const std::vector<std::vector<double>>& bc_value_vector() const
-  // {
-  //   return bc_value_vector_;
-  // }
+  Kokkos::View<const int*> bc_model() const { return bc_model_; }
+  Kokkos::View<const double*> bc_value() const { return bc_value_; }
+  Kokkos::View<const double*> bc_mixed() const { return bc_mixed_; }
+  Kokkos::View<const AmanziGeometry::Point*> bc_value_point() const
+  {
+    return bc_value_point_;
+  }
+  Kokkos::View<const double**> bc_value_vector() const
+  {
+    return bc_value_vector_;
+  }
 
  private:
   AmanziMesh::Entity_kind kind_;
-  DOF_Type type_;
+  WhetStone::DOF_Type type_;
 
   Kokkos::View<int*> bc_model_;
   Kokkos::View<double*> bc_value_;

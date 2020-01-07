@@ -52,8 +52,7 @@ class TreeOperator {
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op,
-                        bool transpose = false);
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
 
   void getLocalDiagCopy(TreeVector& tv) const;
 
@@ -72,7 +71,8 @@ class TreeOperator {
   void InitPreconditioner(const std::string& prec_name,
                           const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitBlockDiagonalPreconditioner();
+  void InitBlockDiagonalPreconditioner() { block_diagonal_ = true; }
+
 
   // two-stage initializeation (preferred)
   void InitializePreconditioner(Teuchos::ParameterList& plist);
@@ -86,7 +86,6 @@ class TreeOperator {
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator>>> blocks_;
-  Teuchos::Array<Teuchos::Array<bool>> transpose_;
 
   Teuchos::RCP<Matrix_type> A_;
   Teuchos::RCP<MatrixFE> Amat_;
