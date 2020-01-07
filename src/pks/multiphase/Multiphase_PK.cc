@@ -80,21 +80,32 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   dim_ = mesh_->space_dimension();
 
   // keys
+  // -- primary unknowns
   pressure_liquid_key_ = Keys::getKey(domain_, "pressure_liquid"); 
   xl_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
+  // -- other fields
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   relperm_liquid_key_ = Keys::getKey(domain_, "rel_permeability_liquid"); 
+  relperm_gas_key_ = Keys::getKey(domain_, "rel_permeability_gas"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
 
   // register non-standard fields
-  if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim_);
-  } 
+  if (!S->HasField("gravity"))
+      S->RequireConstantVector("gravity", passwd_, dim_);
+
+  if (!S->HasField("fluid_density"))
+      S->RequireScalar("fluid_density", passwd_);
+
+  if (!S->HasField("fluid_viscosity"))
+      S->RequireScalar("fluid_viscosity", passwd_);
+
+  if (!S->HasField("gas_viscosity"))
+      S->RequireScalar("gas_viscosity", passwd_);
 
   // pressure as the primary solution
   if (!S->HasField(pressure_liquid_key_)) {
@@ -117,8 +128,15 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
 
   // water saturation is the primary solution
-  S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasField(saturation_liquid_key_)) {
+    S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", saturation_liquid_key_);
+    saturation_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(saturation_liquid_key_, saturation_liquid_eval_);
+  }
 
   // pressure gas
   auto wrm_list = Teuchos::sublist(mp_list_, "water retention models", true);
@@ -138,7 +156,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // relative permeability of liquid phase
   S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("face", AmanziMesh::FACE, 1)
+    ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
   Teuchos::ParameterList elist;
   elist.set<std::string>("my key", relperm_liquid_key_)
@@ -147,6 +167,19 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
   S->SetFieldEvaluator(relperm_liquid_key_, eval);
+
+  // relative permeability of gas phase
+  S->RequireField(relperm_gas_key_, relperm_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("face", AmanziMesh::FACE, 1)
+    ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+
+  elist.set<std::string>("my key", relperm_gas_key_)
+       .set<std::string>("saturation liquid key", saturation_liquid_key_)
+       .set<std::string>("phase name", "gas");
+
+  eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+  S->SetFieldEvaluator(relperm_gas_key_, eval);
 
   // material properties
   if (!S->HasField(permeability_key_)) {
@@ -166,6 +199,11 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("prev_total_water_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("prev_total_water_storage", passwd_)->set_io_vis(false);
+  }
+  if (!S->HasField("prev_total_component_storage")) {
+    S->RequireField("prev_total_component_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField("prev_total_component_storage", passwd_)->set_io_vis(false);
   }
 }
 
@@ -198,8 +236,9 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                                            // array or vector
   g_ = fabs(gravity_[dim_ - 1]);
 
-  rho_ = *S->GetScalarData("fluid_density");
-  mu_ = *S->GetScalarData("fluid_viscosity");
+  rho_l_ = *S->GetScalarData("fluid_density");
+  mu_l_ = *S->GetScalarData("fluid_viscosity");
+  mu_g_ = *S->GetScalarData("gas_viscosity");
 
   // process CPR list
   cpr_enhanced_ = mp_list_->isSublist("CPR enhancement");
@@ -278,6 +317,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- liquid pressure is always go first
   auto opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, mesh_, 1.0, gravity_));
+  pde_matrix_diff_.push_back(opd);
   opd->SetBCs(op_bcs_[0], op_bcs_[0]);
   op_matrix_->SetOperatorBlock(0, 0, opd->global_operator());
 
@@ -287,6 +327,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     opa->SetBCs(op_bcs_[i + 1], op_bcs_[i + 1]);
 
     opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, opa->global_operator()));
+    pde_matrix_diff_.push_back(opd);
     op_matrix_->SetOperatorBlock(i + 1, i + 1, opa->global_operator());
   }
 
@@ -342,6 +383,45 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   upwind_ = Teuchos::rcp(new Operators::UpwindFlux<int>(mesh_, Teuchos::null));
   upwind_->Init(upw_list);
+
+  // initialize other fields
+  InitializeFields_();
+}
+
+
+/* ****************************************************************
+* This completes initialization of fields left out by state.
+**************************************************************** */
+void Multiphase_PK::InitializeFields_()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  InitializeFieldFromField_("prev_total_water_storage", "total_water_storage", true);
+  InitializeFieldFromField_("prev_total_component_storage", "total_component_storage", true);
+}
+
+
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void Multiphase_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1, bool call_evaluator)
+{
+  if (S_->HasField(field0)) {
+    if (!S_->GetField(field0, passwd_)->initialized()) {
+      if (call_evaluator)
+          S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+
+      const CompositeVector& f1 = *S_->GetFieldData(field1);
+      CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+      f0 = f1;
+
+      S_->GetField(field0, passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
+    }
+  }
 }
 
 

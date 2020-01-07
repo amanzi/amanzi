@@ -102,6 +102,10 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void InitPreconditioner() = 0;
   virtual void PopulateBCs() = 0;
 
+ private:
+  void InitializeFields_();
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
+
  protected:
   Key domain_;  // computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_; 
@@ -126,8 +130,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // keys
   std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
-  std::string permeability_key_, relperm_liquid_key_, porosity_key_;
-  std::string pressure_gas_key_, temperature_key_;
+  std::string permeability_key_, relperm_liquid_key_, relperm_gas_key_;
+  std::string porosity_key_, pressure_gas_key_, temperature_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
@@ -139,7 +143,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // physical parameters
-  double mu_, rho_;
+  double mu_l_, mu_g_, rho_l_;
   std::vector<WhetStone::Tensor> K_;
 
   // upwind

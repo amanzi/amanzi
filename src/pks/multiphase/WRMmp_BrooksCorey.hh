@@ -12,8 +12,8 @@
   for decoupled multiphase flow
 */
 
-#ifndef AMANZI_WRM_MP_BROOKS_COREY_HH_
-#define AMANZI_WRM_MP_BROOKS_COREY_HH_
+#ifndef AMANZI_MULTIPHASE_WRM_BROOKS_COREY_HH_
+#define AMANZI_MULTIPHASE_WRM_BROOKS_COREY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

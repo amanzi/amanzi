@@ -36,32 +36,53 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // trigger update of primary variables
   saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
-  // water component
+  // -----------------------
+  // process water component
+  // -----------------------
   // -- init with diffusion operator for water
   const auto& u0 = u_new->SubVector(0)->Data();
   CompositeVector f1(*u0);
 
   // -- upwind relative permeability
-  S_->GetFieldEvaluator(relperm_liquid_key_)->HasFieldChanged(S_.ptr(), "multiphase");
-  const auto& relperm = *S_->GetFieldData(relperm_liquid_key_);
+  S_->GetFieldEvaluator(relperm_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  auto krl = S_->GetFieldData(relperm_liquid_key_, relperm_liquid_key_);
 
-  auto relperm_upw = CreateSimpleCV(mesh_, AmanziMesh::FACE);
-  upwind_->Compute(relperm, relperm, op_bcs_[0]->bc_model(), *relperm_upw);
-  relperm_upw->Scale(rho_/mu_);
+  upwind_->Compute(*krl, *krl, op_bcs_[0]->bc_model(), *krl);
+  krl->Scale(rho_l_ / mu_l_);
 
   // -- create operator
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   const auto& rho = S_->GetFieldData("molar_density_liquid");
 
   auto pde = pde_matrix_diff_[0];
-  pde->Setup(Kptr, relperm_upw, Teuchos::null, rho, gravity_);
+  pde->Setup(Kptr, krl, Teuchos::null, rho, gravity_);
   pde->global_operator()->Init();
   pde->ApplyBCs(true, true, true);
   pde->UpdateMatrices(Teuchos::null, Teuchos::null);
   pde->global_operator()->ComputeNegativeResidual(*u0, f1);
   u0->Update(1.0, f1, 0.0);
  
-  // init with advection operator for 
+  // ---------------------------
+  // process chemical components
+  // ---------------------------
+  const auto& u1 = u_new->SubVector(1)->Data();
+
+  // -- gas pressure
+  S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  auto pg = S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
+
+  // -- mass density of gas phase
+
+  // -- upwind relative permeability
+  S_->GetFieldEvaluator(relperm_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  auto krg = S_->GetFieldData(relperm_gas_key_, relperm_gas_key_);
+
+  upwind_->Compute(*krg, *krg, op_bcs_[0]->bc_model(), *krg);
+  krg->Scale(1.0 / mu_g_);
+
+  for (int i = 0; i < num_primary_; ++i) {
+    // -- init with advection operator for specie
+  }
 
   // add accumulation term
   for (int i = 0; i < num_primary_ + 1; ++i) {

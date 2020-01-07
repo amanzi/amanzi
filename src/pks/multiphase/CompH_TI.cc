@@ -101,23 +101,17 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
   op1_matrix_->SetDensity(rho_w_);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true, true);
-  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->SymbolicAssembleMatrix();
-  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->AssembleMatrix();
 
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Coeff(), Teuchos::null);
   op2_matrix_->SetDensity(rho_g_old);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true, true);
-  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->SymbolicAssembleMatrix();
-  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->AssembleMatrix(); 
 
   op3_matrix_->global_operator()->Init();
   op3_matrix_->Setup(D1ptr, s_with_face, Teuchos::null);
   op3_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op3_matrix_->ApplyBCs(true, true, true);
-  //op3_matrix_->SymbolicAssembleMatrix();
-  //op3_matrix_->AssembleMatrix(); 
 
   Teuchos::RCP<CompositeVector> f1 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   Teuchos::RCP<CompositeVector> f2 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));

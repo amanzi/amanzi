@@ -12,8 +12,8 @@
   for decoupled multiphase flow
 */
 
-#ifndef AMANZI_SIMPLE_MODEL_HH_
-#define AMANZI_SIMPLE_MODEL_HH_
+#ifndef AMANZI_MULTIPHASE_WRM_SIMPLE_HH_
+#define AMANZI_MULTIPHASE_WRM_SIMPLE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

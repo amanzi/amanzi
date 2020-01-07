@@ -78,7 +78,7 @@ double WRMmp_vanGenuchten::k_relative(double Sw, std::string phase_name)
 
 
 /* ******************************************************************
-* Derivative of Relative permeability wrt wetting saturation formula.                                          
+* Derivative of relative permeability wrt liquid saturation
 ****************************************************************** */
 double WRMmp_vanGenuchten::dKdS(double Sw, std::string phase_name)
 {

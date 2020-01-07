@@ -64,7 +64,7 @@ double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
 
 
 /* ******************************************************************
-* Derivative of Relative permeability wrt wetting saturation formula.                                          
+* Derivative of relative permeability wrt liquid saturation. 
 ****************************************************************** */
 double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
 {
@@ -86,8 +86,7 @@ double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
 
 
 /* ******************************************************************
-* Capillary Pressure formula. Assume the formula based on saturation
-* of the wetting phase Sw.
+* Capillary pressure formula.
 ****************************************************************** */
 double WRMmp_Simple::capillaryPressure(double Sw)
 {
@@ -104,7 +103,7 @@ double WRMmp_Simple::capillaryPressure(double Sw)
 
 
 /* ******************************************************************
-* Derivative of capillary pressure formula. Hard-coded Brooks-Corey
+* Derivative of capillary pressure. Hard-coded Brooks-Corey
 * with Pd = 1, gamma = 3. Assume the saturation is of the wetting phase
 ****************************************************************** */
 double WRMmp_Simple::dPc_dS(double Sw)

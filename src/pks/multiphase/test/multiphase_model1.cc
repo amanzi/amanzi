@@ -50,13 +50,16 @@ TEST(MULTIPHASE_MODEL_I) {
   std::string xmlFileName = "test/multiphase_model1.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create a MSTK mesh framework */
+  // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
+
+  // create screen io
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Mumtiphase_PK", *plist));
 
   // create a simple state populate it
   auto state_list = plist->sublist("state");
@@ -76,10 +79,11 @@ TEST(MULTIPHASE_MODEL_I) {
   // initialize the multiphase process kernel
   MPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
+  S->WriteStatistics(vo);
 
   // loop
   bool failed = true;
-  double t(0.0), tend(1.0), dt(0.5);
+  double t(0.0), tend(1.0), dt(1.0);
   while (t - tend) {
     bool failed = MPK->AdvanceStep(t, t + dt, false);
 

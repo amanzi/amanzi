@@ -9,9 +9,7 @@
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
-  Abstract base class for water retention model for multiphase flow.
-  It is assumed that the saturation S is the saturation of the wetting
-  phase. i.e. S = Sw.
+  The base class for water retention models.
 */
 
 #ifndef AMANZI_MULTIPHASE_WATER_RETENTION_MODEL_HH_
