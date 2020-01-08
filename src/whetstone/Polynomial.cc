@@ -168,7 +168,7 @@ void Polynomial::reshape(int d, int order, bool reset)
     if (reset) { 
       coefs_.putScalar(0.0);
     } else {
-      double* data = coefs_.Values();
+      Kokkos::View<double*> data = coefs_.Values();
       for (int i = size; i < size_; ++i) data[i] = 0.0;
     }
   } else if (reset) {

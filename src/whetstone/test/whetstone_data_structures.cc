@@ -18,6 +18,8 @@
 
 // Amanzi::WhetStone
 #include <DenseMatrix.hh>
+#include <DenseVector.hh>
+#include <Tensor.hh>
 
 #include <Kokkos_Vector.hpp>
 
@@ -62,3 +64,57 @@ TEST_FIXTURE(test, DENSEMATRIX)
     std::cout<<m2[i]<<std::endl;
   }
 }
+
+/* ****************************************************************
+* Test DenseVector 
+ **************************************************************** */
+TEST_FIXTURE(test, DENSEVECTOR)
+{
+  std::cout<<"Default execution space: "<<typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+  const int nb = 4;
+  Kokkos::vector<DenseVector> m1;
+
+  for(int i = 0 ; i < nb ; ++i){
+      m1.push_back(DenseVector(i+2));
+      std::cout<<m1[i]<<std::endl;
+  }
+
+  Kokkos::parallel_for(nb, KOKKOS_LAMBDA(const int& i){
+      Kokkos::vector<DenseVector> lm1 = m1; 
+      DenseVector mm1 = lm1[i]; 
+      mm1.putScalar(i+1); 
+  });
+
+  for(int i = 0 ; i < nb ; ++i){
+    std::cout<<m1[i]<<std::endl;
+  }
+}
+
+/* ****************************************************************
+* Test Tensor 
+ **************************************************************** */
+TEST_FIXTURE(test, TENSOR)
+{
+  std::cout<<"Default execution space: "<<typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+  const int nb = 4;
+  Kokkos::vector<Tensor> m1;
+
+  for(int i = 0 ; i < nb ; ++i){
+      m1.push_back(Tensor(i+1,i+2));
+      std::cout<<m1[i]<<std::endl;
+  }
+  Kokkos::parallel_for(nb, KOKKOS_LAMBDA(const int& i){
+      Kokkos::vector<Tensor> lm1 = m1; 
+      Tensor mm1 = lm1[i]; 
+      mm1.putScalar(i+1); 
+  });
+
+  for(int i = 0 ; i < nb ; ++i){
+    std::cout<<m1[i]<<std::endl;
+  }
+}
+

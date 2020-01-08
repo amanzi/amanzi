@@ -24,6 +24,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
+#if 0 
 /* ******************************************************************
  * Constructor
  ****************************************************************** */
@@ -40,37 +41,7 @@ Tensor::Tensor(const Tensor& T)
     d_ = rank_ = size_ = 0;
   }
 }
-
-/* ******************************************************************
- * Initialization of a tensor of rank 1, 2 or 4.
- ****************************************************************** */
-int Tensor::Init(int d, int rank)
-{
-  size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
-  int mem = size_ * size_;
-
-  Kokkos::resize(data_,mem); 
-
-  d_ = d;
-  rank_ = rank;
-  for (int i = 0; i < mem; i++) data_[i] = 0.0;
-
-  return mem;
-}
-
-
-/* ******************************************************************
- * Assign constant value to the tensor entries
- ****************************************************************** */
-void
-Tensor::putScalar(double val)
-{
-  if (data_.extent(0) != size_*size_) return;
-
-  size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
-  int mem = size_ * size_;
-  for (int i = 0; i < mem; i++) data_[i] = val;
-}
+#endif 
 
 
 /* ******************************************************************
@@ -341,7 +312,7 @@ Tensor::operator-=(const Tensor& T)
   return *this;
 }
 
-
+#if 0 
 /* ******************************************************************
  * Copy operator.
  ****************************************************************** */
@@ -356,7 +327,7 @@ Tensor::operator=(const Tensor& T)
   for (int i = 0; i < mem; i++) data_[i] = data[i];
   return *this;
 }
-
+#endif 
 
 
 
@@ -518,7 +489,7 @@ void
 TensorToVector(const Tensor& T, DenseVector& v)
 {
   const Kokkos::View<double*> data1 = T.data();
-  double* data2 = v.Values();
+  Kokkos::View<double*> data2 = v.Values();
 
   if (T.rank() == 2) {
     int mem = T.size() * T.size();
@@ -536,7 +507,7 @@ VectorToTensor(const DenseVector& v, Tensor& T)
 {
   AMANZI_ASSERT(v.NumRows() == T.size() * T.size());
 
-  const double* data1 = v.Values();
+  const Kokkos::View<double*> data1 = v.Values();
   Kokkos::View<double*> data2 = T.data();
   for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
 }

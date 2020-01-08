@@ -26,37 +26,56 @@
 
 #include <Kokkos_Core.hpp>
 
+const int WHETSTONE_TENSOR_SIZE[3][4] = { {1, 1, 0, 1},
+                                          {1, 2, 0, 3},
+                                          {1, 3, 0, 6 }};
+
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_TENSOR_SIZE[3][4] = { {1, 1, 0, 1},
-                                        {1, 2, 0, 3},
-                                        {1, 3, 0, 6 }};
-
 class Tensor {
  public:
-  KOKKOS_INLINE_FUNCTION Tensor()
-  {
-    d_ = rank_ = size_ = 0;
-  }
-  Tensor(const Tensor& T);
-  Tensor(int d, int rank)
-  {
-    Init(d, rank);
-  }
+
+  KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0){}
+  //Tensor(const Tensor& T);
+  Tensor(const int& d, const int& rank){ Init(d, rank); }
+
+#if 0 
   KOKKOS_INLINE_FUNCTION Tensor(int d, int rank, const Kokkos::View<double*> data)
   {
-    size_ = Amanzi::WhetStone::WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
+    size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
     int mem = size_ * size_;
     data_ = data; 
     d_ = d;
     rank_ = rank;
   }
-  KOKKOS_INLINE_FUNCTION ~Tensor() {}
+#endif 
+  
+  /*******************************************************************
+  * Initialization of a tensor of rank 1, 2 or 4.
+  ****************************************************************** */
+  int Init(int d, int rank)
+  {
+    size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
+    int mem = size_ * size_;
+    Kokkos::resize(data_,mem); 
+    d_ = d;
+    rank_ = rank;
+    for (int i = 0; i < mem; i++) data_[i] = 0.0;
+    return mem;
+  }
 
-  // primary members
-  int Init(int d, int rank);
-  void putScalar(double val);
+  /* ******************************************************************
+  * Assign constant value to the tensor entries
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION void putScalar(double val)
+  {
+    if (data_.extent(0) != size_*size_) return;
+    size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
+    int mem = size_ * size_;
+    for (int i = 0; i < mem; i++) data_[i] = val;
+  }
+
   double Trace() const;
   double Det() const;
   void Inverse();
@@ -71,7 +90,7 @@ class Tensor {
   Tensor& operator*=(double c);
   Tensor& operator+=(double c);
   Tensor& operator-=(const Tensor& T);
-  Tensor& operator=(const Tensor& T);
+  //Tensor& operator=(const Tensor& T);
   //friend AmanziGeometry::Point
   //operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
@@ -91,9 +110,8 @@ class Tensor {
   KOKKOS_INLINE_FUNCTION int size() const { return size_; }
   KOKKOS_INLINE_FUNCTION Kokkos::View<double*> data() { return data_; }
   KOKKOS_INLINE_FUNCTION Kokkos::View<double*> data() const { return data_; }
-  double* data_ptr() { return &data_[0];}
-  double* data_ptr() const { return &data_[0];}
-
+  KOKKOS_INLINE_FUNCTION double* data_ptr() { return &data_[0];}
+  KOKKOS_INLINE_FUNCTION double* data_ptr() const { return &data_[0];}
 
   // miscaleneous
   friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
@@ -101,39 +119,6 @@ class Tensor {
  private:
   int d_, rank_, size_;
   Kokkos::View<double*> data_;
-};
-
-// Tensor Array structure
-struct TensorArray {
-  Kokkos::View<double**> data;
-  int dim;
-  int rank;
-
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*> operator()(int i) const {
-    return Kokkos::subview(data, i, Kokkos::ALL);
-  }
-
-  KOKKOS_INLINE_FUNCTION WhetStone::Tensor getTensor(int i) const {
-    return WhetStone::Tensor(dim, rank, this->operator()(i));
-  }
-
-  KOKKOS_INLINE_FUNCTION int extent(const unsigned int& i) const {
-    assert(i < 2); 
-    return data.extent(i); 
-  }
-
-  void resize(int i, int j) {
-    Kokkos::resize(data,i,j); 
-  }
-
-  void addTensor(int idx,const Tensor& T){
-    int size = T.size(); 
-    for(int i = 0 ; i < size; ++i){
-      for(int j = 0 ; j < size; ++j){
-        data(idx,i*size+j) = T(i,j); 
-      }
-    }
-  }
 };
 
 // non-member functions
