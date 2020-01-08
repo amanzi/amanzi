@@ -63,5 +63,23 @@ TEST(SHALLOW_WATER_1D) {
     S->InitializeEvaluators();
     if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
     
+    // advance in time
+    double t_old(0.0), t_new(0.0), dt;
+//    Teuchos::RCP<Epetra_MultiVector>
+//    tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+    
+    int iter = 0;
+    bool flag = true;
+    while (t_new < 0.25) {
+        dt = SWPK.get_dt();
+        t_new = t_old + dt;
+        
+        SWPK.AdvanceStep(t_old, t_new);
+        SWPK.CommitStep(t_old, t_new, S);
+        
+        t_old = t_new;
+        iter++;
+    }
+    if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
     
 }
