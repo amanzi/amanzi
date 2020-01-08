@@ -44,7 +44,7 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   // interface multiphase models
   virtual void InitSolutionVector() override;
   virtual void InitPreconditioner() override;
-  virtual void PopulateBCs() override;
+  virtual void PopulateBCs(int icomp) override;
 
  private:
   int missed_bc_faces_;

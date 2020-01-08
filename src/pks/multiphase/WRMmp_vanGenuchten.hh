@@ -43,7 +43,7 @@ class WRMmp_vanGenuchten : public WRMmp {
   double deriv_VGM(double Sn);
   double deriv_mod_VGM(double Sn);
 
-  double Pr_, S_rw_, S_rn_, n_, m_, eps_;
+  double Pr_, srl_, srg_, n_, m_, eps_;
 
   static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
 };

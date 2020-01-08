@@ -72,7 +72,7 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
 void MultiphaseReduced_PK::InitSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(xl_key_);
+  soln_names_.push_back(xl_liquid_key_);
   soln_names_.push_back(saturation_liquid_key_);
 
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -101,13 +101,13 @@ void MultiphaseReduced_PK::InitPreconditioner()
 /* ******************************************************************* 
 * Populate boundary conditions for various bc types
 ******************************************************************* */
-void MultiphaseReduced_PK::PopulateBCs()
+void MultiphaseReduced_PK::PopulateBCs(int icomp)
 {
   auto& bc_model_p = op_bcs_[0]->bc_model();
   auto& bc_value_p = op_bcs_[0]->bc_value();
 
   auto& bc_model_x = op_bcs_[1]->bc_model();
-  auto& bc_value_x = op_bcs_[1]->bc_value_vector(num_primary_);
+  auto& bc_value_x = op_bcs_[1]->bc_value();
 
   auto& bc_model_s = op_bcs_[2]->bc_model();
   auto& bc_value_s = op_bcs_[2]->bc_value();
@@ -119,7 +119,7 @@ void MultiphaseReduced_PK::PopulateBCs()
     bc_value_p[n] = 0.0;
 
     bc_model_x[n] = Operators::OPERATOR_BC_NONE;
-    for (int i = 0; i < num_primary_; ++i) bc_value_x[n][i] = 0.0;
+    bc_value_x[n] = 0.0;
 
     bc_model_s[n] = Operators::OPERATOR_BC_NONE;
     bc_value_s[n] = 0.0;
@@ -156,7 +156,7 @@ void MultiphaseReduced_PK::PopulateBCs()
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_p[f] = 0.0;
         bc_value_s[f] = 0.0;
-        bc_value_x[f][0] = 0.0;
+        bc_value_x[f] = 0.0;
       }
 
       missed_bc_faces_++;

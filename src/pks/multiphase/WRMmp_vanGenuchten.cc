@@ -25,18 +25,18 @@ namespace Multiphase {
 ****************************************************************** */
 WRMmp_vanGenuchten::WRMmp_vanGenuchten(Teuchos::ParameterList& plist)
 {
-  double S_rw = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
-  double S_rn = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
+  double srl = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
+  double srg = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
   double n = plist.get<double>("van Genuchten n", MULTIPHASE_WRM_EXCEPTION);
   double Pr = plist.get<double>("van Genuchten entry pressure", MULTIPHASE_WRM_EXCEPTION);
 
-  Init_(S_rw, S_rn, n, Pr);
+  Init_(srl, srg, n, Pr);
 }
 
-void WRMmp_vanGenuchten::Init_(double S_rw, double S_rn, double n, double Pr)
+void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr)
 {
-  S_rw_ = S_rw;
-  S_rn_ = S_rn;
+  srl_ = srl;
+  srg_ = srg;
   n_ = n;
   m_ = 1.0 - 1.0/n_;
   Pr_ = Pr;
@@ -50,7 +50,7 @@ void WRMmp_vanGenuchten::Init_(double S_rw, double S_rn, double n, double Pr)
 double WRMmp_vanGenuchten::k_relative(double Sw, std::string phase_name)
 {
   Errors::Message msg;
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - srl_) / (1.0 - srl_ - srg_);
   if (phase_name == "liquid") {
     if (Swe < 1.0e-09) {
       return 0.0;
@@ -84,8 +84,8 @@ double WRMmp_vanGenuchten::dKdS(double Sw, std::string phase_name)
 {
   Errors::Message msg;
   double Swe = 0.0;
-  double factor = 1.0/(1.0 - S_rw_ - S_rn_);
-  Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double factor = 1.0/(1.0 - srl_ - srg_);
+  Swe = (Sw - srl_)/(1.0 - srl_ - srg_);
   if (phase_name == "liquid") {
     if (Swe < 1.0e-09) {
       return 0.0;
@@ -119,10 +119,10 @@ double WRMmp_vanGenuchten::dKdS(double Sw, std::string phase_name)
 double WRMmp_vanGenuchten::capillaryPressure(double Sw)
 {
   double Sn = 1.0 - Sw;
-  if (Sn - S_rn_ < 1e-15) {
-    return mod_VGM(S_rn_) + deriv_mod_VGM(S_rn_) * (Sn - S_rn_);
-  } else if (Sn + S_rw_ - 1.0 > -1e-15) {
-    return mod_VGM(1.0 - S_rw_) + deriv_mod_VGM(1.0 - S_rw_) * (Sn - 1.0 + S_rw_);
+  if (Sn - srg_ < 1e-15) {
+    return mod_VGM(srg_) + deriv_mod_VGM(srg_) * (Sn - srg_);
+  } else if (Sn + srl_ - 1.0 > -1e-15) {
+    return mod_VGM(1.0 - srl_) + deriv_mod_VGM(1.0 - srl_) * (Sn - 1.0 + srl_);
   } else {
     return mod_VGM(Sn);
   }
@@ -135,10 +135,10 @@ double WRMmp_vanGenuchten::capillaryPressure(double Sw)
 double WRMmp_vanGenuchten::dPc_dS(double Sw)
 {
   double Sn = 1.0 - Sw;
-  if (Sn - S_rn_ < 1e-15) {
-    return -deriv_mod_VGM(S_rn_);
-  } else if (Sn + S_rw_ - 1.0 > -1e-15) {
-    return -deriv_mod_VGM(1.0 - S_rw_);
+  if (Sn - srg_ < 1e-15) {
+    return -deriv_mod_VGM(srg_);
+  } else if (Sn + srl_ - 1.0 > -1e-15) {
+    return -deriv_mod_VGM(1.0 - srl_);
   } else {
     return -deriv_mod_VGM(Sn); // wrt Sw
   }
@@ -151,23 +151,23 @@ double WRMmp_vanGenuchten::dPc_dS(double Sw)
 ****************************************************************** */
 double WRMmp_vanGenuchten::VGM(double Sn) {
   double Sw = 1.0 - Sn;
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - srl_)/(1.0 - srl_ - srg_);
   return Pr_ * pow(pow(Swe, -1.0/m_) - 1.0, 1.0/n_);
 }
 
 double WRMmp_vanGenuchten::mod_VGM(double Sn) {
-  double s_mod = S_rn_ + (1.0 - eps_) * (Sn - S_rn_) + eps_/2.0 * (1.0 - S_rw_ - S_rn_);
-  return VGM(s_mod) - VGM(S_rn_ + eps_/2 * (1.0 - S_rw_ - S_rn_));
+  double s_mod = srg_ + (1.0 - eps_) * (Sn - srg_) + eps_/2.0 * (1.0 - srl_ - srg_);
+  return VGM(s_mod) - VGM(srg_ + eps_/2 * (1.0 - srl_ - srg_));
 }
 
 double WRMmp_vanGenuchten::deriv_VGM(double Sn) { // wrt Sn
   double Sw = 1.0 - Sn;
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  return Pr_ / (m_ * n_) * pow(pow(Swe, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(Swe, -1.0/m_ - 1.0) / (1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - srl_)/(1.0 - srl_ - srg_);
+  return Pr_ / (m_ * n_) * pow(pow(Swe, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(Swe, -1.0/m_ - 1.0) / (1.0 - srl_ - srg_);
 }
 
 double WRMmp_vanGenuchten::deriv_mod_VGM(double Sn) { // wrt Sn
-  double s_mod = S_rn_ + (1.0 - eps_) * (Sn - S_rn_) + eps_/2.0 * (1.0 - S_rw_ - S_rn_);
+  double s_mod = srg_ + (1.0 - eps_) * (Sn - srg_) + eps_/2.0 * (1.0 - srl_ - srg_);
   return (1.0 - eps_) * deriv_VGM(s_mod);
 }
 

@@ -82,7 +82,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   // keys
   // -- primary unknowns
   pressure_liquid_key_ = Keys::getKey(domain_, "pressure_liquid"); 
-  xl_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
+  xl_liquid_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
   // -- other fields
@@ -114,18 +114,27 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", pressure_liquid_key_);
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(pressure_liquid_key_, eval);
+    pressure_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(pressure_liquid_key_, pressure_liquid_eval_);
   }
 
   // liquid mole fraction is the primary solution
-  component_names_ = mp_list_->template get<Teuchos::Array<std::string> >("primary component names").toVector();
-  std::vector<std::vector<std::string> > subfield_names(1);
-  subfield_names[0] = component_names_;
+  if (!S->HasField(xl_liquid_key_)) {
+    component_names_ = mp_list_->sublist("molecular diffusion")
+       .get<Teuchos::Array<std::string> >("primary component names").toVector();
+    std::vector<std::vector<std::string> > subfield_names(1);
+    subfield_names[0] = component_names_;
 
-  S->RequireField(xl_key_, passwd_, subfield_names)
-    ->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
+    S->RequireField(xl_liquid_key_, passwd_, subfield_names)
+      ->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", xl_liquid_key_);
+    xl_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(xl_liquid_key_, xl_liquid_eval_);
+  }
+
 
   // water saturation is the primary solution
   if (!S->HasField(saturation_liquid_key_)) {
@@ -156,9 +165,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // relative permeability of liquid phase
   S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1)
-    ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList elist;
   elist.set<std::string>("my key", relperm_liquid_key_)
@@ -170,9 +177,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // relative permeability of gas phase
   S->RequireField(relperm_gas_key_, relperm_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1)
-    ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   elist.set<std::string>("my key", relperm_gas_key_)
        .set<std::string>("saturation liquid key", saturation_liquid_key_)
@@ -209,7 +214,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* Standard constructor
+* Initialize various PK objects
 ****************************************************************** */
 void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
@@ -222,6 +227,10 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   num_aqueous_ = mp_list_->get<int>("number aqueous components");
   num_gaseous_ = mp_list_->get<int>("number gaseous components");
   num_primary_ = component_names_.size();
+
+  auto tmp_list = mp_list_->sublist("molecular diffusion");
+  mol_diff_l_ = tmp_list.get<Teuchos::Array<double> >("aqueous values").toVector();
+  mol_diff_g_ = tmp_list.get<Teuchos::Array<double> >("gaseous values").toVector();
 
   // verbose object must go first to support initialization reports
   Teuchos::ParameterList vlist;
@@ -237,6 +246,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   g_ = fabs(gravity_[dim_ - 1]);
 
   rho_l_ = *S->GetScalarData("fluid_density");
+  eta_l_ = rho_l_ / CommonDefs::MOLAR_MASS_H2O;
   mu_l_ = *S->GetScalarData("fluid_viscosity");
   mu_g_ = *S->GetScalarData("gas_viscosity");
 
@@ -305,43 +315,34 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     bcs_[i]->ComputeSubmodel(mesh_);
   }
 
-  PopulateBCs();
+  PopulateBCs(0);
 
   // matrix is used to eleviate calculation of residual. It is the mathematical
   // representation of differential operators
-  auto& opd_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-  auto& opa_list = mp_list_->sublist("operators").sublist("advection operator").sublist("matrix");
-
-  op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-  op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+  auto& ddf_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
+  auto& mdf_list = mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
+  auto& adv_list = mp_list_->sublist("operators").sublist("advection operator").sublist("matrix");
 
   // -- liquid pressure is always go first
-  auto opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, mesh_, 1.0, gravity_));
-  pde_matrix_diff_.push_back(opd);
-  opd->SetBCs(op_bcs_[0], op_bcs_[0]);
-  op_matrix_->SetOperatorBlock(0, 0, opd->global_operator());
+  pde_diff_K_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(ddf_list, mesh_, 1.0, gravity_));
+  pde_diff_K_->SetBCs(op_bcs_[0], op_bcs_[0]);
 
-  // -- chemical components go second
-  for (int i = 0; i < num_primary_; ++i) {
-    auto opa = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, mesh_));
-    opa->SetBCs(op_bcs_[i + 1], op_bcs_[i + 1]);
-
-    opd = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(opd_list, opa->global_operator()));
-    pde_matrix_diff_.push_back(opd);
-    op_matrix_->SetOperatorBlock(i + 1, i + 1, opa->global_operator());
-  }
+  // -- chemical components go second (Darcy law + molecular diffusion)
+  pde_diff_D_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, mesh_));
+  pde_diff_D_->SetBCs(op_bcs_[1], op_bcs_[1]);
 
   // preconditioner is reflects equations of states and is model-specific
+  op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   InitPreconditioner();
 
   for (int i = 0; i < num_primary_ + 1; ++i) {
     auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
     if (eval_adv_[i] != "") {
-      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opa_list, op->global_operator()));
+      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op->global_operator()));
       tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
     }
     if (eval_diff_[i] != "") {
-      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(opd_list, op->global_operator()));
+      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op->global_operator()));
       tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
     }
     op_preconditioner_->SetOperatorBlock(i, i, op->global_operator());
@@ -435,6 +436,10 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // make a copy of primary and conservative fields
+  // -- primary field
+  CompositeVector pl_copy(*S_->GetFieldData(pressure_liquid_key_));
+  CompositeVector sl_copy(*S_->GetFieldData(saturation_liquid_key_));
+  CompositeVector xl_copy(*S_->GetFieldData(xl_liquid_key_));
 
   // initialization
   if (num_itrs_ == 0) {
@@ -451,6 +456,17 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
+
+    // recover the original fields
+    *S_->GetFieldData(pressure_liquid_key_, passwd_) = pl_copy;
+    pressure_liquid_eval_->SetFieldAsChanged(S_.ptr());
+
+    *S_->GetFieldData(saturation_liquid_key_, passwd_) = sl_copy;
+    saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
+
+    *S_->GetFieldData(xl_liquid_key_, passwd_) = xl_copy;
+    xl_liquid_eval_->SetFieldAsChanged(S_.ptr());
+
     return failed;
   }
 
@@ -467,8 +483,11 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
-  *S_->GetFieldData(xl_key_, passwd_) = *soln_->SubVector(1)->Data();
+  *S_->GetFieldData(xl_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
   *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
+
+  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData("total_component_storage");
+  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData("total_water_storage");
 }
 
 }  // namespace Multiphase

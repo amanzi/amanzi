@@ -16,6 +16,9 @@
 // TPLs
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
+#include "Tensor.hh"
+
 // Multiphase
 #include "Multiphase_PK.hh"
 #include "TotalComponentStorage.hh"
@@ -41,47 +44,107 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // -----------------------
   // -- init with diffusion operator for water
   const auto& u0 = u_new->SubVector(0)->Data();
-  CompositeVector f1(*u0);
+  auto f0 = f->SubVector(0)->Data();
 
   // -- upwind relative permeability
   S_->GetFieldEvaluator(relperm_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto krl = S_->GetFieldData(relperm_liquid_key_, relperm_liquid_key_);
+  auto relperm_l = S_->GetFieldData(relperm_liquid_key_, relperm_liquid_key_);
 
-  upwind_->Compute(*krl, *krl, op_bcs_[0]->bc_model(), *krl);
-  krl->Scale(rho_l_ / mu_l_);
+  auto kr = CreateCVforUpwind(mesh_);
+  *kr->ViewComponent("cell") = *relperm_l->ViewComponent("cell");
+  upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
+
+  // -- scale the upwinded relperm assuming constant viscosity
+  double factor = eta_l_ / mu_l_;
+  kr->Scale(factor);
 
   // -- create operator
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
-  const auto& rho = S_->GetFieldData("molar_density_liquid");
 
-  auto pde = pde_matrix_diff_[0];
-  pde->Setup(Kptr, krl, Teuchos::null, rho, gravity_);
+  auto& pde = pde_diff_K_;
+  pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
   pde->global_operator()->Init();
   pde->ApplyBCs(true, true, true);
   pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-  pde->global_operator()->ComputeNegativeResidual(*u0, f1);
-  u0->Update(1.0, f1, 0.0);
+  pde->global_operator()->ComputeNegativeResidual(*u0, *f0);
  
   // ---------------------------
   // process chemical components
   // ---------------------------
   const auto& u1 = u_new->SubVector(1)->Data();
+  auto f1 = f->SubVector(1)->Data();
+  CompositeVector fadd(*f0);
 
   // -- gas pressure
   S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   auto pg = S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
 
-  // -- mass density of gas phase
+  // -- mass density of gas phase (create evaluator ??? FIXME)
+  const auto& eta_g = S_->GetFieldData("molar_density_gas");
+  auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
 
-  // -- upwind relative permeability
+  // -- update relative premeability of gas phase
   S_->GetFieldEvaluator(relperm_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto krg = S_->GetFieldData(relperm_gas_key_, relperm_gas_key_);
+  auto relperm_g = S_->GetFieldData(relperm_gas_key_, relperm_gas_key_);
 
-  upwind_->Compute(*krg, *krg, op_bcs_[0]->bc_model(), *krg);
-  krg->Scale(1.0 / mu_g_);
+  const auto& u1_c = *u1->ViewComponent("cell");
+  const auto& eta_gc = *eta_g->ViewComponent("cell");
+  const auto& relperm_lc = *relperm_l->ViewComponent("cell");
+  const auto& relperm_gc = *relperm_g->ViewComponent("cell");
+  auto& kr_c = *kr->ViewComponent("cell");
 
   for (int i = 0; i < num_primary_; ++i) {
-    // -- init with advection operator for specie
+    // -- upwind the scaled relative permeability kr xi eta_l / mu_l
+    for (int c = 0; c < ncells_owned_; ++c) {
+      kr_c[0][c] = u1_c[i][c] * eta_l_ * relperm_lc[0][c] / mu_l_;
+    }
+    upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
+
+    // -- init with transport in liquid phase
+    auto& pdeK = pde_diff_K_;
+    pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
+    pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
+    pdeK->global_operator()->Init();
+    pdeK->ApplyBCs(true, true, true);
+    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeK->global_operator()->ComputeNegativeResidual(*u0, *f1);
+
+    // -- upwind the scaled relative permeability for gas phase
+    for (int c = 0; c < ncells_owned_; ++c) {
+      kr_c[0][c] = (1.0 - u1_c[i][c]) * eta_gc[0][c] * relperm_gc[0][c] / mu_g_;
+    }
+    upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
+
+    // -- add transport in gas phase
+    pdeK->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
+    pdeK->global_operator()->Init();
+    pdeK->ApplyBCs(true, true, true);
+    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeK->global_operator()->ComputeNegativeResidual(*pg, fadd);
+    f1->Update(1.0, fadd, 1.0);
+
+    // -- add molecular diffusion using harmoic-mean formula
+    CompositeVector u1i(fadd);
+    *u1i.ViewComponent("cell") = *u1->ViewComponent("cell");
+
+    auto D = Teuchos::rcp(new std::vector<WhetStone::Tensor>);
+    WhetStone::Tensor Dc(dim_, 1);
+    for (int c = 0; c < ncells_owned_; ++c) {
+      Dc(0, 0) = eta_l_ * mol_diff_l_[i] - eta_gc[0][c] * mol_diff_g_[i];
+      D->push_back(Dc);
+    }
+
+    auto& pdeD = pde_diff_D_;
+    pdeD->Setup(D, Teuchos::null, Teuchos::null);
+    pdeK->SetBCs(op_bcs_[1], op_bcs_[1]);
+    pdeD->global_operator()->Init();
+    pdeD->ApplyBCs(true, true, true);
+    pdeD->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeD->global_operator()->ComputeNegativeResidual(u1i, fadd);
+
+    auto f1c = (*f1->ViewComponent("cell"))(i);
+    const auto& fadd_c = *fadd.ViewComponent("cell");
+    f1c->Update(1.0, fadd_c, 1.0);
   }
 
   // add accumulation term
@@ -104,6 +167,11 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
       f_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
     }
   }
+
+  // ------------------
+  // process constraint
+  // ------------------
+  f->SubVector(2)->Data()->PutScalar(0.0);
 }
 
 

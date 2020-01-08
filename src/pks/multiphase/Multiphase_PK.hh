@@ -100,7 +100,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // multiphase submodels
   virtual void InitSolutionVector() = 0;
   virtual void InitPreconditioner() = 0;
-  virtual void PopulateBCs() = 0;
+  virtual void PopulateBCs(int icomp) = 0;
 
  private:
   void InitializeFields_();
@@ -123,19 +123,22 @@ class Multiphase_PK: public PK_PhysicalBDF {
   int num_aqueous_, num_gaseous_, num_primary_;
   int num_phases_;
 
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_liquid_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> xl_liquid_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
 
   // variable evaluators
   Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
   // keys
-  std::string pressure_liquid_key_, xl_key_, saturation_liquid_key_;
+  std::string pressure_liquid_key_, xl_liquid_key_, saturation_liquid_key_;
   std::string permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   std::string porosity_key_, pressure_gas_key_, temperature_key_;
 
   // matrix and preconditioner
-  Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
-  std::vector<Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> > pde_matrix_diff_;
+  Teuchos::RCP<Operators::TreeOperator> op_preconditioner_;
+  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
+  Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
   std::vector<std::string> eval_acc_, eval_adv_, eval_diff_;   // evaluator names
 
   // boundary conditions
@@ -143,8 +146,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // physical parameters
-  double mu_l_, mu_g_, rho_l_;
+  double mu_l_, mu_g_, rho_l_, eta_l_;
   std::vector<WhetStone::Tensor> K_;
+  std::vector<double> mol_diff_l_, mol_diff_g_; 
 
   // upwind
   Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
@@ -182,15 +186,15 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
 // non-member function
 inline
-Teuchos::RCP<CompositeVector> CreateSimpleCV(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
-    const AmanziMesh::Entity_kind& kind)
+Teuchos::RCP<CompositeVector> CreateCVforUpwind(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  CompositeVectorSpace cvs; 
-  cvs.SetMesh(mesh_)->SetGhosted(true);
-
-  if (kind == AmanziMesh::FACE) 
-    cvs.SetGhosted(false)->AddComponent("face", kind, 1);
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh)->SetGhosted(true)
+     ->AddComponent("cell", AmanziMesh::CELL, 1)
+     ->AddComponent("face", AmanziMesh::FACE, 1)
+     ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+  cvs.SetOwned(false);
 
   return Teuchos::rcp(new CompositeVector(cvs));
 }
