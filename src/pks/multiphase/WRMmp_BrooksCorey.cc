@@ -43,7 +43,6 @@ void WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda
 
 double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
 {
-  Errors::Message msg;
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   double Sne = 1.0 - Swe;
   if (phase_name == "liquid") {
@@ -64,10 +63,6 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
       return pow(Sne,2.0)*(1.0 - pow(Swe,(2+lambda_)/lambda_));
     }
   }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 
@@ -76,7 +71,6 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
 ***********************************************************************/
 double WRMmp_BrooksCorey::dKdS(double Sw, std::string phase_name)
 {
-  Errors::Message msg;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   if (phase_name == "liquid") {
@@ -85,10 +79,6 @@ double WRMmp_BrooksCorey::dKdS(double Sw, std::string phase_name)
   else if (phase_name == "gas") {
     return -(lambda_ + 2.0)/lambda_*factor*pow(1.0-Swe,2.0)*pow(Swe,(lambda_+2.0)/lambda_-1.0) - 
       2.0*factor*(1.0-Swe)*(1.0 - pow(Swe,(lambda_+2.0)/lambda_));
-  }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
   }
 }
 

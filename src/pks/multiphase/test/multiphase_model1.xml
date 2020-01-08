@@ -82,9 +82,9 @@
       <ParameterList name="WRM for All">
         <Parameter name="regions" type="Array(string)" value="{All}"/>
         <Parameter name="water retention model" type="string" value="van Genuchten"/>
-        <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
         <Parameter name="van Genuchten m" type="double" value="0.32886"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
+        <Parameter name="van Genuchten entry pressure" type="double" value="2.0e6"/>
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
@@ -106,7 +106,7 @@
 
         <Parameter name="solver type" type="string" value="nka"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="6.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
@@ -116,7 +116,7 @@
           <Parameter name="monitor" type="string" value="monitor residual"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="7.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="12"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
