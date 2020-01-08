@@ -19,6 +19,7 @@
 #include <iostream>
 #include <cstdio>
 #include <iomanip>
+#include <Kokkos_Core.hpp>
 
 #include "lapack.hh"
 #include "DenseVector.hh"
@@ -26,75 +27,93 @@
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_DATA_ACCESS_COPY = 1;
-const int WHETSTONE_DATA_ACCESS_VIEW = 2;
+//const int WHETSTONE_DATA_ACCESS_COPY = 1;
+//const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 
 class DenseMatrix {
  public:
-  DenseMatrix();
-  DenseMatrix(int mrow, int ncol); // memory is not initialized
-  DenseMatrix(int mrow, int ncol, double* data,
-              int data_access = WHETSTONE_DATA_ACCESS_COPY);
-  DenseMatrix(const DenseMatrix& B);
-  DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
-  ~DenseMatrix()
+  KOKKOS_INLINE_FUNCTION DenseMatrix()
   {
-    if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) {
-      delete[] data_;
-    }
+    m_ = 0;
+    n_ = 0;
+    mem_ = 0;
+    //data_ = NULL;
+    //access_ = WHETSTONE_DATA_ACCESS_COPY;
   }
+  DenseMatrix(const int& mrow, const int& ncol)
+  {
+    m_ = mrow;
+    n_ = ncol;
+    mem_ = m_ * n_;
+    Kokkos::resize(data_,mem_); 
+    //data_ = new double[mem_];
+    //access_ = WHETSTONE_DATA_ACCESS_COPY;
+  } // memory is not initialized
+
+  //DenseMatrix(int mrow, int ncol, double* data
+  //            );//, int data_access = WHETSTONE_DATA_ACCESS_COPY);
+  //DenseMatrix(int mrow, int ncol, const Kokkos::View<double*>& data);
+  //DenseMatrix(const DenseMatrix& B);
+  //DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
+  //~DenseMatrix(){}
 
   // primary members
   // -- reshape can be applied only to a matrix that owns data
   // -- data are not remapped to the new matrix shape
-  void reshape(int mrow, int ncol);
+  //void reshape(int mrow, int ncol);
 
-  double& operator()(int i, int j) { return data_[j * m_ + i]; }
-  const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
+  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_(j * m_ + i); }
+  KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
-  DenseMatrix& operator=(const DenseMatrix& B)
+#if 0
+  KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(const DenseMatrix& B)
   {
     if (this != &B) {
-      if (mem_ < B.m_ * B.n_) {
-        if (data_ != NULL) { delete[] data_; }
-        mem_ = B.m_ * B.n_;
-        data_ = new double[mem_];
-      }
+      //if (mem_ != B.m_ * B.n_) {
+        //if (data_ != NULL) { delete[] data_; }
+      //  mem_ = B.m_ * B.n_;
+      //  Kokkos::resize(data_,mem_);
+        //data_ = new double[mem_];
+      //}
       n_ = B.n_;
       m_ = B.m_;
-      const double* b = B.Values();
-      for (int i = 0; i < m_ * n_; i++) data_[i] = b[i];
+      mem_ = n_*m_; 
+      data_ = B.Values(); 
+      //Kokkos::deep_copy(data_,B.data_);  
     }
     return (*this);
   }
+#endif 
 
-  DenseMatrix& operator=(double val)
+
+  KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(double val)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] = val;
+    for (int i = 0; i < m_ * n_; i++) data_(i) = val;
     return *this;
   }
 
-  DenseMatrix& operator*=(double val)
+  KOKKOS_INLINE_FUNCTION DenseMatrix& operator*=(double val)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
+    for (int i = 0; i < m_ * n_; i++) data_(i) *= val;
     return *this;
   }
 
-  DenseMatrix& operator/=(double val)
+  KOKKOS_INLINE_FUNCTION DenseMatrix& operator/=(double val)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] /= val;
+    for (int i = 0; i < m_ * n_; i++) data_(i) /= val;
     return *this;
   }
 
+#if 0 
   DenseMatrix& operator+=(const DenseMatrix& A)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] += A.data_[i];
+    for (int i = 0; i < m_ * n_; i++) data_(i) += A.data_[i];
     return *this;
   }
 
   DenseMatrix& operator-=(const DenseMatrix& A)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
+    for (int i = 0; i < m_ * n_; i++) data_(i) -= A.data_[i];
     return *this;
   }
 
@@ -102,20 +121,22 @@ class DenseMatrix {
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   // calculates B = *this * A
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
-
-  void putScalar(double val)
+#endif
+  KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
-    for (int i = 0; i < m_ * n_; i++) data_[i] = val;
+    for (int i = 0; i < m_ * n_; i++) data_(i) = val;
   }
 
   // access: the data are ordered by columns
-  int NumRows() const { return m_; }
-  int NumCols() const { return n_; }
+  KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
+  KOKKOS_INLINE_FUNCTION int NumCols() const { return n_; }
 
-  inline double* Values() { return data_; }
-  inline double* Value(int i, int j) { return data_ + j * m_ + i; }
-  inline const double* Values() const { return data_; }
-  inline const double* Value(int i, int j) const { return data_ + j * m_ + i; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION double& Value(int i, int j) { return data_(j * m_ + i); }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*> Values() const { return data_; }
+  KOKKOS_INLINE_FUNCTION const double& Value(int i, int j) const { return data_(j * m_ + i); }
+  KOKKOS_INLINE_FUNCTION double* Values_ptr() { return &data_(0);}
+  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const {return &data_(0); }
 
   // output
   friend std::ostream& operator<<(std::ostream& os, const DenseMatrix& A)
@@ -129,6 +150,7 @@ class DenseMatrix {
     return os;
   }
 
+#if 0 
   // First level routines
   // -- trace of a rectangular matrix
   double Trace();
@@ -186,13 +208,15 @@ class DenseMatrix {
 
   // -- permutations
   void SwapColumns(int n1, int n2);
-
+#endif 
  private:
-  int m_, n_, mem_, access_;
-  double* data_;
+  int m_, n_, mem_; 
+  //access_;
+  Kokkos::View<double*> data_; 
+  //double* data_;
 };
 
-
+#if 0 
 // non-member functions
 inline bool
 operator==(const DenseMatrix& A, const DenseMatrix& B)
@@ -224,7 +248,7 @@ PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f")
   }
   printf("\n");
 }
-
+#endif 
 } // namespace WhetStone
 } // namespace Amanzi
 

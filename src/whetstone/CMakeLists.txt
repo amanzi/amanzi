@@ -83,6 +83,13 @@ if (BUILD_TESTS)
 
     set(whetstone_test_link_libs geometry whetstone)
 
+    # Test: Matrices, Tensors and Vectors on GPU 
+    add_amanzi_test(whetstone_data_structures whetstone_data_structures
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_data_structures.cc
+                    LINK_LIBS ${whetstone_test_link_libs} ${UnitTest_LIBRARIES})
+
+
     # Test: miscalleneous library tools
     add_amanzi_test(whetstone_misc whetstone_misc
                     KIND unit

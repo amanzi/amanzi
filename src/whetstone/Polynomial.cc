@@ -134,12 +134,12 @@ Polynomial::Polynomial(int d, int order,
     DenseMatrix A(size_, size_);
     DenseVector b(size_);
 
-    A.Multiply(psi, psi, true);
-    psi.Multiply(values, b, true);
+    //A.Multiply(psi, psi, true);
+    //psi.Multiply(values, b, true);
 
     // solver linear systems
-    A.Inverse();
-    A.Multiply(b, coefs_, false);
+    //A.Inverse();
+    //A.Multiply(b, coefs_, false);
   }
 }
 
