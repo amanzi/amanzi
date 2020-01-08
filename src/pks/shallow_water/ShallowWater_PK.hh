@@ -53,22 +53,27 @@ class ShallowWater_PK : public PK_Physical,
 
     ShallowWater_PK() {};
                             
-    virtual void Setup(const Teuchos::Ptr<State>& S) {};
-    virtual void Initialize(const Teuchos::Ptr<State>& S) {};
+    ~ShallowWater_PK() {};
+                            
+    virtual void Setup(const Teuchos::Ptr<State>& S) override {};
+    virtual void Initialize(const Teuchos::Ptr<State>& S) override {};
     
-    virtual double get_dt() {};
-    virtual void set_dt(double dt) {};
+    virtual double get_dt() override {return 1.;};
+    virtual void set_dt(double dt) override {};
                      
     // Advance PK by step size dt.
-    virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+    virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
+                            
+    virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
+                                          Epetra_Vector& f_component) override;
                             
     // Commit any secondary (dependent) variables.
-    virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {};
+    virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
                             
     // Calculate any diagnostics prior to doing vis
-    virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+    virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
     
-    virtual std::string name() { return "Shallow water PK"; }
+    virtual std::string name() override { return "Shallow water PK"; }
                             
   protected:
     
