@@ -164,11 +164,9 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   // the space_dimension parameter
   int ok = 0;
 
-#ifdef DEBUG
-  if (vo_.get() && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *(vo_->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *(vo_->os()) << "MeshMST: Construct mesh from file" << std::endl;
   }
-#endif
 
   // Pre-processing (init, MPI queries etc)
   int space_dim = 3;
@@ -392,13 +390,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   int space_dim = 2;
   pre_create_steps_(space_dim);
 
-#ifdef DEBUG
-  if (verbosity_obj()) {
-    if (verbosity_obj()->os_OK(Teuchos::VERB_MEDIUM)) {
-      verbosity_obj()->os() << "Testing Verbosity !!!! - Construct mesh from low/hi coords - 2D" << std::endl;
-    }
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << "MeshMSTK: Construct mesh from low/hi coords - 2D" << std::endl;
   }
-#endif
 
   set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
@@ -3293,7 +3287,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // initialized from the input file
   
   if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() != NULL) {
-
+    // Ignore - perform operations in Mesh_MSTK::build_set
   }
   else if (rgn->type() == AmanziGeometry::LABELEDSET) {
     auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
@@ -3406,8 +3400,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
 
 #ifdef DEBUG
+{
   int nent_glob;
-
   get_comm()->SumAll(&nent_loc,&nent_glob,1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -3415,6 +3409,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     Errors::Message mesg(mesg_stream.str());
     Exceptions::amanzi_throw(mesg);
   }
+}
 #endif
   
   setents->resize(nent_loc);
@@ -3463,11 +3458,12 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // extracting the appropriate category of entities
     
 #ifdef DEBUG
+  int nent_glob;
   get_comm()->SumAll(&nent_loc,&nent_glob,1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
-    mesg_stream << "Could not retrieve any mesh entities of type " << setkind << " for set " << setname << std::endl;
+    mesg_stream << "Could not retrieve any mesh entities of type " << entity_kind_string(kind) << " for set " << setname << std::endl;
     Errors::Message mesg(mesg_stream.str());
     Exceptions::amanzi_throw(mesg);
   }
@@ -5725,7 +5721,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (fregs) {
           int nfregs = List_Num_Entries(fregs);
           List_Delete(fregs);
-          if (nfregs == 1) return true;
+          if (nfregs == 1) {
+            List_Delete(vfaces);
+            return true;
+          }
         }
       }
       List_Delete(vfaces);
@@ -5741,7 +5740,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (efaces) {
           int nefaces = List_Num_Entries(efaces);
           List_Delete(efaces);
-          if (nefaces == 1) return true;
+          if (nefaces == 1) {
+            List_Delete(vedges);
+            return true;
+          }
         }
       }
       List_Delete(vedges);
