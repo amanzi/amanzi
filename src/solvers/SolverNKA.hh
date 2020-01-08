@@ -87,7 +87,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int fun_calls_, pc_calls_;
   int pc_lag_, pc_updates_;
   int nka_lag_space_, nka_lag_iterations_;
-  int max_error_growth_factor_, max_du_growth_factor_;
+  double max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
 
   bool modify_correction_;
