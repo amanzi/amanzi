@@ -171,7 +171,31 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // ------------------
   // process constraint
   // ------------------
-  f->SubVector(2)->Data()->PutScalar(0.0);
+  auto f2 = f->SubVector(2)->Data();
+  auto& f2_c = *f2->ViewComponent("cell");
+
+  auto u2 = f->SubVector(2)->Data();
+  auto& u2_c = *u2->ViewComponent("cell");  // saturation liquid
+
+  if (ncp_ == "min") {
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double x_sum(0.0);
+      for (int i = 0; i < num_primary_; ++i) {
+        x_sum += u1_c[i][c];
+      } 
+      f2_c[0][c] = std::min(1.0 - u2_c[0][c], 1.0 - x_sum);
+    }
+  } else if (ncp_ == "Fischer-Burmeister") {
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double x_sum(0.0);
+      for (int i = 0; i < num_primary_; ++i) {
+        x_sum += u1_c[i][c];
+      } 
+      double a = 1.0 - u2_c[0][c];
+      double b = 1.0 - x_sum;
+      f2_c[0][c] = pow(a * a + b * b, 0.5) - (a + b);
+    }
+  }
 }
 
 

@@ -104,7 +104,7 @@
           <Parameter name="min time step" type="double" value="1.0e-20"/>
         </ParameterList>
 
-        <Parameter name="solver type" type="string" value="nka"/>
+        <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
           <Parameter name="nonlinear tolerance" type="double" value="6.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>

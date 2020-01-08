@@ -223,7 +223,6 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   ncp_ = mp_list_->get<std::string>("NCP function", "min");
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
-  // H_ = mp_list_->get<double>("Henry law constants", 7.65e-6);
   num_aqueous_ = mp_list_->get<int>("number aqueous components");
   num_gaseous_ = mp_list_->get<int>("number gaseous components");
   num_primary_ = component_names_.size();
