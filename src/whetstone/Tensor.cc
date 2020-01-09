@@ -45,20 +45,6 @@ Tensor::Tensor(const Tensor& T)
 
 
 /* ******************************************************************
- * Trace operation with tensors of rank 1 and 2
- ****************************************************************** */
-double
-Tensor::Trace() const
-{
-  double s = 0.0;
-  if (rank_ <= 2) {
-    for (int i = 0; i < size_; i++) s += (*this)(i, i);
-  }
-  return s;
-}
-
-
-/* ******************************************************************
  * Inverse operation with tensors of rank 1 and 2
  ****************************************************************** */
 void
@@ -168,51 +154,6 @@ Tensor::Cofactors() const
   return C;
 }
 
-
-/* ******************************************************************
- * Transpose operator for non-symmetric tensors.
- ****************************************************************** */
-void
-Tensor::Transpose()
-{
-  if (rank_ == 2 && d_ == 2) {
-    double tmp = data_[1];
-    data_[1] = data_[2];
-    data_[2] = tmp;
-  } else if (rank_ == 2 && d_ == 3) {
-    double tmp = data_[1];
-    data_[1] = data_[3];
-    data_[3] = tmp;
-
-    tmp = data_[2];
-    data_[2] = data_[6];
-    data_[6] = tmp;
-
-    tmp = data_[5];
-    data_[5] = data_[7];
-    data_[7] = tmp;
-  }
-}
-
-
-/* ******************************************************************
- * Determinant of second-order tensors.
- ****************************************************************** */
-double
-Tensor::Det() const
-{
-  double det = 0.0;
-  if (rank_ == 2 && d_ == 2) {
-    det = data_[0] * data_[3] - data_[1] * data_[2];
-  } else if (rank_ == 2 && d_ == 3) {
-    det = data_[0] * data_[4] * data_[8] + data_[2] * data_[3] * data_[7] +
-          data_[1] * data_[5] * data_[6] - data_[2] * data_[4] * data_[6] -
-          data_[1] * data_[3] * data_[8] - data_[0] * data_[5] * data_[7];
-  }
-  return det;
-}
-
-
 /* ******************************************************************
  * Symmetrizing the tensors of rank 2.
  ****************************************************************** */
@@ -235,20 +176,6 @@ Tensor::SymmetricPart()
     data_[7] = tmp;
   }
 }
-
-
-/* ******************************************************************
- * Check that matrix is zero.
- ****************************************************************** */
-bool
-Tensor::isZero()
-{
-  for (int i = 0; i < size_ * size_; i++) {
-    if (data_[i] != 0.0) return false;
-  }
-  return true;
-}
-
 
 /* ******************************************************************
  * Spectral bounds of symmetric tensors of rank 1 and 2
@@ -278,38 +205,6 @@ Tensor::SpectralBounds(double* lower, double* upper) const
     *lower = S[0];
     *upper = S[n - 1];
   }
-}
-
-
-/* ******************************************************************
- * Elementary operations with a constant. Since we use Voigt notation,
- * the identity tensor equals the identity matrix.
- ****************************************************************** */
-Tensor&
-Tensor::operator*=(double c)
-{
-  for (int i = 0; i < size_ * size_; i++) data_[i] *= c;
-  return *this;
-}
-
-
-Tensor&
-Tensor::operator+=(double c)
-{
-  for (int i = 0; i < size_ * size_; i += size_ + 1) data_[i] += c;
-  return *this;
-}
-
-
-/* ******************************************************************
- * Elementary operations with a tensor.
- ****************************************************************** */
-Tensor&
-Tensor::operator-=(const Tensor& T)
-{
-  Kokkos::View<double*> data = T.data(); 
-  for (int i = 0; i < size_ * size_; ++i) data_[i] -= data[i];
-  return *this;
 }
 
 #if 0 
@@ -402,65 +297,6 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
   return T3;
 }
 
-
-
-
-
-/* ******************************************************************
- * Dot product of tensors of equal rank.
- ****************************************************************** */
-double
-DotTensor(const Tensor& T1, const Tensor& T2)
-{
-  Kokkos::View<double*> data1 = T1.data(); 
-  Kokkos::View<double*> data2 = T2.data(); 
-  int mem = T1.size() * T1.size();
-
-  double s(0.0);
-  for (int i = 0; i < mem; i++) s += data1[i] * data2[i];
-  return s;
-}
-
-
-/* ******************************************************************
- * Miscaleneous routines: diagonal tensor
- ****************************************************************** */
-void
-Tensor::MakeDiagonal(double s)
-{
-  if (data_.extent(0) != size_*size_) return;
-
-  int mem = size_ * size_;
-  for (int i = 1; i < mem; i++) data_[i] = 0.0;
-  for (int i = 0; i < mem; i += d_ + 1) data_[i] = s;
-}
-
-
-/* ******************************************************************
- * Miscaleneous routines: populate tensors of rank 2
- ****************************************************************** */
-int
-Tensor::SetColumn(int column, const AmanziGeometry::Point& p)
-{
-  if (rank_ == 2) {
-    for (int i = 0; i < d_; i++) (*this)(i, column) = p[i];
-    return 1;
-  }
-  return -1;
-}
-
-
-int
-Tensor::SetRow(int row, const AmanziGeometry::Point& p)
-{
-  if (rank_ == 2) {
-    for (int i = 0; i < d_; i++) (*this)(row, i) = p[i];
-    return 1;
-  }
-  return 0;
-}
-
-
 /* ******************************************************************
  * Miscaleneous routines: print
  ****************************************************************** */
@@ -496,7 +332,7 @@ TensorToVector(const Tensor& T, DenseVector& v)
     for (int i = 0; i < mem; ++i) data2[i] = data1[i];
   } else if (T.rank() == 1) {
     int d = T.dimension();
-    int mem = WHETSTONE_TENSOR_SIZE[d - 1][1]; // rank 2
+    int mem = 2;//T.WHETSTONE_TENSOR_SIZE[d - 1][1]; // rank 2
     v.putScalar(0.0);
     for (int i = 0; i < mem * mem; i += d + 1) data2[i] = data1[0];
   }

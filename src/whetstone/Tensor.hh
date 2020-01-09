@@ -26,21 +26,22 @@
 
 #include <Kokkos_Core.hpp>
 
-const int WHETSTONE_TENSOR_SIZE[3][4] = { {1, 1, 0, 1},
-                                          {1, 2, 0, 3},
-                                          {1, 3, 0, 6 }};
-
 namespace Amanzi {
 namespace WhetStone {
 
+const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
+                                         {1, 2, 0, 3},
+                                         {1, 3, 0, 6 }};
+
 class Tensor {
  public:
+
 
   KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0){}
   //Tensor(const Tensor& T);
   Tensor(const int& d, const int& rank){ Init(d, rank); }
 
-#if 0 
+#if 0
   KOKKOS_INLINE_FUNCTION Tensor(int d, int rank, const Kokkos::View<double*> data)
   {
     size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
@@ -49,7 +50,7 @@ class Tensor {
     d_ = d;
     rank_ = rank;
   }
-#endif 
+#endif
   
   /*******************************************************************
   * Initialization of a tensor of rank 1, 2 or 4.
@@ -70,37 +71,172 @@ class Tensor {
   ****************************************************************** */
   KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
+    // Need to have a copy for the device 
+    // \TODO find another way 
+    const int WHETSTONE_TENSOR_SIZE_L[3][4] = { {1, 1, 0, 1},
+                                                {1, 2, 0, 3},
+                                                {1, 3, 0, 6 }};
     if (data_.extent(0) != size_*size_) return;
-    size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
+    size_ = WHETSTONE_TENSOR_SIZE_L[d_ - 1][rank_ - 1];
     int mem = size_ * size_;
     for (int i = 0; i < mem; i++) data_[i] = val;
   }
 
-  double Trace() const;
-  double Det() const;
+  /* ******************************************************************
+  * Trace operation with tensors of rank 1 and 2
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION double Trace() const 
+  {
+    double s = 0.0;
+    if (rank_ <= 2) {
+      for (int i = 0; i < size_; i++) s += (*this)(i, i);
+    }
+    return s;
+  }
+
+
+  /* ******************************************************************
+  * Transpose operator for non-symmetric tensors.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION void Transpose()
+  {
+    if (rank_ == 2 && d_ == 2) {
+      double tmp = data_[1];
+      data_[1] = data_[2];
+      data_[2] = tmp;
+    } else if (rank_ == 2 && d_ == 3) {
+      double tmp = data_[1];
+      data_[1] = data_[3];
+      data_[3] = tmp;
+
+      tmp = data_[2];
+      data_[2] = data_[6];
+      data_[6] = tmp;
+
+      tmp = data_[5];
+      data_[5] = data_[7];
+      data_[7] = tmp;
+    }
+  }
+
+
+  /* ******************************************************************
+  * Determinant of second-order tensors.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION double Det() const
+  {
+    double det = 0.0;
+    if (rank_ == 2 && d_ == 2) {
+      det = data_[0] * data_[3] - data_[1] * data_[2];
+    } else if (rank_ == 2 && d_ == 3) {
+      det = data_[0] * data_[4] * data_[8] + data_[2] * data_[3] * data_[7] +
+            data_[1] * data_[5] * data_[6] - data_[2] * data_[4] * data_[6] -
+            data_[1] * data_[3] * data_[8] - data_[0] * data_[5] * data_[7];
+    }
+    return det;
+  }
+
+
+  /* ******************************************************************
+  * Check that matrix is zero.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION bool isZero()
+  {
+    for (int i = 0; i < size_ * size_; i++) {
+      if (data_[i] != 0.0) return false;
+    }
+    return true;
+  }
+
   void Inverse();
   void PseudoInverse();
-  void Transpose();
   Tensor Cofactors() const;
   void SymmetricPart();
-  bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
 
-  // elementary operators
-  Tensor& operator*=(double c);
-  Tensor& operator+=(double c);
-  Tensor& operator-=(const Tensor& T);
+  /* ******************************************************************
+  * Elementary operations with a constant. Since we use Voigt notation,
+  * the identity tensor equals the identity matrix.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION Tensor& operator*=(double c)
+  {
+    for (int i = 0; i < size_ * size_; i++) data_[i] *= c;
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION Tensor& operator+=(double c)
+  {
+    for (int i = 0; i < size_ * size_; i += size_ + 1) data_[i] += c;
+    return *this;
+  }
+
+  /* ******************************************************************
+  * Elementary operations with a tensor.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION Tensor& operator-=(const Tensor& T)
+  {
+    Kokkos::View<double*> data = T.data(); 
+    for (int i = 0; i < size_ * size_; ++i) data_[i] -= data[i];
+    return *this;
+  }
+
   //Tensor& operator=(const Tensor& T);
   //friend AmanziGeometry::Point
   //operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
-  friend double DotTensor(const Tensor& T1, const Tensor& T2);
 
-  // initialization
-  void MakeDiagonal(double s);
-  int SetColumn(int column, const AmanziGeometry::Point& p);
-  int SetRow(int row, const AmanziGeometry::Point& p);
+  /* ******************************************************************
+  * Dot product of tensors of equal rank.
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION double DotTensor(
+    const Tensor& T1, const Tensor& T2)
+  {
+    Kokkos::View<double*> data1 = T1.data(); 
+    Kokkos::View<double*> data2 = T2.data(); 
+    int mem = T1.size() * T1.size();
 
+    double s(0.0);
+    for (int i = 0; i < mem; i++) s += data1[i] * data2[i];
+    return s;
+  }
+
+
+  /* ******************************************************************
+  * Miscaleneous routines: diagonal tensor
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION void MakeDiagonal(double s)
+  {
+    if (data_.extent(0) != size_*size_) return;
+
+    int mem = size_ * size_;
+    for (int i = 1; i < mem; i++) data_[i] = 0.0;
+    for (int i = 0; i < mem; i += d_ + 1) data_[i] = s;
+  }
+
+  /* ******************************************************************
+  * Miscaleneous routines: populate tensors of rank 2
+  ****************************************************************** */
+  KOKKOS_INLINE_FUNCTION int SetColumn(
+    int column, const AmanziGeometry::Point& p)
+  {
+    if (rank_ == 2) {
+      for (int i = 0; i < d_; i++) (*this)(i, column) = p[i];
+      return 1;
+    }
+    return -1;
+  }
+
+
+  KOKKOS_INLINE_FUNCTION int SetRow(
+    int row, const AmanziGeometry::Point& p)
+  {
+    if (rank_ == 2) {
+      for (int i = 0; i < d_; i++) (*this)(row, i) = p[i];
+      return 1;
+    }
+    return 0;
+  }
+  
   // access members
   KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_[j * size_ + i]; }
   KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) const { return data_[j * size_ + i]; }
