@@ -3283,13 +3283,15 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   std::string internal_name = internal_name_of_set(rgn,kind);
 
-  // If region is of type labeled set and a mesh set should have been
-  // initialized from the input file
+  // If region is of type labeled set, a mesh set should have been
+  // initialized from the input file. If region requires volume 
+  // fractions or is a segment, use base class capabilities to 
+  // build a mesh set. Otherwise, if a mesh set exists, search 
+  // the database for it. This is a two step procedure, which shows
+  // probably defficiency of the internal naming convention (KL).
+  // Finally, build a new mesh set for the region.
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() != NULL) {
-    // Ignore - perform operations in Mesh_MSTK::build_set
-  }
-  else if (rgn->type() == AmanziGeometry::LABELEDSET) {
+  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() == NULL) {
     auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string label = lsrgn->label();
     std::string entity_type = lsrgn->entity_str();
@@ -3390,7 +3392,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   // All attempts to find the set failed so it must not exist - build it
 
-  if (mset1 == NULL && rgn->type() != AmanziGeometry::LABELEDSET) {
+  if (mset1 == NULL) {
     mset1 = build_set(rgn, kind);
   }
 
