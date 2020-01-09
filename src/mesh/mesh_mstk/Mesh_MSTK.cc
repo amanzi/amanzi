@@ -164,6 +164,10 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   // the space_dimension parameter
   int ok = 0;
 
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *(vo_->os()) << "Construct mesh from file" << std::endl;
+  }
+
   // Pre-processing (init, MPI queries etc)
   int space_dim = 3;
   pre_create_steps_(space_dim);
@@ -385,6 +389,11 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   int ok;
   int space_dim = 2;
   pre_create_steps_(space_dim);
+
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << "Construct mesh from low/hi coords - 2D" << std::endl;
+  }
+
   set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
   int topo_dim=space_dim; // What is the topological dimension of the mesh
@@ -3273,13 +3282,15 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   std::string internal_name = internal_name_of_set(rgn,kind);
 
-  // If region is of type labeled set and a mesh set should have been
-  // initialized from the input file
+  // If region is of type labeled set, a mesh set should have been
+  // initialized from the input file. If region requires volume 
+  // fractions or is a segment, use base class capabilities to 
+  // build a mesh set. Otherwise, if a mesh set exists, search 
+  // the database for it. This is a two step procedure, which shows
+  // probably defficiency of the internal naming convention (KL).
+  // Finally, build a new mesh set for the region.
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() != NULL) {
-
-  }
-  else if (rgn->type() == AmanziGeometry::LABELEDSET) {
+  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() == NULL) {
     auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string label = lsrgn->label();
     std::string entity_type = lsrgn->entity_str();
@@ -3380,14 +3391,14 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   // All attempts to find the set failed so it must not exist - build it
 
-  if (mset1 == NULL && rgn->type() != AmanziGeometry::LABELEDSET) {
+  if (mset1 == NULL) {
     mset1 = build_set(rgn, kind);
   }
 
   // Check if no processor got any mesh entities
 
   int nent_loc = (mset1 == NULL) ? 0 : MSet_Num_Entries(mset1);
-  
+
   setents->resize(nent_loc);
   Entity_ID_List::iterator it = setents->begin();
 
@@ -5682,7 +5693,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (fregs) {
           int nfregs = List_Num_Entries(fregs);
           List_Delete(fregs);
-          if (nfregs == 1) return true;
+          if (nfregs == 1) {
+            List_Delete(vfaces);
+            return true;
+          }
         }
       }
       List_Delete(vfaces);
@@ -5698,7 +5712,10 @@ Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
         if (efaces) {
           int nefaces = List_Num_Entries(efaces);
           List_Delete(efaces);
-          if (nefaces == 1) return true;
+          if (nefaces == 1) {
+            List_Delete(vedges);
+            return true;
+          }
         }
       }
       List_Delete(vedges);
