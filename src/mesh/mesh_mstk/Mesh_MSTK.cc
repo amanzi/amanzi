@@ -164,12 +164,6 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   // the space_dimension parameter
   int ok = 0;
 
-#ifdef DEBUG
-  if (vo_.get() && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *(vo_->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
-  }
-#endif
-
   // Pre-processing (init, MPI queries etc)
   int space_dim = 3;
   pre_create_steps_(space_dim);
@@ -391,17 +385,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   int ok;
   int space_dim = 2;
   pre_create_steps_(space_dim);
-
-#ifdef DEBUG
-  if (verbosity_obj()) {
-    if (verbosity_obj()->os_OK(Teuchos::VERB_MEDIUM)) {
-      verbosity_obj()->os() << "Testing Verbosity !!!! - Construct mesh from low/hi coords - 2D" << std::endl;
-    }
-  }
-#endif
-
   set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
-
 
   int topo_dim=space_dim; // What is the topological dimension of the mesh
   set_manifold_dimension(topo_dim);
@@ -3403,19 +3387,6 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // Check if no processor got any mesh entities
 
   int nent_loc = (mset1 == NULL) ? 0 : MSet_Num_Entries(mset1);
-
-
-#ifdef DEBUG
-  int nent_glob;
-
-  get_comm()->SumAll(&nent_loc,&nent_glob,1);
-  if (nent_glob == 0) {
-    std::stringstream mesg_stream;
-    mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-#endif
   
   setents->resize(nent_loc);
   Entity_ID_List::iterator it = setents->begin();
@@ -3458,20 +3429,6 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     
     setents->resize(nent_loc);
   }
-      
-  // Check if there were no entities left on any processor after
-  // extracting the appropriate category of entities
-    
-#ifdef DEBUG
-  get_comm()->SumAll(&nent_loc,&nent_glob,1);
-  
-  if (nent_glob == 0) {
-    std::stringstream mesg_stream;
-    mesg_stream << "Could not retrieve any mesh entities of type " << setkind << " for set " << setname << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-#endif
 }
 
 
