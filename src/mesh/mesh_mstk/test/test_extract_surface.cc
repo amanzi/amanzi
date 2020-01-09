@@ -505,5 +505,18 @@ TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_BOTTOM_CELLS) {
   }
 }
 
+
+TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_BAD_NAME) {
+  extract(false);
+
+  // In this case, a cell set in the parent becomes a cell set in the surface,
+  // but there is no intersection.  This is either valid, but doesn't throw and
+  // returns an empty set, or is not valid.  Either is OK?
+  bool is_valid = surfmesh->valid_set_name("Region Not Here", Amanzi::AmanziMesh::CELL);
+  CHECK(!is_valid);
+  is_valid = surfmesh->valid_set_name("Region Not Here", Amanzi::AmanziMesh::FACE);
+  CHECK(!is_valid);
+}
+
 }
 
