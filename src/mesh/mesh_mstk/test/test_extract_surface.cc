@@ -295,7 +295,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_SIDE_FACES) {
   // In this case, a face set in the parent becomes a face set in the surface
   surfmesh->get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 3);
+  CHECK_EQUAL(3, setents.size());
 }
 
 TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_SIDE_FACES_NO_CELLS) {
@@ -306,7 +306,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_SIDE_FACES_NO_CELLS) {
   // In this case, a face set in the parent becomes a face set in the surface
   surfmesh->get_set_entities("Side Surface",Amanzi::AmanziMesh::CELL,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 0);
+  CHECK_EQUAL(0, setents.size());
 }
 
 TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_FACES) {
@@ -314,7 +314,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_FACES) {
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::CELL,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 9);
+  CHECK_EQUAL(0, setents.size());
 }
 
 TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_FACES_NO_FACES) {
@@ -322,7 +322,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_FACES_NO_FACES) {
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::FACE,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 0);
+  CHECK_EQUAL(0, setents.size());
 }
 
 TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_CELLS) {
@@ -330,7 +330,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_TOP_CELLS) {
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh->get_set_entities("Region 1",Amanzi::AmanziMesh::CELL,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 9);
+  CHECK_EQUAL(9, setents.size());
 }
 
 TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_BOTTOM_CELLS) {
@@ -339,7 +339,7 @@ TEST_FIXTURE(test_fixture, Extract_Surface_MSTK3_BOTTOM_CELLS) {
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh->get_set_entities("Region 2",Amanzi::AmanziMesh::CELL,
                             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK(setents.size() == 0);
+  CHECK_EQUAL(0, setents.size());
 }
 
 
