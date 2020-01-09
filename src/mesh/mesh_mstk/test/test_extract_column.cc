@@ -152,14 +152,20 @@ TEST(Extract_Column_MSTK_SETS)
 
   // check we can still get sets
   Amanzi::AmanziMesh::Entity_ID_List set_ids2;
+  bool is_valid = column_mesh.valid_set_name("Region 1", Amanzi::AmanziMesh::CELL);
+  CHECK(is_valid);
   column_mesh.get_set_entities("Region 1", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(1, set_ids2.size());
 
   set_ids2.clear();
+  is_valid = column_mesh.valid_set_name("Top Surface", Amanzi::AmanziMesh::FACE);
+  CHECK(is_valid);
   column_mesh.get_set_entities("Top Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(1, set_ids2.size());
 
   set_ids2.clear();
+  is_valid = column_mesh.valid_set_name("Side Surface", Amanzi::AmanziMesh::FACE);
+  CHECK(is_valid);
   column_mesh.get_set_entities("Side Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(3, set_ids2.size());
 }
