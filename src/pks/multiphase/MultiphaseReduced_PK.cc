@@ -50,7 +50,6 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
   plist.set<std::string>("my key", "total_water_storage")
        .set<std::string>("saturation liquid key", saturation_liquid_key_)
        .set<std::string>("porosity key", porosity_key_);
-  plist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
   eval_tws_ = Teuchos::rcp(new TotalWaterStorage(plist));
   S->SetFieldEvaluator("total_water_storage", eval_tws_);
@@ -135,6 +134,14 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
       }
     }
 
+    if (bcs_[i]->bc_name() == "flux") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_p[f] = it->second[0];
+      }
+    }
+
     if (bcs_[i]->bc_name() == "saturation") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
@@ -146,9 +153,8 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
   // mark missing boundary conditions as zero flux conditions 
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  for (int f = 0; f < nfaces; f++) {
+  for (int f = 0; f < nfaces_owned_; f++) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
     if (cells.size() == 1) {
@@ -165,6 +171,21 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
 
   bc_model_s = bc_model_p;
   bc_model_x = bc_model_p;
+
+  // boundary conditions for derived fields 
+  auto& bc_model_pg = op_bc_pg_->bc_model();
+  auto& bc_value_pg = op_bc_pg_->bc_value();
+
+  for (int f = 0; f != nfaces_owned_; ++f) {
+    if (bc_model_p[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
+      bc_value_pg[f] = bc_value_p[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_s[f]);
+    }
+  }
+
+  bc_model_pg = bc_model_p;
 }
 
 }  // namespace Multiphase

@@ -110,6 +110,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key domain_;  // computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_; 
   int ncells_owned_, ncells_wghost_;
+  int nfaces_owned_, nfaces_wghost_;
   int dim_;
 
   Teuchos::RCP<State> S_;
@@ -144,11 +145,15 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
+  Teuchos::RCP<Operators::BCs> op_bc_pg_;
 
   // physical parameters
   double mu_l_, mu_g_, rho_l_, eta_l_;
   std::vector<WhetStone::Tensor> K_;
   std::vector<double> mol_diff_l_, mol_diff_g_; 
+
+  // water retention models
+  Teuchos::RCP<WRMmpPartition> wrm_;
 
   // upwind
   Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
@@ -170,9 +175,6 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<const Teuchos::ParameterList> pc_list_;
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
-
-  // water retention models
-  Teuchos::RCP<WRMmpPartition> wrm_;
 
   // time integration
   int num_itrs_;

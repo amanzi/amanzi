@@ -221,6 +221,9 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
   ncp_ = mp_list_->get<std::string>("NCP function", "min");
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
   num_aqueous_ = mp_list_->get<int>("number aqueous components");
@@ -284,6 +287,21 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
+  // -- mass flux
+  if (bc_list.isSublist("mass flux total")) {
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("mass flux total");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      if (it->second.isList()) {
+        Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("flux");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
   // -- saturation
   if (bc_list.isSublist("saturation")) {
     PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
@@ -313,6 +331,8 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     bcs_[i]->Compute(t_ini, t_ini);
     bcs_[i]->ComputeSubmodel(mesh_);
   }
+
+  op_bc_pg_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   PopulateBCs(0);
 

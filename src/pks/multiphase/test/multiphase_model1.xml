@@ -53,9 +53,9 @@
     <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="primary component names" type="Array(string)" value="{O2}"/>
-      <Parameter name="aqueous values" type="Array(double)" value="{3e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{3e-9}"/>
+      <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-9}"/>
     </ParameterList>
 
     <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
@@ -104,9 +104,9 @@
           <Parameter name="min time step" type="double" value="1.0e-20"/>
         </ParameterList>
 
-        <Parameter name="solver type" type="string" value="Newton"/>
+        <Parameter name="solver type" type="string" value="nka"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="6.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
@@ -116,13 +116,13 @@
           <Parameter name="monitor" type="string" value="monitor residual"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="7.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="2.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-          <Parameter name="limit iterations" type="int" value="12"/>
+          <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
           <Parameter name="max nka vectors" type="int" value="10"/>
-          <Parameter name="modify correction" type="bool" value="false"/>
+          <Parameter name="modify correction" type="bool" value="true"/>
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="true"/>
@@ -155,7 +155,7 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
+              <Parameter name="value" type="double" value="-1.766235413495687e-7"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -286,7 +286,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.5"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -332,9 +332,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="molar_density_liquid">
@@ -360,9 +357,9 @@
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
         </ParameterList>
-        <ParameterList name="verbose object">
+        <!--ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
+        </ParameterList-->
       </ParameterList>
 
       <ParameterList name="temperature">

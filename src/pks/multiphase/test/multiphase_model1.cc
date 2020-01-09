@@ -83,7 +83,7 @@ TEST(MULTIPHASE_MODEL_I) {
 
   // loop
   bool failed = true;
-  double t(0.0), tend(1.0e+2), dt(tend);
+  double t(0.0), tend(1.0e+12), dt(tend / 10);
   while (t - tend) {
     bool failed = MPK->AdvanceStep(t, t + dt, false);
 

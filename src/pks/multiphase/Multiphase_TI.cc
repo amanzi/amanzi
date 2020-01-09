@@ -36,6 +36,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 {
   double dtp = t_new - t_old;
 
+  PopulateBCs(0);
+
   // trigger update of primary variables
   saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
@@ -94,6 +96,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto& kr_c = *kr->ViewComponent("cell");
 
   for (int i = 0; i < num_primary_; ++i) {
+    PopulateBCs(i);
+
     // -- upwind the scaled relative permeability kr xi eta_l / mu_l
     for (int c = 0; c < ncells_owned_; ++c) {
       kr_c[0][c] = u1_c[i][c] * eta_l_ * relperm_lc[0][c] / mu_l_;
@@ -117,13 +121,14 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
     // -- add transport in gas phase
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
+    pdeK->SetBCs(op_bc_pg_, op_bc_pg_);
     pdeK->global_operator()->Init();
     pdeK->ApplyBCs(true, true, true);
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
     pdeK->global_operator()->ComputeNegativeResidual(*pg, fadd);
     f1->Update(1.0, fadd, 1.0);
 
-    // -- add molecular diffusion using harmoic-mean formula
+    // -- add molecular diffusion using harmonic-mean transmissibility
     CompositeVector u1i(fadd);
     *u1i.ViewComponent("cell") = *u1->ViewComponent("cell");
 
@@ -174,7 +179,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto f2 = f->SubVector(2)->Data();
   auto& f2_c = *f2->ViewComponent("cell");
 
-  auto u2 = f->SubVector(2)->Data();
+  const auto& u2 = u_new->SubVector(2)->Data();
   auto& u2_c = *u2->ViewComponent("cell");  // saturation liquid
 
   if (ncp_ == "min") {
@@ -215,8 +220,11 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                        Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
+
   // return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
   *Y = *X;
+
+  Y->SubVector(0)->Data()->Scale(1.0e-3);
   return 0;
 }
 
@@ -228,12 +236,18 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<const TreeVector> du) 
 {
   double du_l2 = 0.0;
-  double resnorm_p, resnorm_s, resnorm_r;
+  double rnorm_p, rnorm_x, rnorm_s;
 
-  du->SubVector(0)->Data()->Norm2(&resnorm_p);
-  du->SubVector(1)->Data()->Norm2(&resnorm_s);
-  du->SubVector(2)->Data()->Norm2(&resnorm_r);
-  printf("resnorm_p = %4.6e, resnorm_s = %4.6e, resnorm_r = %4.6e \n", resnorm_p, resnorm_s, resnorm_r);
+  du->SubVector(0)->Data()->Norm2(&rnorm_p);
+  du->SubVector(1)->Data()->Norm2(&rnorm_x);
+  du->SubVector(2)->Data()->Norm2(&rnorm_s);
+
+  /*
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "rnorm_p= " << rnorm_p << ", rnorm_x=" << rnorm_x << ", rnorm_s=" << rnorm_s << std::endl;
+  }
+  */
 
   du->Norm2(&du_l2);
   return du_l2;
@@ -245,18 +259,21 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Multiphase_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                               Teuchos::RCP<const TreeVector> u,
-                               Teuchos::RCP<TreeVector> du)
+                                Teuchos::RCP<const TreeVector> u,
+                                Teuchos::RCP<TreeVector> du)
 {
-  Teuchos::RCP<CompositeVector> rho_next = Teuchos::rcp(new CompositeVector(*u->SubVector(2)->Data()));
-  rho_next->Update(-1.0, *du->SubVector(2)->Data(), 1.0);
+  auto u2 = u->SubVector(2);
+  auto du2 = du->SubVector(2);
 
-  Epetra_MultiVector& rho_c = *rho_next->ViewComponent("cell");
-  for (int c = 0; c < rho_c.MyLength(); c++) {
-    rho_c[0][c] = std::max(0.0, rho_c[0][c]);
+  auto sat_next = Teuchos::rcp(new CompositeVector(*u2->Data()));
+  sat_next->Update(-1.0, *du2->Data(), 1.0);
+
+  Epetra_MultiVector& sat_c = *sat_next->ViewComponent("cell");
+  for (int c = 0; c < ncells_owned_; ++c) {
+    sat_c[0][c] = std::max(0.0, sat_c[0][c]);
   }
 
-  du->SubVector(2)->Data()->Update(1.0, *u->SubVector(2)->Data(), -1.0, *rho_next, 0.0);
+  du2->Data()->Update(1.0, *u2->Data(), -1.0, *sat_next, 0.0);
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
 }
