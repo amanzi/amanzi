@@ -76,53 +76,63 @@ TEST(Extract_Column_MSTK)
 // Do the same but for an exodus mesh, with sets.
 TEST(Extract_Column_MSTK_SETS)
 {
-  // construct a column mesh
+  std::string filename("test/hex_3x3x3_sets.exo");
   auto comm = Amanzi::getDefaultComm();
+  Teuchos::ParameterList parameterlist;
+ 
+  // create a sublist name Regions and put a reference to it in
+  // reg_spec and other sublists as references. Turns out it is
+  // important to define reg_spec and other lists below as references
+  // - otherwise, a new copy is made of the sublist that is retrieved
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
+  
+  Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: labeled set");
+  top_surface_def.set<std::string>("label","106");
+  top_surface_def.set<std::string>("file",filename.c_str());
+  top_surface_def.set<std::string>("format","Exodus II");
+  top_surface_def.set<std::string>("entity","face");
 
-  std::string infilename = "test/test_extract_column.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(infilename);
-  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+  Teuchos::ParameterList& side_surface = reg_spec.sublist("Side Surface");
+  Teuchos::ParameterList& side_surface_def = side_surface.sublist("region: labeled set");
+  side_surface_def.set<std::string>("label","102");
+  side_surface_def.set<std::string>("file",filename.c_str());
+  side_surface_def.set<std::string>("format","Exodus II");
+  side_surface_def.set<std::string>("entity","face");
 
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
+  Teuchos::ParameterList& r1_surface = reg_spec.sublist("Region 1");
+  Teuchos::ParameterList& r1_surface_def = r1_surface.sublist("region: labeled set");
+  r1_surface_def.set<std::string>("label","30000");
+  r1_surface_def.set<std::string>("file",filename.c_str());
+  r1_surface_def.set<std::string>("format","Exodus II");
+  r1_surface_def.set<std::string>("entity","cell");
+  
+  Teuchos::ParameterList& r2_surface = reg_spec.sublist("Region 2");
+  Teuchos::ParameterList& r2_surface_def = r2_surface.sublist("region: labeled set");
+  r2_surface_def.set<std::string>("label","20000");
+  r2_surface_def.set<std::string>("file",filename.c_str());
+  r2_surface_def.set<std::string>("format","Exodus II");
+  r2_surface_def.set<std::string>("entity","cell");
 
-  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/four_polygons.exo",comm,gm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm, gm));
   CHECK_EQUAL(1, mesh->build_columns());
-  CHECK_EQUAL(4, mesh->num_columns());
+  CHECK_EQUAL(9, mesh->num_columns());
 
   // make sure we can get sets on the mesh
   Amanzi::AmanziMesh::Entity_ID_List set_ids;
-  mesh->get_set_entities("organic", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids);
-  CHECK_EQUAL(40, set_ids.size());
-  
-  int ncells = 118;
-  
+  mesh->get_set_entities("Region 1", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids);
+  CHECK_EQUAL(9, set_ids.size());
+
+  int ncells = 3;
   Amanzi::AmanziMesh::Entity_ID_List const& cell_list = mesh->cells_of_column(0);
   CHECK_EQUAL(ncells,cell_list.size());
-
-  // check we are not doubling up on some cells (catches previous bug)
-  for (int i=0; i!=ncells; ++i) {
-    for (int j=0; j!=ncells; ++j) {
-      if (i != j) {
-        CHECK(cell_list[i] != cell_list[j]);
-      }
-    }
-  }
 
   Amanzi::AmanziMesh::Entity_ID_List const& face_list = mesh->faces_of_column(0);
   CHECK_EQUAL(ncells+1,face_list.size());
 
-  // check we are not doubling up on some faces (catches previous bug)
-  for (int i=0; i!=ncells+1; ++i) {
-    for (int j=0; j!=ncells+1; ++j) {
-      if (i != j) {
-        CHECK(face_list[i] != face_list[j]);
-      }
-    }
-  }
-
   // construct a column mesh by extracting from mesh
-  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
+  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh, cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
   
   // Number of cells in column mesh
   int ncells_col = column_mesh.num_entities(Amanzi::AmanziMesh::CELL,
@@ -132,7 +142,7 @@ TEST(Extract_Column_MSTK_SETS)
   // Number of faces in the column mesh
   int nfaces_col = column_mesh.num_entities(Amanzi::AmanziMesh::FACE,
                                             Amanzi::AmanziMesh::Parallel_type::OWNED);
-  CHECK_EQUAL(7*ncells + 1,nfaces_col);
+  CHECK_EQUAL(5*ncells + 1, nfaces_col);
   
   // Check that their parents are as expected
   for (int i = 0; i < ncells_col; ++i) {
@@ -142,8 +152,15 @@ TEST(Extract_Column_MSTK_SETS)
 
   // check we can still get sets
   Amanzi::AmanziMesh::Entity_ID_List set_ids2;
-  column_mesh.get_set_entities("organic", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
-  CHECK_EQUAL(10, set_ids2.size());
-  
+  column_mesh.get_set_entities("Region 1", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  CHECK_EQUAL(1, set_ids2.size());
+
+  set_ids2.clear();
+  column_mesh.get_set_entities("Top Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  CHECK_EQUAL(1, set_ids2.size());
+
+  set_ids2.clear();
+  column_mesh.get_set_entities("Side Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  CHECK_EQUAL(3, set_ids2.size());
 }
 
