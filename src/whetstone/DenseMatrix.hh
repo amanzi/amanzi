@@ -170,16 +170,16 @@ class DenseMatrix {
     return 0;
   }
 
-#if 0 
   /* ******************************************************************
    * Matrix-vector product. The matrix is ordered by columns.
   ****************************************************************** */
   // calculates B = *this * A
-  KOKKOS_INLINE_FUNCTION int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
+  int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const
+  {
     //Kokkos::View<double*> dataA = A.Values(); 
     //Kokkos::View<double*> dataB = B.Values();
-    const double* dataA = A.Values();
-    double* dataB = B.Values();
+    auto dataA = A.Values();
+    auto dataB = B.Values();
 
     int mrowsA = A.NumRows();
     int mrowsB = B.NumRows();
@@ -214,7 +214,6 @@ class DenseMatrix {
 
     return 0;
   }
-#endif 
 
   KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
@@ -360,40 +359,35 @@ class DenseMatrix {
     return a;
   }
 
-#if 0 
-\TODO transform for Kokkos::View
   /* ******************************************************************
   * Orthonormalize selected matrix columns.
   ****************************************************************** */
-  KOKKOS_INLINE_FUNCTIONint OrthonormalizeColumns(int n1, int n2)
+  KOKKOS_INLINE_FUNCTION int OrthonormalizeColumns(int n1, int n2)
   {
     double sum;
 
     for (int i = n1; i < n2; ++i) {
-      double* tmp1 = data_ + i * m_;
+      //double* tmp1 = data_ + i * m_;
 
       for (int j = n1; j < i; ++j) {
-        double* tmp2 = data_ + j * m_;
+        //double* tmp2 = data_ + j * m_;
 
         sum = 0.0;
-        for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp2[k];
-        for (int k = 0; k < m_; ++k) tmp1[k] -= sum * tmp2[k];
+        for (int k = 0; k < m_; ++k) sum += data_(i*m_+k)*data_(j*m_+k);//tmp1[k] * tmp2[k];
+        for (int k = 0; k < m_; ++k) data_(i*m_+k) -= sum * data_(j*m_+k);//tmp1[k] -= sum * tmp2[k];
       }
 
       sum = 0.0;
-      for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp1[k];
+      for (int k = 0; k < m_; ++k) sum += data_(i*m_+k)*data_(i*m_+k);//tmp1[k] * tmp1[k];
       if (sum == 0.0) return -1;
 
       sum = std::pow(1.0 / sum, 0.5);
-      for (int k = 0; k < m_; ++k) tmp1[k] *= sum;
+      for (int k = 0; k < m_; ++k) data_(i*m_+k) *= sum;//tmp1[k] *= sum;
     }
 
     return 0;
   }
-#endif 
-
-#if 0 
-  \TODO transform for Kokkos::View
+ 
   /* ******************************************************************
   * Permutation of matrix columns.
   ****************************************************************** */
@@ -401,17 +395,18 @@ class DenseMatrix {
   {
     if (n1 != n2) {
       double tmp;
-      double* row1 = data_ + n1 * m_;
-      double* row2 = data_ + n2 * m_;
+      //double* row1 = data_ + n1 * m_;
+      //double* row2 = data_ + n2 * m_;
 
       for (int i = 0; i < m_; i++) {
-        tmp = row1[i];
-        row1[i] = row2[i];
-        row2[i] = tmp;
+        tmp = data_(n1*m_+i);//row1[i];
+        data_(n1*m_+i) = data_(n2*m_+i);
+        data_(n2*m_+i) = tmp;  
+        //row1[i] = row2[i];
+        //row2[i] = tmp;
       }
     }
   }
-#endif 
 
  private:
   int m_, n_, mem_; 

@@ -14,7 +14,7 @@
 #define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 
 #include "AnalyticBase.hh"
 

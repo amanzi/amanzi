@@ -410,17 +410,17 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
                        &m,
                        &n,
                        &nrhs,
-                       Ttmp.Values(),
+                       Ttmp.Values_ptr(),
                        &m,
-                       d.Values(),
+                       d.Values_ptr(),
                        &m,
-                       work.Values(),
+                       work.Values_ptr(),
                        &lwork,
                        &info);
 
   residual_ = fabs(d(n));
   num_itrs_total_ += krylov_dim_;
-  ComputeSolution_(x, d.Values(), p, r);
+  ComputeSolution_(x, d.Values_ptr(), p, r);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << num_itrs_total_ << " ||r||=" << residual_
@@ -447,15 +447,15 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   WhetStone::DGEEV_F77("N",
                        "V",
                        &n,
-                       Sm.Values(),
+                       Sm.Values_ptr(),
                        &n,
-                       wr.Values(),
-                       wi.Values(),
+                       wr.Values_ptr(),
+                       wi.Values_ptr(),
                        Vl,
                        &nrhs,
-                       Vr.Values(),
+                       Vr.Values_ptr(),
                        &m,
-                       work.Values(),
+                       work.Values_ptr(),
                        &lwork,
                        &info);
 
@@ -506,8 +506,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
   WhetStone::DenseMatrix Vr2(krylov_dim_ + 1,
                              num_ritz_ + 1,
-                             Vr.Values(),
-                             WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
+                             Vr.Values_ptr());
 
   TVr.Multiply(T, Vr1, false);
   VTVr.Multiply(Vr2, TVr, true);

@@ -74,7 +74,7 @@ class PDE_DiffusionFV : public PDE_Diffusion {
 
   // main virtual members
   // -- setup
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
+  virtual void SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -109,12 +109,12 @@ class PDE_DiffusionFV : public PDE_Diffusion {
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
-  Kokkos::View<const double**> ScalarCoefficientFaces(bool scatter) const {
-    Kokkos::View<const double**> k_face;
+  Kokkos::View<const double**> ScalarCoefficientFaces(
+    Kokkos::View<double**>& k_face, bool scatter) const {
     if (k_ != Teuchos::null) {
       if (scatter) k_->ScatterMasterToGhosted("face");
       if (k_->HasComponent("face")) {
-        k_face = k_->ViewComponent<AmanziDefaultDevice>("face", true);
+        //k_face = k_->ViewComponent<AmanziDefaultDevice>("face", true);
         return k_face;
       }
     }
@@ -123,10 +123,9 @@ class PDE_DiffusionFV : public PDE_Diffusion {
     return k_face;
   }
 
-
- protected:
   void ComputeTransmissibility_();
 
+ protected:
   void AnalyticJacobian_(const CompositeVector& solution);
 
   // virtual void ComputeJacobianLocal_(

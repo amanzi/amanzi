@@ -69,17 +69,18 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+    Kokkos::vector<WhetStone::Tensor> K;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->push_back(Kc);
+      K.push_back(Kc);
     }
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
+    //\TODO
+    //bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
   }
 
@@ -95,17 +96,18 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+    Kokkos::vector<WhetStone::Tensor>K;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->push_back(Kc);
+      K.push_back(Kc);
     }
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
+    // \TODO
+    //bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
   }
 
@@ -133,8 +135,8 @@ struct DiffusionFixture {
   }
 
   void setBCsDirichlet() {
-    auto& bc_value = bc->bc_value();
-    auto& bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value();
+    auto bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
@@ -151,8 +153,8 @@ struct DiffusionFixture {
   }
 
   void setBCsDirichletNeumannBox() {
-    auto& bc_value = bc->bc_value();
-    auto& bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value();
+    auto bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);

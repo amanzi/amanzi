@@ -41,7 +41,7 @@ void PDE_DiffusionFV::Init()
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, global_op_schema_));
+    //global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, global_op_schema_));
 
   } else {
     // constructor was given an Operator
@@ -132,7 +132,7 @@ void PDE_DiffusionFV::Init()
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -172,15 +172,17 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
   if (!exclude_primary_terms_) {
     auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
-    auto k_face = ScalarCoefficientFaces(true);
+    Kokkos::View<double**> k_face; 
+    ScalarCoefficientFaces(k_face,true);
 
+    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
     // updating matrix blocks
-    AmanziMesh::Entity_ID_View cells;
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          AmanziMesh::Entity_ID_View cells;
+          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           int ncells = cells.extent(0);
 
           WhetStone::DenseMatrix Aface(ncells, ncells, Kokkos::subview(local_op_->data, f, Kokkos::ALL));
@@ -259,18 +261,20 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
-  auto k_face = ScalarCoefficientFaces(false);
+  Kokkos::View<double**> k_face; 
+  ScalarCoefficientFaces(k_face,false);
 
   if (!exclude_primary_terms_) {
     const auto rhs_cell = global_op_->rhs()->ViewComponent<AmanziDefaultDevice>("cell", true);
 
-    AmanziMesh::Entity_ID_View cells;
+    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
 
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ApplyBCs",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          AmanziMesh::Entity_ID_View cells;
+          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           int ncells = cells.extent(0);
 
           if (bc_model(f) == OPERATOR_BC_DIRICHLET && primary) {
@@ -281,7 +285,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             local_op_->Zero(f);
           }
           
-          if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * mesh_->face_area(f));
+          if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * m->face_area(f));
         });
   }
 
@@ -312,22 +316,25 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
-
-  const auto k_face = ScalarCoefficientFaces(true);
+  Kokkos::View<double**> k_face; 
+  ScalarCoefficientFaces(k_face,true);
   auto flux = darcy_mass_flux->ViewComponent<AmanziDefaultDevice>("face", false);
 
   solution->ScatterMasterToGhosted("cell");
   const auto p = solution->ViewComponent<AmanziDefaultDevice>("cell", true);
 
-  AmanziMesh::Entity_ID_View cells, faces;
-  AmanziMesh::Entity_Dir_View dirs;
+
   Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
+
+  const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
 
   Kokkos::parallel_for(
       "PDE_DiffusionFV::UpdateFlux outer loop",
       ncells_owned,
       KOKKOS_LAMBDA(const int c) {
-        mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+        AmanziMesh::Entity_ID_View cells, faces;
+        AmanziMesh::Entity_Dir_View dirs;
+        m->cell_get_faces_and_dirs(c, faces, dirs);
         int nfaces = faces.size();
 
         for (int n = 0; n < nfaces; n++) {
@@ -338,12 +345,12 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
             flux(f,0) = dirs(n) * trans_face(f,0) * (p(c,0) - bc_value(f)) * k_face(f,0);
 
           } else if (bc_model(f) == OPERATOR_BC_NEUMANN) {
-            flux[0][f] = dirs(n) * bc_value(f) * mesh_->face_area(f);
+            flux(0,f) = dirs(n) * bc_value(f) * m->face_area(f);
         
           } else {
             // this needs more thought --etc
             if (f < nfaces_owned && Kokkos::atomic_compare_exchange(&flag(f), 0, 1) == 0) {
-              mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+              m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
               // if (cells.size() <= 1) {
               //   Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
               //   Exceptions::amanzi_throw(msg);
@@ -489,17 +496,17 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   transmissibility_->putScalar(0.);
 
   Kokkos::View<double**> K;
-  int d, rank;
-  if (K_.get()) {
-    K = K_->data;
-    d = K_->d;
-    rank = K_->rank;
-  } else {
-    Kokkos::resize(K, ncells_owned, 1);
-    Kokkos::deep_copy(K, 1.0); // again, not sure this putScalar works/exists... --etc
-    d = mesh_->space_dimension();
-    rank = 1;
-  }
+  //int d, rank;
+  //if (K_.size() != 0) {
+  //  K = K_->data;
+  //  d = K_->d;
+  //  rank = K_->rank;
+  //} else {
+  //  Kokkos::resize(K, ncells_owned, 1);
+  //  Kokkos::deep_copy(K, 1.0); // again, not sure this putScalar works/exists... --etc
+  //  d = mesh_->space_dimension();
+  //  rank = 1;
+  //}
 
   {
     auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
@@ -509,11 +516,12 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
         KOKKOS_LAMBDA(const int c) {
           AmanziMesh::Entity_ID_View faces;
           Kokkos::View<AmanziGeometry::Point*> bisectors;
-          mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
+          
+          //mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
           int nfaces = faces.extent(0);
 
           // ????
-          WhetStone::Tensor Kc(d, rank, Kokkos::subview(K, c, Kokkos::ALL));
+          //WhetStone::Tensor Kc(d, rank, Kokkos::subview(K, c, Kokkos::ALL));
 
           for (int i = 0; i < nfaces; i++) {
             int f = faces(i);
@@ -523,7 +531,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 
             double h_tmp = norm(a);
             double s = area / h_tmp;
-            double perm = ((Kc * a) * normal) * s;
+            double perm = ((K_[c] * a) * normal) * s;
             double dxn = a * normal;
             Kokkos::atomic_add(&trans_face(f,0), fabs(dxn / perm));
           }

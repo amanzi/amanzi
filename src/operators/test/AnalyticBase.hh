@@ -44,7 +44,10 @@
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
-#include "NumericalIntegration.hh"
+//#include "NumericalIntegration.hh"
+#include "Quadrature1D.hh"
+#include "Quadrature2D.hh"
+#include "Quadrature3D.hh"
 
 using namespace Amanzi;
 
@@ -256,10 +259,11 @@ void ComputeNodeError(const AnalyticBase& ana,
     mesh->cell_get_nodes(c, nodes);
     int nnodes = nodes.size();
     std::vector<WhetStone::Polynomial> cell_solution(nnodes);
+    std::vector<WhetStone::Polynomial> vf_solutions(nnodes);
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      cell_solution[k].Reshape(ana.dimension(), 0);
+      cell_solution[k].reshape(ana.dimension(), 0);
       cell_solution[k](0) = p(v,0);
 
       mesh->node_get_coordinates(v, &xv);
@@ -277,7 +281,7 @@ void ComputeNodeError(const AnalyticBase& ana,
 
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     const AmanziGeometry::Point& grad_exact = ana.gradient_exact(xc, t);
-    mfd.L2Cell(c, cell_solution, NULL, poly);
+    mfd.L2Cell(c, cell_solution, vf_solutions, NULL, poly);
     for (int k = 0; k < ana.dimension(); ++k) grad[k] = poly(k + 1);
 
     h1_err += L22(grad - grad_exact) * volume;
