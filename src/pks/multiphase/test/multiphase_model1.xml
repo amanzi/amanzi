@@ -155,7 +155,7 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-1.766235413495687e-7"/>
+              <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -356,6 +356,9 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
+          <ParameterList name="gas EOS parameters">
+            <Parameter name="molar mass of gas [kg/mol]" type="double" value="1.00794e-3"/>
+          </ParameterList>
         </ParameterList>
         <!--ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

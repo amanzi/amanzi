@@ -47,21 +47,21 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList plist;
-  plist.set<std::string>("my key", "total_water_storage")
+  plist.set<std::string>("my key", tws_key_)
        .set<std::string>("saturation liquid key", saturation_liquid_key_)
        .set<std::string>("porosity key", porosity_key_);
 
   eval_tws_ = Teuchos::rcp(new TotalWaterStorage(plist));
-  S->SetFieldEvaluator("total_water_storage", eval_tws_);
+  S->SetFieldEvaluator(tws_key_, eval_tws_);
 
   // -- total component storage is allocated for component set with a modifier function
-  S->RequireField("total_component_storage", "total_component_storage")->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireField(tcs_key_, tcs_key_)->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  plist.set<std::string>("my key", "total_component_storage");
+  plist.set<std::string>("my key", tcs_key_);
 
   eval_tcs_ = Teuchos::rcp(new TotalComponentStorage(plist));
-  S->SetFieldEvaluator("total_component_storage", eval_tcs_);
+  S->SetFieldEvaluator(tcs_key_, eval_tcs_);
 }
 
 

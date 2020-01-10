@@ -38,6 +38,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
                                        Teuchos::RCP<TreeVector> u_new,
                                        Teuchos::RCP<TreeVector> f) 
 {
+std::cout << "entering funcyional evaluator" << std::endl;
   double dtp = t_new - t_old;
 
   PopulateBCs(0);
@@ -160,18 +161,22 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   // add accumulation term
   for (int i = 0; i < num_primary_ + 1; ++i) {
+std::cout << "  point: " << i << std::endl;
     std::string name = eval_acc_[i];
     std::string prev_name = "prev_" + name;
     if (name == "") continue;
 
     auto eval = S_->GetFieldEvaluator(name);
     if (i > 0) Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_component_id(i - 1);
+std::cout << "  point: " << i << " name=" << name << " " << eval << std::endl;
 
-    eval->HasFieldChanged(S_.ptr(), "multiphase");
+    eval->HasFieldChanged(S_.ptr(), passwd_);
+std::cout << "  point: " << i << std::endl;
     const auto& total_c = *S_->GetFieldData(name)->ViewComponent("cell");
     const auto& total_prev_c = *S_->GetFieldData(prev_name)->ViewComponent("cell");
 
     auto& f_c = *f->SubVector(i)->Data()->ViewComponent("cell");
+std::cout << "  point: " << i << std::endl;
 
     for (int c = 0; c < ncells_owned_; ++c) {
       double factor = mesh_->cell_volume(c) / dtp;
@@ -184,6 +189,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // ------------------
   auto f2 = f->SubVector(2)->Data();
   auto& f2_c = *f2->ViewComponent("cell");
+std::cout << "  point" << std::endl;
 
   const auto& u2 = u_new->SubVector(2)->Data();
   auto& u2_c = *u2->ViewComponent("cell");  // saturation liquid
@@ -207,6 +213,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
       f2_c[0][c] = pow(a * a + b * b, 0.5) - (a + b);
     }
   }
+std::cout << "leaving funcyional evaluator" << std::endl;
 }
 
 
@@ -215,6 +222,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 ****************************************************************** */
 void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+std::cout << "entering Update PC" << std::endl;
   double t_old = tp - dtp;
 
   PopulateBCs(0);
@@ -241,7 +249,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   double factor = eta_l_ / mu_l_;
   kr->Scale(factor);
 
-  // -- init with Darcy operator
+  // -- init with Darcy operator; block (0, 0)
   auto& pdeK = pde_diff_K_;
   op_preconditioner_->SetOperatorBlock(0, 0, pdeK->global_operator());
 
@@ -254,6 +262,20 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   auto flux_liquid = S_->GetFieldData(darcy_flux_liquid_key_, passwd_);
   pdeK->UpdateFlux(u0.ptr(), flux_liquid.ptr());
+
+  // -- block (0, 2)
+  auto pde02 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+  op_preconditioner_->SetOperatorBlock(0, num_primary_ + 1, pde02->global_operator());
+
+  S_->GetFieldEvaluator(tws_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, saturation_liquid_key_);
+  auto dtws_dsl = S_->GetFieldData("dtotal_water_storage_dsaturation_liquid", tws_key_);
+
+  auto& kr_c = *kr->ViewComponent("cell");
+  auto& dtws_dsl_c = *dtws_dsl->ViewComponent("cell");
+  for (int c = 0; c < ncells_owned_; ++c) {
+    kr_c[0][c] = dtws_dsl_c[0][c] / dtp;
+  }
+  pde02->AddAccumulationTerm(*kr, "cell");
 
   // ---------------------------
   // process chemical components
@@ -292,8 +314,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   auto pdeC = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
   op_preconditioner_->SetOperatorBlock(num_primary_ + 1, num_primary_ + 1, pdeC->global_operator());
  
-  // -- reuse temporary vector
-  auto& kr_c = *kr->ViewComponent("cell");
+  // -- we can reuse vector
   for (int c = 0; c < ncells_owned_; ++c) {
     kr_c[0][c] = 1.0;
   }
@@ -312,6 +333,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     pdeU[i] = Teuchos::null;
     pdeA[i] = Teuchos::null;
   }
+std::cout << "leaving Update PC" << std::endl;
 }
 
 

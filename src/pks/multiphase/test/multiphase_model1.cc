@@ -83,7 +83,7 @@ TEST(MULTIPHASE_MODEL_I) {
 
   // loop
   bool failed = true;
-  double t(0.0), tend(1.0e+10), dt(tend / 10);
+  double t(0.0), tend(1.0e+11), dt(tend / 10);
   while (t - tend) {
     bool failed = MPK->AdvanceStep(t, t + dt, false);
 
@@ -92,9 +92,7 @@ TEST(MULTIPHASE_MODEL_I) {
     S->advance_time(dt);
     S->advance_cycle();
 
-    if (MyPID == 0) {
-      std::cout << "State time=" << S->time() << ", cycle=" << S->cycle() << std::endl;
-    }
+    S->WriteStatistics(vo);
   }
 
   S->WriteStatistics(vo);
