@@ -170,3 +170,82 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_CLOSE(80.0, col_surf.face_area(3), 1.e-9);
   
 }
+
+
+TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
+{
+  std::string filename("test/hex_3x3x3_sets.exo");
+  auto comm = Amanzi::getDefaultComm();
+  Teuchos::ParameterList parameterlist;
+ 
+  // create a sublist name Regions and put a reference to it in
+  // reg_spec and other sublists as references. Turns out it is
+  // important to define reg_spec and other lists below as references
+  // - otherwise, a new copy is made of the sublist that is retrieved
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
+  
+  Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: labeled set");
+  top_surface_def.set<std::string>("label","106");
+  top_surface_def.set<std::string>("file",filename.c_str());
+  top_surface_def.set<std::string>("format","Exodus II");
+  top_surface_def.set<std::string>("entity","face");
+  
+  Teuchos::ParameterList& side_surface = reg_spec.sublist("Side Surface");
+  Teuchos::ParameterList& side_surface_def = side_surface.sublist("region: labeled set");
+  side_surface_def.set<std::string>("label","102");
+  side_surface_def.set<std::string>("file",filename.c_str());
+  side_surface_def.set<std::string>("format","Exodus II");
+  side_surface_def.set<std::string>("entity","face");
+  
+  Teuchos::ParameterList& r1_surface = reg_spec.sublist("Region 1");
+  Teuchos::ParameterList& r1_surface_def = r1_surface.sublist("region: labeled set");
+  r1_surface_def.set<std::string>("label","30000");
+  r1_surface_def.set<std::string>("file",filename.c_str());
+  r1_surface_def.set<std::string>("format","Exodus II");
+  r1_surface_def.set<std::string>("entity","cell");
+  
+  Teuchos::ParameterList& r2_surface = reg_spec.sublist("Region 2");
+  Teuchos::ParameterList& r2_surface_def = r2_surface.sublist("region: labeled set");
+  r2_surface_def.set<std::string>("label","20000");
+  r2_surface_def.set<std::string>("file",filename.c_str());
+  r2_surface_def.set<std::string>("format","Exodus II");
+  r2_surface_def.set<std::string>("entity","cell");
+
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm, gm));
+
+  CHECK_EQUAL(9, mesh->get_set_size("Top Surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
+  CHECK_EQUAL(1, mesh->build_columns());
+  
+  // Create a column mesh from one of the columns
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,0));
+  CHECK_EQUAL(1, colmesh->get_set_size("Top Surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
+  CHECK_EQUAL(1, colmesh->get_set_size("Region 1",Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL));
+
+  // Extract the surface from this column
+  Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "Top Surface");
+
+  CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED));
+
+  CHECK(col_surf.valid_set_name("Top Surface", Amanzi::AmanziMesh::CELL));
+  CHECK(col_surf.valid_set_name("Region 1", Amanzi::AmanziMesh::CELL));
+  CHECK(col_surf.valid_set_name("Top Surface", Amanzi::AmanziMesh::FACE));
+  CHECK(!col_surf.valid_set_name("Region 1", Amanzi::AmanziMesh::FACE));
+  
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
+  col_surf.get_set_entities_and_vofs("Top Surface", Amanzi::AmanziMesh::CELL,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
+                                     &cells_in_surf, NULL);
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
+
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf2;
+  col_surf.get_set_entities_and_vofs("Region 1", Amanzi::AmanziMesh::CELL,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
+                                     &cells_in_surf2, NULL);
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
+}

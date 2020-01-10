@@ -363,9 +363,6 @@ class MeshSurfaceCell : public Mesh {
           std::vector<int> *edge_dirs) const override;
 
  protected:
-
-  Teuchos::RCP<const Mesh> parent_mesh_;
-
   std::vector<AmanziGeometry::Point> nodes_;
   std::map<Set_ID,bool> sets_;
   Entity_ID parent_face_;
