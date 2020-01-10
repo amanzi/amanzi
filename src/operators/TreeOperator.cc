@@ -252,15 +252,13 @@ void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  AMANZI_ASSERT(A_.get());
-  AMANZI_ASSERT(smap_.get());
-
   // provide block ids for block strategies.
   if (plist.isParameter("preconditioner type") &&
       plist.get<std::string>("preconditioner type") == "boomer amg" &&
       plist.isSublist("boomer amg parameters")) {
 
     // NOTE: Hypre frees this
+    AMANZI_ASSERT(smap_.get());
     auto block_ids = smap_->BlockIndices();
 
     plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);

@@ -50,7 +50,8 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
   soln_(soln),
   passwd_("multiphase"),
   num_phases_(2),
-  num_itrs_(0)
+  num_itrs_(0),
+  op_pc_assembled_(false)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -82,7 +83,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   // keys
   // -- primary unknowns
   pressure_liquid_key_ = Keys::getKey(domain_, "pressure_liquid"); 
-  xl_liquid_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
+  x_liquid_key_ = Keys::getKey(domain_, "molar_fraction_liquid"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
 
   // -- other fields
@@ -93,6 +94,10 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
+  darcy_flux_liquid_key_ = Keys::getKey(domain_, "darcy_flux_liquid"); 
+
+  tws_key_ = Keys::getKey(domain_, "total_water_storage");
+  tcs_key_ = Keys::getKey(domain_, "total_component_storage");
 
   // register non-standard fields
   if (!S->HasField("gravity"))
@@ -107,7 +112,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("gas_viscosity"))
       S->RequireScalar("gas_viscosity", passwd_);
 
-  // pressure as the primary solution
+  // pressure is the primary solution
   if (!S->HasField(pressure_liquid_key_)) {
     S->RequireField(pressure_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -119,22 +124,21 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // liquid mole fraction is the primary solution
-  if (!S->HasField(xl_liquid_key_)) {
+  if (!S->HasField(x_liquid_key_)) {
     component_names_ = mp_list_->sublist("molecular diffusion")
        .get<Teuchos::Array<std::string> >("primary component names").toVector();
     std::vector<std::vector<std::string> > subfield_names(1);
     subfield_names[0] = component_names_;
 
-    S->RequireField(xl_liquid_key_, passwd_, subfield_names)
+    S->RequireField(x_liquid_key_, passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", xl_liquid_key_);
+    elist.set<std::string>("evaluator name", x_liquid_key_);
     xl_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(xl_liquid_key_, xl_liquid_eval_);
+    S->SetFieldEvaluator(x_liquid_key_, xl_liquid_eval_);
   }
-
 
   // water saturation is the primary solution
   if (!S->HasField(saturation_liquid_key_)) {
@@ -161,6 +165,12 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
     S->SetFieldEvaluator(pressure_gas_key_, eval);
+  }
+
+  // Darcy velocity
+  if (!S->HasField(darcy_flux_liquid_key_)) {
+    S->RequireField(darcy_flux_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::CELL, 1);
   }
 
   // relative permeability of liquid phase
@@ -263,7 +273,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // vector of primary variables
-  InitSolutionVector();
+  InitMPSolutionVector();
 
   // boundary conditions
   Teuchos::RCP<MultiphaseBoundaryFunction> bc;
@@ -350,29 +360,25 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   pde_diff_D_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, mesh_));
   pde_diff_D_->SetBCs(op_bcs_[1], op_bcs_[1]);
 
-  // preconditioner is reflects equations of states and is model-specific
+  // preconditioner incorporates equations of states and is model-specific.
+  // It is created in the scope of global assembly to reduce memory footprint.
+  // Here we just initialize required basis operators in addition to the two
+  // operators created for the matrix.
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-  InitPreconditioner();
+  InitMPPreconditioner();
 
-  for (int i = 0; i < num_primary_ + 1; ++i) {
-    auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    if (eval_adv_[i] != "") {
-      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op->global_operator()));
-      tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
-    }
-    if (eval_diff_[i] != "") {
-      auto tmp = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op->global_operator()));
-      tmp->SetBCs(op_bcs_[i], op_bcs_[i]);
-    }
-    op_preconditioner_->SetOperatorBlock(i, i, op->global_operator());
-  }
+  pde_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, mesh_));
+  pde_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
 
-  for (int i = 0; i < num_primary_ + 2; ++i) {
-    auto op = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    op->SetBCs(op_bcs_[2], op_bcs_[i]);
-    op_preconditioner_->SetOperatorBlock(num_primary_, i, op->global_operator());
-  }
+  std::string pc_name = mp_list_->get<std::string>("preconditioner");
+  AMANZI_ASSERT(pc_list_->isSublist(pc_name));
+  auto tmp = pc_list_->sublist(pc_name);
+  op_preconditioner_->InitializePreconditioner(tmp);
   
+  // linear solver
+  op_pc_solver_ = op_preconditioner_;
+  std::string solver_name = mp_list_->get<std::string>("linear solver");
+
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   AMANZI_ASSERT(ti_method_name == "BDF1");
@@ -382,14 +388,6 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
       bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
-
-  // linear solver
-  pc_name_ = mp_list_->get<std::string>("preconditioner");
-  solver_name_ = mp_list_->get<std::string>("linear solver");
-  AMANZI_ASSERT(pc_list_->isSublist(pc_name_));
-
-  AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> factory;
-  op_pc_solver_ = factory.Create(solver_name_, *linear_operator_list_, op_preconditioner_);
 
   // absolute permeability
   ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -418,6 +416,8 @@ void Multiphase_PK::InitializeFields_()
 
   InitializeFieldFromField_("prev_total_water_storage", "total_water_storage", true);
   InitializeFieldFromField_("prev_total_component_storage", "total_component_storage", true);
+
+  InitializeField(S_.ptr(), passwd_, darcy_flux_liquid_key_, 0.0);
 }
 
 
@@ -458,7 +458,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // -- primary field
   CompositeVector pl_copy(*S_->GetFieldData(pressure_liquid_key_));
   CompositeVector sl_copy(*S_->GetFieldData(saturation_liquid_key_));
-  CompositeVector xl_copy(*S_->GetFieldData(xl_liquid_key_));
+  CompositeVector xl_copy(*S_->GetFieldData(x_liquid_key_));
 
   // initialization
   if (num_itrs_ == 0) {
@@ -483,7 +483,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *S_->GetFieldData(saturation_liquid_key_, passwd_) = sl_copy;
     saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
-    *S_->GetFieldData(xl_liquid_key_, passwd_) = xl_copy;
+    *S_->GetFieldData(x_liquid_key_, passwd_) = xl_copy;
     xl_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
     return failed;
@@ -502,7 +502,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
-  *S_->GetFieldData(xl_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
+  *S_->GetFieldData(x_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
   *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
 
   *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData("total_component_storage");

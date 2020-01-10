@@ -21,6 +21,8 @@
 #include "BDFFnBase.hh"
 #include "FieldEvaluator.hh"
 #include "LinearOperator.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -98,8 +100,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void ChangedSolution() override {};
 
   // multiphase submodels
-  virtual void InitSolutionVector() = 0;
-  virtual void InitPreconditioner() = 0;
+  virtual void InitMPSolutionVector() = 0;
+  virtual void InitMPPreconditioner() = 0;
   virtual void PopulateBCs(int icomp) = 0;
 
  private:
@@ -132,14 +134,20 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
   // keys
-  std::string pressure_liquid_key_, xl_liquid_key_, saturation_liquid_key_;
+  std::string pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
   std::string permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   std::string porosity_key_, pressure_gas_key_, temperature_key_;
+  std::string darcy_flux_liquid_key_;
+  std::string tws_key_, tcs_key_;
 
   // matrix and preconditioner
-  Teuchos::RCP<Operators::TreeOperator> op_preconditioner_;
-  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
+  Teuchos::RCP<Operators::TreeOperator> op_preconditioner_, op_pc_solver_;
+  bool op_pc_assembled_;
+
+  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;  // basis operators
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> pde_adv_;
+  Teuchos::RCP<Operators::PDE_Accumulation> pde_acc_;
   std::vector<std::string> eval_acc_, eval_adv_, eval_diff_;   // evaluator names
 
   // boundary conditions
@@ -168,8 +176,6 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // solvers and preconditioners
   bool cpr_enhanced_;
-  std::string pc_name_, solver_name_;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::TreeOperator, TreeVector, TreeVectorSpace> > op_pc_solver_;
 
   Teuchos::RCP<const Teuchos::ParameterList> glist_;
   Teuchos::RCP<const Teuchos::ParameterList> pc_list_;

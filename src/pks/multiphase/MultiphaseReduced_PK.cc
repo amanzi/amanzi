@@ -68,10 +68,10 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */
-void MultiphaseReduced_PK::InitSolutionVector()
+void MultiphaseReduced_PK::InitMPSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(xl_liquid_key_);
+  soln_names_.push_back(x_liquid_key_);
   soln_names_.push_back(saturation_liquid_key_);
 
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -85,7 +85,7 @@ void MultiphaseReduced_PK::InitSolutionVector()
 /* ******************************************************************* 
 * Create matrix structure of operators
 ******************************************************************* */
-void MultiphaseReduced_PK::InitPreconditioner()
+void MultiphaseReduced_PK::InitMPPreconditioner()
 {
   eval_acc_.push_back("total_water_storage");
   eval_adv_.push_back("");

@@ -17,6 +17,10 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionFVwithGravity.hh"
 #include "Tensor.hh"
 
 // Multiphase
@@ -44,7 +48,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // -----------------------
   // process water component
   // -----------------------
-  // -- init with diffusion operator for water
   const auto& u0 = u_new->SubVector(0)->Data();
   auto f0 = f->SubVector(0)->Data();
 
@@ -54,6 +57,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   auto kr = CreateCVforUpwind(mesh_);
   *kr->ViewComponent("cell") = *relperm_l->ViewComponent("cell");
+  kr->ViewComponent("dirichlet_faces")->PutScalar(1.0);  // FIXME
   upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
 
   // -- scale the upwinded relperm assuming constant viscosity
@@ -66,8 +70,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto& pde = pde_diff_K_;
   pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
   pde->global_operator()->Init();
-  pde->ApplyBCs(true, true, true);
   pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde->ApplyBCs(true, true, true);
   pde->global_operator()->ComputeNegativeResidual(*u0, *f0);
  
   // ---------------------------
@@ -102,6 +106,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     for (int c = 0; c < ncells_owned_; ++c) {
       kr_c[0][c] = u1_c[i][c] * eta_l_ * relperm_lc[0][c] / mu_l_;
     }
+    kr->ViewComponent("dirichlet_faces")->PutScalar(1.0);  // FIXME
     upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
 
     // -- init with transport in liquid phase
@@ -109,22 +114,23 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
     pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
     pdeK->global_operator()->Init();
-    pdeK->ApplyBCs(true, true, true);
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeK->ApplyBCs(true, true, true);
     pdeK->global_operator()->ComputeNegativeResidual(*u0, *f1);
 
     // -- upwind the scaled relative permeability for gas phase
     for (int c = 0; c < ncells_owned_; ++c) {
       kr_c[0][c] = (1.0 - u1_c[i][c]) * eta_gc[0][c] * relperm_gc[0][c] / mu_g_;
     }
+    kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
     upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
 
     // -- add transport in gas phase
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
     pdeK->SetBCs(op_bc_pg_, op_bc_pg_);
     pdeK->global_operator()->Init();
-    pdeK->ApplyBCs(true, true, true);
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeK->ApplyBCs(true, true, true);
     pdeK->global_operator()->ComputeNegativeResidual(*pg, fadd);
     f1->Update(1.0, fadd, 1.0);
 
@@ -143,8 +149,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     pdeD->Setup(D, Teuchos::null, Teuchos::null);
     pdeK->SetBCs(op_bcs_[1], op_bcs_[1]);
     pdeD->global_operator()->Init();
-    pdeD->ApplyBCs(true, true, true);
     pdeD->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pdeD->ApplyBCs(true, true, true);
     pdeD->global_operator()->ComputeNegativeResidual(u1i, fadd);
 
     auto f1c = (*f1->ViewComponent("cell"))(i);
@@ -210,6 +216,102 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   double t_old = tp - dtp;
+
+  PopulateBCs(0);
+
+  // trigger update of primary variables
+  saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
+
+  // -----------------------
+  // process water component
+  // -----------------------
+  const auto& u0 = u->SubVector(0)->Data();
+
+  // accumulation
+  // -- upwind relative permeability
+  S_->GetFieldEvaluator(relperm_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  auto relperm_l = S_->GetFieldData(relperm_liquid_key_, relperm_liquid_key_);
+
+  auto kr = CreateCVforUpwind(mesh_);
+  *kr->ViewComponent("cell") = *relperm_l->ViewComponent("cell");
+  kr->ViewComponent("dirichlet_faces")->PutScalar(1.0);  // FIXME
+  upwind_->Compute(*kr, *kr, op_bcs_[0]->bc_model(), *kr);
+
+  // -- scale the upwinded relperm assuming constant viscosity
+  double factor = eta_l_ / mu_l_;
+  kr->Scale(factor);
+
+  // -- init with Darcy operator
+  auto& pdeK = pde_diff_K_;
+  op_preconditioner_->SetOperatorBlock(0, 0, pdeK->global_operator());
+
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
+  pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
+  pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
+  pdeK->global_operator()->Init();
+  pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pdeK->ApplyBCs(true, true, true);
+
+  auto flux_liquid = S_->GetFieldData(darcy_flux_liquid_key_, passwd_);
+  pdeK->UpdateFlux(u0.ptr(), flux_liquid.ptr());
+
+  // ---------------------------
+  // process chemical components
+  // ---------------------------
+  std::vector<Teuchos::RCP<Operators::PDE_AdvectionUpwind> > pdeU(num_primary_);
+  std::vector<Teuchos::RCP<Operators::PDE_Accumulation> > pdeA(num_primary_);
+
+  auto& adv_list = mp_list_->sublist("operators").sublist("advection operator").sublist("preconditioner");
+
+  for (int i = 0; i < num_primary_; ++i) {
+    PopulateBCs(i);
+
+    // -- init with upwind operator 
+    pdeU[i] = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, mesh_));
+    op_preconditioner_->SetOperatorBlock(i + 1, i + 1, pdeU[i]->global_operator());
+
+    pdeU[i]->Setup(*flux_liquid);
+    pdeU[i]->SetBCs(op_bcs_[1], op_bcs_[1]);
+    pdeU[i]->global_operator()->Init();
+    pdeU[i]->UpdateMatrices(flux_liquid.ptr());
+    pdeU[i]->ApplyBCs(true, true, true);
+
+    if (dtp > 0.0) {
+      pdeA[i] = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, pdeU[i]->global_operator())); 
+
+      S_->GetFieldEvaluator(tcs_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, x_liquid_key_);
+      CompositeVector& dtcs_dpl = *S_->GetFieldData("dtotal_component_storage_dmolar_fraction_liquid", tcs_key_);
+
+      pdeA[i]->AddAccumulationTerm(dtcs_dpl, dtp, "cell", true);
+    }
+  }
+ 
+  // ------------------
+  // process constraint
+  // ------------------
+  auto pdeC = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+  op_preconditioner_->SetOperatorBlock(num_primary_ + 1, num_primary_ + 1, pdeC->global_operator());
+ 
+  // -- reuse temporary vector
+  auto& kr_c = *kr->ViewComponent("cell");
+  for (int c = 0; c < ncells_owned_; ++c) {
+    kr_c[0][c] = 1.0;
+  }
+  pdeC->AddAccumulationTerm(*kr, "cell");
+
+  // finalize preconditioner
+  if (!op_pc_assembled_) {
+    op_preconditioner_->SymbolicAssembleMatrix();
+    op_pc_assembled_ = true;
+  }
+  op_preconditioner_->AssembleMatrix();
+  op_preconditioner_->UpdatePreconditioner();
+
+  // cleaning temporaty operators
+  for (int i = 0; i < num_primary_; ++i) {
+    pdeU[i] = Teuchos::null;
+    pdeA[i] = Teuchos::null;
+  }
 }
 
 
@@ -220,12 +322,7 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                        Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-
-  // return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
-  *Y = *X;
-
-  Y->SubVector(0)->Data()->Scale(1.0e-3);
-  return 0;
+  return op_pc_solver_->ApplyInverse(*X, *Y);
 }
 
 
@@ -235,22 +332,29 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<const TreeVector> du) 
 {
-  double du_l2 = 0.0;
-  double rnorm_p, rnorm_x, rnorm_s;
+  // pressure error
+  auto pc = *u->SubVector(0)->Data()->ViewComponent("cell");
+  auto dpc = *du->SubVector(0)->Data()->ViewComponent("cell");
 
-  du->SubVector(0)->Data()->Norm2(&rnorm_p);
-  du->SubVector(1)->Data()->Norm2(&rnorm_x);
-  du->SubVector(2)->Data()->Norm2(&rnorm_s);
+  double atm_pressure(1.0e+5);
 
-  /*
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "rnorm_p= " << rnorm_p << ", rnorm_x=" << rnorm_x << ", rnorm_s=" << rnorm_s << std::endl;
+  double error_p = 0.0;
+  for (int c = 0; c < ncells_owned_; c++) {
+    double tmp = fabs(dpc[0][c]) / (fabs(pc[0][c] - atm_pressure) + atm_pressure);
+    if (tmp > error_p) {
+      error_p = tmp;
+    } 
   }
-  */
 
-  du->Norm2(&du_l2);
-  return du_l2;
+  // saturation error
+  auto dsc = *du->SubVector(2)->Data()->ViewComponent("cell");
+
+  double error_s = 0.0;
+  for (int c = 0; c < ncells_owned_; c++) {
+    error_s  = std::max(error_s, fabs(dsc[0][c]));
+  }
+
+  return error_p + error_s;
 }
 
 

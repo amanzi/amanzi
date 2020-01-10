@@ -42,8 +42,8 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   virtual std::string name() override { return "multiphase reduced"; }
 
   // interface multiphase models
-  virtual void InitSolutionVector() override;
-  virtual void InitPreconditioner() override;
+  virtual void InitMPSolutionVector() override;
+  virtual void InitMPPreconditioner() override;
   virtual void PopulateBCs(int icomp) override;
 
  private:
