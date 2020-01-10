@@ -21,7 +21,7 @@
 
 namespace Amanzi {
 namespace AmanziEOS {
-
+ 
 // Equation of State model
 class EOS_IdealGas : public EOS_ConstantMolarMass {
  public:

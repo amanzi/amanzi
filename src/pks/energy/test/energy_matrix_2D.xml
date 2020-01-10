@@ -251,6 +251,7 @@
           <Parameter name="eos type" type="string" value="vapor in gas"/>
           <ParameterList name="gas EOS parameters">
             <Parameter name="eos type" type="string" value="ideal gas"/>
+            <Parameter name="molar mass of gas" type="double" value="28.9647e-03"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
