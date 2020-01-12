@@ -107,7 +107,6 @@ void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVecto
   Teuchos::RCP<CompositeVector> pressure_n = Teuchos::rcp(new CompositeVector(*pressure_w));
   capillary_pressure_->Compute(*saturation_w);  
   pressure_n->Update(1.0, *capillary_pressure_->Pc(), 1.0);
-  //capillary_pressure_->dPc_dS()->Print(std::cout);
 
   // create variables for active sets
   Teuchos::RCP<CompositeVector> active_p_g = Teuchos::rcp(new CompositeVector(rhl->Map()));
@@ -125,7 +124,6 @@ void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVecto
   cnt_ = 0; // number of cells without gas
   int ncells = rhl_c.MyLength();
   for (int c = 0; c < ncells; c++) {
-    //std::cout << "Phase transition condition: " << 1.0 - sat_w_c[0][c] - (Cg * p2_c[0][c] - rhl_c[0][c]) << "\n";
     if (std::abs(1.0 - sat_w_c[0][c]) - std::abs(Cg * p2_c[0][c] - rhl_c[0][c]) > 1e-12) {
       active_p_g_c[0][c] = 1.0;
       inactive_p_g_c[0][c] = 0.0;

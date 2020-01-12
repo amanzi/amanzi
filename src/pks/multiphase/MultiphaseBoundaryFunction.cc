@@ -9,17 +9,23 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <algorithm>
+#include <iterator>
+
 #include "MultiphaseBoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
 /* ******************************************************************
-* Constructor
+* Constructor defaults to liquid component which is water
 ****************************************************************** */
 MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
+  if (plist.isParameter("name"))
+    component_name_ = plist.get<std::string>("name");
+
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
 }
@@ -39,6 +45,16 @@ void MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const Amanzi
       it->second[0] *= fabs(normal[dim - 1]) / norm(normal);
     }
   }
+}
+
+
+/* ****************************************************************
+* Find position of component in the list of names
+**************************************************************** */
+int MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names)
+{
+  auto it = std::find(names.begin(), names.end(), component_name_);
+  return (it == names.end()) ? -1 : std::distance(names.begin(), it);
 }
 
 }  // namespace Multiphase

@@ -131,7 +131,7 @@ double WRMmp_vanGenuchten::dPc_dS(double sl)
   } else if (sg + srl_ - 1.0 > -1e-15) {
     return -deriv_mod_VGM(1.0 - srl_);
   } else {
-    return -deriv_mod_VGM(sg);  // wrt Sw
+    return -deriv_mod_VGM(sg);  // negative wrt sl
   }
 }
 

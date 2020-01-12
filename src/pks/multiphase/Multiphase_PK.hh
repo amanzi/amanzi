@@ -137,7 +137,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::string pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
   std::string permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   std::string porosity_key_, pressure_gas_key_, temperature_key_;
-  std::string darcy_flux_liquid_key_;
+  std::string darcy_flux_liquid_key_, darcy_flux_gas_key_;
   std::string tws_key_, tcs_key_;
 
   // matrix and preconditioner

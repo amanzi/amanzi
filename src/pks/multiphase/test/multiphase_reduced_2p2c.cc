@@ -78,6 +78,10 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
     }
   }
 
+  // create screen io
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
+
+
   double dT = time_list->get<double>("time step");
   double t_final = time_list->get<double>("end time");
 
@@ -148,6 +152,8 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   double t_sim = 0.0;
   // double dT = 5000.0*365.0*24.0*3600.0;
   // double t_final = 10*dT;
+  S->WriteStatistics(vo);
+
   while (!(t_sim > t_final || abs(t_sim - t_final) < 1e-8)) {
     if (t_sim + dT - t_final > 1e-12) dT = t_final - t_sim;
     failed = MPMC->AdvanceStep(t_sim, t_sim + dT, false);
@@ -167,6 +173,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
       dT = MPMC->get_dt();
     } 
   }
+  S->WriteStatistics(vo);
 
   // MPMC->Functional(0.0, 0.1, u_new, u_new, f);
   // MPMC->UpdatePreconditioner(0.0, u_new, 0.1);

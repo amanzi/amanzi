@@ -25,9 +25,9 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "Mesh.hh"
-
 #include "State.hh"
 #include "OperatorDefs.hh"
+#include "OutputXDMF.hh"
 
 // Multiphase
 #include "MultiphaseReduced_PK.hh"
@@ -59,7 +59,7 @@ TEST(MULTIPHASE_MODEL_I) {
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 5);
 
   // create screen io
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Mumtiphase_PK", *plist));
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
 
   // create a simple state populate it
   auto state_list = plist->sublist("state");
@@ -81,18 +81,38 @@ TEST(MULTIPHASE_MODEL_I) {
   S->CheckAllFieldsInitialized();
   S->WriteStatistics(vo);
 
-  // loop
-  bool failed = true;
-  double t(0.0), tend(1.0e+11), dt(tend / 10);
-  while (t - tend) {
-    bool failed = MPK->AdvanceStep(t, t + dt, false);
+  // initialize io
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
-    t += dt;
-    MPK->CommitStep(t, t + dt, S); 
-    S->advance_time(dt);
+  // loop
+  int iloop(0);
+  bool failed = true;
+  double t(0.0), tend(1.0e+10), dt(1.0e+6);
+  while (t < tend && iloop < 100) {
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
+
+    MPK->CommitStep(t, t + dt, S);
     S->advance_cycle();
 
-    S->WriteStatistics(vo);
+    S->advance_time(dt);
+    t += dt;
+    dt *= 1.2;
+    iloop++;
+
+    // output solution
+    if (iloop % 4 == 0) {
+      io->InitializeCycle(t, iloop);
+      const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
+      const auto& u1 = *S->GetFieldData("molar_fraction_liquid")->ViewComponent("cell");
+      const auto& u2 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+
+      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
+      io->WriteVector(*u1(0), "molar fraction", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "saturation", AmanziMesh::CELL);
+      io->FinalizeCycle();
+    }
   }
 
   S->WriteStatistics(vo);

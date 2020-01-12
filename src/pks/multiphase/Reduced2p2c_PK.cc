@@ -204,14 +204,6 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(soln_->Map()));
   udot->PutScalar(0.0);
 
-  /*
-  // predict water mass change during time step
-  if (ti_specs_->num_itrs == 0) {  // initialization
-    UpdatePreconditioner(time, soln_, dT);
-    ti_specs_->num_itrs++;
-  }
-  */
-
   bdf1_dae->SetInitialState(time, soln_, udot);
 
   bool fail = false;

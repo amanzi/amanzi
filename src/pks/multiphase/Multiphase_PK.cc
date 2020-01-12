@@ -95,6 +95,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
   darcy_flux_liquid_key_ = Keys::getKey(domain_, "darcy_flux_liquid"); 
+  darcy_flux_gas_key_ = Keys::getKey(domain_, "darcy_flux_gas"); 
 
   tws_key_ = Keys::getKey(domain_, "total_water_storage");
   tcs_key_ = Keys::getKey(domain_, "total_component_storage");
@@ -167,10 +168,15 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(pressure_gas_key_, eval);
   }
 
-  // Darcy velocity
+  // Darcy velocities
   if (!S->HasField(darcy_flux_liquid_key_)) {
     S->RequireField(darcy_flux_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::CELL, 1);
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  if (!S->HasField(darcy_flux_gas_key_)) {
+    S->RequireField(darcy_flux_gas_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
   // relative permeability of liquid phase
@@ -282,10 +288,10 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   bcs_.clear();
 
   // -- pressure 
-  if (bc_list.isSublist("pressure")) {
+  if (bc_list.isSublist("pressure liquid")) {
     PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
 
-    Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure");
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure liquid");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
@@ -297,7 +303,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
-  // -- mass flux
+  // -- total injected mass flux
   if (bc_list.isSublist("mass flux total")) {
     PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
 
@@ -307,6 +313,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
         Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
         bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("flux");
+        bc->SetComponentId(component_names_);
         bcs_.push_back(bc);
       }
     }
@@ -378,6 +385,8 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // linear solver
   op_pc_solver_ = op_preconditioner_;
   std::string solver_name = mp_list_->get<std::string>("linear solver");
+  AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> sfactory;
+  op_pc_solver_ = sfactory.Create(solver_name, *linear_operator_list_, op_preconditioner_);
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
@@ -418,6 +427,7 @@ void Multiphase_PK::InitializeFields_()
   InitializeFieldFromField_("prev_total_component_storage", "total_component_storage", true);
 
   InitializeField(S_.ptr(), passwd_, darcy_flux_liquid_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, darcy_flux_gas_key_, 0.0);
 }
 
 
@@ -459,6 +469,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector pl_copy(*S_->GetFieldData(pressure_liquid_key_));
   CompositeVector sl_copy(*S_->GetFieldData(saturation_liquid_key_));
   CompositeVector xl_copy(*S_->GetFieldData(x_liquid_key_));
+  CompositeVector ql_copy(*S_->GetFieldData(darcy_flux_liquid_key_));
+  CompositeVector qg_copy(*S_->GetFieldData(darcy_flux_gas_key_));
 
   // initialization
   if (num_itrs_ == 0) {
@@ -486,6 +498,9 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *S_->GetFieldData(x_liquid_key_, passwd_) = xl_copy;
     xl_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
+    *S_->GetFieldData(darcy_flux_liquid_key_, passwd_) = ql_copy;
+    *S_->GetFieldData(darcy_flux_gas_key_, passwd_) = qg_copy;
+
     return failed;
   }
 
@@ -502,11 +517,15 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   *S_->GetFieldData(pressure_liquid_key_, passwd_) = *soln_->SubVector(0)->Data();
-  *S_->GetFieldData(x_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
-  *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
+  *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(1)->Data();
+  *S_->GetFieldData(x_liquid_key_, passwd_) = *soln_->SubVector(2)->Data();
 
-  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData("total_component_storage");
-  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData("total_water_storage");
+  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
+  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);
+
+  // auto flux_liquid = S_->GetFieldData(darcy_flux_liquid_key_, passwd_);
+  // pdeK->UpdateFlux(u0.ptr(), flux_liquid.ptr());
+  // flux_liquid->Scale(1.0 / eta_l_);
 }
 
 }  // namespace Multiphase

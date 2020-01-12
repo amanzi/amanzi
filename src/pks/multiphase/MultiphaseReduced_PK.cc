@@ -71,8 +71,8 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
 void MultiphaseReduced_PK::InitMPSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(x_liquid_key_);
   soln_names_.push_back(saturation_liquid_key_);
+  soln_names_.push_back(x_liquid_key_);
 
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto field = Teuchos::rcp(new TreeVector());
@@ -105,11 +105,11 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
   auto& bc_model_p = op_bcs_[0]->bc_model();
   auto& bc_value_p = op_bcs_[0]->bc_value();
 
-  auto& bc_model_x = op_bcs_[1]->bc_model();
-  auto& bc_value_x = op_bcs_[1]->bc_value();
+  auto& bc_model_s = op_bcs_[1]->bc_model();
+  auto& bc_value_s = op_bcs_[1]->bc_value();
 
-  auto& bc_model_s = op_bcs_[2]->bc_model();
-  auto& bc_value_s = op_bcs_[2]->bc_value();
+  auto& bc_model_x = op_bcs_[2]->bc_model();
+  auto& bc_value_x = op_bcs_[2]->bc_value();
 
   // initialize to zero
   int nfaces = bc_model_p.size();
@@ -135,16 +135,25 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
     }
 
     if (bcs_[i]->bc_name() == "flux") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value_p[f] = it->second[0];
+      if (bcs_[i]->component_name() == "water") { 
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value_p[f] = it->second[0] * (eta_l_ / rho_l_);
+        }
+      } else if (bcs_[i]->component_id() == icomp) {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value_x[f] = it->second[0] * (eta_l_ / rho_l_);
+        }
       }
     }
 
     if (bcs_[i]->bc_name() == "saturation") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
+        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_s[f] = it->second[0];
       }
     }
@@ -160,17 +169,13 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
     if (cells.size() == 1) {
       if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value_p[f] = 0.0;
-        bc_value_s[f] = 0.0;
-        bc_value_x[f] = 0.0;
+        missed_bc_faces_++;
       }
 
-      missed_bc_faces_++;
+      if (bc_model_x[f] == Operators::OPERATOR_BC_NONE)
+        bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
     }
   }
-
-  bc_model_s = bc_model_p;
-  bc_model_x = bc_model_p;
 
   // boundary conditions for derived fields 
   auto& bc_model_pg = op_bc_pg_->bc_model();

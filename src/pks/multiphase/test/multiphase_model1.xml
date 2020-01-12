@@ -53,9 +53,9 @@
     <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
+      <Parameter name="primary component names" type="Array(string)" value="{H}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
     </ParameterList>
 
     <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
@@ -83,6 +83,7 @@
         <Parameter name="regions" type="Array(string)" value="{All}"/>
         <Parameter name="water retention model" type="string" value="van Genuchten"/>
         <Parameter name="van Genuchten m" type="double" value="0.32886"/>
+        <Parameter name="van Genuchten n" type="double" value="1.49"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
         <Parameter name="van Genuchten entry pressure" type="double" value="2.0e6"/>
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
@@ -112,17 +113,18 @@
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
-          <Parameter name="modify correction" type="bool" value="false"/>
+          <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor residual"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="2.0e-6"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
           <Parameter name="max nka vectors" type="int" value="10"/>
           <Parameter name="modify correction" type="bool" value="true"/>
+          <Parameter name="monitor" type="string" value="monitor l2 residual"/>
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="true"/>
@@ -138,7 +140,7 @@
     </ParameterList>
 
     <ParameterList name="boundary conditions">
-      <ParameterList name="pressure">
+      <ParameterList name="pressure liquid">
         <ParameterList name="BC 1">
           <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -153,6 +155,17 @@
         <ParameterList name="BC 2">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="water"/>
+          <ParameterList name="outward mass flux">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="BC 3">
+          <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="H"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
@@ -161,7 +174,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="saturation">
-        <ParameterList name="BC 3">
+        <ParameterList name="BC 4">
           <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary saturation">
@@ -229,6 +242,9 @@
           <Parameter name="nonlinear coefficient" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList> 
   </ParameterList>  <!-- PKs, no shift -->
@@ -397,7 +413,7 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <Parameter name="error tolerance" type="double" value="1e-6"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
