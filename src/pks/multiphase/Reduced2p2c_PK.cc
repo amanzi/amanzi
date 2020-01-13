@@ -259,6 +259,7 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     tree_op_->SymbolicAssembleMatrix();
     tree_op_->AssembleMatrix();
   }
+{ std::cout << *tree_op_->A() << std::endl; } exit(0);
 }
 
 

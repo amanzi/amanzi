@@ -46,6 +46,11 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   virtual void InitMPPreconditioner() override;
   virtual void PopulateBCs(int icomp) override;
 
+  virtual std::pair<int, int> EquationToSolution(int neqn) override;
+  virtual std::pair<int, int> PressureToSolution() override;
+  virtual std::pair<int, int> SaturationToSolution() override;
+  virtual std::pair<int, int> ComponentToSolution(int neqn) override;
+
  private:
   int missed_bc_faces_;
 

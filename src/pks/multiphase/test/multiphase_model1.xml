@@ -53,7 +53,7 @@
     <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="primary component names" type="Array(string)" value="{H}"/>
+      <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
     </ParameterList>
@@ -165,7 +165,7 @@
         <ParameterList name="BC 3">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="H"/>
+          <Parameter name="name" type="string" value="H2"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
@@ -254,13 +254,13 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
       </ParameterList>
-      <ParameterList name="gas_viscosity">
+      <ParameterList name="const_gas_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
 
@@ -332,6 +332,34 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0e-3"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="viscosity_gas">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.0e-6"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="field evaluators">
@@ -372,9 +400,7 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <ParameterList name="gas EOS parameters">
-            <Parameter name="molar mass of gas [kg/mol]" type="double" value="1.00794e-3"/>
-          </ParameterList>
+          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
         </ParameterList>
         <!--ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

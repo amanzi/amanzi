@@ -87,13 +87,20 @@ void MultiphaseReduced_PK::InitMPSolutionVector()
 ******************************************************************* */
 void MultiphaseReduced_PK::InitMPPreconditioner()
 {
-  eval_acc_.push_back("total_water_storage");
-  eval_adv_.push_back("");
-  eval_diff_.push_back("");
+  for (int i = 0; i < 3; ++i)
+    eval_mobility_liquid_.push_back(molar_mobility_liquid_key_);
 
-  for (int i = 0; i < num_primary_; ++i) {
-    eval_acc_.push_back("total_component_storage");
-  }
+  eval_mobility_gas_.push_back("");
+  eval_mobility_gas_.push_back(molar_mobility_gas_key_);
+  eval_mobility_gas_.push_back(molar_mobility_gas_key_);
+
+  eval_molecular_diff_.push_back("");
+  eval_molecular_diff_.push_back("any");
+  eval_molecular_diff_.push_back("any");
+
+  eval_storage_.push_back("total_water_storage");
+  eval_storage_.push_back("total_component_storage");
+  eval_storage_.push_back("total_component_storage");
 }
 
 
@@ -142,10 +149,18 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
           bc_value_p[f] = it->second[0] * (eta_l_ / rho_l_);
         }
       } else if (bcs_[i]->component_id() == icomp) {
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value_x[f] = it->second[0] * (eta_l_ / rho_l_);
+        if (icomp > 0) {
+          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+            int f = it->first;
+            bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
+            bc_value_x[f] = it->second[0] * (eta_l_ / rho_l_);
+          }
+        } else {
+          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+            int f = it->first;
+            bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
+            bc_value_s[f] = it->second[0] * (eta_l_ / rho_l_);
+          }
         }
       }
     }
@@ -191,6 +206,28 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
   }
 
   bc_model_pg = bc_model_p;
+}
+
+
+/* ******************************************************************* 
+* Map for indices
+******************************************************************* */
+std::pair<int, int> MultiphaseReduced_PK::EquationToSolution(int neqn) {
+  int i1 = std::min(neqn, 2);
+  int i2 = (neqn < 2) ? 0 : neqn - 1;
+  return std::make_pair(i1, i2);
+}
+
+std::pair<int, int> MultiphaseReduced_PK::PressureToSolution() {
+  return std::make_pair(0, 0);
+}
+
+std::pair<int, int> MultiphaseReduced_PK::SaturationToSolution() {
+  return std::make_pair(1, 0);
+}
+
+std::pair<int, int> MultiphaseReduced_PK::ComponentToSolution(int neqn) {
+  return std::make_pair(2, neqn - 1);
 }
 
 }  // namespace Multiphase

@@ -20,6 +20,7 @@
 #include "BDF1_TI.hh"
 #include "BDFFnBase.hh"
 #include "FieldEvaluator.hh"
+#include "Key.hh"
 #include "LinearOperator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
@@ -104,6 +105,11 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void InitMPPreconditioner() = 0;
   virtual void PopulateBCs(int icomp) = 0;
 
+  virtual std::pair<int, int> EquationToSolution(int neqn) = 0;
+  virtual std::pair<int, int> PressureToSolution() = 0;
+  virtual std::pair<int, int> SaturationToSolution() = 0;
+  virtual std::pair<int, int> ComponentToSolution(int neqn) = 0;
+
  private:
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
@@ -134,11 +140,14 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
   // keys
-  std::string pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
-  std::string permeability_key_, relperm_liquid_key_, relperm_gas_key_;
-  std::string porosity_key_, pressure_gas_key_, temperature_key_;
-  std::string darcy_flux_liquid_key_, darcy_flux_gas_key_;
-  std::string tws_key_, tcs_key_;
+  Key pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
+  Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
+  Key molar_mobility_liquid_key_, molar_mobility_gas_key_;
+  Key viscosity_liquid_key_, viscosity_gas_key_;
+  Key porosity_key_, pressure_gas_key_, temperature_key_;
+  Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
+  Key molar_density_liquid_key_, molar_density_gas_key_;
+  Key tws_key_, tcs_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_preconditioner_, op_pc_solver_;
@@ -148,7 +157,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> pde_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> pde_acc_;
-  std::vector<std::string> eval_acc_, eval_adv_, eval_diff_;   // evaluator names
+
+  std::vector<Key> eval_mobility_liquid_, eval_mobility_gas_;
+  std::vector<Key> eval_molecular_diff_, eval_storage_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 

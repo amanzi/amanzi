@@ -77,7 +77,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dKdS(sat_c[0][c], phase_name_);
+    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dKdS(sat_c[0][c], phase_name_);
   }
 }
 

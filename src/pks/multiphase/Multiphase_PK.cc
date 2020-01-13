@@ -88,9 +88,17 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- other fields
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+
   relperm_liquid_key_ = Keys::getKey(domain_, "rel_permeability_liquid"); 
   relperm_gas_key_ = Keys::getKey(domain_, "rel_permeability_gas"); 
-  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+  molar_mobility_liquid_key_ = Keys::getKey(domain_, "molar_mobility_liquid"); 
+  molar_mobility_gas_key_ = Keys::getKey(domain_, "molar_mobility_gas"); 
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
+  viscosity_gas_key_ = Keys::getKey(domain_, "viscosity_gas"); 
+
+  molar_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+  molar_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas"); 
 
   pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
@@ -104,14 +112,14 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("gravity"))
       S->RequireConstantVector("gravity", passwd_, dim_);
 
-  if (!S->HasField("fluid_density"))
-      S->RequireScalar("fluid_density", passwd_);
+  if (!S->HasField("const_fluid_density"))
+      S->RequireScalar("const_fluid_density", passwd_);
 
-  if (!S->HasField("fluid_viscosity"))
-      S->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("const_fluid_viscosity"))
+      S->RequireScalar("const_fluid_viscosity", passwd_);
 
-  if (!S->HasField("gas_viscosity"))
-      S->RequireScalar("gas_viscosity", passwd_);
+  if (!S->HasField("const_gas_viscosity"))
+      S->RequireScalar("const_gas_viscosity", passwd_);
 
   // pressure is the primary solution
   if (!S->HasField(pressure_liquid_key_)) {
@@ -202,6 +210,32 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
   S->SetFieldEvaluator(relperm_gas_key_, eval);
 
+  // mobility of liquid phase
+  S->RequireField(molar_mobility_liquid_key_, molar_mobility_liquid_key_)
+    ->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  elist.set<std::string>("my key", molar_mobility_liquid_key_)
+       .set<std::string>("viscosity key", viscosity_liquid_key_)
+       .set<std::string>("molar density key", molar_density_liquid_key_)
+       .set<std::string>("phase name", "liquid");
+
+  eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+  S->SetFieldEvaluator(molar_mobility_liquid_key_, eval);
+
+  // mobility of gas phase
+  S->RequireField(molar_mobility_gas_key_, molar_mobility_gas_key_)
+    ->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  elist.set<std::string>("my key", molar_mobility_gas_key_)
+       .set<std::string>("viscosity key", viscosity_gas_key_)
+       .set<std::string>("molar density key", molar_density_gas_key_)
+       .set<std::string>("phase name", "gas");
+
+  eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+  S->SetFieldEvaluator(molar_mobility_gas_key_, eval);
+
   // material properties
   if (!S->HasField(permeability_key_)) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -210,6 +244,17 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(porosity_key_)) {
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // viscosity liquid phase
+  if (!S->HasField(viscosity_liquid_key_)) {
+    S->RequireField(viscosity_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(viscosity_gas_key_)) {
+    S->RequireField(viscosity_gas_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -263,10 +308,10 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                                            // array or vector
   g_ = fabs(gravity_[dim_ - 1]);
 
-  rho_l_ = *S->GetScalarData("fluid_density");
+  rho_l_ = *S->GetScalarData("const_fluid_density");
   eta_l_ = rho_l_ / CommonDefs::MOLAR_MASS_H2O;
-  mu_l_ = *S->GetScalarData("fluid_viscosity");
-  mu_g_ = *S->GetScalarData("gas_viscosity");
+  mu_l_ = *S->GetScalarData("const_fluid_viscosity");
+  mu_g_ = *S->GetScalarData("const_gas_viscosity");
 
   // process CPR list
   cpr_enhanced_ = mp_list_->isSublist("CPR enhancement");

@@ -89,7 +89,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // loop
   int iloop(0);
   bool failed = true;
-  double t(0.0), tend(1.0e+10), dt(1.0e+6);
+  double t(0.0), tend(1.0e+12), dt(1.5768e+11);
   while (t < tend && iloop < 100) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
