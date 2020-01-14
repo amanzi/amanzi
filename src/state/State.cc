@@ -197,6 +197,7 @@ void State::AliasMesh(Key target, Key alias) {
   bool deformable = IsDeformableMesh(target);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
   RegisterMesh(alias, mesh, deformable);
+  mesh_aliases_.push_back(alias);
 };
 
 

@@ -183,6 +183,9 @@ class State {
 
   // Alias a mesh to an existing mesh
   void AliasMesh(Key target, Key alias);
+  bool IsAliasedMesh(Key alias) const {
+    return !(std::find(mesh_aliases_.begin(), mesh_aliases_.end(), alias) == mesh_aliases_.end());
+  }
 
   // Remove a mesh.
   void RemoveMesh(Key key);
@@ -385,6 +388,7 @@ class State {
   void InitializeIOFlags_();
 
   // Containers
+  std::vector<Key> mesh_aliases_;
   MeshMap meshes_;
   FieldMap fields_;
   FieldFactoryMap field_factories_;

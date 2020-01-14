@@ -107,7 +107,18 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     std::string filename = plist.get<std::string>("restart file");
-    bool read = ReadCheckpoint_(filename);
+    auto split_restart = Keys::splitKey(filename, '*');
+    bool read;
+    if (split_restart.first.empty()) {
+      // standard restart file on COMM_WORLD
+      read = ReadCheckpoint_(filename);
+    } else {
+      // rank-based restart file on COMM_SELF
+      auto comm_self = Amanzi::getCommSelf();
+      std::stringstream restart_fname;
+      restart_fname << split_restart.first << data_->Comm()->MyPID() << split_restart.second;
+      read = ReadCheckpoint_(restart_fname.str(), comm_self);
+    }
     if (!read) {
       Errors::Message message;
       message << "Field: \"" << fieldname() << "\" is not available in restart file \"" << filename << "\"";
@@ -298,9 +309,10 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
 }
 
 
-bool Field_CompositeVector::ReadCheckpoint_(std::string filename) {
+bool Field_CompositeVector::ReadCheckpoint_(std::string filename, Comm_ptr_type comm) {
+  if (!comm.get()) comm = data_->Comm();
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
+      Teuchos::rcp(new Amanzi::HDF5_MPI(comm, filename));
   file_input->open_h5file();
   bool read_complete = ReadCheckpoint(file_input.ptr());
   file_input->close_h5file();

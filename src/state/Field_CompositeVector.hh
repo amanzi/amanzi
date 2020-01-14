@@ -134,7 +134,7 @@ public:
   long int GetLocalElementCount();
 
 protected:
-  bool ReadCheckpoint_(std::string filename);
+  bool ReadCheckpoint_(std::string filename, Comm_ptr_type comm=Teuchos::null);
   void ReadCellsFromCheckpoint_(std::string filename); // for ICs
   void ReadAttributeFromExodusII_(Teuchos::ParameterList& plist); 
   void ReadVariableFromExodusII_(Teuchos::ParameterList& plist); 

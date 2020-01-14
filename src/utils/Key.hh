@@ -60,9 +60,9 @@ getKey(const Key& domain, const Key& name)
 
 // Split a DOMAIN-VARNAME key.
 inline KeyPair
-splitKey(const Key& name)
+splitKey(const Key& name, const char split='-')
 {
-  std::size_t pos = name.find('-');
+  std::size_t pos = name.find(split);
   if (pos == std::string::npos) 
     return std::make_pair(Key(""), name);
   else
