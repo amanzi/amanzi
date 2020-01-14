@@ -174,14 +174,6 @@ void PK_Physical_Default::Initialize(const Teuchos::Ptr<State>& S) {
 
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
-    int rank =-1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (ic_plist.isParameter("restart from checkpoint columns")) {
-	std::stringstream path;
-	path << ic_plist.get<std::string>("restart from checkpoint columns") << "checkpoint_" << rank <<"_"<<ic_plist.get<std::string>("cycles") << ".h5";
-	ic_plist.set("restart file",path.str());
-	std::cout<<"PK physical default "<<ic_plist<<" "<<path.str()<<"\n";
-	}
     field->Initialize(ic_plist);
 
     // -- Update faces from cells if needed.
