@@ -302,11 +302,10 @@ protected:
   // is vapor turned on
   bool vapor_diffusion_;
 
-  // scale for perm
+  // permeability scaling and metadata
   double perm_scale_;
   int perm_tensor_rank_;
   int num_perm_vals_;
-  std::string perm_type_;
 
   // limiters
   double p_limit_;
