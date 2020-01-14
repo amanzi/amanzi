@@ -105,6 +105,8 @@ SurfaceIceModel::EvaluateEnergyAndWaterContent_(double T, double p,
         AmanziGeometry::Point& result) {
   if (T < 100) return 1; // invalid temperature
   int ierr = 0;
+  std::vector<double> eos_param(2);
+  
   try {
     // water content [mol / A]
     double WC = p < p_atm_ ? 0. : (p - p_atm_) / (gz_ * M_);
@@ -114,9 +116,11 @@ SurfaceIceModel::EvaluateEnergyAndWaterContent_(double T, double p,
     double uf = uf_->UnfrozenFraction(T);
 
     // -- densities
-    double rho_l = liquid_eos_->MassDensity(T,p);
+    eos_param[0] = T;
+    eos_param[1] = p;    
+    double rho_l = liquid_eos_->MassDensity(eos_param);
     double n_l = rho_l / M_;
-    double rho_i = ice_eos_->MassDensity(T,p);
+    double rho_i = ice_eos_->MassDensity(eos_param);
     double n_i = rho_i / M_;
 
     // -- ponded depth

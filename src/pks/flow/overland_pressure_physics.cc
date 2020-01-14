@@ -17,6 +17,10 @@ namespace Flow {
 void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
 
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  
   // update the rel perm according to the scheme of choice.
   UpdatePermeabilityData_(S_next_.ptr());
   auto cond = S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
@@ -24,8 +28,14 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the stiffness matrix
   matrix_->Init();
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
+
+  std::vector<WhetStone::DenseMatrix>& Aff =
+    matrix_diff_->local_op()->matrices;
+   
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   FixBCsForOperator_(S_next_.ptr(), matrix_diff_.ptr()); // deals with zero gradient case
+
   matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes -- this gets done independently fo update as precon does
@@ -37,6 +47,7 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, *g);
+  
 };
 
 

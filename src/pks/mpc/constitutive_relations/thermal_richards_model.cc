@@ -293,13 +293,17 @@ bool ThermalRichardsModel::IsSetUp_() {
 
 int ThermalRichardsModel::EvaluateEnergyAndWaterContent_(double T, double p, double poro, AmanziGeometry::Point& result) {
   int ierr = 0;
-
+  std::vector<double> eos_param(2);
+  
   try {
     double eff_p = std::max(p_atm_, p);
 
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
-    double rho_g = gas_eos_->MolarDensity(T,eff_p);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;        
+    
+    double rho_l = liquid_eos_->MolarDensity(eos_params);
+    double mass_rho_l = liquid_eos_->MassDensity(eos_params);
+    double rho_g = gas_eos_->MolarDensity(eos_params);
     double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;
 
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);

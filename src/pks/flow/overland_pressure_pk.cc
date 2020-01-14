@@ -44,7 +44,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 #define DEBUG_RES_FLAG 0
 
 OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
@@ -126,6 +126,9 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
   bc_seepage_pressure_ = bc_factory.CreateSeepageFacePressure();
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
+  bc_dynamic_ = bc_factory.CreateDynamic();
+  bc_tidal_ = bc_factory.CreateTidalHead();
+  
   if (bc_plist.isParameter("seepage face")) {
     // old style! DEPRECATED
     Errors::Message message;
@@ -240,7 +243,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                                     Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
                                     Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
-                                    Keys::getKey(domain_,"mass_flux_direction"),1.e-8));
+                                    Keys::getKey(domain_,"mass_flux_direction"),1.e-12));
     }
   }
   
@@ -297,6 +300,9 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
   patm_hard_limit_ = plist_->get<bool>("allow no negative ponded depths", false);
+  min_vel_ponded_depth_ = plist_->get<double>("min ponded depth for velocity calculation", 1e-2);
+  min_tidal_bc_ponded_depth_ = plist_->get<double>("min ponded depth for tidal bc", 0.02);  
+  
   
 };
 
@@ -510,6 +516,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
+  bc_dynamic_->Compute(S->time());
+  bc_tidal_->Compute(S->time());  
   
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"),name_)->PutScalar(0.0);
@@ -556,6 +564,8 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
+  bc_dynamic_->Compute(S->time());
+  bc_tidal_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
 
   // Update flux if rel perm or h + Z has changed.
@@ -573,9 +583,11 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   matrix_diff_->ApplyBCs(true, true, true);
   
   // derive the fluxes
+    
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
   matrix_diff_->UpdateFlux(potential.ptr(), flux.ptr());
+  
 };
 
 
@@ -647,7 +659,7 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
     lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
 
     // NOTE this is probably wrong in the frozen case?  pd --> uf*pd?
-    for (int i=0; i!=d; ++i) velocity[i][c] = pd_c[0][c] > 0. ? rhs[i] / (nliq_c[0][c] * pd_c[0][c]) : 0.;
+    for (int i=0; i!=d; ++i) velocity[i][c] = pd_c[0][c] > min_vel_ponded_depth_ ? rhs[i] / (nliq_c[0][c] * pd_c[0][c]) : 0.;
   }
 
 
@@ -843,6 +855,23 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     else values[f] = val;
   }
 
+  //for (auto bc : bc_dynamic_) {
+  if (bc_dynamic_ -> size() > 0){
+    double time = S->time();
+    int id = bc_dynamic_->Func_ID(time);
+    for (Functions::DynamicBoundaryFunction::Iterator bc=bc_dynamic_->GetFunction(id) -> begin();
+         bc!=bc_dynamic_-> GetFunction(id) -> end(); ++bc){
+      int f = bc->first;
+      if (id == 0){
+        markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        values[f] = bc->second + elevation[0][f];
+      }else if (id==1){
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = bc->second;
+      }
+    }
+  }
+
   // Standard Neumann data for flux
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
@@ -960,8 +989,67 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     }
   }
 
-  // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
+
+  //Tidal BC
+
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
+  Teuchos::RCP<const CompositeVector> ponded_depth = S->GetFieldData(Keys::getKey(domain_,"ponded_depth"));
+
+  elev->ScatterMasterToGhosted();
+  ponded_depth->ScatterMasterToGhosted();
+  
+  const Epetra_MultiVector& elevation_f = *elev -> ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev -> ViewComponent("cell",false);
+  const Epetra_MultiVector& ponded_c = *ponded_depth -> ViewComponent("cell",false);
+  Teuchos::RCP<const CompositeVector> flux =
+       S->GetFieldData(Keys::getKey(domain_,"mass_flux"));
+  const Epetra_MultiVector& flux_f = *flux -> ViewComponent("face",false);  
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_tidal_->begin();
+       bc!=bc_tidal_->end(); ++bc) {
+
+    int f = bc->first;
+
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> fdirs;
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
+    AmanziMesh::Entity_ID c = cells[0];
+      
+    if (f < nfaces_owned) {
+      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      int j=0;
+      for (j=0; j<faces.size(); j++){
+        if (faces[j] == f) break;
+      }
+      if (j >= faces.size()) {
+        Errors::Message message("Overland_pressure PK: boundary face is not found in the boundary cell.");
+        Exceptions::amanzi_throw(message);
+      }
+      double h0 = bc->second;
+      
+      if ((h0 - elevation_f[0][f]  < min_tidal_bc_ponded_depth_) ) {      
+          
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = 0.;
+        
+      }else{        
+        markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        values[f] = h0;
+        
+      }
+
+      if (vo_->os_OK(Teuchos::VERB_HIGH)){
+        *vo_->os() << "Tidal BC: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<"\n";
+      }
+      
+    }
+
+  }
+
+  // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
+
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
@@ -976,7 +1064,9 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.0;
     }
-  } 
+  }
+  
+
 }
 
 
@@ -1037,12 +1127,23 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
+  Teuchos::RCP<const CompositeVector> ponded_depth = S->GetFieldData(Keys::getKey(domain_,"ponded_depth"));  
+  Teuchos::RCP<const CompositeVector> upw_conductivity =
+    S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> conductivity =
+       S->GetFieldData(Keys::getKey(domain_,"overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> flux =
+       S->GetFieldData(Keys::getKey(domain_,"mass_flux"));
 
-  elev->ScatterMasterToGhosted();
-  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
-  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
+  const Epetra_MultiVector& elevation_f = *elev -> ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev -> ViewComponent("cell",false);
+  const Epetra_MultiVector& ponded_c = *ponded_depth -> ViewComponent("cell",false);
+  const Epetra_MultiVector& upw_cond_f = *upw_conductivity -> ViewComponent("face",false);
+  const Epetra_MultiVector& cond_c = *conductivity -> ViewComponent("cell",false);
+  const Epetra_MultiVector& flux_f = *flux -> ViewComponent("face",false);  
 
   std::vector<WhetStone::DenseMatrix>& Aff = diff_op->local_op()->matrices;
+
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
@@ -1059,9 +1160,64 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
       double bc_val = -dp * Aff[f](0,0);
 
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
-      values[f] = bc_val / mesh_->face_area(f);
+      values[f] = bc_val / mesh_->face_area(f);        
+
     }
   }
+
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+  const Epetra_MultiVector& rho_l = *S->GetFieldData(Keys::getKey(domain_,"mass_density_liquid"))->ViewComponent("cell");
+  double gz = -(*S->GetConstantVectorData("gravity"))[2];  
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_tidal_->begin();
+       bc!=bc_tidal_->end(); ++bc) {
+
+    int f = bc->first;
+
+
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> fdirs;
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
+    AmanziMesh::Entity_ID c = cells[0];
+                                               
+    if (f < nfaces_owned) {
+
+      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      int j=0;
+      for (j=0; j<faces.size(); j++){
+        if (faces[j] == f) break;
+      }
+      if (j >= faces.size()) {
+        Errors::Message message("Overland_pressure PK: boundary face is not found in the boundary cell.");
+        Exceptions::amanzi_throw(message);
+      }
+      double h0 = bc->second;
+      
+      if ((h0 - elevation_f[0][f] < min_tidal_bc_ponded_depth_)) {
+        double dp = elevation_f[0][f] - elevation_c[0][c];        
+        double bc_val = -dp * Aff[f](0,0);
+
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = bc_val / mesh_->face_area(f);
+        
+      }else{
+        
+        markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        values[f] = h0;
+        
+      }
+
+      if (vo_->os_OK(Teuchos::VERB_HIGH)){
+        *vo_->os() << "Tidal BC2: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<
+          " Aff "<< Aff[f](0,0) << "\n";
+      }
+
+      
+    }
+  }
+
+  
 };
 
 
@@ -1117,7 +1273,7 @@ void OverlandPressureFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 //   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
 //   std::vector<WhetStone::DenseMatrix>& Aff_cells =
-//       matrix_diff_->local_matrices()->matrices;
+//       matrix_diff_->local_op()->matrices;
 //   Epetra_MultiVector& rhs_f = *matrix_->rhs()->ViewComponent("face",false);
 
 //   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

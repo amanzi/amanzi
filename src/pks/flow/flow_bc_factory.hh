@@ -246,7 +246,61 @@ Example:
    </ParameterList>
  </ParameterList>
 
+
+Dynamic boundary condutions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The type of boundary conditions maybe changed in time depending on the switch function of TIME.
+<ParameterList name="dynamic">
+          
+     <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+     <ParameterList name="switch function">
+       <ParameterList name="function-tabular">
+         <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+         <Parameter name="x header" type="string" value="Time" />
+         <Parameter name="y header" type="string" value="Switch" />
+         <Parameter name="form" type="Array(string)" value="{constant}"/>
+       </ParameterList>
+     </ParameterList>
+          
+     <ParameterList name="bcs">
+       <Parameter name="bc types" type="Array(string)" value="{head, mass flux}"/>
+       <Parameter name="bc functions" type="Array(string)" value="{boundary head, outward mass flux}"/>
+
+       <ParameterList name="mass flux">
+         <ParameterList name="BC west">
+           <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-tabular">
+               <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+               <Parameter name="x header" type="string" value="Time" />
+               <Parameter name="y header" type="string" value="Flux" />
+               <Parameter name="form" type="Array(string)" value="{linear}"/>
+             </ParameterList>
+            </ParameterList>
+          </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="head">  
+          <ParameterList name="BC west">
+            <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+            <ParameterList name="boundary head">
+              <ParameterList name="function-tabular">
+                 <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+                 <Parameter name="x header" type="string" value="Time" />
+                 <Parameter name="y header" type="string" value="Head" />
+                 <Parameter name="form" type="Array(string)" value="{linear}"/>
+               </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+     </ParameterList>
+                 
+ </ParameterList> 
+<!-- dynamic -->
+
  */
+
+
 
 namespace Amanzi {
 namespace Flow {
@@ -278,6 +332,10 @@ public:
     return CreateWithFunction("seepage face head", "boundary head");
   }
 
+  Teuchos::RCP<Functions::BoundaryFunction> CreateTidalHead() const {
+    return CreateWithFunction("tidal head", "boundary head");
+  }
+  
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressure() const {
     return CreateWithFunction("seepage face pressure", "boundary pressure");
   }
@@ -292,6 +350,10 @@ public:
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateFixedLevel() const {
     return CreateWithFunction("fixed level", "fixed level");
+  }
+
+  Teuchos::RCP<Functions::DynamicBoundaryFunction> CreateDynamic() const {
+    return CreateDynamicFunction("dynamic");
   }
   
 };

@@ -43,8 +43,8 @@ class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
 
   // Keys for fields
   // dependencies
-  Key temp_key_;
-  Key pres_key_;
+  Key pres_key_;  
+  Key dep_key_;
   Key a_key_;
 
  private:

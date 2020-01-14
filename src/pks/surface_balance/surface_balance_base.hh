@@ -47,11 +47,14 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
   // computes the non-linear functional g = g(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) override;
+
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override;
 
  protected:
 
@@ -62,6 +65,8 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   double theta_;
   double eps_;
+
+  bool modify_predictor_positivity_preserving_;
 
   bool precon_used_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;

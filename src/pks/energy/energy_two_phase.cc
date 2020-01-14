@@ -9,7 +9,8 @@ Author: Ethan Coon
 Process kernel for energy equation for Richard's flow.
 ------------------------------------------------------------------------- */
 
-#include "eos_evaluator.hh"
+
+#include "eos_evaluator_tp.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_twophase_evaluator.hh"
 #include "enthalpy_evaluator.hh"

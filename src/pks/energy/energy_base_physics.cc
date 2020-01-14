@@ -61,6 +61,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   db_->WriteVector(" adv flux", flux.ptr(), true);
   matrix_adv_->global_operator()->Init();
   matrix_adv_->Setup(*flux);
+  matrix_adv_->SetBCs(bc_adv_, bc_adv_);
   matrix_adv_->UpdateMatrices(flux.ptr());
 
   // apply to enthalpy
@@ -68,6 +69,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
   matrix_adv_->ApplyBCs(false, true, false);
+
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);

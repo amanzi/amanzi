@@ -187,8 +187,11 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (jacobian_) {
-    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(energy_flux_key_, name_);
+    Teuchos::RCP<CompositeVector> flux = Teuchos::null;
+
+    flux = S_next_->GetFieldData(energy_flux_key_, name_);
     preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
+
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 
@@ -244,9 +247,11 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
     preconditioner_adv_->Setup(*mass_flux);
+    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
     preconditioner_adv_->ApplyBCs(false, true, false);
+
   }
 
   // Apply boundary conditions.

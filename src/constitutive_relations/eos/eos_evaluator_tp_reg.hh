@@ -7,13 +7,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "eos_evaluator.hh"
+#include "eos_evaluator_tp.hh"
 
 namespace Amanzi {
 namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> EOSEvaluator::factory_("eos");
+Utils::RegisteredFactory<FieldEvaluator,EOSEvaluatorTP> EOSEvaluatorTP::factory_("eos");
 
 }
 }

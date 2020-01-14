@@ -22,11 +22,16 @@ namespace Transport {
  * Routine takes a parallel overlapping vector C and returns a parallel
  * overlapping vector F(C).
  ****************************************************************** */
-void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
+
+void Transport_PK_ATS::FunctionalTimeDerivative(double t,
+                                                const Epetra_Vector& component,
+                                                Epetra_Vector& f_component)
+
 {
 
   // distribute vector
-  
+  Epetra_Vector component_tmp(component);
+  component_tmp.Import(component, *tcc->importer("cell"), Insert);
   
   
   // transport routines need an RCP pointer
@@ -35,7 +40,6 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
   lifting_->ComputeGradient();
-  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -61,6 +65,8 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
   limiter_->Init(plist, flux_);
   limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
 
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
+
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
@@ -71,6 +77,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
+  
 
     if (c1 >= 0 && c2 >= 0) {
       u1 = component[c1];
@@ -94,7 +101,9 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
-    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned)) {
+
+    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+
       upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -121,6 +130,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
       f_component[c2] += tcc_flux;
     }
   }
+
                                                 
 
   // process external sources
@@ -180,6 +190,8 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
   }
 }
 
+
+  
 }  // namespace Transport
 }  // namespace Amanzi
 

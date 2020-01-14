@@ -54,11 +54,11 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
     }
     mfd3d.L2Cell(c, flux, flux, NULL, poly);
 
-     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
+    for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
         velocity, axi_symmetry_[c], saturation[0][c], porosity[0][c]);
-    // double mol_den = mol_density[0][c];
-    // D_[c] *= mol_den;
+    double mol_den = mol_density[0][c];
+    D_[c] *= mol_den;
   }
 }
 
@@ -88,14 +88,14 @@ void Transport_PK_ATS::CalculateDiffusionTensor_(
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       }
 

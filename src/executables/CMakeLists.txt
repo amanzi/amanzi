@@ -19,11 +19,13 @@
 #  ATS
 #    Executable
 #
+
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
 
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations)
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
@@ -39,6 +41,14 @@ include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
 include_directories(${ATS_SOURCE_DIR}/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/operators/deformation)
 
+if (ENABLE_FATES)
+  link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
+  link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
+  link_directories(/nh/u/dasvyat/Coastal/pnetcdf-1.11.2/install/lib)
+  set (VEG_LIB pk_veg)
+endif()
+
+
 include_evaluators_directories(LISTNAME REGISTER_AMANZI_STATE_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_RELATIONS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_TRANSPORT_REG_INCLUDES)
@@ -50,6 +60,7 @@ include_evaluators_directories(LISTNAME ATS_DEFORMATION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_SURFACE_BALANCE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_MPC_REG_INCLUDES)
+include_evaluators_directories(LISTNAME SED_TRANSPORT_REG_INCLUDES)
 
 set(ats_src_files
   coordinator.cc
@@ -71,6 +82,7 @@ set(amanzi_link_libs
   whetstone
   time_integration
   solvers
+  dbg       
   data_structures
   mesh
   mesh_audit
@@ -98,6 +110,7 @@ set(ats_link_libs
   ats_eos
   ats_pks
   ats_transport
+  ats_sed_transport  
   ats_energy
   ats_energy_relations
   ats_flow
@@ -124,9 +137,15 @@ set(tpl_link_libs
   ${HDF5_LIBRARIES}
   )
 
+if (ENABLE_FATES)
+  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
+#  link_directories(ats /nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
+endif()
+
+
 add_amanzi_executable(ats
   SOURCE ${ats_src_files}
-  LINK_LIBS ${ats_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
+  LINK_LIBS ${fates_link_libs} ${ats_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
 

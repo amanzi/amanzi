@@ -166,13 +166,17 @@ bool LiquidIceModel::IsSetUp_() {
 bool 
 LiquidIceModel::Freezing(double T, double p) {
   double eff_p = std::max(p_atm_, p);
+  std::vector<double> eos_param(2);
+  eos_param[0] = T;
+  eos_param[1] = eff_p;        
+  
   double pc_l = pc_l_->CapillaryPressure(p,p_atm_);
   double pc_i;
   if (pc_i_->IsMolarBasis()) {
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+    double rho_l = liquid_eos_->MolarDensity(eos_param);
     pc_i = pc_i_->CapillaryPressure(T, rho_l);
   } else {
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+    double mass_rho_l = liquid_eos_->MassDensity(eos_param);
     pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
   }
 
@@ -184,13 +188,18 @@ int LiquidIceModel::EvaluateSaturations(double T, double p, double& s_gas, doubl
   int ierr = 0;
   try {
     double eff_p = std::max(p_atm_, p);
+
+    std::vector<double> eos_param(2);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;
+    
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
-      double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+      double rho_l = liquid_eos_->MolarDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
-      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      double mass_rho_l = liquid_eos_->MassDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
     }
 
@@ -223,14 +232,18 @@ int LiquidIceModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGeo
     
     double eff_p = std::max(p_atm_, p);
 
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double rho_i = ice_eos_->MolarDensity(T,eff_p);
+    std::vector<double> eos_param(2);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;
+    
+    double rho_l = liquid_eos_->MolarDensity(eos_param);
+    double rho_i = ice_eos_->MolarDensity(eos_param);
 
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
-      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      double mass_rho_l = liquid_eos_->MassDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
     }
 

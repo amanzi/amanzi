@@ -11,11 +11,6 @@ add_subdirectory(generic_evaluators)
 # eos/
 
 register_evaluator_with_factory(
-  HEADERFILE eos/effective_pressure_evaluator_reg.hh
-  LISTNAME   ATS_RELATIONS_REG
-  )
-
-register_evaluator_with_factory(
   HEADERFILE eos/eos_constant_reg.hh
   LISTNAME   ATS_RELATIONS_REG
   )
@@ -26,7 +21,12 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE eos/eos_evaluator_reg.hh
+  HEADERFILE eos/eos_evaluator_tp_reg.hh
+  LISTNAME   ATS_RELATIONS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE eos/eos_evaluator_ctp_reg.hh
   LISTNAME   ATS_RELATIONS_REG
   )
 
@@ -41,6 +41,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE eos/eos_vapor_in_gas_reg.hh
+  LISTNAME   ATS_RELATIONS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE eos/eos_sw_reg.hh
   LISTNAME   ATS_RELATIONS_REG
   )
 
@@ -115,6 +120,11 @@ register_evaluator_with_factory(
 register_evaluator_with_factory(
   HEADERFILE generic_evaluators/SubgridDisaggregateEvaluator_reg.hh
   LISTNAME ATS_RELATIONS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE generic_evaluators/ColumnSumEvaluator_reg.hh
+  LISTNAME CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS
   )
 
 generate_evaluators_registration_header(

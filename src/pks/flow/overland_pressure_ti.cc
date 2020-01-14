@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 #define DEBUG_ICE_FLAG 0
 #define DEBUG_RES_FLAG 0
 
@@ -39,6 +39,7 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
+
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   // zero out residual
@@ -94,6 +95,9 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   bc_seepage_head_->Compute(S_next_->time());
   bc_seepage_pressure_->Compute(S_next_->time());
   bc_critical_depth_->Compute(S_next_->time());
+  bc_dynamic_->Compute(S_next_->time());
+  bc_tidal_->Compute(S_next_->time());
+  
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
@@ -200,7 +204,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     iter_ = 0;
     iter_counter_time_ = t;
   }
+
+
   AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:

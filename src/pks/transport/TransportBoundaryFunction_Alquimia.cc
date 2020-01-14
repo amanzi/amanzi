@@ -46,7 +46,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   std::vector<std::string> conditions = plist.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
 
   // Function of geochemical conditions and the associates regions.
-  f_ = Teuchos::rcp(new TabularStringFunction(times, conditions));
+  f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
 }
 
@@ -78,7 +78,6 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
     AmanziMesh::Entity_ID_List cells;
     for (int n = 0; n < nblock; ++n) {
       int f = block[n];
-      //value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
@@ -105,28 +104,13 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     // Dump the contents of the chemistry state into our Alquimia containers.
     chem_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
 
-    //alq_mat_props_.saturation = 1;
-    //alq_state_.porosity = 0.25;
-    //    alq_aux_data_.aux_doubles.data[0] = 1.0018e-20;
-
-    // std::cout<<"cell "<<cell<<" "<<alq_state_.total_mobile.data[0]<<"\n";
-    // std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
-    // std::cout<<"alq_mat_props: saturation"<<alq_mat_props_.saturation<<"\n";
-    // std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
-    // std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
-    // std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "
-    //          <<alq_aux_data_.aux_doubles.data[1]<<" "
-    //          <<alq_aux_data_.aux_doubles.data[2]<<"\n";
-
     // Enforce the condition.
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
     // Move the concentrations into place.
-    //WhetStone::DenseVector& values = it->second;
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
       values[i] = alq_state_.total_mobile.data[i];
-      // std::cout<<"BC values "<< values[i]<<"\n";
     }
   }
 }

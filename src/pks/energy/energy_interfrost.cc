@@ -111,8 +111,6 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
   unsigned int ncells = T0.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[0][c] += coef[0][c]*cv[0][c]/h + dcoef_dT[0][c] * cv[0][c] * (T1[0][c]-T0[0][c])/h;
-    if (c == 3953)
-      std::cout << "de_dT = " << Acc_cells[0][c] * h << std::endl;
   }
 
   // -- update preconditioner with source term derivatives if needed

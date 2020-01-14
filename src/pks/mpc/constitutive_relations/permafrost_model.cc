@@ -195,14 +195,19 @@ bool PermafrostModel::IsSetUp_() {
 bool 
 PermafrostModel::Freezing(double T, double p) {
   double eff_p = std::max(p_atm_, p);
+  std::vector<double> eos_param(2);
 
   double pc_l = pc_l_->CapillaryPressure(p,p_atm_);
   double pc_i;
   if (pc_i_->IsMolarBasis()) {
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;    
+    double rho_l = liquid_eos_->MolarDensity(eos_param);
     pc_i = pc_i_->CapillaryPressure(T, rho_l);
   } else {
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;        
+    double mass_rho_l = liquid_eos_->MassDensity(eos_param);
     pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
   }
 
@@ -212,16 +217,21 @@ PermafrostModel::Freezing(double T, double p) {
 
 int PermafrostModel::EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice) {
   int ierr = 0;
+  std::vector<double> eos_param(2);
   try {
     double eff_p = std::max(p_atm_, p);
 
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
-      double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+      eos_param[0] = T;
+      eos_param[1] = eff_p;          
+      double rho_l = liquid_eos_->MolarDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
-      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      eos_param[0] = T;
+      eos_param[1] = eff_p;          
+      double mass_rho_l = liquid_eos_->MassDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
     }
 
@@ -245,6 +255,8 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
     return 1; // invalid temperature
   }
   int ierr = 0;
+  std::vector<double> eos_param(2);
+  
   try {
     double poro;
     if (!poro_leij_)
@@ -254,16 +266,20 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
     
     double eff_p = std::max(p_atm_, p);
 
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double rho_i = ice_eos_->MolarDensity(T,eff_p);
-    double rho_g = gas_eos_->MolarDensity(T,eff_p);
+    eos_param[0] = T;
+    eos_param[1] = eff_p;        
+    
+    double rho_l = liquid_eos_-> MolarDensity(eos_param);
+    double rho_i = ice_eos_   -> MolarDensity(eos_param);
+    double rho_g = gas_eos_   -> MolarDensity(eos_param);
+    
     double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;
 
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
-      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      double mass_rho_l = liquid_eos_->MassDensity(eos_param);
       pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
     }
 

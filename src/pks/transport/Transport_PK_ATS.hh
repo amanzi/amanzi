@@ -243,7 +243,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key tcc_matrix_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
-
+    Key water_content_key_;
   
  
  private:

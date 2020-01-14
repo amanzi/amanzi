@@ -149,7 +149,9 @@ Interfrost::UpdatePreconditioner(double t,
       *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
   
   // -- update the cell-cell block
+
   auto& Acc_cells = *preconditioner_acc_->local_op(0)->diag;
+
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[0][c] += dwc_dp[0][c] / h + cv[0][c] * dThdp_coef[0][c] / h

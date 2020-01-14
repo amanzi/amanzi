@@ -465,7 +465,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(mass_dens_key_); // simply picks up the molar density one.
 
-
 }
     
 
@@ -474,9 +473,11 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 
 void Richards::Initialize(const Teuchos::Ptr<State>& S) {
-
+ 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
+  
+  
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
