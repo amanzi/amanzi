@@ -139,11 +139,25 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
       (*K_)[c](1, 1) = perm[0][c] * perm_scale_;
       (*K_)[c](2, 2) = perm[1][c] * perm_scale_;
     }
-  } else if (ndofs == S->GetMesh()->space_dimension()) {
+  } else if (ndofs >= S->GetMesh()->space_dimension()) {
     // diagonal tensor
-    for (unsigned int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
+    for (unsigned int dim=0; dim!=S->GetMesh()->space_dimension(); ++dim) {
       for (unsigned int c=0; c!=ncells; ++c) {
-        (*K_)[c](lcv_dof, lcv_dof) = perm[lcv_dof][c] * perm_scale_;
+        (*K_)[c](dim, dim) = perm[dim][c] * perm_scale_;
+      }
+    }
+      if (ndofs > S->GetMesh()->space_dimension()) {
+      // full tensor
+      if (ndofs == 3) { // 2D
+        for (unsigned int c=0; c!=ncells; ++c) {
+          (*K_)[c](0,1) = (*K_)[c](1,0) = perm[2][c] * perm_scale_;
+        }
+      } else if (ndofs == 6) { // 3D
+        for (unsigned int c=0; c!=ncells; ++c) {
+          (*K_)[c](0,1) = (*K_)[c](1,0) = perm[3][c] * perm_scale_; // xy & yx
+          (*K_)[c](0,2) = (*K_)[c](2,0) = perm[4][c] * perm_scale_; // xz & zx
+          (*K_)[c](1,2) = (*K_)[c](2,1) = perm[5][c] * perm_scale_; // yz & zy
+        }
       }
     }
   } else {
