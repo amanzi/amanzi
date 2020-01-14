@@ -200,16 +200,13 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     std::string parent_domain_name = subgrid.get<std::string>("parent domain", "domain");
     auto parent_mesh = S.GetMesh(parent_domain_name);
 
+    // a flyweight allows each subgrid model to share (topologically and
+    // geometrically) identical meshes.
     bool flyweight = subgrid.get<bool>("flyweight mesh", false);
 
-    // etc: Note that this explicitly and purposefully leaks the comm's
-    // memory.  This is due to poor design of the mesh infrastructure, where a
-    // bare pointer is stored instead of a reference counted pointer.  
-    // Teuchos::RCP<Epetra_MpiComm> comm_self =
-    //     Teuchos::rcpFromRef(*(new Epetra_MpiComm(MPI_COMM_SELF)));
+    // for each id in the regions of the parent mesh on entity, create a
+    // subgrid mesh on MPI_COMM_SELF
     auto comm_self = Amanzi::getCommSelf();
-    
-    // for each id in the regions of the parent mesh on entity, create a subgrid mesh
     Amanzi::AmanziMesh::Entity_ID_List entities;
     parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::Parallel_type::OWNED, &entities);
     const Epetra_Map& map = parent_mesh->map(kind,false);

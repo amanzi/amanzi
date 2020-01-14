@@ -28,9 +28,9 @@ class EOSIce : public EOSConstantMolarMass {
 public:
   explicit EOSIce(Teuchos::ParameterList& eos_plist);
 
-  virtual double MassDensity(double T, double p);
-  virtual double DMassDensityDT(double T, double p);
-  virtual double DMassDensityDp(double T, double p);
+  virtual double MassDensity(std::vector<double>& params) override;
+  virtual double DMassDensityDT(std::vector<double>& params) override;
+  virtual double DMassDensityDp(std::vector<double>& params) override;
 
 private:
   virtual void InitializeFromPlist_();

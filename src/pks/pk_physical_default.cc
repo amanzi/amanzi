@@ -199,6 +199,7 @@ void PK_Physical_Default::Initialize(const Teuchos::Ptr<State>& S) {
 };
 
 
+
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
@@ -239,5 +240,6 @@ void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Com
   }
 };
 
+  
 
 } // namespace

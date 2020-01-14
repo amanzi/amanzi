@@ -100,6 +100,7 @@ class SubgridEvaluator : public SecondaryVariablesFieldEvaluator {
   bool ss_topcell_based_evap_;
   bool diagnostics_;
   Teuchos::RCP<Debugger> db_;
+  Teuchos::RCP<Debugger> db_ss_;
   Teuchos::ParameterList plist_;
   
  private:

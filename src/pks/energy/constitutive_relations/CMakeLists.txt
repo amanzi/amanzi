@@ -5,40 +5,49 @@
 #    Constitutive relations for flow
 #
 
-
-include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
-add_definitions("-DMSTK_HAVE_MPI")
-
-list(APPEND subdirs energy enthalpy internal_energy source_terms thermal_conductivity)
-
-set(sources "")
-
-
-# include all subdirectories
-foreach(lcv IN LISTS subdirs)
-  include_directories($lcv)
-endforeach(lcv)
-
 # collect all registrations and register
 file(GLOB_RECURSE registrations "./*_reg.hh" )
 foreach(reg_lcv IN LISTS registrations)
-  register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME ENERGY_RELATIONS)
+  register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME ATS_ENERGY_RELATIONS_REG)
 endforeach(reg_lcv)
 
 generate_evaluators_registration_header(
-  HEADERFILE energy_relations_registration.hh
-  LISTNAME   ENERGY_RELATIONS
+  HEADERFILE ats_energy_relations_registration.hh
+  LISTNAME   ATS_ENERGY_RELATIONS_REG
   INSTALL    True
   )
 
-
 # collect all sources
-foreach(lcv IN LISTS subdirs)
+list(APPEND subdirs energy enthalpy internal_energy source_terms thermal_conductivity)
+set(ats_energy_relations_src_files "")
+set(ats_energy_relations_inc_files "")
 
-file(GLOB subdir_sources "./${lcv}/*.cc")
-  set(sources ${sources} ${subdir_sources})
+foreach(lcv IN LISTS subdirs)
+  include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/${lcv})
+  
+  file(GLOB subdir_sources "./${lcv}/*.cc")
+  set(ats_energy_relations_src_files ${ats_energy_relations_src_files} ${subdir_sources})
+
+  file(GLOB subdir_incs "./${lcv}/*.hh")
+  set(ats_energy_relations_inc_files ${ats_energy_relations_inc_files} ${subdir_incs})
 endforeach(lcv)
 
+set(ats_energy_relations_link_libs
+  ${Teuchos_LIBRARIES}
+  ${Epetra_LIBRARIES}
+  error_handling
+  atk
+  mesh
+  data_structures
+  whetstone
+  solvers
+  state
+  )
+
 # make the library
-add_library(energy_relations ${sources})
+add_amanzi_library(ats_energy_relations
+                   SOURCE ${ats_energy_relations_src_files}
+                   HEADERS ${ats_energy_relations_inc_files}
+		   LINK_LIBS ${ats_energy_relations_link_libs})
+
 
