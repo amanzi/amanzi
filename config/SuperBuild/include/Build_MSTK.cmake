@@ -20,20 +20,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${MSTK_VERSION_MAJOR} ${MSTK_VERSION_MINOR} ${MSTK_VERSION_PATCH})
 
 # --- Patch the original code
-set(MSTK_patch_file mstk-cmake.patch)
-set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
-               ${MSTK_sh_patch}
-               @ONLY)
+#set(MSTK_patch_file mstk-cmake.patch)
+#set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
+#               ${MSTK_sh_patch}
+#               @ONLY)
 
 # configure the CMake patch step
-set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
-               ${MSTK_cmake_patch}
-               @ONLY)
+#set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
+#               ${MSTK_cmake_patch}
+#               @ONLY)
 
 # set the patch command
-set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
+#set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
 
 # --- Define the configure parameters
 # compile flags
@@ -79,7 +79,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMETIS_INCLUDE_DIRS:PATH=${METIS_DIR}/include
                     -DParMETIS_DIR:PATH=${METIS_DIR}
                     -DENABLE_Tests:BOOL=FALSE
-                    -DINSTALL_DIR:PATH=${TPL_INSTALL_PREFIX}
+                    -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
 
 # --- Add external project build and tie to the MSTK build target
@@ -93,7 +93,7 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     URL_MD5       ${MSTK_MD5_SUM}                 # md5sum of the archive file
                     DOWNLOAD_NAME ${MSTK_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${MSTK_PATCH_COMMAND}
+                    # PATCH_COMMAND ${MSTK_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev
