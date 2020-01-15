@@ -146,8 +146,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", x_liquid_key_);
-    xl_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(x_liquid_key_, xl_liquid_eval_);
+    x_liquid_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(x_liquid_key_, x_liquid_eval_);
   }
 
   // water saturation is the primary solution
@@ -531,7 +531,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
     *S_->GetFieldData(x_liquid_key_, passwd_) = xl_copy;
-    xl_liquid_eval_->SetFieldAsChanged(S_.ptr());
+    x_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
     *S_->GetFieldData(darcy_flux_liquid_key_, passwd_) = ql_copy;
     *S_->GetFieldData(darcy_flux_gas_key_, passwd_) = qg_copy;
@@ -542,7 +542,6 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = dt_next_;
   num_itrs_++;
 
-// { std::cout << *op_preconditioner_->A() << std::endl; exit(0); }
   return failed;
 }
 
@@ -563,6 +562,10 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
 
   *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
   *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);
+
+  // update time integration history
+  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  ChangedSolution();
 
   // update Darcy fluxes
   // -- fluxes

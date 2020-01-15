@@ -89,8 +89,8 @@ TEST(MULTIPHASE_MODEL_I) {
   // loop
   int iloop(0);
   bool failed = true;
-  double t(0.0), tend(1.0e+12), dt(1.5768e+1);
-  while (t < tend && iloop < 100) {
+  double t(0.0), tend(1.57e+12), dt(1.57e+01);
+  while (t < tend && iloop < 400) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
     MPK->CommitStep(t, t + dt, S);
@@ -102,7 +102,7 @@ TEST(MULTIPHASE_MODEL_I) {
     iloop++;
 
     // output solution
-    if (iloop % 4 == 0) {
+    if (iloop % 5 == 0) {
       io->InitializeCycle(t, iloop);
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("molar_fraction_liquid")->ViewComponent("cell");
@@ -112,8 +112,9 @@ TEST(MULTIPHASE_MODEL_I) {
       io->WriteVector(*u1(0), "molar fraction", AmanziMesh::CELL);
       io->WriteVector(*u2(0), "saturation", AmanziMesh::CELL);
       io->FinalizeCycle();
+
+      S->WriteStatistics(vo);
     }
-    S->WriteStatistics(vo);
   }
 
   S->WriteStatistics(vo);

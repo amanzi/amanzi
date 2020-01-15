@@ -125,7 +125,7 @@
           <Parameter name="max divergent iterations" type="int" value="3"/>
           <Parameter name="max nka vectors" type="int" value="10"/>
           <Parameter name="modify correction" type="bool" value="true"/>
-          <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+          <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="true"/>

@@ -98,7 +98,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // calling this indicates that the time integration scheme is changing 
   // the value of the solution in state.
-  virtual void ChangedSolution() override {};
+  virtual void ChangedSolution() override;
 
   // multiphase submodels
   virtual void InitMPSolutionVector() = 0;
@@ -135,7 +135,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   int num_phases_;
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_liquid_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> xl_liquid_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> x_liquid_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
 
   // variable evaluators

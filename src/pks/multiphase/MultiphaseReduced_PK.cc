@@ -170,6 +170,9 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
         int f = it->first;
         bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_s[f] = it->second[0];
+
+        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET;  // a huck
+        bc_value_x[f] = 0.0;
       }
     }
   }

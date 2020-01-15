@@ -40,11 +40,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 {
   double dtp = t_new - t_old;
 
-  // trigger update of primary variables
-  pressure_liquid_eval_->SetFieldAsChanged(S_.ptr());
-  xl_liquid_eval_->SetFieldAsChanged(S_.ptr());
-  saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
-
   // extract pointers to subvectors
   std::vector<const Teuchos::RCP<CompositeVector> > up, fp;
   for (int i = 0; i < 3; ++i) {
@@ -78,6 +73,9 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
   const auto& eta_lc = *eta_l->ViewComponent("cell");
 
+  // -- porosity
+  const auto& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
+
   // -- mass density of gas phase 
   auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
 
@@ -85,10 +83,14 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
 
+  // primary variables
   auto psol = PressureToSolution();
   auto tmp = up[psol.first];
   CompositeVector fone(*tmp), fadd(*tmp), comp(*tmp);
   auto& fone_c = *fone.ViewComponent("cell");
+
+  auto ssol = SaturationToSolution();
+  auto& usi = *up[ssol.first]->ViewComponent("cell");
 
   // start loop over physical equations
   Key key;
@@ -158,7 +160,9 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
       auto D = Teuchos::rcp(new std::vector<WhetStone::Tensor>);
       WhetStone::Tensor Dc(dim_, 1);
       for (int c = 0; c < ncells_owned_; ++c) {
-        Dc(0, 0) = eta_lc[0][c] * mol_diff_l_[i] - eta_gc[0][c] * mol_diff_g_[i];
+        double diff_l = usi[0][c] * eta_lc[0][c] * mol_diff_l_[i];
+        double diff_g = (1.0 - usi[0][c]) * eta_gc[0][c] * mol_diff_g_[i] / kH_[i];
+        Dc(0, 0) = phi[0][c] * (diff_l + diff_g);
         D->push_back(Dc);
       }
 
@@ -203,9 +207,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   }
 
   // process gas constraint
-  auto ssol = SaturationToSolution();
-  auto& usi = *up[ssol.first]->ViewComponent("cell");  // saturation liquid
-
   auto csol = ComponentToSolution(num_primary_ + 1);
   auto& uci = *up[csol.first]->ViewComponent("cell");  // chemical components
 
@@ -236,9 +237,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   double t_old = tp - dtp;
-
-  // trigger update of primary variables
-  saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
   // extract pointers to subvectors
   std::vector<const Teuchos::RCP<const CompositeVector> > up;
@@ -369,6 +367,14 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         }
       }
 
+      // -- (b) molar mobility could be a function of saturation 
+      if ((key = eval_mobility_gas_[row]) != "") {
+      }
+
+      // molecular diffusion via harmonic-mean transmissibility
+      if ((key = eval_molecular_diff_[row]) != "") {
+      }
+
       // storage term
       if ((key = eval_storage_[row]) != "") {
         Key der_key = "d" + key + "_d" + keyc;
@@ -450,9 +456,18 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
   Y->PutScalar(0.0);
   // *Y = *X; return 0;
   int ierr = op_pc_solver_->ApplyInverse(*X, *Y);
-std::cout << "X: " << (*X->SubVector(1)->Data()->ViewComponent("cell"))[0][0] <<
-                 "-> Y: " << (*Y->SubVector(1)->Data()->ViewComponent("cell"))[0][0] << std::endl;
   return ierr;
+}
+
+
+/* ******************************************************************
+* This is called when the time integration scheme changes solution
+****************************************************************** */
+void Multiphase_PK::ChangedSolution()
+{
+  pressure_liquid_eval_->SetFieldAsChanged(S_.ptr());
+  x_liquid_eval_->SetFieldAsChanged(S_.ptr());
+  saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 }
 
 
@@ -462,8 +477,6 @@ std::cout << "X: " << (*X->SubVector(1)->Data()->ViewComponent("cell"))[0][0] <<
 double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<const TreeVector> du) 
 {
-// { double aaa; u->SubVector(0)->Norm2(&aaa); std::cout << aaa << std::endl; }
-// { std::cout << *du->SubVector(1)->Data()->ViewComponent("cell") << std::endl; }
   // pressure error
   auto pc = *u->SubVector(0)->Data()->ViewComponent("cell");
   auto dpc = *du->SubVector(0)->Data()->ViewComponent("cell");
@@ -480,7 +493,6 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   // saturation error
   auto dsc = *du->SubVector(1)->Data()->ViewComponent("cell");
-std::cout << "DU: " << dsc[0][0] << " " << dsc[0][1] << std::endl;
 
   double error_s = 0.0;
   for (int c = 0; c < ncells_owned_; c++) {
@@ -515,10 +527,8 @@ Multiphase_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; ++c) {
-double aaa = du1c[0][c];
     du1c[0][c] = std::min(du1c[0][c], u1c[0][c]);
     du1c[0][c] = std::max(du1c[0][c], u1c[0][c] - 1.0);
-if (fabs(aaa-du1c[0][c]) > 1e-12 && c < 2) std::cout << " clipping in cell " << c << std::endl; 
   }
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
