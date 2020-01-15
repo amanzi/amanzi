@@ -56,7 +56,7 @@ TEST(MULTIPHASE_MODEL_I) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 5);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -89,7 +89,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // loop
   int iloop(0);
   bool failed = true;
-  double t(0.0), tend(1.0e+12), dt(1.5768e+11);
+  double t(0.0), tend(1.0e+12), dt(1.5768e+1);
   while (t < tend && iloop < 100) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
@@ -113,6 +113,7 @@ TEST(MULTIPHASE_MODEL_I) {
       io->WriteVector(*u2(0), "saturation", AmanziMesh::CELL);
       io->FinalizeCycle();
     }
+    S->WriteStatistics(vo);
   }
 
   S->WriteStatistics(vo);

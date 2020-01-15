@@ -110,6 +110,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual std::pair<int, int> SaturationToSolution() = 0;
   virtual std::pair<int, int> ComponentToSolution(int neqn) = 0;
 
+  Teuchos::RCP<TreeVector> soln() { return soln_; }
+
  private:
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
@@ -153,10 +155,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::TreeOperator> op_preconditioner_, op_pc_solver_;
   bool op_pc_assembled_;
 
-  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;  // basis operators
+  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
-  Teuchos::RCP<Operators::PDE_AdvectionUpwind> pde_adv_;
-  Teuchos::RCP<Operators::PDE_Accumulation> pde_acc_;
 
   std::vector<Key> eval_mobility_liquid_, eval_mobility_gas_;
   std::vector<Key> eval_molecular_diff_, eval_storage_;
@@ -169,7 +169,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // physical parameters
   double mu_l_, mu_g_, rho_l_, eta_l_;
   std::vector<WhetStone::Tensor> K_;
-  std::vector<double> mol_diff_l_, mol_diff_g_; 
+  std::vector<double> mol_diff_l_, mol_diff_g_, kH_; 
 
   // water retention models
   Teuchos::RCP<WRMmpPartition> wrm_;

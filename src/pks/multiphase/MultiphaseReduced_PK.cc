@@ -187,6 +187,9 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
         missed_bc_faces_++;
       }
 
+      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE)
+        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
+
       if (bc_model_x[f] == Operators::OPERATOR_BC_NONE)
         bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
     }

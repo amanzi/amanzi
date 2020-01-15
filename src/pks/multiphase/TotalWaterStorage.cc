@@ -61,14 +61,14 @@ void TotalWaterStorage::EvaluateField_(
     const Teuchos::Ptr<CompositeVector>& result)
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& s_l = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& nl = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
+    result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c];
   }      
 }
 
@@ -81,26 +81,24 @@ void TotalWaterStorage::EvaluateFieldPartialDerivative_(
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& s_l = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& nl = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = s_l[0][c] * n_l[0][c];
+      result_c[0][c] = sl[0][c] * nl[0][c];
     }
   } else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * n_l[0][c];
+      result_c[0][c] = phi[0][c] * nl[0][c];
     }
   } else if (wrt_key == "molar_density_liquid") {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * s_l[0][c];
+      result_c[0][c] = phi[0][c] * sl[0][c];
     }
-  } else {
-    AMANZI_ASSERT(0);
   }
 }
 

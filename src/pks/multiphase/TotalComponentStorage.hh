@@ -48,12 +48,14 @@ class TotalComponentStorage : public SecondaryVariableFieldEvaluator {
 
   // modifiers
   void set_component_id(int n) { n_ = n; } 
+  void set_kH(double kH) { kH_ = kH; } 
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
 
  private:
   int n_;  // component id
+  double kH_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator, TotalComponentStorage> reg_;

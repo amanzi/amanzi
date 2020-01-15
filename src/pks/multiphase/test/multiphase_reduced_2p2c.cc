@@ -61,7 +61,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 5);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
 
   // create a simple state populate it
   RCP<State> S = rcp(new State(*state_list));
