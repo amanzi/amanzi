@@ -46,7 +46,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
   // extract pointers to subvectors
-  std::vector<const Teuchos::RCP<CompositeVector> > up, fp;
+  std::vector<Teuchos::RCP<CompositeVector> > up, fp;
   for (int i = 0; i < 3; ++i) {
     up.push_back(u_new->SubVector(i)->Data());
     fp.push_back(f->SubVector(i)->Data());
@@ -241,7 +241,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   saturation_liquid_eval_->SetFieldAsChanged(S_.ptr());
 
   // extract pointers to subvectors
-  std::vector<const Teuchos::RCP<const CompositeVector> > up;
+  std::vector<Teuchos::RCP<const CompositeVector> > up;
   for (int i = 0; i < 3; ++i) {
     up.push_back(u->SubVector(i)->Data());
   }

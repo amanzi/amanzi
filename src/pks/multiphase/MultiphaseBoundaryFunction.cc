@@ -51,10 +51,10 @@ void MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const Amanzi
 /* ****************************************************************
 * Find position of component in the list of names
 **************************************************************** */
-int MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names)
+void MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names)
 {
   auto it = std::find(names.begin(), names.end(), component_name_);
-  return (it == names.end()) ? -1 : std::distance(names.begin(), it);
+  component_id_ = (it == names.end()) ? -1 : std::distance(names.begin(), it);
 }
 
 }  // namespace Multiphase

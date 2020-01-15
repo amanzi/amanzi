@@ -41,7 +41,7 @@ class MultiphaseBoundaryFunction : public PK_DomainFunction {
   void set_bc_name(const std::string& name) { bc_name_ = name; }
   std::string bc_name() { return bc_name_; }
 
-  int SetComponentId(const std::vector<std::string>& names);
+  void SetComponentId(const std::vector<std::string>& names);
   std::string component_name() { return component_name_; }
   int component_id() { return component_id_; }
 
