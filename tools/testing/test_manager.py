@@ -7,10 +7,6 @@ PFloTran regression test suite.
 
 Author: Ethan Coon (ecoon@lanl.gov)
 """
-
-from __future__ import print_function
-from __future__ import division
-
 import sys
 
 if sys.hexversion < 0x02070000:
@@ -209,7 +205,7 @@ class RegressionTest(object):
             self._default_tolerance[self._DISCRETE] = tol
             
         # requested criteria, skipping time and timesteps
-        for key in set(cfg_criteria.keys() + test_data.keys()):
+        for key in set(list(cfg_criteria.keys()) + list(test_data.keys())):
             if key != self._TIME and key != self._TIMESTEPS:
                 self._set_criteria(key, cfg_criteria, test_data)
 
@@ -592,7 +588,7 @@ class RegressionTest(object):
     def _compare(self, h5_current, h5_gold, status, testlog):
         """Check that output hdf5 file has not changed from the baseline.
         """
-        for key, tolerance in self._criteria.iteritems():
+        for key, tolerance in self._criteria.items():
             if key == self._TIME:
                 self._check_tolerance(h5_current.attrs['time'], h5_gold.attrs['time'],
                                       self._TIME, tolerance, status, testlog)
@@ -1510,7 +1506,7 @@ def setup_testlog(txtwrap):
     print("Test directory : ", file=testlog)
     print("    {0}".format(test_dir), file=testlog)
 
-    if os.environ.has_key("ATS_SRC_DIR"):
+    if 'ATS_SRC_DIR' in os.environ:
         tempfile = "{0}/tmp-ats-regression-test-hg-info.txt".format(test_dir)
 
         print("\nATS repository status :", file=testlog)
