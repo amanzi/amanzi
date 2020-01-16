@@ -7,11 +7,10 @@ PFloTran regression test suite.
 
 Author: Ethan Coon (ecoon@lanl.gov)
 """
-import sys
-
 from __future__ import print_function
 from __future__ import division
 
+import sys
 if sys.hexversion < 0x02070000:
     print(70*"*")
     print("ERROR: The regression test manager requires python >= 2.7.x")

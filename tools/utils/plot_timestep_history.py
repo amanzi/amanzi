@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """Loads and plots timestep history for a given run."""
-
-import numpy as np
-
 from __future__ import print_function
 from __future__ import division
+
+import numpy as np
 
 def print_headers():
     print("cycle, time, dt, iteration count, wallclock avg (s)")

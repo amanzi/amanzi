@@ -6,6 +6,8 @@ Usage: parse_logfile.py out.log
 
 NOTE: This is deprecated -- please use plot_timestep_history.py instead.
 """
+from __future__ import print_function
+from __future__ import division
 
 import numpy as np
 
