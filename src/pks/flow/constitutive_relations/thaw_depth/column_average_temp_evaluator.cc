@@ -30,12 +30,6 @@ ColumnAverageTempEvaluator::ColumnAverageTempEvaluator(Teuchos::ParameterList& p
 }
   
 
-ColumnAverageTempEvaluator::ColumnAverageTempEvaluator(const ColumnAverageTempEvaluator& other)
-  : SecondaryVariableFieldEvaluator(other),
-    temp_key_(other.temp_key_),
-    depth_(other.depth_)
-{}
-  
 Teuchos::RCP<FieldEvaluator>
 ColumnAverageTempEvaluator::Clone() const
 {

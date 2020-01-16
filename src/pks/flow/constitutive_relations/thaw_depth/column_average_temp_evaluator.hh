@@ -22,7 +22,7 @@ class ColumnAverageTempEvaluator : public SecondaryVariableFieldEvaluator {
 public:
   explicit
   ColumnAverageTempEvaluator(Teuchos::ParameterList& plist);
-  ColumnAverageTempEvaluator(const ColumnAverageTempEvaluator& other);
+  ColumnAverageTempEvaluator(const ColumnAverageTempEvaluator& other) = default;
   Teuchos::RCP<FieldEvaluator> Clone() const;
   
 protected:
