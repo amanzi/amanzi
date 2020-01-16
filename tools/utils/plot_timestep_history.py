@@ -3,8 +3,11 @@
 
 import numpy as np
 
+from __future__ import print_function
+from __future__ import division
+
 def print_headers():
-    print "cycle, time, dt, iteration count, wallclock avg (s)"
+    print("cycle, time, dt, iteration count, wallclock avg (s)")
 
 def parse_logfile(fid, wallclock=False):
     """Reads a file, and returns a list of good and bad timesteps.

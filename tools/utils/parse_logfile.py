@@ -10,7 +10,7 @@ NOTE: This is deprecated -- please use plot_timestep_history.py instead.
 import numpy as np
 
 def print_headers():
-    print "cycle, time, dt, iteration count, wallclock avg (s)"
+    print("cycle, time, dt, iteration count, wallclock avg (s)")
 
 def split_header(line):
     """Cleans a line and splits off the VerboseObject header and remainder of the line"""
