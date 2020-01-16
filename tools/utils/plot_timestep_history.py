@@ -5,6 +5,9 @@ from __future__ import division
 
 import numpy as np
 
+from __future__ import print_function
+from __future__ import division
+
 def print_headers():
     print("cycle, time, dt, iteration count, wallclock avg (s)")
 
