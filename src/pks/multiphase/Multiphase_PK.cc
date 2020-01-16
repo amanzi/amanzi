@@ -392,23 +392,26 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   PopulateBCs(0);
 
-  // matrix is used to eleviate calculation of residual. It is the mathematical
-  // representation of differential operators
+  // matrix is used to simplify calculation of residual
+  // -- absolute permeability
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  K_.resize(ncells_wghost_);
+  ConvertFieldToTensor(S_, dim_, "permeability", K_);
+
+  // -- pre-process full tensor once to re-use it later for flux calculation
   auto& ddf_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-  auto& mdf_list = mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
-  auto& adv_list = mp_list_->sublist("operators").sublist("advection operator").sublist("matrix");
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
 
-  // -- liquid pressure is always go first
   pde_diff_K_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(ddf_list, mesh_, 1.0, gravity_));
+  pde_diff_K_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_l_, gravity_);
   pde_diff_K_->SetBCs(op_bcs_[0], op_bcs_[0]);
+  pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // -- chemical components go second (Darcy law + molecular diffusion)
+  auto& mdf_list = mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
   pde_diff_D_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, mesh_));
-  pde_diff_D_->SetBCs(op_bcs_[1], op_bcs_[1]);
 
-  // preconditioner incorporates equations of states and is model-specific.
-  // It is created in the scope of global assembly to reduce memory footprint.
-  // Here we just initialize required basis supporting structures.
+  // preconditioner is model-specific. It is created in the scope of global assembly to 
+  // reduce memory footprint for large number of components.
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   InitMPPreconditioner();
 
@@ -432,11 +435,6 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
       bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
-
-  // absolute permeability
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  K_.resize(ncells_wghost_);
-  ConvertFieldToTensor(S_, dim_, "permeability", K_);
 
   // upwind operator with a face model (FIXME)
   auto upw_list = mp_list_->sublist("operators")
@@ -573,6 +571,9 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
   auto flux_gas = S_->GetFieldData(darcy_flux_gas_key_, passwd_);
 
   // -- other fields
+  S_->GetFieldEvaluator(molar_mobility_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const auto& mobility_lc = *S_->GetFieldData(molar_mobility_liquid_key_)->ViewComponent("cell");
+
   S_->GetFieldEvaluator(molar_mobility_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& mobility_gc = *S_->GetFieldData(molar_mobility_gas_key_)->ViewComponent("cell");
 
@@ -590,9 +591,15 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
 
   // -- liquid (replace rho_l_ with mass density vector FIXME)
+  PopulateBCs(psol.first);
+
+  kr_c = mobility_lc;
+  kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
+  upwind_->Compute(*flux_liquid, *kr, op_bcs_[psol.first]->bc_model(), *kr);
+
   auto& pdeK = pde_diff_K_;
   pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-  pdeK->global_operator()->Init();
+  pdeK->SetBCs(op_bcs_[psol.first], op_bcs_[psol.first]);
   pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
   pdeK->UpdateFlux(pl.ptr(), flux_liquid.ptr());
   flux_liquid->Scale(1.0 / eta_l_);
@@ -606,7 +613,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
 
   pdeK = pde_diff_K_;
   pdeK->Setup(Kptr, kr, Teuchos::null, eta_g, gravity_);
-  pdeK->global_operator()->Init();
+  pdeK->SetBCs(op_bc_pg_, op_bc_pg_);
   pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
   pdeK->UpdateFlux(pg.ptr(), flux_gas.ptr());
 }

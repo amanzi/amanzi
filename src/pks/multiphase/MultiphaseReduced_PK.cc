@@ -202,16 +202,19 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
   auto& bc_model_pg = op_bc_pg_->bc_model();
   auto& bc_value_pg = op_bc_pg_->bc_value();
 
+  bc_model_pg = bc_model_p;
+
   for (int f = 0; f != nfaces_owned_; ++f) {
-    if (bc_model_p[f] == Operators::OPERATOR_BC_DIRICHLET) {
+    if (bc_model_pg[f] == Operators::OPERATOR_BC_DIRICHLET) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       bc_value_pg[f] = bc_value_p[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_s[f]);
     }
+    else if (bc_model_pg[f] == Operators::OPERATOR_BC_NEUMANN) {
+      bc_value_pg[f] = 0.0;
+    }
   }
-
-  bc_model_pg = bc_model_p;
 }
 
 

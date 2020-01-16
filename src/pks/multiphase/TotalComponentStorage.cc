@@ -82,7 +82,7 @@ void TotalComponentStorage::EvaluateField_(
   for (int c = 0; c != ncells; ++c) {
     double tmpl = phi[0][c] * nl[0][c] * sl[0][c];
     double tmpg = phi[0][c] * ng[0][c] * (1.0 - sl[0][c]);
-    double xg = 1.0 - xl[n_][c] / kH_;
+    double xg = xl[n_][c] / kH_;
     result_c[0][c] = tmpl * xl[n_][c] + tmpg * xg;
   }
 }
@@ -106,13 +106,13 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {
-      double xg = 1.0 - xl[n_][c] / kH_;
+      double xg = xl[n_][c] / kH_;
       result_c[0][c] = sl[0][c] * nl[0][c] * xl[n_][c] + (1.0 - sl[0][c]) * ng[0][c] * xg;
     }
   }
   else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      double xg = 1.0 - xl[n_][c] / kH_;
+      double xg = xl[n_][c] / kH_;
       result_c[0][c] = phi[n_][c] * (nl[0][c] * xl[n_][c] - ng[0][c] * xg);
     }
   }
@@ -123,14 +123,14 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
     }
   } else if (wrt_key == "molar_density_gas") {
     for (int c = 0; c != ncells; ++c) {
-      double xg = 1.0 - xl[n_][c] / kH_;
+      double xg = xl[n_][c] / kH_;
       result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * xg;
     }
   }
 
   else if (wrt_key == "molar_fraction_liquid") {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (sl[0][c] * nl[0][c] - (1.0 - sl[0][c]) * ng[0][c] / kH_);
+      result_c[0][c] = phi[0][c] * (sl[0][c] * nl[0][c] + (1.0 - sl[0][c]) * ng[0][c] / kH_);
     }
   }
 }
