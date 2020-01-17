@@ -26,6 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
+//void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
 void PDE_DiffusionFV::Init()
 {
   // Define stencil for the FV diffusion method.
@@ -41,11 +42,12 @@ void PDE_DiffusionFV::Init()
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    //global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, global_op_schema_));
+    global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, global_op_schema_));
 
   } else {
     // constructor was given an Operator
     global_op_schema_ = global_op_->schema();
+    mesh_ = global_op_->getDomainMap()->Mesh();
   }
 
   // Do we need to exclude the primary terms?
@@ -146,6 +148,7 @@ void PDE_DiffusionFV::SetTensorCoefficient(const Kokkos::vector<WhetStone::Tenso
 void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                            const Teuchos::RCP<const CompositeVector>& dkdp)
 {
+  transmissibility_initialized_ = false;
   k_ = k;
   dkdp_ = dkdp;
 
@@ -158,6 +161,11 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
   if (dkdp_ != Teuchos::null) {
     AMANZI_ASSERT(dkdp_->HasComponent("cell"));
   }
+
+  // verify that mass matrices were initialized.
+  // -- this shouldn't be called here, as Trans has no dependence on
+  //    rel perm, and abs perm may not be set yet! --etc
+  // if (!transmissibility_initialized_)  ComputeTransmissibility_();
 }
 
 
@@ -171,33 +179,36 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
   if (!exclude_primary_terms_) {
-    auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
-    Kokkos::View<double**> k_face; 
-    ScalarCoefficientFaces(k_face,true);
+    const auto trans_face = transmissibility_->ViewComponent("face", true);
+    WhetStone::DenseMatrix null_matrix;
 
-    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
+    // preparing upwind data
+    Kokkos::View<const double **, Kokkos::LayoutLeft, AmanziDefaultDevice> k_face;
+    if (k_ != Teuchos::null) {
+      k_->ScatterMasterToGhosted("face");
+      if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+    }
+
     // updating matrix blocks
-    Kokkos::parallel_for(
-        "PDE_DiffusionFV::UpdateMatrices",
-        nfaces_owned,
-        KOKKOS_LAMBDA(const int f) {
-          AmanziMesh::Entity_ID_View cells;
-          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          int ncells = cells.extent(0);
+    AmanziMesh::Entity_ID_View cells, faces;
 
-          WhetStone::DenseMatrix Aface(ncells, ncells, Kokkos::subview(local_op_->data, f, Kokkos::ALL));
-          Aface = 0.0;
+    for (int f = 0; f != nfaces_owned; ++f) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+      int ncells = cells.size();
 
-          double tij = trans_face(f,0) * k_face(f,0);
+      WhetStone::DenseMatrix Aface(ncells, ncells);
+      Aface = 0.0;
 
-          for (int i = 0; i != ncells; ++i) {
-            Aface(i, i) = tij;
-            for (int j = i + 1; j != ncells; ++j) {
-              Aface(i, j) = -tij;
-              Aface(j, i) = -tij;
-            }
-          }
-        });
+      double tij = trans_face(0,f) * (k_face.extent(0) ? k_face(0,f) : 1.0);
+      for (int i = 0; i != ncells; ++i) {
+        Aface(i, i) = tij;
+        for (int j = i + 1; j != ncells; ++j) {
+          Aface(i, j) = -tij;
+          Aface(j, i) = -tij;
+        }
+      }
+      local_op_->matrices[f] = Aface;
+    }
   }
 }
 
@@ -211,21 +222,22 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  AMANZI_ASSERT(false); // not yet implemented --etc
-  
-  // // Add derivatives to the matrix (Jacobian in this case)
-  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-  //   AMANZI_ASSERT(u != Teuchos::null);
+  assert(0); 
+  #if 0 
+  // Add derivatives to the matrix (Jacobian in this case)
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    AMANZI_ASSERT(u != Teuchos::null);
 
-  //   if (k_ != Teuchos::null) {
-  //     if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-  //   }
-  //   if (dkdp_ != Teuchos::null) {
-  //     if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
-  //   }
+    if (k_ != Teuchos::null) {
+      if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+    }
+    if (dkdp_ != Teuchos::null) {
+      if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
+    }
 
-  //   AnalyticJacobian_(*u);
-  // }
+    AnalyticJacobian_(*u);
+  }
+  #endif 
 }
 
 void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
@@ -233,77 +245,80 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& factor)
 {
-  AMANZI_ASSERT(false); // not yet implemented --etc
+  assert(false); 
+  #if 0 
+  // Add derivatives to the matrix (Jacobian in this case)
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    AMANZI_ASSERT(u != Teuchos::null);
 
-  // // Add derivatives to the matrix (Jacobian in this case)
-  // if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-  //   AMANZI_ASSERT(u != Teuchos::null);
+    if (k_ != Teuchos::null) {
+      if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+    }
+    if (dkdp_ != Teuchos::null) {
+      if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
+    }
 
-  //   if (k_ != Teuchos::null) {
-  //     if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-  //   }
-  //   if (dkdp_ != Teuchos::null) {
-  //     if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
-  //   }
-
-  //   AnalyticJacobian_(*u);
-  // }
+    AnalyticJacobian_(*u);
+  }
+  #endif 
 }  
 
-
+#if 0 
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
 void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  // prep views
-  auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
+  const auto trans_face = transmissibility_->ViewComponent("face", true);
+
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
-  Kokkos::View<double**> k_face; 
-  ScalarCoefficientFaces(k_face,false);
+
+  //Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  Kokkos::View<const double **, Kokkos::LayoutLeft, AmanziDefaultDevice> k_face;
+  if (k_ != Teuchos::null) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   if (!exclude_primary_terms_) {
-    const auto rhs_cell = global_op_->rhs()->ViewComponent<AmanziDefaultDevice>("cell", true);
+    auto rhs_cell = global_op_->rhs()->ViewComponent("cell", true);
 
-    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
+    AmanziMesh::Entity_ID_View cells;
 
-    Kokkos::parallel_for(
-        "PDE_DiffusionFV::ApplyBCs",
-        nfaces_owned,
-        KOKKOS_LAMBDA(const int f) {
-          AmanziMesh::Entity_ID_View cells;
-          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          int ncells = cells.extent(0);
+    for (int f = 0; f < nfaces_owned; f++) {
+      if (bc_model[f] != OPERATOR_BC_NONE) {
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+        int c = cells[0];
 
-          if (bc_model(f) == OPERATOR_BC_DIRICHLET && primary) {
-            double tij = trans_face(f,0) * k_face.extent(0) ? k_face(f,0) : 1.0;
-            Kokkos::atomic_add(&rhs_cell(cells(0),0), bc_value(f) * tij);
-          } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-            local_op_->CopyMasterToShadow(f); // -- NOTE this is probably illegal! --etc
-            local_op_->Zero(f);
-          }
-          
-          if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * m->face_area(f));
-        });
+        if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
+          rhs_cell(0,c) += bc_value[f] * trans_face(0,f) * 
+            (k_face.extent(0) ? k_face(0,f) : 1.0);
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          local_op_->matrices_shadow[f] = local_op_->matrices[f];
+          local_op_->matrices[f](0,0) = 0.0;
+
+          if (primary)
+            rhs_cell(0,c) -= bc_value[f] * mesh_->face_area(f);
+        }
+      }
+    }
   }
 
   if (jac_op_ != Teuchos::null) {
-    AMANZI_ASSERT(false); // not yet implemented --etc
-    // AMANZI_ASSERT(false) // 
-    // AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-    // for (int f = 0; f != nfaces_owned; ++f) {
-    //   WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
+    AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
+    for (int f = 0; f != nfaces_owned; ++f) {
+      WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
-    //   if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //     jac_op_->matrices_shadow[f] = Aface;
-    //     Aface *= 0.0;
-    //   }
-    // }
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        jac_op_->matrices_shadow[f] = Aface;
+        Aface *= 0.0;
+      }
+    }
+    
   }
 }
-
+#endif 
 
 /* ******************************************************************
 * Calculate mass flux from cell-centered data
@@ -311,62 +326,67 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
                                  const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
-  // prep views
-  auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
-  AMANZI_ASSERT(bcs_trial_.size() > 0);
+  const auto trans_face = transmissibility_->ViewComponent("face", true);
+
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
-  Kokkos::View<double**> k_face; 
-  ScalarCoefficientFaces(k_face,true);
-  auto flux = darcy_mass_flux->ViewComponent<AmanziDefaultDevice>("face", false);
+
 
   solution->ScatterMasterToGhosted("cell");
-  const auto p = solution->ViewComponent<AmanziDefaultDevice>("cell", true);
+  if (k_ != Teuchos::null)  k_->ScatterMasterToGhosted("face");
+  
+  Kokkos::View<const double **, Kokkos::LayoutLeft, AmanziDefaultDevice> Krel_face;
+  //const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
+  //    k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
+  if(k_.get())
+    Krel_face = k_->ViewComponent("face", false);
 
+  const auto p = solution->ViewComponent("cell", true);
+  auto flux = darcy_mass_flux->ViewComponent("face", false);
 
-  Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
+  AmanziMesh::Entity_ID_View cells, faces;
+  Kokkos::View<int*> dirs;
 
-  const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
+  std::vector<int> flag(nfaces_wghost, 0);
 
-  Kokkos::parallel_for(
-      "PDE_DiffusionFV::UpdateFlux outer loop",
-      ncells_owned,
-      KOKKOS_LAMBDA(const int c) {
-        AmanziMesh::Entity_ID_View cells, faces;
-        AmanziMesh::Entity_Dir_View dirs;
-        m->cell_get_faces_and_dirs(c, faces, dirs);
-        int nfaces = faces.size();
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+    int nfaces = faces.size();
 
-        for (int n = 0; n < nfaces; n++) {
-          int f = faces(n);
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
 
-          if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
-            // guaranteed single touch?  no internal DIRICHLET BCs required or we need atomics here! --etc
-            flux(f,0) = dirs(n) * trans_face(f,0) * (p(c,0) - bc_value(f)) * k_face(f,0);
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        double value = bc_value[f];
+        flux(0,f) = dirs[n] * trans_face(0,f) * (p(0,c) - value);
+        if (Krel_face.extent(0))
+          flux(0,f) *= Krel_face(0,f);
 
-          } else if (bc_model(f) == OPERATOR_BC_NEUMANN) {
-            flux(0,f) = dirs(n) * bc_value(f) * m->face_area(f);
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        double value = bc_value[f];
+        double area = mesh_->face_area(f);
+        flux(0,f) = dirs[n] * value * area;
         
-          } else {
-            // this needs more thought --etc
-            if (f < nfaces_owned && Kokkos::atomic_compare_exchange(&flag(f), 0, 1) == 0) {
-              m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-              // if (cells.size() <= 1) {
-              //   Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
-              //   Exceptions::amanzi_throw(msg);
-              // }
-              assert(cells.extent(0) >= 2);
-              int c1 = cells[0];
-              int c2 = cells[1];
-              if (c == c1) {
-                flux(f,0) = dirs(n) * trans_face(f,0) * (p(c1,0) - p(c2,0)) * k_face(f,0);
-              } else {
-                flux(f,0) = dirs(n) * trans_face(f,0) * (p(c2,0) - p(c1,0)) * k_face(f,0);
-              }            
-            }
+      } else {
+        if (f < nfaces_owned && !flag[f]) {
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          if (cells.size() <= 1) {
+            Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
+            Exceptions::amanzi_throw(msg);
           }
+          int c1 = cells[0];
+          int c2 = cells[1];
+          if (c == c1) {
+            flux(0,f) = dirs[n] * trans_face(0,f) * (p(0,c1) - p(0,c2));
+          } else {
+            flux(0,f) = dirs[n] * trans_face(0,f) * (p(0,c2) - p(0,c1));
+          }            
+          if (Krel_face.extent(0)) flux(0,f) *= Krel_face(0,f);
+          flag[f] = 1;
         }
-      });
+      }
+    }
+  }
 }
 
 
@@ -382,6 +402,7 @@ void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVe
 }
 
 
+#if 0 
 /* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
 * of the relative permeability wrt to capillary pressure. They must
@@ -389,157 +410,158 @@ void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVe
 ****************************************************************** */
 void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
-    AMANZI_ASSERT(false); // not yet implemented --etc
-  // const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  // const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+  const auto bc_model = bcs_trial_[0]->bc_model();
+  const auto bc_value = bcs_trial_[0]->bc_value();
 
-  // u.ScatterMasterToGhosted("cell");
-  // const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
+  u.ScatterMasterToGhosted("cell");
+  const auto uc = u.ViewComponent("cell", true);
 
-  // const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  // AmanziMesh::Entity_ID_List cells, faces;
+  const auto cmap_wghost = mesh_->cell_map(true);
+  AmanziMesh::Entity_ID_View cells, faces;
 
-  // double k_rel[2], dkdp[2], pres[2], dist;
+  double k_rel[2], dkdp[2], pres[2], dist;
 
-  // const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
-  // Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-  // if (dkdp_->HasComponent("face")) {
-  //   dKdP_face = dkdp_->ViewComponent("face", true);
-  // }
+  const auto dKdP_cell = dkdp_->ViewComponent("cell");
+  Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
+  if (dkdp_->HasComponent("face")) {
+    dKdP_face = dkdp_->ViewComponent("face", true);
+  }
 
-  // for (int f=0; f!=nfaces_owned; ++f) {
-  //   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  //   int mcells = cells.size();
+  for (int f=0; f!=nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    int mcells = cells.size();
 
-  //   WhetStone::DenseMatrix Aface(mcells, mcells);
+    WhetStone::DenseMatrix Aface(mcells, mcells);
 
-  //   for (int n = 0; n < mcells; n++) {
-  //     int c1 = cells[n];
-  //     pres[n] = uc[0][c1];
-  //     dkdp[n] = dKdP_cell[0][c1];
-  //   }
+    for (int n = 0; n < mcells; n++) {
+      int c1 = cells[n];
+      pres[n] = uc[0][c1];
+      dkdp[n] = dKdP_cell[0][c1];
+    }
 
-  //   if (mcells == 1) {
-  //     dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
-  //   }
+    if (mcells == 1) {
+      dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
+    }
 
-  //   // find the face direction from cell 0 to cell 1
-  //   AmanziMesh::Entity_ID_List cfaces;
-  //   std::vector<int> fdirs;
-  //   mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
-  //   int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
-  //   ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
-  //                         pres, dkdp, Aface);
+    // find the face direction from cell 0 to cell 1
+    AmanziMesh::Entity_ID_List cfaces;
+    std::vector<int> fdirs;
+    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
+    int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
+    ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
+                          pres, dkdp, Aface);
 
-  //   jac_op_->matrices[f] = Aface;
-  // }
+    jac_op_->matrices[f] = Aface;
+  }
 }
+#endif 
 
-
+#if 0 
 /* ******************************************************************
 * Computation of a local submatrix of the analytical Jacobian 
 * (its nonlinear part) on face f.
 ****************************************************************** */
-// void PDE_DiffusionFV::ComputeJacobianLocal_(
-//     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
-//     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
-// {
-//   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-//   double dKrel_dp[2];
-//   double dpres;
+void PDE_DiffusionFV::ComputeJacobianLocal_(
+    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
+{
+  const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+  double dKrel_dp[2];
+  double dpres;
 
-//   if (mcells == 2) {
-//     dpres = pres[0] - pres[1];  // + grn;
-//     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-//       double flux0to1;
-//       flux0to1 = trans_face[0][f] * dpres;
-//       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = dkdp_cell[0];
-//         dKrel_dp[1] = 0.0;
-//       } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = 0.0;
-//         dKrel_dp[1] = dkdp_cell[1];
-//       } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = 0.5 * dkdp_cell[0];
-//         dKrel_dp[1] = 0.5 * dkdp_cell[1];
-//       }
-//     } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-//       dKrel_dp[0] = 0.5 * dkdp_cell[0];
-//       dKrel_dp[1] = 0.5 * dkdp_cell[1];
-//     } else {
-//       AMANZI_ASSERT(0);
-//     }
+  if (mcells == 2) {
+    dpres = pres[0] - pres[1];  // + grn;
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      double flux0to1;
+      flux0to1 = trans_face[0][f] * dpres;
+      if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = dkdp_cell[0];
+        dKrel_dp[1] = 0.0;
+      } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.0;
+        dKrel_dp[1] = dkdp_cell[1];
+      } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.5 * dkdp_cell[0];
+        dKrel_dp[1] = 0.5 * dkdp_cell[1];
+      }
+    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+      dKrel_dp[0] = 0.5 * dkdp_cell[0];
+      dKrel_dp[1] = 0.5 * dkdp_cell[1];
+    } else {
+      AMANZI_ASSERT(0);
+    }
 
-//     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
-//     Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
+    Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
+    Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
 
-//     Jpp(1, 0) = -Jpp(0, 0);
-//     Jpp(1, 1) = -Jpp(0, 1);
+    Jpp(1, 0) = -Jpp(0, 0);
+    Jpp(1, 1) = -Jpp(0, 1);
 
-//   } else if (mcells == 1) {
-//     if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
-//       pres[1] = bc_value_f;
-//       dpres = pres[0] - pres[1];
-//       Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-//     } else {
-//       Jpp(0, 0) = 0.0;
-//     }
-//   }
-// }
-
+  } else if (mcells == 1) {
+    if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
+      pres[1] = bc_value_f;
+      dpres = pres[0] - pres[1];
+      Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
+    } else {
+      Jpp(0, 0) = 0.0;
+    }
+  }
+}
+#endif 
 
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
-  transmissibility_->putScalar(0.);
+  auto trans_face = transmissibility_->ViewComponent("face", true);
 
-  Kokkos::View<double**> K;
-  //int d, rank;
-  //if (K_.size() != 0) {
-  //  K = K_->data;
-  //  d = K_->d;
-  //  rank = K_->rank;
-  //} else {
-  //  Kokkos::resize(K, ncells_owned, 1);
-  //  Kokkos::deep_copy(K, 1.0); // again, not sure this putScalar works/exists... --etc
-  //  d = mesh_->space_dimension();
-  //  rank = 1;
-  //}
+  // Compute auxiliary structure. Note that first components of both 
+  // fields are used symmetrically (no specific order).
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
 
-  {
-    auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
-    Kokkos::parallel_for(
-        "PDE_DiffusionFV::ComputeTransmissibility",
-        ncells_owned,
-        KOKKOS_LAMBDA(const int c) {
-          AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<AmanziGeometry::Point*> bisectors;
-          
-          //mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
-          int nfaces = faces.extent(0);
+  Teuchos::RCP<CompositeVector> beta = cvs.Create();
+  auto beta_face = beta->ViewComponent("face", true);
+  beta->putScalar(0.0);
 
-          // ????
-          //WhetStone::Tensor Kc(d, rank, Kokkos::subview(K, c, Kokkos::ALL));
+  AmanziMesh::Entity_ID_View faces, cells;
+  Kokkos::View<AmanziGeometry::Point*> bisectors;
+  AmanziGeometry::Point a_dist;
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+  Kc(0, 0) = 1.0;
 
-          for (int i = 0; i < nfaces; i++) {
-            int f = faces(i);
-            const AmanziGeometry::Point& a = bisectors(i);
-            const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-            double area = mesh_->face_area(f);
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (K_.extent(0)) Kc = K_[c];
+    mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
+    int nfaces = faces.size();
 
-            double h_tmp = norm(a);
-            double s = area / h_tmp;
-            double perm = ((K_[c] * a) * normal) * s;
-            double dxn = a * normal;
-            Kokkos::atomic_add(&trans_face(f,0), fabs(dxn / perm));
-          }
-        });
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const AmanziGeometry::Point& a = bisectors[i];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
+
+      double h_tmp = norm(a);
+      double s = area / h_tmp;
+      double perm = ((Kc * a) * normal) * s;
+      double dxn = a * normal;
+      beta_face(0,f) += fabs(dxn / perm);
+    }
   }
-  transmissibility_->GatherGhostedToMaster();
-  transmissibility_->reciprocal(*transmissibility_);
-  transmissibility_->ScatterMasterToGhosted("face");
+
+  beta->GatherGhostedToMaster(Tpetra::CombineMode::ADD);
+
+  // Compute transmissibilities. Since it is done only once, we repeat
+  // some calculatons.
+  transmissibility_->putScalar(0.0);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    trans_face(0,f) = 1.0 / beta_face(0,f);
+  }
+  transmissibility_->ScatterMasterToGhosted("face", Tpetra::CombineMode::ADD);
   transmissibility_initialized_ = true;
 }
 
@@ -547,13 +569,12 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 /* ******************************************************************
 * Return transmissibility value on the given face f.
 ****************************************************************** */
-// double PDE_DiffusionFV::ComputeTransmissibility(int f) const
-// {
-//   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-//   return trans_face[0][f];
-// }
+double PDE_DiffusionFV::ComputeTransmissibility(int f) const
+{
+  const auto trans_face = transmissibility_->ViewComponent("face", true);
+  return trans_face(0,f);
+}
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 

@@ -20,6 +20,7 @@
 
 #include "Op.hh"
 
+#if 0 
 namespace Amanzi {
 namespace Operators {
 
@@ -77,6 +78,7 @@ Op::Rescale(double scaling)
         data(i,j) *= scaling; });
 }
 
-
 } // namespace Operators
 } // namespace Amanzi
+#endif 
+

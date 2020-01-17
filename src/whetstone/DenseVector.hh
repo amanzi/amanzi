@@ -34,6 +34,7 @@ class DenseVector {
 
   explicit DenseVector(int mrow) : m_(mrow), mem_(mrow)
   {
+    std::cout<<"Creating DenseVector"<<std::endl;
     Kokkos::resize(data_,mem_);
     //data_ = new double[mem_];
     //map_ = Teuchos::rcp(new int(mem_)); 

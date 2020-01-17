@@ -42,7 +42,6 @@ class Analytic00 : public AnalyticBase {
       poly_(2, 1) = 4.0;
       poly_(2, 2) = -3.0;
     }
-
     grav_ = Amanzi::WhetStone::VectorPolynomial(2, 2);
     grav_[0](0,0) = 0.;
     grav_[1](0,0) = -gravity;
@@ -55,7 +54,6 @@ class Analytic00 : public AnalyticBase {
       poly_(3, 2) = -3.0;
       poly_(3, 3) = -2.0;
     }
-
     rhs_ = Amanzi::WhetStone::Divergence((K_ * grad_) * -kr_);
   }
   ~Analytic00(){};

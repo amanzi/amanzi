@@ -30,7 +30,8 @@ struct test{};
  **************************************************************** */
 TEST_FIXTURE(test, DENSEMATRIX)
 {
-  std::cout<<"Default execution space: "<<typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
+  std::cout<<"Default execution space: "<<
+    typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
   const int nb = 4;
@@ -46,10 +47,8 @@ TEST_FIXTURE(test, DENSEMATRIX)
   }
 
   Kokkos::parallel_for(nb, KOKKOS_LAMBDA(const int& i){
-      Kokkos::vector<DenseMatrix> lm1 = m1; 
-      Kokkos::vector<DenseMatrix> lm2 = m2; 
-      DenseMatrix mm1 = lm1[i]; 
-      DenseMatrix mm2 = lm2[i];
+      DenseMatrix mm1 = m1[i];
+      DenseMatrix mm2 = m2[i];
       mm1.putScalar(i+1); 
       mm1 *= 2;
       mm2.putScalar(i+1);
@@ -70,7 +69,8 @@ TEST_FIXTURE(test, DENSEMATRIX)
  **************************************************************** */
 TEST_FIXTURE(test, DENSEVECTOR)
 {
-  std::cout<<"Default execution space: "<<typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
+  std::cout<<"Default execution space: "<<
+    typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
   const int nb = 4;
@@ -82,8 +82,7 @@ TEST_FIXTURE(test, DENSEVECTOR)
   }
 
   Kokkos::parallel_for(nb, KOKKOS_LAMBDA(const int& i){
-      Kokkos::vector<DenseVector> lm1 = m1; 
-      DenseVector mm1 = lm1[i]; 
+      DenseVector mm1 = m1[i]; 
       mm1.putScalar(i+1); 
   });
 
@@ -97,7 +96,8 @@ TEST_FIXTURE(test, DENSEVECTOR)
  **************************************************************** */
 TEST_FIXTURE(test, TENSOR)
 {
-  std::cout<<"Default execution space: "<<typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
+  std::cout<<"Default execution space: "<<
+    typeid(Kokkos::DefaultExecutionSpace).name()<<std::endl;
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
   const int nb = 4;
@@ -108,8 +108,7 @@ TEST_FIXTURE(test, TENSOR)
       std::cout<<m1[i]<<std::endl;
   }
   Kokkos::parallel_for(nb, KOKKOS_LAMBDA(const int& i){
-      Kokkos::vector<Tensor> lm1 = m1; 
-      Tensor mm1 = lm1[i]; 
+      Tensor mm1 = m1[i]; 
       mm1.putScalar(i+1); 
   });
 

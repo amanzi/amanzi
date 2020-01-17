@@ -25,7 +25,6 @@ DenseVector::reshape(int mrow)
 {
   Kokkos::View<double*> data_tmp; 
   m_ = mrow;
-  mem_ = m_;
   //if (mem_ < m_) {
   Kokkos::resize(data_tmp,m_); 
     //double* data_tmp = new double[m_];
@@ -34,6 +33,7 @@ DenseVector::reshape(int mrow)
     //  delete[] data_;
     //}
   //  data_ = data_tmp;
+  mem_ = m_;
   data_ = data_tmp; 
 }
 

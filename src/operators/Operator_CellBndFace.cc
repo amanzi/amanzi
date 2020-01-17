@@ -81,7 +81,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
   // Y.GatherGhostedToMaster("cell",Add);
   // Y.GatherGhostedToMaster("boundary_face",Add);
   
-  // return 0;
+  return 0;
 }
 
 

@@ -112,7 +112,7 @@ Note on implementation for discretization/framework developers:
 #include "Mesh.hh"
 #include "CompositeSpace.hh"
 #include "CompositeVector.hh"
-//#include "DenseVector.hh"
+#include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
@@ -168,19 +168,20 @@ class Operator {
 
   virtual ~Operator() = default;
 
+
   // set all local values to 0.
   void Zero();
 
   // main members as an operator
   virtual int apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
-  virtual int applyTranspose(const CompositeVector& X, CompositeVector& Y,
-                     double scalar=0.0) const;
+  //virtual int applyTranspose(const CompositeVector& X, CompositeVector& Y,
+  //                   double scalar=0.0) const;
   virtual int applyAssembled(const CompositeVector& X, CompositeVector& Y,
                      double scalar=0.0) const;
   virtual int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // diagonal
-  virtual void getLocalDiagCopy(CompositeVector& X) const;
+  virtual void getLocalDiagCopy(CompositeVector& X) const = 0;
 
   // symbolic assembly:
   // -- wrapper
@@ -221,6 +222,8 @@ class Operator {
   void InitPreconditioner(Teuchos::ParameterList& plist);
   void InitializePreconditioner(Teuchos::ParameterList& plist);
   void UpdatePreconditioner();
+
+  void Init();
 
   void CreateCheckPoint();
   void RestoreCheckPoint();
@@ -437,9 +440,9 @@ class Operator {
   // virtual void
   // ExtractVectorCellOp(int c, const Schema& schema, WhetStone::DenseVector& v,
   //                     const CompositeVector& X) const;
-  // virtual void AssembleVectorCellOp(int c, const Schema& schema,
-  //                                   const WhetStone::DenseVector& v,
-  //                                   CompositeVector& X) const;
+  virtual void AssembleVectorCellOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v,
+                                    CompositeVector& X) const;
 
   // virtual void
   // ExtractVectorFaceOp(int c, const Schema& schema, WhetStone::DenseVector& v,

@@ -104,38 +104,38 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 /* ******************************************************************
 * Compute local (cell-based) offsets
 ****************************************************************** */
-// void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-//                            std::vector<int>& offset) const
-// {
-//   AmanziMesh::Entity_ID_List nodes, edges, faces;
+void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::vector<int>& offset) const
+{
+  AmanziMesh::Entity_ID_View nodes, edges, faces;
 
-//   offset.clear();
-//   offset.push_back(0);
+  offset.clear();
+  offset.push_back(0);
 
-//   int ndofs;
-//   for (auto it = items_.begin(); it != items_.end(); ++it) {
-//     int num;
-//     AmanziMesh::Entity_kind kind;
-//     std::tie(kind, std::ignore, num) = *it;
+  int ndofs;
+  for (auto it = items_.begin(); it != items_.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
 
-//     if (kind == AmanziMesh::NODE) {
-//       mesh->cell_get_nodes(c, &nodes);
-//       ndofs = nodes.size();
-//     }
-//     else if (kind == AmanziMesh::EDGE) {
-//       mesh->cell_get_nodes(c, &edges);
-//       ndofs = edges.size();
-//     }
-//     else if (kind == AmanziMesh::FACE) {
-//       ndofs = mesh->cell_get_num_faces(c);
-//     }
-//     else if (kind == AmanziMesh::CELL) {
-//       ndofs = 1;
-//     }
+    if (kind == AmanziMesh::NODE) {
+      mesh->cell_get_nodes(c, nodes);
+      ndofs = nodes.size();
+    }
+    else if (kind == AmanziMesh::EDGE) {
+      mesh->cell_get_nodes(c, edges);
+      ndofs = edges.size();
+    }
+    else if (kind == AmanziMesh::FACE) {
+      ndofs = mesh->cell_get_num_faces(c);
+    }
+    else if (kind == AmanziMesh::CELL) {
+      ndofs = 1;
+    }
 
-//     offset.push_back(ndofs * num);
-//   }
-// }
+    offset.push_back(ndofs * num);
+  }
+}
 
 
 /* ******************************************************************
