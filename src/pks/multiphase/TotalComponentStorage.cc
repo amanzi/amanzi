@@ -25,8 +25,7 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist),
-    n_(0),
+    MultiphaseBaseEvaluator(plist),
     kH_(1.0e-2)
 {
   Init_();
@@ -55,10 +54,10 @@ void TotalComponentStorage::Init_()
 * Copy constructors.
 ****************************************************************** */
 TotalComponentStorage::TotalComponentStorage(const TotalComponentStorage& other) :
-    SecondaryVariableFieldEvaluator(other) {};
+    MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> TotalComponentStorage::Clone() const {
+Teuchos::RCP<MultiphaseBaseEvaluator> TotalComponentStorage::Clone() const {
   return Teuchos::rcp(new TotalComponentStorage(*this));
 }
 

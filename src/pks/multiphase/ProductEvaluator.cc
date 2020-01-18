@@ -1,0 +1,110 @@
+/*
+  Multiphase PK 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Molar mobility is defined as the product of molar density and mobility.
+*/
+
+#include "error.hh"
+
+#include "ProductEvaluator.hh"
+
+namespace Amanzi {
+namespace Multiphase {
+
+/* ******************************************************************
+* Two constructors.
+****************************************************************** */
+ProductEvaluator::ProductEvaluator(Teuchos::ParameterList& plist)
+  : MultiphaseBaseEvaluator(plist)
+{
+  my_key_ = plist.get<std::string>("my key");
+  if (plist.isParameter("evaluator dependencies") &&
+      plist.isParameter("powers")) {
+    Errors::Message msg("Product evaluator requires \"evaluator denedencies\" and \"powers\"");
+    Exceptions::amanzi_throw(msg);
+  }
+  factors_ = plist_.get<Teuchos::Array<int> >("powers").toVector();
+  field_n_.resize(factors_.size(), 0);
+}
+
+
+ProductEvaluator::ProductEvaluator(const ProductEvaluator& other)
+  : MultiphaseBaseEvaluator(other),
+    field_n_(other.field_n_) {};
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<FieldEvaluator> ProductEvaluator::Clone() const {
+  return Teuchos::rcp(new ProductEvaluator(*this));
+}
+
+
+/* ******************************************************************
+* Required member function.
+****************************************************************** */
+void ProductEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  auto& result_c = *result->ViewComponent("cell");
+  int ncells = result_c.MyLength();
+
+  int n(0);
+  results_c->PutScalar(1.0);
+  for (auto it = dependencies_.begin(); it != dependencies_.end(); ++it) {
+    int m = field_n_[n];
+    if (m < 0) continue;
+
+    const auto& factor_c = *S->GetFieldData(*it)->ViewComponent("cell");
+    if (powers_[n] = 1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[m][c];
+    else if (powers_[n] = -1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[m][c];
+
+    n++;
+  }
+}
+
+
+/* ******************************************************************
+* Required member function.
+****************************************************************** */
+void ProductEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  auto& result_c = *result->ViewComponent("cell");
+  int ncells = result_c.MyLength();
+
+  int n(0);
+  results_c->PutScalar(1.0);
+  for (auto it = dependencies_.begin(); it != dependencies_.end(); ++it) {
+    int m = field_n_[n];
+    if (m < 0) continue;
+
+    const auto& factor_c = *S->GetFieldData(*it)->ViewComponent("cell");
+    if (*it != wrt_key && powers_[n] == 1)
+      // do nothing
+    else if (*it != wrt_key && powers_[n] == -1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] /= -factor_c[m][c] * factor_c[m][c];
+    else if (powers_[n] = 1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[m][c];
+    else if (powers_[n] = -1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[m][c];
+
+    n++;
+  }
+}
+
+}  // namespace Flow
+}  // namespace Amanzi

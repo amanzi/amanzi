@@ -14,21 +14,16 @@
 #ifndef AMANZI_MULTIPHASE_MOLAR_MOBILITY_EVALUATOR_HH_
 #define AMANZI_MULTIPHASE_MOLAR_MOBILITY_EVALUATOR_HH_
 
-// Amanzi
-#include "secondary_variable_field_evaluator.hh"
-
 // Multiphase
-#include "MultiphaseTypeDefs.hh"
-#include "WRMmp.hh"
+#include "MultiphaseBaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MolarMobilityEvaluator : public SecondaryVariableFieldEvaluator {
+class ProductEvaluator : public MultiphaseBaseEvaluator {
  public:
-  MolarMobilityEvaluator(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<WRMmpPartition>& wrm);
-  MolarMobilityEvaluator(const MolarMobilityEvaluator& other);
+  ProductEvaluator(Teuchos::ParameterList& plist);
+  ProductEvaluator(const ProductEvaluator& other);
 
   // inteface functions to FieldEvaluator
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override;
@@ -39,11 +34,12 @@ class MolarMobilityEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override;
 
+ // interface to multiphase base class
+ virtual void set_subvector(int ifield, int n) { field_n_[ifield] = n; } override;
+
  private:
-  Teuchos::RCP<WRMmpPartition> wrm_;
- 
-  std::string phase_name_;
-  Key saturation_liquid_key_, viscosity_key_, molar_density_key_;
+  std::vector<int> power_;
+  std::vector<int> field_n_;
 };
 
 }  // namespace Multiphase

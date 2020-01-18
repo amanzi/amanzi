@@ -30,7 +30,6 @@
 
 // Multiphase
 #include "ModelMeshPartition.hh"
-#include "MolarMobilityEvaluator.hh"
 #include "Multiphase_PK.hh"
 #include "Multiphase_Utils.hh"
 #include "MultiphaseTypeDefs.hh"
@@ -93,11 +92,11 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   relperm_liquid_key_ = Keys::getKey(domain_, "rel_permeability_liquid"); 
   relperm_gas_key_ = Keys::getKey(domain_, "rel_permeability_gas"); 
-  molar_mobility_liquid_key_ = Keys::getKey(domain_, "molar_mobility_liquid"); 
-  molar_mobility_gas_key_ = Keys::getKey(domain_, "molar_mobility_gas"); 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   viscosity_gas_key_ = Keys::getKey(domain_, "viscosity_gas"); 
 
+  advection_liquid_key_ = Keys::getKey(domain_, "advection_liquid"); 
+  advection_gas_key_ = Keys::getKey(domain_, "advection_gas"); 
   molar_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
   molar_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas"); 
 
@@ -210,36 +209,6 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
   S->SetFieldEvaluator(relperm_gas_key_, eval);
-
-  // molar mobility of liquid phase
-  {
-    S->RequireField(molar_mobility_liquid_key_, molar_mobility_liquid_key_)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    elist.set<std::string>("my key", molar_mobility_liquid_key_)
-         .set<std::string>("viscosity key", viscosity_liquid_key_)
-         .set<std::string>("molar density key", molar_density_liquid_key_)
-         .set<std::string>("phase name", "liquid");
-
-    auto eval = Teuchos::rcp(new MolarMobilityEvaluator(elist, wrm_));
-    S->SetFieldEvaluator(molar_mobility_liquid_key_, eval);
-  }
-
-  // molar mobility of gas phase
-  {
-    S->RequireField(molar_mobility_gas_key_, molar_mobility_gas_key_)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    elist.set<std::string>("my key", molar_mobility_gas_key_)
-         .set<std::string>("viscosity key", viscosity_gas_key_)
-         .set<std::string>("molar density key", molar_density_gas_key_)
-         .set<std::string>("phase name", "gas");
-
-    auto eval = Teuchos::rcp(new MolarMobilityEvaluator(elist, wrm_));
-    S->SetFieldEvaluator(molar_mobility_gas_key_, eval);
-  }
 
   // material properties
   if (!S->HasField(permeability_key_)) {
@@ -510,8 +479,6 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
     udot->PutScalar(0.0);
     bdf1_dae_->SetInitialState(t_old, soln_, udot);
-
-    UpdatePreconditioner(t_old, soln_, dt_);
     num_itrs_++;
   }
 
@@ -549,73 +516,54 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  auto psol = PressureToSolution();
-  auto ssol = SaturationToSolution();
-  auto csol = ComponentToSolution(num_primary_);
-  auto pl = soln_->SubVector(psol.first)->Data();
-
-  *S_->GetFieldData(pressure_liquid_key_, passwd_) = *pl;
-  *S_->GetFieldData(saturation_liquid_key_, passwd_) = *soln_->SubVector(ssol.first)->Data();
-  *S_->GetFieldData(x_liquid_key_, passwd_) = *soln_->SubVector(csol.first)->Data();
-
-  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
-  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);
+  for (int i = 0; i < 3; ++i) {
+    *S_->GetFieldData(soln_names_[i], passwd_) = *soln_->SubVector(i)->Data();
+  }
 
   // update time integration history
   bdf1_dae_->CommitSolution(t_new - t_old, soln_);
   ChangedSolution();
 
-  // update Darcy fluxes
-  // -- fluxes
-  auto flux_liquid = S_->GetFieldData(darcy_flux_liquid_key_, passwd_);
-  auto flux_gas = S_->GetFieldData(darcy_flux_gas_key_, passwd_);
+  // miscalleneous fields
+  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
+  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);
 
-  // -- other fields
-  S_->GetFieldEvaluator(molar_mobility_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& mobility_lc = *S_->GetFieldData(molar_mobility_liquid_key_)->ViewComponent("cell");
+  S_->GetFieldEvaluator(advection_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const auto& mobility_gc = *S_->GetFieldData(advection_gas_key_)->ViewComponent("cell");
 
-  S_->GetFieldEvaluator(molar_mobility_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& mobility_gc = *S_->GetFieldData(molar_mobility_gas_key_)->ViewComponent("cell");
-
-  S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto eta_g = S_->GetFieldData(molar_density_gas_key_);
-  const auto& eta_gc = *eta_g->ViewComponent("cell");
-
-  S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto pg = S_->GetFieldData(pressure_gas_key_);
-
-  // -- work memory
+  // work memory
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
 
- Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
+  PopulateBCs(0);
 
-  // -- liquid (replace rho_l_ with mass density vector FIXME)
-  PopulateBCs(psol.first);
+  std::vector<std::string> relperm_name{advection_liquid_key_, advection_gas_key_};
+  std::vector<std::string> viscosity_name{viscosity_liquid_key_, viscosity_gas_key_};
+  std::vector<std::string> var_name{pressure_liquid_key_, pressure_gas_key_};
+  std::vector<std::string> flux_name{darcy_flux_liquid_key_, darcy_flux_gas_key_};
 
-  kr_c = mobility_lc;
-  kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
-  upwind_->Compute(*flux_liquid, *kr, op_bcs_[psol.first]->bc_model(), *kr);
+  for (int phase = 0; phase < 2; ++phase) {
+    S_->GetFieldEvaluator(relperm_name[phase])->HasFieldChanged(S_.ptr(), passwd_);
 
-  auto& pdeK = pde_diff_K_;
-  pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-  pdeK->SetBCs(op_bcs_[psol.first], op_bcs_[psol.first]);
-  pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
-  pdeK->UpdateFlux(pl.ptr(), flux_liquid.ptr());
-  flux_liquid->Scale(1.0 / eta_l_);
+    const auto& relperm_c = *S_->GetFieldData(relperm_name[phase])->ViewComponent("cell");
+    const auto& viscosity_c = *S_->GetFieldData(viscosity_name[phase])->ViewComponent("cell");
+    auto flux = S_->GetFieldData(flux_name[phase], passwd_);
 
-  // -- gas (replace eta_g with mass density vector FIXME)
-  for (int c = 0; c < ncells_owned_; ++c) {
-    kr_c[0][c] = mobility_gc[0][c] / eta_gc[0][c];
+    for (int c = 0; c < ncells_owned_; ++c) {
+      kr_c[0][c] = relperm_c[0][c] / viscosity_c[0][c];
+    }
+    kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) / mu_l_);  // FIXME
+    upwind_->Compute(*flux, *kr, op_bcs_[0]->bc_model(), *kr);
+
+    auto& pdeK = pde_diff_K_;
+    pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
+    pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
+    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+    auto var = S_->GetFieldData(var_name[phase]);
+    pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
-  kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
-  upwind_->Compute(*flux_gas, *kr, op_bcs_[0]->bc_model(), *kr);
-
-  pdeK = pde_diff_K_;
-  pdeK->Setup(Kptr, kr, Teuchos::null, eta_g, gravity_);
-  pdeK->SetBCs(op_bc_pg_, op_bc_pg_);
-  pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
-  pdeK->UpdateFlux(pg.ptr(), flux_gas.ptr());
 }
 
 }  // namespace Multiphase

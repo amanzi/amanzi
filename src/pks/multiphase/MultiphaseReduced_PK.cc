@@ -18,6 +18,7 @@
 
 // Multiphase
 #include "MultiphaseReduced_PK.hh"
+#include "ProductEvaluator.hh"
 #include "TotalComponentStorage.hh"
 #include "TotalWaterStorage.hh"
 
@@ -62,6 +63,52 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
 
   eval_tcs_ = Teuchos::rcp(new TotalComponentStorage(plist));
   S->SetFieldEvaluator(tcs_key_, eval_tcs_);
+
+  // product evaluators
+  {
+    S->RequireField(advection_liquid_key_, advection_liquid_key_)
+      ->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::Array<int> dep_factors(4, 1);
+    Teuchos::Array<std::string> dep_names;
+
+    dep_names.push_back(molar_density_liquid_key_);
+    dep_names.push_back(relperm_liquid_key_);
+    dep_names.push_back(viscosity_liquid_key_);
+    dep_names.push_back(molar_fraction_liquid_key_);
+    dep_factors[2] = -1;
+
+    elist.set<std::string>("my key", advection_liquid_key_)
+         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<Teuchos::Array<int> >("factors", dep_factors);
+
+    auto eval = Teuchos::rcp(new MolarMobilityEvaluator(elist));
+    S->SetFieldEvaluator(advection_liquid_key_, eval);
+  }
+
+  // molar mobility of gas phase
+  {
+    S->RequireField(advection_gas_key_, advection_gas_key_)
+      ->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::Array<int> dep_factors(3, 1);
+    Teuchos::Array<std::string> dep_names;
+
+    dep_names.push_back(molar_density_gas_key_);
+    dep_names.push_back(relperm_gas_key_);
+    dep_names.push_back(viscosity_gas_key_);
+    dep_names.push_back(molar_fraction_gas_key_);
+    dep_factors[2] = -1;
+
+    elist.set<std::string>("my key", advection_gas_key_)
+         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<Teuchos::Array<int> >("factors", dep_factors);
+
+    auto eval = Teuchos::rcp(new MolarMobilityEvaluator(elist));
+    S->SetFieldEvaluator(advection_gas_key_, eval);
+  }
 }
 
 
@@ -87,20 +134,10 @@ void MultiphaseReduced_PK::InitMPSolutionVector()
 ******************************************************************* */
 void MultiphaseReduced_PK::InitMPPreconditioner()
 {
-  for (int i = 0; i < 3; ++i)
-    eval_mobility_liquid_.push_back(molar_mobility_liquid_key_);
-
-  eval_mobility_gas_.push_back("");
-  eval_mobility_gas_.push_back(molar_mobility_gas_key_);
-  eval_mobility_gas_.push_back(molar_mobility_gas_key_);
-
-  eval_molecular_diff_.push_back("");
-  eval_molecular_diff_.push_back("any");
-  eval_molecular_diff_.push_back("any");
-
-  eval_storage_.push_back("total_water_storage");
-  eval_storage_.push_back("total_component_storage");
-  eval_storage_.push_back("total_component_storage");
+  eval_eqns_.push_back({advection_liquid_key_, "", "", " ", tws_key_});
+  for (int i = 0; i < num_primary_; ++i) {
+    eval_eqns_.push_back({advection_liquid_key_, advection_gas_key_, "any", "any", twc_key_});
+  }
 }
 
 
@@ -221,22 +258,24 @@ void MultiphaseReduced_PK::PopulateBCs(int icomp)
 /* ******************************************************************* 
 * Map for indices
 ******************************************************************* */
-std::pair<int, int> MultiphaseReduced_PK::EquationToSolution(int neqn) {
-  int i1 = std::min(neqn, 2);
-  int i2 = (neqn < 2) ? 0 : neqn - 1;
-  return std::make_pair(i1, i2);
+std::pair<Key, int> MultiphaseReduced_PK::EquationToSolution(int neqn) {
+  if (neqn == 0) return std::make_pair(pressure_liquid_key_, 0);
+  if (neqn == 1) return std::make_pair(saturation_liquid_key_, 0);
+  return std::make_pair(x_liquid_key, neqn - 2);
 }
 
-std::pair<int, int> MultiphaseReduced_PK::PressureToSolution() {
-  return std::make_pair(0, 0);
-}
 
-std::pair<int, int> MultiphaseReduced_PK::SaturationToSolution() {
-  return std::make_pair(1, 0);
-}
-
-std::pair<int, int> MultiphaseReduced_PK::ComponentToSolution(int neqn) {
-  return std::make_pair(2, neqn - 1);
+/* ******************************************************************* 
+* Remove water molar fraction (= 1) from this evalautor
+******************************************************************* */
+void MultiphaseReduced_PK::ModifyEvaluator(
+  int neqn, int pos, const Teuchos::RCP<MultiphaseBaseEvaluator>& eval)
+{
+  if (neqn == 0) {
+    eval->set_subvector(2, -1);
+    if (pos == 4)
+      Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_kH(kH_[neqn - 1]);
+  }
 }
 
 }  // namespace Multiphase

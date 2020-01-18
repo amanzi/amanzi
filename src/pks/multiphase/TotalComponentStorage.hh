@@ -23,12 +23,13 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+
+#include "MultiphaseBaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage : public SecondaryVariableFieldEvaluator {
+class TotalComponentStorage : public MultiphaseBaseEvaluator {
  public:
   TotalComponentStorage(Teuchos::ParameterList& plist);
   TotalComponentStorage(const TotalComponentStorage& other);
@@ -54,7 +55,6 @@ class TotalComponentStorage : public SecondaryVariableFieldEvaluator {
   Key saturation_liquid_key_, porosity_key_;
 
  private:
-  int n_;  // component id
   double kH_;
   
  private:

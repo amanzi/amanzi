@@ -52,15 +52,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto flux_liquid = S_->GetFieldData(darcy_flux_liquid_key_, passwd_);
   auto flux_gas = S_->GetFieldData(darcy_flux_gas_key_, passwd_);
 
-  // -- molar mobilities
-  S_->GetFieldEvaluator(molar_mobility_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto mobility_l = S_->GetFieldData(molar_mobility_liquid_key_);
-  const auto& mobility_lc = *mobility_l->ViewComponent("cell");
-
-  S_->GetFieldEvaluator(molar_mobility_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto mobility_g = S_->GetFieldData(molar_mobility_gas_key_, molar_mobility_gas_key_);
-  const auto& mobility_gc = *mobility_g->ViewComponent("cell");
-
   // -- gas pressure
   S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   auto pg = S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
@@ -80,9 +71,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // -- porosity
   const auto& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
-  // -- mass density of gas phase 
-  auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
-
   // -- wrapper for absolute permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
 
@@ -91,106 +79,86 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto& kr_c = *kr->ViewComponent("cell");
 
   // primary variables
-  auto psol = PressureToSolution();
-  auto tmp = up[psol.first];
+  auto tmp = up[0];
   CompositeVector fone(*tmp), fadd(*tmp), comp(*tmp);
   auto& fone_c = *fone.ViewComponent("cell");
-
-  auto ssol = SaturationToSolution();
-  auto& usi = *up[ssol.first]->ViewComponent("cell");
 
   // start loop over physical equations
   Key key;
   for (int n = 0; n < num_primary_ + 1; ++n) {
-    auto csol = ComponentToSolution(n);
-    const auto& uci = *up[csol.first]->ViewComponent("cell");
-
     auto eqn = EquationToSolution(n);
     PopulateBCs(eqn.second);
   
-    // Richards operator for liquid phase
-    if ((key = eval_mobility_liquid_[n]) != "") {
-      // -- upwind product of liquid mobility, molar density, and mole fraction
-      *kr->ViewComponent("cell") = *mobility_l->ViewComponent("cell");
-      if (csol.second < 0) {
-        kr_c = mobility_lc;  // FIXME
-      } else {
-        for (int c = 0; c < ncells_owned_; ++c)
-          kr_c[0][c] = mobility_lc[0][c] * uci[csol.second][c];
-      }
-      kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
-      upwind_->Compute(*flux_liquid, *kr, op_bcs_[eqn.first]->bc_model(), *kr);
+    // Richards-type operator for all phases
+    fone.PutScalar(0.0);
+    std::vector<std::string> var_name{pressure_liquid_key_, pressure_gas_key_};
+    std::vector<std::string> flux_name{darcy_flux_liquid_key_, darcy_flux_gas_key_};
 
-      // -- add transport in liquid phase
-      auto& pde = pde_diff_K_;
-      pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-      pde->SetBCs(op_bcs_[eqn.first], op_bcs_[psol.first]);
-      pde->global_operator()->Init();
-      pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-      pde->ApplyBCs(true, false, true);
-      pde->global_operator()->ComputeNegativeResidual(*up[psol.first], fone);
-    } else {
-      // primary boundary conditions should be imposed in each equation for at least
-      // one term.
-      AMANZI_ASSERT(true);
+    for (int phase = 0; phase < 2; ++phase) {
+      bool bcflag = (phase == 0);
+
+      if ((key = eval_eqns_[n][phase]) != "") {
+        auto eval = S_->GetFieldEvaluator(key);
+        ModifyEvaluator(n, phase, eval);
+        eval->HasFieldChanged(S_.ptr(), passwd_);
+
+        // -- upwind cell-centered coefficient
+        auto flux = S_->GetFieldData(flux_name[phase], passwd_);
+        kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
+        kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) * eta_l_ / mu_l_);  // FIXME (BC data)
+        upwind_->Compute(*flux, *kr, op_bcs_[eqn.first]->bc_model(), *kr);
+
+        // -- form operator
+        auto& pde = pde_diff_K_;
+        pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME (gravity for gas phase)
+        pde->SetBCs(op_bcs_[eqn.first], op_bcs_[psol.first]);
+        pde->global_operator()->Init();
+        pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+        pde->ApplyBCs(bc_flag, false, bc_flag);
+
+        // -- add advection term to the residual
+        auto var = S_->GetFieldData(var_name[phase]);
+        pde->global_operator()->ComputeNegativeResidual(*var, fadd);
+        fone.Update(1.0, fadd, 1.0);
+      }
     }
  
-    // Richards operator for gas phase
-    if ((key = eval_mobility_gas_[n]) != "") {
-      // -- upwind product of gas mobility, molar density, and mole fraction
-      for (int c = 0; c < ncells_owned_; ++c) {
-        kr_c[0][c] = mobility_gc[0][c] * (uci[csol.second][c] / kH_[csol.second]);
-      }
-      kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
-      upwind_->Compute(*flux_gas, *kr, op_bcs_[eqn.first]->bc_model(), *kr);
-
-      // -- add transport in gas phase
-      auto& pde = pde_diff_K_;
-      pde->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
-      pde->SetBCs(op_bcs_[eqn.first], op_bc_pg_);
-      pde->global_operator()->Init();
-      pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-      pde->ApplyBCs(false, false, false);
-      pde->global_operator()->ComputeNegativeResidual(*pg, fadd);
-      fone.Update(1.0, fadd, 1.0);
-    }
-
     // molecular diffusion via harmonic-mean transmissibility
-    if ((key = eval_molecular_diff_[n]) != "") {
-      int i = csol.second;
-      *comp.ViewComponent("cell") = *uci(i);
+    for (int phase = 0; phase < 2; ++phase) {
+      if ((key = eval_eqns_[n][2 + phase]) != "") {
+        auto D = Teuchos::rcp(new std::vector<WhetStone::Tensor>);
+        WhetStone::Tensor Dc(dim_, 1);
+        for (int c = 0; c < ncells_owned_; ++c) {
+          double diff_l = usi[0][c] * eta_lc[0][c] * mol_diff_l_[i];
+          double diff_g = (1.0 - usi[0][c]) * eta_gc[0][c] * mol_diff_g_[i] / kH_[i];
+          Dc(0, 0) = phi[0][c] * (diff_l + diff_g);
+          D->push_back(Dc);
+        }
 
-      auto D = Teuchos::rcp(new std::vector<WhetStone::Tensor>);
-      WhetStone::Tensor Dc(dim_, 1);
-      for (int c = 0; c < ncells_owned_; ++c) {
-        double diff_l = usi[0][c] * eta_lc[0][c] * mol_diff_l_[i];
-        double diff_g = (1.0 - usi[0][c]) * eta_gc[0][c] * mol_diff_g_[i] / kH_[i];
-        Dc(0, 0) = phi[0][c] * (diff_l + diff_g);
-        D->push_back(Dc);
+        // -- form operator
+        auto& pde = pde_diff_D_;
+        pde->Setup(D, Teuchos::null, Teuchos::null);
+        pde->SetBCs(op_bcs_[eqn.first], op_bcs_[eqn.first]);
+        pde->global_operator()->Init();
+        pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+        pde->ApplyBCs(false, false, false);
+
+        // -- add diffusion term to the residual
+        *comp.ViewComponent("cell") = *(*up[2])(n - 1);
+        pde->global_operator()->ComputeNegativeResidual(comp, fadd);
+        fone.Update(1.0, fadd, 1.0);
+
+        // add counter-diffusion to the first component
+        fp[0]->Update(-1.0, fadd, 1.0);
       }
-
-      auto& pde = pde_diff_D_;
-      pde->Setup(D, Teuchos::null, Teuchos::null);
-      pde->SetBCs(op_bcs_[eqn.first], op_bcs_[eqn.first]);
-      pde->global_operator()->Init();
-      pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-      pde->ApplyBCs(false, false, false);
-      pde->global_operator()->ComputeNegativeResidual(comp, fadd);
-      fone.Update(1.0, fadd, 1.0);
     }
-
-    // add counter-diffusion to the water component
-    fp[psol.first]->Update(-1.0, fadd, 1.0);
 
     // add storage terms 
-    if ((key = eval_storage_[n]) != "") {
+    if ((key = eval_eqns_[n][4]) != "") {
       std::string prev_key = "prev_" + key;
 
       auto eval = S_->GetFieldEvaluator(key);
-      if (key == tcs_key_) {
-        Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_component_id(eqn.second);
-        Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_kH(kH_[eqn.second]);
-      }
+      ModifyEvaluator(n, 4, eval);
       eval->HasFieldChanged(S_.ptr(), passwd_);
 
       const auto& total_c = *S_->GetFieldData(key)->ViewComponent("cell");
@@ -210,8 +178,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   // process gas constraint
   auto csol = ComponentToSolution(num_primary_ + 1);
-  auto& uci = *up[csol.first]->ViewComponent("cell");  // chemical components
-  auto& fci = *fp[csol.first]->ViewComponent("cell");
+  auto& uci = *up[2]->ViewComponent("cell");  // chemical components
+  auto& fci = *fp[2]->ViewComponent("cell");
 
   int n = num_primary_ - 1;
   if (ncp_ == "min") {
@@ -253,12 +221,27 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   auto flux_gas = S_->GetFieldData(darcy_flux_gas_key_, passwd_);
   auto flux_tmp = Teuchos::rcp(new CompositeVector(*flux_liquid));
 
+  // -- molar densities
+  S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
+  // const auto& eta_gc = *eta_g->ViewComponent("cell");
+
+  // const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
+  // const auto& eta_lc = *eta_l->ViewComponent("cell");
+
   // -- mobilities
   S_->GetFieldEvaluator(molar_mobility_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& mobility_lc = *S_->GetFieldData(molar_mobility_liquid_key_)->ViewComponent("cell");
 
   S_->GetFieldEvaluator(molar_mobility_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& mobility_gc = *S_->GetFieldData(molar_mobility_gas_key_)->ViewComponent("cell");
+
+  // -- mass density of gas phase 
+  auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
+
+  // -- gas pressure
+  S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  auto pg = S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
 
   // -- wrapper for absolute permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
@@ -299,173 +282,97 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       kr_c.PutScalar(0.0);
       pde->AddAccumulationTerm(*kr, "cell");
 
-      // Richards operator for liquid phase
-      // -- (a) since liquid pressure is primary, its linearization is either 0 or 1
-      if ((key = eval_mobility_liquid_[row]) != "" && keyc == pressure_liquid_key_) {
-        auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
+      // Richards operator for all phases
+      std::vector<std::string> var_name{pressure_liquid_key_, pressure_gas_key_};
+      std::vector<std::string> flux_name{flux_liquid_key_, flux_gas_key_};
 
-        // -- upwind product of liquid mobility and liquid mole fraction
-        if (csol.second < 0) {
-          kr_c = mobility_lc;  // FIXME
-        } else {
-          for (int c = 0; c < ncells_owned_; ++c)
-            kr_c[0][c] = mobility_lc[0][c] * uci[csol.second][c];
-        }
-        kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
-        upwind_->Compute(*flux_liquid, *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
+      for (int phase = 0; phase < 2; ++phase) {
+        // -- flux due to du/dv where is is primary
+        if ((key = eval_eqns_[row][phase]) != "") {
+          Key der_key = "d" + var_name[phase] + "_d" + keyc;
+          S_->GetFieldEvaluator(var_name[phase])->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
-        pde->Setup(Kptr, kr, Teuchos::null);
-        pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[psol.first]);
-        pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-        pde->ApplyBCs(true, true, true);
-      } 
+          if (S_->HasField(der_key)) {
+            auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
 
-      // -- (b) liquid molar mobility could be a function of primary unknowns
-      //    Linearization of liquid molar fraction is either 0 or 1
-      if ((key = eval_mobility_liquid_[row]) != "") {
-        Key der_key = "d" + key + "_d" + keyc;
-        S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
+            kr_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
+            kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) * eta_l_ / rho_l_);  // FIXME
+            upwind_->Compute(*flux_name[phase], *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
 
-        if (S_->HasField(der_key)) {
-          auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
-          // --- upwind derivative
-          const auto& der_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
-          kr_c = der_c;
-          if (csol.second >= 0) {
-            for (int c = 0; c < ncells_owned_; ++c)
-              kr_c[0][c] *= uci[csol.second][c];
+            pde->Setup(Kptr, kr, Teuchos::null);
+            pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
+            pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+            pde->ApplyBCs(false, false, false);
           }
-          if (keyc == x_liquid_key_) {
-            for (int c = 0; c < ncells_owned_; ++c)
-              kr_c[0][c] += mobility_lc[0][c];
+        }
+
+        // -- flux due to grad (du/dv)
+        if ((key = eval_eqns_[row][phase]) != "") {
+          Key der_key = "d" + var_name[phase] + "_d" + keyc;
+          S_->GetFieldEvaluator(var_name[phase])->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
+
+          if (S_->HasField(der_key)) {
+            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
+
+            // --- upwind gas molar mobility times molar fraction 
+            k_r = *S_->GetFieldData(key)->ViewComponent("cell");
+            kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) * eta_l_ / rho_l_);  // FIXME
+            upwind_->Compute(*flux_name[phase], *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
+
+            // --- calculate advective flux 
+            auto der = S_->GetFieldData(der_key);
+            pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME
+            pde_diff_K_->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
+            pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
+            pde_diff_K_->UpdateFlux(der.ptr(), flux_tmp.ptr());
+
+            // -- populated advection operator
+            pde->Setup(*flux_tmp);
+            pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
+            pde->global_operator()->Init();
+            pde->UpdateMatrices(flux_tmp.ptr());
+            pde->ApplyBCs(false, false, false);
           }
-
-          kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
-          upwind_->Compute(*flux_liquid, *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
-
-          // --- calculate advective flux 
-          pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-          pde_diff_K_->SetBCs(op_bcs_[psol.first], op_bcs_[psol.first]);
-          pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
-          pde_diff_K_->UpdateFlux(up[psol.first].ptr(), flux_tmp.ptr());
-
-          // -- populated advection operator
-          pde->Setup(*flux_tmp);
-          pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
-          pde->UpdateMatrices(flux_tmp.ptr());
-          pde->ApplyBCs(false, false, false);
         }
-      }
 
-      // Richards operator for gas phase
-      // -- (a) since gas pressure depends on liquid pressure and liquid saturation, 
-      //    its linearization adds a factor to molar mobility.
-      if ((key = eval_mobility_gas_[row]) != "") {
-        Key der_key = "dpressure_gas_d" + keyc;
-        S_->GetFieldEvaluator("pressure_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
+        // -- flux due to df/dv
+        if ((key = eval_eqns_[row][phase]) != "") {
+          Key der_key = "d" + key + "_d" + keyc;
+          S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
-        if (S_->HasField(der_key)) {
-          auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
+          if (S_->HasField(der_key)) {
+            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
-          // -- upwind product of liquid mobility, liquid mole fraction, and
-          //    derivative gas pressure 
-          const auto& der_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
-          for (int c = 0; c < ncells_owned_; ++c)
-            kr_c[0][c] = mobility_lc[0][c] * der_c[0][c] / kH_[csol.second];
+            // --- upwind derivative
+            kr_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
+            kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) * eta_l_ / rho_l_);  // FIXME
+            upwind_->Compute(*flux_name[phase], *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
 
-          kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
-          upwind_->Compute(*flux_gas, *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
+            // --- calculate advective flux 
+            pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
+            pde_diff_K_->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
+            pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
+            pde_diff_K_->UpdateFlux(var_name[phase], flux_tmp.ptr());
 
-          pde->Setup(Kptr, kr, Teuchos::null);
-          pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
-          pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-          pde->ApplyBCs(false, false, false);
-        }
-      }
-
-      // -- (b) flux due to gradient of capillary pressure
-      if ((key = eval_mobility_gas_[row]) != "") {
-        Key der_key = "d" + key + "_d" + keyc;
-        S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
-
-        if (S_->HasField(der_key)) {
-          auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
-          // --- upwind gas molar mobility times molar fraction 
-          auto der = S_->GetFieldData(der_key);
-          const auto& der_c = *der->ViewComponent("cell");
-          for (int c = 0; c < ncells_owned_; ++c)
-            kr_c[0][c] = mobility_gc[0][c] * uci[csol.second][c] / kH_[csol.second];
-
-          kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
-          upwind_->Compute(*flux_gas, *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
-
-          // --- calculate advective flux 
-          pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-          pde_diff_K_->SetBCs(op_bcs_[eqnr.first], op_bc_pg_);
-          pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
-          pde_diff_K_->UpdateFlux(der.ptr(), flux_tmp.ptr());
-
-          // -- populated advection operator
-          pde->Setup(*flux_tmp);
-          pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
-          pde->global_operator()->Init();
-          pde->UpdateMatrices(flux_tmp.ptr());
-          pde->ApplyBCs(false, false, false);
-        }
-      }
-
-      // -- (c) gas molar mobility could be a function of primary unknowns
-      //    Linearization of gas molar fraction is either 0 or 1
-      if ((key = eval_mobility_gas_[row]) != "") {
-        /*
-        Key der_key = "d" + key + "_d" + keyc;
-        S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
-
-        if (S_->HasField(der_key)) {
-          auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
-          // --- upwind derivative
-          const auto& der_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
-          for (int c = 0; c < ncells_owned_; ++c)
-            kr_c[0][c] = der_c[0][c] * uci[csol.second][c];
-
-          if (keyc == x_liquid_key_) {
-            for (int c = 0; c < ncells_owned_; ++c)
-              kr_c[0][c] += mobility_lc[0][c];
+            // -- populated advection operator
+            pde->Setup(*flux_tmp);
+            pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
+            pde->UpdateMatrices(flux_tmp.ptr());
+            pde->ApplyBCs(false, false, false);
           }
-
-          kr->ViewComponent("dirichlet_faces")->PutScalar(eta_l_ / mu_l_);  // FIXME
-          upwind_->Compute(*flux_liquid, *kr, op_bcs_[eqnr.first]->bc_model(), *kr);
-
-          // --- calculate advective flux 
-          pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-          pde_diff_K_->SetBCs(op_bcs_[psol.first], op_bcs_[psol.first]);
-          pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
-          pde_diff_K_->UpdateFlux(up[psol.first].ptr(), flux_tmp.ptr());
-
-          // -- populated advection operator
-          pde->Setup(*flux_tmp);
-          pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
-          pde->UpdateMatrices(flux_tmp.ptr());
-          pde->ApplyBCs(false, false, false);
         }
-        */
       }
 
       // molecular diffusion via harmonic-mean transmissibility
-      if ((key = eval_molecular_diff_[row]) != "") {
+      if ((key = eval_eans_[n][row]) != "") {
       }
 
       // storage term
-      if ((key = eval_storage_[row]) != "") {
+      if ((key = eval_eqns_[row][4]) != "") {
         Key der_key = "d" + key + "_d" + keyc;
+
         auto eval = S_->GetFieldEvaluator(key);
-        if (key == tcs_key_) {
-          Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_component_id(eqnr.second);
-          Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval)->set_kH(kH_[eqnr.second]);
-        }
+        ModifyEvaluator(row, 4, eval);
         eval->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
         if (S_->HasField(der_key)) {
@@ -531,7 +438,9 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     op_pc_assembled_ = true;
   }
   op_preconditioner_->AssembleMatrix();
+std::cout << *op_preconditioner_->A() << std::endl; 
   op_preconditioner_->UpdatePreconditioner();
+exit(0);
 }
 
 

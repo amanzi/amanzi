@@ -33,6 +33,7 @@
 #include "UpwindFlux.hh"
 
 // Multiphase
+#include "MultiphaseBaseEvaluator.hh"
 #include "MultiphaseBoundaryFunction.hh"
 #include "MultiphaseTypeDefs.hh"
 
@@ -104,11 +105,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void InitMPSolutionVector() = 0;
   virtual void InitMPPreconditioner() = 0;
   virtual void PopulateBCs(int icomp) = 0;
-
-  virtual std::pair<int, int> EquationToSolution(int neqn) = 0;
-  virtual std::pair<int, int> PressureToSolution() = 0;
-  virtual std::pair<int, int> SaturationToSolution() = 0;
-  virtual std::pair<int, int> ComponentToSolution(int neqn) = 0;
+  virtual std::pair<Key, int> EquationToSolution(int neqn) = 0;
+  virtual void ModifyEvaluator(int neqn, int pos,
+                               const Teuchos::RCP<MultiphaseBaseEvaluator>& eval) = 0;
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
 
@@ -144,7 +143,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // keys
   Key pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
-  Key molar_mobility_liquid_key_, molar_mobility_gas_key_;
+  Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
   Key porosity_key_, pressure_gas_key_, temperature_key_;
   Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
@@ -158,8 +157,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
 
-  std::vector<Key> eval_mobility_liquid_, eval_mobility_gas_;
-  std::vector<Key> eval_molecular_diff_, eval_storage_;
+  std::vector<std::vector<Key> > eval_eqns_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 

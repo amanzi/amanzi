@@ -54,7 +54,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          TotalWaterStorage.cc TotalComponentStorage.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
                          PressureGasEvaluator.cc
-                         RelPermEvaluator.cc MolarMobilityEvaluator.cc
+                         RelPermEvaluator.cc ProductEvaluator.cc
                          #
                          CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
                          GasConstraint.cc
@@ -78,7 +78,7 @@ set(multiphase_inc_files
   ModelMeshPartition.hh
   MultiphaseBoundaryFunction.hh
   PressureGasEvaluator.hh
-  RelPermEvaluator.hh MolarMobilityEvaluator.hh
+  RelPermEvaluator.hh ProductEvaluator.hh
   TotalWaterStorage.hh TotalComponentStorage.hh
   WRMmp.hh
   WRMmp_Simple.hh

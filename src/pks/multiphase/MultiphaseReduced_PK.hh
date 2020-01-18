@@ -20,6 +20,7 @@
 #define AMANZI_MULTIPHASE_REDUCED_PK_HH_
 
 // Amanzi
+#include "Key.hh"
 #include "PK_Factory.hh"
 
 // Multiphase
@@ -46,10 +47,9 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   virtual void InitMPPreconditioner() override;
   virtual void PopulateBCs(int icomp) override;
 
-  virtual std::pair<int, int> EquationToSolution(int neqn) override;
-  virtual std::pair<int, int> PressureToSolution() override;
-  virtual std::pair<int, int> SaturationToSolution() override;
-  virtual std::pair<int, int> ComponentToSolution(int neqn) override;
+  virtual std::pair<Key, int> EquationToSolution(int neqn) override;
+  virtual void ModifyEvaluator(int neqn, int pos, 
+                               const Teuchos::RCP<MultiphaseBaseEvaluator>& eval) override;
 
  private:
   int missed_bc_faces_;
