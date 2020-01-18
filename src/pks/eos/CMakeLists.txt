@@ -18,63 +18,6 @@ project(EOS)
 include_directories(${ATK_SOURCE_DIR})
 
 #
-# EOS registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE EOSEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EffectivePressureEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_Constant_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE Viscosity_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE Viscosity_Constant_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE ViscosityEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_IdealGas_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE MolarFractionGasEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE IsobaricEOSEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_VaporInGas_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE VaporPressure_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-generate_evaluators_registration_header(
-  HEADERFILE eos_registration.hh
-  LISTNAME   EOS_EVALUATORS
-  INSTALL    True
-  )
-
-#
 # Library: eos
 #
 set(eos_src_files 
