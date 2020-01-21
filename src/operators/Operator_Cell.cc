@@ -82,8 +82,8 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
     auto Xc = X.ViewComponent<AmanziDefaultDevice>("cell", true);
     auto Yc = Y.ViewComponent<AmanziDefaultDevice>("cell", true);
 
-    typedef Kokkos::TeamPolicy<> TeamPolicy_type ;
-    typedef typename TeamPolicy_type::member_type Team_type ;
+    typedef Kokkos::TeamPolicy<> TeamPolicy_type;
+    typedef typename TeamPolicy_type::member_type Team_type;
 
     Kokkos::parallel_for( // loop over local matrices
       "Operator_Cell::ApplyMatrixFreeOp Face_Cell",
