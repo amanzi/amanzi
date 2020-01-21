@@ -1,0 +1,199 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <model_description name="flow and transport in fractures">
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+    <constants>
+      <numerical_constant name="X0" value="0.0"/>
+      <numerical_constant name="Y0" value="0.0"/>
+      <numerical_constant name="Z0" value="0.0"/>
+
+      <numerical_constant name="X1" value="100.0"/>
+      <numerical_constant name="Y1" value="100.0"/>
+      <numerical_constant name="Z1" value="100.0"/>
+
+      <constant name="gravity" type="none" value="1.0"/>
+      <constant name="atmospheric_pressure" type="none" value="0.0"/>
+    </constants>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Steady State">
+        <time>0.0</time>
+      </time_macro>
+      <cycle_macro name="Every10Cycles">
+        <start>0</start>
+        <timestep_interval>2</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow model="constant" state="on"/>
+    <transport state="on" />
+    <chemistry input_filename="tritium.bgd" engine="amanzi" state="on"/>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.0</viscosity>
+      <density>1.0</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9">Tritium</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults method="bdf1" increase_factor="1.0" mode="steady" />
+    <execution_control end="0 h" init_dt="1.0" max_dt="1.0" method="bdf1" mode="steady" start="0.0" />
+    <execution_control end="1.0e+9" init_dt="1.0e+4" max_dt="1.0e+7" method="bdf1" mode="transient" start="0.0" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_steady-state_controls>
+        <unstr_initialization/>
+      </unstr_steady-state_controls>
+      <unstr_linear_solver>
+        <method>pcg</method>
+        <max_iterations>20</max_iterations>
+        <tolerance>1.0e-14</tolerance>
+      </unstr_linear_solver>
+      <unstr_flow_controls>
+        <preconditioning_strategy>linearized_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+      <unstr_preconditioners>
+        <hypre_amg />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <read>
+      <file>single_fracture.exo</file>
+      <format>exodus ii</format>
+    </read>
+  </mesh>
+
+  <regions>
+    <region name="EntireDomain">
+      <box high_coordinates="X1, Y1, Z1" low_coordinates="X0, Y0, Z0"/>
+    </region>
+    <region name="SurfaceInlet">
+      <box low_coordinates="X0, Y0, 90.0" high_coordinates="X0, Y1, Z1"/>
+    </region>
+    <region name="SurfaceOutlet">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X1, Y0, 10.0"/>
+    </region>
+    <region name="fracture">
+      <region_file entity="face" format="exodus ii" label="100" name="single_fracture.exo" type="labeled set"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="Homogeneous">
+      <mechanical_properties>
+        <porosity value="0.25" />
+      </mechanical_properties>
+      <permeability x="1.0e-5" y="1.0e-5" z="1.0e-5" />
+      <assigned_regions>EntireDomain</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="Initial Condition">
+      <assigned_regions>EntireDomain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="1.7" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="tracer" value="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="FrontBC">
+      <assigned_regions>SurfaceInlet</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure function="constant" start="0.0" value="4.0" />
+        </liquid_component>
+        <solute_component>
+	  <aqueous_conc name="Tritium" value="1.e-3" start="0.0" function="constant" />
+        </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="BackBC">
+      <assigned_regions>SurfaceOutlet</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure function="constant" start="0.0" value="1.0" />
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <fracture_network>
+    <materials>
+      <material name="Uniform">
+        <mechanical_properties>
+          <porosity value="0.004"/>
+        </mechanical_properties>
+        <fracture_permeability model="cubic law" aperture="1e-4" normal="20.0"/>
+        <assigned_regions>fracture</assigned_regions>
+      </material>
+    </materials>
+
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <assigned_regions>EntireDomain</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <uniform_pressure value="1.8" />
+          </liquid_component>
+          <solute_component>
+            <aqueous_conc name="tracer" value="0.0"/>
+          </solute_component> 
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+  </fracture_network>
+
+  <geochemistry>
+    <verbosity>verbose</verbosity>
+    <radioactive_decay>
+      <solute name="Tritium" rate_constant="1.78577e-09"/>
+    </radioactive_decay>
+  </geochemistry>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every10Cycles</cycle_macros>
+    </vis>
+    <mesh_info>
+      <filename>centroids</filename>
+    </mesh_info>
+  </output>
+</amanzi_input>
+ 

@@ -154,7 +154,7 @@ class InputConverterU : public InputConverter {
                                             std::vector<std::string>& regions);
 
   // -- chemistry and energy
-  Teuchos::ParameterList TranslateChemistry_();
+  Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();
 
@@ -165,6 +165,7 @@ class InputConverterU : public InputConverter {
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
+  void PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::string pk_name);
   void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
 
   void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
