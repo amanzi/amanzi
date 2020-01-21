@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """Loads and plots timestep history for a given run."""
+from __future__ import print_function
+from __future__ import division
 
 import numpy as np
 
 def print_headers():
-    print "cycle, time, dt, iteration count, wallclock avg (s)"
+    print("cycle, time, dt, iteration count, wallclock avg (s)")
 
 def parse_logfile(fid, wallclock=False):
     """Reads a file, and returns a list of good and bad timesteps.
