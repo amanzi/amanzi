@@ -12,7 +12,12 @@
   matrix and fracture network.
 */
 
+#include "Chemistry_PK.hh"
+
+#ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
+#endif
+
 #include "ReactiveTransportMatrixFracture_PK.hh"
 #include "Transport_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
@@ -58,6 +63,10 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
+
+  tcc_matrix_key_="total_component_concentration";
+  tcc_fracture_key_="fracture-total_component_concentration";
+  
   // evaluators in fracture
   Teuchos::ParameterList& elist = S->FEList();
   Teuchos::ParameterList& ilist = S->ICList();
@@ -86,6 +95,15 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   Amanzi::PK_MPCAdditive<PK>::Setup(S);
 }
 
+  
+void ReactiveTransportMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S){
+  
+  S->RequireFieldCopy(tcc_matrix_key_, "matrix_copy", "state");
+  S->RequireFieldCopy(tcc_fracture_key_, "fracture_copy", "state");
+
+  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+}
+  
 
 // -----------------------------------------------------------------------------
 // Calculate minimum of sub PKs timestep sizes
@@ -126,11 +144,13 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
 
   // save copy of fields (FIXME)
   Teuchos::RCP<Epetra_MultiVector> tcc_m_copy, tcc_f_copy;
-  tcc_m_copy = Teuchos::rcp(new Epetra_MultiVector(
-      *S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
-  tcc_f_copy = Teuchos::rcp(new Epetra_MultiVector(
-      *S_->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell", true)));
-
+  // tcc_m_copy = Teuchos::rcp(new Epetra_MultiVector(
+  //     *S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
+  // tcc_f_copy = Teuchos::rcp(new Epetra_MultiVector(
+  //     *S_->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell", true)));
+  tcc_m_copy = S_->GetFieldCopyData(tcc_matrix_key_, "matrix_copy", "state")->ViewComponent("cell", true);
+  tcc_f_copy = S_->GetFieldCopyData(tcc_fracture_key_, "fracture_copy", "state")->ViewComponent("cell", true);  
+  
   try {
     std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
     for (auto ic = coupled_chemistry_pk_->begin(); ic != coupled_chemistry_pk_->end(); ++ic) { 
@@ -143,10 +163,10 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
 
     fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
  
-    *S_->GetFieldData("total_component_concentration", "state")
+    *S_->GetFieldData(tcc_matrix_key_, "state")
       ->ViewComponent("cell", true) = *subpks[0]->aqueous_components();
 
-    *S_->GetFieldData("fracture-total_component_concentration", "state")
+    *S_->GetFieldData(tcc_fracture_key_, "state")
       ->ViewComponent("cell", true) = *subpks[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {

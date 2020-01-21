@@ -47,6 +47,7 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
   virtual void set_dt(double dt) override;
 
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -58,6 +59,8 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
 
   Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
   Teuchos::RCP<PK_MPC<PK> > coupled_transport_pk_;
+
+  Key tcc_matrix_key_, tcc_fracture_key_;
 
   // factory registration
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;

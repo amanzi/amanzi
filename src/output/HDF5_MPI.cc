@@ -1183,8 +1183,7 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
   } else {
     iofile_t *currfile;
     currfile = IOgroup_.file[data_file_];
-    // exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
-    exists = parallelIO_name_exists(currfile->fid, h5path);
+    exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
 
     if (!exists) {
       std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
