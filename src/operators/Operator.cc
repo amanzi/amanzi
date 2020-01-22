@@ -451,13 +451,7 @@ void Operator::Init()
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
   if (smap_.get() == nullptr) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = createSuperMap(getDomainMap().ptr());
-    } else {
-      Errors::Message msg("Operator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
+    smap_ = createSuperMap(getDomainMap().ptr());
   }
 
   // provide block ids for block strategies.

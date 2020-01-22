@@ -51,10 +51,10 @@ void PDE_DiffusionFV::Init()
   }
 
   // Do we need to exclude the primary terms?
-  exclude_primary_terms_ = plist_.get<bool>("exclude primary terms", false);
+  bool exclude_primary_terms = plist_.get<bool>("exclude primary terms", false);
   
   // create the local Op and register it with the global Operator
-  if (!exclude_primary_terms_) {
+  if (!exclude_primary_terms) {
     if (plist_.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface";
       local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
@@ -70,10 +70,10 @@ void PDE_DiffusionFV::Init()
   Errors::Message msg;
   std::string uwname = plist_.get<std::string>("nonlinear coefficient", "upwind: face");
   if (uwname == "none") {
-    little_k_ = OPERATOR_LITTLE_K_NONE;
+    little_k_type_ = OPERATOR_LITTLE_K_NONE;
 
   } else if (uwname == "upwind: face") {
-    little_k_ = OPERATOR_LITTLE_K_UPWIND;
+    little_k_type_ = OPERATOR_LITTLE_K_UPWIND;
 
   } else if (uwname == "divk: cell-face" ||
              uwname == "divk: cell-grad-face-twin" ||
@@ -88,12 +88,6 @@ void PDE_DiffusionFV::Init()
 
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-
-  // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist_.isParameter("newton correction")) {
-    msg << "DiffusionFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
-    Exceptions::amanzi_throw(msg);
-  }
 
   std::string jacobian = plist_.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
@@ -178,7 +172,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
-  if (!exclude_primary_terms_) {
+  if (local_op_.get()) {
     const auto trans_face = transmissibility_->ViewComponent("face", true);
     WhetStone::DenseMatrix null_matrix;
 
@@ -263,7 +257,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   #endif 
 }  
 
-#if 0 
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
@@ -281,7 +274,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     k_face = k_->ViewComponent("face", true);
   }
 
-  if (!exclude_primary_terms_) {
+  if (local_op_.get()) {
     auto rhs_cell = global_op_->rhs()->ViewComponent("cell", true);
 
     AmanziMesh::Entity_ID_View cells;
@@ -318,7 +311,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     
   }
 }
-#endif 
+
 
 /* ******************************************************************
 * Calculate mass flux from cell-centered data
@@ -387,18 +380,6 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
       }
     }
   }
-}
-
-
-/* ******************************************************************
-* Calculate flux from cell-centered data
-****************************************************************** */
-void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                            const Teuchos::Ptr<CompositeVector>& flux)
-{
-  Errors::Message msg;
-  msg << "DiffusionFV: missing support for non-manifolds.";
-  Exceptions::amanzi_throw(msg);
 }
 
 
@@ -471,7 +452,7 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
@@ -484,7 +465,7 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+    } else if (little_k_type_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
@@ -565,15 +546,6 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   transmissibility_initialized_ = true;
 }
 
-
-/* ******************************************************************
-* Return transmissibility value on the given face f.
-****************************************************************** */
-double PDE_DiffusionFV::ComputeTransmissibility(int f) const
-{
-  const auto trans_face = transmissibility_->ViewComponent("face", true);
-  return trans_face(0,f);
-}
 
 }  // namespace Operators
 }  // namespace Amanzi

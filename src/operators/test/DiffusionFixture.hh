@@ -192,9 +192,9 @@ struct DiffusionFixture {
     solution->putScalar(0.);
     
     // get and assemble the global operator
-    if (pc_name != "identity") {
-      global_op->SymbolicAssembleMatrix();
-    }
+    // if (pc_name != "identity") {
+    //   global_op->SymbolicAssembleMatrix();
+    // }
 
     // create preconditoner using the base operator class
     Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
@@ -230,10 +230,10 @@ struct DiffusionFixture {
     }
     
     op->ApplyBCs(true, true, true);
-    if (pc_name != "identity") {
-      global_op->SymbolicAssembleMatrix();
-      global_op->AssembleMatrix();
-    }
+    // if (pc_name != "identity") {
+    //   global_op->SymbolicAssembleMatrix();
+    //   global_op->AssembleMatrix();
+    // }
     global_op->UpdatePreconditioner();
 
     // if (symmetric) {
