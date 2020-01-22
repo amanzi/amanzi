@@ -31,7 +31,7 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_LOGICAL_SOURCE_DIR})
+#include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
@@ -220,14 +220,14 @@ if (BUILD_TESTS)
     endif()
 
     message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
-    set(operators_test_link_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
-
+    set(operators_test_link_libs geometry atk mesh mesh_factory  data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
+#mesh_logical
     
     # Tests: diffusion
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
-                    LINK_LIBS ${operators_test_link_libs})
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
 
     # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
     #                 KIND unit
@@ -254,7 +254,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_discretization operators_diffusion_discretization
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
-                    LINK_LIBS ${operators_test_link_libs})
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
 
     add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
                   

@@ -64,26 +64,24 @@ namespace Operators {
 class PDE_Diffusion : public PDE_HelperDiscretization {
  public:
   PDE_Diffusion(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<Operator>& global_op) :
-      PDE_HelperDiscretization(global_op),
-      plist_(plist)
+                const Teuchos::RCP<Operator>& global_op)
+      : PDE_HelperDiscretization(global_op),
+        plist_(plist)
   {};
 
-  PDE_Diffusion(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_HelperDiscretization(mesh),
-      plist_(plist)
+  PDE_Diffusion(Teuchos::ParameterList& plist,  
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+      : PDE_HelperDiscretization(mesh),
+        plist_(plist)
   {};
 
   virtual ~PDE_Diffusion() = default;
-
-  // virtual constructor, creates the space/schema and operator.
   virtual void Init() = 0;
   
   // Setters and Setup
   //
   // Note that these default setters can be overridden to do actual work.
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) {
+  virtual void SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K) {
     K_ = K;
   }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
@@ -107,25 +105,14 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     }
   }
 
-  // NOTE: this is very inefficient! Deprecate this!
-  // 
-  // double GetDensity(const int c) {
-  //   return is_scalar_ ? rho_ :
-  //   if (is_scalar_) {
-  //     return rho_ ;
-  //   }else{
-  //     return (*rho_cv_->ViewComponent("cell", true))[0][c];
-  //   }
-  // }
-  
-  // Lumped Setters for lazy development
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+  // Lumped Setters for lazy developers
+  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
     SetScalarCoefficient(k, dkdp);
   }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const double rho,
@@ -135,7 +122,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     SetDensity(rho);
     SetGravity(g);
   }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
+  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const Teuchos::RCP<const CompositeVector>& rho,
@@ -171,9 +158,6 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // postprocessing
   // -- flux calculation uses potential p to calculate flux u
-  //
-  // NOTE: this probably should live in Diffusion?  This is a very
-  // Diffusion-looking interface that is not valid for other operators?
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
   
@@ -185,6 +169,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
   // -- matrix modifications
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) {
     Errors::Message msg("Diffusion: This diffusion implementation does not support ModifyMatrices.");
     Exceptions::amanzi_throw(msg);
@@ -214,10 +199,11 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     Exceptions::amanzi_throw(msg);
     return 1;
   }
-    
 
-  // access
+  // access -- can this be global_operator()->schema()?
   int schema_prec_dofs() { return global_op_schema_; }
+
+  // access -- can this be local_op()->schema?
   int schema_dofs() { return local_op_schema_; }
 
   Teuchos::RCP<const Op> jacobian_op() const { return jac_op_; }
@@ -225,25 +211,25 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   void set_jacobian_op(const Teuchos::RCP<Op>& op);
   int schema_jacobian() { return jac_op_schema_; }
 
-  int little_k() const { return little_k_; }
+  int little_k_type() const { return little_k_type_; }
   CompositeVectorSpace little_k_space() const {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
       return out;
     }
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
       out.AddComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+    if (little_k_type_ != OPERATOR_LITTLE_K_STANDARD) {
       out.AddComponent("face", AmanziMesh::FACE, 1);
     }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
-        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
+        little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
       out.AddComponent("twin", AmanziMesh::FACE, 1);
     }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
       out.AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     }
     return out;          
@@ -251,12 +237,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
+  Kokkos::vector<WhetStone::Tensor> K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
-  int little_k_;
+  int little_k_type_;
 
   // gravity
   bool is_scalar_;
@@ -265,7 +251,10 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   AmanziGeometry::Point g_;
   
   // additional operators
+  int newton_correction_;
   Teuchos::RCP<Op> jac_op_;
+
+  // deprecate these in favor of real schemas?
   int global_op_schema_, local_op_schema_, jac_op_schema_;
 };
 
@@ -295,5 +284,4 @@ void PDE_Diffusion::set_jacobian_op(const Teuchos::RCP<Op>& op)
 }  // namespace Amanzi
 
 #endif
-
 

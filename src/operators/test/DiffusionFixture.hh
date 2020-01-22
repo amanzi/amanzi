@@ -67,24 +67,29 @@ struct DiffusionFixture {
     // construct the operator
     op = Teuchos::rcp(new PDE_Diffusion_type(plist.sublist("PK operator").sublist(name), mesh));
     op->Init();
-
     // modify diffusion coefficient
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+    Kokkos::vector<WhetStone::Tensor> K;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->push_back(Kc);
+      K.push_back(Kc);
     }
     op->SetTensorCoefficient(K);
-
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(
+      new Operators::BCs(
+        mesh, 
+        Boundary_kind, 
+        WhetStone::DOF_Type::SCALAR)
+      );
     op->SetBCs(bc,bc);
   }
 
   template<class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>
   void discretizeWithGravity(const std::string& name, double gravity) {
+    assert(false);
+    #if 0 
     AmanziGeometry::Point g(mesh->space_dimension());
     g[mesh->space_dimension()-1] = -gravity;
     Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(name);
@@ -95,18 +100,20 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+    Kokkos::vector<WhetStone::Tensor>K;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->push_back(Kc);
+      K.push_back(Kc);
     }
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
+    // \TODO
+    //bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
+    #endif 
   }
 
   void scalarCoefficient(AmanziMesh::Entity_kind kind) {
@@ -133,8 +140,8 @@ struct DiffusionFixture {
   }
 
   void setBCsDirichlet() {
-    auto& bc_value = bc->bc_value();
-    auto& bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value();
+    auto bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
@@ -151,8 +158,8 @@ struct DiffusionFixture {
   }
 
   void setBCsDirichletNeumannBox() {
-    auto& bc_value = bc->bc_value();
-    auto& bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value();
+    auto bc_model = bc->bc_model();
     
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
@@ -185,9 +192,9 @@ struct DiffusionFixture {
     solution->putScalar(0.);
     
     // get and assemble the global operator
-    if (pc_name != "identity") {
-      global_op->SymbolicAssembleMatrix();
-    }
+    // if (pc_name != "identity") {
+    //   global_op->SymbolicAssembleMatrix();
+    // }
 
     // create preconditoner using the base operator class
     Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
@@ -211,7 +218,7 @@ struct DiffusionFixture {
   }
 
   void go(double tol=1.e-14) {
-    global_op->Zero();
+    //global_op->Zero();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
     CompositeVector& rhs = *global_op->rhs();
@@ -223,10 +230,10 @@ struct DiffusionFixture {
     }
     
     op->ApplyBCs(true, true, true);
-    if (pc_name != "identity") {
-      global_op->SymbolicAssembleMatrix();
-      global_op->AssembleMatrix();
-    }
+    // if (pc_name != "identity") {
+    //   global_op->SymbolicAssembleMatrix();
+    //   global_op->AssembleMatrix();
+    // }
     global_op->UpdatePreconditioner();
 
     // if (symmetric) {

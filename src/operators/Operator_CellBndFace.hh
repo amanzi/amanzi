@@ -34,6 +34,8 @@ class Operator_CellBndFace : public Operator_Cell {
   virtual int
   ApplyMatrixFreeOp(const Op_Face_CellBndFace& op, const CompositeVector& X,
                     CompositeVector& Y) const;
+  
+  virtual void getLocalDiagCopy(CompositeVector& X) const;
 
   // virtual int
   // ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,

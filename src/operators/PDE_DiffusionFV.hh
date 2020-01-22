@@ -56,7 +56,7 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFV : public PDE_Diffusion {
+class PDE_DiffusionFV : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<Operator>& global_op) :
@@ -71,10 +71,10 @@ class PDE_DiffusionFV : public PDE_Diffusion {
   {}
 
   virtual void Init() override;
-
+  
   // main virtual members
   // -- setup
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
+  virtual void SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -93,53 +93,26 @@ class PDE_DiffusionFV : public PDE_Diffusion {
   
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override {};
 
-  // Developments
-  // -- interface to solvers for treating nonlinear BCs.
-  // virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
-
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
-  Kokkos::View<const double**> ScalarCoefficientFaces(bool scatter) const {
-    Kokkos::View<const double**> k_face;
-    if (k_ != Teuchos::null) {
-      if (scatter) k_->ScatterMasterToGhosted("face");
-      if (k_->HasComponent("face")) {
-        k_face = k_->ViewComponent<AmanziDefaultDevice>("face", true);
-        return k_face;
-      }
-    }
-    Kokkos::resize(k_face, nfaces_wghost, 1);
-    Kokkos::deep_copy(k_face, 1.0); // surely this fails?  Looking for a putScalar()...
-    return k_face;
-  }
-
-
  protected:
   void ComputeTransmissibility_();
-
-  void AnalyticJacobian_(const CompositeVector& solution);
+  // void AnalyticJacobian_(const CompositeVector& solution);
 
   // virtual void ComputeJacobianLocal_(
   //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
   //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
-
+  
  protected:
-  Teuchos::ParameterList plist_;
   Teuchos::RCP<CompositeVector> transmissibility_;
   bool transmissibility_initialized_;
-
-  int newton_correction_;
-  bool exclude_primary_terms_;
 };
 
 }  // namespace Operators

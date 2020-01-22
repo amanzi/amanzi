@@ -8,25 +8,31 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! Container for local matrices.
-
-/*
-
-  Op classes are a small container that generically stores local matrices and
-  provides metadata about the structure of those local matrices via visitor
-  pattern.
- 
-*/
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
 
+#include <Kokkos_Core.hpp>
+#include <Kokkos_Vector.hpp>
 #include "Teuchos_RCP.hpp"
-#include "Kokkos_View.hpp"
 
+#include "DenseMatrix.hh"
+#include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
+#include "AmanziVector.hh"
+
+/*
+  Op classes are small structs that play two roles:
+
+  1. They provide a class name to the schema, enabling visitor patterns.
+  2. They are a container for local matrices.
+
+  This Op class is a container for storing local matrices that spans
+  the whole mesh. The dofs vary and defined by operator's schema.
+*/
 
 namespace Amanzi {
 
@@ -41,101 +47,127 @@ class GraphFE;
 class MatrixFE;
 class Operator;
 
-struct Op {
+class Op {
  public:
-  Op(const Schema& schema_row_,
-     const Schema& schema_col_,
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
-      : schema_row(schema_row_),
-        schema_col(schema_col_),
-        schema_old(-1),
-        mesh(mesh_),
-        schema_string(schema_row_.CreateUniqueName()+'+'+schema_col_.CreateUniqueName())
+  Op(int schema, const std::string& schema_string_,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : schema_old_(schema),
+      schema_row_(schema),
+      schema_col_(schema),
+      schema_string(schema_string_),
+      mesh_(mesh){};
+
+  Op(const Schema& schema_row, const Schema& schema_col,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : schema_row_(schema_row), schema_col_(schema_col), mesh_(mesh)
   {
-    AMANZI_ASSERT(schema_row.base() == schema_col.base());
+    schema_string =
+      schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
   }
 
-  Op(int schema_old_,
-     const std::string& name,     
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
-      : schema_old(schema_old_),
-        schema_col(schema_old_),
-        schema_row(schema_old_),
-        mesh(mesh_),
-        schema_string(name) {}     
+  Op(int schema, const std::string& schema_string_)
+    : schema_old_(schema),
+      schema_string(schema_string_),
+      mesh_(Teuchos::null){};
+
+  virtual ~Op() = default;
 
   // Clean the operator without destroying memory
-  void Zero();
-  KOKKOS_INLINE_FUNCTION
-  void Zero(const int i) {
-    // NOTE this is probably currently illegal -- we must be able to do this within a parallel_for?
-    // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
-    for (int j=0; j!=data.extent(1); ++j) data(i,j) = 0.;
-  }
+  void Init()
+  {
+    //if (diag != Teuchos::null) {
+    //  diag->putScalar(0.0);
+    //  diag_shadow->putScalar(0.0);
+    //}
 
-    
+    WhetStone::DenseMatrix null_mat;
+    for (int i = 0; i < matrices.size(); ++i) {
+      matrices[i] = 0.0;
+      matrices_shadow[i] = null_mat;
+    }
+  }
 
   // Restore pristine value of the matrices, i.e. before BCs.
-  virtual int CopyShadowToMaster();
-
-  KOKKOS_INLINE_FUNCTION
-  void CopyMasterToShadow(const int i) {
-    // NOTE this is probably currently illegal -- we must be able to do this within a parallel_for?
-    // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
-    for (int j=0; j!=data.extent(1); ++j) shadow(i,j) = data(i,j);
+  virtual int CopyShadowToMaster()
+  {
+    for (int i = 0; i != matrices.size(); ++i) {
+      if (matrices_shadow[i].NumRows() != 0) {
+        matrices[i] = matrices_shadow[i];
+      }
+    }
+    //*diag = *diag_shadow;
+    return 0;
   }
-  
-  
+
+  // For backward compatibility... must go away
+  virtual void RestoreCheckPoint()
+  {
+    for (int i = 0; i != matrices.size(); ++i) {
+      if (matrices_shadow[i].NumRows() != 0) {
+        matrices[i] = matrices_shadow[i];
+      }
+    }
+    //*diag = *diag_shadow;
+  }
 
   // Matching rules for schemas.
-  virtual bool Matches(int match_schema, int matching_rule);
+  virtual bool Matches(int match_schema, int matching_rule)
+  {
+    if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
+      if ((match_schema & schema_old_) == schema_old_) return true;
+    } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
+      if (match_schema & schema_old_) return true;
+    }
+    return false;
+  }
 
   // linear operator functionality.
   virtual void
-  getLocalDiagCopy(CompositeVector& X) const = 0;
-  
-  virtual void
-  ApplyMatrixFreeOp(const Operator* assembler,
-                    const CompositeVector& X,
+  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const = 0;
 
-  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
-                                          const CompositeVector& X,
-                                          CompositeVector& Y) const = 0;
+  //virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
+  //                                        const CompositeVector& X,
+  //                                        CompositeVector& Y) const = 0;
 
-  virtual void
-  SymbolicAssembleMatrixOp(const Operator* assembler,
-                           const SuperMap& map,
-                           GraphFE& graph,
-                           int my_block_row,
-                           int my_block_col) const = 0;
+  //virtual void
+  //SymbolicAssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+  //                         GraphFE& graph, int my_block_row,
+  //                         int my_block_col) const = 0;
 
-  virtual void
-  AssembleMatrixOp(const Operator* assembler,
-                   const SuperMap& map,
-                   MatrixFE& mat,
-                   int my_block_row,
-                   int my_block_col) const = 0;
+  //virtual void
+  //AssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+  //                 MatrixFE& mat, int my_block_row, int my_block_col) const = 0;
 
   // Mutators of local matrices.
   // -- rescale local matrices in the container using a CV
   virtual void Rescale(const CompositeVector& scaling) = 0;
 
   // -- rescale local matrices in the container using a double
-  virtual void Rescale(double scaling);
+  virtual void Rescale(double scaling)
+  {
+    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
+    //if (diag.get()) diag->scale(scaling);
+  }
+
+  // access
+  const Schema& schema_row() const { return schema_row_; }
 
  public:
-  // diagonal matrix
+  int schema_old_;
+  Schema schema_row_, schema_col_;
   std::string schema_string;
 
-  Kokkos::View<double**> data;
-  Kokkos::View<double**> shadow;
-  Kokkos::View<int*> shadow_indices;
+  // diagonal matrix
+  MultiVector_type diag;
+  MultiVector_type diag_shadow;
 
-  int schema_old;
-  Schema schema_row, schema_col;
+  // collection of local matrices
+  Kokkos::vector<WhetStone::DenseMatrix> matrices;
+  Kokkos::vector<WhetStone::DenseMatrix> matrices_shadow;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 } // namespace Operators

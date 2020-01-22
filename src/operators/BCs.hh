@@ -17,8 +17,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "WhetStoneDefs.hh"
 #include "Mesh.hh"
-
 #include "OperatorDefs.hh"
 
 namespace Amanzi {

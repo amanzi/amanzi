@@ -98,15 +98,15 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
 /* ******************************************************************
 * Init owned local operators.
 ****************************************************************** */
-void Operator::Zero()
-{
-  rhs_->putScalarMasterAndGhosted(0.0);
-  int nops = ops_.size();
-  for (int i = 0; i < nops; ++i) {
-    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
-       ops_[i]->Zero();
-  }
-}
+//void Operator::Zero()
+//{
+//  rhs_->putScalarMasterAndGhosted(0.0);
+//  int nops = ops_.size();
+//  for (int i = 0; i < nops; ++i) {
+//    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
+//       ops_[i]->Zero();
+//  }
+//}
 
 
 /* ******************************************************************
@@ -122,23 +122,23 @@ void Operator::SymbolicAssembleMatrix()
   AMANZI_ASSERT(false);
   // // Create the supermap given a space (set of possible schemas) and a
   // // specific schema (assumed/checked to be consistent with the space).
-  // smap_ = createSuperMap(cvs_col_.ptr());
+  //smap_ = createSuperMap(cvs_col_.ptr());
 
   // // create the graph
-  // int row_size = MaxRowSize(*mesh_, schema(), 1);
-  // Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
-  //     smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
+  //int row_size = MaxRowSize(*mesh_, schema(), 1);
+  //Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
+  //    smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
 
   // // fill the graph
-  // SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  //SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // // Completing and optimizing the graphs
-  // int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
-  // AMANZI_ASSERT(!ierr);
+  //int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
+  //AMANZI_ASSERT(!ierr);
 
   // // create global matrix
-  // Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  // A_ = Amat_->Matrix();
+  //Amat_ = Teuchos::rcp(new MatrixFE(graph));
+  //A_ = Amat_->Matrix();
 }
 
 
@@ -429,6 +429,19 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
   UpdatePreconditioner();
 }
 
+/* ******************************************************************
+* Init owned local operators.
+****************************************************************** */
+void Operator::Init()
+{
+  rhs_->putScalarMasterAndGhosted(0.0);
+  int nops = ops_.size();
+  for (int i = 0; i < nops; ++i) {
+    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
+       ops_[i]->Init();
+  }
+}
+
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
@@ -438,13 +451,7 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
   if (smap_.get() == nullptr) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = createSuperMap(getDomainMap().ptr());
-    } else {
-      Errors::Message msg("Operator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
+    smap_ = createSuperMap(getDomainMap().ptr());
   }
 
   // provide block ids for block strategies.
@@ -1017,11 +1024,11 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 // }
 
 
-// void Operator::AssembleVectorCellOp(int c, const Schema& schema,
-//                                     const WhetStone::DenseVector& v, CompositeVector& X) const {
-//   Errors::Message msg("Assembly fo local cell-based vector is missing for this operator");
-//   Exceptions::amanzi_throw(msg);
-// }
+void Operator::AssembleVectorCellOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
+  Errors::Message msg("Assembly fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
 
 
 // void Operator::ExtractVectorFaceOp(int c, const Schema& schema,
