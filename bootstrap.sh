@@ -1283,7 +1283,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.10.0"
+      status_message "CMake version is less than required version. Will build CMake version 3.11.4"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
