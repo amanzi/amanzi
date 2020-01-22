@@ -20,40 +20,35 @@
 
 #include "Op.hh"
 
-#if 0 
 namespace Amanzi {
 namespace Operators {
 
 void
 Op::Zero()
 {
-  Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({0,0},
-          {data.extent(0), data.extent(1)});
-  Kokkos::parallel_for(policy,
-                       KOKKOS_LAMBDA(const int i, const int j) {
-                         data(i,j) = 0.0; });
+  if (data.size()) {
+    Kokkos::parallel_for(data.size(),
+                         KOKKOS_LAMBDA(const int i) {
+                           Zero(i);
+                         });
+  }
+  if (diag.get()) diag->putScalar(0.);
+  if (diag_shadow.get()) diag->putScalar(0.);
 }
-
 
 
 // Restore pristine value of the matrices, i.e. before BCs.
-int
-Op::CopyShadowToMaster()
+virtual int Op::CopyShadowToMaster()
 {
-  if (shadow.extent(0) == data.extent(0)) {
-    Kokkos::deep_copy(data, shadow);
-    
-  } else {
-    // sparse copy
-    Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({0,0},
-            {shadow.extent(0), shadow.extent(1)});
-    Kokkos::parallel_for(policy,
-                         KOKKOS_LAMBDA(const int i, const int j) {
-                           data(shadow_indices(i), j) = shadow(i,j); });
+  for (int i = 0; i != matrices.size(); ++i) {
+    if (matrices_shadow[i].NumRows() != 0) {
+      matrices[i] = matrices_shadow[i];
+    }
   }
+  
+  if (diag.get()) diag.assign(*diag_shadow);
   return 0;
 }
-    
 
 // Matching rules for schemas.
 bool
@@ -69,13 +64,11 @@ Op::Matches(int match_schema, int matching_rule)
 
 
 // -- rescale local matrices in the container using a double
-void
-Op::Rescale(double scaling)
+virtual void Op::Rescale(double scaling)
 {
-  Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({0,0},
-          {data.extent(0), data.extent(1)});
-  Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int i,const int j) {
-        data(i,j) *= scaling; });
+  if (matrices.size())
+    for (int i = 0; i != matrices.size(); ++i) matrices[i] *= scaling;
+  if (diag.get()) diag->scale(scaling);
 }
 
 } // namespace Operators

@@ -8,7 +8,15 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! Container for local matrices.
+
+/*
+
+  Op classes are a small container that generically stores local matrices and
+  provides metadata about the structure of those local matrices via visitor
+  pattern.
+ 
+*/
 
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
@@ -24,15 +32,6 @@
 
 #include "AmanziVector.hh"
 
-/*
-  Op classes are small structs that play two roles:
-
-  1. They provide a class name to the schema, enabling visitor patterns.
-  2. They are a container for local matrices.
-
-  This Op class is a container for storing local matrices that spans
-  the whole mesh. The dofs vary and defined by operator's schema.
-*/
 
 namespace Amanzi {
 
@@ -49,77 +48,43 @@ class Operator;
 
 class Op {
  public:
-  Op(int schema, const std::string& schema_string_,
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : schema_old_(schema),
-      schema_row_(schema),
-      schema_col_(schema),
-      schema_string(schema_string_),
-      mesh_(mesh){};
-
-  Op(const Schema& schema_row, const Schema& schema_col,
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : schema_row_(schema_row), schema_col_(schema_col), mesh_(mesh)
+  Op(const Schema& schema_row_,
+     const Schema& schema_col_,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
+      : schema_row(schema_row_),
+        schema_col(schema_col_),
+        schema_old(-1),
+        mesh(mesh_),
+        schema_string(schema_row_.CreateUniqueName()+'+'+schema_col_.CreateUniqueName())
   {
-    schema_string =
-      schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
+    AMANZI_ASSERT(schema_row.base() == schema_col.base());
   }
 
-  Op(int schema, const std::string& schema_string_)
-    : schema_old_(schema),
-      schema_string(schema_string_),
-      mesh_(Teuchos::null){};
+  Op(int schema_old_,
+     const std::string& name,     
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
+      : schema_old(schema_old_),
+        schema_col(schema_old_),
+        schema_row(schema_old_),
+        mesh(mesh_),
+        schema_string(name) {}     
 
   virtual ~Op() = default;
-
+  
   // Clean the operator without destroying memory
-  void Init()
-  {
-    //if (diag != Teuchos::null) {
-    //  diag->putScalar(0.0);
-    //  diag_shadow->putScalar(0.0);
-    //}
+  void Zero();
 
-    WhetStone::DenseMatrix null_mat;
-    for (int i = 0; i < matrices.size(); ++i) {
-      matrices[i] = 0.0;
-      matrices_shadow[i] = null_mat;
-    }
+  KOKKOS_INLINE_FUNCTION
+  void Zero(const int i) {
+    // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
+    matrices(i) = 0.;
   }
 
   // Restore pristine value of the matrices, i.e. before BCs.
-  virtual int CopyShadowToMaster()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) {
-        matrices[i] = matrices_shadow[i];
-      }
-    }
-    //*diag = *diag_shadow;
-    return 0;
-  }
-
-  // For backward compatibility... must go away
-  virtual void RestoreCheckPoint()
-  {
-    for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) {
-        matrices[i] = matrices_shadow[i];
-      }
-    }
-    //*diag = *diag_shadow;
-  }
+  virtual int CopyShadowToMaster();
 
   // Matching rules for schemas.
-  virtual bool Matches(int match_schema, int matching_rule)
-  {
-    if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
-      if ((match_schema & schema_old_) == schema_old_) return true;
-    } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
-      if (match_schema & schema_old_) return true;
-    }
-    return false;
-  }
+  virtual bool Matches(int match_schema, int matching_rule);
 
   // linear operator functionality.
   virtual void
@@ -144,14 +109,12 @@ class Op {
   virtual void Rescale(const CompositeVector& scaling) = 0;
 
   // -- rescale local matrices in the container using a double
-  virtual void Rescale(double scaling)
-  {
-    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
-    //if (diag.get()) diag->scale(scaling);
-  }
+  virtual void Rescale(double scaling);
 
   // access
   const Schema& schema_row() const { return schema_row_; }
+  const Schema& schema_col() const { return schema_col_; }
+  const std::string& name() const { return schema_string; }
 
  public:
   int schema_old_;
@@ -159,8 +122,8 @@ class Op {
   std::string schema_string;
 
   // diagonal matrix
-  MultiVector_type diag;
-  MultiVector_type diag_shadow;
+  MultiVector_ptr_type diag;
+  MultiVector_ptr_type diag_shadow;
 
   // collection of local matrices
   Kokkos::vector<WhetStone::DenseMatrix> matrices;
