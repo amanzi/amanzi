@@ -51,17 +51,15 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-#if 0
   auto Xc = X.ViewComponent("cell");
   auto Yc = Y.ViewComponent("cell");
   const auto dv = op.diag->getLocalViewDevice(); 
 
-  for (int k = 0; k != Xc.extent(0); ++k) {
-    for (int c = 0; c != ncells_owned; ++c) {
-      Yc(k,c) += Xc(k,c) * dv(k,c);
-    }
-  }
-#endif
+  Kokkos::parallel_for(
+      Xc.extent(0),
+      KOKKOS_LAMBDA(const int c) {
+        Yc(c,0) += Xc(c,0) * dv(c,0);
+      });
   return 0;
 }
 
@@ -74,28 +72,29 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
-#if 0
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_View cells;
-  for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-    int ncells = cells.extent(0);
+  AmanziMesh::Mesh const* mesh = mesh_.get();
+  Kokkos::parallel_for(
+      op.matrices.size(),
+      KOKKOS_LAMBDA(const int f) {
+        AmanziMesh::Entity_ID_View cells;
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
-    WhetStone::DenseVector v(ncells), av(ncells);
-    for (int n = 0; n != ncells; ++n) {
-      v(n) = Xc(cells[n],0);
-    }
+        int ncells = cells.extent(0);
+        WhetStone::DenseVector v(ncells), av(ncells);
+        for (int n = 0; n != ncells; ++n) {
+          v(n) = Xc(cells[n],0);
+        }
 
-    const WhetStone::DenseMatrix& Aface = op.matrices[f];
-    Aface.Multiply(v, av, false);
+        const WhetStone::DenseMatrix& Aface = op.matrices[f];
+        Aface.Multiply(v, av, false);
 
-    for (int n = 0; n != ncells; ++n) {
-      Yc(cells[n],0) += av(n);
-    }
-  }
-#endif
+        for (int n = 0; n != ncells; ++n) {
+          Kokkos::atomic_add(&Yc(cells[n],0), av(n));
+        }
+      });
   return 0;
 }
 
