@@ -38,57 +38,116 @@ class Op_Face_CellBndFace : public Op {
          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_BNDFACE,
          name, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     matrices.resize(nfaces_owned, null_matrix);
     matrices_shadow = matrices;
   }
+
+  virtual void
+  GetLocalDiagCopy(CompositeVector& X) const
+  {
+    AmanziMesh::Mesh const* mesh_ = mesh.get();
+    auto Xc = X.ViewComponent("cell", true);
+    Kokkos::parallel_for(
+        matrices.size(),
+        KOKKOS_LAMBDA(const int f) {
+          AmanziMesh::Entity_ID_View cells;
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          Xc(cells(0), 0) += matrices[f](0,0);
+          if (cells.extent(0) > 1) {
+            Kokkos::atomic_add(&Xc(cells(1),0), matrices[f](1,1));
+          }
+        });
+
+    auto Xbf = X.ViewComponent("boundary_face", true);
+    auto import_same_face = mesh->exterior_face_importer()->getNumSameIDs();
+    Kokkos::parallel_for(
+        import_same_face,
+        KOKKOS_LAMBDA(const int bf) {
+          // atomic not needed, each bf touched once
+          Xbf(bf,0) += matrices[bf](1,1);
+        });
+
+    auto import_permute_face = mesh->exterior_face_importer()
+        ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+    Kokkos::parallel_for(
+        import_permute_face.extent(0),
+        KOKKOS_LAMBDA(const int bf_offset) {
+          // atomic not needed, each bf touched once
+          Xbf(bf_offset+import_same_face,0) += matrices[import_permute_face(bf_offset)](1,1);
+        });
+  }
+
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const {
-    assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
-  }
+  // virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
+  //         const SuperMap& map, GraphFE& graph,
+  //         int my_block_row, int my_block_col) const {
+  //   assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
+  // }
 
-  virtual void AssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const {
-    assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
-  }
+  // virtual void AssembleMatrixOp(const Operator* assembler,
+  //         const SuperMap& map, MatrixFE& mat,
+  //         int my_block_row, int my_block_col) const {
+  //   assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
+  // }
   
-  virtual void Rescale(const CompositeVector& scaling) {
-    assert(false); // Need to spill the loop  
-    if ((scaling.HasComponent("cell"))&&(scaling.HasComponent("boundary_face"))) {
-      const auto s_c = scaling.ViewComponent("cell",true);
-      const auto s_bnd = scaling.ViewComponent("boundary_face",true);
-      const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
-      Kokkos::parallel_for(matrices.size(), KOKKOS_LAMBDA(const int&f){
-      //for (int f = 0; f != matrices.size(); ++f) {
-        AmanziMesh::Entity_ID_View cells;
-        m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-        if (cells.size() > 1) {
-          matrices[f](0,0) *= s_c(0,cells[0]);
-          matrices[f](0,1) *= s_c(0,cells[1]);          
-          matrices[f](1,0) *= s_c(0,cells[0]);          
-          matrices[f](1,1) *= s_c(0,cells[1]);
-        }else if (cells.size()==1) {
-          assert(false);
-          //int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
-          //matrices[f](0,0) *= s_c(0,cells[0]);
-          //matrices[f](1,0) *= s_c(0,cells[0]);          
-          //matrices[f](0,1) *= s_bnd(0,bf]);
-          //matrices[f](1,1) *= s_bnd(0,bf];
-        }
-      }); 
+  virtual void Rescale(const CompositeVector& scaling)
+  {
+    if ((scaling.HasComponent("cell")) &&
+        (scaling.HasComponent("boundary_face"))) {
+
+      { // context for views
+        auto s_c = scaling.ViewComponent("cell", true);
+        AmanziMesh::Mesh const * mesh_ = mesh.get();
+
+        Kokkos::parallel_for(
+            matrices.size(),
+            KOKKOS_LAMBDA(const int f) {
+              AmanziMesh::Entity_ID_View cells;
+              mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+              matrices[f](0,0) *= s_c(cells(0),0);
+              matrices[f](1,0) *= s_c(cells(0),0);
+              if (cells.extent(0) > 1) {
+                matrices[f](0,1) *= s_c(cells(1),0);
+                matrices[f](1,1) *= s_c(cells(1),0);
+              }
+            });
+      }
+
+      {
+        auto s_bnd = scaling.ViewComponent("boundary_face", true);
+
+        // The importer gets us the face LID of a given boundary face LID
+        // through two parts -- the first import_same_face are bf = f, then the
+        // remainder are permutations.  Note this is guaranteed because we
+        // know, by definition, that the faces and boundary faces are owned by
+        // the same process.        
+        auto import_same_face = mesh->exterior_face_importer()->getNumSameIDs();
+        auto import_permute_face =
+            mesh->exterior_face_importer()
+            ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+      
+        Kokkos::parallel_for(import_same_face,
+                             KOKKOS_LAMBDA(const int bf) {
+                               matrices[bf](0,1) *= s_bnd(bf,0);
+                               matrices[bf](1,1) *= s_bnd(bf,0);
+                             });
+
+        Kokkos::parallel_for(import_permute_face.extent(0),
+                             KOKKOS_LAMBDA(const int bf_offset) {
+                               matrices[import_permute_face(bf_offset)](0,1) *=
+                                   s_bnd(bf_offset+import_same_face,0);
+                               matrices[import_permute_face(bf_offset)](1,1) *=
+                                   s_bnd(bf_offset+import_same_face,0);
+                             });
+      }
     }
   }
-
- protected:
-  int nfaces_owned;
 };
 
 }  // namespace Operators

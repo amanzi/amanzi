@@ -432,16 +432,25 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Init owned local operators.
 ****************************************************************** */
-void Operator::Init()
+void Operator::Zero()
 {
   rhs_->putScalarMasterAndGhosted(0.0);
   int nops = ops_.size();
   for (int i = 0; i < nops; ++i) {
     if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
-       ops_[i]->Init();
+       ops_[i]->Zero();
   }
 }
 
+
+void Operator::getLocalDiagCopy(CompositeVector& X) const
+{
+  X.putScalarMasterAndGhosted(0.);
+  for (auto& op : *this) {
+    op->GetLocalDiagCopy(X);
+  }
+  X.GatherGhostedToMaster();
+}
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.

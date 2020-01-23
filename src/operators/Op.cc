@@ -26,8 +26,8 @@ namespace Operators {
 void
 Op::Zero()
 {
-  if (data.size()) {
-    Kokkos::parallel_for(data.size(),
+  if (matrices.size()) {
+    Kokkos::parallel_for(matrices.size(),
                          KOKKOS_LAMBDA(const int i) {
                            Zero(i);
                          });
@@ -38,7 +38,7 @@ Op::Zero()
 
 
 // Restore pristine value of the matrices, i.e. before BCs.
-virtual int Op::CopyShadowToMaster()
+int Op::CopyShadowToMaster()
 {
   for (int i = 0; i != matrices.size(); ++i) {
     if (matrices_shadow[i].NumRows() != 0) {
@@ -46,7 +46,7 @@ virtual int Op::CopyShadowToMaster()
     }
   }
   
-  if (diag.get()) diag.assign(*diag_shadow);
+  if (diag.get()) diag->assign(*diag_shadow);
   return 0;
 }
 
@@ -64,7 +64,7 @@ Op::Matches(int match_schema, int matching_rule)
 
 
 // -- rescale local matrices in the container using a double
-virtual void Op::Rescale(double scaling)
+void Op::Rescale(double scaling)
 {
   if (matrices.size())
     for (int i = 0; i != matrices.size(); ++i) matrices[i] *= scaling;
@@ -73,5 +73,6 @@ virtual void Op::Rescale(double scaling)
 
 } // namespace Operators
 } // namespace Amanzi
-#endif 
+
+
 

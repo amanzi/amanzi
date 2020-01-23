@@ -25,9 +25,9 @@ class Op_Cell_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL,
          name, mesh) {
-    assert(false); 
-    //diag = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(false), 1));
-    //diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(false), 1));
+
+    diag = Teuchos::rcp(new MultiVector_type(mesh->cell_map(false), 1));
+    diag_shadow = Teuchos::rcp(new MultiVector_type(mesh->cell_map(false), 1));
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,

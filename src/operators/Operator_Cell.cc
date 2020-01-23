@@ -50,15 +50,18 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  const auto Xc = X.ViewComponent("cell");
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
+#if 0
+  auto Xc = X.ViewComponent("cell");
   auto Yc = Y.ViewComponent("cell");
-  const auto dv = op.diag.getLocalViewDevice(); 
+  const auto dv = op.diag->getLocalViewDevice(); 
 
   for (int k = 0; k != Xc.extent(0); ++k) {
     for (int c = 0; c != ncells_owned; ++c) {
       Yc(k,c) += Xc(k,c) * dv(k,c);
     }
   }
+#endif
   return 0;
 }
 
@@ -70,13 +73,10 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  assert(false); 
-  #if 0 
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
-  
-  X.ScatterMasterToGhosted();
-  Y.putScalarGhosted(0.);
+#if 0
   auto Yc = Y.ViewComponent("cell", true);
+  auto Xc = X.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_View cells;
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -85,19 +85,17 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
     WhetStone::DenseVector v(ncells), av(ncells);
     for (int n = 0; n != ncells; ++n) {
-      v(n) = Xc(0,cells[n]);
+      v(n) = Xc(cells[n],0);
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
     Aface.Multiply(v, av, false);
 
     for (int n = 0; n != ncells; ++n) {
-      Yc(0,cells[n]) += av(n);
+      Yc(cells[n],0) += av(n);
     }
   }
-
-  Y.GatherGhostedToMaster("cell",Add);
-  #endif 
+#endif
   return 0;
 }
 
@@ -171,7 +169,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
-  const auto dv = op.diag.getLocalViewDevice(); 
+  const auto dv = op.diag->getLocalViewDevice(); 
 
   int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {

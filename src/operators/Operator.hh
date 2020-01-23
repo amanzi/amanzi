@@ -181,7 +181,7 @@ class Operator {
   virtual int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // diagonal
-  virtual void getLocalDiagCopy(CompositeVector& X) const = 0;
+  virtual void getLocalDiagCopy(CompositeVector& X) const;
 
   // symbolic assembly:
   // -- wrapper

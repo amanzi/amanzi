@@ -88,6 +88,9 @@ class Op {
 
   // linear operator functionality.
   virtual void
+  GetLocalDiagCopy(CompositeVector& X) const = 0;
+
+  virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const = 0;
 
@@ -112,13 +115,9 @@ class Op {
   virtual void Rescale(double scaling);
 
   // access
-  const Schema& schema_row() const { return schema_row_; }
-  const Schema& schema_col() const { return schema_col_; }
-  const std::string& name() const { return schema_string; }
-
  public:
-  int schema_old_;
-  Schema schema_row_, schema_col_;
+  int schema_old;
+  Schema schema_row, schema_col;
   std::string schema_string;
 
   // diagonal matrix
@@ -129,8 +128,7 @@ class Op {
   Kokkos::vector<WhetStone::DenseMatrix> matrices;
   Kokkos::vector<WhetStone::DenseMatrix> matrices_shadow;
 
- protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };
 
 } // namespace Operators

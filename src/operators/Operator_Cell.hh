@@ -46,11 +46,6 @@ class Operator_Cell : public Operator {
   virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
-  virtual void getLocalDiagCopy(CompositeVector& X) const {
-    assert(false);
-  }
-
-
   // visit methods for symbolic assemble
   //virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
   //        const SuperMap& map, GraphFE& graph,

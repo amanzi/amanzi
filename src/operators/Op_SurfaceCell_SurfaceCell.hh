@@ -24,9 +24,20 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
  public:
   Op_SurfaceCell_SurfaceCell(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_) :
-      Op_Cell_Cell(name, surf_mesh_),
-      surf_mesh(surf_mesh_)
+      Op_Cell_Cell(name, surf_mesh_)
   {}
+
+  virtual void
+  GetLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("face", false);
+    auto diag_v = diag->getLocalViewHost();
+    // entity_get_parent is not available on device --FIXME
+    for(int sc = 0 ; sc < diag_v.extent(0); ++sc){
+      auto f = mesh->entity_get_parent(AmanziMesh::CELL, sc);
+      Xv(f,0) += diag_v(sc,0);
+    }
+  }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
@@ -46,29 +57,27 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   //}
   
   virtual void Rescale(const CompositeVector& scaling) {
-    #if 0 
     if (scaling.HasComponent("cell") &&
-        scaling.ViewComponent("cell", false)->MyLength() ==
-        surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)) {
+        scaling.GetComponent("cell", false)->getLocalLength() ==
+        mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)) {
       Op_Cell_Cell::Rescale(scaling);
     }
-    if (scaling.HasComponent("face") &&
-        scaling.ViewComponent("face", false)->MyLength() ==
-        mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED)) {
-      const auto s_f = *scaling.ViewComponent("face", false);
-      Kokkos::parallel_for(s_f.NumVectors(),KOKKOS_LAMBDA(){
-      //for (int k = 0; k != s_f.NumVectors(); ++k) {
-        for (int sc = 0; sc != diag->MyLength(); ++sc) {
-          auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-          (*diag)[k][sc] *= s_f[0][f];
-        }
-      }); 
-    }
-    #endif 
-  }
 
- public:
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh;
+    if (scaling.HasComponent("face") &&
+        scaling.GetComponent("face", false)->getLocalLength() ==
+        mesh->parent()->num_entities(AmanziMesh::FACE,
+                AmanziMesh::Parallel_type::OWNED)) {
+      const auto s_f = scaling.ViewComponent("face", false);
+      auto diag_v = diag->getLocalViewDevice();
+      
+      Kokkos::parallel_for(
+          diag_v.extent(0),
+          KOKKOS_LAMBDA(const int sc) {
+            auto f = mesh->entity_get_parent(AmanziMesh::CELL, sc);
+            diag_v(sc,0) *= s_f(f,0);
+          });
+    }
+  }
 };
 
 }  // namespace Operators
