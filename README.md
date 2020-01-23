@@ -28,3 +28,8 @@ License and Copyright
 ---------------------
 
 Please see the [LICENSE](https://github.com/amanzi/ats/blob/master/LICENSE) and [COPYRIGHT](https://github.com/amanzi/ats/blob/master/COPYRIGHT) files included in the top level directory of your ATS download.
+
+Citation
+--------
+
+E.T. Coon, M. Berndt, A. Jan, D. Svyatsky, A.L. Atchley, E. Kikinzon, D.R. Harp, G. Manzini, E. Shelef, K. Lipnikov, R. Garimella, C. Xu, J.D. Moulton, S. Karra, S.L. Painter, E. Jafarov, and S. Molins. 2019. Advanced Terrestrial Simulator. U.S. Department of Energy, USA. Version [xxx]. [YEAR]. DOI: 10.11578/dc.20190911.1
