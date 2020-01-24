@@ -28,6 +28,7 @@ set(eos_src_files
     EOS_IdealGas.cc
     EOS_VaporInGas.cc
     EOS_Water.cc
+    Henry_Solubility.cc
     IsobaricEOSEvaluator.cc
     MolarFractionGasEvaluator.cc
     ThermalConductivity_Water.cc
@@ -59,6 +60,7 @@ set(eos_inc_files
     EOS_VaporInGas.hh
     EOS_Water.hh
     eos_registration.hh
+    Henry_Solubility.hh
     IsobaricEOSEvaluator.hh
     MolarFractionGasEvaluator.hh
     ThermalConductivity_Water.hh

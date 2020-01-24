@@ -8,17 +8,15 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for a total component stirage (water, hydrogen,
+  Field evaluator for a total component storage (water, hydrogen,
   etc) storage, the conserved quantity:
 
-    TCS = phi * (rho_l * s_l * X_l + rho_g * s_g * X_g)
-
-  where x_p is the mole fraction of a component in phase p.
+    TCS = phi * (rho_l * s_l + rho_g * s_g)
 */
 
 
-#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_HH_
-#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_HH_
+#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TEST_HH_
+#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TEST_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -29,10 +27,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage : public MultiphaseBaseEvaluator {
+class TotalComponentStorageTest : public MultiphaseBaseEvaluator {
  public:
-  TotalComponentStorage(Teuchos::ParameterList& plist);
-  TotalComponentStorage(const TotalComponentStorage& other);
+  TotalComponentStorageTest(Teuchos::ParameterList& plist);
+  TotalComponentStorageTest(const TotalComponentStorageTest& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -49,9 +47,6 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
-  
- private:
-  static Utils::RegisteredFactory<FieldEvaluator, TotalComponentStorage> reg_;
 };
 
 }  // namespace Multiphase

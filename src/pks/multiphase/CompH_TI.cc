@@ -251,8 +251,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   if (dTp > 0.0) {
     op_acc_->AddAccumulationDelta(*saturation_w, acc_term, acc_term, 1.0, "cell");
   } 
-  // op_prec_pres_->global_operator()->SymbolicAssembleMatrix();
-  // op_prec_pres_->global_operator()->AssembleMatrix();
+
 
   // A_22 block wrt Sw
   Teuchos::RCP<CompositeVector> adv_coef = Teuchos::rcp(new CompositeVector(*tmp_flux_));

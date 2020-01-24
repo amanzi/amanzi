@@ -259,6 +259,7 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     tree_op_->SymbolicAssembleMatrix();
     tree_op_->AssembleMatrix();
   }
+// std::cout << *tree_op_->A() << std::endl; exit(0);
 }
 
 
@@ -341,6 +342,10 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
     if (ierr > 0) ln_itrs_ += solver_tree_->num_itrs();
   }
 
+{double aaa; pu->SubVector(0)->Data()->Norm2(&aaa); std::cout << aaa << std::endl; }
+{double aaa; pu->SubVector(1)->Data()->Norm2(&aaa); std::cout << aaa << std::endl; }
+{double aaa; pu->SubVector(2)->Data()->Norm2(&aaa); std::cout << aaa << std::endl; }
+exit(0);
   return ierr;
 }
 

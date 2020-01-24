@@ -104,10 +104,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // multiphase submodels
   virtual void InitMPSolutionVector() = 0;
   virtual void InitMPPreconditioner() = 0;
-  virtual void PopulateBCs(int icomp) = 0;
-  virtual std::pair<Key, int> EquationToSolution(int neqn) = 0;
-  virtual void ModifyEvaluator(int neqn, int pos,
-                               const Teuchos::RCP<MultiphaseBaseEvaluator>& eval) = 0;
+  virtual void PopulateBCs(int icomp, bool flag) = 0;
+  virtual std::pair<int, int> EquationToSolution(int neqn) = 0;
+  virtual void ModifyEvaluators(int neqn) = 0;
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
 
@@ -134,18 +133,22 @@ class Multiphase_PK: public PK_PhysicalBDF {
   int num_phases_;
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_liquid_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> x_liquid_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> x_gas_eval_;
 
   // variable evaluators
   Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
 
+  // complimentarity problem
+  std::string ncp_;
+
   // keys
-  Key pressure_liquid_key_, x_liquid_key_, saturation_liquid_key_;
+  Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
+  Key saturation_liquid_key_, temperature_key_;
+  Key porosity_key_, pressure_gas_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
-  Key porosity_key_, pressure_gas_key_, temperature_key_;
   Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
   Key molar_density_liquid_key_, molar_density_gas_key_;
   Key tws_key_, tcs_key_;
@@ -157,7 +160,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
 
-  std::vector<std::vector<Key> > eval_eqns_;
+  std::vector<std::vector<std::pair<Key, double> > > eval_eqns_;  // name and factor pair
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
@@ -174,13 +177,15 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // upwind
   Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
+ 
+  // time integration
+  std::vector<std::string> varx_name_;
 
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> mp_list_;
 
  private:
-  std::string ncp_;
   double smooth_mu_;  // smoothing parameter
 
   // solvers and preconditioners

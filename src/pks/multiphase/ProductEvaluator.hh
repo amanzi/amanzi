@@ -34,11 +34,11 @@ class ProductEvaluator : public MultiphaseBaseEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override;
 
- // interface to multiphase base class
- virtual void set_subvector(int ifield, int n) { field_n_[ifield] = n; } override;
+  // extended interface
+  virtual void set_subvector(int ifield, int n, double kH) override { field_n_[ifield] = n; kH_ = kH; } 
 
  private:
-  std::vector<int> power_;
+  std::vector<int> powers_;
   std::vector<int> field_n_;
 };
 

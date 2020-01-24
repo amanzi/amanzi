@@ -6,19 +6,11 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-
-  Field evaluator for a total component stirage (water, hydrogen,
-  etc) storage, the conserved quantity:
-
-    TCS = phi * (rho_l * s_l * X_l + rho_g * s_g * X_g)
-
-  where x_p is the mole fraction of a component in phase p.
+  Field evaluator for noninear complimentary problem, function F.
 */
 
-
-#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_HH_
-#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_HH_
+#ifndef AMANZI_MULTIPHASE_NCP_HENRY_LAW_HH_
+#define AMANZI_MULTIPHASE_NCP_HENRY_LAW_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -29,16 +21,14 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage : public MultiphaseBaseEvaluator {
+class NCP_HenryLaw : public MultiphaseBaseEvaluator {
  public:
-  TotalComponentStorage(Teuchos::ParameterList& plist);
-  TotalComponentStorage(const TotalComponentStorage& other);
+  NCP_HenryLaw(Teuchos::ParameterList& plist);
+  NCP_HenryLaw(const NCP_HenryLaw& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  virtual void Init_();
-
-  // interface to FieldEvaluator
+  // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result);
@@ -48,10 +38,7 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
       const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key saturation_liquid_key_, porosity_key_;
-  
- private:
-  static Utils::RegisteredFactory<FieldEvaluator, TotalComponentStorage> reg_;
+  Key pressure_gas_key_, molar_density_liquid_key_;
 };
 
 }  // namespace Multiphase

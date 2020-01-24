@@ -30,11 +30,11 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseReduced_PK.hh"
+#include "Multiphase2p2c_PK.hh"
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_MODEL_I) {
+TEST(MULTIPHASE_2P2C) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -47,7 +47,7 @@ TEST(MULTIPHASE_MODEL_I) {
   if (MyPID == 0) std::cout << "Test: multiphase pk, model I" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_model1.xml";
+  std::string xmlFileName = "test/multiphase_2p2c.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -70,7 +70,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseReduced_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new Multiphase2p2c_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();
@@ -90,7 +90,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // loop
   int iloop(0);
   bool failed = true;
-  double t(0.0), tend(1.57e+12), dt(1.57e+02);
+  double t(0.0), tend(1.57e+12), dt(1.5768e+11 / 1e+6);
   while (t < tend && iloop < 400) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
@@ -99,7 +99,7 @@ TEST(MULTIPHASE_MODEL_I) {
 
     S->advance_time(dt);
     t += dt;
-    dt *= 1.2;
+    dt *= 1.1;
     iloop++;
 
     // output solution
@@ -107,11 +107,11 @@ TEST(MULTIPHASE_MODEL_I) {
       io->InitializeCycle(t, iloop);
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+      const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "molar density hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();
 
       S->WriteStatistics(vo);

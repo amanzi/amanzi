@@ -11,8 +11,6 @@
   Molar mobility is defined as the product of molar density and mobility.
 */
 
-#include "error.hh"
-
 #include "ProductEvaluator.hh"
 
 namespace Amanzi {
@@ -25,13 +23,13 @@ ProductEvaluator::ProductEvaluator(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
   my_key_ = plist.get<std::string>("my key");
-  if (plist.isParameter("evaluator dependencies") &&
-      plist.isParameter("powers")) {
-    Errors::Message msg("Product evaluator requires \"evaluator denedencies\" and \"powers\"");
+  if (!(plist.isParameter("evaluator dependencies") &&
+        plist.isParameter("powers"))) {
+    Errors::Message msg("Product evaluator requires \"evaluator dependencies\" and \"powers\"");
     Exceptions::amanzi_throw(msg);
   }
-  factors_ = plist_.get<Teuchos::Array<int> >("powers").toVector();
-  field_n_.resize(factors_.size(), 0);
+  powers_ = plist_.get<Teuchos::Array<int> >("powers").toVector();
+  field_n_.resize(powers_.size(), 0);
 }
 
 
@@ -59,15 +57,14 @@ void ProductEvaluator::EvaluateField_(
   int ncells = result_c.MyLength();
 
   int n(0);
-  results_c->PutScalar(1.0);
+  result_c.PutScalar(1.0);
   for (auto it = dependencies_.begin(); it != dependencies_.end(); ++it) {
     int m = field_n_[n];
-    if (m < 0) continue;
 
     const auto& factor_c = *S->GetFieldData(*it)->ViewComponent("cell");
-    if (powers_[n] = 1)
+    if (powers_[n] == 1)
       for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[m][c];
-    else if (powers_[n] = -1)
+    else if (powers_[n] == -1)
       for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[m][c];
 
     n++;
@@ -87,19 +84,18 @@ void ProductEvaluator::EvaluateFieldPartialDerivative_(
   int ncells = result_c.MyLength();
 
   int n(0);
-  results_c->PutScalar(1.0);
+  result_c.PutScalar(1.0);
   for (auto it = dependencies_.begin(); it != dependencies_.end(); ++it) {
     int m = field_n_[n];
-    if (m < 0) continue;
 
     const auto& factor_c = *S->GetFieldData(*it)->ViewComponent("cell");
-    if (*it != wrt_key && powers_[n] == 1)
-      // do nothing
-    else if (*it != wrt_key && powers_[n] == -1)
+    if (*it == wrt_key && powers_[n] == 1)
+      ;  // do nothing
+    else if (*it == wrt_key && powers_[n] == -1)
       for (int c = 0; c != ncells; ++c) result_c[0][c] /= -factor_c[m][c] * factor_c[m][c];
-    else if (powers_[n] = 1)
+    else if (powers_[n] == 1)
       for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[m][c];
-    else if (powers_[n] = -1)
+    else if (powers_[n] == -1)
       for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[m][c];
 
     n++;

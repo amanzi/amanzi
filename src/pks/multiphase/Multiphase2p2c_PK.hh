@@ -9,15 +9,13 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Reduced multiphase model: 
-    - water is only in liquid phase
-    - water density is constant
-    - porosity is constant
-  Solution vectors: pressure (l), saturation (l), mole fraction (g).
+  Reimplementation of the original multiphase mode for testing.
+  Solution vectors are pressure (l), saturation (l), and hydrogen 
+  molar density (l).
 */
 
-#ifndef AMANZI_MULTIPHASE_REDUCED_PK_HH_
-#define AMANZI_MULTIPHASE_REDUCED_PK_HH_
+#ifndef AMANZI_MULTIPHASE_2P2C_PK_HH_
+#define AMANZI_MULTIPHASE_2P2C_PK_HH_
 
 // Amanzi
 #include "Key.hh"
@@ -29,18 +27,19 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseReduced_PK: public Multiphase_PK {
+class Multiphase2p2c_PK: public Multiphase_PK {
  public:
-  MultiphaseReduced_PK(Teuchos::ParameterList& pk_tree,
-                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                       const Teuchos::RCP<State>& S,
-                       const Teuchos::RCP<TreeVector>& soln);
+  Multiphase2p2c_PK(Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                    const Teuchos::RCP<State>& S,
+                    const Teuchos::RCP<TreeVector>& soln);
 
-  ~MultiphaseReduced_PK() {};
+  ~Multiphase2p2c_PK() {};
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual std::string name() override { return "multiphase reduced"; }
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual std::string name() override { return "multiphase 2p2c"; }
 
   // interface multiphase models
   virtual void InitMPSolutionVector() override;
@@ -53,12 +52,12 @@ class MultiphaseReduced_PK: public Multiphase_PK {
  private:
   int missed_bc_faces_;
 
-  Key advection_liquid_reduced_key_;
-  Key ncp_f_key_, ncp_g_key_;
+  Key advection_liquid_reduced_key_, molar_density_water_key_;
+  Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
  private:
   // factory registration
-  static RegisteredPKFactory<MultiphaseReduced_PK> reg_;
+  static RegisteredPKFactory<Multiphase2p2c_PK> reg_;
 };
 
 }  // namespace Multiphase

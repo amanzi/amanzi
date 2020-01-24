@@ -49,11 +49,12 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         MultiphaseReduced_PK.cc
+                         MultiphaseReduced_PK.cc Multiphase2p2c_PK.cc
                          Multiphase_Utils.cc
-                         TotalWaterStorage.cc TotalComponentStorage.cc
+                         NCP_F.cc NCP_HenryLaw.cc
+                         TotalComponentStorage.cc TotalComponentStorageTest.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
-                         PressureGasEvaluator.cc
+                         MoleFractionLiquid.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          #
                          CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
@@ -73,13 +74,15 @@ add_amanzi_library(multiphase
 #
 set(multiphase_inc_files 
   Multipahase_PK.hh
-  MultiphaseReduced_PK.hh
+  MultiphaseReduced_PK.hh Multiphase2p2c_PK.hh
   Multiphase_Utils.hh
-  ModelMeshPartition.hh
   MultiphaseBoundaryFunction.hh
+  ModelMeshPartition.hh
+  MoleFractionLiquid.hh
+  NCP_F.hh NCP_HenryLaw.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
-  TotalWaterStorage.hh TotalComponentStorage.hh
+  TotalComponentStorage.hh
   WRMmp.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
@@ -121,6 +124,11 @@ if (BUILD_TESTS)
   add_amanzi_test(multiphase_model1 multiphase_model1
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_model1.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_2p2c multiphase_2p2c
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_2p2c.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

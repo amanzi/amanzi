@@ -54,13 +54,11 @@
 
     <ParameterList name="molecular diffusion">
       <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
-      <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{1.5e-6}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
-      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.9e-2}"/>
+      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
     </ParameterList>
 
-    <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
-    <Parameter name="atmospheric pressure" type="double" value="0.0"/>
     <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>
@@ -169,7 +167,7 @@
           <Parameter name="name" type="string" value="H2"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-3.0e-10"/>
+              <Parameter name="value" type="double" value="-8.831177067478435e-11"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -256,7 +254,7 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="998.2"/>
+        <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
@@ -293,18 +291,14 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="mole_fraction_gas">
+      <ParameterList name="molar_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -381,7 +375,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="molar_density_liquid">
+      <ParameterList name="molar_density_water">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -418,7 +412,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="300.0"/>
+                <Parameter name="value" type="double" value="302.9998973209611"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
