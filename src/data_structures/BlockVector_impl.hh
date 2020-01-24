@@ -410,7 +410,7 @@ BlockVector<Scalar>::dot(const BlockVector<Scalar>& other) const
     result += std::accumulate(
       intermediate_result.begin(), intermediate_result.end(), (Scalar)0);
   }
-  return 0;
+  return result;
 };
 
 

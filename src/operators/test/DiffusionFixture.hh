@@ -218,7 +218,7 @@ struct DiffusionFixture {
   }
 
   void go(double tol=1.e-14) {
-    //global_op->Zero();
+    global_op->Zero();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
     CompositeVector& rhs = *global_op->rhs();
@@ -230,10 +230,6 @@ struct DiffusionFixture {
     }
     
     op->ApplyBCs(true, true, true);
-    // if (pc_name != "identity") {
-    //   global_op->SymbolicAssembleMatrix();
-    //   global_op->AssembleMatrix();
-    // }
     global_op->UpdatePreconditioner();
 
     // if (symmetric) {
@@ -260,6 +256,11 @@ struct DiffusionFixture {
       double unorm, ul2_err, uinf_err;
       
       op->UpdateFlux(solution.ptr(), flux.ptr());
+      {
+        auto fv = flux->ViewComponent<AmanziDefaultHost>("face", false);
+      }
+
+      
       ComputeFaceError(*ana, mesh, *flux, 0.0, unorm, ul2_err, uinf_err);
       //flux->Print(std::cout);
 

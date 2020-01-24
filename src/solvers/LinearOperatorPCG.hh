@@ -165,6 +165,7 @@ LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(const Vector& f, Vector& x,
   Vector p(f.getMap());
   h_->applyInverse(r, p); // gamma = (H r,r)
   double gamma0 = p.dot(r);
+  std::cout << " dot = " << gamma0 << std::endl;
   if (gamma0 <= 0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Failed: non-SPD ApplyInverse: gamma0=" << gamma0

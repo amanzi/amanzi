@@ -34,10 +34,7 @@ class DenseVector {
 
   explicit DenseVector(int mrow) : m_(mrow), mem_(mrow)
   {
-    std::cout<<"Creating DenseVector"<<std::endl;
     Kokkos::resize(data_,mem_);
-    //data_ = new double[mem_];
-    //map_ = Teuchos::rcp(new int(mem_)); 
   }
 
   DenseVector(int mrow, double* data)
@@ -45,25 +42,19 @@ class DenseVector {
     m_ = mrow;
     mem_ = mrow;
     Kokkos::resize(data_,mem_); 
-    //data_ = new double[mem_];
     for (int i = 0; i < m_; i++) data_[i] = data[i];
-    //map_ = Teuchos::rcp(new int(mem_)); 
   }
 
-#if 0 
-  DenseVector(const DenseVector& B)
+  DenseVector(const DenseVector& other)
   {
-    m_ = B.NumRows();
-    mem_ = m_;
-    //data_ = NULL;
-    if (m_ > 0) {
-      data_ = new double[m_];
-      const double* dataB = B.Values();
-      for (int i = 0; i < m_; i++) data_[i] = dataB[i];
+    m_ = other.NumRows();
+    if (m_ != mem_) {
+      mem_ = m_;
+      Kokkos::resize(data_, mem_);
+      Kokkos::deep_copy(data_, other.data_);
     }
-    //map_ = Teuchos::rcp(new int(mem_)); 
   }
-#endif 
+
 
 #if 0 
   DenseVector(const Teuchos::RCP<const int>& map){
@@ -84,7 +75,21 @@ class DenseVector {
   void reshape(int mrow);
 
   // -- initialization
-  //DenseVector& operator=(const DenseVector& B);
+  void assign(const DenseVector& other) {
+    if (this != &other) {
+      if (m_ != other.m_) {
+        m_ = other.m_;
+        mem_ = other.mem_;
+        Kokkos::resize(data_, mem_);
+      }
+      Kokkos::deep_copy(data_, other.data_);
+    }
+  }
+  
+  DenseVector& operator=(const DenseVector& B) {
+    assign(B);
+    return *this;
+  }
 
   KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
@@ -242,7 +247,6 @@ class DenseVector {
   //}
 
  private:
-  //Teuchos::RCP<const int> map_;
   int m_, mem_;
   Kokkos::View<double*> data_;
 };

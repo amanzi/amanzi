@@ -172,7 +172,11 @@ class BlockVector {
   void scale(const std::string& name, Scalar scalarThis);
 
   // // this <- this + scalarA
-  // void Shift(Scalar scalarA);
+  void shift(Scalar scalarA) {
+    BlockVector<Scalar> one(*this);
+    one.putScalar(1.0);
+    this->update(scalarA, one, 1.);
+  }
 
   // // Shift() applied to component name.
   // void Shift(const std::string& name, Scalar scalarA);

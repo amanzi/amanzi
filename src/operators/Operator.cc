@@ -450,6 +450,7 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
     op->GetLocalDiagCopy(X);
   }
   X.GatherGhostedToMaster();
+  if (shift_ > 0.) X.shift(shift_);
 }
 
 /* ******************************************************************

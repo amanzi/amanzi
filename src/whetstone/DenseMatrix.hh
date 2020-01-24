@@ -37,8 +37,6 @@ class DenseMatrix {
     m_ = 0;
     n_ = 0;
     mem_ = 0;
-    //data_ = NULL;
-    //access_ = WHETSTONE_DATA_ACCESS_COPY;
   }
   DenseMatrix(const int& mrow, const int& ncol)
   {
@@ -46,44 +44,49 @@ class DenseMatrix {
     n_ = ncol;
     mem_ = m_ * n_;
     Kokkos::resize(data_,mem_); 
-    //data_ = new double[mem_];
-    //access_ = WHETSTONE_DATA_ACCESS_COPY;
   } // memory is not initialized
 
   DenseMatrix(int mrow, int ncol, double* data
               );//, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(int mrow, int ncol, const Kokkos::View<double*>& data);
-  //DenseMatrix(const DenseMatrix& B);
+
+  DenseMatrix(const DenseMatrix& other)
+  {
+    m_ = other.m_;
+    n_ = other.n_;
+    if (mem_ != other.mem_) {
+      mem_ = other.mem_;
+      Kokkos::resize(data_, mem_);
+      Kokkos::deep_copy(data_, other.data_);
+    }
+  }
+
   DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
-  //~DenseMatrix(){}
   
   // primary members
   // -- reshape can be applied only to a matrix that owns data
   // -- data are not remapped to the new matrix shape
   void reshape(int mrow, int ncol);
+  void assign(const DenseMatrix& other) {
+    if (this != &other) {
+      n_ = other.n_;
+      m_ = other.m_;
+      if (mem_ != other.mem_) {
+        mem_ = n_ * m_;
+        Kokkos::resize(data_, mem_);
+      }
+      Kokkos::deep_copy(data_, other.data_);
+    }
+  }
 
   KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_(j * m_ + i); }
   KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
-#if 0
-  KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(const DenseMatrix& B)
+  DenseMatrix& operator=(const DenseMatrix& B)
   {
-    if (this != &B) {
-      //if (mem_ != B.m_ * B.n_) {
-        //if (data_ != NULL) { delete[] data_; }
-      //  mem_ = B.m_ * B.n_;
-      //  Kokkos::resize(data_,mem_);
-        //data_ = new double[mem_];
-      //}
-      n_ = B.n_;
-      m_ = B.m_;
-      mem_ = n_*m_; 
-      data_ = B.Values(); 
-      //Kokkos::deep_copy(data_,B.data_);  
-    }
-    return (*this);
+    assign(B);
+    return *this;
   }
-#endif 
 
   KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(double val)
   {

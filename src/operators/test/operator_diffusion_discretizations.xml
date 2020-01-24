@@ -216,6 +216,7 @@
       <Parameter name="discretization secondary" type="string" value="fv: default"/>
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="diagonal shift" type="double" value="1.e-8"/>
     </ParameterList>
 
     <ParameterList name="nlfv">

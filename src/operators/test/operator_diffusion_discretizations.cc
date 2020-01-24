@@ -156,8 +156,6 @@ SUITE(DIFFUSION) {
 
     fix.op->ApplyBCs(true, true, true);
     fix.global_op->UpdatePreconditioner();
-    
-
   }
 
   
