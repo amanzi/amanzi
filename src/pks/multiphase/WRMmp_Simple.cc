@@ -11,7 +11,6 @@
 
 #include <cmath>
 #include <string>
-#include "errors.hh"
 
 #include "MultiphaseDefs.hh"
 #include "WRMmp_Simple.hh"
@@ -45,7 +44,6 @@ void WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
 ****************************************************************** */
 double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
 {
-  Errors::Message msg;
   double Swe = 0.0;
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   if (phase_name == "liquid") {
@@ -53,10 +51,6 @@ double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
   }
   else if (phase_name == "gas") {
     return pow(1.0 - Swe, 2.0);
-  }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
   }
 
   return 0.0;
@@ -68,7 +62,6 @@ double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
 ****************************************************************** */
 double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
 {
-  Errors::Message msg;
   double Swe = 0.0;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
@@ -77,10 +70,6 @@ double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
   }
   else if (phase_name == "gas") {
     return - 2.0 * (1.0 - Swe) * factor;
-  }
-  else {
-    msg << "Multiphase PK: phase_name \"" << phase_name.c_str() << "\" not recognized \n";
-    Exceptions::amanzi_throw(msg);
   }
 }
 
