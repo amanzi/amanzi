@@ -67,6 +67,7 @@ set(operators_inc_files
   PDE_HelperDiscretization.hh
   PDE_Diffusion.hh
   PDE_DiffusionFV.hh
+  PDE_DiffusionFVwithGravity.hh
   )
 
 set(operators_src_files
@@ -79,6 +80,7 @@ set(operators_src_files
   TreeOperator.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc
+  PDE_DiffusionFVwithGravity.cc
   )
 
 set(operators_link_libs

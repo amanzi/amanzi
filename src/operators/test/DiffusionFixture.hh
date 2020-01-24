@@ -77,19 +77,12 @@ struct DiffusionFixture {
     }
     op->SetTensorCoefficient(K);
     // boundary condition
-    bc = Teuchos::rcp(
-      new Operators::BCs(
-        mesh, 
-        Boundary_kind, 
-        WhetStone::DOF_Type::SCALAR)
-      );
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
   }
 
   template<class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>
   void discretizeWithGravity(const std::string& name, double gravity) {
-    assert(false);
-    #if 0 
     AmanziGeometry::Point g(mesh->space_dimension());
     g[mesh->space_dimension()-1] = -gravity;
     Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(name);
@@ -100,7 +93,7 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    Kokkos::vector<WhetStone::Tensor>K;
+    Kokkos::vector<WhetStone::Tensor> K;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -110,10 +103,8 @@ struct DiffusionFixture {
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    // \TODO
-    //bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, Operators::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
-    #endif 
   }
 
   void scalarCoefficient(AmanziMesh::Entity_kind kind) {
