@@ -77,7 +77,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("eos type", "vapor in gas");
     elist.sublist("molar_density_gas").sublist("EOS parameters")
          .sublist("gas EOS parameters")
-         .set<std::string>("eos type", "ideal gas");
+         .set<std::string>("eos type", "ideal gas")
+         .set<double>("molar mass of gas", 28.9647e-03);  // dry air
   }
 
   // -- molar fraction

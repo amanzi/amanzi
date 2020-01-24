@@ -12,6 +12,8 @@
 */
 
 #include "MultiscaleTransportPorosityFactory.hh"
+#include "MultiscaleTransportPorosity_GDPM.hh"
+#include "MultiscaleTransportPorosity_DPM.hh"
 
 // explicity instantitate the static data of factory
 namespace Amanzi {
@@ -24,3 +26,15 @@ Factory<Transport::MultiscaleTransportPorosity>::map_type*
 }  // namespace Utils
 }  // namespace Amanzi
 
+
+namespace Amanzi {
+namespace Transport {
+
+Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
+    MultiscaleTransportPorosity_DPM::factory_("dual porosity");
+
+Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM>
+    MultiscaleTransportPorosity_GDPM::factory_("generalized dual porosity");
+
+}  // namespace Transport
+}  // namespace Amanzi
