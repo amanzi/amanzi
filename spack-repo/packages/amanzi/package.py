@@ -124,8 +124,8 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_ASCEMIO=ON')
         else:
             options.append('-DENABLE_ASCEMIO=OFF')
-        #if '+gpu' in self.spec:
-        #    options.append('-DAMANZI_ARCH="Summit"')
-        #else: 
-        #    options.append('-DAMANZI_ARCH=\'\'')
+        if '+gpu' in self.spec:
+            options.append('-DAMANZI_ARCH="Summit"')
+        else: 
+            options.append('-DAMANZI_ARCH=\'\'')
         return options
