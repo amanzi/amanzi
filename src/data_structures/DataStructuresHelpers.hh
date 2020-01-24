@@ -52,8 +52,6 @@ LocallySameAs<BlockMap_type>(const BlockMap_type& one, const BlockMap_type& two)
   return one.locallySameAs(two);
 }
 
-
-
 } // namespace Amanzi
 
 #endif

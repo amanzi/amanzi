@@ -134,6 +134,33 @@ SUITE(DIFFUSION) {
   // Not all combinations make sense, obviously.  2D problems must be run with
   // 2D meshes, and 3D with 3D.
 
+  TEST(ConstructorDestructor) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    DiffusionFixture fix(ana, "Generate2D");
+    fix.discretize<Operators::PDE_DiffusionFV, AmanziMesh::FACE>("fv");
+    fix.setBCsDirichlet();
+    fix.setup("diagonal", true);
+
+    fix.global_op->Zero();
+    fix.op->UpdateMatrices(Teuchos::null, fix.solution.ptr());
+
+    CompositeVector& rhs = *fix.global_op->rhs();
+    {
+      auto rhs_c = rhs.ViewComponent<AmanziDefaultHost>("cell", false);
+      for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
+              AmanziMesh::Parallel_type::OWNED); ++c) {
+        const auto& xc = fix.mesh->cell_centroid(c);
+        rhs_c(c,0) += ana->source_exact(xc, 0.0) * fix.mesh->cell_volume(c);
+      }
+    }
+
+    fix.op->ApplyBCs(true, true, true);
+    fix.global_op->UpdatePreconditioner();
+    
+
+  }
+
+  
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
   // polynomial with coefficient=1
@@ -145,6 +172,7 @@ SUITE(DIFFUSION) {
         ana, "diagonal", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+
   // TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_diagonal) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
   //   testWGravity<Operators::PDE_DiffusionFVwithGravity>(
