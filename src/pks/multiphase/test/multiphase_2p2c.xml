@@ -54,7 +54,7 @@
 
     <ParameterList name="molecular diffusion">
       <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
-      <Parameter name="aqueous values" type="Array(double)" value="{1.5e-6}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
     </ParameterList>

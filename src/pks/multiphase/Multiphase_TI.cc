@@ -123,7 +123,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
       }
     }
  
-    // molecular diffusion via harmonic-mean transmissibility
+    // molecular diffusion 
     for (int phase = 0; phase < 2; ++phase) {
       if ((key = eval_eqns_[n][2 + phase].first) != "") {
         double coef;
@@ -271,6 +271,8 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       auto eqnc = EquationToSolution(col);
       Key keyc = soln_names_[eqnc.first];
 
+      bool bcflag = (row == col);
+
       // add empty operator to have a well-defined global operator pointer
       auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
       auto global_op = pde->global_operator();
@@ -309,7 +311,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde->ApplyBCs(false, false, false);
+            pde->ApplyBCs(bcflag, false, false);
           }
         }
 
@@ -375,7 +377,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
       // molecular diffusion
       for (int phase = 0; phase < 2; ++phase) {
-        // -- diffusion operator div [ D f du/dv grad dv ]
+        // -- diffusion operator div [ (D f du/dv) grad dv ]
         if ((key = eval_eqns_[row][2 + phase].first) != "") {
           if (varx_name_[phase] == keyc) {
             der_key = "constant_field";  // DAG does not calculate derivative when u=v
@@ -401,14 +403,14 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde->Setup(D, Teuchos::null, Teuchos::null);
             pde->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde->ApplyBCs(false, false, false);
+            pde->ApplyBCs(bcflag, false, false);
 
             double factor = eval_eqns_[row][2 + phase].second;
             if (factor != 1.0) pde->local_op()->Rescale(factor);
           }
         }
 
-        // -- diffusion operator div [ (D df/dv grad du ]
+        // -- advection operator div [ (D df/dv grad u) dv ]
         if ((key = eval_eqns_[row][2 + phase].first) != "" && keyc == saturation_liquid_key_) {
           auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
@@ -422,7 +424,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           }
 
           // --- calculate advective flux 
-          auto var = S_->GetFieldData(keyc);
+          auto var = S_->GetFieldData(varx_name_[phase]);
           pde_diff_D_->Setup(D, Teuchos::null, Teuchos::null);
           pde_diff_D_->SetBCs(op_bcs_[eqnr.first], op_bcs_[eqnc.first]);
           pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -464,6 +466,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
 
     Key key = eval_eqns_[n][0].first;
+    S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
     const auto& ncp_fc = *S_->GetFieldData(key)->ViewComponent("cell");
 
     Key keyc = soln_names_[eqnc.first];
