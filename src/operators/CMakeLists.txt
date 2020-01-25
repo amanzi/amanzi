@@ -226,11 +226,6 @@ if (BUILD_TESTS)
 #mesh_logical
     
     # Tests: diffusion
-    add_amanzi_test(operators_utils operators_utils
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_utils.cc
-                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
-
     # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
