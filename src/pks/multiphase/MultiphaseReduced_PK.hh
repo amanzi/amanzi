@@ -42,6 +42,15 @@ class MultiphaseReduced_PK: public Multiphase_PK {
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
   virtual std::string name() override { return "multiphase reduced"; }
 
+  // possibly modifies the correction, after the nonlinear solver (NKA)
+  // has computed it, will return true if it did change the correction,
+  // so that the nonlinear iteration can store the modified correction
+  // and pass it to NKA so that the NKA space can be updated
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override; 
+
   // interface multiphase models
   virtual void InitMPSolutionVector() override;
   virtual void InitMPPreconditioner() override;

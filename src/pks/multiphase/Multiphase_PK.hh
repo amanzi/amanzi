@@ -89,15 +89,6 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
                                Teuchos::RCP<TreeVector> u) override { return false; }
 
-  // possibly modifies the correction, after the nonlinear solver (NKA)
-  // has computed it, will return true if it did change the correction,
-  // so that the nonlinear iteration can store the modified correction
-  // and pass it to NKA so that the NKA space can be updated
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override; 
-
   // calling this indicates that the time integration scheme is changing 
   // the value of the solution in state.
   virtual void ChangedSolution() override;

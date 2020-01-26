@@ -183,6 +183,38 @@ void MultiphaseReduced_PK::Setup(const Teuchos::Ptr<State>& S)
 }
 
 
+/********************************************************************
+* Modifies nonlinear update du using .. TBW
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+MultiphaseReduced_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                                       Teuchos::RCP<const TreeVector> u,
+                                       Teuchos::RCP<TreeVector> du)
+{
+  // clip mole fraction to range [0; 1]
+  const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
+  auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
+
+  for (int i = 0; i < u2c.NumVectors(); ++i) {
+    for (int c = 0; c < ncells_owned_; ++c) {
+      du2c[i][c] = std::min(du2c[i][c], u2c[i][c]);
+      // du2c[i][c] = std::max(du2c[i][c], u2c[i][c] - 1.0);
+    }    
+  }
+
+  // clip saturation (residual saturation is missing, FIXME)
+  const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
+  auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    // du1c[0][c] = std::min(du1c[0][c], u1c[0][c]);
+    // du1c[0][c] = std::max(du1c[0][c], u1c[0][c] - 1.0);
+  }
+
+  return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
+}
+
+
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */

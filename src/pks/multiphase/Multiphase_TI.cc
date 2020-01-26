@@ -126,13 +126,9 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     // molecular diffusion 
     for (int phase = 0; phase < 2; ++phase) {
       if ((key = eqns_[n].diffusion[phase].first) != "") {
-        double coef;
-        for (int c = 0; c < ncells_owned_; ++c) {
-          if (phase == 0) coef = sat_lc[0][c] * mol_diff_l_[sol.second];
-          if (phase == 1) coef = (1.0 - sat_lc[0][c]) * eta_gc[0][c] * mol_diff_g_[sol.second];
-          kr_c[0][c] = phi[0][c] * coef;
-        }
+        S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
         auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
+        kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
         upwind_->Compute(flux, *kr, op_bcs_[sol.first]->bc_model(), *kr);
 
         // -- form operator
@@ -393,11 +389,11 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (S_->HasField(der_key)) {
             auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, global_op));
 
-            double coef;
+            const auto& coef_c = *S_->GetFieldData(key)->ViewComponent("cell");
+            const auto& der_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
+
             for (int c = 0; c < ncells_owned_; ++c) {
-              if (phase == 0) coef = sat_lc[0][c] * mol_diff_l_[solr.second];
-              if (phase == 1) coef = (1.0 - sat_lc[0][c]) * eta_gc[0][c] * mol_diff_g_[solr.second];
-              kr_c[0][c] = phi[0][c] * coef;
+              kr_c[0][c] = der_c[0][c] * coef_c[0][c];
             }
             auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
             upwind_->Compute(flux, *kr, op_bcs_[solr.first]->bc_model(), *kr);
@@ -422,12 +418,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
             // --- calculate diffusion coefficient
-            double coef;
-            for (int c = 0; c < ncells_owned_; ++c) {
-              if (phase == 0) coef = sat_lc[0][c] * mol_diff_l_[solr.second];
-              if (phase == 1) coef = (1.0 - sat_lc[0][c]) * eta_gc[0][c] * mol_diff_g_[solr.second];
-              kr_c[0][c] = phi[0][c] * coef;
-            }
+            kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
             auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
             upwind_->Compute(flux, *kr, op_bcs_[solr.first]->bc_model(), *kr);
@@ -456,6 +447,8 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
           // --- calculate diffusion coefficient
+            kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
+            kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
           double coef;
           for (int c = 0; c < ncells_owned_; ++c) {
             if (phase == 0) coef = phi[0][c] * mol_diff_l_[solr.second];
@@ -559,8 +552,6 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
   Y->PutScalar(0.0);
   // *Y = *X; return 0;
   int ierr = op_pc_solver_->ApplyInverse(*X, *Y);
-// {double aaa; Y->SubVector(0)->Data()->Norm2(&aaa); std::cout << aaa << std::endl; }
-// exit(0);
   return ierr;
 }
 
@@ -605,39 +596,15 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     error_s = std::max(error_s, fabs(dsc[0][c]));
   }
 
-  return error_p + error_s;
-}
+  // concentration error
+  auto dxc = *du->SubVector(2)->Data()->ViewComponent("cell");
 
-
-/********************************************************************
-* Modifies nonlinear update du using .. TBW
-****************************************************************** */
-AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-Multiphase_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                                Teuchos::RCP<const TreeVector> u,
-                                Teuchos::RCP<TreeVector> du)
-{
-  // clip mole fraction to range [0; 1]
-  const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
-  auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
-
-  for (int i = 0; i < u2c.NumVectors(); ++i) {
-    for (int c = 0; c < ncells_owned_; ++c) {
-      du2c[i][c] = std::min(du2c[i][c], u2c[i][c]);
-      // du2c[i][c] = std::max(du2c[i][c], u2c[i][c] - 1.0);
-    }    
+  double error_x = 0.0;
+  for (int c = 0; c < ncells_owned_; c++) {
+    error_x = std::max(error_x, fabs(dxc[0][c]));
   }
 
-  // clip saturation (residual saturation is missing, FIXME)
-  const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
-  auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    // du1c[0][c] = std::min(du1c[0][c], u1c[0][c]);
-    // du1c[0][c] = std::max(du1c[0][c], u1c[0][c] - 1.0);
-  }
-
-  return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
+  return error_p + error_s + error_x;
 }
 
 }  // namespace Multiphase

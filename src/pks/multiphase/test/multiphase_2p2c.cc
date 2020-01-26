@@ -92,7 +92,7 @@ TEST(MULTIPHASE_2P2C) {
   bool failed = true;
   double t(0.0), tend(1.57e+12), dt(1.5768e+11 / 1e+4), dt_max(2e+10);
   while (t < tend && iloop < 400) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
 
     MPK->CommitStep(t, t + dt, S);
     S->advance_cycle();

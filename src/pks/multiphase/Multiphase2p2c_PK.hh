@@ -41,6 +41,15 @@ class Multiphase2p2c_PK: public Multiphase_PK {
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
   virtual std::string name() override { return "multiphase 2p2c"; }
 
+  // possibly modifies the correction, after the nonlinear solver (NKA)
+  // has computed it, will return true if it did change the correction,
+  // so that the nonlinear iteration can store the modified correction
+  // and pass it to NKA so that the NKA space can be updated
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override; 
+
   // interface multiphase models
   virtual void InitMPSolutionVector() override;
   virtual void InitMPPreconditioner() override;
@@ -53,6 +62,8 @@ class Multiphase2p2c_PK: public Multiphase_PK {
   int missed_bc_faces_;
 
   Key advection_liquid_reduced_key_, molar_density_water_key_;
+  Key diffusion_liquid_key_, diffusion_gas_key_;
+  Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
  private:
