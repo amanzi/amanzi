@@ -104,11 +104,6 @@ if (BUILD_TESTS)
                   geometry mesh_functions functions eos pks)
 
   # Unit tests:
-  add_amanzi_test(multiphase_reduced_2p2c multiphase_reduced_2p2c
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_reduced_2p2c.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
   add_amanzi_test(multiphase_model1 multiphase_model1
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_model1.cc
