@@ -90,7 +90,7 @@ TEST(MULTIPHASE_2P2C) {
   // loop
   int iloop(0);
   bool failed = true;
-  double t(0.0), tend(1.57e+12), dt(1.5768e+11 / 1e+6);
+  double t(0.0), tend(1.57e+12), dt(1.5768e+11 / 1e+4), dt_max(2e+10);
   while (t < tend && iloop < 400) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
@@ -99,7 +99,7 @@ TEST(MULTIPHASE_2P2C) {
 
     S->advance_time(dt);
     t += dt;
-    dt *= 1.2;
+    dt = std::min(dt_max, dt * 1.2);
     iloop++;
 
     // output solution

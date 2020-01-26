@@ -80,7 +80,8 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   double max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
 
-  int modify_correction_;
+  int make_one_iteration_;
+  bool modify_correction_;
   double residual_;
   ConvergenceMonitor monitor_;
 };
@@ -113,6 +114,7 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
   modify_correction_ = plist_.get<bool>("modify correction", true);
+  make_one_iteration_ = (plist_.get<bool>("make one iteration", false)) ? 1 : 0;
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
   if (monitor_name == "monitor update") {
@@ -199,8 +201,11 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       }
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
-      if (ierr == SOLVER_CONVERGED) return num_itrs_;
-      if (ierr != SOLVER_CONTINUE) return ierr;
+      if (ierr == SOLVER_CONVERGED) {
+        if (num_itrs_ >= make_one_iteration_) return num_itrs_;
+      } else if (ierr != SOLVER_CONTINUE) {
+        return ierr;
+      }
     }
 
     // Update the preconditioner.

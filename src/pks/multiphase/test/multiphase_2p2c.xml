@@ -104,7 +104,7 @@
           <Parameter name="min time step" type="double" value="1.0e-20"/>
         </ParameterList>
 
-        <Parameter name="solver type" type="string" value="nka"/>
+        <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
@@ -113,7 +113,8 @@
           <Parameter name="max divergent iterations" type="int" value="10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="modify correction" type="bool" value="true"/>
-          <Parameter name="monitor" type="string" value="monitor residual"/>
+          <Parameter name="monitor" type="string" value="monitor update"/>
+          <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="nka parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>

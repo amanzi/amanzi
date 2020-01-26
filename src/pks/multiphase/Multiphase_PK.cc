@@ -243,7 +243,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   num_primary_ = component_names_.size();
 
   // some defaults
-  varx_name_ = {x_liquid_key_, x_gas_key_};
+  flux_names_ = {darcy_flux_liquid_key_, darcy_flux_gas_key_};
 
   auto tmp_list = mp_list_->sublist("molecular diffusion");
   mol_diff_l_ = tmp_list.get<Teuchos::Array<double> >("aqueous values").toVector();

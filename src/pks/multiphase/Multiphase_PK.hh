@@ -33,6 +33,7 @@
 #include "UpwindFlux.hh"
 
 // Multiphase
+#include "EquationStructure.hh"
 #include "MultiphaseBaseEvaluator.hh"
 #include "MultiphaseBoundaryFunction.hh"
 #include "MultiphaseTypeDefs.hh"
@@ -160,7 +161,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
 
-  std::vector<std::vector<std::pair<Key, double> > > eval_eqns_;  // name and factor pair
+  std::vector<EquationStructure> eqns_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
@@ -179,7 +180,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
  
   // time integration
-  std::vector<std::string> varx_name_;
+  std::vector<std::string> flux_names_;
 
   // io
   Utils::Units units_;

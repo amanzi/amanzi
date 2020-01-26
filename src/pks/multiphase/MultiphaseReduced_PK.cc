@@ -201,19 +201,38 @@ void MultiphaseReduced_PK::InitMPSolutionVector()
 
 
 /* ******************************************************************* 
-* Create matrix structure of operators
+* Populate structure of equations with names of evqluators.
 ******************************************************************* */
 void MultiphaseReduced_PK::InitMPPreconditioner()
 {
-  eval_eqns_.push_back({{advection_liquid_reduced_key_, 1.0}, {"", 0.0},
-                        {"", 0.0}, {"", 0.0}, {tws_key_, 1.0}});
+  eqns_.resize(num_primary_ + 2);
+
+  eqns_[0].adv_factors.resize(2, 1.0);
+  eqns_[0].advection.push_back(std::make_pair(advection_liquid_reduced_key_, pressure_liquid_key_));
+  eqns_[0].advection.push_back(std::make_pair("", ""));  // no gas phase
+
+  eqns_[0].diff_factors.resize(2, -1.0);
+  eqns_[0].diffusion.push_back(std::make_pair("any", x_liquid_key_));
+  eqns_[0].diffusion.push_back(std::make_pair("", ""));  // no gas phase flux
+
+  eqns_[0].storage = tws_key_;
 
   for (int i = 0; i < num_primary_; ++i) {
-    eval_eqns_.push_back({{advection_liquid_key_, 1.0}, {advection_gas_key_, 1.0},
-                          {"any", 1.0}, {"any", 1.0}, {tcs_key_, 1.0}});
+    int n = i + 1;
+    eqns_[n].adv_factors.resize(2, 1.0);
+    eqns_[n].advection.push_back(std::make_pair(advection_liquid_key_, pressure_liquid_key_));
+    eqns_[n].advection.push_back(std::make_pair(advection_gas_key_, pressure_gas_key_));
+
+    eqns_[n].diff_factors.resize(2, 1.0);
+    eqns_[n].diffusion.push_back(std::make_pair("any", x_liquid_key_));
+    eqns_[n].diffusion.push_back(std::make_pair("any", x_gas_key_));
+
+    eqns_[n].storage = tcs_key_;
   }
 
-  eval_eqns_.push_back({{ncp_f_key_, 1.0}, {ncp_g_key_, 1.0}});
+  // the last equaiton is special
+  int n = num_primary_ + 1;
+  eqns_[n].constraint = std::make_pair(ncp_f_key_, ncp_g_key_);
 }
 
 
