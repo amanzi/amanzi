@@ -1,7 +1,7 @@
 diff -ruNbB netcdf-4.6.1/CMakeLists.txt netcdf-4.6.1-source/CMakeLists.txt
 --- netcdf-4.6.1/CMakeLists.txt	2018-09-13 15:46:20.212185000 -0700
 +++ netcdf-4.6.1-source/CMakeLists.txt	2018-09-13 15:50:54.092459756 -0700
-@@ -579,9 +579,9 @@
+@@ -588,9 +588,9 @@
    # specify HDF5_HL_LIB, HDF5_LIB, HDF5_INCLUDE_DIR manually.
    ##
    IF(HDF5_C_LIBRARY AND HDF5_HL_LIBRARY AND HDF5_INCLUDE_DIR)
