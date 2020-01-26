@@ -201,26 +201,6 @@ void Multiphase2p2c_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- coefficient for diffusion operator in gas phase
-  if (!S->HasField(diffusion_gas_key_)) {
-    S->RequireField(diffusion_gas_key_, diffusion_gas_key_)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::Array<int> dep_powers(3, 1);
-    Teuchos::Array<std::string> dep_names;
-
-    dep_names.push_back(molecular_diff_gas_key_);
-    dep_names.push_back(porosity_key_);
-    dep_names.push_back(saturation_liquid_key_);  // FIXME (gas key)
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("my key", diffusion_gas_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
-         .set<Teuchos::Array<int> >("powers", dep_powers);
-
-    auto eval = Teuchos::rcp(new ProductEvaluator(elist));
-    S->SetFieldEvaluator(diffusion_gas_key_, eval);
-  }
 
   // nonlinear complimentary problem
   if (!S->HasField(ncp_f_key_)) {
@@ -353,7 +333,7 @@ void Multiphase2p2c_PK::InitMPPreconditioner()
 
     eqns_[n].diff_factors.resize(2, 1.0);
     eqns_[n].diffusion.push_back(std::make_pair(diffusion_liquid_key_, molar_density_liquid_key_));
-    eqns_[n].diffusion.push_back(std::make_pair(diffusion_gas_key_, molar_density_gas_key_));
+    eqns_[n].diffusion.push_back(std::make_pair("", ""));
 
     eqns_[n].storage = tcs_key_;
   }

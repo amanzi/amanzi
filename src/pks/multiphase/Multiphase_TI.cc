@@ -444,36 +444,35 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
         // -- advection operator div [ (D df/dv grad u) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
-          auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
+          Key der_key = "d" + key + "_d" + keyc;
+          S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
-          // --- calculate diffusion coefficient
-            kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
+          if (S_->HasField(der_key)) {
+            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
+
+            // --- upwind derivative
+            kr_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
-          double coef;
-          for (int c = 0; c < ncells_owned_; ++c) {
-            if (phase == 0) coef = phi[0][c] * mol_diff_l_[solr.second];
-            if (phase == 1) coef =-eta_gc[0][c] * mol_diff_g_[solr.second];
-            kr_c[0][c] = coef;
+            auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
+            upwind_->Compute(flux, *kr, op_bcs_[solr.first]->bc_model(), *kr);
+
+            // --- calculate advective flux 
+            Key fname = eqns_[row].diffusion[phase].second;
+            auto var = S_->GetFieldData(fname);
+            pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
+            pde_diff_D_->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
+            pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
+            pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
+
+            // -- populated advection operator
+            pde->Setup(*flux_tmp);
+            pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
+            pde->UpdateMatrices(flux_tmp.ptr());
+            pde->ApplyBCs(false, false, false);
+
+            double factor = eqns_[row].diff_factors[phase];
+            if (factor != 1.0) pde->local_op()->Rescale(factor);
           }
-          auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
-          upwind_->Compute(flux, *kr, op_bcs_[solr.first]->bc_model(), *kr);
-
-          // --- calculate advective flux 
-          Key fname = eqns_[row].diffusion[phase].second;
-          auto var = S_->GetFieldData(fname);
-          pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-          pde_diff_D_->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-          pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
-          pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
-
-          // -- populated advection operator
-          pde->Setup(*flux_tmp);
-          pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-          pde->UpdateMatrices(flux_tmp.ptr());
-          pde->ApplyBCs(false, false, false);
-
-          double factor = eqns_[row].diff_factors[phase];
-          if (factor != 1.0) pde->local_op()->Rescale(factor);
         }
       }
 
