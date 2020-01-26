@@ -55,13 +55,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          TotalComponentStorage.cc TotalComponentStorageTest.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
                          MoleFractionLiquid.cc PressureGasEvaluator.cc
-                         RelPermEvaluator.cc ProductEvaluator.cc
-                         #
-                         CompW_PK.cc CompW_TI.cc CompH_PK.cc CompH_TI.cc
-                         GasConstraint.cc
-                         Reduced2p2c_PK.cc
-                         MPCoeff.cc
-                         CapillaryPressureOld.cc)
+                         RelPermEvaluator.cc ProductEvaluator.cc)
 
 add_amanzi_library(multiphase 
                    SOURCE ${multiphase_src_files}
@@ -86,13 +80,7 @@ set(multiphase_inc_files
   WRMmp.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
-  WRMmp_BrooksCorey.hh
-  #
-  CompW_PK.hh
-  CompH_PK.hh
-  GasConstraint.hh
-  Reduced2p2c_PK.hh
-  MPCoeff.hh)
+  WRMmp_BrooksCorey.hh)
 
 add_install_include_file(${multiphase_inc_files})
 
