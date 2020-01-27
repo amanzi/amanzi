@@ -10,8 +10,6 @@
 add_subdirectory(constitutive_relations)
 #add_subdirectory(morphology_pk)
 
-
-
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${ATS_SOURCE_DIR}/pks)
@@ -29,6 +27,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/constitutive_relations)
 
 set(ats_mpc_src_files
   weak_mpc.cc
+  DomainSetMPC.cc
   operator_split_mpc.cc
   weak_mpc_semi_coupled.cc
   weak_mpc_semi_coupled_deform.cc
@@ -59,6 +58,7 @@ set(ats_mpc_inc_files
   mpc.hh
   weak_mpc.hh
   strong_mpc.hh
+  DomainSetMPC.hh
   operator_split_mpc.hh
   weak_mpc_semi_coupled.hh
   weak_mpc_semi_coupled_deform.hh
@@ -120,6 +120,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE strong_mpc_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE DomainSetMPC_reg.hh
   LISTNAME   ATS_MPC_REG
   )
 

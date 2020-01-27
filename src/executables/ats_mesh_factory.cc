@@ -35,6 +35,8 @@ createMesh(Teuchos::ParameterList& mesh_plist,
            Amanzi::State& S)
 {
   auto mesh_type = mesh_plist.get<std::string>("mesh type");
+  auto mesh_name = Amanzi::Keys::cleanPListName(mesh_plist.name());
+                   
   if (mesh_type == "read mesh file") {
     //Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
     //prefs.clear();
@@ -81,7 +83,7 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    S.RegisterMesh(mesh_name, mesh, deformable);
     
   } else if (mesh_type == "generate mesh") {
     // create the MSTK factory
@@ -105,7 +107,7 @@ createMesh(Teuchos::ParameterList& mesh_plist,
 
     checkVerifyMesh(mesh_plist, mesh);
     std::string name = mesh_plist.name();
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    S.RegisterMesh(mesh_name, mesh, deformable);
 
   } else if (mesh_type == "logical mesh") {
     // -- from logical mesh file
@@ -122,10 +124,11 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    S.RegisterMesh(mesh_name, mesh, deformable);
 
   } else if (mesh_type == "aliased") {
-    S.AliasMesh(mesh_plist.sublist("aliased parameters").get<std::string>("alias"), Amanzi::Keys::cleanPListName(mesh_plist.name()));    
+    S.AliasMesh(mesh_plist.sublist("aliased parameters").get<std::string>("alias"), mesh_name);
+
   } else if (mesh_type == "surface") {
     Teuchos::ParameterList& surface_plist = mesh_plist.sublist("surface parameters");
     std::vector<std::string> setnames;
@@ -164,17 +167,17 @@ createMesh(Teuchos::ParameterList& mesh_plist,
                   Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d");
     }
     checkVerifyMesh(mesh_plist, surface_mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), surface_mesh, deformable);
+    S.RegisterMesh(mesh_name, surface_mesh, deformable);
 
   } else if (mesh_type == "column") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column parameters");
-    int lid = column_list.get<int>("entity LID");
+    Amanzi::AmanziMesh::Entity_ID lid = column_list.get<Amanzi::AmanziMesh::Entity_ID>("entity LID");
     auto parent = S.GetMesh(column_list.get<std::string>("parent domain", "domain"));
     auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(parent, lid));
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    S.RegisterMesh(mesh_name, mesh, deformable);
 
   } else if (mesh_type == "column surface") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column surface parameters");
@@ -188,17 +191,10 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    S.RegisterMesh(mesh_name, mesh, deformable);
 
-  } else if (mesh_type == "subgrid") {
-    Teuchos::ParameterList& subgrid = mesh_plist.sublist("subgrid parameters");
-    auto kind_str = subgrid.get<std::string>("entity kind");
-
-    Amanzi::AmanziMesh::Entity_kind kind = Amanzi::AmanziMesh::entity_kind(kind_str);
-
-    auto regionname = subgrid.get<std::string>("subgrid region name");
-    std::string parent_domain_name = subgrid.get<std::string>("parent domain", "domain");
-    auto parent_mesh = S.GetMesh(parent_domain_name);
+  } else if (mesh_type == "domain set") {
+    Teuchos::ParameterList& subgrid = mesh_plist.sublist("domain set parameters");
 
     // a flyweight allows each subgrid model to share (topologically and
     // geometrically) identical meshes.
@@ -207,34 +203,24 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     // for each id in the regions of the parent mesh on entity, create a
     // subgrid mesh on MPI_COMM_SELF
     auto comm_self = Amanzi::getCommSelf();
-    Amanzi::AmanziMesh::Entity_ID_List entities;
-    parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::Parallel_type::OWNED, &entities);
-    const Epetra_Map& map = parent_mesh->map(kind,false);
+    auto ds = S.GetOrCreateDomainSet(mesh_name);
     
-    for (auto lid : entities) {
-      Amanzi::AmanziMesh::Entity_ID gid = map.GID(lid);
-      std::stringstream name;
-      name << Amanzi::Keys::cleanPListName(mesh_plist.name()) << "_" << gid;
-
+    for (auto name_id : *ds) {
       Teuchos::ParameterList subgrid_i_list;
-      if (subgrid.isSublist(name.str())) {
-        subgrid_i_list = subgrid.sublist(name.str());
+      if (subgrid.isSublist(name_id.first)) {
+        subgrid_i_list = subgrid.sublist(name_id.first);
       } else {
-        subgrid_i_list = subgrid.sublist(Amanzi::Keys::cleanPListName(mesh_plist.name())+"_*");
+        subgrid_i_list = subgrid.sublist(mesh_name+"_*");
       }
-
-      subgrid_i_list.setName(name.str());
-      Teuchos::ParameterList& subgrid_i_param_list = subgrid_i_list.sublist(
-          subgrid_i_list.get<std::string>("mesh type")+" parameters");
-      if (!subgrid_i_param_list.isParameter("entity kind"))
-        subgrid_i_param_list.set("entity kind", kind_str);
+      subgrid_i_list.setName(name_id.first);
+      auto& subgrid_i_param_list =
+          subgrid_i_list.sublist(subgrid_i_list.get<std::string>("mesh type")+" parameters");
       if (!subgrid_i_param_list.isParameter("entity LID"))
-        subgrid_i_param_list.set("entity LID", lid);
-      if (!subgrid_i_param_list.isParameter("subgrid region name"))
-        subgrid_i_param_list.set("subgrid region name", regionname);
+        subgrid_i_param_list.set("entity LID", name_id.second);
+      if (!subgrid_i_param_list.isParameter("entity kind"))
+        subgrid_i_param_list.set("entity kind", ds->kind_str());
       if (!subgrid_i_param_list.isParameter("parent domain"))
-        subgrid_i_param_list.set("parent domain", parent_domain_name);
-
+        subgrid_i_param_list.set("parent domain", ds->parent_domain());
       createMesh(subgrid_i_list, comm_self, gm, S);
     }
 
