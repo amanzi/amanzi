@@ -118,6 +118,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator("mass_density_liquid");
   }
 
   // -- viscosity model

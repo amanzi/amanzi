@@ -164,6 +164,9 @@
   </ParameterList>
   <ParameterList name="state">
     <ParameterList name="field evaluators">
+      <ParameterList name="particle_density">
+        <Parameter name="field evaluator type" type="string" value="constant variable"/>
+      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
