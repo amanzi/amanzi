@@ -44,7 +44,7 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinxcontrib.bibtex',
 ]
 
-ext_matplotlib = ['matplotlib.sphinxext.only_directives',
+ext_matplotlib = [#'matplotlib.sphinxext.only_directives',
                   'matplotlib.sphinxext.plot_directive'
 ]
 
@@ -89,9 +89,11 @@ copyright = u'2016, Amanzi Development Team'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-amanzi_branch=subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip()
-amanzi_global_id=subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip()
-amanzi_latest_tag=subprocess.check_output('git tag -l amanzi-*', shell=True).split()[-1].rstrip()
+decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
+
+amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
+amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
+amanzi_latest_tag=decode(subprocess.check_output('git tag -l amanzi-*', shell=True).split()[-1].rstrip())
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
