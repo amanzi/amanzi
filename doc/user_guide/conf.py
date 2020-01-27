@@ -238,7 +238,7 @@ latex_elements = {
 'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\usepackage[version=3]{mhchem}\n\usepackage{amssymb,grffile}\n',
+'preamble': '\\usepackage[version=3]{mhchem}\n\\usepackage{amssymb,grffile}\n',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
