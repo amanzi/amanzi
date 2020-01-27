@@ -9,6 +9,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 """
 from __future__ import print_function
 from __future__ import division
+import sys
 
 import sys
 if sys.hexversion < 0x02070000:
