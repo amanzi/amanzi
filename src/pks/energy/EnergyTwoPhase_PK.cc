@@ -64,7 +64,8 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
-  ee_list.set("energy key", energy_key_);
+  ee_list.set<std::string>("energy key", energy_key_)
+         .set<bool>("vapor diffusion", true);
   Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
   S_->SetFieldEvaluator(energy_key_, ee);
 

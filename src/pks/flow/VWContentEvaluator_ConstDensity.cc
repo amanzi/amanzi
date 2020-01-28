@@ -40,8 +40,8 @@ void VWContentEvaluator_ConstDensity::Init_()
   dependencies_.insert(porosity_key_);
   dependencies_.insert(saturation_key_);
 
-  vapor_phase_ = plist_.get<bool>("water vapor phase", false);
-  if (vapor_phase_) {
+  water_vapor_ = plist_.get<bool>("water vapor", false);
+  if (water_vapor_) {
     dependencies_.insert(std::string("molar_density_gas"));
     dependencies_.insert(std::string("molar_fraction_gas"));
   }
@@ -62,7 +62,7 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
-  if (vapor_phase_) {
+  if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
@@ -104,7 +104,7 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
-  if (vapor_phase_) {
+  if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 

@@ -45,8 +45,8 @@ void VWContentEvaluator::Init_()
   dependencies_.insert(std::string(saturation_key_));
   dependencies_.insert(std::string("molar_density_liquid"));
 
-  vapor_phase_ = plist_.get<bool>("water vapor phase", false);
-  if (vapor_phase_) {
+  water_vapor_ = plist_.get<bool>("water vapor", false);
+  if (water_vapor_) {
     dependencies_.insert(std::string("molar_density_gas"));
     dependencies_.insert(std::string("molar_fraction_gas"));
   }
@@ -58,7 +58,7 @@ void VWContentEvaluator::Init_()
 ****************************************************************** */
 VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    vapor_phase_(other.vapor_phase_) {};
+    water_vapor_(other.water_vapor_) {};
 
 
 Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
@@ -78,7 +78,7 @@ void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
-  if (vapor_phase_) {
+  if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
@@ -111,7 +111,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
 
   int ncells = result->size("cell", false);
 
-  if (vapor_phase_) {
+  if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
