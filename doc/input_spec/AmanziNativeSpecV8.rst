@@ -122,7 +122,7 @@ code development and its daily usage in reasearch.
 
   * Proper names such as an individual person, place, or organization, including their derivatives
     *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
-    *Jacobian matrix*, *Newton correction*, *Richards problem*
+    *Jacobian matrix*, and *Newton correction*.
 
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
 
@@ -1219,19 +1219,6 @@ Since hydraulic heads are needed for both regions, this equation requires
 retention curves for both regions and therefore is nonlinear.
  
 
-The flow sublist includes exactly one sublist, either 
-*Darcy problem* or *Richards problem*.
-Structure of both sublists is quite similar.
-
-.. code-block:: xml
-
-  <ParameterList name="_FLOW">  <!-- parent list -->
-  <ParameterList name="Richards problem">
-     ...
-  </ParameterList>
-  </ParameterList>
-
-
 Model specifications and assumptions
 ....................................
 
@@ -1269,7 +1256,7 @@ Combination of both approaches may lead to a more efficient code.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="physical models and assumptions">
     <Parameter name="vapor diffusion" type="bool" value="false"/>
     <Parameter name="water content model" type="string" value="constant density"/>
@@ -1293,7 +1280,7 @@ Water retention models
 
 User defines water retention models in sublist *water retention models*. 
 It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
-This list is required for *Richards problem* only.
+This list is required for the Richards problem only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
@@ -1331,7 +1318,7 @@ if the list *output* is provided. This list has two mandatory parameters:
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="water retention models">
     <ParameterList name="_SOIL_1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1383,7 +1370,7 @@ includes a few mandatory parameters: *regions names*, *model name*, and paramete
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="porosity models">
     <ParameterList name="_SOIL1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1444,7 +1431,7 @@ Generalized dual porosity model
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="multiscale models"> 
     <ParameterList name="_SOIL1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1477,7 +1464,7 @@ Absolute permeability
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="absolute permeability">
     <Parameter name="coordinate system" type="string" value="cartesian"/>
     <Parameter name="off-diagonal components" type="int" value="0"/>
@@ -1522,7 +1509,7 @@ relative permeability, density and viscosity.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="relative permeability">
     <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
     <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -1548,19 +1535,19 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
     * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
       describing operators. 
-      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
     * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
       matrix that is used to create preconditioner. 
-      This sublist is ignored inside sublist `"Darcy problem`".
+      This sublist is ignored for the saturated problem.
       Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="operators">
     <ParameterList name="diffusion operator">
       <ParameterList name="matrix">
@@ -1667,7 +1654,7 @@ specified regions calculated using the folume fraction function.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="boundary conditions">
     <ParameterList name="pressure">
       <ParameterList name="_BC 0">
@@ -1775,7 +1762,7 @@ Again, constant functions can be replaced by any of the available functions.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="source terms">
     <ParameterList name="_SRC 0">
       <Parameter name="regions" type="Array(string)" value="{_WELL_EAST}"/>
@@ -1905,7 +1892,7 @@ Initialization and constraints
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="time integrator">
     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
     <Parameter name="linear solver" type="string" value="_GMRES_WITH_AMG"/>
@@ -1947,7 +1934,7 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="time integrator">
     <Parameter name="time integration method" type="string" value="BDF1"/>
     <ParameterList name="BDF1">
@@ -2026,7 +2013,7 @@ The remaining *flow* parameters are
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="clipping parameters">
      <Parameter name="maximum saturation change" type="double" value="0.25"/>
      <Parameter name="pressure damping factor" type="double" value="0.5"/>

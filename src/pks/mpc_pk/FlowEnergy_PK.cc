@@ -164,7 +164,6 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- flow
   std::string model = (vapor_diff) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
-                                        .sublist("Richards problem")
                                         .sublist("physical models and assumptions");
   flow.set<bool>("vapor diffusion", vapor_diff);
   flow.set<std::string>("water content model", model);
