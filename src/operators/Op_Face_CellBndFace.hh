@@ -37,10 +37,13 @@ class Op_Face_CellBndFace : public Op {
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_BNDFACE,
          name, mesh) {
-    WhetStone::DenseMatrix null_matrix;
+
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    WhetStone::DenseMatrix null_matrix(2,2);
     matrices.resize(nfaces_owned, null_matrix);
-    matrices_shadow = matrices;
+    // for (int f=0; f!=nfaces_owned; ++f) {
+    //   matrices[f].reshape(2,2);
+    // }    
   }
 
   virtual void

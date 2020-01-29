@@ -225,12 +225,6 @@ class Operator {
 
   void Init();
 
-  void CreateCheckPoint();
-  void RestoreCheckPoint();
-
-  // supporting members
-  int CopyShadowToMaster(int iops);
-
   // access
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }

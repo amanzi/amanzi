@@ -28,7 +28,12 @@ class Op_Face_Cell : public Op {
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     matrices.resize(nfaces_owned);
-    matrices_shadow = matrices;
+
+    for (int f=0; f!=nfaces_owned; ++f) {
+      AmanziMesh::Entity_ID_View cells;
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+      matrices[f].reshape(cells.extent(0), cells.extent(0));
+    }    
   }
 
   virtual void

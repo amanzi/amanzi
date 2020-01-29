@@ -33,19 +33,9 @@ Op::Zero()
                          });
   }
   if (diag.get()) diag->putScalar(0.);
-  if (diag_shadow.get()) diag->putScalar(0.);
 }
 
 
-// Restore pristine value of the matrices, i.e. before BCs.
-int Op::CopyShadowToMaster()
-{
-  for (int i = 0; i != matrices.size(); ++i) {
-    CopyShadowToMaster(i);
-  }
-  if (diag.get()) diag->assign(*diag_shadow);
-  return 0;
-}
 
 // Matching rules for schemas.
 bool

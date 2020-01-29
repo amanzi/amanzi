@@ -178,30 +178,24 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
     // preparing upwind data
     const auto k_face = ScalarCoefficientFaces(true);
-    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
+    const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
+    Kokkos::vector<WhetStone::DenseMatrix> local_matrices = local_op_->matrices; 
+    
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          AmanziMesh::Entity_ID_View cells;
-          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          int ncells = cells.extent(0);
-
-          WhetStone::DenseMatrix Aface(ncells, ncells);
-          Aface = 0.0;
-
+          WhetStone::DenseMatrix& Aface = local_matrices[f];
           double tij = trans_face(f,0) * k_face(f,0);
 
-          for (int i = 0; i != ncells; ++i) {
+          for (int i = 0; i != Aface.NumRows(); ++i) {
             Aface(i, i) = tij;
-            for (int j = i + 1; j != ncells; ++j) {
+            for (int j = i + 1; j != Aface.NumRows(); ++j) {
               Aface(i, j) = -tij;
               Aface(j, i) = -tij;
             }
           }
-
-          local_op->matrices[f].assign(Aface);
         });
   }
 }
@@ -285,7 +279,6 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             double tij = trans_face(f,0) * k_face(f,0);
             Kokkos::atomic_add(&rhs_cell(cells(0),0), bc_value(f) * tij);
           } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-            local_op->CopyMasterToShadow(f);
             local_op->Zero(f);
           
             if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * m->face_area(f));
@@ -301,7 +294,6 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     //   WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
     //   if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //     jac_op_->matrices_shadow[f].assign(Aface);
     //     Aface *= 0.0;
     //   }
     // }

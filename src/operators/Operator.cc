@@ -540,45 +540,6 @@ void Operator::Rescale(const CompositeVector& scaling, int iops)
 }
 
 
-/* ******************************************************************
-* Check points allows us to revert boundary conditions, source terms,
-* and accumulation terms. They are useful for operators with constant
-* coefficients and varying boundary conditions, e.g. for modeling
-* saturated flows.
-****************************************************************** */
-void Operator::CreateCheckPoint()
-{
-  rhs_checkpoint_ = Teuchos::rcp(new CompositeVector(*rhs_));
-}
-
-
-void Operator::RestoreCheckPoint()
-{
-  // The routine should be called after checkpoint is created.
-  AMANZI_ASSERT(rhs_checkpoint_ != Teuchos::null);
-
-  // restore accumulation and source terms
-  *rhs_ = *rhs_checkpoint_;
-
-  // restore local matrices without boundary conditions
-  for (auto& it : *this) {
-    it->CopyShadowToMaster();
-  }
-}
-
-
-/* ******************************************************************
-* New implementation of check-point algorithm.
-****************************************************************** */
-int Operator::CopyShadowToMaster(int iops) 
-{
-  int nops = ops_.size();
-  AMANZI_ASSERT(iops < nops);
-  ops_[iops]->CopyShadowToMaster();
-
-  return 0;
-} 
-
 
 /* ******************************************************************
 * Find a matrix block matching the given pattern.

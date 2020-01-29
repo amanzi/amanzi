@@ -80,21 +80,6 @@ class Op {
     matrices(i).putScalar(0.);
   }
 
-  // Restore pristine value of the matrices, i.e. before BCs.
-  int CopyShadowToMaster();
-
-  KOKKOS_INLINE_FUNCTION
-  void CopyShadowToMaster(int i) {
-    if (matrices_shadow[i].NumRows() != 0) {
-      matrices[i].assign(matrices_shadow[i]);
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void CopyMasterToShadow(int i) {
-    matrices_shadow[i].assign(matrices[i]);
-  }
-
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule);
 
@@ -134,11 +119,9 @@ class Op {
 
   // diagonal matrix
   MultiVector_ptr_type diag;
-  MultiVector_ptr_type diag_shadow;
 
   // collection of local matrices
   Kokkos::vector<WhetStone::DenseMatrix> matrices;
-  Kokkos::vector<WhetStone::DenseMatrix> matrices_shadow;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };
