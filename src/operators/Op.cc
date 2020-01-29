@@ -42,7 +42,7 @@ int Op::CopyShadowToMaster()
 {
   for (int i = 0; i != matrices.size(); ++i) {
     if (matrices_shadow[i].NumRows() != 0) {
-      matrices[i] = matrices_shadow[i];
+      matrices[i].assign(matrices_shadow[i]);
     }
   }
   

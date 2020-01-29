@@ -410,7 +410,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
       Aface(0, 0) = matrix[0][f];
     }
 
-    local_op_->matrices[f] = Aface;
+    local_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -472,7 +472,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
       Aface(0, 0) = vmod;
     }
 
-    jac_op_->matrices[f] = Aface;
+    jac_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -535,7 +535,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
       Aface(0, 0) = vmod;
     }
 
-    jac_op_->matrices[f] = Aface;
+    jac_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -693,7 +693,7 @@ void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eq
         rhs_cell[0][c] += Aface(0, 0) * bc_value[f];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
-        local_op_->matrices_shadow[f] = Aface;
+        local_op_->matrices_shadow[f].assign(Aface);
 
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];

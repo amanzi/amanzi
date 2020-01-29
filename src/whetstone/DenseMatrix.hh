@@ -82,11 +82,12 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_(j * m_ + i); }
   KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
-  DenseMatrix& operator=(const DenseMatrix& B)
-  {
-    assign(B);
-    return *this;
-  }
+  // Remove assignment operator 
+  //DenseMatrix& operator=(const DenseMatrix& B)
+  //{
+  //  assign(B);
+  //  return *this;
+  //}
 
   KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(double val)
   {
@@ -177,6 +178,7 @@ class DenseMatrix {
    * Matrix-vector product. The matrix is ordered by columns.
   ****************************************************************** */
   // calculates B = *this * A
+  KOKKOS_INLINE_FUNCTION 
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const
   {
     //Kokkos::View<double*> dataA = A.Values(); 

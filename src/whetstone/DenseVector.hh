@@ -37,6 +37,12 @@ class DenseVector {
     Kokkos::resize(data_,mem_);
   }
 
+  KOKKOS_INLINE_FUNCTION 
+  DenseVector(Kokkos::View<double*> base, int mrow): m_(mrow), mem_(mrow){
+    //assert(base.extent(0)>=mrow); 
+    data_ = base; 
+  }
+
   DenseVector(int mrow, double* data)
   {
     m_ = mrow;
@@ -151,7 +157,7 @@ class DenseVector {
   }
 
   // ring algebra
-  KOKKOS_INLINE_FUNCTION friend DenseVector operator*(double val, const DenseVector& v)
+  friend DenseVector operator*(double val, const DenseVector& v)
   {
     DenseVector tmp(v);
     tmp *= val;

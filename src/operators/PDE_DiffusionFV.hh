@@ -116,7 +116,8 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
     return k_face;
   }
 
-
+public: 
+  // This function need to be public for Kokkos Lambda
   void ComputeTransmissibility_();
   // void AnalyticJacobian_(const CompositeVector& solution);
 

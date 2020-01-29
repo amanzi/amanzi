@@ -183,7 +183,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         for (int f = 0; f != nfaces_owned; ++f) {
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           int ncells = cells.size();
-          schur_op->matrices[f] = WhetStone::DenseMatrix(ncells, ncells);
+          schur_op->matrices[f].assign(WhetStone::DenseMatrix(ncells, ncells));
         }
       }
 

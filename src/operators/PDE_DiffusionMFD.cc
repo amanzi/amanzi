@@ -242,7 +242,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
       matsum += rowsum;
     }
     Acell(nfaces, nfaces) = matsum;
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 }
 
@@ -273,7 +273,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
     }
     Acell(nfaces, nfaces) = matsum;
 
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 }
 
@@ -402,7 +402,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
       Acell(nfaces, nfaces) = matsum;
     }
     
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 }
 
@@ -454,7 +454,7 @@ void PDE_DiffusionMFD::UpdateMatricesNodal_()
       Exceptions::amanzi_throw(msg);
     }
 
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 }
 
@@ -507,7 +507,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
     if (Ttmp[0][f] == 0.0) {
       Aface = 0.0;
-      local_op_->matrices[f] = Aface;
+      local_op_->matrices[f].assign(Aface);
       continue;  // We skip zero transmissibilities
     }
 
@@ -522,7 +522,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
       Aface(0, 0) = coef;
     }
 
-    local_op_->matrices[f] = Aface;
+    local_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -575,7 +575,7 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn
 
       if (bc_model[f] == OPERATOR_BC_NEUMANN ||
           bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
-        jac_op_->matrices_shadow[f] = Aface;
+        jac_op_->matrices_shadow[f].assign(Aface);
         Aface *= 0.0;
       }
     }
@@ -641,7 +641,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
       int f = faces[n];
       if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) {
         if (flag) {  // make a copy of elemental matrix
-          local_op_->matrices_shadow[c] = Acell;
+          local_op_->matrices_shadow[c].assign(Acell);
           flag = false;
         }
         for (int m = 0; m < nfaces + 1; m++) Acell(n, m) = 0.0;
@@ -656,7 +656,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
       if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) {
         // make a copy of elemental matrix for post-processing
         if (flag) {
-          local_op_->matrices_shadow[c] = Acell;
+          local_op_->matrices_shadow[c]..assign(Acell);
           flag = false;
         }
 
@@ -698,7 +698,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
 
       } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
         if (flag) {  // make a copy of elemental matrix
-          local_op_->matrices_shadow[c] = Acell;
+          local_op_->matrices_shadow[c].assign(Acell);
           flag = false;
         }
         double area = mesh_->face_area(f);
@@ -754,7 +754,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
     }
     // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
-      local_op_->matrices_shadow[f] = Aface;
+      local_op_->matrices_shadow[f].assign(Aface);
       
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
@@ -762,7 +762,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
     }
     // solve system of two equations in three unknowns
     else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
-      local_op_->matrices_shadow[f] = Aface;
+      local_op_->matrices_shadow[f].assign(Aface);
       
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       double area = mesh_->face_area(f);
@@ -820,7 +820,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
         } else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
           nm++;
           if (flag) {  // make a copy of cell-based matrix
-            local_op_->matrices_shadow[c] = Acell;
+            local_op_->matrices_shadow[c].assign(Acell);
             flag = false;
           }
           double value = bc_value[f];
@@ -851,7 +851,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
         int v = nodes[n];
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
           if (flag) {  // make a copy of elemental matrix
-            local_op_->matrices_shadow[c] = Acell;
+            local_op_->matrices_shadow[c].assign(Acell);
             flag = false;
           }
           for (int m = 0; m < nnodes; m++) Acell(n, m) = 0.0;
@@ -864,7 +864,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
 
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
           if (flag) {  // make a copy of cell-based matrix
-            local_op_->matrices_shadow[c] = Acell;
+            local_op_->matrices_shadow[c].assign(Acell);
             flag = false;
           }
      
@@ -945,7 +945,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
       Aface(0, 0) = vmod;
     }
 
-    jac_op_->matrices[f] = Aface;
+    jac_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -1002,7 +1002,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
       Aface(0, 0) = vmod;
     }
 
-    jac_op_->matrices[f] = Aface;
+    jac_op_->matrices[f].assign(Aface);
   }
 }  
 

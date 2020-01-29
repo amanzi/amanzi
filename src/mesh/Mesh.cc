@@ -379,6 +379,26 @@ Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
   return -1;
 }
 
+void 
+Mesh::cache_parents_info_() const 
+{
+  // CELLS
+  int ncells = num_entities(CELL, Parallel_type::ALL);
+  Kokkos::resize(cells_parent_,ncells); 
+  for(int i = 0 ; i < ncells; ++i){
+    cells_parent_[i] = entity_get_parent(CELL,i); 
+  }
+  // FACES 
+  int nfaces = num_entities(FACE, Parallel_type::ALL);
+  Kokkos::resize(faces_parent_,nfaces);
+  for(int i = 0 ; i < ncells; ++i){
+    faces_parent_[i] = entity_get_parent(CELL,i); 
+  }
+  // NODES 
+  // EDGES
+  parents_precomputed_ = true; 
+}
+
 
 unsigned int
 Mesh::cell_get_num_faces(const Entity_ID cellid) const

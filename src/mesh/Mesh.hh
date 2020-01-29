@@ -909,6 +909,8 @@ class Mesh {
   virtual int compute_edge_geometry_(const Entity_ID edgeid, double* length,
                                      AmanziGeometry::Point* edge_vector) const;
 
+  virtual void cache_parents_info_() const; 
+
  public:
   void PrintMeshStatistics() const;
 
@@ -941,6 +943,11 @@ class Mesh {
 
   mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
 
+  mutable Kokkos::View<Entity_ID*> cells_parent_; 
+  mutable Kokkos::View<Entity_ID*> faces_parent_; 
+  mutable Kokkos::View<Entity_ID*> edges_parent_; 
+  mutable Kokkos::View<Entity_ID*> nodes_parent_; 
+
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_,
     node_nodeabove_;
@@ -972,6 +979,7 @@ class Mesh {
   mutable bool cell2edge_info_cached_, face2edge_info_cached_;
   mutable bool cell_geometry_precomputed_, face_geometry_precomputed_,
     edge_geometry_precomputed_;
+  mutable bool parents_precomputed_; 
 
   // -- region data
   mutable std::map<std::string, std::vector<int>> region_ids;

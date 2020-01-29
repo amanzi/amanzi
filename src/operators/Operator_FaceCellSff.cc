@@ -190,7 +190,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         schur_ops_.push_back(schur_op);
         for (int c = 0; c != ncells_owned; ++c) {
           int nfaces = mesh_->cell_get_num_faces(c);
-          schur_op->matrices[c] = WhetStone::DenseMatrix(nfaces, nfaces);
+          schur_op->matrices[c].assign(WhetStone::DenseMatrix(nfaces, nfaces));
         }
       }
 

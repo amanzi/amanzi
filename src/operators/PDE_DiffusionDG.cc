@@ -110,14 +110,14 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
     interface_->StiffnessMatrix(c, Acell);
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 
   // strenghen stability term
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
     dg_->FaceMatrixPenalty(f, Kf, Aface);
-    penalty_op_->matrices[f] = Aface;
+    penalty_op_->matrices[f].assign(Aface);
   }
 
   // stability terms
@@ -129,10 +129,10 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     interface_->FaceMatrixJump(f, c1, c2, Aface);
 
     Aface *= -1.0;
-    jump_up_op_->matrices[f] = Aface;
+    jump_up_op_->matrices[f].assign(Aface);
 
     Aface.Transpose();
-    jump_pu_op_->matrices[f] = Aface;
+    jump_pu_op_->matrices[f].assign(Aface);
   }
 }
 

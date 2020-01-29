@@ -115,7 +115,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
         }
       }
 
-      local_op_->matrices[c] = Anew;
+      local_op_->matrices[c].assign(Anew);
     }
 
     // shift gravity

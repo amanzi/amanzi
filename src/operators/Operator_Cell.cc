@@ -76,6 +76,14 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Xc = X.ViewComponent("cell", true);
 
   AmanziMesh::Mesh const* mesh = mesh_.get();
+
+  // Pre-allocation for DenseVectors 
+  // Find max value 
+  const int maxncells = 100; 
+  const int maxviews = op.matrices.size(); 
+  Kokkos::View<double**> pre_alloc; 
+  Kokkos::resize(pre_alloc,maxviews,maxncells); 
+
   Kokkos::parallel_for(
       op.matrices.size(),
       KOKKOS_LAMBDA(const int f) {
@@ -83,7 +91,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-        WhetStone::DenseVector v(ncells), av(ncells);
+        //WhetStone::DenseVector v(ncells), av(ncells);
+        auto view = Kokkos::subview(pre_alloc,f,Kokkos::ALL);
+        WhetStone::DenseVector v(view, ncells), av(view, ncells);
         for (int n = 0; n != ncells; ++n) {
           v(n) = Xc(cells[n],0);
         }

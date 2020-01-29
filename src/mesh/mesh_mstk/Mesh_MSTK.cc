@@ -3273,7 +3273,6 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 #endif
 }
 
-
 //---------------------------------------------------------
 // Parent entity in the source mesh if mesh was derived from another mesh
 //---------------------------------------------------------
@@ -3288,24 +3287,24 @@ Mesh_MSTK::entity_get_parent(const Entity_kind kind,
   MAttrib_ptr att = nullptr;
 
   switch (kind) {
-  case CELL:
-    att = (manifold_dimension() == 3) ? rparentatt : fparentatt;
-    ment = (MEntity_ptr)cell_id_to_handle[entid];
-    break;
-  case FACE:
-    att = (manifold_dimension() == 3) ? fparentatt : eparentatt;
-    ment = (MEntity_ptr)face_id_to_handle[entid];
-    break;
-  case EDGE:
-    att = eparentatt;
-    ment = (MEntity_ptr)edge_id_to_handle[entid];
-    break;
-  case NODE:
-    if (!vparentatt) return 0;
-    att = vparentatt;
-    ment = (MEntity_ptr)vtx_id_to_handle[entid];
-    break;
-  default: {}
+    case CELL:
+      att = (manifold_dimension() == 3) ? rparentatt : fparentatt;
+      ment = (MEntity_ptr)cell_id_to_handle[entid];
+      break;
+    case FACE:
+      att = (manifold_dimension() == 3) ? fparentatt : eparentatt;
+      ment = (MEntity_ptr)face_id_to_handle[entid];
+      break;
+    case EDGE:
+      att = eparentatt;
+      ment = (MEntity_ptr)edge_id_to_handle[entid];
+      break;
+    case NODE:
+      if (!vparentatt) return 0;
+      att = vparentatt;
+      ment = (MEntity_ptr)vtx_id_to_handle[entid];
+      break;
+    default: {}
   }
 
   if (!att) return 0;
@@ -3316,7 +3315,6 @@ Mesh_MSTK::entity_get_parent(const Entity_kind kind,
   else
     return 0;
 }
-
 
 //---------------------------------------------------------
 // Epetra map for cells - basically a structure specifying the global

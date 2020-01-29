@@ -69,11 +69,13 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
                 AmanziMesh::Parallel_type::OWNED)) {
       const auto s_f = scaling.ViewComponent("face", false);
       auto diag_v = diag->getLocalViewDevice();
-      
+      const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
+
+      // \TODO add entity_get_parent to mesh 
       Kokkos::parallel_for(
           diag_v.extent(0),
           KOKKOS_LAMBDA(const int sc) {
-            auto f = mesh->entity_get_parent(AmanziMesh::CELL, sc);
+            auto f = m->entity_get_parent(AmanziMesh::CELL, sc);
             diag_v(sc,0) *= s_f(f,0);
           });
     }
