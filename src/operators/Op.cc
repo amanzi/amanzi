@@ -41,11 +41,8 @@ Op::Zero()
 int Op::CopyShadowToMaster()
 {
   for (int i = 0; i != matrices.size(); ++i) {
-    if (matrices_shadow[i].NumRows() != 0) {
-      matrices[i].assign(matrices_shadow[i]);
-    }
+    CopyShadowToMaster(i);
   }
-  
   if (diag.get()) diag->assign(*diag_shadow);
   return 0;
 }

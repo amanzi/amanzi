@@ -83,11 +83,7 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
   // Remove assignment operator 
-  //DenseMatrix& operator=(const DenseMatrix& B)
-  //{
-  //  assign(B);
-  //  return *this;
-  //}
+  DenseMatrix& operator=(const DenseMatrix& B) = default;
 
   KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(double val)
   {

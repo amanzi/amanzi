@@ -201,7 +201,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
             }
           }
 
-          local_op->matrices[f].assign(Aface);
+          Kokkos::deep_copy(local_op->matrices[f], Aface);
         });
   }
 }
@@ -285,7 +285,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             double tij = trans_face(f,0) * k_face(f,0);
             Kokkos::atomic_add(&rhs_cell(cells(0),0), bc_value(f) * tij);
           } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-            local_op->matrices_shadow(f) = local_op->matrices(f);
+            local_op->CopyMasterToShadow(f);
             local_op->Zero(f);
           
             if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * m->face_area(f));
@@ -301,7 +301,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     //   WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
     //   if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //     jac_op_->matrices_shadow[f] = Aface;
+    //     Kokkos::deep_copy(jac_op_->matrices_shadow[f], Aface);
     //     Aface *= 0.0;
     //   }
     // }
@@ -422,7 +422,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
                           pres, dkdp, Aface);
 
-    jac_op_->matrices[f].assign(Aface);
+    Kokkos::deep_copy(jac_op_->matrices[f], Aface);
   }
 }
 #endif 
