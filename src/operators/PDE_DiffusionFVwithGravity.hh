@@ -26,7 +26,6 @@
 
 // Operators
 #include "PDE_DiffusionFV.hh"
-#include "PDE_DiffusionWithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -57,28 +56,26 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV {
                               const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override {
     ComputeTransmissibility_(gravity_term_);
-    transmissibility_->Scale(s);
+    transmissibility_->scale(s);
   };
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const override;
+  // virtual double ComputeGravityFlux(int f) const override;
 
   // access
   const CompositeVector& gravity_terms() { return *gravity_term_; }
 
  protected:
-  virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
-      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
+  // virtual void ComputeJacobianLocal_(
+  //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
+  //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
 

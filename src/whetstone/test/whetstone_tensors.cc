@@ -51,7 +51,8 @@ TEST(TENSOR_CONSTRUCTOR)
   Tensor T1;
   Tensor T2a(2, 1), T2b(2, 2), T2c(3, 1), T2d(3, 2), T2e(2, 4);
 
-  Tensor T3(2, 2, data);
+  // not supported
+  //  Tensor T3(2, 2, data);
 
   Tensor T4(T2d);
 }

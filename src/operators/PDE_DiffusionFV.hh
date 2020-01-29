@@ -56,7 +56,7 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFV : public virtual PDE_Diffusion {
+class PDE_DiffusionFV : public PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<Operator>& global_op) :

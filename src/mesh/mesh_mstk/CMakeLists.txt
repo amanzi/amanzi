@@ -82,27 +82,27 @@ if (BUILD_TESTS)
     endif()
 
     #Test: eliminate degeneracies for serial mesh
-    add_amanzi_test(mstk_pinchout_test mstk_pinchout_test
-                    KIND int
-                    SOURCE test/Main.cc 
-                    test/test_pinchouts.cc
-                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(mstk_pinchout_test mstk_pinchout_test
+    #                 KIND int
+    #                 SOURCE test/Main.cc 
+    #                 test/test_pinchouts.cc
+    #                 LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    #Test: eliminate degeneracies in parallel mesh created from inline partitioning
-    add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
-                    --kokkos-ndevices=1
-		    KIND int
-		    NPROCS 4
-                    SOURCE test/Main.cc test/test_pinchouts.cc
-                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # #Test: eliminate degeneracies in parallel mesh created from inline partitioning
+    # add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
+    #                 --kokkos-ndevices=1
+    #     	    KIND int
+    #     	    NPROCS 4
+    #                 SOURCE test/Main.cc test/test_pinchouts.cc
+    #                 LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     #Test: eliminate degeneracies in pre-partitioned parallel mesh
-    add_amanzi_test(mstk_pinchout_test_prepart mstk_pinchout_test_prepart
-		    --kokkos-ndevices=1
-                    KIND int
-		    NPROCS 4
-                    SOURCE test/Main.cc test/test_degen_prepart.cc
-                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(mstk_pinchout_test_prepart mstk_pinchout_test_prepart
+    #     	    --kokkos-ndevices=1
+    #                 KIND int
+    #     	    NPROCS 4
+    #                 SOURCE test/Main.cc test/test_degen_prepart.cc
+    #                 LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mstk_mesh
     add_amanzi_test(mstk_mesh_basis mstk_mesh_basis
@@ -117,7 +117,7 @@ if (BUILD_TESTS)
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
 			 test/test_extract_column.cc
-                         test/test_deform_vols.cc
+#                         test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 

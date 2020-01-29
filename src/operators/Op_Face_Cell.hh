@@ -26,9 +26,8 @@ class Op_Face_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
-    WhetStone::DenseMatrix null_matrix;
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    matrices.resize(nfaces_owned, null_matrix);
+    matrices.resize(nfaces_owned);
     matrices_shadow = matrices;
   }
 

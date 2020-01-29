@@ -67,6 +67,7 @@ set(operators_inc_files
   PDE_HelperDiscretization.hh
   PDE_Diffusion.hh
   PDE_DiffusionFV.hh
+  PDE_DiffusionFVwithGravity.hh
   )
 
 set(operators_src_files
@@ -79,6 +80,7 @@ set(operators_src_files
   TreeOperator.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc
+  PDE_DiffusionFVwithGravity.cc
   )
 
 set(operators_link_libs
@@ -224,11 +226,6 @@ if (BUILD_TESTS)
 #mesh_logical
     
     # Tests: diffusion
-    add_amanzi_test(operators_utils operators_utils
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_utils.cc
-                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
-
     # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
@@ -417,20 +414,13 @@ if (BUILD_TESTS)
     #                                     test/operator_mini1D_nonlinear.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
-    # DG advection test
-    add_amanzi_test(operators_advection_dg operators_advection_dg
-                    KIND unit
-                    NPROCS 3
-                    SOURCE test/Main.cc test/operator_advection_dg.cc
-                                        test/operator_advection_dg_transient
-                    LINK_LIBS ${operators_test_link_libs})
-
-    # Test: mini PDEs
-    add_amanzi_test(operators_mini1D operators_mini1D
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_mini1D.cc
-                                        test/operator_mini1D_nonlinear.cc
-                    LINK_LIBS ${operators_test_link_libs})
+    # # DG advection test
+    # add_amanzi_test(operators_advection_dg operators_advection_dg
+    #                 KIND unit
+    #                 NPROCS 3
+    #                 SOURCE test/Main.cc test/operator_advection_dg.cc
+    #                                     test/operator_advection_dg_transient
+    #                 LINK_LIBS ${operators_test_link_libs})
 
 endif()
 
