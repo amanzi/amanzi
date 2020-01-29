@@ -36,7 +36,7 @@ def run_amanzi(input_file, max_np, copyfiles=None, subdirectory=None):
     # set up the log file and verify it content
     run_stdout = os.path.join(run_directory, "stdout.out")
 
-    print "  trying ", input_file
+    print("  trying ", input_file)
     if os.path.isdir(run_directory):
        if os.path.isfile(run_stdout):
           if ( "Amanzi::SIMULATION_SUCCESSFUL" in open(run_stdout).read() ):
