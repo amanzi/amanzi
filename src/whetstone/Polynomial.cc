@@ -41,7 +41,8 @@ Polynomial::Polynomial(int d, int order, const DenseVector& coefs)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
   AMANZI_ASSERT(size_ == coefs.NumRows());
-  coefs_ = coefs;
+  coefs_.reshape(size_);
+  coefs_.assign(coefs);
 }
 
 
@@ -72,7 +73,8 @@ Polynomial::Polynomial(const Polynomial& poly)
   order_ = poly.order();
   origin_ = poly.origin();
   size_ = poly.size();
-  coefs_ = poly.coefs();
+  coefs_.reshape(size_);
+  coefs_.assign(poly.coefs());
 }
 
 

@@ -97,8 +97,6 @@ class DenseVector {
     }
   }
   
-  DenseVector& operator=(const DenseVector& B) = default;
-
   KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
     for (int i = 0; i < m_; i++) data_[i] = val;
@@ -253,7 +251,11 @@ class DenseVector {
   //  return Teuchos::null; 
   //}
 
+  // Default assigment implies view semantics
+  DenseVector& operator=(const DenseVector& B) = default;
+
  private:
+
   int m_, mem_;
   Kokkos::View<double*> data_;
 };

@@ -83,8 +83,6 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_(j * m_ + i); }
   KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
-  // Remove assignment operator 
-  DenseMatrix& operator=(const DenseMatrix& B) = default;
 
   KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(double val)
   {
@@ -410,7 +408,11 @@ class DenseMatrix {
     }
   }
 
+  // Default assigment implies view semantics
+  DenseMatrix& operator=(const DenseMatrix& B) = default;
+
  private:
+
   int m_, n_, mem_; 
   //access_;
   Kokkos::View<double*> data_; 

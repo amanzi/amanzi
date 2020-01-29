@@ -66,10 +66,6 @@ class Tensor {
     }
   }
 
-  // this may change to a shallow copy, but would require careful refactor of
-  // existing users.
-  Tensor& operator=(const Tensor& other) = default;
-  
   /*******************************************************************
   * Initialization of a tensor of rank 1 (scalar), 2 (matrix) or 4.
   ****************************************************************** */
@@ -279,7 +275,12 @@ class Tensor {
   // miscaleneous
   friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
 
+
+  // Default assigment implies view semantics
+  Tensor& operator=(const Tensor& other) = default;
+  
  private:
+
   int d_, rank_, size_;
   Kokkos::View<double*> data_;
 };
