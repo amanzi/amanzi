@@ -69,12 +69,7 @@ class DenseMatrix {
   void reshape(int mrow, int ncol);
   void assign(const DenseMatrix& other) {
     if (this != &other) {
-      n_ = other.n_;
-      m_ = other.m_;
-      if (mem_ != other.mem_) {
-        mem_ = n_ * m_;
-        Kokkos::resize(data_, mem_);
-      }
+      assert(n_ == other.n_ && m_ == other.m_);
       Kokkos::deep_copy(data_, other.data_);
     }
   }

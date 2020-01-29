@@ -86,13 +86,13 @@ class Op {
   KOKKOS_INLINE_FUNCTION
   void CopyShadowToMaster(int i) {
     if (matrices_shadow[i].NumRows() != 0) {
-      Kokkos::deep_copy(matrices[i], matrices_shadow[i]);
+      matrices[i].assign(matrices_shadow[i]);
     }
   }
 
   KOKKOS_INLINE_FUNCTION
   void CopyMasterToShadow(int i) {
-    Kokkos::deep_copy(matrices_shadow[i], matrices[i]);
+    matrices_shadow[i].assign(matrices[i]);
   }
 
   // Matching rules for schemas.

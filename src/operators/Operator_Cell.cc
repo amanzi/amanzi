@@ -78,11 +78,10 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   AmanziMesh::Mesh const* mesh = mesh_.get();
 
   // Pre-allocation for DenseVectors 
-  // Find max value 
-  const int maxncells = 100; 
-  const int maxviews = op.matrices.size(); 
-  Kokkos::View<double**> pre_alloc; 
-  Kokkos::resize(pre_alloc,maxviews,maxncells); 
+  Kokkos::View<double**> v("ApplyMatrixFreeOp on Face_Cell work space v",
+          op.matrices.size(), 2);
+  Kokkos::View<double**> Av("ApplyMatrixFreeOp on Face_Cell work space Av",
+          op.matrices.size(), 2);
 
   Kokkos::parallel_for(
       op.matrices.size(),
@@ -91,18 +90,16 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-        //WhetStone::DenseVector v(ncells), av(ncells);
-        auto view = Kokkos::subview(pre_alloc,f,Kokkos::ALL);
-        WhetStone::DenseVector v(view, ncells), av(view, ncells);
+
+        auto vv = WhetStone::DenseVector{Kokkos::subview(v, f, std::make_pair(0,ncells))};
+        auto Avv = WhetStone::DenseVector{Kokkos::subview(Av, f, std::make_pair(0,ncells))};
         for (int n = 0; n != ncells; ++n) {
-          v(n) = Xc(cells[n],0);
+          vv(n) = Xc(cells[n],0);
         }
-
-        const WhetStone::DenseMatrix& Aface = op.matrices[f];
-        Aface.Multiply(v, av, false);
+        op.matrices[f].Multiply(vv, Avv, false);
 
         for (int n = 0; n != ncells; ++n) {
-          Kokkos::atomic_add(&Yc(cells[n],0), av(n));
+          Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
         }
       });
   return 0;

@@ -43,6 +43,12 @@ class DenseVector {
     data_ = base; 
   }
 
+  KOKKOS_INLINE_FUNCTION 
+  DenseVector(Kokkos::View<double*> base)
+      : m_(base.extent(0)),
+        mem_(base.extent(0)),
+        data_(base) {}
+  
   DenseVector(int mrow, double* data)
   {
     m_ = mrow;
@@ -81,21 +87,15 @@ class DenseVector {
   void reshape(int mrow);
 
   // -- initialization
+  KOKKOS_INLINE_FUNCTION
   void assign(const DenseVector& other) {
     if (this != &other) {
-      if (m_ != other.m_) {
-        m_ = other.m_;
-        mem_ = other.mem_;
-        Kokkos::resize(data_, mem_);
-      }
+      assert(mem_ == other.mem_);
       Kokkos::deep_copy(data_, other.data_);
     }
   }
   
-  DenseVector& operator=(const DenseVector& B) {
-    assign(B);
-    return *this;
-  }
+  DenseVector& operator=(const DenseVector& B) = default;
 
   KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {

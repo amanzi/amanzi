@@ -56,31 +56,17 @@ class Tensor {
   //     data_(other.data_) {}
   
   // deep copy
+  KOKKOS_INLINE_FUNCTION
   void assign(const Tensor& other) {
     if (this != &other) {
-      if (d_ != other.d_ || rank_ !=other.rank_) {
-        Init(other.d_, other.rank_);
-      }
+      assert(size_ == other.size_);
       Kokkos::deep_copy(data_, other.data_);
     }
   }
 
   // this may change to a shallow copy, but would require careful refactor of
   // existing users.
-  Tensor& operator=(const Tensor& other) {
-    assign(other);
-    return *this;
-  }
-
-  // Tensor& operator=(Tensor&& other) {
-  //   if (this != &other) {
-  //     d_ = other.d_;
-  //     rank_ = other.rank_;
-  //     size_ = other.size_;
-  //     data_ = other.data_;
-  //   }
-  //   return *this;
-  // }
+  Tensor& operator=(const Tensor& other) = default;
   
   /*******************************************************************
   * Initialization of a tensor of rank 1 (scalar), 2 (matrix) or 4.
