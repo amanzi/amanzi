@@ -24,6 +24,7 @@
 #define AMANZI_BLOCK_VECTOR_IMPL_HH_
 
 #include <numeric>
+#include "Teuchos_FancyOStream.hpp"
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -605,8 +606,10 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
     os << name << "(" << getNumVectors(name) << ") ";
   }
   os << std::endl;
+
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(os));
   if (data_io) {
-    for (const auto& name : *this) { GetComponent_(name, ghosted)->print(os); }
+    for (const auto& name : *this) { GetComponent_(name, ghosted)->describe(out, Teuchos::VERB_EXTREME); }
   }
 };
 

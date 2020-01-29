@@ -110,7 +110,6 @@ LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(const Vector& f, Vector& x,
   num_itrs_ = 0;
 
   double fnorm = f.norm2();
-  //  std::cout << "PCG fnorm = " << fnorm << std::endl;
 
   if (fnorm == 0.0) {
     x.putScalar(0.0);
@@ -122,11 +121,8 @@ LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(const Vector& f, Vector& x,
   }
 
   m_->apply(x, r); // r = f - M * x
-  //  std::cout << "Pre-update: f = " << f.norm2() << ", r = " << r.norm2() <<
-  //  std::endl;
   r.update(1.0, f, -1.0);
   double rnorm0 = r.norm2();
-  //  std::cout << "PCG rnorm0 = " << rnorm0 << std::endl;
   residual_ = rnorm0;
 
   // Ignore all criteria if one iteration is enforced.
@@ -165,7 +161,6 @@ LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(const Vector& f, Vector& x,
   Vector p(f.getMap());
   h_->applyInverse(r, p); // gamma = (H r,r)
   double gamma0 = p.dot(r);
-  std::cout << " dot = " << gamma0 << std::endl;
   if (gamma0 <= 0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Failed: non-SPD ApplyInverse: gamma0=" << gamma0

@@ -25,6 +25,8 @@
 #include "DenseVector.hh"
 
 #include <Kokkos_Core.hpp>
+#include "exceptions.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -37,32 +39,71 @@ class Tensor {
  public:
 
 
-  KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0){}
-  //Tensor(const Tensor& T);
-  Tensor(const int& d, const int& rank){ Init(d, rank); }
+  KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0) {}
 
-#if 0
-  KOKKOS_INLINE_FUNCTION Tensor(int d, int rank, const Kokkos::View<double*> data)
-  {
-    size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
-    int mem = size_ * size_;
-    data_ = data; 
-    d_ = d;
-    rank_ = rank;
+  Tensor(const int& d, const int& rank) {
+    Init(d, rank);
   }
-#endif
+
+  Tensor(const Tensor& other) : Tensor(other.d_, other.rank_) {
+    Kokkos::deep_copy(data_, other.data_);
+  }
+
+  // Tensor(Tensor&& other) :
+  //     d_(other.d_),
+  //     rank_(other.rank_),
+  //     size_(other.size_),
+  //     data_(other.data_) {}
+  
+  // deep copy
+  void assign(const Tensor& other) {
+    if (this != &other) {
+      if (d_ != other.d_ || rank_ !=other.rank_) {
+        Init(other.d_, other.rank_);
+      }
+      Kokkos::deep_copy(data_, other.data_);
+    }
+  }
+
+  // this may change to a shallow copy, but would require careful refactor of
+  // existing users.
+  Tensor& operator=(const Tensor& other) {
+    assign(other);
+    return *this;
+  }
+
+  // Tensor& operator=(Tensor&& other) {
+  //   if (this != &other) {
+  //     d_ = other.d_;
+  //     rank_ = other.rank_;
+  //     size_ = other.size_;
+  //     data_ = other.data_;
+  //   }
+  //   return *this;
+  // }
   
   /*******************************************************************
-  * Initialization of a tensor of rank 1, 2 or 4.
+  * Initialization of a tensor of rank 1 (scalar), 2 (matrix) or 4.
   ****************************************************************** */
   int Init(int d, int rank)
   {
-    size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
-    int mem = size_ * size_;
-    Kokkos::resize(data_,mem); 
+    int mem;
+    if (d <= 0 || rank <= 0) {
+      d_ = rank_ = size_ = mem = 0;
+      return 0;
+    } else if (d > 3) {
+      Errors::Message msg("Tensor dimension exceeds limit (3).");
+      Exceptions::amanzi_throw(msg);
+    } else if (rank > 4) {
+      Errors::Message msg("Tensor rank exceeds limit (4).");
+      Exceptions::amanzi_throw(msg);
+    }
     d_ = d;
     rank_ = rank;
-    for (int i = 0; i < mem; i++) data_[i] = 0.0;
+    size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
+    mem = size_ * size_;
+    Kokkos::resize(data_, mem); 
+    Kokkos::deep_copy(data_, 0.);
     return mem;
   }
 
@@ -73,13 +114,9 @@ class Tensor {
   {
     // Need to have a copy for the device 
     // \TODO find another way 
-    const int WHETSTONE_TENSOR_SIZE_L[3][4] = { {1, 1, 0, 1},
-                                                {1, 2, 0, 3},
-                                                {1, 3, 0, 6 }};
     if (data_.extent(0) != size_*size_) return;
-    size_ = WHETSTONE_TENSOR_SIZE_L[d_ - 1][rank_ - 1];
     int mem = size_ * size_;
-    for (int i = 0; i < mem; i++) data_[i] = val;
+    Kokkos::deep_copy(data_, val);
   }
 
   /* ******************************************************************

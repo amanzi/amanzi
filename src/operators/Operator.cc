@@ -95,19 +95,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
 }
 
 
-/* ******************************************************************
-* Init owned local operators.
-****************************************************************** */
-//void Operator::Zero()
-//{
-//  rhs_->putScalarMasterAndGhosted(0.0);
-//  int nops = ops_.size();
-//  for (int i = 0; i < nops; ++i) {
-//    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
-//       ops_[i]->Zero();
-//  }
-//}
-
 
 /* ******************************************************************
 * Create structure of a global square matrix.
@@ -314,10 +301,12 @@ int Operator::apply(const CompositeVector& X, CompositeVector& Y, double scalar)
     Y.putScalarGhosted(0.0);
   }
 
+  // apply local matrices
   apply_calls_++;
-
   for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
 
+  // gather off-process contributions
+  Y.GatherGhostedToMaster();
   return 0;
 }
 
@@ -442,7 +431,9 @@ void Operator::Zero()
   }
 }
 
-
+/* ******************************************************************
+* Copy the diagonal.
+****************************************************************** */
 void Operator::getLocalDiagCopy(CompositeVector& X) const
 {
   X.putScalarMasterAndGhosted(0.);
@@ -450,7 +441,6 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
     op->GetLocalDiagCopy(X);
   }
   X.GatherGhostedToMaster();
-  if (shift_ > 0.) X.shift(shift_);
 }
 
 /* ******************************************************************

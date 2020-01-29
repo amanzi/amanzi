@@ -24,25 +24,6 @@
 namespace Amanzi {
 namespace WhetStone {
 
-#if 0 
-/* ******************************************************************
- * Constructor
- ****************************************************************** */
-Tensor::Tensor(const Tensor& T)
-{
-  int d = T.dimension();
-  int rank = T.rank();
-  Kokkos::View<double*> data = T.data(); 
-
-  if (d && rank) {
-    int mem = Init(d, rank);
-    Kokkos::deep_copy(data_,data); 
-  } else {
-    d_ = rank_ = size_ = 0;
-  }
-}
-#endif 
-
 
 /* ******************************************************************
  * Inverse operation with tensors of rank 1 and 2
@@ -206,24 +187,6 @@ Tensor::SpectralBounds(double* lower, double* upper) const
     *upper = S[n - 1];
   }
 }
-
-#if 0 
-/* ******************************************************************
- * Copy operator.
- ****************************************************************** */
-Tensor&
-Tensor::operator=(const Tensor& T)
-{
-  int d = T.dimension();
-  int rank = T.rank();
-  Kokkos::View<double*> data = T.data(); 
-
-  int mem = Init(d, rank);
-  for (int i = 0; i < mem; i++) data_[i] = data[i];
-  return *this;
-}
-#endif 
-
 
 
 

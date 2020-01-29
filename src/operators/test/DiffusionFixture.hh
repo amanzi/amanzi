@@ -52,7 +52,9 @@ struct DiffusionFixture {
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(ana->dimension(),
             plist.sublist("regions"), *comm));
     AmanziMesh::MeshFactory meshfactory(comm, gm);
-    if (mesh_file == "Generate2D") {
+    if (mesh_file == "Generate1D") {
+      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
+    } else if (mesh_file == "Generate2D") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
     } else if (mesh_file == "Generate3D") {
       mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);

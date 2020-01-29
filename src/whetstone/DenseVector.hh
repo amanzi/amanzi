@@ -211,7 +211,6 @@ class DenseVector {
   {
     for (int i = 0; i < A.NumRows(); i++)
       os << std::setw(12) << std::setprecision(12) << A(i) << " ";
-    os << "\n";
     return os;
   }
 

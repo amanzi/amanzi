@@ -414,20 +414,13 @@ if (BUILD_TESTS)
     #                                     test/operator_mini1D_nonlinear.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
-    # DG advection test
-    add_amanzi_test(operators_advection_dg operators_advection_dg
-                    KIND unit
-                    NPROCS 3
-                    SOURCE test/Main.cc test/operator_advection_dg.cc
-                                        test/operator_advection_dg_transient
-                    LINK_LIBS ${operators_test_link_libs})
-
-    # Test: mini PDEs
-    add_amanzi_test(operators_mini1D operators_mini1D
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_mini1D.cc
-                                        test/operator_mini1D_nonlinear.cc
-                    LINK_LIBS ${operators_test_link_libs})
+    # # DG advection test
+    # add_amanzi_test(operators_advection_dg operators_advection_dg
+    #                 KIND unit
+    #                 NPROCS 3
+    #                 SOURCE test/Main.cc test/operator_advection_dg.cc
+    #                                     test/operator_advection_dg_transient
+    #                 LINK_LIBS ${operators_test_link_libs})
 
 endif()
 
