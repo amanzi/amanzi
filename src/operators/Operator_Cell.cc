@@ -76,12 +76,12 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Xc = X.ViewComponent("cell", true);
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
+  Kokkos::vector<WhetStone::DenseVector> v;
+  Kokkos::vector<WhetStone::DenseVector> Av;
+  WhetStone::DenseVector dv(2); 
+  v.resize(op.matrices.size(),dv); 
+  Av.resize(op.matrices.size(),dv); 
 
-  // Pre-allocation for DenseVectors 
-  Kokkos::View<double**> v("ApplyMatrixFreeOp on Face_Cell work space v",
-          op.matrices.size(), 2);
-  Kokkos::View<double**> Av("ApplyMatrixFreeOp on Face_Cell work space Av",
-          op.matrices.size(), 2);
 
   Kokkos::vector<WhetStone::DenseMatrix> local_matrices = op.matrices; 
 
@@ -93,8 +93,8 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
         int ncells = cells.extent(0);
 
-        WhetStone::DenseVector vv(Kokkos::subview(v, f, Kokkos::make_pair(0,ncells)));
-        WhetStone::DenseVector Avv(Kokkos::subview(Av, f, Kokkos::make_pair(0,ncells)));
+        WhetStone::DenseVector& vv = v[f];
+        WhetStone::DenseVector& Avv = Av[f]; 
         
         for (int n = 0; n != ncells; ++n) {
           vv(n) = Xc(cells[n],0);

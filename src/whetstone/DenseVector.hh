@@ -30,7 +30,7 @@ namespace WhetStone {
 
 class DenseVector {
  public:
-  DenseVector() : m_(0), mem_(0) {};
+  KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0) {};
 
   explicit DenseVector(int mrow) : m_(mrow), mem_(mrow)
   {
@@ -79,8 +79,6 @@ class DenseVector {
     }
   }
 #endif 
-
-  ~DenseVector(){}
 
   // primary members
   // -- smart memory management: preserves data only for vector reduction
