@@ -17,6 +17,7 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
@@ -173,6 +174,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", pressure_key_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(pressure_key_, eval);
   }
 
   // require additional fields for this PK
@@ -187,8 +193,13 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField(saturation_liquid_key_)) {
-    S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(saturation_liquid_key_, saturation_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", saturation_liquid_key_);
+    auto eval = Teuchos::rcp(new ConstantVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(saturation_liquid_key_, eval);
   }
 
   if (!S->HasField(prev_saturation_liquid_key_)) {

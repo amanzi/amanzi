@@ -96,8 +96,11 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 }
 
   
-void ReactiveTransportMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S){
-  
+// -----------------------------------------------------------------------------
+// Initialization of copies requires fileds to exists
+// -----------------------------------------------------------------------------
+void ReactiveTransportMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
   S->RequireFieldCopy(tcc_matrix_key_, "matrix_copy", "state");
   S->RequireFieldCopy(tcc_fracture_key_, "fracture_copy", "state");
 
@@ -143,13 +146,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   if (fail) return fail;
 
   // save copy of fields (FIXME)
-  Teuchos::RCP<Epetra_MultiVector> tcc_m_copy, tcc_f_copy;
-  // tcc_m_copy = Teuchos::rcp(new Epetra_MultiVector(
-  //     *S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
-  // tcc_f_copy = Teuchos::rcp(new Epetra_MultiVector(
-  //     *S_->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell", true)));
-  tcc_m_copy = S_->GetFieldCopyData(tcc_matrix_key_, "matrix_copy", "state")->ViewComponent("cell", true);
-  tcc_f_copy = S_->GetFieldCopyData(tcc_fracture_key_, "fracture_copy", "state")->ViewComponent("cell", true);  
+  S_->CopyField(tcc_matrix_key_, "matrix_copy", "state");
+  S_->CopyField(tcc_fracture_key_, "fracture_copy", "state");  
   
   try {
     std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
@@ -158,6 +156,10 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
       subpks.push_back(ic1);
     }
     
+    // tell chemistry PKs to work with copies
+    auto tcc_m_copy = S_->GetFieldCopyData(tcc_matrix_key_, "matrix_copy", "state")->ViewComponent("cell", true);
+    auto tcc_f_copy = S_->GetFieldCopyData(tcc_fracture_key_, "fracture_copy", "state")->ViewComponent("cell", true);  
+
     subpks[0]->set_aqueous_components(tcc_m_copy);
     subpks[1]->set_aqueous_components(tcc_f_copy);
 

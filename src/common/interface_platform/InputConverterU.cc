@@ -86,6 +86,26 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("state").set<std::string>("initialization filename", init_filename_);
   }
 
+  // -- additional saturated flow fields
+  if (pk_model_["flow"] == "darcy") {
+    Teuchos::Array<std::string> regions(1, "All");
+    out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid")
+        .sublist("function").sublist("ALL")
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", 1.0);
+
+    if (fracture_regions_.size() > 0) {
+      out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid")
+        .sublist("function").sublist("ALL")
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", 1.0);
+    }
+  }
+
   // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
     out_list.sublist("PKs").sublist("transport")

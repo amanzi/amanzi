@@ -179,6 +179,16 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************* 
+* Initialization of copies requires fileds to exists
+******************************************************************* */
+void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
+  S->RequireFieldCopy("prev_water_content", "wc_copy", "state");
+  Amanzi::PK_MPCStrong<PK_BDF>::Initialize(S);
+}
+  
+
+/* ******************************************************************* 
 * Performs one time step.
 ******************************************************************* */
 bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -193,12 +203,14 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sat_prev = sat;
 
   // -- swap water_contents (current and previous)
-  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
-  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+  if (S_->HasField("water_content")) {
+    S_->CopyField("prev_water_content", "wc_copy", "state");
 
-  CompositeVector wc_prev_copy(wc_prev);
-  wc_prev = wc;
+    S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+    CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+    CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+    wc_prev = wc;
+  }
 
   // energy
   // -- swap conserved energies (current and previous)
@@ -209,14 +221,17 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector e_prev_copy(e_prev);
   e_prev = e;
  
-  // try a step
+  // try time step
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     // revover the original conserved quantaties
     *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
-    *S_->GetFieldData("prev_water_content", "flow") = wc_prev_copy;
     *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
+    if (S_->HasField("water_content")) {
+      *S_->GetFieldData("prev_water_content", "flow") =
+          *S_->GetFieldCopyData("prev_water_content", "wc_copy", "state");
+    }
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed. Restored prev_saturation_liquid, prev_water_content, prev_energy" << std::endl;
