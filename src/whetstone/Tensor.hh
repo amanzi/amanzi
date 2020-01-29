@@ -60,7 +60,9 @@ class Tensor {
   void assign(const Tensor& other) {
     if (this != &other) {
       assert(size_ == other.size_);
-      Kokkos::deep_copy(data_, other.data_);
+      for(int i = 0 ; i < size_; ++i){
+        data_[i] = other.data_[i]; 
+      }
     }
   }
 
@@ -102,7 +104,9 @@ class Tensor {
     // \TODO find another way 
     if (data_.extent(0) != size_*size_) return;
     int mem = size_ * size_;
-    Kokkos::deep_copy(data_, val);
+    for(int i = 0 ; i < mem; ++i){
+      data_[i] = val;
+    }
   }
 
   /* ******************************************************************

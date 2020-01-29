@@ -83,17 +83,17 @@ class MeshColumn : public Mesh {
   }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
-  virtual Entity_ID entity_get_parent(const Entity_kind kind,
+  virtual Entity_ID entity_get_parent_type(const Entity_kind kind,
                                       const Entity_ID entid) const override
   {
     Entity_ID ent;
     switch (kind) {
     case FACE:
-      ent = extracted_->entity_get_parent(kind, column_faces_[entid]);
+      ent = extracted_->entity_get_parent_type(kind, column_faces_[entid]);
       break;
 
     default:
-      ent = extracted_->entity_get_parent(kind, entid);
+      ent = extracted_->entity_get_parent_type(kind, entid);
       break;
     }
     return ent;

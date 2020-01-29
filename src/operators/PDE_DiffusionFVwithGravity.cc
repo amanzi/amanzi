@@ -67,6 +67,7 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
     const auto grav_f = gravity_term_->ViewComponent("face", true);
     auto rhs_c = global_op_->rhs()->ViewComponent("cell");
     const auto k_face = ScalarCoefficientFaces(true);
+    const AmanziMesh::Mesh* m = mesh_.get(); 
 
     Kokkos::parallel_for(
         "PDE_DiffusionFVwithGravity::UpdateMatrices",
@@ -74,7 +75,7 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
         KOKKOS_LAMBDA(const int c) {
           AmanziMesh::Entity_ID_View faces;
           AmanziMesh::Entity_Dir_View dirs;
-          mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+          m->cell_get_faces_and_dirs(c, faces, dirs);
           int nfaces = faces.size();
 
           for (int n = 0; n != nfaces; ++n) {
@@ -208,6 +209,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
   {
     auto beta_f = transmissibility_->ViewComponent("face", true);
     auto h_f = h->ViewComponent("face", true);
+    const AmanziMesh::Mesh* m = mesh_.get(); 
     Kokkos::parallel_for(
         "PDE_DiffusionFVwithGravity::ComputeTransmissibility1",
         ncells_owned,
@@ -215,17 +217,17 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
 
           AmanziMesh::Entity_ID_View faces;
           Kokkos::View<AmanziGeometry::Point*> bisectors;
-          mesh_->cell_get_faces_and_bisectors(c, faces, bisectors);
+          m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+          WhetStone::Tensor Kc(m->space_dimension(), 1); 
           Kc(0, 0) = 1.0;
           if (K_.size()) Kc = K_[c];
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
             const AmanziGeometry::Point& a = bisectors(i);
-            const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-            const double area = mesh_->face_area(f);
+            const AmanziGeometry::Point& normal = m->face_normal(f);
+            const double area = m->face_area(f);
 
             const double h_tmp = AmanziGeometry::norm(a);
             const double s = area / h_tmp;
@@ -247,23 +249,25 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
     auto h_f = h->ViewComponent("face", false);
     const auto trans_f = transmissibility_->ViewComponent("face", false);
     auto grav_f = g_cv->ViewComponent("face", false);
+    const AmanziMesh::Mesh* m = mesh_.get(); 
+
     Kokkos::parallel_for(
         "PDE_DiffusionFVwithGravity::ComputeTransmissibility2",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
-          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           int ncells = cells.size();
 
           AmanziGeometry::Point a_dist;
           if (ncells == 2) {
-            a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+            a_dist = m->cell_centroid(cells[1]) - m->cell_centroid(cells[0]);
           } else if (ncells == 1) {
-            a_dist = mesh_->face_centroid(f) - mesh_->cell_centroid(cells[0]);
+            a_dist = m->face_centroid(f) - m->cell_centroid(cells[0]);
           } 
           a_dist *= 1.0 / AmanziGeometry::norm(a_dist);
 
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          const AmanziGeometry::Point& normal = m->face_normal(f);
           double dir = std::copysign(1.0, normal * a_dist);
 
           double rho = ncells == 1 ? rho_c(cells(0),0) : (rho_c(cells(0),0) + rho_c(cells(1),0))/2.;

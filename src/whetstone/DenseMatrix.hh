@@ -67,10 +67,16 @@ class DenseMatrix {
   // -- reshape can be applied only to a matrix that owns data
   // -- data are not remapped to the new matrix shape
   void reshape(int mrow, int ncol);
+  
+  KOKKOS_INLINE_FUNCTION 
   void assign(const DenseMatrix& other) {
     if (this != &other) {
       assert(n_ == other.n_ && m_ == other.m_);
-      Kokkos::deep_copy(data_, other.data_);
+      for(int i = 0 ; i < n_; ++i){
+        for(int j = 0 ; j < m_; ++j){
+          data_(i,j) = other.data_(i,j); 
+        }
+      }
     }
   }
 

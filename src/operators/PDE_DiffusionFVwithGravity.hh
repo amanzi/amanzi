@@ -76,7 +76,8 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV {
   // virtual void ComputeJacobianLocal_(
   //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
   //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
-
+public: 
+  // Neeed to be public for kokkos 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
 
  protected:

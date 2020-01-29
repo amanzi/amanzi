@@ -3277,7 +3277,7 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 // Parent entity in the source mesh if mesh was derived from another mesh
 //---------------------------------------------------------
 Entity_ID
-Mesh_MSTK::entity_get_parent(const Entity_kind kind,
+Mesh_MSTK::entity_get_parent_type(const Entity_kind kind,
                              const Entity_ID entid) const
 {
   int ival;

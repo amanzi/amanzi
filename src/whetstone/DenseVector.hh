@@ -91,7 +91,9 @@ class DenseVector {
   void assign(const DenseVector& other) {
     if (this != &other) {
       assert(mem_ == other.mem_);
-      Kokkos::deep_copy(data_, other.data_);
+      for(int i = 0 ; i < mem_; ++i){
+        data_[i] = other.data_[i]; 
+      }
     }
   }
   

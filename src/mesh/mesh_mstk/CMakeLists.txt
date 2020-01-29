@@ -110,13 +110,13 @@ if (BUILD_TESTS)
                     SOURCE
                          test/Main.cc
                          test/test_hex_1x1x1.cc
-                         test/test_hex_2x2x1.cc
-                         test/test_hex_3x3x3.cc
-                         test/test_hex_3x3x3_sets.cc
-                         test/test_hex_gen_3x3x3.cc
-                         test/test_quad_gen_3x3.cc
-                         test/test_extract_surface.cc
-			 test/test_extract_column.cc
+#                         test/test_hex_2x2x1.cc
+#                         test/test_hex_3x3x3.cc
+#                         test/test_hex_3x3x3_sets.cc
+#                         test/test_hex_gen_3x3x3.cc
+#                         test/test_quad_gen_3x3.cc
+#                         test/test_extract_surface.cc
+#			                   test/test_extract_column.cc
 #                         test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

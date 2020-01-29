@@ -183,8 +183,39 @@ class Mesh {
   entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const = 0;
 
   // Parent entity in the source mesh if mesh was derived from another mesh
+  KOKKOS_INLINE_FUNCTION Entity_ID
+  entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
+  {
+    assert(parents_precomputed_); 
+    switch(kind){
+      case CELL:
+        if(entid > cells_parent_.extent(0))
+          return -1; 
+        return cells_parent_(entid);  
+        break;
+      case FACE: 
+        if(entid > faces_parent_.extent(0))
+          return -1; 
+        return faces_parent_(entid);
+        break; 
+      case EDGE: 
+        assert(edges_requested_); 
+        if(entid > edges_parent_.extent(0))
+          return -1; 
+        return edges_parent_(entid);
+        break; 
+      case NODE: 
+        if(entid > nodes_parent_.extent(0))
+          return -1; 
+        return nodes_parent_(entid);
+      default: {} 
+    }
+    return -1;
+  }
+
+
   virtual Entity_ID
-  entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
+  entity_get_parent_type(const Entity_kind kind, const Entity_ID entid) const;
 
   // Get cell type - UNKNOWN, TRI, QUAD, etc. See MeshDefs.hh
   virtual Cell_type cell_get_type(const Entity_ID cellid) const = 0;
@@ -277,9 +308,21 @@ class Mesh {
   }
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void cell_get_faces_and_bisectors(
-    const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-    Kokkos::View<AmanziGeometry::Point*>& bisectors) const;
+  KOKKOS_INLINE_FUNCTION void 
+  cell_get_faces_and_bisectors(const Entity_ID cellid, 
+                      Kokkos::View<Entity_ID*>& faceids,
+                      Kokkos::View<AmanziGeometry::Point*>& bisectors) const
+  {
+    assert(cell_get_faces_and_bisectors_precomputed_); 
+    faceids =
+      Kokkos::subview(cell_face_ids_.entries,
+                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
+                                        cell_face_ids_.row_map(cellid + 1)));
+    bisectors = 
+      Kokkos::subview(cell_faces_bisectors_.entries,
+                    Kokkos::make_pair(cell_faces_bisectors_.row_map(cellid),
+                                      cell_faces_bisectors_.row_map(cellid + 1)));
+}
 
   // Get edges of a cell
   void cell_get_edges(const Entity_ID cellid,
@@ -911,6 +954,8 @@ class Mesh {
 
   virtual void cache_parents_info_() const; 
 
+  virtual void cache_cell_get_faces_and_bisectors_() const; 
+
  public:
   void PrintMeshStatistics() const;
 
@@ -948,6 +993,9 @@ class Mesh {
   mutable Kokkos::View<Entity_ID*> edges_parent_; 
   mutable Kokkos::View<Entity_ID*> nodes_parent_; 
 
+  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace> cell_faces_bisectors_;
+
+
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_,
     node_nodeabove_;
@@ -979,7 +1027,7 @@ class Mesh {
   mutable bool cell2edge_info_cached_, face2edge_info_cached_;
   mutable bool cell_geometry_precomputed_, face_geometry_precomputed_,
     edge_geometry_precomputed_;
-  mutable bool parents_precomputed_; 
+  mutable bool parents_precomputed_, cell_get_faces_and_bisectors_precomputed_; 
 
   // -- region data
   mutable std::map<std::string, std::vector<int>> region_ids;

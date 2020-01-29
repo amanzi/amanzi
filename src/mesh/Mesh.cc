@@ -89,6 +89,8 @@ Mesh::Mesh(const Comm_ptr_type& comm,
     face2cell_info_cached_(false),
     cell2edge_info_cached_(false),
     face2edge_info_cached_(false),
+    cell_get_faces_and_bisectors_precomputed_(false), 
+    parents_precomputed_(false),
     parent_(Teuchos::null),
     logical_(false),
     kdtree_faces_initialized_(false)
@@ -369,9 +371,8 @@ Mesh::cache_cell2edge_info_() const
   cell2edge_info_cached_ = true;
 }
 
-
 Entity_ID
-Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
+Mesh::entity_get_parent_type(const Entity_kind kind, const Entity_ID entid) const
 {
   Errors::Message mesg(
     "Parent/daughter entities not enabled in this framework.");
@@ -386,18 +387,31 @@ Mesh::cache_parents_info_() const
   int ncells = num_entities(CELL, Parallel_type::ALL);
   Kokkos::resize(cells_parent_,ncells); 
   for(int i = 0 ; i < ncells; ++i){
-    cells_parent_[i] = entity_get_parent(CELL,i); 
+    cells_parent_[i] = entity_get_parent_type(CELL,i); 
   }
   // FACES 
   int nfaces = num_entities(FACE, Parallel_type::ALL);
   Kokkos::resize(faces_parent_,nfaces);
-  for(int i = 0 ; i < ncells; ++i){
-    faces_parent_[i] = entity_get_parent(CELL,i); 
+  for(int i = 0 ; i < nfaces; ++i){
+    faces_parent_[i] = entity_get_parent_type(FACE,i); 
   }
   // NODES 
+  int nnodes = num_entities(NODE, Parallel_type::ALL);
+  Kokkos::resize(nodes_parent_,nnodes);
+  for(int i = 0 ; i < nnodes; ++i){
+    nodes_parent_[i] = entity_get_parent_type(NODE,i); 
+  }
   // EDGES
+  if(edges_requested_){
+    int nedges = num_entities(EDGE, Parallel_type::ALL);
+    Kokkos::resize(edges_parent_,nedges);
+    for(int i = 0 ; i < nedges; ++i){
+      edges_parent_[i] = entity_get_parent_type(EDGE,i); 
+    }
+  }
   parents_precomputed_ = true; 
 }
+
 
 
 unsigned int
@@ -471,22 +485,36 @@ Mesh::init_cache()
   assert(!face_geometry_precomputed_);
   compute_face_geometric_quantities_();
   face_geometry_precomputed_ = true;
+  if(parent().get()){
+    assert(!parents_precomputed_); 
+    cache_parents_info_(); 
+    parents_precomputed_ = true; 
+  }
+  assert(!cell_get_faces_and_bisectors_precomputed_); 
+  cache_cell_get_faces_and_bisectors_(); 
+  cell_get_faces_and_bisectors_precomputed_ = true;
 }
 
-// Get the bisectors, i.e. vectors from cell centroid to face centroids.
-void
-Mesh::cell_get_faces_and_bisectors(
-  const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-  Kokkos::View<AmanziGeometry::Point*>& bisectors) const
-{
-  cell_get_faces(cellid, faceids);
-
-  AmanziGeometry::Point cc = cell_centroid(cellid);
-  Kokkos::resize(bisectors, faceids.extent(0));
-  for (int i = 0; i != faceids.extent(0); ++i) {
-    bisectors(i) = face_centroid(faceids(i)) - cc;
+void 
+Mesh::cache_cell_get_faces_and_bisectors_() const {
+  int ncells = num_entities(CELL, Parallel_type::ALL);
+  Kokkos::resize(cell_faces_bisectors_.row_map,ncells+1); 
+  cell_faces_bisectors_.row_map(0) = 0; 
+  
+  for(int i = 0 ; i < ncells; ++i){
+    Kokkos::View<Entity_ID*> faceids;
+    cell_get_faces(i, faceids);
+    Kokkos::resize(cell_faces_bisectors_.entries,
+                   cell_faces_bisectors_.row_map(i) + faceids.extent(0)); 
+    AmanziGeometry::Point cc = cell_centroid(i);
+    cell_faces_bisectors_.row_map(i + 1) = faceids.extent(0) +
+       cell_faces_bisectors_.row_map(i);
+    //Kokkos::resize(bisectors, faceids.extent(0));
+    for (int j = 0; j < faceids.extent(0); ++j) {
+      cell_faces_bisectors_.entries(cell_faces_bisectors_.row_map(i)+j) = 
+        face_centroid(faceids(j)) - cc;
+    }
   }
-  return;
 }
 
 void
