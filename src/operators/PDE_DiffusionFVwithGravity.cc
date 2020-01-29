@@ -30,6 +30,12 @@ void PDE_DiffusionFVwithGravity::Init()
 {
   PDE_DiffusionFV::Init();
   gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
+  // Init vector of tensor is it does not exists
+  if (K_.size() == 0){
+    WhetStone::Tensor t(mesh_->space_dimension(),1);
+    t(0,0) = 1.0;
+    K_.resize(ncells_owned,t);
+  } 
 }
 
 
@@ -219,9 +225,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc(m->space_dimension(), 1); 
-          Kc(0, 0) = 1.0;
-          if (K_.size()) Kc = K_[c];
+          WhetStone::Tensor& Kc = K_[c];
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

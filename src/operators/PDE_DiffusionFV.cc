@@ -102,7 +102,12 @@ void PDE_DiffusionFV::Init()
     msg << "DiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"true Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
-    
+
+  if (K_.size() == 0){
+    WhetStone::Tensor t(mesh_->space_dimension(),1);
+    t(0,0) = 1.0;
+    K_.resize(ncells_owned,t);
+  } 
 
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
     if (plist_.get<bool>("surface operator", false)) {
@@ -488,15 +493,12 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
         "PDE_DiffusionFV::ComputeTransmissibility",
         ncells_owned,
         KOKKOS_LAMBDA(const int c) {
-          Kokkos::View<double*> truc("",20); 
 
           AmanziMesh::Entity_ID_View faces;
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc(space_dimension, 1); 
-          Kc(0, 0) = 1.0;
-          if (K_.size()) Kc = K_[c];
+          WhetStone::Tensor& Kc = K_[c]; 
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
