@@ -121,7 +121,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="Flow Steady">
+          <ParameterList name="flow steady">
             <Parameter name="PK type" type="string" value="richards"/>
           </ParameterList>
         </ParameterList>
@@ -382,7 +382,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
-    <ParameterList name="Flow Steady">
+    <ParameterList name="flow steady">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">

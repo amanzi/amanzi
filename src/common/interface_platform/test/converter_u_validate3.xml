@@ -269,7 +269,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="Flow Steady">
+          <ParameterList name="flow steady">
             <Parameter name="PK type" type="string" value="darcy"/>
           </ParameterList>
         </ParameterList>
@@ -312,7 +312,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Flow Steady">
+    <ParameterList name="flow steady">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Darcy problem">
         <ParameterList name="absolute permeability">
