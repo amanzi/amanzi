@@ -22,6 +22,13 @@
 
 #include "ShallowWater_PK.hh"
 
+#include "OutputXDMF.hh"
+
+
+double BottomTopography(double x, double y) {
+    return 0.;
+}
+
 /* **************************************************************** */
 TEST(SHALLOW_WATER_1D) {
     using namespace Teuchos;
@@ -33,6 +40,10 @@ TEST(SHALLOW_WATER_1D) {
     Comm_ptr_type comm = Amanzi::getDefaultComm();
     int MyPID = comm->MyPID();
     if (MyPID == 0) std::cout << "Test: 1D shallow water" << std::endl;
+    
+    // read parameter list
+    std::string xmlFileName = "test/shallow_water_1D.xml";
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     /* create a mesh framework */
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -45,41 +56,104 @@ TEST(SHALLOW_WATER_1D) {
     if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
     RCP<const Mesh> mesh;
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1);
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
     
     // create a state
     RCP<State> S = rcp(new State());
-    S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+    //S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+    S->RegisterMesh("surface",rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
-    S->set_intermediate_time(0.0);
     if (MyPID == 0) std::cout << "State created." << std::endl;
     
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+    
+    Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("Shallow water");
+    
     // create a shallow water PK
-    ShallowWater_PK SWPK;
+    ShallowWater_PK SWPK(pk_tree,plist,S,soln);
     SWPK.Setup(S.ptr());
+    S->Setup();
     //SWPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
+    SWPK.Initialize(S.ptr());
     if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
+    
+    // create screen io
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
+    S->WriteStatistics(vo);
     
     // advance in time
     double t_old(0.0), t_new(0.0), dt;
 //    Teuchos::RCP<Epetra_MultiVector>
 //    tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
     
+    std::string passwd("state");
+    
+    Teuchos::RCP<Epetra_MultiVector> h_vec = S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+    Teuchos::RCP<Epetra_MultiVector> u_vec = S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
+    Teuchos::RCP<Epetra_MultiVector> v_vec = S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+    
     int iter = 0;
     bool flag = true;
+    
     while (t_new < 0.25) {
+
         dt = SWPK.get_dt();
+        dt = 0.05;
         t_new = t_old + dt;
+       
+//        Teuchos::RCP<Epetra_MultiVector> tmp(v_vec), F(v_vec);
         
+        std::cout << "h_vec.MyLength() = " << (*h_vec).MyLength() << std::endl;
+        
+
         SWPK.AdvanceStep(t_old, t_new);
         SWPK.CommitStep(t_old, t_new, S);
         
         t_old = t_new;
         iter++;
+
+        // initialize io
+        Teuchos::ParameterList iolist;
+        std::string fname;
+        fname = "depth_"+std::to_string(iter);
+        iolist.get<std::string>("file name base", fname);
+        OutputXDMF io(iolist, mesh, true, false);
+
+        // cycle 1, time t
+        double t_out = t_new;
+
+        const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+
+        io.InitializeCycle(t_out, 1);
+        io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+        io.FinalizeCycle();
+
     }
     if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
+    
+
+//    if (MyPID == 0) {
+//        GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+//        GMV::start_data();
+//        GMV::write_cell_data(*h_vec, 0, "depth");
+//        GMV::close_data_file();
+//    }
+    
+//    // initialize io
+//    Teuchos::ParameterList iolist;
+//    iolist.get<std::string>("file name base", "depth");
+//    OutputXDMF io(iolist, mesh, true, false);
+//
+//    // cycle 1, time t
+//    double t_out = 0.25;
+//
+//    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+//
+//    io.InitializeCycle(t_out, 1);
+//    io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+//    io.FinalizeCycle();
     
 }

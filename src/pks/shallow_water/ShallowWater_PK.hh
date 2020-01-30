@@ -55,8 +55,8 @@ class ShallowWater_PK : public PK_Physical,
                             
     ~ShallowWater_PK() {};
                             
-    virtual void Setup(const Teuchos::Ptr<State>& S) override {};
-    virtual void Initialize(const Teuchos::Ptr<State>& S) override {};
+    virtual void Setup(const Teuchos::Ptr<State>& S) override;
+    virtual void Initialize(const Teuchos::Ptr<State>& S) override;
     
     virtual double get_dt() override {return 1.;};
     virtual void set_dt(double dt) override {};
@@ -78,12 +78,25 @@ class ShallowWater_PK : public PK_Physical,
   protected:
     
     Teuchos::RCP<Teuchos::ParameterList> glist_;
-    Teuchos::ParameterList ti_list_;
+    Teuchos::RCP<Teuchos::ParameterList> sw_list_;
     Teuchos::RCP<TreeVector> soln_;
     Teuchos::RCP<State> S_;
                             
     double dummy_dt;
     int step_count;
+                            
+    Key domain_;
+                            
+    // names of state fields
+    Key pressure_key_;
+    Key velocity_x_key_;
+    Key velocity_y_key_;
+    Key ponded_depth_key_;
+                            
+    std::string passwd_;
+                            
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+    int dim_;
                             
   private:
                             
