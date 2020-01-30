@@ -78,10 +78,12 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   const AmanziMesh::Mesh* mesh = mesh_.get();
   Kokkos::vector<WhetStone::DenseVector> v;
   Kokkos::vector<WhetStone::DenseVector> Av;
-  WhetStone::DenseVector dv(2); 
-  v.resize(op.matrices.size(),dv); 
-  Av.resize(op.matrices.size(),dv); 
-
+  v.resize(op.matrices.size()); 
+  Av.resize(op.matrices.size());
+  for(int i = 0 ; i < op.matrices.size(); ++i){
+    v[i].reshape(op.matrices[i].NumCols()); 
+    Av[i].reshape(op.matrices[i].NumRows()); 
+  } 
 
   Kokkos::vector<WhetStone::DenseMatrix> local_matrices = op.matrices; 
 

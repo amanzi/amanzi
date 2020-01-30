@@ -40,10 +40,10 @@ class Op_Face_CellBndFace : public Op {
 
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     WhetStone::DenseMatrix null_matrix(2,2);
-    matrices.resize(nfaces_owned, null_matrix);
-    // for (int f=0; f!=nfaces_owned; ++f) {
-    //   matrices[f].reshape(2,2);
-    // }    
+    matrices.resize(nfaces_owned);
+    for (int f=0; f!=nfaces_owned; ++f) {
+      matrices[f].reshape(2,2);
+    }    
   }
 
   virtual void
