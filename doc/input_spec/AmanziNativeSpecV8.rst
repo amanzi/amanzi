@@ -3198,9 +3198,6 @@ where
 :math:`c_r` is specific heat of rock,
 and :math:`T` is temperature.
 
-Energy sublist includes exactly one sublist, either `"Single-phase problem`" or `"Two-phase problem`".
-Structure of both sublists is quite similar. We make necessary comments on their differences.
-
 
 Physical models and assumptions
 ...............................
@@ -3623,8 +3620,8 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
   </ParameterList>
 
 
-Flow and energy PK
-------------------
+Thermal Richards PK
+-------------------
 
 The conceptual PDE model of the coupled flow and energy equations is
 
@@ -3686,6 +3683,7 @@ where
 and :math:`c_r` is specific heat of rock.
 
 
+
 Diffusion operator
 ..................
 
@@ -3706,6 +3704,13 @@ Diffusion operator
      </ParameterList>
    </ParameterList>
    </ParameterList>
+
+
+Saturated flow and energy PK
+----------------------------
+
+This is a simplication of the thermal Richards PK. The water remains in the liquid phase,
+i.e. :math:`X_g=0`. 
 
 
 Coupled matrix-fracture Darcy flow PK
@@ -6016,7 +6021,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 This example defines a degenerate box, a square on a surface *z=1*.
 
 Line Segment
-....................
+............
 
 List *region: line segment* desribes a region defined by a line
 segment. This region is a set of cells which intersect with a line
@@ -6041,7 +6046,7 @@ points.
 
 
 All
-....................
+...
 
 List *region: all* desribes a region which matches all entities in the
 mesh.  No parameters are required.
