@@ -35,7 +35,6 @@ XERCES_CPP_NAMESPACE_USE
 Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList* energy_list = nullptr;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating energy" << std::endl;
@@ -47,16 +46,6 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls", flag);
-
-  // create energy header
-  if (pk_model_["energy"] == "two-phase energy") {
-    Teuchos::ParameterList& tmp = out_list.sublist("two-phase problem");
-    energy_list = &tmp;
-  }
-  else if (pk_model_["energy"] == "one-phase energy") {
-    Teuchos::ParameterList& tmp = out_list.sublist("one-phase problem");
-    energy_list = &tmp;
-  }
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
@@ -75,12 +64,12 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  energy_list->sublist("operators") = TranslateDiffusionOperator_(
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
       disc_method, pc_method, nonlinear_solver, "", "", false);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
-  Teuchos::ParameterList& thermal = energy_list->sublist("thermal conductivity evaluator")
-                                                .sublist("thermal conductivity parameters");
+  Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator")
+                                            .sublist("thermal conductivity parameters");
   thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
   thermal.set<double>("thermal conductivity of rock", 0.2);
   thermal.set<double>("thermal conductivity of liquid", 0.1);
@@ -92,21 +81,21 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
   
   if (pk_master_.find("energy") != pk_master_.end()) {
-    energy_list->sublist("time integrator") = TranslateTimeIntegrator_(
+    out_list.sublist("time integrator") = TranslateTimeIntegrator_(
         err_options, nonlinear_solver, modify_correction, unstr_controls,
         TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
   }
 
   // insert boundary conditions and source terms
-  energy_list->sublist("boundary conditions") = TranslateEnergyBCs_();
+  out_list.sublist("boundary conditions") = TranslateEnergyBCs_();
 
   // insert internal evaluators
-  energy_list->sublist("energy evaluator")
-              .sublist("verbose object") = verb_list_.sublist("verbose object");
-  energy_list->sublist("enthalpy evaluator")
-              .sublist("verbose object") = verb_list_.sublist("verbose object");
+  out_list.sublist("energy evaluator")
+          .sublist("verbose object") = verb_list_.sublist("verbose object");
+  out_list.sublist("enthalpy evaluator")
+          .sublist("verbose object") = verb_list_.sublist("verbose object");
 
-  energy_list->sublist("verbose object") = verb_list_.sublist("verbose object");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

@@ -119,8 +119,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   }
   
   // create diffusion operator 
-  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy")
-                                              .sublist("two-phase problem");
+  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy");
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
