@@ -117,7 +117,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
         os.remove("table_values.txt")
 
     table_file = open("table_values.txt", "w+")
-    table_file.write(x.get_string())
+    table_file.write(x.get_string(sortby="x [m]"))
     table_file.close()
         
 if __name__ == "__main__":

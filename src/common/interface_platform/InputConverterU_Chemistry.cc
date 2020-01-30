@@ -35,18 +35,21 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create flow list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateChemistry_()
+Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating chemistry" << std::endl;
+    *vo_->os() << "Translating chemistry, domain=" << domain << std::endl;
 
   MemoryManager mm;
   char* text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
+
+  // create header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // chemical engine
   bool flag;

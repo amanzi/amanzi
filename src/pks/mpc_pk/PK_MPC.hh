@@ -42,13 +42,11 @@ namespace Amanzi {
 template <class PK_Base>
 class PK_MPC : virtual public PK {
  public:
+  PK_MPC() {};
   PK_MPC(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
-
-  PK_MPC() {};
-
   ~PK_MPC() {};
 
   // PK methods
@@ -72,11 +70,15 @@ class PK_MPC : virtual public PK {
                                  const Teuchos::RCP<State>& S) {};
 
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln) {} ;
+                                 TreeVector& soln) {};
 
   // -- identifier accessor
   std::string name() const { return name_; }
 
+  // iterator over pks
+  typename std::vector<Teuchos::RCP<PK_Base> >::iterator begin() { return sub_pks_.begin(); }
+  typename std::vector<Teuchos::RCP<PK_Base> >::iterator end() { return sub_pks_.end(); }
+    
  protected:
   // identifier
   std::string name_;
@@ -85,8 +87,11 @@ class PK_MPC : virtual public PK {
   typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
   SubPKList sub_pks_;
 
-  // single solution vector for the coupled problem
+  // single solution vector for the global problem
   Teuchos::RCP<TreeVector> solution_;
+
+  // single solution vector for this pk only
+  Teuchos::RCP<TreeVector> my_solution_;
 
   // plists
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
@@ -139,10 +144,12 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
     }
   }
 
+  my_solution_ = Teuchos::rcp(new TreeVector());
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
+    my_solution_->PushBack(pk_soln);
 
     // create the PK
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
@@ -199,12 +206,10 @@ template <class PK_Base>
 void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<const State>& S,
                                    const Teuchos::RCP<State>& S_inter,
                                    const Teuchos::RCP<State>& S_next) {
-
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->set_states(S, S_inter, S_next);
   }
-
 };
 
 }  // namespace Amanzi

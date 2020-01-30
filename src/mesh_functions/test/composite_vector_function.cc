@@ -93,7 +93,6 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   Teuchos::RCP<MeshFunction::Spec> specC =
     Teuchos::rcp(new MeshFunction::Spec(domainC, vector_func));
 
-  // THIS OUGHT TO WORK but fails for strange caching reasons in STK mesh.
   // This type of support will eventually be added, at least to MSTK.
   Teuchos::RCP<MeshFunction::Domain> domainF =
     Teuchos::rcp(new MeshFunction::Domain(regions, AmanziMesh::FACE));

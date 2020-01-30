@@ -1,0 +1,12 @@
+diff -ruNbB netcdf-4.7.3/netCDFConfig.cmake.in netcdf-4.7.3-source/netCDFConfig.cmake.in
+--- netcdf-4.7.3/netCDFConfig.cmake.in	2020-01-24 11:09:54.618544073 -0700
++++ netcdf-4.7.3-source/netCDFConfig.cmake.in	2020-01-24 11:15:26.897941837 -0700
+@@ -9,7 +9,7 @@
+ set_and_check(netCDF_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+ set_and_check(netCDF_LIB_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+ 
+-set(netCDF_LIBRARIES netcdf)
++set(netCDF_LIBRARIES netCDF::netcdf)
+ 
+ # include target information
+ include("${CMAKE_CURRENT_LIST_DIR}/netCDFTargets.cmake")

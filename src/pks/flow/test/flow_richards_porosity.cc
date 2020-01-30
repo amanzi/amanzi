@@ -135,7 +135,7 @@ TEST(FLOW_POROSITY_MODELS) {
   CHECK(pmin + 0.02 < pmax);
 
   Teuchos::ParameterList& tmp = plist->sublist("PKs").sublist("flow")
-                                      .sublist("Richards problem").sublist("porosity models")
+                                      .sublist("porosity models")
                                       .sublist("POM for Material 2");
   std::cout << "Mat2: ref pressure:" << tmp.get<double>("reference pressure") << std::endl;
   std::cout << "      compressibility:" << tmp.get<double>("pore compressibility") << std::endl;

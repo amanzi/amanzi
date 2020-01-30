@@ -38,7 +38,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
     soln_(soln)
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "energy", true), "One-phase problem", true);
+  ep_list_ = Teuchos::sublist(pk_list, "energy", true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -64,7 +64,8 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
-  ee_list.set("energy key", energy_key_);
+  ee_list.set<std::string>("energy key", energy_key_)
+         .set<bool>("vapor diffusion", false);
   Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
   S->SetFieldEvaluator(energy_key_, ee);
 

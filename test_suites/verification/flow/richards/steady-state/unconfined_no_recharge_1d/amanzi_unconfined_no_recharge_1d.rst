@@ -1,3 +1,5 @@
+.. _amanzi_unconfined_no_recharge_1D:
+
 Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions
 ==============================================================================
 
@@ -16,8 +18,9 @@ and can be neglected following Dupuit :cite:`ur-Dupuit_1863` and Forchheimer :ci
 The Dupuit-Forchheimer theory of free-surface flow assumes that :cite:`ur-Freeze_1979`:
 
 #. flow is horizontal and equipotential lines are vertical, and 
-#. hydraulic gradient is equal to the slope of the free surface. With these assumptions and
+#. hydraulic gradient is equal to the slope of the free surface. 
    
+With these assumptions and
 assuming the Cartesian :math:`x`- and :math:`y`-coordinates align with the 
 principal axes of the hydraulic conductivity tensor,
 the general expression for saturated flow in an unconfined aquifer becomes (e.g., :cite:`ur-deMarsily_1986`)
@@ -221,6 +224,20 @@ References
 	    
 About
 -----
+
+* Directory: testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d
+
+* Authors:  
+
+* Maintainer(s): David Moulton (moulton@lanl.gov) 
+
+* Input Files:
+
+  * amanzi_unconfined_no_recharge_1d.xml
+
+    * Spec Version 
+    * mesh:  
+    * runs
 
 Status
 ------

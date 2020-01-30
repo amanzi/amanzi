@@ -1183,6 +1183,8 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
   } else {
     iofile_t *currfile;
     currfile = IOgroup_.file[data_file_];
+    // old interface has issues with CLang 10.0.1
+    // exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
     if (!exists) {

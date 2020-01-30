@@ -62,7 +62,7 @@ set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 
 
 # --- Set the name of the patch
-set(HYPRE_patch_file hypre-cmake3_7.patch hypre-superlu.patch)
+set(HYPRE_patch_file hypre-superlu.patch)
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
@@ -91,7 +91,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
-                    # SOURCE_SUBDIR src   # cmake 3.7+ feature 
+                    SOURCE_SUBDIR src                          # cmake 3.7+ feature 
 		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                   ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}

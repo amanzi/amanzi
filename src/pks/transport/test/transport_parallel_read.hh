@@ -30,8 +30,6 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
 
   if (mypref == Framework::MSTK)
     std::cout << "Test: advance using parallel mesh with parallel file read and format MSTK" << std::endl;
-  else if (mypref == Framework::STK)
-    std::cout << "Test: advance using parallel mesh with parallel file read and format STK" << std::endl;
   else if (mypref == Framework::MOAB)
     std::cout << "Test: advance using parallel mesh with parallel file read and format MOAB" << std::endl;
   else if (mypref == Framework::SIMPLE)

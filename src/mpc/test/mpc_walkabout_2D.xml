@@ -136,7 +136,21 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
+
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{All}"/>
@@ -146,7 +160,6 @@
 
   <ParameterList name="PKs">
     <ParameterList name="flow">
-      <ParameterList name="Darcy problem">
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="none"/>
       </ParameterList>
@@ -223,7 +236,6 @@
       	  <Parameter name="linear solver" type="string" value="AztecOO"/>
       	</ParameterList>
       </ParameterList>
-    </ParameterList>
     </ParameterList>
   </ParameterList>
 

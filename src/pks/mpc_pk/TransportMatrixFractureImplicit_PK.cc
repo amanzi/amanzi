@@ -100,7 +100,7 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
@@ -172,6 +172,11 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
+               << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -278,7 +283,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
     int ierr = solver.ApplyInverse(rhs, tv_aux);
 
-    SaveComponent_(tv_aux, solution_, i);
+    SaveComponent_(tv_aux, my_solution_, i);
 
     // process error code
     bool fail = (ierr == 0);
@@ -292,8 +297,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   // output 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix->VV_PrintSoluteExtrema(*solution_->SubVector(0)->Data()->ViewComponent("cell"), dt, " (m)");
-    pk_fracture->VV_PrintSoluteExtrema(*solution_->SubVector(1)->Data()->ViewComponent("cell"), dt, " (f)");
+    pk_matrix->VV_PrintSoluteExtrema(*my_solution_->SubVector(0)->Data()->ViewComponent("cell"), dt, " (m)");
+    pk_fracture->VV_PrintSoluteExtrema(*my_solution_->SubVector(1)->Data()->ViewComponent("cell"), dt, " (f)");
   }
 
   dt_ = ts_control_->get_timestep(dt_, 1);
@@ -308,8 +313,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 void TransportMatrixFractureImplicit_PK::CommitStep(
     double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  *S->GetFieldData("total_component_concentration", "state") = *solution_->SubVector(0)->Data();
-  *S->GetFieldData("fracture-total_component_concentration", "state") = *solution_->SubVector(1)->Data();
+  *S->GetFieldData("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
+  *S->GetFieldData("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
 }
 
 

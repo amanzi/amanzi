@@ -32,62 +32,60 @@
   <ParameterList name="PKs">
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="Darcy problem">
-        <ParameterList name="physical models and assumptions">
-          <Parameter name="flow in fractures" type="bool" value="true"/>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="flow in fractures" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
 
-        <ParameterList name="fracture permeability models">
-          <ParameterList name="FPM for Entire Domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="model" type="string" value="cubic law"/>
-            <Parameter name="aperture" type="double" value="1.0"/>
+      <ParameterList name="fracture permeability models">
+        <ParameterList name="FPM for Entire Domain">
+          <Parameter name="region" type="string" value="Computational domain"/>
+          <Parameter name="model" type="string" value="cubic law"/>
+          <Parameter name="aperture" type="double" value="1.0"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="operators">
+	<ParameterList name="diffusion operator">
+	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="time integrator">
+	<Parameter name="time integration method" type="string" value="BDF1"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="linear solver" type="string" value="PCG"/>
+
+	<ParameterList name="BDF1">
+	  <Parameter name="timestep controller type" type="string" value="standard"/>
+	  <ParameterList name="timestep controller standard parameters">
+	    <Parameter name="min iterations" type="int" value="5"/>
+	    <Parameter name="max iterations" type="int" value="7"/>
+	    <Parameter name="time step increase factor" type="double" value="1.2"/>
+	    <Parameter name="time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="min time step" type="double" value="0.0"/>
+            <Parameter name="max time step" type="double" value="1.0"/>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
 
-        <ParameterList name="operators">
-          <ParameterList name="diffusion operator">
-            <ParameterList name="matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-
-        <ParameterList name="time integrator">
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <Parameter name="linear solver" type="string" value="PCG"/>
-
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
-              <Parameter name="min iterations" type="int" value="5"/>
-              <Parameter name="max iterations" type="int" value="7"/>
-              <Parameter name="time step increase factor" type="double" value="1.2"/>
-              <Parameter name="time step reduction factor" type="double" value="0.5"/>
-              <Parameter name="min time step" type="double" value="0.0"/>
-              <Parameter name="max time step" type="double" value="1.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-
-        <ParameterList name="boundary conditions">
-          <ParameterList name="pressure">
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="boundary pressure">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="pressure">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
