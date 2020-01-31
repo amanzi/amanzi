@@ -319,7 +319,7 @@ void Multiphase2p2c_PK::InitMPPreconditioner()
   eqns_[0].advection.push_back(std::make_pair(advection_liquid_reduced_key_, pressure_liquid_key_));
   eqns_[0].advection.push_back(std::make_pair("", ""));  // no gas phase
 
-  eqns_[0].diff_factors.resize(2, -1.0);
+  eqns_[0].diff_factors.resize(2, -mol_mass_[0] / mol_mass_H2O_);
   eqns_[0].diffusion.push_back(std::make_pair(diffusion_liquid_key_, molar_density_liquid_key_));
   eqns_[0].diffusion.push_back(std::make_pair("", ""));  // no gas phase flux
 

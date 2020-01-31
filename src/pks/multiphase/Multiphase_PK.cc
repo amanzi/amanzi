@@ -248,7 +248,10 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto tmp_list = mp_list_->sublist("molecular diffusion");
   mol_diff_l_ = tmp_list.get<Teuchos::Array<double> >("aqueous values").toVector();
   mol_diff_g_ = tmp_list.get<Teuchos::Array<double> >("gaseous values").toVector();
+  mol_mass_ = tmp_list.get<Teuchos::Array<double> >("molar masses").toVector();
   kH_ = tmp_list.get<Teuchos::Array<double> >("Henry dimensionless constants").toVector();
+
+  mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
 
   // verbose object must go first to support initialization reports
   Teuchos::ParameterList vlist;

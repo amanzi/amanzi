@@ -108,10 +108,12 @@ TEST(MULTIPHASE_2P2C) {
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
       const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+      const auto& u3 = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "molar density hydrogen", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
+      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();
 
       S->WriteStatistics(vo);

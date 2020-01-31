@@ -160,9 +160,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc_pg_;
 
   // physical parameters
-  double mu_l_, mu_g_, rho_l_, eta_l_;
+  double mu_l_, mu_g_, rho_l_, eta_l_, mol_mass_H2O_;
   std::vector<WhetStone::Tensor> K_;
-  std::vector<double> mol_diff_l_, mol_diff_g_, kH_; 
+  std::vector<double> mol_diff_l_, mol_diff_g_, mol_mass_, kH_; 
 
   // water retention models
   Teuchos::RCP<WRMmpPartition> wrm_;

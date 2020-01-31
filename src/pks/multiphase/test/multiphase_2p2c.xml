@@ -56,9 +56,11 @@
       <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
     </ParameterList>
 
+    <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
     <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>

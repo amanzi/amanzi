@@ -335,7 +335,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             // -- populated advection operator
             pde->Setup(*flux_tmp);
             pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->global_operator()->Init();
+            pde->local_op()->Init();
             pde->UpdateMatrices(flux_tmp.ptr());
             pde->ApplyBCs(false, false, false);
           }
@@ -433,7 +433,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             // -- populated advection operator
             pde->Setup(*flux_tmp);
             pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->global_operator()->Init();
+            pde->local_op()->Init();
             pde->UpdateMatrices(flux_tmp.ptr());
             pde->ApplyBCs(false, false, false);
 
