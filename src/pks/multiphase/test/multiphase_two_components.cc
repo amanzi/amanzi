@@ -30,7 +30,7 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "Multiphase2p2c_PK.hh"
+#include "MultiphaseTwoComponents_PK.hh"
 
 
 /* **************************************************************** */
@@ -47,7 +47,7 @@ TEST(MULTIPHASE_2P2C) {
   if (MyPID == 0) std::cout << "Test: multiphase pk, model I" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_2p2c.xml";
+  std::string xmlFileName = "test/multiphase_two_components.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -56,8 +56,8 @@ TEST(MULTIPHASE_2P2C) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 5);
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -70,7 +70,7 @@ TEST(MULTIPHASE_2P2C) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new Multiphase2p2c_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MultiphaseTwoComponents_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();

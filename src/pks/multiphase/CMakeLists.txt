@@ -49,7 +49,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         MultiphaseReduced_PK.cc Multiphase2p2c_PK.cc
+                         MultiphaseModelI_PK.cc MultiphaseTwoComponents_PK.cc
                          Multiphase_Utils.cc
                          NCP_F.cc NCP_HenryLaw.cc
                          TotalComponentStorage.cc TotalComponentStorageTest.cc
@@ -68,7 +68,7 @@ add_amanzi_library(multiphase
 #
 set(multiphase_inc_files 
   Multipahase_PK.hh
-  MultiphaseReduced_PK.hh Multiphase2p2c_PK.hh
+  MultiphaseModelI_PK.hh MultiphaseTwoComponents_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
@@ -104,14 +104,14 @@ if (BUILD_TESTS)
                   geometry mesh_functions functions eos pks)
 
   # Unit tests:
-  add_amanzi_test(multiphase_model1 multiphase_model1
+  add_amanzi_test(multiphase_modelI multiphase_modelI
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_model1.cc
+                  SOURCE    test/Main.cc test/multiphase_modelI.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(multiphase_2p2c multiphase_2p2c
+  add_amanzi_test(multiphase_two_components multiphase_two_components
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_2p2c.cc
+                  SOURCE    test/Main.cc test/multiphase_two_components.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

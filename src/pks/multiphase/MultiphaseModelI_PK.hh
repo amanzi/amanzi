@@ -9,15 +9,11 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Reduced multiphase model: 
-    - water is only in liquid phase
-    - water density is constant
-    - porosity is constant
-  Solution vectors: pressure (l), saturation (l), mole fraction (g).
+  Solution vector: pressure (l), saturation (l), mole fraction (g).
 */
 
-#ifndef AMANZI_MULTIPHASE_REDUCED_PK_HH_
-#define AMANZI_MULTIPHASE_REDUCED_PK_HH_
+#ifndef AMANZI_MULTIPHASE_MODEL_I_PK_HH_
+#define AMANZI_MULTIPHASE_MODEL_I_PK_HH_
 
 // Amanzi
 #include "Key.hh"
@@ -29,14 +25,14 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseReduced_PK: public Multiphase_PK {
+class MultiphaseModelI_PK: public Multiphase_PK {
  public:
-  MultiphaseReduced_PK(Teuchos::ParameterList& pk_tree,
-                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                       const Teuchos::RCP<State>& S,
-                       const Teuchos::RCP<TreeVector>& soln);
+  MultiphaseModelI_PK(Teuchos::ParameterList& pk_tree,
+                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                      const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& soln);
 
-  ~MultiphaseReduced_PK() {};
+  ~MultiphaseModelI_PK() {};
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
@@ -67,7 +63,7 @@ class MultiphaseReduced_PK: public Multiphase_PK {
 
  private:
   // factory registration
-  static RegisteredPKFactory<MultiphaseReduced_PK> reg_;
+  static RegisteredPKFactory<MultiphaseModelI_PK> reg_;
 };
 
 }  // namespace Multiphase

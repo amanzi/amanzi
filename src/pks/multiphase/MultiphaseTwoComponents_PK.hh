@@ -14,8 +14,8 @@
   molar density (l).
 */
 
-#ifndef AMANZI_MULTIPHASE_2P2C_PK_HH_
-#define AMANZI_MULTIPHASE_2P2C_PK_HH_
+#ifndef AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
+#define AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
 
 // Amanzi
 #include "Key.hh"
@@ -27,14 +27,14 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class Multiphase2p2c_PK: public Multiphase_PK {
+class MultiphaseTwoComponents_PK: public Multiphase_PK {
  public:
-  Multiphase2p2c_PK(Teuchos::ParameterList& pk_tree,
-                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                    const Teuchos::RCP<State>& S,
-                    const Teuchos::RCP<TreeVector>& soln);
+  MultiphaseTwoComponents_PK(Teuchos::ParameterList& pk_tree,
+                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                             const Teuchos::RCP<State>& S,
+                             const Teuchos::RCP<TreeVector>& soln);
 
-  ~Multiphase2p2c_PK() {};
+  ~MultiphaseTwoComponents_PK() {};
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
@@ -68,7 +68,7 @@ class Multiphase2p2c_PK: public Multiphase_PK {
 
  private:
   // factory registration
-  static RegisteredPKFactory<Multiphase2p2c_PK> reg_;
+  static RegisteredPKFactory<MultiphaseTwoComponents_PK> reg_;
 };
 
 }  // namespace Multiphase

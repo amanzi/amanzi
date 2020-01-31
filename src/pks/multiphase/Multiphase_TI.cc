@@ -193,7 +193,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     for (int c = 0; c < ncells_owned_; ++c) {
       double a = ncp_fc[0][c];
       double b = ncp_gc[0][c];
-      fci[0][c] = pow(a * a + b * b, 0.5) - (a + b);
+      fci[0][c] = std::pow(a * a + b * b, 0.5) - (a + b);
     }
   }
 }
