@@ -56,11 +56,11 @@
       <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.9e-2}"/>
     </ParameterList>
 
-    <Parameter name="compressibility constant" type="double" value="7.938772e-7"/>
-    <Parameter name="atmospheric pressure" type="double" value="0.0"/>
+    <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
     <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>
@@ -405,9 +405,47 @@
           <Parameter name="eos type" type="string" value="ideal gas"/>
           <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
         </ParameterList>
-        <!--ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList-->
+      </ParameterList>
+
+      <ParameterList name="pressure_vapor_gas">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="molar"/>
+        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+        <Parameter name="pressure key" type="string" value="pressure_gas"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="ideal gas"/>
+          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molecular_diff_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="3.0e-9"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molecular_diff_gas">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="3.0e-5"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="temperature">

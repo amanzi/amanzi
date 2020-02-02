@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Field evaluator for noninear complimentary problem, function F.
+  Field evaluator for noninear complimentary problem, function G.
 */
 
 #ifndef AMANZI_MULTIPHASE_NCP_HENRY_LAW_HH_

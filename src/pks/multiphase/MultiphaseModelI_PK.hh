@@ -58,8 +58,9 @@ class MultiphaseModelI_PK: public Multiphase_PK {
  private:
   int missed_bc_faces_;
 
-  Key advection_liquid_reduced_key_;
-  Key ncp_f_key_, ncp_g_key_;
+  Key advection_water_key_, pressure_vapor_key_, x_vapor_key_;
+  Key diffusion_liquid_key_, diffusion_gas_key_, diffusion_vapor_key_; 
+  Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
 
  private:
   // factory registration

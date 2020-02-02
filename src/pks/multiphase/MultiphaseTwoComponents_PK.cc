@@ -17,7 +17,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Multiphase
-#include "MoleFractionLiquid.hh"
 #include "MultiphaseTwoComponents_PK.hh"
 #include "NCP_F.hh"
 #include "NCP_HenryLaw.hh"
@@ -45,18 +44,14 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   Multiphase_PK::Setup(S);
 
+  advection_water_key_ = Keys::getKey(domain_, "advection_water"); 
   molar_density_water_key_ = Keys::getKey(domain_, "molar_density_water"); 
-  advection_liquid_reduced_key_ = Keys::getKey(domain_, "advection_liquid_reduced"); 
 
   diffusion_liquid_key_ = Keys::getKey(domain_, "diffusion_liquid"); 
   diffusion_gas_key_ = Keys::getKey(domain_, "diffusion_gas"); 
 
   molecular_diff_liquid_key_ = Keys::getKey(domain_, "molecular_diff_liquid"); 
   molecular_diff_gas_key_ = Keys::getKey(domain_, "molecular_diff_gas"); 
-
-  ncp_f_key_ = Keys::getKey(domain_, "ncp_f"); 
-  ncp_g_key_ = Keys::getKey(domain_, "ncp_g"); 
-  ncp_fg_key_ = Keys::getKey(domain_, "ncp_fg"); 
 
   // liquid molar fraction is the primary solution
   if (!S->HasField(molar_density_liquid_key_)) {
@@ -135,8 +130,8 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(advection_liquid_key_, eval);
   }
 
-  if (!S->HasField(advection_liquid_reduced_key_)) {
-    S->RequireField(advection_liquid_reduced_key_, advection_liquid_reduced_key_)
+  if (!S->HasField(advection_water_key_)) {
+    S->RequireField(advection_water_key_, advection_water_key_)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -149,12 +144,12 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
     dep_powers[2] = -1;
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("my key", advection_liquid_reduced_key_)
+    elist.set<std::string>("my key", advection_water_key_)
          .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
-    S->SetFieldEvaluator(advection_liquid_reduced_key_, eval);
+    S->SetFieldEvaluator(advection_water_key_, eval);
   }
 
   // -- coefficient for advection operator in gas phase
@@ -226,25 +221,6 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("molar density liquid key", molar_density_liquid_key_);
     auto eval = Teuchos::rcp(new NCP_HenryLaw(elist));
     S->SetFieldEvaluator(ncp_g_key_, eval);
-  }
-
-  if (!S->HasField(ncp_fg_key_)) {
-    S->RequireField(ncp_fg_key_, ncp_fg_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::Array<int> dep_powers(2, 1);
-    Teuchos::Array<std::string> dep_names;
-
-    dep_names.push_back(ncp_f_key_);
-    dep_names.push_back(ncp_g_key_);
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("my key", ncp_fg_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
-         .set<Teuchos::Array<int> >("powers", dep_powers);
-
-    auto eval = Teuchos::rcp(new ProductEvaluator(elist));
-    S->SetFieldEvaluator(ncp_fg_key_, eval);
   }
 }
 
@@ -320,7 +296,7 @@ void MultiphaseTwoComponents_PK::InitMPPreconditioner()
   eqns_.resize(num_primary_ + 2);
 
   eqns_[0].adv_factors.resize(2, 1.0);
-  eqns_[0].advection.push_back(std::make_pair(advection_liquid_reduced_key_, pressure_liquid_key_));
+  eqns_[0].advection.push_back(std::make_pair(advection_water_key_, pressure_liquid_key_));
   eqns_[0].advection.push_back(std::make_pair("", ""));  // no gas phase
 
   eqns_[0].diff_factors.resize(2, -mol_mass_[0] / mol_mass_H2O_);

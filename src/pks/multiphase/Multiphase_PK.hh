@@ -144,6 +144,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
   Key molar_density_liquid_key_, molar_density_gas_key_;
   Key tws_key_, tcs_key_;
+  Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::TreeOperator> op_preconditioner_, op_pc_solver_;

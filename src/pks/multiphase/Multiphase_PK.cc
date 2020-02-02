@@ -30,11 +30,11 @@
 
 // Multiphase
 #include "ModelMeshPartition.hh"
-#include "MoleFractionLiquid.hh"
 #include "Multiphase_PK.hh"
 #include "Multiphase_Utils.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "PressureGasEvaluator.hh"
+#include "ProductEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -110,6 +110,10 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   tws_key_ = Keys::getKey(domain_, "total_water_storage");
   tcs_key_ = Keys::getKey(domain_, "total_component_storage");
+
+  ncp_f_key_ = Keys::getKey(domain_, "ncp_f"); 
+  ncp_g_key_ = Keys::getKey(domain_, "ncp_g"); 
+  ncp_fg_key_ = Keys::getKey(domain_, "ncp_fg"); 
 
   // register non-standard fields
   if (!S->HasField("gravity"))
@@ -217,6 +221,26 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("prev_total_component_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("prev_total_component_storage", passwd_)->set_io_vis(false);
+  }
+
+  // complimantary constraints fields
+  if (!S->HasField(ncp_fg_key_)) {
+    S->RequireField(ncp_fg_key_, ncp_fg_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::Array<int> dep_powers(2, 1);
+    Teuchos::Array<std::string> dep_names;
+
+    dep_names.push_back(ncp_f_key_);
+    dep_names.push_back(ncp_g_key_);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", ncp_fg_key_)
+         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<Teuchos::Array<int> >("powers", dep_powers);
+
+    auto eval = Teuchos::rcp(new ProductEvaluator(elist));
+    S->SetFieldEvaluator(ncp_fg_key_, eval);
   }
 
   // work fields

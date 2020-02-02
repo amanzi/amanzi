@@ -519,11 +519,22 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
     // -- identify active set for gas phase
     fone.PutScalar(0.0);
-    for (int c = 0; c < ncells_owned_; c++) {
-      if (ncp_fc[0][c] > ncp_gc[0][c] + 1.0e-12) {
-        if (der_gc.get()) fone_c[0][c] = (*der_gc)[0][c];
-      } else {
-        if (der_fc.get()) fone_c[0][c] = (*der_fc)[0][c];
+    if (ncp_ == "min") {
+      for (int c = 0; c < ncells_owned_; c++) {
+        if (ncp_fc[0][c] > ncp_gc[0][c] + 1.0e-12) {
+          if (der_gc.get()) fone_c[0][c] = (*der_gc)[0][c];
+        } else {
+          if (der_fc.get()) fone_c[0][c] = (*der_fc)[0][c];
+        }
+      }
+    } else if (ncp_ == "Fischer-Burmeister") {
+      for (int c = 0; c < ncells_owned_; ++c) {
+        double a = ncp_fc[0][c];
+        double b = ncp_gc[0][c];
+
+        double da = (der_fc.get()) ? (*der_fc)[0][c] : 0.0;
+        double db = (der_gc.get()) ? (*der_gc)[0][c] : 0.0;
+        fone_c[0][c] = (a * da + b * db) * std::pow(a * a + b * b, -0.5) - (da + db);
       }
     }
 
@@ -537,7 +548,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     op_pc_assembled_ = true;
   }
   op_preconditioner_->AssembleMatrix();
-// std::cout << *op_preconditioner_->A() << std::endl; exit(0);
+std::cout << *op_preconditioner_->A() << std::endl; exit(0);
   op_preconditioner_->UpdatePreconditioner();
 }
 

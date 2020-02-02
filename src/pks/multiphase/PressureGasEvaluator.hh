@@ -48,7 +48,7 @@ class PressureGasEvaluator : public SecondaryVariableFieldEvaluator {
   std::string pressure_liquid_key_, saturation_liquid_key_;
 };
 
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
 
 #endif

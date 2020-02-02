@@ -29,7 +29,6 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
@@ -51,8 +50,9 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
                          MultiphaseModelI_PK.cc MultiphaseTwoComponents_PK.cc
                          Multiphase_Utils.cc
-                         NCP_F.cc NCP_HenryLaw.cc
+                         NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc
                          TotalComponentStorage.cc TotalComponentStorageTest.cc
+                         VaporPressureEvaluator.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
                          MoleFractionLiquid.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc)
@@ -61,7 +61,7 @@ add_amanzi_library(multiphase
                    SOURCE ${multiphase_src_files}
                    LINK_LIBS pks operators state functions 
                              mesh_functions time_integration data_structures
-                             flow)
+                             eos)
 
 #
 # Install Targets
@@ -73,10 +73,11 @@ set(multiphase_inc_files
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
   MoleFractionLiquid.hh
-  NCP_F.hh NCP_HenryLaw.hh
+  NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
   TotalComponentStorage.hh
+  VaporPressureEvaluator.hh
   WRMmp.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
