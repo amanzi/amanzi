@@ -129,12 +129,12 @@ def CheckVersion(ncp_pre_lines):
             elif ( int(version_major) == 1 and int(version_minor) == 0 ):
                 break
             else:
-                print 'Error: This scripts translates versions <= 1.0.0!'
-                print '       But this input file is version', version_string
+                print('Error: This scripts translates versions <= 1.0.0!')
+                print('       But this input file is version', version_string)
                 sys.exit()
 
     if ( version_string == '' ):
-        print 'Error: The version string is empty!'
+        print('Error: The version string is empty!')
         sys.exit()
 
     return version_string
@@ -201,8 +201,8 @@ def CheckValidValues(xml_input):
                     try:
                         d=float(v)
                     except:
-                        print "Invalid double in line", i
-                        print line
+                        print("Invalid double in line", i)
+                        print(line)
 
             elif ("int" in data_type ):
 
@@ -210,8 +210,8 @@ def CheckValidValues(xml_input):
                     try:
                         d=int(v)
                     except:
-                        print "Invalid integer in line", i
-                        print line
+                        print("Invalid integer in line", i)
+                        print(line)
 
 
 
@@ -252,7 +252,7 @@ for line in xml_lines:
 #
 lev_spc.append(lev_spc[len(lev_spc)-1]+2)
 
-print 'Debugging: Level indentation = ', lev_spc
+print('Debugging: Level indentation = ', lev_spc)
 
 #
 # Define booleans and lists for each of the three sections:

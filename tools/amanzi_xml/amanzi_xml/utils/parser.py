@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as etree
 from . import errors as aerrors
-import io as aio
+from . import io as aio
 
 objects = dict()
 
@@ -31,8 +31,8 @@ def _listObjectFromElement(elem):
             obj = objects[cname]
         except KeyError:
             print("Error interpreting list:")
-            print(elem, cname)
-            print(objects.keys())
+            print((elem, cname))
+            print((list(objects.keys())))
             raise aerrors.NotNativeSpecError()
         else:
             return obj.from_Element(elem)

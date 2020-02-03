@@ -85,7 +85,7 @@ def replace_elem(xml, elem_sink, elem_src):
     """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""    
     pm = create_parent_map(xml)
     p_elem_sink = pm[elem_sink]
-    i = (i for i in range(len(p_elem_sink)) if p_elem_sink[i] == elem_sink).next()
+    i = next((i for i in range(len(p_elem_sink)) if p_elem_sink[i] == elem_sink))
     p_elem_sink[i] = elem_src
 
 def get_parent(xml,elem,level=1):

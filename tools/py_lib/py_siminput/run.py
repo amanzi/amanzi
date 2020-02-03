@@ -52,7 +52,7 @@ Example:
   %s --procs=4 input.py
 '''
 
-import commands, getopt, sys, os
+import subprocess, getopt, sys, os
 from py_siminput.input_interface import Dump_XML, Dump_Doc, Dump_Python
 
 # global variables
@@ -66,8 +66,8 @@ def Usage(mesg):
     '''
     Prints documentation and exits.
     '''
-    print mesg
-    print _usage % (script_name, script_name)
+    print(mesg)
+    print(_usage % (script_name, script_name))
     sys.exit(0)
 
 def system(command, debug):
@@ -75,11 +75,11 @@ def system(command, debug):
     Runs command on the underlying operating system.
     '''
     if debug:
-        print "      " + command # for debugging
+        print("      " + command) # for debugging
     else:
         r = os.system(command)
         if r != 0:  # alternatively, "if not os.WIFEXITED(r)"
-            print "Error running: " + command
+            print("Error running: " + command)
             sys.exit(1)
 
 def append_to_file(file):
@@ -93,7 +93,7 @@ def mpi_only_run_string(num_pes,exe,inputfile):
     This function may be used to define a default run string for
     mpi runs, dependent on the platform.
     '''
-    machine = commands.getoutput('uname')
+    machine = subprocess.getoutput('uname')
 
     if machine == "AIX":
         # IBM AIX (with poe)
@@ -154,8 +154,8 @@ def unit_test_args(exe1,exe2,input,args):
         try:
             optlist, args = getopt.getopt(args[1:], 'n:',
                                           ['procs='])
-        except getopt.error, val:
-            print 'ERROR ' + val.msg
+        except getopt.error as val:
+            print('ERROR ' + val.msg)
             sys.exit(1)
 
         for o, a in optlist:
@@ -169,9 +169,9 @@ def unit_test_args(exe1,exe2,input,args):
 
 def get_root(input):
     input_dict = {}
-    execfile(input, input_dict)
+    exec(compile(open(input).read(), input, 'exec'), input_dict)
     
-    if not input_dict.has_key('root'):
+    if 'root' not in input_dict:
         Usage("No 'root' variable defined in input file %s" % (input))
 
     return input_dict['root']
@@ -211,7 +211,7 @@ def run(exe1,exe2):
                                        'procs=',
                                        'python',
                                        'xml'])
-    except getopt.error, val:
+    except getopt.error as val:
         Usage('ERROR: ' + val.msg)
 
     for o, a in optlist:
@@ -264,10 +264,10 @@ def run(exe1,exe2):
         if dump_doc:
             Usage('--doc unavailable when input is xml.')
         command = run_string(num_pes,exe1,exe2,input_xml)
-        print 'Running: %s ...' % (command)
+        print('Running: %s ...' % (command))
         system(command,debug)
     else:
-        print 'Generating %s from %s ...' % (input_xml, input)
+        print('Generating %s from %s ...' % (input_xml, input))
         root = get_root(input)
 
         run_sim = 1 # if true, run simulation.
@@ -289,7 +289,7 @@ def run(exe1,exe2):
         if run_sim:
             # Run the solver
             command = run_string(num_pes,exe1,exe2,input_xml)
-            print 'Running: %s ...' % (command)
+            print('Running: %s ...' % (command))
             run_root(root, input_xml, command, debug)
         elif dump_xml:
             # just dump the xml
