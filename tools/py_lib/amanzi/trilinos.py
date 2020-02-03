@@ -53,7 +53,7 @@ def get_list_type(a):
     ret_type = type(a[0])
     for item in a:
         if type(item) != ret_type:
-            ret_type = types.StringType
+            ret_type = str
             break
     return ret_type
 
@@ -62,46 +62,45 @@ def get_str_list_type(a):
     tvalue = get_list_type(a)
     str_type = None
     
-    if tvalue == types.FloatType:
+    if isinstance(tvalue,float):
         str_type = 'Array double'
-    elif tvalue == types.IntType:
+    elif isinstance(tvalue,int):
         str_type = 'Array int'
-    elif tvalue == types.LongType:
+    elif isinstance(tvalue,long):
         str_type = 'Array long'
-    elif tvalue == types.StringType:
+    elif isinstance(tvalue,str):
         str_type = 'Array string'
-    elif tvalue == types.BooleanType:
+    elif isinstance(tvalue,bool):
         str_type = 'Array bool'
     else:
-        raise ValueError, str(value) + 'unknown value type' + \
-               str(tvalue) 
+        raise ValueError(str(value) + 'unknown value type' + str(tvalue))
     return str_type
 
 def get_str_type(value):
     tvalue = type(value)
     str_type = None
-    if tvalue == types.FloatType:
+    if isinstance(tvalue,float):
         str_type = 'double'
-    elif tvalue == types.IntType:
+    elif isinstance(tvalue,int):
         str_type = 'int'
-    elif tvalue == types.LongType:
+    elif isinstance(tvalue,long):
         str_type = 'long'
-    elif tvalue == types.StringType:
+    elif isinstance(tvalue,str):
         str_type = 'string'
-    elif tvalue == types.BooleanType:
+    elif isinstance(tvalue,bool):
         str_type = 'bool'
-    elif tvalue == types.InstanceType:
+    elif isinstance(tvalue,object):
         str_type = str(value.__class__)
-    elif tvalue == types.ListType:
+    elif isinstance(tvalue,list):
         str_type = get_str_list_type(value)
     else:
-        raise ValueError, str(value) + 'unknown value type' + \
-               str(tvalue) 
+        raise ValueError(str(value) + 'unknown value type' + \
+               str(tvalue))
     return str_type
 
 def get_py_type(str_type):
 
-    result = types.NoneType
+    result = type(None)
 
     bool_type_strings = ['bool', 'boolean']
     int_type_strings  = ['int', 'integer']
@@ -109,39 +108,39 @@ def get_py_type(str_type):
     string_type_strings = ['str', 'string', 'char', 'character']
 
     if str_type in bool_type_strings:
-        result = types.BooleanType
+        result = bool
     elif str_type in int_type_strings:
-        result = types.IntType
+        result = int
     elif str_type in float_type_strings:
-        result = types.FloatType
+        result = float
     elif str_type in string_type_strings:
-        result = types.StringType
+        result = str
     else:
-        raise ValueError, str_type + 'is an unknown string type'
+        raise ValueError(str_type + 'is an unknown string type')
      
     return result 
 
 
 def convert_str_to_type(str,str_type):
  
-    if not isinstance(str_type,types.StringType):
-        raise TypeError, type(str_type).__name__ + ' is an invalid type'
+    if not isinstance(str_type,str):
+        raise TypeError(type(str_type).__name__ + ' is an invalid type')
 
     result = None
     py_type = get_py_type(str_type)
-    if py_type != types.NoneType:
-        if py_type == types.IntType:
+    if py_type is not None:
+        if isinstance(py_type,int):
             result = int(str)
-        elif py_type == types.FloatType:
+        elif isinstance(py_type,float):
             result = float(str)
-        elif py_type == types.BooleanType:
+        elif isinstance(py_type,bool):
             result = bool(str)
-        elif py_type == types.StringType:
+        elif isinstance(py_type,str):
             result = str
         else:
-            raise ValueError, py_type + ' no conversion possible with this type'
+            raise ValueError(py_type + ' no conversion possible with this type')
     else:
-        raise ValueError, str_type + ' can not convert this to a Python type'
+        raise ValueError(str_type + ' can not convert this to a Python type')
 
     return result
 
@@ -157,11 +156,11 @@ class _ParameterInterface(_ElementInterface):
 
     def __init__(self, name=None, value=None):
         
-        if name == None:
-            raise ValueError, 'Parameter constructor requires a name'
+        if name is None:
+            raise ValueError('Parameter constructor requires a name')
 
-        if value == None:
-            raise ValueError, 'Parameter constructor requires a value'
+        if value is None:
+            raise ValueError('Parameter constructor requires a value')
       
         #print "name=",name 
         #print "value=",value 
@@ -187,7 +186,7 @@ class _ParameterInterface(_ElementInterface):
 
     def set_value(self,value):
         import re
-        if type(value) == types.ListType:
+        if isinstance(value,list):
             str1 = str(value)
             str2 = re.sub('\[','{',str1)
             str_value = re.sub('\]','}',str2)
@@ -207,7 +206,7 @@ class _ParameterListRootInterface(_ElementInterface):
     def __init__(self,name=None):
 
         if name == None:
-            raise ValueError, 'Parameter constructor requires a name'
+            raise ValueError('Parameter constructor requires a name')
 
         _ElementInterface.__init__(self,_ParameterListTag,{})
         self.set('name',name)
@@ -230,8 +229,8 @@ class ParameterList(ElementTree):
 
         # Throw an error if name or file is not defined
         if name == None and file == None:
-            raise ValueError, 'creating ParameterList instance requires a name' \
-                              + ' or file'
+            raise ValueError('creating ParameterList instance requires a name' \
+                              + ' or file')
 
         if name != None:
             root = ParameterListRoot(name)
@@ -251,8 +250,8 @@ class ParameterList(ElementTree):
             oroot = object.getroot()
             root.append(oroot) 
         else:
-            raise TypeError, 'Can not attach type =' + get_str_type(object) + \
-                  ' is not a valid parameter or list element'
+            raise TypeError('Can not attach type =' + get_str_type(object) + \
+                  ' is not a valid parameter or list element')
 
     def add_parameter(self,name,data):
         node = Parameter(name,data)
@@ -270,8 +269,8 @@ class ParameterList(ElementTree):
             self.attach(root)
             return object
         else:
-            raise TypeError, 'type=' + type(object).__name__ \
-                              + ' is an invalid type'
+            raise TypeError('type=' + type(object).__name__ \
+                              + ' is an invalid type')
 
     def find_sublist(self,target):
         sublist = None
@@ -289,7 +288,7 @@ class ParameterList(ElementTree):
                 break
                  
         if result == None:
-            print 'Could not find sublist with name=' + target
+            print('Could not find sublist with name=' + target)
         else:
             list_name = result.get('name')
             sublist = ParameterList(list_name)
@@ -301,7 +300,7 @@ class ParameterList(ElementTree):
         result = None
 
         if target == None:
-            raise ValueError, ' requires a parameter name'
+            raise ValueError(' requires a parameter name')
 
 	'''
         search_list = []    
@@ -323,17 +322,17 @@ class ParameterList(ElementTree):
 		try:
 		  root.remove(node)
 		except ValueError:
-		  print root.tag
-		  print root.get('name')
+		  print(root.tag)
+		  print(root.get('name'))
 		  for item in root.getchildren():
-		    print "CHILD tag", item.tag, " name=", item.get('name')
+		    print("CHILD tag", item.tag, " name=", item.get('name'))
 		  raise
 		root.insert(index,result)
                 break
 	    index=index+1  
 
         if result == None and quiet != False:
-            print 'Could not find parameter ' + target
+            print('Could not find parameter ' + target)
 
         return result    
 

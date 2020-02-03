@@ -29,8 +29,8 @@ class Vector:
     def __init__(self, typecode, spec):
         self._supported_types = ['d', 'i', 'b', 's']
         if typecode not in self._supported_types:
-            raise ValueError, 'typecode must be one of ' + \
-                  `self._supported_types`
+            raise ValueError('typecode must be one of ' + \
+                  repr(self._supported_types))
         self.typecode = typecode
         
         # Create a list of values
@@ -39,7 +39,7 @@ class Vector:
             # if spec is an integer, create a list, of length spec,
             # using the default value to initialize.
             if spec < 0:
-                raise ValueError, 'spec must be a list or a positive integer.'
+                raise ValueError('spec must be a list or a positive integer.')
             if spec > 0:
                 defaults = {}
                 defaults['d'] = 0.0;
@@ -51,7 +51,7 @@ class Vector:
             # spec is a list, so use it.
             list = spec
         else:
-            raise ValueError, 'spec must be a list or an integer.'
+            raise ValueError('spec must be a list or an integer.')
         
         # Set the internal data
         if typecode in ['d', 'i']:
@@ -69,7 +69,7 @@ class Vector:
                 self._type = type('a string')
                 for i in list:
                     if type(i) != self._type:
-                        raise TypeError, `i` + ' is illegal type.'
+                        raise TypeError(repr(i) + ' is illegal type.')
             self._data = list
         # This flag may be used by derived classes (see space_vector)
         self._flag = "std"
@@ -80,8 +80,8 @@ class Vector:
         # If using an array, the array type will do its own checking.
         if not self._use_array:
             if type(value) != self._type:
-                raise TypeError, `value` + ' is illegal type.  ' + \
-                      'Must be type ' + `self._type`
+                raise TypeError(repr(value) + ' is illegal type.  ' + \
+                      'Must be type ' + repr(self._type))
     def __len__(self):
         return len(self._data)
     def __getitem__(self, key):
@@ -91,9 +91,9 @@ class Vector:
         self._data[key] = value
     def __repr__(self):
         if self._use_array:
-            return `self._data.tolist()`
+            return repr(self._data.tolist())
         else:
-            return `self._data`
+            return repr(self._data)
     def append(self, value):
         '''
         Appends value onto the end of the vector.
@@ -116,14 +116,14 @@ if __name__ == '__main__':
     x[0] = 1.0
     x[0] = 2
     x.append(2.7)
-    print `x`
+    print(repr(x))
     s = Vector('s', ['cat', 'dog'])
     s[1] = 'tiger'
-    print `s`
+    print(repr(s))
     b = Vector('b', [Bool('false'), Bool('true')])
     b.append(Bool('false'))
-    print `b`
-    print len(b)
+    print(repr(b))
+    print(len(b))
     q = Vector('d', 3)
-    print `q`
+    print(repr(q))
 

@@ -40,7 +40,7 @@ if __name__ == "__main__":
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
-        print 'error: parflow directory not found in ',PF_DIR
+        print('error: parflow directory not found in ',PF_DIR)
         raise
 
 

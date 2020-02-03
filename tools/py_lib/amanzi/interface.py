@@ -38,7 +38,7 @@ class AmanziDataOutput:
     try:
       tree=ETree.parse(self.filename)
     except IOError:
-      print 'Failed to open:' + self.filename
+      print('Failed to open:' + self.filename)
       raise
     except:
       raise
@@ -81,24 +81,24 @@ class AmanziInterface:
     try:
       import subprocess
     except ImportError:
-      print 'Failed to import module subprocess'
-      print 'Module is avail in Python 2.4 and higher'
-      print 'Current Python version ' + str(sys.version)
+      print('Failed to import module subprocess')
+      print('Module is avail in Python 2.4 and higher')
+      print('Current Python version ' + str(sys.version))
       raise
     except:
-      print "Unknown error:", sys.exc_info()
+      print("Unknown error:", sys.exc_info())
       raise
 
     # Check the files
     if not self._check_binary():
-      raise ValueError, 'Can not run binary'
+      raise ValueError('Can not run binary')
 
     if not self._check_input():
-      raise ValueError, 'Invalid input'
+      raise ValueError('Invalid input')
 
     if self.nprocs > 0:
       if not self._check_mpiexec:
-        raise ValueError, 'Can not launch a parallel executable'
+        raise ValueError('Can not launch a parallel executable')
 
     # Open files to redirect STDOUT and STDERR
     try:
@@ -106,9 +106,9 @@ class AmanziInterface:
     except (ValueError,TypeError):
       stdout_fh=None
     except IOError:
-      raise IOError, 'Failed to open ' + self.output
+      raise IOError('Failed to open ' + self.output)
     except:
-      print "Unknown exception:", sys.exc_info()[0]
+      print("Unknown exception:", sys.exc_info()[0])
       raise
 
     try:
@@ -116,9 +116,9 @@ class AmanziInterface:
     except (ValueError,TypeError):
       stderr_fh=None
     except IOError:
-      raise IOError, 'Failed to open ' + self.error
+      raise IOError('Failed to open ' + self.error)
     except:
-      print 'Unknown exception'
+      print('Unknown exception')
       raise
 
     # Define the arguments and execuables
@@ -133,10 +133,10 @@ class AmanziInterface:
     try: 
       pipe = subprocess.Popen(args,executable=executable,bufsize=-1,stdout=stdout_fh,stderr=stderr_fh)
     except ValueError:
-      raise ValueError, 'Popen called with incorrect arguments'
+      raise ValueError('Popen called with incorrect arguments')
     except OSError:
-      print 'Failed to run ' + str(args)
-      raise OSError, 'Failed to run Amanzi binary ' + self.binary
+      print('Failed to run ' + str(args))
+      raise OSError('Failed to run Amanzi binary ' + self.binary)
     else:
       try:
           pipe.wait()
@@ -145,11 +145,11 @@ class AmanziInterface:
               kill_signal=signal.SIGKILL
           except AttributeError:
               kill_signal=signal.SIGTERM
-              print 'Sending SIGTERM to Amanzi run PID='+str(pipe.pid)
+              print('Sending SIGTERM to Amanzi run PID='+str(pipe.pid))
               os.kill(pipe.pid,signal.SIGTERM)
               time.sleep(1)
               while pipe.poll() == None:
-                  print 'PID='+str(pipe,pid)+' still alive. Sending signal (SIGKILL) '+str(kill_signal)
+                  print('PID='+str(pipe,pid)+' still alive. Sending signal (SIGKILL) '+str(kill_signal))
                   os.kill(pipe.pid,kill_signal)
                   time.sleep(5)
 
@@ -184,14 +184,14 @@ class AmanziInterface:
     try:
       exists=os.path.exists(self.mpiexec)
     except TypeError:
-      print 'MPI launch command is not defined'
+      print('MPI launch command is not defined')
       raise
    
     ok_flag=False
     if exists and path.isfile(self.mpiexec) and access(self.mpiexec,R_OK|X_OK):
       ok_flag=True
     else:
-      print amanzi.mpiexec + ' does not exist or is not readable or is not executbale'
+      print(amanzi.mpiexec + ' does not exist or is not readable or is not executable')
 
     return ok_flag
 
@@ -201,14 +201,14 @@ class AmanziInterface:
     try:
       exists=os.path.exists(self.binary)
     except TypeError:
-      print 'Amanzi binary is not defined'
+      print('Amanzi binary is not defined')
       raise
    
     ok_flag=False
     if exists and path.isfile(self.binary) and access(self.binary,R_OK|X_OK):
       ok_flag=True
     else:
-      print self.binary + ' does not exist or is not readable'
+      print(self.binary + ' does not exist or is not readable')
 
     return ok_flag  
 
@@ -218,14 +218,14 @@ class AmanziInterface:
     try:
       exists=os.path.exists(self.input)
     except TypeError:
-      print 'Input file is not defined'
+      print('Input file is not defined')
       raise
    
     ok_flag=False
     if exists and path.isfile(self.input) and access(self.input,R_OK):
       ok_flag=True
     else:
-      print amanzi.input+ ' does not exist or is not readable'
+      print(amanzi.input+ ' does not exist or is not readable')
 
     return ok_flag
 
@@ -235,7 +235,7 @@ class AmanziInterface:
     try:
       output_xmf_regex=basename+'_data.h5'+'.[0-9]*'+'.xmf'
     except: 
-      print 'Failed to build XMF output regular expression pattern'
+      print('Failed to build XMF output regular expression pattern')
       raise
 
     try:
@@ -243,10 +243,10 @@ class AmanziInterface:
     except:
       pass
 
-    print 'output_xmf_regex='+output_xmf_regex
+    print('output_xmf_regex='+output_xmf_regex)
 
     for output in glob.glob(output_xmf_regex):
-     print 'File='+output 
+     print('File='+output)
      self.data_files.append(AmanziDataOutput(output))
 
     return self.data_files
@@ -278,7 +278,7 @@ class AmanziInterface:
     try:
       mesh_file=glob.glob(mesh_regex)[0]
     except:
-      print "Could not find mesh file matching '" +mesh_regex+"' pattern" 
+      print("Could not find mesh file matching \'" +mesh_regex+"\' pattern")
       mesh_file=None
 
     return mesh_file
@@ -303,6 +303,4 @@ if __name__ == '__main__':
   try:
     amanzi=AmanziInterface('duh.xml')
   except ValueError:
-    print 'Caught the invalid input error'
-    
-
+    print('Caught the invalid input error')

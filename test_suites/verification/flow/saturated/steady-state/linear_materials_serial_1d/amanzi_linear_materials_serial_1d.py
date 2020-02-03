@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     return Obs_data
@@ -33,7 +33,7 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
 
     # === SPECIAL CODE ==== for linear flow problems
     # Collect the z-values from observations
-    z_vals = [coord[2] for coord in Obs_xml.coordinates.itervalues()]
+    z_vals = [coord[2] for coord in Obs_xml.coordinates.values()]
     z_vals.sort()
     z_vals = set(z_vals)
     colors = ['b','g','r']
@@ -41,7 +41,7 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
 
     # Create dictionary for scatter plots
     scatter_data={}
-    for key in cmap.keys():
+    for key in list(cmap.keys()):
         scatter_data[key]={}
         scatter_data[key]['x']=[]
         scatter_data[key]['head']=[]
@@ -50,17 +50,17 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
     p_atm = 101325.0
     rho = 998.2
     g = 9.80665
-    for obs in Obs_data.observations.itervalues(): 
+    for obs in Obs_data.observations.values(): 
         scatter_data[obs.coordinate[2]]['x'].append(obs.coordinate[0])
 
         # Convert from pressure to hydraulic head.
         # This isn't really great, but it gets us there for the moment.
         p = obs.data
-        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in xrange(len(p))]
+        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in range(len(p))]
         scatter_data[obs.coordinate[2]]['head'].append(h)
 
     # Plot the observations
-    for key in cmap.keys():
+    for key in list(cmap.keys()):
         axes1.scatter(scatter_data[key]['x'],scatter_data[key]['head'],c=cmap[key],marker='s',s=25,label='Amanzi')
 
     # Set labels and title
@@ -82,7 +82,7 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     coords[:,0] = x
 
     # Plot a line for each z-coordinate in the observations
-    for (z_val, color) in cmap.iteritems():
+    for (z_val, color) in cmap.items():
         coords[:,1] = z_val
         head = mymodel.head(coords)
         axes1.plot(x,head,color,label='$z = %0.2f $'%z_val)
@@ -97,12 +97,12 @@ def MakeTable(Obs_data,Obs_xml,filename):
     p_atm = 101325.0
     rho = 998.2
     g = 9.80665
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         coordinates.append([obs.coordinate[0], obs.coordinate[2]])
         # Convert from pressure to hydraulic head.
         # This isn't really great, but it gets us there for the moment.
         p = obs.data
-        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in xrange(len(p))]
+        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in range(len(p))]
         head_amanzi.append(str(h).rstrip(']').lstrip('['))
 
     head_analytic = list(mymodel.head(numpy.array(coordinates)))

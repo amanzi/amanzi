@@ -3,7 +3,7 @@
 import os, sys
 import types
 
-from trilinos import ParameterList
+from .trilinos import ParameterList
 
 ################################################################################
 class BoxInterface(ParameterList):
@@ -28,13 +28,13 @@ class RegionsInterface(ParameterList):
     def add_region(self,label=None,lo=[],hi=[]):
 
         if label == None:
-            raise ValueError, 'Must define a label to add a region'
+            raise ValueError('Must define a label to add a region')
 
         if len(lo) == 0:
-            raise ValueError, 'Must define a lower bound region'
+            raise ValueError('Must define a lower bound region')
 
         if len(hi) == 0:
-            raise ValueError, 'Must define an upper bound region'
+            raise ValueError('Must define an upper bound region')
 
         new_region = self.add_sublist(label)
         box = BoxInterface(lo,hi)

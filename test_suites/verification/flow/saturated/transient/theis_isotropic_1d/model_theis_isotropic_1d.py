@@ -91,7 +91,7 @@ def createFromXML(filename):
     params = dict()
 
     params["r"] = []
-    for (coord) in coords.itervalues():
+    for (coord) in coords.values():
         params["r"].append(coord[0]) 
     
     params["times"] = []

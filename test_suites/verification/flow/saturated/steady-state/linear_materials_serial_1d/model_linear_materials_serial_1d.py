@@ -64,7 +64,7 @@ class LinearMaterialsSerial(object):
         K1 = self.rho * self.g * self.k1 / self.mu
         K2 = self.rho * self.g * self.k2 / self.mu
         hi = (K1*(L - Li)*h0 + K2*Li*hL) / (K1*(L-Li) + K2*Li)
-        for i in xrange(len(coords[:,0])):
+        for i in range(len(coords[:,0])):
             x = coords[i,0]
             if x <= Li:
                 head[i] = (hi - h0)*(x/Li) + h0

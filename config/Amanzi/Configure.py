@@ -37,7 +37,7 @@ class AmanziArch(object):
         msg ='*******************************************************************************\n'\
             +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
             +'*******************************************************************************\n'
-        print msg
+        print(msg)
         if not framework is None:
           framework.logClear()
           import traceback
@@ -327,7 +327,7 @@ class Configure(config.base.Configure):
     f.close()
     try:
       os.chmod(scriptName, 0775)
-    except OSError, e:
+    except OSError as e:
       self.framework.logPrint('Unable to make reconfigure script executable:\n'+str(e))
     self.framework.actions.addArgument(self.Project, 'File creation', 'Created '+scriptName+' for automatic reconfiguration')
     return

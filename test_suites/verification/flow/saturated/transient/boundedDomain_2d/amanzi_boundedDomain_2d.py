@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
         obsdata = []
         obstimes = []
-        for obs in obs_data.observations.itervalues():
+        for obs in obs_data.observations.values():
             obsdata.append(obs.data)
             obstimes.append(obs.times)
 

@@ -5,8 +5,8 @@ import os, sys, string
 
  # For debugging only!
 def print_environ():
-    for var in os.environ.keys():
-	print var + '=' + os.environ[var]
+    for var in list(os.environ.keys()):
+	print(var + '=' + os.environ[var])
 
 # Module Gobal
 LOADED_MODULES_KEY = 'LOADEDMODULES'
@@ -31,10 +31,10 @@ class ModuleInterface:
 
     def modulecmd(self,command,*arguments):
 	commands = os.popen('%s python %s %s' % (self._modulecmd,command,string.join(arguments))).read()
-	exec commands
+	exec(commands)
 
 	# Catch any changes to PYTHONPATH
-	if os.environ.has_key('PYTHONPATH'):
+	if 'PYTHONPATH' in os.environ:
 	    pp = ['']
 	    pythonpath = os.environ['PYTHONPATH'].split(":")
 	    for p in sys.path:
@@ -44,7 +44,7 @@ class ModuleInterface:
 
     def list(self):
         self.modulecmd('list')	
-	if os.environ.has_key(LOADED_MODULES_KEY):
+	if LOADED_MODULES_KEY in os.environ:
 	    return os.environ[LOADED_MODULES_KEY].rsplit(':')
 	else:
 	    return []
@@ -57,7 +57,7 @@ class ModuleInterface:
 	    self.modulecmd('unload',module_name)
 	else:
 	    err_mess = "Will not unload %s. Module is not loaded" % (module_name)
-	    print err_mess
+	    print(err_mess)
 
     def use(self,path,append=False):
 	assert os.path.exists(path), \
@@ -93,13 +93,13 @@ class ModuleInterface:
 		"method available is not implemented at this time" 
 
     def version(self):
-	if os.environ.has_key(MODULE_VERSION_KEY):
+	if MODULE_VERSION_KEY in os.environ:
 	    return os.environ[MODULE_VERSION_KEY]
 	else:
 	    return None
 
     def search_paths(self):
-	if os.environ.has_key(MODULE_PATH_KEY):
+	if MODULE_PATH_KEY in os.environ:
 	    return os.environ[MODULE_PATH_KEY].rsplit(":")
 	else:
 	    return []
@@ -113,29 +113,29 @@ if __name__ == '__main__':
     '''
     module_cmd = os.environ['MODULESHOME'] + '/bin/modulecmd'
     if module_cmd == None:
-	print 'Will define module command through a which search'
+	print('Will define module command through a which search')
 
     module = ModuleInterface(module_cmd)
 
-    print 'Module Version:' + module.version()
-    print 'Current Search Paths :' + str(module.search_paths())
+    print('Module Version:' + module.version())
+    print('Current Search Paths :' + str(module.search_paths()))
 
     hdf5_module = 'hdf5-serial/1.8.5'
     module.load(hdf5_module)
-    print 'Loaded modules:' + str(module.list())
+    print('Loaded modules:' + str(module.list()))
 
-    print 'HDF5 Module is loaded:' + str(module.isloaded(hdf5_module))
+    print('HDF5 Module is loaded:' + str(module.isloaded(hdf5_module)))
 
     try:
 	module.use('/some/path/dne')
     except:
-	print 'Caught assert error  while trying to add path that did not exist' 
+	print('Caught assert error  while trying to add path that did not exist') 
 
     module.use(os.environ['HOME'])
-    print 'After calling use Search Paths :' + str(module.search_paths())
+    print('After calling use Search Paths :' + str(module.search_paths()))
 
     module.purge()
-    print 'After purging modules:' + str(module.list())
+    print('After purging modules:' + str(module.list()))
 
     module.available()
 

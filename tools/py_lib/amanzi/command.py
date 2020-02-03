@@ -20,19 +20,19 @@ class CommandInterface:
         try:
             import subprocess
             self.use_ospipe = False
-	except ImportError:
+        except ImportError:
             self.use_ospipe = True
-	except:
-	    print "Unexpected error:",sys.exec_info()[0]
-	    raise
-	    
+        except:
+            print("Unexpected error:",sys.exec_info()[0])
+            raise
+            
 
     def _dump_state(self):
-        print 'command=',self.command
-        print 'args=',self.args
-        print 'exit_code=',self.exit_code
-        print 'output=',self.output
-        print 'use_ospipe=',self.use_ospipe
+        print('command=',self.command)
+        print('args=',self.args)
+        print('exit_code=',self.exit_code)
+        print('output=',self.output)
+        print('use_ospipe=',self.use_ospipe)
 
     def _parse_arg_list(self,args):
         list_args=[]
@@ -41,7 +41,7 @@ class CommandInterface:
         elif isinstance(args,str):
             list_args = shlex.split(args)
         else:
-            raise TypeError, 'args must be of type list or str'
+            raise TypeError('args must be of type list or str')
         self.args = list_args 
         return list_args
 
@@ -66,10 +66,10 @@ class CommandInterface:
 
     def add_args(self,args):
         if len(self.args) == 0:
-	  self.set_args(args)
-	else:  
-          new_args = self._parse_arg_list(args)
-	  self.args.append(new_args)
+            self.set_args(args)
+        else:  
+            new_args = self._parse_arg_list(args)
+            self.args.append(new_args)
         return self.args
 
     def search_args(self,target,index=None):
@@ -95,30 +95,30 @@ class CommandInterface:
 
         import subprocess
         from subprocess import Popen,PIPE,STDOUT
-	import time
-	import signal
+        import time
+        import signal
 
         run_command=self._build_run_command()
-	try:
-          pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
-	except ValueError:
-	  raise ValueError, 'Incorrect arguments in Popen'
-	except:
-	  raise
-	else:
-	  output=pipe.stdout
-	  self.ouput=output.read()
-	  output.close
+        try:
+            pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
+        except ValueError:
+            raise ValueError('Incorrect arguments in Popen')
+        except:
+            raise
+        else:
+            output=pipe.stdout
+            self.ouput=output.read()
+            output.close
 
         # Do not leave until the process completes!
         while pipe.poll() == None:
-	  pass
+            pass
 
         # Set the return code
         self.exit_code=pipe.returncode 
         
         # Dump out the output
-	print self.output
+        print(self.output)
 
         return self.exit_code
 

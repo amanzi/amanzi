@@ -44,10 +44,10 @@ def get_type(value):
        - for Vector, adds the typecode
     '''
     tvalue = type(value)
-    if tvalue == types.InstanceType:
+    if isinstance(tvalue,object):
         tvalue = str(value.__class__)
         if isinstance(value, py_siminput.vector.Fixed_Vector):
-            tvalue = tvalue + '(' + value.typecode + `len(value)` + ')'
+            tvalue = tvalue + '(' + value.typecode + str(len(value)) + ')'
         elif isinstance(value, py_siminput.vector.Vector):
             tvalue = tvalue + '(' + value.typecode + ')'
     return tvalue
@@ -60,11 +60,14 @@ def compatible_types(v, ref):
     '''
     same = 1
     if v != ref:
-        allInt = [types.IntType, types.LongType]
-        allNum = allInt + [types.FloatType]
-        if ref == types.FloatType and v in allNum: pass
-        elif ref == types.LongType and v in allInt: pass
-        else: same = 0
+        allInt = [int]
+        allNum = allInt + [float]
+        if isinstance(ref,float) and v in allNum:
+            pass
+        elif isinstance(ref,int) and v in allInt:
+            pass
+        else:
+            same = 0
     return same
 
 ########################################################################
@@ -91,8 +94,8 @@ class _Constraint:
         '''
         tv = get_type(value)
         if not compatible_types(tv, self.type):
-            raise TypeError, name + ' is ' + `self.type` + \
-                  '; incompatible with ' + `tv`
+            raise TypeError(name + ' is ' + str(self.type) + \
+                  '; incompatible with ' + str(tv))
     def doc_constraints(self, obj, name):
         'Forms a documentation string of the constraints.'
         doc  = ''
@@ -104,9 +107,9 @@ class _Constraint:
         return (doc, also)
     def print_value_error(self, value, obj, name):
         'Raises ValueError and error message.'
-        doc = name + ' = ' + `value` + ' invalid.\n'
+        doc = name + ' = ' + str(value) + ' invalid.\n'
         doc = doc + '       ' + self.doc_constraints(obj, name)[0]
-        raise ValueError, doc
+        raise ValueError(doc)
     def check(self, value, obj, name):
         'Checks all constraints on value.'
         self.check_type(value, name)
@@ -140,16 +143,16 @@ class _Constraint_Numeric(_Constraint):
         'Forms a documentation string of the constraints.'
         (doc, also)  = _Constraint.doc_constraints(self, obj, name)
         if self.min is not None:
-            doc = doc + also + name + ' >= ' + `self.min`
+            doc = doc + also + name + ' >= ' + str(self.min)
             also = ', '
         for v in self.min_attr:
-            doc = doc + also + name + ' >= ' + v + ' = ' + `getattr(obj, v)`
+            doc = doc + also + name + ' >= ' + v + ' = ' + str(getattr(obj, v))
             also = ', '
         if self.max is not None:
-            doc = doc + also + name + ' <= ' + `self.max`
+            doc = doc + also + name + ' <= ' + str(self.max)
             also = ', '
         for v in self.max_attr:
-            doc = doc + also + name + ' <= ' + v + ' = ' + `getattr(obj, v)`
+            doc = doc + also + name + ' <= ' + v + ' = ' + str(getattr(obj, v))
             also = ', '
         return (doc, also)
     def check_min(self, value, min, obj, name):
@@ -171,7 +174,7 @@ class _Constraint_Numeric(_Constraint):
             self.check_max(value, getattr(obj, v), obj, name)
     def add_min(self, minValue):
         'Adds a minimum value constraint.'
-        if type(minValue) is types.StringType:
+        if isinstance(minValue,str):
             if minValue not in self.min_attr:
                 self.min_attr.append(minValue)
         else:
@@ -179,7 +182,7 @@ class _Constraint_Numeric(_Constraint):
             self.min = minValue
     def add_max(self, maxValue):
         'Adds a maximum value constraint.'
-        if type(maxValue) is types.StringType:
+        if isinstance(maxValue,str):
             if maxValue not in self.max_attr:
                 self.max_attr.append(maxValue)
         else:
@@ -199,7 +202,7 @@ class _Constraint_Class(_Constraint):
     def __init__(self, def_value, const, base_class):
         _Constraint.__init__(self, def_value, const)
         if not isinstance(def_value, base_class):
-            raise TypeError, 'def_value is not an instance of base_class'
+            raise TypeError('def_value is not an instance of base_class')
         self.base_class = base_class
     def check_type(self, value, name):
         '''
@@ -208,14 +211,14 @@ class _Constraint_Class(_Constraint):
         tv = get_type(value)
         # ensure value is an instance of base_class
         if not isinstance(value, self.base_class):
-            raise TypeError, name + ' is an instance of ' + \
-                  `self.base_class` + \
-                  '; incompatible with type ' + `tv`
+            raise TypeError(name + ' is an instance of ' + \
+                  str(self.base_class) + \
+                  '; incompatible with type ' + str(tv))
     def doc_constraints(self, obj, name):
         'Forms a documentation string of the constraints.'
         (doc, also)  = _Constraint.doc_constraints(self, obj, name)
         doc = doc + also + name + \
-              ' must be derived from a base class ' + `self.base_class`
+              ' must be derived from a base class ' + str(self.base_class)
         also = ', '
         return (doc, also)
     def check(self, value, obj, name):
@@ -241,7 +244,7 @@ class _Constraint_List(_Constraint):
         'Forms a documentation string of the constraints.'
         (doc, also)  = _Constraint.doc_constraints(self, obj, name)
         doc = doc + name + \
-              ' must be one of the following: ' + `self.list`
+              ' must be one of the following: ' + str(self.list)
         also = ', '
         return (doc, also)
     def check(self, value, obj, name):
@@ -274,7 +277,7 @@ class _Constraint_Type_List(_Constraint):
         'Forms a documentation string of the constraints.'
         (doc, also)  = _Constraint.doc_constraints(self, obj, name)
         doc = doc + name + \
-              ' must be a type of one of the following: ' + `self.list`
+              ' must be a type of one of the following: ' + str(self.list)
         also = ', '
         return (doc, also)
     def check(self, value, obj, name):
@@ -302,7 +305,7 @@ class _Constraint_Dict(_Constraint):
         'Forms a documentation string of the constraints.'
         (doc, also)  = _Constraint.doc_constraints(self, obj, name)
         doc = doc + name + \
-              ' must be one of the following: ' + `self.dict.keys()`
+              ' must be one of the following: ' + str(self.dict.keys())
         also = ', '
         return (doc, also)
     def check(self, value, obj, name):
@@ -356,14 +359,14 @@ class Type_Check:
         Checks if name has been declared.  Throws AttributeError if not.
         '''
         if name not in self._constraint.keys():
-            raise AttributeError, name + ' has not been declared'
+            raise AttributeError(name + ' has not been declared')
     def _check_if_reserved(self, name):
         '''
         Checks if name is a reserved attribute.
         '''
         if hasattr(self, name) and name not in self._constraint.keys():
-            raise AttributeError, name + \
-                  ' is a reserved attribute name for ' + `self.__class__`
+            raise AttributeError(name + \
+                  ' is a reserved attribute name for ' + str(self.__class__))
     def _declare(self, name, value, const=False):
         '''
         Declare an attribute name and set its initial value.
@@ -404,7 +407,7 @@ class Type_Check:
         if min is not None:
             if type(min) != type([]): min = [min]
             for z in min:
-                if type(z) is types.StringType:
+                if isinstance(z,str):
                     self._check_if_declared(z)
                     self._constraint[z].add_max(name)
                 c.add_min(z)
@@ -413,7 +416,7 @@ class Type_Check:
         if max is not None:
             if type(max) != type([]): max = [max]
             for z in max:
-                if type(z) is types.StringType:
+                if isinstance(z,str):
                     self._check_if_declared(z)
                     self._constraint[z].add_max(name)
                 c.add_max(z)
@@ -493,7 +496,7 @@ class Type_Check:
         'Does self.name = value with some checking.'
         self._check_if_declared(name)
         if self._constraint[name].is_const():
-            raise TypeError, name + ' is const.'
+            raise TypeError(name + ' is const.')
         self._constraint[name].check(value, self, name)
         self._set(name, value)
     def _dump_value(self, name):

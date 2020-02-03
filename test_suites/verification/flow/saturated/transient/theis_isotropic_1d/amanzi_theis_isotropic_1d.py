@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     
@@ -33,7 +33,7 @@ def loadDataFile(Obs_xml):
 def plotTheisObservations(Obs_xml, Obs_data, axes1):
     #=== SPECIAL CODE === Theis EXAMPLE === Water Table is 12.0 m 
     r_vals =[]
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         r_vals.append(obs.coordinate[0])
     r_vals = set(r_vals)
     r_vals=list(r_vals)
@@ -42,7 +42,7 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     cmap = dict((rval,color) for (rval,color) in zip(r_vals, colors))
     #print cmap
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         color = cmap[obs.coordinate[0]]
         pres0 = 101325 -9806.65 * (obs.coordinate[2] - 20)
         pres_drop = (pres0 - numpy.array([obs.data]))
@@ -71,7 +71,7 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
         axes1.plot(times,drawdown, label='$r=%0.1f m$'%r)
         press_analytic.append([r,drawdown])
     
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         press_amanzi.append(obs.data)
     
     for press1, press2 in zip(press_analytic,press_amanzi):
@@ -87,7 +87,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     coordinates = []
     mymodel = model_theis_isotropic_1d.createFromXML(filename)
     
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         if obs.coordinate[0] == -55.0:
            coordinates.append([abs(obs.coordinate[0]), obs.coordinate[2]])
            for press in obs.data:

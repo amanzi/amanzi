@@ -30,7 +30,7 @@ class ObservationData(object):
             var_name = var_name.strip()
 
             key = (var_ref,region)
-            if not self.observations.has_key(key):
+            if key not in self.observations:
                 self.observations[key] = self.Data(var_ref, region, obs_type, var_name)
 
             self.observations[key].times.append(float(time.strip()))

@@ -137,7 +137,7 @@ def MakeTableCols(table_layout,slice,
 
             t.add_column(col_key, analytic_data)
             t.float_format[col_key]=".5e"
-            print "Maximal deviation at point distance was ", vmin_max
+            print("Maximal deviation at point distance was ", vmin_max)
 
     # We could insert columns for particular error / differences here.
 

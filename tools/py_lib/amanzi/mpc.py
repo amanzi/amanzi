@@ -3,7 +3,7 @@
 import os, sys
 import types
 
-from trilinos import Parameter, ParameterList
+from .trilinos import Parameter, ParameterList
 
 ################################################################################
 
