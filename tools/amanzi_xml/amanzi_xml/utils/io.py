@@ -1,4 +1,4 @@
-import parser, errors
+from . import parser, errors
 try:
     import elementtree.ElementTree as etree
 except ImportError:

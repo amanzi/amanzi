@@ -1,4 +1,4 @@
-import base
+from . import base
 import amanzi_xml.utils.io as io
 
 _valid_parameter_types = ['double', 'int', 'string', 'bool']

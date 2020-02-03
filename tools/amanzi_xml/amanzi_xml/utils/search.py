@@ -1,4 +1,4 @@
-import errors
+from . import errors
 
 
 #
@@ -135,7 +135,7 @@ def print_path(xml,elem,level=None):
     for e in elems:
         s += "\n"+ind+e.attrib['name']
         ind += '    '
-    print s
+    print(s)
 
 def get_value(xml, name):
     """Return value associated with name

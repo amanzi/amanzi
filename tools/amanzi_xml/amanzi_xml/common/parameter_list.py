@@ -1,6 +1,6 @@
 import warnings
-import base
-import parameter
+from . import base
+from . import parameter
 from amanzi_xml.utils import parser
 from amanzi_xml.utils.parser import ValidationLevel
 from amanzi_xml.utils import io

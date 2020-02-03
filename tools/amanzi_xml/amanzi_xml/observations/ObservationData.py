@@ -37,9 +37,9 @@ class ObservationData(object):
             self.observations[key].data.append(float(value.strip()))
 
     def printSummary(self):
-        print "Read observation data file:", self.obs_file
+        print("Read observation data file:", self.obs_file)
         for key in self.observations.keys():
-            print "  obs:", key[0], "on region", key[1]
+            print("  obs:", key[0], "on region", key[1])
 
 
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
     p.set_defaults(obs_file = "observation.out") #need to get observation.out from input 
     (options, args) = p.parse_args()
 
-    print "Found filename", options.obs_file
-    print " creating ObservationData object"
+    print("Found filename", options.obs_file)
+    print(" creating ObservationData object")
     obs = ObservationData(options.obs_file)
     obs.getObservationData()
     obs.printSummary()
