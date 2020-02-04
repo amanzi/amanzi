@@ -19,8 +19,8 @@ class ObservationData(object):
 
     def getObservationData(self):
         obs_fid = open(self.obs_file)
-        obs_fid.next() # pop header line "name, region,..."
-        obs_fid.next() # pop header line "===="
+        next(obs_fid) # pop header line "name, region,..."
+        next(obs_fid) # pop header line "===="
 
         for line in obs_fid:
             [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
