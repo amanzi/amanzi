@@ -32,7 +32,7 @@ def createFunctionSpec(spec_name, region, component, func):
 
     pl = parameter_list.ParameterList(spec_name)
     pl.append(region_p)
-    pl.append(entity_p)
+    pl.append(entity_p) # TODO: entity_p undefined: did you mean component_p?
     pl.sublist("function").append(func)
     return pl
         

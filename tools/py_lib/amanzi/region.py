@@ -27,7 +27,7 @@ class RegionsInterface(ParameterList):
 
     def add_region(self,label=None,lo=[],hi=[]):
 
-        if label == None:
+        if label is None:
             raise ValueError('Must define a label to add a region')
 
         if len(lo) == 0:

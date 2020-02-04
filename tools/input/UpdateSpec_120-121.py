@@ -81,7 +81,7 @@ def WriteModel(xml_output,Model_lines):
         elif ( TIMode_tag ):
             if ( 'name="Transient"' in line ):
                 TIModeTransient=True
-            elif ('</ParameterList>' in  line):
+            elif ('</ParameterList>' in line):
                 TIMode_tag=False
     
     # Transient with Static
@@ -103,7 +103,7 @@ def WriteModel(xml_output,Model_lines):
                     xml_output.write("%s\n" % ( re.sub(r'name="Transient"','name="Transient with Static Flow"', line)) )
                 else:
                     xml_output.write("%s\n" % ( line ) )
-            elif ('</ParameterList>' in  line):
+            elif ('</ParameterList>' in line):
                 TIMode_tag=False
                 xml_output.write("%s\n" % ( line ) )
             else:

@@ -50,7 +50,7 @@ class ObservationXML(object):
     def getObservationFilename(self):
         obs = search.getElementByTagPath(self.xml, "/Main/Output/Observation Data/Observation Output Filename")
         obs_file = obs.value.strip()
-        return  obs_file
+        return obs_file
 
     def printSummary(self):
         print("Read input file:", self.filename)

@@ -55,6 +55,6 @@ def fromElement(elem):
     elif elem.tag == 'ParameterList':
         return _listObjectFromElement(elem)
     else:
-        raise RuntimeError('Invalid element with tag %s'%elem.tag)
+        raise RuntimeError('Invalid element with tag %s' % elem.tag)
 
 

@@ -46,9 +46,9 @@ def indent(elem, level=0):
 def read_input_tree(inputfile):
 
     try:
-      tree = ET.parse(inputfile)
-    except:
-      raise SyntaxError("Error reading inputfile - " + inputfile + "\n\n" + usage())
+        tree = ET.parse(inputfile)
+    except Exception:
+        raise SyntaxError("Error reading inputfile - " + inputfile + "\n\n" + usage())
 
     return tree
 
@@ -62,21 +62,21 @@ def v211_update(tree):
 
     # try reading in inputfile
     try:
-      root = tree.getroot()
-    except:
-      raise RuntimeError("Error getting xml tree root\n\n" + usage())
+        root = tree.getroot()
+    except Exception:
+        raise RuntimeError("Error getting xml tree root\n\n" + usage())
 
     # check version for 2.1.1
     version = root.get('version')
     if version == '2.1.0':
-      # call UpdateSpec_210-211 to bring input format up to 2.1.1 spec
-      import UpdateSpec_210to211
-      tree = UpdateSpec_210to211.v210_update(tree)
+        # call UpdateSpec_210-211 to bring input format up to 2.1.1 spec
+        import UpdateSpec_210to211
+        tree = UpdateSpec_210to211.v210_update(tree)
     elif version == '2.0.0':
-      #call v200_to_210 before continuing
-      raise RuntimeError("Error reading input file, can not currently update from 2.0.0 input format")
+        #call v200_to_210 before continuing
+        raise RuntimeError("Error reading input file, can not currently update from 2.0.0 input format")
     elif (version == '1.2.3' or version == '1.2.2'):
-      raise RuntimeError("Error reading input file, can not currently update from 1.2.x input format")
+        raise RuntimeError("Error reading input file, can not currently update from 1.2.x input format")
 
     # update version number
     ### EIB >> update this
@@ -93,14 +93,14 @@ def v211_update(tree):
     
     vis = root.find('./output/vis')
     if (vis is not None):
-	wr = vis.find('write_regions')
-	if (wr is not None):
-	    print("    Update form of write_regions")
-	    regs = wr.text
-	    wr.clear()
-	    field = ET.SubElement(wr,'field')
-	    field.set("name","regions")
-	    field.set("regions",regs)
+        wr = vis.find('write_regions')
+        if (wr is not None):
+            print("    Update form of write_regions")
+            regs = wr.text
+            wr.clear()
+            field = ET.SubElement(wr,'field')
+            field.set("name","regions")
+            field.set("regions",regs)
 
     ### Structured Updates ###
 
@@ -108,22 +108,22 @@ def v211_update(tree):
         # if structured: update int subelements to list of integers
         amr = root.find('./numerical_controls/structured_controls/str_amr_controls')
         if (amr is not None):
-	    options = ['refinement_ratio', 'regrid_interval', 'blocking_factor', 'number_error_buffer_cells', 'max_grid_size']
-	    for child in amr:
+            options = ['refinement_ratio', 'regrid_interval', 'blocking_factor', 'number_error_buffer_cells', 'max_grid_size']
+            for child in amr:
                 if child.tag in options:
-		    print(("    Update form of arm control: ",child.tag))
-		    ints = ""
-		    # loop over subelements to get list of values, append to new element
-		    for kid in child:
-	                ints = ints + kid.text + " "
-		    # remove the subelements
-		    kids = child.findall('int')
-		    for e in kids:
-		        child.remove(e)
-		    # update current element text
-		    child.text = ints
+                    print(("    Update form of arm control: ",child.tag))
+                    ints = ""
+                    # loop over subelements to get list of values, append to new element
+                    for kid in child:
+                        ints = ints + kid.text + " "
+                    # remove the subelements
+                    kids = child.findall('int')
+                    for e in kids:
+                        child.remove(e)
+                    # update current element text
+                    child.text = ints
 
-	    
+            
 
     return tree
 
@@ -132,14 +132,14 @@ def v211_update(tree):
 if __name__=="__main__":
   
     try:
-      inputfile = sys.argv[1]
-      try:
-        outputfile = sys.argv[2]
-      except:
-        outputfile = inputfile
-        print(">> no output filename specified, will overwrite inputfile")
-    except:
-      raise RuntimeError("Error reading arguments\n\n" + usage())
+        inputfile = sys.argv[1]
+        try:
+            outputfile = sys.argv[2]
+        except Exception:
+            outputfile = inputfile
+            print(">> no output filename specified, will overwrite inputfile")
+    except Exception:
+        raise RuntimeError("Error reading arguments\n\n" + usage())
 
     tree = read_input_tree(inputfile)
     new_tree = v211_update(tree)

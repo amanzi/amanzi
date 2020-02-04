@@ -405,7 +405,8 @@ class Type_Check:
         self._set(name, value)
         # Add min constraints
         if min is not None:
-            if type(min) != type([]): min = [min]
+            if not isinstance(min,list):
+                min = [min]
             for z in min:
                 if isinstance(z,str):
                     self._check_if_declared(z)
@@ -414,7 +415,8 @@ class Type_Check:
                 c.check(getattr(self, name), self, name)
         # Add max constraints
         if max is not None:
-            if type(max) != type([]): max = [max]
+            if not isinstance(max,list):
+                max = [max]
             for z in max:
                 if isinstance(z,str):
                     self._check_if_declared(z)

@@ -44,7 +44,7 @@ class CGNS(VizBase):
     def __init__(self,file=None):
 
         VizBase.__init__(self,'CGNS')
-        if file != None:
+        if file is not None:
             self.set_file(file)
 
 class MPC(ParameterList):
@@ -80,9 +80,9 @@ class MPC(ParameterList):
         return node
 
     def set_end_cycle(self,value):
-	self.end_cycle = value
-	node = self.set_parameter('End Cycle',value)
-	return node
+        self.end_cycle = value
+        node = self.set_parameter('End Cycle',value)
+        return node
 
 ###############################################################################
 
@@ -94,9 +94,4 @@ if __name__ == '__main__':
     mpc.set_end_time(3600000.0)
 
     mpc.dumpXML()
-
-
-        
-
-       
 

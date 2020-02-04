@@ -35,19 +35,19 @@ class Vector:
         
         # Create a list of values
         list = []
-        if type(spec) == type(1):
+        if isinstance(spec,int):
             # if spec is an integer, create a list, of length spec,
             # using the default value to initialize.
             if spec < 0:
                 raise ValueError('spec must be a list or a positive integer.')
             if spec > 0:
                 defaults = {}
-                defaults['d'] = 0.0;
-                defaults['i'] = 0;
+                defaults['d'] = 0.0
+                defaults['i'] = 0
                 defaults['b'] = Bool('false')
                 defaults['s'] = ''
                 list = spec * [defaults[typecode]]
-        elif type(spec) == type([]):
+        elif isinstance(spec,list):
             # spec is a list, so use it.
             list = spec
         else:
@@ -81,7 +81,7 @@ class Vector:
         if not self._use_array:
             if type(value) != self._type:
                 raise TypeError(repr(value) + ' is illegal type.  ' + \
-                      'Must be type ' + repr(self._type))
+                    'Must be type ' + repr(self._type))
     def __len__(self):
         return len(self._data)
     def __getitem__(self, key):

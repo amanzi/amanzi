@@ -14,7 +14,7 @@ def fromFile(file_or_filename, ensure_is_plistable=False):
     else:
         try:
             return parser.fromElement(elem.getroot())
-        except:
+        except Exception:
             if ensure_is_plistable:
                 raise errors.NotNativeSpecError()
             else:
@@ -44,7 +44,7 @@ def extractDoxygenXML(filename, example_header="Native Spec Example"):
 
         # find the start of the native spec section
         try:
-            while not "Native Spec Example" in line:
+            while "Native Spec Example" not in line:
                 line = fid.readline()
         except StopIteration:
             return None

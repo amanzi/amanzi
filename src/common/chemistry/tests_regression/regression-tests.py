@@ -165,7 +165,7 @@ def run_tests(options, tests_to_run):
                     results_hash.update(line)
             #print results_hash.hexdigest()
             if test_info['hash'] == results_hash.hexdigest():
-                    print("Passed")
+                print("Passed")
             else:
                 num_failed += 1
                 print("Failed:")

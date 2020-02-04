@@ -44,9 +44,7 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinxcontrib.bibtex',
 ]
 
-ext_matplotlib = [#'matplotlib.sphinxext.only_directives',
-                  'matplotlib.sphinxext.plot_directive'
-]
+ext_matplotlib = ['matplotlib.sphinxext.plot_directive']
 
 ext_ipython = ['IPython.sphinxext.ipython_directive',
                'IPython.sphinxext.ipython_console_highlighting'

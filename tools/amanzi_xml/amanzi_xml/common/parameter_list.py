@@ -133,7 +133,7 @@ class ParameterList(base.TeuchosBaseXML):
         postspace = doublespace or self.get("name") in _postspace
         prespace = self.get("name") in _prespace
         
-        if len(self) is 0:
+        if len(self) == 0:
             self.text = "\n" + " "*(ntabs)*base._tabsize
         else:
             self.text = "\n" + " "*(ntabs+1)*base._tabsize

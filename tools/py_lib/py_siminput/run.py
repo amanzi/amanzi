@@ -52,7 +52,10 @@ Example:
   %s --procs=4 input.py
 '''
 
-import subprocess, getopt, sys, os
+import subprocess
+import getopt
+import sys
+import os
 from py_siminput.input_interface import Dump_XML, Dump_Doc, Dump_Python
 
 # global variables
@@ -100,7 +103,7 @@ def mpi_only_run_string(num_pes,exe,inputfile):
         s = "poe %s -procs %d -rmpool 2 -retry 1" % (exe,num_pes,inputfile)
     elif machine == "OSF1":
         # COMPAQ
-        s= "prun -n %d %s %s" % (num_pes,exe,inputfile)
+        s = "prun -n %d %s %s" % (num_pes,exe,inputfile)
     else:
         # Set the default
         s = "mpirun -np %d %s %s" % (num_pes,exe,inputfile)
@@ -218,7 +221,7 @@ def run(exe1,exe2):
         if o in ('-d', '--doc'):
             dump_doc = 1
         elif o in ('-h', '--help'):
-            Usage("");
+            Usage("")
         elif o in ('-p', '--python'):
             dump_python = 1
         elif o in ('-n', '--procs'):
@@ -285,7 +288,7 @@ def run(exe1,exe2):
             d = Dump_Python(1)
             d.dump(root, 'root')
             run_sim = 0
-        
+
         if run_sim:
             # Run the solver
             command = run_string(num_pes,exe1,exe2,input_xml)

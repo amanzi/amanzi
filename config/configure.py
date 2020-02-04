@@ -106,7 +106,7 @@ class ConfigurationManager(object):
         break
     if not found:
       arch = os.environ.get(self.PROJECT+'_ARCH')
-      if arch != None:
+      if arch is not None:
         found = 1
       else:
         arch = ''
@@ -122,7 +122,7 @@ class ConfigurationManager(object):
             +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
             +'*******************************************************************************\n'
         print(msg)
-        if not framework is None:
+        if framework is not None:
           framework.logClear()
           import traceback
           if hasattr(framework, 'log'):
@@ -345,7 +345,7 @@ class ConfigurationManager(object):
           +'*******************************************************************************\n'
       se  = str(e)
     print(msg)
-    if not framework is None:
+    if framework is not None:
       framework.logClear()
       if hasattr(framework, 'log'):
         import traceback

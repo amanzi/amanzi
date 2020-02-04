@@ -14,7 +14,7 @@ class CommandInterface:
         self.exit_code=0
         self.output=''
 
-        if args != None:
+        if args is not None:
             self._parse_arg_list(args)
 
         try:
@@ -22,7 +22,7 @@ class CommandInterface:
             self.use_ospipe = False
         except ImportError:
             self.use_ospipe = True
-        except:
+        except Exception:
             print("Unexpected error:",sys.exec_info()[0])
             raise
             
@@ -46,12 +46,11 @@ class CommandInterface:
         return list_args
 
     def _build_run_command(self):
-        string=' '.join(self.args)
         return self.command + ' ' + ' '.join(self.args)
 
     def _parse_shell_exit(self,pattern):
         m = pattern.findall(self.output)
-        if m != None:
+        if m is not None:
             idx = len(m) - 1
             self.exit_code = m[idx]
 
@@ -84,7 +83,7 @@ class CommandInterface:
         return 
 
     def run(self):
-        if self.use_ospipe == True:
+        if self.use_ospipe:
             self._ospipe_run()
         else:
             self._subprocess_run()
@@ -103,7 +102,7 @@ class CommandInterface:
             pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
         except ValueError:
             raise ValueError('Incorrect arguments in Popen')
-        except:
+        except Exception:
             raise
         else:
             output=pipe.stdout
@@ -111,7 +110,7 @@ class CommandInterface:
             output.close
 
         # Do not leave until the process completes!
-        while pipe.poll() == None:
+        while pipe.poll() is None:
             pass
 
         # Set the return code
@@ -123,21 +122,20 @@ class CommandInterface:
         return self.exit_code
 
     def _ospipe_run(self):
-        import os
         import re
         run_command = self._build_run_command()
 
         # Need the '$' to delete the last print just
         # in case the command output also has this 
         # print out!
-        pattern = re.compile('SHELL_EXIT=(\d+)$')
+        pattern = re.compile('SHELL_EXIT=(\\d+)$')
         
         run_command = run_command + '; echo SHELL_EXIT=$?'
         (child_stdin, child_outerr) =os.popen4(run_command)
         child_stdin.close()
         self.output = child_outerr.read()
         self.exit_code = child_outerr.close()
-        if self.exit_code == None:
+        if self.exit_code is None:
             self._parse_shell_exit(pattern)
         self._remove_shell_exit(pattern)    
             

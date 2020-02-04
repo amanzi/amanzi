@@ -23,7 +23,7 @@ class MpiInterface(CommandInterface):
         elif isinstance(ntype,str):
             try:
                 stripped = str(int(n))
-            except:
+            except Exception:
                 print(n, 'is not an integer')
 
             np = int(n)
@@ -59,10 +59,10 @@ class MpiInterface(CommandInterface):
         print('')
 
     def run(self,binary=None,binary_args=None):
-        if binary != None:
+        if binary is not None:
             self.add_args(binary)
 
-        if binary_args != None:
+        if binary_args is not None:
             self.add_args(binary_args)
 
         CommandInterface.run(self)
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     try:
         mpi.num_procs('blah')
         mpi._dump_state()
-    except:
+    except Exception:
         print('Passed the invalid proc test')
 
     # Resetting the number of procs

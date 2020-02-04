@@ -104,7 +104,7 @@ def WriteUnstructuredLists(xml_output,KeyList,SubLists,lev_spc):
             line='</ParameterList>'
             xml_output.write ("%*s\n" % ( len(line)+lev_spc[4+extra_level], line ) )
                     
-        if ( key is 'Block' and PreconHeader ):
+        if ( key == 'Block' and PreconHeader ):
             extra_level=0
             line='</ParameterList>'
             xml_output.write ("%*s\n" % ( len(line)+lev_spc[4], line ) )
@@ -200,7 +200,7 @@ def CheckValidValues(xml_input):
                 for v in data_value:
                     try:
                         d=float(v)
-                    except:
+                    except Exception:
                         print("Invalid double in line", i)
                         print(line)
 
@@ -209,7 +209,7 @@ def CheckValidValues(xml_input):
                 for v in data_value:
                     try:
                         d=int(v)
-                    except:
+                    except Exception:
                         print("Invalid integer in line", i)
                         print(line)
 

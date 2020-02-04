@@ -127,7 +127,7 @@ class Parameter(base.TeuchosBaseXML):
             self.set('type', "Array(%s)"%self._basetype)
             self._isarray = True
         else:
-            raise RunTimeError("Unknown Parameter type %s"%ptype)
+            raise RuntimeError("Unknown Parameter type %s"%ptype)
 
         self.set('value', None)
 
