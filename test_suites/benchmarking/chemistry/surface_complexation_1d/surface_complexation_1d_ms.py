@@ -153,7 +153,7 @@ if __name__ == "__main__":
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
-	native = True
+    native = True
 
     except:
         native = False

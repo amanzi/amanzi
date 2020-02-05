@@ -23,7 +23,7 @@ def load_amanzi_obs():
 
 # load data from analytic solution
 def load_ana_solution():
-    ana_data =numpy.genfromtxt('analytic/drdn.res')
+    ana_data = numpy.genfromtxt('analytic/drdn.res')
     return ana_data
 
 def plottest(axes1,obstimes,  obsdata, ana_data):
@@ -31,11 +31,11 @@ def plottest(axes1,obstimes,  obsdata, ana_data):
     axes1.set_xlabel('Time after pumping [days]')
     axes1.set_title('Drawdown at Two Observation Wells')
     
-    ntime1 = len(ana_data[:,0])/2
-    ntime2 = len(ana_data[:,0])
+    ntime1 = int(len(ana_data[:,0])/2)
+    ntime2 = int(len(ana_data[:,0]))
 
-    ntime3 = len(obstimes[:,0])
-    ntime4 = len(obstimes[:,1])
+    ntime3 = int(len(obstimes[:,0]))
+    ntime4 = int(len(obstimes[:,1]))
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Butler Pod Solution: Obs1')
     axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'ro', label='Amanzi: Obs1')
