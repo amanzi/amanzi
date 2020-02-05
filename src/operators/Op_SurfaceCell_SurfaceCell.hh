@@ -73,6 +73,7 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
 
       // \TODO add entity_get_parent to mesh 
       Kokkos::parallel_for(
+          "Op_SurfaceCell_SurfaceCell Rescale",
           diag_v.extent(0),
           KOKKOS_LAMBDA(const int sc) {
             auto f = m->entity_get_parent(AmanziMesh::CELL, sc);

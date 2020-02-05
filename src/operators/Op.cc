@@ -27,7 +27,9 @@ void
 Op::Zero()
 {
   if (matrices.size()) {
-    Kokkos::parallel_for(matrices.size(),
+    Kokkos::parallel_for(
+      "Op Zero",
+      matrices.size(),
                          KOKKOS_LAMBDA(const int i) {
                            Zero(i);
                          });
