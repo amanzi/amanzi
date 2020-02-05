@@ -1457,11 +1457,14 @@ Mesh::build_columns(const std::string& setname) const
   Kokkos::resize(cell_cellabove_, nc);
   Kokkos::resize(node_nodeabove_, nn);
 
-  Kokkos::parallel_for(nc, KOKKOS_LAMBDA(const int& i) {
+  Kokkos::parallel_for(
+    "Mesh::build_columns loop 1",
+    nc, KOKKOS_LAMBDA(const int& i) {
     cell_cellbelow_(i) = -1;
     cell_cellabove_(i) = -1;
   });
   Kokkos::parallel_for(
+    "Mesh::build_columns loop 2",
     nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
 
   Kokkos::resize(column_cells_.row_map, 1);
@@ -1537,11 +1540,14 @@ Mesh::build_columns() const
   Kokkos::resize(cell_cellabove_, nc);
   Kokkos::resize(node_nodeabove_, nn);
 
-  Kokkos::parallel_for(nc, KOKKOS_LAMBDA(const int& i) {
+  Kokkos::parallel_for(
+    "Mesh::build_columns loop 1",
+    nc, KOKKOS_LAMBDA(const int& i) {
     cell_cellbelow_(i) = -1;
     cell_cellabove_(i) = -1;
   });
   Kokkos::parallel_for(
+    "Mesh::build_columns loop 2",
     nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
 
   Kokkos::resize(column_cells_.row_map, 1);

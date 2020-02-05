@@ -350,7 +350,7 @@ BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
     Kokkos::MDRangePolicy<Kokkos::Rank<2>> range_policy(
         {size_owned,0}, {vv.extent(0),vv.extent(1)});
     Kokkos::parallel_for(
-        "putScalarGhosted",
+        "BlockVector_impl::putScalarGhosted",
         range_policy,
         KOKKOS_LAMBDA (const int i, const int j) {
           vv(i,j) = scalar;

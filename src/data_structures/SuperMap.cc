@@ -74,7 +74,9 @@ copyToSuperVector(const SuperMap& map, const BlockVector<Vector_type::scalar_typ
       auto data = bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        Kokkos::parallel_for(data.extent(0),
+        Kokkos::parallel_for(
+          "SuperMap::copyToSuperVector",
+          data.extent(0),
                              KOKKOS_LAMBDA(const int i) {
                                svv(inds(i),0) = data(i,dofnum);
                              });
@@ -94,7 +96,9 @@ copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
       auto data = bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        Kokkos::parallel_for(data.extent(0),
+        Kokkos::parallel_for(
+          "SuperMap::copyFromSuperVector",
+          data.extent(0),
                              KOKKOS_LAMBDA(const int i) {
                                data(i,dofnum) = svv(inds(i),0);
                              });
@@ -114,7 +118,9 @@ addFromSuperVector(const SuperMap& map, const Vector_type& sv,
       auto data = bv.ViewComponent(compname, false);
       for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
         auto inds = map.Indices(block_num, compname, dofnum);
-        Kokkos::parallel_for(data.extent(0),
+        Kokkos::parallel_for(
+          "SuperMap::addFromSuperVector",
+          data.extent(0),
                              KOKKOS_LAMBDA(const int i) {
                                data(i,dofnum) += svv(inds(i),0);
                              });

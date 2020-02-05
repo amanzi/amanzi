@@ -46,6 +46,7 @@ template<class Op_type>
 void opPutScalar(Op_type& op, double scalar) {
   Kokkos::MDRangePolicy<Kokkos::Rank<2>> range({0,0}, {op.data.extent(0), op.data.extent(1)});
   Kokkos::parallel_for(
+      "operator_basic",
       range,
       KOKKOS_LAMBDA(const int i, const int j) {
         op.data(i,j) = scalar;

@@ -82,7 +82,9 @@ class FunctionSeparable : public Function {
     Kokkos::View<double*> out_1("out_1", out.extent(0));
     f1_->apply(in, out_1);
     f2_->apply(y, out);
-    Kokkos::parallel_for(out.extent(0),
+    Kokkos::parallel_for(
+      "FunctionSeparable::apply",
+      out.extent(0),
                          KOKKOS_LAMBDA(const int& i) { out(i) *= out_1(i); });
   }
 

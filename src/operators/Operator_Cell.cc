@@ -56,7 +56,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
   const auto dv = op.diag->getLocalViewDevice(); 
 
   Kokkos::parallel_for(
-     "Operator_Cell ApplyMatrixFreeOp Op_Cell_Cell",
+     "Operator_Cell::ApplyMatrixFreeOp Op_Cell_Cell",
       Xc.extent(0),
       KOKKOS_LAMBDA(const int c) {
         Yc(c,0) += Xc(c,0) * dv(c,0);
@@ -89,7 +89,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   Kokkos::vector<WhetStone::DenseMatrix> local_matrices = op.matrices; 
 
   Kokkos::parallel_for(
-      "Operator_Cell ApplyMatrixFreeOp Op_Face_Cell",
+      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell",
       op.matrices.size(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;

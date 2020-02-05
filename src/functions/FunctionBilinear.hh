@@ -138,6 +138,7 @@ class FunctionBilinear : public Function {
   {
     assert(in.extent(1) == out.extent(0));
     Kokkos::parallel_for(
+      "FunctionBilinear::apply",
       in.extent(1), KOKKOS_LAMBDA(const int& i) { out(i) = apply_gpu(in, i); });
   }
 

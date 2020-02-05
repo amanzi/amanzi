@@ -125,7 +125,9 @@ class PK_Veg : public Base_t {
     const auto& data_old =
       this->S_->template Get<PFTList>(this->key_, tag_old_);
 
-    Kokkos::parallel_for(data_new.extent(0), KOKKOS_LAMBDA(const int i) {
+    Kokkos::parallel_for(
+      "test_increment_pk",
+      data_new.extent(0), KOKKOS_LAMBDA(const int i) {
         data_new(i).Bleaf = data_old(i).Bleaf + 0.1*dt;
         data_new(i).Broot = data_old(i).Broot + 0.1*dt;
         data_new(i).Bstem = data_old(i).Bstem + 0.1*dt;

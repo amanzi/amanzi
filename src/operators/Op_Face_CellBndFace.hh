@@ -52,7 +52,7 @@ class Op_Face_CellBndFace : public Op {
     AmanziMesh::Mesh const* mesh_ = mesh.get();
     auto Xc = X.ViewComponent("cell", true);
     Kokkos::parallel_for(
-        "Op_Face_CellBndFace GetLocalDiagCopy loop 1",
+        "Op_Face_CellBndFace::GetLocalDiagCopy loop 1",
         matrices.size(),
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
@@ -66,7 +66,7 @@ class Op_Face_CellBndFace : public Op {
     auto Xbf = X.ViewComponent("boundary_face", true);
     auto import_same_face = mesh->exterior_face_importer()->getNumSameIDs();
     Kokkos::parallel_for(
-        "Op_Face_CellBndFace GetLocalDiagCopy loop 2",
+        "Op_Face_CellBndFace::GetLocalDiagCopy loop 2",
         import_same_face,
         KOKKOS_LAMBDA(const int bf) {
           // atomic not needed, each bf touched once
@@ -76,7 +76,7 @@ class Op_Face_CellBndFace : public Op {
     auto import_permute_face = mesh->exterior_face_importer()
         ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
     Kokkos::parallel_for(
-        "Op_Face_CellBndFace GetLocalDiagCopy loop 3",
+        "Op_Face_CellBndFace::GetLocalDiagCopy loop 3",
         import_permute_face.extent(0),
         KOKKOS_LAMBDA(const int bf_offset) {
           // atomic not needed, each bf touched once
@@ -112,7 +112,7 @@ class Op_Face_CellBndFace : public Op {
         AmanziMesh::Mesh const * mesh_ = mesh.get();
 
         Kokkos::parallel_for(
-            "Op_Face_CellBndFace Rescale loop 1",
+            "Op_Face_CellBndFace::Rescale loop 1",
             matrices.size(),
             KOKKOS_LAMBDA(const int f) {
               AmanziMesh::Entity_ID_View cells;
@@ -140,7 +140,7 @@ class Op_Face_CellBndFace : public Op {
             ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
       
         Kokkos::parallel_for(
-          "Op_Face_CellBndFace Rescale loop 2",
+          "Op_Face_CellBndFace::Rescale loop 2",
           import_same_face,
                              KOKKOS_LAMBDA(const int bf) {
                                matrices[bf](0,1) *= s_bnd(bf,0);
@@ -148,7 +148,7 @@ class Op_Face_CellBndFace : public Op {
                              });
 
         Kokkos::parallel_for(
-          "Op_Face_CellBndFace Rescale loop 3",
+          "Op_Face_CellBndFace::Rescale loop 3",
           import_permute_face.extent(0),
                              KOKKOS_LAMBDA(const int bf_offset) {
                                matrices[import_permute_face(bf_offset)](0,1) *=

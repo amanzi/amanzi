@@ -47,7 +47,7 @@ LocalMatMultAdd(const MatView_type& mat,
   auto num_cols = X_ids.extent(0);
   auto num_rows = Y_ids.extent(0);
   Kokkos::parallel_for(
-      "local_mat_mult_row_loop",
+      "OperatorUtils::LocalMatMultAdd",
       num_rows,
       KOKKOS_LAMBDA(const int& i) {
         double result = 0.0;

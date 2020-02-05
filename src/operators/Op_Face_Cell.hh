@@ -43,7 +43,7 @@ class Op_Face_Cell : public Op {
 
     AmanziMesh::Mesh const * mesh_ = mesh.get();
     Kokkos::parallel_for(
-        "Op_Face_Cell GetLocalDiagCopy",
+        "Op_Face_Cell::GetLocalDiagCopy",
         matrices.size(),
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
@@ -78,7 +78,7 @@ class Op_Face_Cell : public Op {
       const auto s_c = scaling.ViewComponent("cell",true);
       const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
       Kokkos::parallel_for(
-          "Op_Face_Cell Rescale",
+          "Op_Face_Cell::Rescale",
           matrices.size(), 
           KOKKOS_LAMBDA(const int& f) {
             AmanziMesh::Entity_ID_View cells;

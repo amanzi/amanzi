@@ -65,7 +65,9 @@ SUITE(SOLVERS)
       typedef Kokkos::TeamPolicy<>::member_type MemberType;
       // Create an instance of the policy
       Kokkos::TeamPolicy<> policy(N, Kokkos::AUTO());
-      Kokkos::parallel_for(policy, KOKKOS_LAMBDA(MemberType team) {
+      Kokkos::parallel_for(
+        "solver_linear_operators::apply", 
+        policy, KOKKOS_LAMBDA(MemberType team) {
         int k = team.league_rank();
         int i = k % n;
         int j = k / n;
@@ -76,7 +78,9 @@ SUITE(SOLVERS)
                                  i < n - 1 ? k + 1 : -1,
                                  j < n - 1 ? k + n : -1 };
         double sum = 0.;
-        Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 5),
+        Kokkos::parallel_reduce(
+        "solver_linear_operators::apply", 
+          Kokkos::TeamThreadRange(team, 5),
                                 [=](int i, double& lsum) {
                                   int c = inds[i];
                                   lsum += c < 0 ? 0. : coefs[i] * vv(c, 0);
@@ -92,7 +96,9 @@ SUITE(SOLVERS)
       auto vv = v.getLocalViewDevice();
       auto hvv = hv.getLocalViewDevice();
 
-      Kokkos::parallel_for(hvv.extent(0),
+      Kokkos::parallel_for(
+        "solver_linear_operators::applyInverse", 
+        hvv.extent(0),
                            KOKKOS_LAMBDA(int i) { hvv(i, 0) = vv(i, 0); });
       return 0;
     }

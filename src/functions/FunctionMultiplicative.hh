@@ -73,7 +73,9 @@ class FunctionMultiplicative : public Function {
     Kokkos::View<double*> out_2("out_2", in.extent(1));
     f1_->apply(in, out_1);
     f2_->apply(in, out_2);
-    Kokkos::parallel_for(in.extent(1), KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "FunctionMultiplication::apply",
+      in.extent(1), KOKKOS_LAMBDA(const int& i) {
       out(i) = out_1(i) * out_2(i);
     });
   }

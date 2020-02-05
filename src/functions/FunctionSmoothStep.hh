@@ -67,6 +67,7 @@ class FunctionSmoothStep : public Function {
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
   {
     Kokkos::parallel_for(
+      "FunctionSmoothingStep::apply",
       in.extent(1), KOKKOS_LAMBDA(const int& i) { out(i) = apply_gpu(in, i); });
   }
 
