@@ -55,7 +55,7 @@
   <!--  FLOW  -->
   <ParameterList name="PKs">
     <ParameterList name="energy">
-      <ParameterList name="One-phase problem">
+      <ParameterList name="one-phase problem">
         <ParameterList name="verbose object">
          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>

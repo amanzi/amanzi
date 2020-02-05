@@ -27,6 +27,14 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
+  std::string pk_name = pk_tree.name();
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
+
+  // we will use a few parameter lists
+  auto pk_list = Teuchos::sublist(glist, "PKs", true);
+  my_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
 }
@@ -42,6 +50,11 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   Teuchos::ParameterList& elist = S->FEList();
 
+  // Our decision can be affected by the list of models
+  auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
+  bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
+
+  // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
   if (!S->HasField("particle_density")) {
@@ -118,6 +131,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator("mass_density_liquid");
   }
 
   // -- viscosity model
@@ -148,16 +162,16 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
+  std::string model = (vapor_diff) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
-                                        .sublist("Richards problem")
                                         .sublist("physical models and assumptions");
-  flow.set("vapor diffusion", true);
-  flow.set<std::string>("water content model", "generic");
+  flow.set<bool>("vapor diffusion", vapor_diff);
+  flow.set<std::string>("water content model", model);
 
   // -- energy
   Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
                                           .sublist("physical models and assumptions");
-  energy.set("vapor diffusion", true);
+  energy.set<bool>("vapor diffusion", vapor_diff);
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);

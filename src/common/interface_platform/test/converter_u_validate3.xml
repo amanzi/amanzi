@@ -106,6 +106,9 @@
 
   <ParameterList name="state">
     <ParameterList name="field evaluators">
+      <ParameterList name="particle_density">
+        <Parameter name="field evaluator type" type="string" value="constant variable"/>
+      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
@@ -311,311 +314,308 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow Steady">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="Darcy problem">
-        <ParameterList name="absolute permeability">
-          <Parameter name="coordinate system" type="string" value="cartesian"/>
-        </ParameterList>
-        <ParameterList name="operators">
-          <ParameterList name="diffusion operator">
-            <ParameterList name="matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-            </ParameterList>
-            <ParameterList name="preconditioner">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-            </ParameterList>
-            <ParameterList name="vapor matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-              <Parameter name="exclude primary terms" type="bool" value="false"/>
-              <Parameter name="scaled constraint equation" type="bool" value="false"/>
-              <Parameter name="Newton correction" type="string" value="none"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="time integrator">
-          <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
-          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <Parameter name="preconditioner enhancement" type="string" value="none"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-          </ParameterList>
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
-              <Parameter name="max iterations" type="int" value="15"/>
-              <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.19999999999999996e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="0.8"/>
-              <Parameter name="max time step" type="double" value="4.3234e+17"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-            </ParameterList>
-            <Parameter name="solver type" type="string" value="nka"/>
-            <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-              <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-              <Parameter name="max divergent iterations" type="int" value="3"/>
-              <Parameter name="max nka vectors" type="int" value="10"/>
-              <Parameter name="limit iterations" type="int" value="20"/>
-              <Parameter name="modify correction" type="bool" value="false"/>
-            </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-            <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-            <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-            <ParameterList name="verbose object">
-              <Parameter name="verbosity level" type="string" value="high"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="initialization">
-            <Parameter name="method" type="string" value="saturated solver"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
-            <Parameter name="active wells" type="bool" value="false"/>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="boundary conditions">
-          <ParameterList name="pressure">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
-              <ParameterList name="boundary pressure">
-                <ParameterList name="function-linear">
-                  <Parameter name="y0" type="double" value="1.013250e+05"/>
-                  <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                  <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="mass flux">
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Crib}"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-            </ParameterList>
-            <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="source terms">
-          <ParameterList name="Pumping Well">
-            <Parameter name="regions" type="Array(string)" value="{Well}"/>
-            <Parameter name="spatial distribution method" type="string" value="simple well"/>
-            <Parameter name="use volume fractions" type="bool" value="false"/>
-            <ParameterList name="well">
-              <Parameter name="submodel" type="string" value="bhp"/>
-              <Parameter name="well radius" type="double" value="0.1"/>
-              <Parameter name="depth" type="double" value="25.0"/>
-              <ParameterList name="bhp">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.1e+05"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="physical models and assumptions">
-          <Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
-          <Parameter name="water content model" type="string" value="constant density"/>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
+      <ParameterList name="absolute permeability">
+	<Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+	<ParameterList name="diffusion operator">
+	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	  </ParameterList>
+	  <ParameterList name="preconditioner">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	  </ParameterList>
+	  <ParameterList name="vapor matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="exclude primary terms" type="bool" value="false"/>
+	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
+	    <Parameter name="Newton correction" type="string" value="none"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	<Parameter name="linear solver" type="string" value="AztecOO"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="preconditioner enhancement" type="string" value="none"/>
+	<ParameterList name="pressure-lambda constraints">
+	  <Parameter name="method" type="string" value="projection"/>
+	  <Parameter name="inflow krel correction" type="bool" value="true"/>
+	  <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
+	</ParameterList>
+	<Parameter name="time integration method" type="string" value="BDF1"/>
+	<ParameterList name="BDF1">
+	  <Parameter name="timestep controller type" type="string" value="standard"/>
+	  <ParameterList name="timestep controller standard parameters">
+	    <Parameter name="max iterations" type="int" value="15"/>
+	    <Parameter name="min iterations" type="int" value="10"/>
+	    <Parameter name="time step increase factor" type="double" value="1.19999999999999996e+00"/>
+	    <Parameter name="time step reduction factor" type="double" value="0.8"/>
+	    <Parameter name="max time step" type="double" value="4.3234e+17"/>
+	    <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+	  </ParameterList>
+	  <Parameter name="solver type" type="string" value="nka"/>
+	  <ParameterList name="nka parameters">
+	    <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+	    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+	    <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+	    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+	    <Parameter name="max divergent iterations" type="int" value="3"/>
+	    <Parameter name="max nka vectors" type="int" value="10"/>
+	    <Parameter name="limit iterations" type="int" value="20"/>
+	    <Parameter name="modify correction" type="bool" value="false"/>
+	  </ParameterList>
+	  <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+	  <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+	  <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
+	  <ParameterList name="verbose object">
+	    <Parameter name="verbosity level" type="string" value="high"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="initialization">
+	  <Parameter name="method" type="string" value="saturated solver"/>
+	  <Parameter name="linear solver" type="string" value="AztecOO"/>
+	  <Parameter name="active wells" type="bool" value="false"/>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+	<ParameterList name="pressure">
+	  <ParameterList name="BC 0">
+	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-linear">
+		<Parameter name="y0" type="double" value="1.013250e+05"/>
+		<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+		<Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="mass flux">
+	  <ParameterList name="BC 1">
+	    <Parameter name="regions" type="Array(string)" value="{Crib}"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
+		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	    <Parameter name="rainfall" type="bool" value="false"/>
+	  </ParameterList>
+	  <ParameterList name="BC 2">
+	    <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
+		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	    <Parameter name="rainfall" type="bool" value="false"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="source terms">
+	<ParameterList name="Pumping Well">
+	  <Parameter name="regions" type="Array(string)" value="{Well}"/>
+	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
+	  <Parameter name="use volume fractions" type="bool" value="false"/>
+	  <ParameterList name="well">
+	    <Parameter name="submodel" type="string" value="bhp"/>
+	    <Parameter name="well radius" type="double" value="0.1"/>
+	    <Parameter name="depth" type="double" value="25.0"/>
+	    <ParameterList name="bhp">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="1.1e+05"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
+	<Parameter name="water content model" type="string" value="constant density"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="flow and transport">
       <Parameter name="PKs order" type="Array(string)" value="{flow, transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="Darcy problem">
-        <ParameterList name="absolute permeability">
-          <Parameter name="coordinate system" type="string" value="cartesian"/>
-        </ParameterList>
-        <ParameterList name="operators">
-          <ParameterList name="diffusion operator">
-            <ParameterList name="matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-            </ParameterList>
-            <ParameterList name="preconditioner">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-            </ParameterList>
-            <ParameterList name="vapor matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-              <Parameter name="exclude primary terms" type="bool" value="false"/>
-              <Parameter name="scaled constraint equation" type="bool" value="false"/>
-              <Parameter name="Newton correction" type="string" value="none"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="time integrator">
-          <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
-          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <Parameter name="preconditioner enhancement" type="string" value="none"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-          </ParameterList>
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="adaptive"/>
-            <ParameterList name="timestep controller adaptive parameters">
-              <Parameter name="max iterations" type="int" value="15"/>
-              <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.19999999999999996e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="0.8"/>
-              <Parameter name="max time step" type="double" value="4.323400e+17"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-              <Parameter name="relative tolerance" type="double" value="1e-04"/>
-              <Parameter name="absolute tolerance" type="double" value="10.0"/>
-            </ParameterList>
-            <Parameter name="solver type" type="string" value="nka"/>
-            <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-              <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1e+03"/>
-              <Parameter name="max divergent iterations" type="int" value="3"/>
-              <Parameter name="max nka vectors" type="int" value="10"/>
-              <Parameter name="limit iterations" type="int" value="20"/>
-              <Parameter name="modify correction" type="bool" value="false"/>
-            </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-            <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
-            <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
-            <ParameterList name="verbose object">
-              <Parameter name="verbosity level" type="string" value="high"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="boundary conditions">
-          <ParameterList name="pressure">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
-              <ParameterList name="boundary pressure">
-                <ParameterList name="function-linear">
-                  <Parameter name="y0" type="double" value="1.013250e+05"/>
-                  <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                  <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="mass flux">
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Crib}"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-            </ParameterList>
-            <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-                </ParameterList>
-              </ParameterList>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-              <Parameter name="rainfall" type="bool" value="false"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="source terms">
-          <ParameterList name="Pumping Well">
-            <Parameter name="regions" type="Array(string)" value="{Well}"/>
-            <Parameter name="spatial distribution method" type="string" value="simple well"/>
-            <Parameter name="use volume fractions" type="bool" value="false"/>
-            <ParameterList name="well">
-              <Parameter name="submodel" type="string" value="bhp"/>
-              <Parameter name="well radius" type="double" value="0.1"/>
-              <Parameter name="depth" type="double" value="25.0"/>
-              <ParameterList name="bhp">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.1e+05"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="physical models and assumptions">
-          <Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
-          <Parameter name="water content model" type="string" value="constant density"/>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
+      <ParameterList name="absolute permeability">
+	<Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+	<ParameterList name="diffusion operator">
+	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	  </ParameterList>
+	  <ParameterList name="preconditioner">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	  </ParameterList>
+	  <ParameterList name="vapor matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="exclude primary terms" type="bool" value="false"/>
+	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
+	    <Parameter name="Newton correction" type="string" value="none"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="linear solver" type="string" value="AztecOO"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="preconditioner enhancement" type="string" value="none"/>
+	<ParameterList name="pressure-lambda constraints">
+	  <Parameter name="method" type="string" value="projection"/>
+	  <Parameter name="inflow krel correction" type="bool" value="true"/>
+	  <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
+	</ParameterList>
+	<Parameter name="time integration method" type="string" value="BDF1"/>
+	<ParameterList name="BDF1">
+	  <Parameter name="timestep controller type" type="string" value="adaptive"/>
+	  <ParameterList name="timestep controller adaptive parameters">
+	    <Parameter name="max iterations" type="int" value="15"/>
+	    <Parameter name="min iterations" type="int" value="10"/>
+	    <Parameter name="time step increase factor" type="double" value="1.19999999999999996e+00"/>
+	    <Parameter name="time step reduction factor" type="double" value="0.8"/>
+	    <Parameter name="max time step" type="double" value="4.323400e+17"/>
+	    <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+	    <Parameter name="relative tolerance" type="double" value="1e-04"/>
+	    <Parameter name="absolute tolerance" type="double" value="10.0"/>
+	  </ParameterList>
+	  <Parameter name="solver type" type="string" value="nka"/>
+	  <ParameterList name="nka parameters">
+	    <Parameter name="nonlinear tolerance" type="double" value="1e-05"/>
+	    <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+	    <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+	    <Parameter name="max du growth factor" type="double" value="1e+03"/>
+	    <Parameter name="max divergent iterations" type="int" value="3"/>
+	    <Parameter name="max nka vectors" type="int" value="10"/>
+	    <Parameter name="limit iterations" type="int" value="20"/>
+	    <Parameter name="modify correction" type="bool" value="false"/>
+	  </ParameterList>
+	  <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+	  <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
+	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
+	  <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
+	  <ParameterList name="verbose object">
+	    <Parameter name="verbosity level" type="string" value="high"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+	<ParameterList name="pressure">
+	  <ParameterList name="BC 0">
+	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-linear">
+		<Parameter name="y0" type="double" value="1.013250e+05"/>
+		<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+		<Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="mass flux">
+	  <ParameterList name="BC 1">
+	    <Parameter name="regions" type="Array(string)" value="{Crib}"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
+		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	    <Parameter name="rainfall" type="bool" value="false"/>
+	  </ParameterList>
+	  <ParameterList name="BC 2">
+	    <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
+		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <Parameter name="use area fractions" type="bool" value="false"/>
+	    <Parameter name="rainfall" type="bool" value="false"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="source terms">
+	<ParameterList name="Pumping Well">
+	  <Parameter name="regions" type="Array(string)" value="{Well}"/>
+	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
+	  <Parameter name="use volume fractions" type="bool" value="false"/>
+	  <ParameterList name="well">
+	    <Parameter name="submodel" type="string" value="bhp"/>
+	    <Parameter name="well radius" type="double" value="0.1"/>
+	    <Parameter name="depth" type="double" value="25.0"/>
+	    <ParameterList name="bhp">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="1.1e+05"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
+	<Parameter name="water content model" type="string" value="constant density"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 

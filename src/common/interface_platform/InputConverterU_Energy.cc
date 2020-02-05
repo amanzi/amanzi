@@ -53,6 +53,10 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
     Teuchos::ParameterList& tmp = out_list.sublist("two-phase problem");
     energy_list = &tmp;
   }
+  else if (pk_model_["energy"] == "one-phase energy") {
+    Teuchos::ParameterList& tmp = out_list.sublist("one-phase problem");
+    energy_list = &tmp;
+  }
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
