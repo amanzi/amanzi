@@ -137,7 +137,7 @@ class VisFile:
         inds = [np.argwhere(np.isclose(self.times, t, eps))[0] for t in times]
         self.filterIndices(inds)
 
-    def variable(vname):
+    def variable(self, vname):
         """Forms a variable name.
 
         Parameters
@@ -157,11 +157,11 @@ class VisFile:
             vname = vname + '.cell.0'
         return vname
 
-    def _get(vname, cycle):
+    def _get(self, vname, cycle):
         """Private get: assumes vname is fully resolved, and does not deal with maps."""
         return self.d[vname][cycle][:,0]
     
-    def get(vname, cycle):
+    def get(self, vname, cycle):
         """Access a data member.
 
         Parameters
@@ -184,7 +184,7 @@ class VisFile:
             return reorder(val, self.map)
         return 
 
-    def getArray(vname):
+    def getArray(self, vname):
         """Access an array of all cycle values.
 
         Parameters
@@ -204,7 +204,7 @@ class VisFile:
         else:
             return reorder(val, self.map)
     
-    def loadMesh(cycle=None, order=None, round=5):
+    def loadMesh(self, cycle=None, order=None, shape=None, columnar=False, round=5):
         """Load and reorder centroids and volumes of mesh.
 
         Parameters
@@ -222,12 +222,12 @@ class VisFile:
         if cycle is None:
             cycle = self.cycles[0]
         
-        centroids = elemCentroids(self.directory, self.mesh_filename, cycle, round)
-        if order is None:
+        centroids = meshElemCentroids(self.directory, self.mesh_filename, cycle, round)
+        if order is None and shape is None and not columnar:
             self.map = None
             self.centroids = centroids
         else:
-            self.centroids, self.map = structuredOrdering(centroids, order)
+            self.centroids, self.map = structuredOrdering(centroids, order, shape, columnar)
 
         self.volume = self.get('cell_volume', cycle)
 
@@ -239,7 +239,7 @@ elem_type = {5:'QUAD',
              4:'TRIANGLE'
              }
 
-def xyz(directory=".", filename="visdump_mesh.h5", key=None):
+def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
     """Reads a mesh nodal coordinates and connectivity.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -296,7 +296,7 @@ def xyz(directory=".", filename="visdump_mesh.h5", key=None):
     return etype, coords, conn
 
 
-def elemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
+def meshElemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
     """Reads and calculates mesh element centroids.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -321,7 +321,7 @@ def elemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
       2D nodal coordinate array.  Shape is (n_elems, dimension).
 
     """
-    etype, coords, conn = xyz(directory, filename, key)
+    etype, coords, conn = meshXYZ(directory, filename, key)
 
     centroids = np.zeros((len(conn),3),'d')
     for i,elem in enumerate(conn):
@@ -331,8 +331,14 @@ def elemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
     return np.round(centroids, round)
     
 
-def structuredOrdering(coordinates, order):
+def structuredOrdering(coordinates, order=None, shape=None, columnar=False):
     """Reorders coordinates in a natural ordering for structured meshes.
+
+    This generates a mapping from an unsorted, unraveled list of
+    elements to either a (if shape is None) sorted, unraveled list of
+    elements or a (if shape is provided) len(order)+1 dimensional
+    array of elements that can be used for structured plotting,
+    sorting output, post-processing, and more.
 
     Parameters
     ----------
@@ -341,43 +347,71 @@ def structuredOrdering(coordinates, order):
     order : list
       An ordering given to sort(), where headings are 'x', 'y', and potentially
       'z' for 3D meshes.  Note omitted headings always go first.  See below for
-      common examples.
+      common examples.  May be omitted if columnar == True
+    shape : list, optional
+      If provided, a list of the same length as order, providing the
+      number of elements in that dimension.
+    columnar : bool, optional
+      If True, this sets order = ['x', 'y', 'z'] and shape is guessed by
+      assuming (x,y) coordinates are constant in map-view and cells
+      are vertical columns, a common Amanzi/ATS mesh layout.
 
     Returns
     -------
     ordered_coordinates : np.ndarray
       The re-ordered coordinates, shape (n_coordinates, dimension).
-    map : np.array(int)
-      Indices of the new coordinates in the old array.  
-      ordered_coordinates[i] == coordinates[map[i]]
+    map : np.ndarray(int)
+      Indices of the new coordinates in the old array.  If shape is
+      not provided, this is a 1D array and 
+        ordered_coordinates[i] == coordinates[map[i]]
+      If shape is provided or guess_shape is True, this is a
+      len(shape)+1-D array and: 
+        ordered_coordinates[i,...,k] == coordinates[map[i,...,k]]
 
     Examples
     --------
-    Sort a column of cells into a 1D sorted array:
 
-      > ordered_centroids = structuredOrdering(centroids, ['z',])
+    Sort a column of 100 unordered cells into a 1D sorted array.  The
+    input and output are both of shape (100,3).
 
-    Sort a transect, where x is structured and z may vary as a function of
-    x.
+      > ordered_centroids, map = structuredOrdering(centroids, list())
+
+    Sort a logically structured transect of size NX x NY x NZ =
+    (100,1,20), where x is structured and z may vary as a function of
+    x.  Both input and output are of shape (2000, 3), but the output
+    is sorted with each column appearing sequentially and the
+    z-dimension fastest-varying.  map is of shape (2000,).
     
-      > ordered_centroids = structuredOrdering(centroids, ['x', 'z'])
+      > ordered_centroids, map = structuredOrdering(centroids, ['z',])
 
-    Sort a 3D map-view "structured-in-z" mesh into arbitrarily-ordered x and y
-    columns.
+    Do the same, but this time reshape into a 2D array.  Now the
+    ordered_centroids are of shape (100, 20, 3), and the map is of
+    shape (100, 20).
+    
+      > ordered_centroids, map = structuredOrdering(centroids, ['z',], [20,])
 
-      > ordered_centroids = structuredOrdering(centroids, ['z',])
+    Do the same as above, but detect the shape.  This works only
+    because the mesh is columnar.
+
+      > ordered_centroids, map = structuredOrdering(centroids, columnar=True)
+
+    Sort a 3D map-view "structured-in-z" mesh into arbitrarily-ordered
+    x and y columns.  Assume there are 1000 map-view triangles, each
+    extruded 20 cells deep.  The input is is of shape (20000, 3) and
+    the output is of shape (1000, 20, 3).
+
+      > ordered_centroids, map = structuredOrdering(centroids, columnar=True)
+
+    Note that map can be used with the reorder() function to place
+    data in this ordering.
 
     """
-    order = order[:]
-    if 'x' not in order:
-        order.insert(0, 'x')
-    if 'y' not in order:
-        order.insert(0, 'y')
-    if coordinates.shape[1] > 2 and 'z' not in order:
-        order.insert(0, 'z')
+    if columnar:
+        order = ['x', 'y', 'z',]
     
+    # Surely there is a cleaner way to do this in numpy?
+    # The current approach packs, sorts, and unpacks.
     if (coordinates.shape[1] == 3):
-        # surely there is a cleaner way to do this in numpy?
         coords_a = np.array([(i,coordinates[i,0],coordinates[i,1],coordinates[i,2])
                              for i in range(coordinates.shape[0])],
                             dtype=[('id',int),('x',float),('y',float),('z',float)])
@@ -386,12 +420,26 @@ def structuredOrdering(coordinates, order):
                              for i in range(coordinates.shape[0])],
                             dtype=[('id',int),('x',float),('y',float)])
     coords_a.sort(order=order)
-
     map = coords_a['id']
     if (coordinates.shape[1] == 3):
         ordered_coordinates = np.array([coords_a['x'], coords_a['y'], coords_a['z']]).transpose()
     else:
         ordered_coordinates = np.array([coords_a['x'], coords_a['y']]).transpose()
+        
+    if columnar:
+        # try to guess the shape based on new-found contiguity
+        n_cells_in_column = 0
+        xy = ordered_coordinates[0,0:2]
+        while n_cells_in_column < ordered_coordinates.shape[0] and \
+              np.allclose(xy, ordered_coordinates[n_cells_in_column,0:2], 1.e-5):
+            n_cells_in_column += 1
+        shape = [n_cells_in_column,]
+
+    if shape is not None:
+        new_shape = (-1,) + tuple(shape)
+        ordered_coordinates = np.reshape(ordered_coordinates, new_shape+(3,))
+        map = np.reshape(map, new_shape)
+
     return ordered_coordinates, map
 
 
@@ -402,25 +450,27 @@ def reorder(data, map):
     ----------
     data : np.ndarray
       The data, i.e. provided by VisFile.get() or VisFile.getArray() 
-    map : np.array
-      A list of indices to remap the data based on a mesh reordering
-      (e.g. to structured orderings), as returned in mesh.structuredOrdering()
+    map : np.ndarray
+      A reordering of indices to remap the data based on a map
+      returned by structuredOrdering()
 
     Returns
     -------
     data : np.ndarray
       The re-ordered data.
+
     """
+    # one cycle or many?
     flatten = (len(data.shape) == 1)
     if flatten:
         data = np.expand_dims(data, 0)
 
-    if type(map) is tuple or type(map) is list:
-        map = np.array(map)
+    # unravel the map, reorder, then reshape back into map's shape
+    map_shape = map.shape
+    data = data[:, map.ravel()].reshape((-1,)+map_shape)
 
-    data = data[:, map]
-
+    # if one cycle, get one data
     if flatten:
-        data = data[0,:]
+        data = data[0]
 
     return data
