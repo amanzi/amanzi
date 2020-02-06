@@ -431,13 +431,14 @@ def structuredOrdering(coordinates, order=None, shape=None, columnar=False):
         n_cells_in_column = 0
         xy = ordered_coordinates[0,0:2]
         while n_cells_in_column < ordered_coordinates.shape[0] and \
-              np.allclose(xy, ordered_coordinates[n_cells_in_column,0:2], 1.e-5):
+              np.allclose(xy, ordered_coordinates[n_cells_in_column,0:2], 0., 1.e-5):
             n_cells_in_column += 1
         shape = [n_cells_in_column,]
 
     if shape is not None:
         new_shape = (-1,) + tuple(shape)
-        ordered_coordinates = np.reshape(ordered_coordinates, new_shape+(3,))
+        coord_shape = new_shape+(3,)
+        ordered_coordinates = np.reshape(ordered_coordinates, coord_shape)
         map = np.reshape(map, new_shape)
 
     return ordered_coordinates, map
