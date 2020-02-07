@@ -11,7 +11,7 @@
   Field evaluator for a total component stirage (water, hydrogen,
   etc) storage, the conserved quantity:
 
-    TCS = phi * (rho_l * s_l * X_l + rho_g * s_g * X_g)
+    TCS = phi * (eta_l * s_l * x_l + eta_g * s_g * x_g)
 
   where X_p is the mole fraction of a component in phase p.
 */

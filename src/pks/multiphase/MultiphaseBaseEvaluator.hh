@@ -15,6 +15,7 @@
 #define AMANZI_MULTIPHASE_BASE_EVALUATOR_HH_
 
 // Amanzi
+#include "primary_variable_field_evaluator.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -23,15 +24,29 @@ namespace Multiphase {
 class MultiphaseBaseEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   MultiphaseBaseEvaluator(Teuchos::ParameterList& plist)
-    : SecondaryVariableFieldEvaluator(plist), n_(0), kH_(1.0) {
-};
+    : SecondaryVariableFieldEvaluator(plist), n_(0), kH_(1.0) {};
 
   // inteface functions to FieldEvaluator
   MultiphaseBaseEvaluator(const MultiphaseBaseEvaluator& other)
     : SecondaryVariableFieldEvaluator(other) { n_ = other.n_; kH_ = other.kH_; }
 
+  bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request, bool force) {
+    bool ok = SecondaryVariableFieldEvaluator::HasFieldChanged(S, request);
+    if (force) UpdateField_(S);
+    return ok || force;
+  }
+
   // added interface
+  // -- modifier
   virtual void set_subvector(int ifield, int n, double kH) { n_ = n; kH_ = kH; } 
+
+  // -- trigger update via dependent primary variable
+  /*
+  void SetFieldAsChanged(const Teuchos::Ptr<State>& S, const std::string& primary) {
+    auto eval = S->GetFieldEvaluator(primary);
+    Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval)->SetFieldAsChanged(S.ptr());
+  }
+  */
 
  protected:
   int n_;

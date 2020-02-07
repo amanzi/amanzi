@@ -460,13 +460,16 @@ void MultiphaseTwoComponents_PK::ModifyEvaluators(int neqn)
     int ifield(0), n(neqn - 1);
     // ifield is dummy here
     Teuchos::rcp_dynamic_cast<TotalComponentStorageTest>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<TotalComponentStorageTest>(eval_tcs_)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     // mole fraction is second in the dependencies set
     auto eval = S_->GetFieldEvaluator(advection_liquid_key_);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->set_subvector(1, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     eval = S_->GetFieldEvaluator(ncp_g_key_);
     Teuchos::rcp_dynamic_cast<NCP_HenryLaw>(eval)->set_subvector(ifield, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<NCP_HenryLaw>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
   }
 }
 

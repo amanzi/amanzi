@@ -55,14 +55,15 @@
     <ParameterList name="molecular diffusion">
       <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
-      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.9e-2}"/>
+      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.39e-10}"/>
     </ParameterList>
 
     <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
     <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
+    <Parameter name="NCP function" type="string" value="min"/>
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
       <Parameter name="global solve" type="bool" value="true"/>
@@ -103,22 +104,23 @@
           <Parameter name="time step increase factor" type="double" value="1.25"/>
           <Parameter name="time step reduction factor" type="double" value="0.8"/>
           <Parameter name="max time step" type="double" value="6.0e+10"/>
-          <Parameter name="min time step" type="double" value="1.0e-20"/>
+          <Parameter name="min time step" type="double" value="1.0e-10"/>
         </ParameterList>
 
-        <Parameter name="solver type" type="string" value="nka"/>
+        <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="10"/>
-          <Parameter name="limit iterations" type="int" value="20"/>
+          <Parameter name="limit iterations" type="int" value="120"/>
           <Parameter name="modify correction" type="bool" value="true"/>
-          <Parameter name="monitor" type="string" value="monitor residual"/>
+          <Parameter name="monitor" type="string" value="monitor update"/>
+          <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
@@ -169,7 +171,7 @@
           <Parameter name="name" type="string" value="H2"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-3.0e-10"/>
+              <Parameter name="value" type="double" value="-4.4155885e-10"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -182,19 +184,6 @@
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
             </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="source terms">
-      <ParameterList name="SRC 1">
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="spatial distribution method" type="string" value="none"/>
-        <Parameter name="submodel" type="string" value="intergrand"/>
-        <ParameterList name="sink">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -303,7 +292,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+                  <Parameter name="value" type="double" value="1.0e-20"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -316,20 +305,20 @@
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
-              <ParameterList name="function">
-                <Parameter name="number of dofs" type="int" value="2"/>
-                <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="dof 1 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
-                  </ParameterList>
-                </ParameterList>
-                <ParameterList name="dof 2 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
-                  </ParameterList>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.0e-16"/>
                 </ParameterList>
               </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.0e-16"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -456,7 +445,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="300.0"/>
+                <Parameter name="value" type="double" value="303.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -480,10 +469,10 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1e-6"/>
+        <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
-        <Parameter name="maximum number of iterations" type="int" value="400"/>
-        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+        <Parameter name="maximum number of iterations" type="int" value="40"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{absolute residual, make one iteration}"/>
         <Parameter name="size of Krylov space" type="int" value="400"/>
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
@@ -496,12 +485,16 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
+    <ParameterList name="Block ILU">
+      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <ParameterList name="block ilu parameters">
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Euclid">
-      <Parameter name="discretization method" type="string" value="fv: default"/>
       <Parameter name="preconditioner type" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
-        <!--<Parameter name="ILUT drop tolerance" type="double" value="0.000001"/>-->
+        <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>

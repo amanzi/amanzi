@@ -9,8 +9,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "errors.hh"
-
 #include "ModelMeshPartition.hh"
 #include "MultiphaseDefs.hh"
 #include "MoleFractionLiquid.hh"

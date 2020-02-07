@@ -61,6 +61,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
   const auto& eta_gc = *eta_g->ViewComponent("cell");
 
+  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
   const auto& eta_lc = *eta_l->ViewComponent("cell");
 
@@ -224,6 +225,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
   const auto& eta_gc = *eta_g->ViewComponent("cell");
 
+  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
   const auto& eta_lc = *eta_l->ViewComponent("cell");
 
@@ -320,6 +322,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
             // --- upwind gas molar mobility times molar fraction 
+            S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
             kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
             auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
@@ -341,7 +344,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           }
         }
 
-        // -- advection operator div [ (K df/dv grad p) dv ]
+        // -- advection operator div [ (K df/dv grad u) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key der_key = "d" + key + "_d" + keyc;
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
@@ -357,6 +360,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
             // --- calculate advective flux 
             Key fname = eqns_[row].advection[phase].second;
+            S_->GetFieldEvaluator(fname)->HasFieldChanged(S_.ptr(), passwd_);
             auto var = S_->GetFieldData(fname);
             pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
             pde_diff_K_->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
@@ -389,6 +393,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (S_->HasField(der_key)) {
             auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, global_op));
 
+            S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
             const auto& coef_c = *S_->GetFieldData(key)->ViewComponent("cell");
             const auto& der_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
 
@@ -418,6 +423,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
 
             // --- calculate diffusion coefficient
+            S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
             kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
             auto flux = *S_->GetFieldData(flux_names_[phase], passwd_);
@@ -458,6 +464,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
             // --- calculate advective flux 
             Key fname = eqns_[row].diffusion[phase].second;
+            S_->GetFieldEvaluator(fname)->HasFieldChanged(S_.ptr(), passwd_);
             auto var = S_->GetFieldData(fname);
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
             pde_diff_D_->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
@@ -510,6 +517,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     if (S_->HasField(derf_key)) der_fc = S_->GetFieldData(derf_key)->ViewComponent("cell");
 
     key = eqns_[n].constraint.second;
+    S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
     const auto& ncp_gc = *S_->GetFieldData(key)->ViewComponent("cell");
 
     keyc = soln_names_[solc.first];
@@ -521,7 +529,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     fone.PutScalar(0.0);
     if (ncp_ == "min") {
       for (int c = 0; c < ncells_owned_; c++) {
-        if (ncp_fc[0][c] > ncp_gc[0][c] + 1.0e-12) {
+        if (ncp_fc[0][c] > ncp_gc[0][c]) {
           if (der_gc.get()) fone_c[0][c] = (*der_gc)[0][c];
         } else {
           if (der_fc.get()) fone_c[0][c] = (*der_fc)[0][c];
@@ -548,7 +556,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     op_pc_assembled_ = true;
   }
   op_preconditioner_->AssembleMatrix();
-std::cout << *op_preconditioner_->A() << std::endl; exit(0);
+  // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
   op_preconditioner_->UpdatePreconditioner();
 }
 

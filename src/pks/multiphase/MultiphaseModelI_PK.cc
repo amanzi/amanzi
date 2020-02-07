@@ -13,7 +13,6 @@
   fraction of gas.
 */
 
-
 // TPLs
 #include "Teuchos_RCP.hpp"
 
@@ -521,13 +520,16 @@ void MultiphaseModelI_PK::ModifyEvaluators(int neqn)
     int ifield(0), n(neqn - 1);
     // ifield is dummy here
     Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     auto eval = S_->GetFieldEvaluator(x_liquid_key_);
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     // mole fraction is second in the dependencies set
     eval = S_->GetFieldEvaluator(advection_liquid_key_);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->set_subvector(1, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
   }
 }
 
