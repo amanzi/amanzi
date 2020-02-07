@@ -32,15 +32,14 @@ def loadDataFile(Obs_xml):
 
 def plotTheisObservations(Obs_xml, Obs_data, axes1):
     #=== SPECIAL CODE === Theis EXAMPLE === Water Table is 12.0 m 
-    r_vals =[]
+    r_vals = []
     for obs in Obs_data.observations.values():
         r_vals.append(obs.coordinate[0])
     r_vals = set(r_vals)
-    r_vals=list(r_vals)
+    r_vals = list(r_vals)
     r_vals.sort()
-    colors = ['b','g','r']
+    colors = ['g','r','b']
     cmap = dict((rval,color) for (rval,color) in zip(r_vals, colors))
-    #print cmap
 
     for obs in Obs_data.observations.values():
         color = cmap[obs.coordinate[0]]
@@ -66,9 +65,10 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
         times.append(1+math.exp(float(i)*(i+1)/(10.3*len(tindex))))
     
     for rad in mymodel.r:
-        r= abs(rad)
+        r = abs(rad)
+        color = cmap[rad]
         drawdown=mymodel.runForFixedRadius(times,r)
-        axes1.plot(times,drawdown, label='$r=%0.1f m$'%r)
+        axes1.plot(times, drawdown, label='$r=%0.1f m$'%r, c=color)
         press_analytic.append([r,drawdown])
     
     for obs in Obs_data.observations.values():
@@ -91,7 +91,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
         if obs.coordinate[0] == -55.0:
            coordinates.append([abs(obs.coordinate[0]), obs.coordinate[2]])
            for press in obs.data:
-               pres0  = 101325 -9806.65 * (obs.coordinate[2] - 20)
+               pres0 = 101325 -9806.65 * (obs.coordinate[2] - 20)
                pres_drop = (pres0 - press)
                drawdown = pres_drop / 9806.65
                drawdown_amanzi.append(drawdown)
