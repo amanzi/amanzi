@@ -310,6 +310,19 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
 }
 
 
+/* ******************************************************************
+* Push data to the state
+****************************************************************** */
+void MultiphaseModelI_PK::CommitStep(
+    double t_old, double t_new, const Teuchos::RCP<State>& S)
+{
+  Multiphase_PK::CommitStep(t_old, t_new, S);
+
+  // miscalleneous fields
+  S_->GetFieldEvaluator(ncp_fg_key_)->HasFieldChanged(S_.ptr(), passwd_);
+}
+
+
 /********************************************************************
 * Modifies nonlinear update du using .. TBW
 ****************************************************************** */

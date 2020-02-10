@@ -36,6 +36,7 @@ class MultiphaseModelI_PK: public Multiphase_PK {
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
   virtual std::string name() override { return "multiphase reduced"; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
