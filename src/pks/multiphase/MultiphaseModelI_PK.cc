@@ -22,7 +22,9 @@
 #include "NCP_F.hh"
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
+#include "SaturationGasEvaluator.hh"
 #include "TotalComponentStorage.hh"
+#include "TotalWaterStorage.hh"
 #include "VaporPressureEvaluator.hh"
 
 namespace Amanzi {
@@ -78,19 +80,15 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(tws_key_, tws_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::Array<int> dep_powers(3, 1);
-    Teuchos::Array<std::string> dep_names;
-
-    dep_names.push_back(molar_density_liquid_key_);
-    dep_names.push_back(porosity_key_);
-    dep_names.push_back(saturation_liquid_key_);
-
     Teuchos::ParameterList elist;
     elist.set<std::string>("my key", tws_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
-         .set<Teuchos::Array<int> >("powers", dep_powers);
+         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
+         .set<std::string>("molar density gas key", molar_density_gas_key_)
+         .set<std::string>("porosity key", porosity_key_)
+         .set<std::string>("saturation liquid key", saturation_liquid_key_)
+         .set<std::string>("mole fraction vapor key", x_vapor_key_);
 
-    eval_tws_ = Teuchos::rcp(new ProductEvaluator(elist));
+    eval_tws_ = Teuchos::rcp(new TotalWaterStorage(elist));
     S->SetFieldEvaluator(tws_key_, eval_tws_);
   }
 
@@ -106,6 +104,18 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
 
     eval_tcs_ = Teuchos::rcp(new TotalComponentStorage(elist));
     S->SetFieldEvaluator(tcs_key_, eval_tcs_);
+  }
+
+  // saturation
+  if (!S->HasField(saturation_gas_key_)) {
+    S->RequireField(saturation_gas_key_, saturation_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", saturation_gas_key_)
+         .set<std::string>("saturation liquid key", saturation_liquid_key_);
+    auto eval = Teuchos::rcp(new SaturationGasEvaluator(elist));
+    S->SetFieldEvaluator(saturation_gas_key_, eval);
   }
 
   // water vapor
@@ -130,12 +140,13 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::Array<int> dep_powers(3, 1);
+    Teuchos::Array<int> dep_powers(4, 1);
     Teuchos::Array<std::string> dep_names;
 
+    dep_names.push_back(molar_density_gas_key_);
     dep_names.push_back(molecular_diff_gas_key_);
     dep_names.push_back(porosity_key_);
-    dep_names.push_back(saturation_liquid_key_);
+    dep_names.push_back(saturation_gas_key_);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("my key", diffusion_vapor_key_)
@@ -313,7 +324,7 @@ MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
 
   for (int i = 0; i < u2c.NumVectors(); ++i) {
     for (int c = 0; c < ncells_owned_; ++c) {
-      du2c[i][c] = std::min(du2c[i][c], u2c[i][c]);
+      // du2c[i][c] = std::min(du2c[i][c], u2c[i][c]);
       // du2c[i][c] = std::max(du2c[i][c], u2c[i][c] - 1.0);
     }    
   }

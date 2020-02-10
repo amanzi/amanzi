@@ -47,15 +47,15 @@ Teuchos::RCP<FieldEvaluator> NCP_MoleFractions::Clone() const {
 void NCP_MoleFractions::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& vl = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
+  const auto& vg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
   const auto& xg = *S->GetFieldData(x_gas_key_)->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
-    double sum(vl[0][c]);
-    for (int i = 0; i < vl.NumVectors(); ++i) sum += xg[i][c];
+    double sum(vg[0][c]);
+    for (int i = 0; i < xg.NumVectors(); ++i) sum += xg[i][c];
     result_c[0][c] = 1.0 - sum;
   }      
 }
@@ -68,9 +68,6 @@ void NCP_MoleFractions::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& vl = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData(x_gas_key_)->ViewComponent("cell");
-
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 

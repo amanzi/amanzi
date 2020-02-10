@@ -43,7 +43,8 @@ class TotalWaterStorage : public MultiphaseBaseEvaluator {
       const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key saturation_liquid_key_, porosity_key_;
+  Key saturation_liquid_key_, porosity_key_, x_vapor_key_;
+  Key molar_density_liquid_key_, molar_density_gas_key_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator, TotalWaterStorage> reg_;

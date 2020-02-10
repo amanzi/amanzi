@@ -87,6 +87,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   pressure_gas_key_ = Keys::getKey(domain_, "pressure_gas"); 
 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
+  saturation_gas_key_ = Keys::getKey(domain_, "saturation_gas"); 
+
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
 
   x_liquid_key_ = Keys::getKey(domain_, "mole_fraction_liquid"); 
@@ -178,27 +180,32 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // relative permeability of liquid phase
-  S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasField(relperm_liquid_key_)) {
+    S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList elist;
-  elist.set<std::string>("my key", relperm_liquid_key_)
-       .set<std::string>("saturation liquid key", saturation_liquid_key_)
-       .set<std::string>("phase name", "liquid");
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", relperm_liquid_key_)
+         .set<std::string>("saturation liquid key", saturation_liquid_key_)
+         .set<std::string>("phase name", "liquid");
 
-  auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
-  S->SetFieldEvaluator(relperm_liquid_key_, eval);
+    auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+    S->SetFieldEvaluator(relperm_liquid_key_, eval);
+  }
 
   // relative permeability of gas phase
-  S->RequireField(relperm_gas_key_, relperm_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasField(relperm_gas_key_)) {
+    S->RequireField(relperm_gas_key_, relperm_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  elist.set<std::string>("my key", relperm_gas_key_)
-       .set<std::string>("saturation liquid key", saturation_liquid_key_)
-       .set<std::string>("phase name", "gas");
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", relperm_gas_key_)
+         .set<std::string>("saturation liquid key", saturation_liquid_key_)
+         .set<std::string>("phase name", "gas");
 
-  eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
-  S->SetFieldEvaluator(relperm_gas_key_, eval);
+    auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
+    S->SetFieldEvaluator(relperm_gas_key_, eval);
+  }
 
   // material properties
   if (!S->HasField(permeability_key_)) {
@@ -571,6 +578,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
     auto& pdeK = pde_diff_K_;
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
     pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
+    pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     auto var = S_->GetFieldData(varp_name[phase]);

@@ -136,7 +136,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // keys
   Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
-  Key saturation_liquid_key_, temperature_key_;
+  Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key porosity_key_, pressure_gas_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;

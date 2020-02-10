@@ -1119,11 +1119,12 @@ and :math:`\boldsymbol{K}_g` is the effective diffusion coefficient of the water
 We define 
 
 .. math::
-  \theta = \phi \eta_l s_l + \phi (1 - \eta_l) X_l
+  \theta = \phi \eta_l s_l + \phi \eta_g (1 - s_l) X_g
 
 where :math:`s_l` is liquid saturation [-],
 :math:`\phi` is porosity [-],
-and :math:`X_l` is molar fraction of water vapor.
+:math:`\eta_g` is molar density of water vapor [:math:`mol/m^3`],
+and :math:`X_g` is molar fraction of water vapor.
 The effective diffusion coefficient of the water vapor is given by
 
 .. math::

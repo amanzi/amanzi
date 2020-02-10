@@ -247,6 +247,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   // work memory for miscalleneous operator
   Key der_key;
   auto flux_tmp = Teuchos::rcp(new CompositeVector(*S_->GetFieldData(darcy_flux_liquid_key_)));
+  auto flux_acc = Teuchos::rcp(new CompositeVector(*flux_tmp));
 
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
@@ -271,21 +272,24 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       bool bcflag = (row == col);
 
       // add empty operator to have a well-defined global operator pointer
-      auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
-      auto global_op = pde->global_operator();
+      auto pde0 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+      auto global_op = pde0->global_operator();
       op_preconditioner_->SetOperatorBlock(row, col, global_op);
       kr_c.PutScalar(0.0);
-      pde->AddAccumulationTerm(*kr, "cell");
+      pde0->AddAccumulationTerm(*kr, "cell");
+
+      // initialize accumulated flux
+      flux_acc->PutScalar(0.0);
 
       //
       // Richards-type operator for all phases
       //
       for (int phase = 0; phase < 2; ++phase) {
-        // -- diffusion operator div[ (K f du/dv) grad dv ] 
+        // -- diffusion operator div[ (K f dg/dv) grad dv ] 
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key fname = eqns_[row].advection[phase].second;
           if (fname == keyc) {
-            der_key = "constant_field";  // DAG does not calculate derivative when u=v
+            der_key = "constant_field";  // DAG does not calculate derivative when g(u)=u
           } else {
             der_key = "d" + fname + "_d" + keyc;
             S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
@@ -312,15 +316,13 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           }
         }
 
-        // -- advection operator div[ (K f grad du/dv) dv ]
+        // -- advection operator div[ (K f grad dg/dv) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key fname = eqns_[row].advection[phase].second;
           Key der_key = "d" + fname + "_d" + keyc;
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
-            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
             // --- upwind gas molar mobility times molar fraction 
             S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
             kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
@@ -335,23 +337,17 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_K_->UpdateFlux(der.ptr(), flux_tmp.ptr());
 
-            // -- populated advection operator
-            pde->Setup(*flux_tmp);
-            pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->local_op()->Init();
-            pde->UpdateMatrices(flux_tmp.ptr());
-            pde->ApplyBCs(false, false, false);
+            double factor = eqns_[row].adv_factors[phase];
+            flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
 
-        // -- advection operator div [ (K df/dv grad u) dv ]
+        // -- advection operator div [ (K df/dv grad g) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key der_key = "d" + key + "_d" + keyc;
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
-            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
             // --- upwind derivative
             kr_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
@@ -367,11 +363,8 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_K_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
-            // -- populated advection operator
-            pde->Setup(*flux_tmp);
-            pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->UpdateMatrices(flux_tmp.ptr());
-            pde->ApplyBCs(false, false, false);
+            double factor = eqns_[row].adv_factors[phase];
+            flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
       }
@@ -380,11 +373,11 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       // Molecular diffusion
       //
       for (int phase = 0; phase < 2; ++phase) {
-        // -- diffusion operator div [ (D f du/dv) grad dv ]
+        // -- diffusion operator div [ (f dg/dv) grad dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "") {
           Key fname = eqns_[row].diffusion[phase].second;
           if (fname == keyc) {
-            der_key = "constant_field";  // DAG does not calculate derivative when u=v
+            der_key = "constant_field";  // DAG does not calculate derivative when g(u)=u
           } else {
             der_key = "d" + fname + "_d" + keyc;
             S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
@@ -413,15 +406,13 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           }
         }
 
-        // -- advection operator div[ (D f grad du/dv) dv ]
+        // -- advection operator div[ (f grad dg/dv) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "") {
           Key fname = eqns_[row].diffusion[phase].second;
           Key der_key = "d" + fname + "_d" + keyc;
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
-            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
             // --- calculate diffusion coefficient
             S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
             kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
@@ -436,26 +427,17 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(der.ptr(), flux_tmp.ptr());
 
-            // -- populated advection operator
-            pde->Setup(*flux_tmp);
-            pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->local_op()->Init();
-            pde->UpdateMatrices(flux_tmp.ptr());
-            pde->ApplyBCs(false, false, false);
-
             double factor = eqns_[row].diff_factors[phase];
-            if (factor != 1.0) pde->local_op()->Rescale(factor);
+            flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
 
-        // -- advection operator div [ (D df/dv grad u) dv ]
+        // -- advection operator div [ (df/dv grad g) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
           Key der_key = "d" + key + "_d" + keyc;
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
-            auto pde = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
-
             // --- upwind derivative
             kr_c = *S_->GetFieldData(der_key)->ViewComponent("cell");
             kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME
@@ -471,17 +453,18 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
-            // -- populated advection operator
-            pde->Setup(*flux_tmp);
-            pde->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
-            pde->UpdateMatrices(flux_tmp.ptr());
-            pde->ApplyBCs(false, false, false);
-
             double factor = eqns_[row].diff_factors[phase];
-            if (factor != 1.0) pde->local_op()->Rescale(factor);
+            flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
       }
+
+      // populate advection operator
+      auto pde1 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
+      pde1->Setup(*flux_acc);
+      pde1->SetBCs(op_bcs_[solr.first], op_bcs_[solc.first]);
+      pde1->UpdateMatrices(flux_acc.ptr());
+      pde1->ApplyBCs(false, false, false);
 
       // storage term
       if ((key = eqns_[row].storage) != "") {

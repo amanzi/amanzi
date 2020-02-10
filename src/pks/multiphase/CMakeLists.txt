@@ -51,6 +51,8 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseModelI_PK.cc MultiphaseTwoComponents_PK.cc
                          Multiphase_Utils.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc
+                         SaturationGasEvaluator.cc
+                         TotalWaterStorage.cc 
                          TotalComponentStorage.cc TotalComponentStorageTest.cc
                          VaporPressureEvaluator.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
@@ -76,7 +78,8 @@ set(multiphase_inc_files
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
-  TotalComponentStorage.hh
+  SaturationGasEvaluator.hh
+  TotalWaterStorage.hh TotalComponentStorage.hh
   VaporPressureEvaluator.hh
   WRMmp.hh
   WRMmp_Simple.hh
