@@ -79,9 +79,8 @@ SUITE(SOLVERS)
                                  j < n - 1 ? k + n : -1 };
         double sum = 0.;
         Kokkos::parallel_reduce(
-        "solver_linear_operators::apply", 
           Kokkos::TeamThreadRange(team, 5),
-                                [=](int i, double& lsum) {
+                                [=](const int i, double& lsum) {
                                   int c = inds[i];
                                   lsum += c < 0 ? 0. : coefs[i] * vv(c, 0);
                                 },

@@ -63,7 +63,6 @@ class EvaluatorModelLauncher {
       Kokkos::RangePolicy<Deriv<I>, typename Device_type::execution_space>
         range(0, extent);
       Kokkos::parallel_for(
-        "EvaluatorModelLauncher::launch",
         name_, range, model_);
     } else {
       EvaluatorModelLauncher<I - 1, Model_type, Device_type> launcher(
@@ -78,7 +77,6 @@ class EvaluatorModelLauncher {
       Kokkos::RangePolicy<typename Device_type::execution_space> range(
         0, material_ids.extent(0));
       Kokkos::parallel_for(
-        "EvaluatorModelLauncher::launch",
         name_, range, KOKKOS_LAMBDA(const int i) {
         model_(Deriv<I>(), material_ids(i));
       });

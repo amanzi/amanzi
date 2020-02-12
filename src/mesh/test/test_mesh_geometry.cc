@@ -169,7 +169,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
     });
 
     Kokkos::parallel_for(
-      "test_mesh_geometry::MESH_GEOMETRY_PLANAR loop 2"
+      "test_mesh_geometry::MESH_GEOMETRY_PLANAR loop 2",
       nfaces, KOKKOS_LAMBDA(const Amanzi::LO& i) {
       // for(int i = 0; i < nfaces; ++i){
       Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i);

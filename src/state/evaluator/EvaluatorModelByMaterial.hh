@@ -187,7 +187,6 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
       Kokkos::RangePolicy<typename Device_type::execution_space> range(
         0, material_ids.extent(0));
       Kokkos::parallel_for(
-        "EvaluatorModeByMaterial::Evaluate_",
         name_, range, KOKKOS_LAMBDA(const int i) {
         (*region_model.second)(material_ids(i));
       });
