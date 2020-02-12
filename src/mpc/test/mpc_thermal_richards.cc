@@ -28,10 +28,9 @@
 
 
 TEST(MPC_DRIVER_THERMAL_RICHARDS) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
   

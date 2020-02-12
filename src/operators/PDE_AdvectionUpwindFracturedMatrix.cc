@@ -85,6 +85,21 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
 }
 
 
+/* ******************************************************************
+* Add a simple first-order upwind method where the advected quantity
+* is not the primary variable (used in Jacobians).
+* Advection operator is of the form: div (q H(u))
+*     q:    flux
+*     H(u): advected quantity (i.e. enthalpy)
+****************************************************************** */
+void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& dhdT)
+{
+  AMANZI_ASSERT(false);
+}
+
+
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               

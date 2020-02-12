@@ -40,6 +40,9 @@ class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
   // -- setup
   virtual void Setup(const CompositeVector& u) override;
   // -- generate a linearized operator
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& dHdT) override;
+
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
 
  private:
