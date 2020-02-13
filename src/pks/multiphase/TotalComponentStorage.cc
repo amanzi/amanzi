@@ -110,7 +110,7 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
   }
   else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[n_][c] * (nl[0][c] * xl[0][c] - ng[0][c] * xg[n_][c]);
+      result_c[0][c] = phi[0][c] * (nl[0][c] * xl[0][c] - ng[0][c] * xg[n_][c]);
     }
   }
 

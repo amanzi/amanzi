@@ -40,14 +40,6 @@ class MultiphaseBaseEvaluator : public SecondaryVariableFieldEvaluator {
   // -- modifier
   virtual void set_subvector(int ifield, int n, double kH) { n_ = n; kH_ = kH; } 
 
-  // -- trigger update via dependent primary variable
-  /*
-  void SetFieldAsChanged(const Teuchos::Ptr<State>& S, const std::string& primary) {
-    auto eval = S->GetFieldEvaluator(primary);
-    Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval)->SetFieldAsChanged(S.ptr());
-  }
-  */
-
  protected:
   int n_;
   double kH_;

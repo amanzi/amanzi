@@ -59,6 +59,9 @@ class TreeVectorSpace {
   // Add a sub-vector as a child of this node.
   void PushBack(const Teuchos::RCP<TreeVectorSpace>& subvec);
 
+  // I/O
+  void Print(std::ostream& os) const;
+
  private:
   // private and unimplemented
   TreeVectorSpace& operator=(const TreeVectorSpace&);

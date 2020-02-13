@@ -117,7 +117,6 @@ set(operators_inc_files
     RemapUtils.hh
     Schema.hh
     TreeOperator.hh
-    CombinativeTreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
     UniqueLocalIndex.hh
@@ -164,7 +163,6 @@ add_amanzi_library(operators
                           PDE_Reaction.cc
                           Schema.cc
                           TreeOperator.cc
-                          CombinativeTreeOperator.cc
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc

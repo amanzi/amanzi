@@ -57,7 +57,8 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          VaporPressureEvaluator.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
                          MoleFractionLiquid.cc PressureGasEvaluator.cc
-                         RelPermEvaluator.cc ProductEvaluator.cc)
+                         RelPermEvaluator.cc ProductEvaluator.cc
+                         FlattenedTreeOperator.cc)
 
 add_amanzi_library(multiphase 
                    SOURCE ${multiphase_src_files}
@@ -108,9 +109,14 @@ if (BUILD_TESTS)
                   geometry mesh_functions functions eos pks)
 
   # Unit tests:
-  add_amanzi_test(multiphase_modelI multiphase_modelI
+  add_amanzi_test(multiphase_modelIa multiphase_modelIa
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_modelI.cc
+                  SOURCE    test/Main.cc test/multiphase_modelIa.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_modelIb multiphase_modelIb
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_modelIb.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
   add_amanzi_test(multiphase_two_components multiphase_two_components

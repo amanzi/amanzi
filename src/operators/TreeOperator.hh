@@ -81,7 +81,7 @@ class TreeOperator {
   void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
   void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
 
- private:
+ protected:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
   

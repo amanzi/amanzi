@@ -28,7 +28,7 @@
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
-#include "TreeOperator.hh"
+#include "FlattenedTreeOperator.hh"
 #include "TreeVector.hh"
 #include "UpwindFlux.hh"
 
@@ -147,7 +147,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
   // matrix and preconditioner
-  Teuchos::RCP<Operators::TreeOperator> op_preconditioner_, op_pc_solver_;
+  Teuchos::RCP<FlattenedTreeOperator> op_preconditioner_, op_pc_solver_;
   bool op_pc_assembled_;
 
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;

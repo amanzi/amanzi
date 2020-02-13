@@ -55,8 +55,8 @@ class Schema {
   int OldSchema() const;
 
   std::string KindToString(AmanziMesh::Entity_kind kind) const;
-  AmanziMesh::Entity_kind StringToKind(std::string& name) const;
-  WhetStone::DOF_Type StringToType(std::string& name) const;
+  AmanziMesh::Entity_kind StringToKind(const std::string& name) const;
+  WhetStone::DOF_Type StringToType(const std::string& name) const;
 
   // fancy io
   std::string CreateUniqueName() const;

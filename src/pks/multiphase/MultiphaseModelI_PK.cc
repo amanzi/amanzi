@@ -551,9 +551,11 @@ void MultiphaseModelI_PK::ModifyEvaluators(int neqn)
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     // mole fraction is second in the dependencies set
+    /*
     eval = S_->GetFieldEvaluator(advection_liquid_key_);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->set_subvector(1, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
+    */
   }
 }
 

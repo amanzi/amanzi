@@ -396,17 +396,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="pressure_vapor_gas">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
-        <Parameter name="eos basis" type="string" value="molar"/>
-        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
-        <Parameter name="pressure key" type="string" value="pressure_gas"/>
-        <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="molecular_diff_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
