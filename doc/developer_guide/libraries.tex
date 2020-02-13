@@ -187,6 +187,38 @@ A few comments are below, see the code for the complete description of these int
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Boundary conditions}
+To help implementing boundary conditions, this library provides a few helper 
+classes derived from the base class {\tt PK\_DomainFunction}.
+Each PK has typically its own boundary class derived (optionally) from the
+base class, e.g. {\tt FlowBoundaryFunction}.
+This class parses the XML sublist {\it boundary conditions} and creates 
+distributed arrays with boundary data. The key variable is typically named 
+{\it bcs\_} and can be found in a main PK class.
+Explicit Transport uses {\it bcs\_} directly.
+Other PKs take {\it bcs\_} and populate mesh-size arrays (see class {\tt BCs})
+in order to use operators' machinery for imposing boundary conditions.
+
+Another approach to imposing simple boundary condition is useful for unit tests:
+
+\begin{lstlisting}
+// get mesh maps with ghosts entities
+const auto& fmap = mesh->face_map(true);
+const auto& bmap = mesh->exterior_face_map(true);
+
+// loop over boundary faces
+for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+  // local boundary face id -> global face id -> local face id
+  int f = fmap.LID(bmap.GID(bf));
+  const Point& xf = mesh->face_centroid(f);
+  ...
+}
+\end{lstlisting}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \subsection{General purpose factory}
 In many cases, the developer may have multiple options that inherit a
