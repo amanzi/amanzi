@@ -75,6 +75,14 @@ class ShallowWater_PK : public PK_Physical,
     
     virtual std::string name() override { return "Shallow water PK"; }
                             
+    std::vector<double> PhysFlux(std::vector<double>);
+                            
+    std::vector<double> NumFlux(std::vector<double>,std::vector<double>);
+
+    std::vector<double> PhysSrc(std::vector<double>);
+
+    std::vector<double> NumSrc(std::vector<double>);
+                            
   protected:
     
     Teuchos::RCP<Teuchos::ParameterList> glist_;

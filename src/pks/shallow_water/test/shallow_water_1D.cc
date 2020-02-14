@@ -98,27 +98,12 @@ TEST(SHALLOW_WATER_1D) {
     int iter = 0;
     bool flag = true;
     
-    while (t_new < 0.25) {
-
-        dt = SWPK.get_dt();
-        dt = 0.05;
-        t_new = t_old + dt;
-       
-//        Teuchos::RCP<Epetra_MultiVector> tmp(v_vec), F(v_vec);
-        
-        std::cout << "h_vec.MyLength() = " << (*h_vec).MyLength() << std::endl;
-        
-
-        SWPK.AdvanceStep(t_old, t_new);
-        SWPK.CommitStep(t_old, t_new, S);
-        
-        t_old = t_new;
-        iter++;
+    while (t_new < 1.0) {
 
         // initialize io
         Teuchos::ParameterList iolist;
         std::string fname;
-        fname = "depth_"+std::to_string(iter);
+        fname = "SW_sol_"+std::to_string(iter);
         iolist.get<std::string>("file name base", fname);
         OutputXDMF io(iolist, mesh, true, false);
 
@@ -126,10 +111,29 @@ TEST(SHALLOW_WATER_1D) {
         double t_out = t_new;
 
         const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
 
         io.InitializeCycle(t_out, 1);
         io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+        io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
+        io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
         io.FinalizeCycle();
+
+        dt = SWPK.get_dt();
+        dt = 0.05;
+        t_new = t_old + dt;
+
+//        Teuchos::RCP<Epetra_MultiVector> tmp(v_vec), F(v_vec);
+
+        std::cout << "h_vec.MyLength() = " << (*h_vec).MyLength() << std::endl;
+
+
+        SWPK.AdvanceStep(t_old, t_new);
+        SWPK.CommitStep(t_old, t_new, S);
+
+        t_old = t_new;
+        iter++;
 
     }
     if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
