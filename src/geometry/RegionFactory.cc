@@ -210,6 +210,20 @@ createRegion(const std::string reg_name,
                                                entity_list.toVector(),
                                                lifecycle));
 
+  } else if (shape == "region: enumerated set from file") {
+    Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
+
+    std::string filename = enum_params.get<std::string>("read from file");
+    Teuchos::ParameterList enum_list_from_file = *Teuchos::getParametersFromXmlFile(filename);
+    std::string enum_reg_name = enum_params.get<std::string>("region name");
+    Teuchos::ParameterList enum_sub_list = enum_list_from_file.sublist(enum_reg_name);
+    
+    std::string entity_str = enum_sub_list.get<std::string>("entity");
+    Teuchos::Array<int> entity_list =
+      enum_sub_list.get< Teuchos::Array<int> >("entity gids");
+    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str,
+                                               entity_list.toVector(),
+                                               lifecycle));
   } else if (shape == "region: all") {
     region = Teuchos::rcp(new RegionAll(reg_name, reg_id, lifecycle));
 
