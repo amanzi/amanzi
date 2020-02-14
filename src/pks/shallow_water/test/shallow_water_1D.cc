@@ -51,14 +51,16 @@ TEST(SHALLOW_WATER_1D) {
     if (MyPID == 0) std::cout << "Geometric model created." << std::endl;
 
     // create a mesh
+    bool request_faces = true, request_edges = true;
     MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
     if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
     RCP<const Mesh> mesh;
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1);
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1, request_faces,
+			   request_edges);
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
-    
+
     // create a state
     RCP<State> S = rcp(new State());
     //S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
@@ -121,7 +123,6 @@ TEST(SHALLOW_WATER_1D) {
         io.FinalizeCycle();
 
         dt = SWPK.get_dt();
-        dt = 0.05;
         t_new = t_old + dt;
 
 //        Teuchos::RCP<Epetra_MultiVector> tmp(v_vec), F(v_vec);

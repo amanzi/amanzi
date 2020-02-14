@@ -58,7 +58,7 @@ class ShallowWater_PK : public PK_Physical,
     virtual void Setup(const Teuchos::Ptr<State>& S) override;
     virtual void Initialize(const Teuchos::Ptr<State>& S) override;
     
-    virtual double get_dt() override {return 1.;};
+    virtual double get_dt() override;
     virtual void set_dt(double dt) override {};
                      
     // Advance PK by step size dt.
@@ -75,9 +75,13 @@ class ShallowWater_PK : public PK_Physical,
     
     virtual std::string name() override { return "Shallow water PK"; }
                             
-    std::vector<double> PhysFlux(std::vector<double>);
+    std::vector<double> PhysFlux_x(std::vector<double>);
+
+    std::vector<double> PhysFlux_y(std::vector<double>);
                             
-    std::vector<double> NumFlux(std::vector<double>,std::vector<double>);
+    std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
+
+    std::vector<double> NumFlux_y(std::vector<double>,std::vector<double>);
 
     std::vector<double> PhysSrc(std::vector<double>);
 

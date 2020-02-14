@@ -63,29 +63,7 @@ namespace ShallowWater {
         // Shallow water equations have the form
          // U_t + F_x(U) + G_y(U) = Sr(U)
 
-         std::vector<double> U, F, G, Sr, U_new;
-
-         double h, u, v, g;
-
-         // Form vector of conservative variables U = (h,hu,hv)
-
-         U.push_back(h);
-         U.push_back(h*u);
-         U.push_back(h*v);
-
-         // Form vector of x-fluxes F(U) = (hu, hu^2 + 1/2 gh^2, huv)
-
-         F.push_back(h*u);
-         F.push_back(h*u*u+0.5*g*h*h);
-         F.push_back(h*u*v);
-
-         // Form vector of y-fluxes G(U) = (hv, huv, hv^2 + 1/2 gh^2)
-
-         G.push_back(h*v);
-         G.push_back(h*u*v);
-         G.push_back(h*v*v+0.5*g*h*h);
-
-         // Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
+         std::vector<double> U, U_new;
 
          // Simplest first-order form
          // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -99,8 +77,27 @@ namespace ShallowWater {
          U_new.resize(3);
 
       	 for (int c = 0; c < ncells_owned; c++) {
-      		// cell volume
+
+      		 // mesh sizes
+      		 double dx, dy;
+
+      		 Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
+
+      		 mesh_->cell_get_edges(c,&cedges);
+
+			 //    	for (int i = 0; i < cedges.size(); i++) {
+			 //        	std::cout << cedges[i] << " "<< mesh->edge_length(i) << " ";
+			 //    	}
+			 //    	std::cout << std::endl;
+
+      		 dx = mesh_->edge_length(0);
+      		 dy = mesh_->edge_length(1);
+
+      		 // cell volume
       		 double vol = mesh_->cell_volume(c);
+
+//      		 std::cout << "dx = " << dx << ", dy = " << dy << ", vol = " << vol << std::endl;
+
              std::vector<double> FL, FR;  // fluxes
              std::vector<double> S;       // source term
              std::vector<double> UL, UR, U;  // data for the fluzes
@@ -109,7 +106,7 @@ namespace ShallowWater {
              UR.resize(3);
              
              if (c == 0) {
-            	 UL[0] = 5.;
+            	 UL[0] = 10.;
             	 UL[1] = 10.;
             	 UL[2] = 0.;
              }
@@ -121,7 +118,7 @@ namespace ShallowWater {
              UR[0] = h_vec_c[0][c];
              UR[1] = h_vec_c[0][c]*vx_vec_c[0][c];
              UR[2] = h_vec_c[0][c]*vy_vec_c[0][c];
-             FL = NumFlux(UL,UR);
+             FL = NumFlux_x(UL,UR);
              
              UL[0] = h_vec_c[0][c];
 			 UL[1] = h_vec_c[0][c]*vx_vec_c[0][c];
@@ -134,7 +131,7 @@ namespace ShallowWater {
 				 UR[1] = UL[1];
 				 UR[2] = UL[2];
 			 }
-             FR = NumFlux(UL,UR);
+             FR = NumFlux_x(UL,UR);
 
              U.resize(3);
 
@@ -144,7 +141,7 @@ namespace ShallowWater {
              S = NumSrc(U);
 
              for (int i = 0; i < 3; i++) {
-            	 U_new[i] = U[i] - dt/vol*(FR[i]-FL[i]) + dt/vol*S[i];
+            	 U_new[i] = U[i] - dt/dx*(FR[i]-FL[i]) + dt/vol*S[i];
              }
 
              h_vec_c[0][c]  = U_new[0];
@@ -210,14 +207,30 @@ namespace ShallowWater {
     }
     
     void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S) {
+
+    	int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
         
         if (!S_->GetField("surface-ponded_depth", passwd_)->initialized()) {
-            S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(2.0);
-            S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
+
+//            S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(2.0);
+
+        	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+
+        	for (int c = 0; c < ncells_owned; c++) {
+        		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+        		if (xc[0] < 4.) {
+        		   h_vec_c[0][c] = 4.;
+        		}
+			    else {
+			       h_vec_c[0][c] = 1.;
+			    }
+        	}
+
+        	S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
         }
         
         if (!S_->GetField("surface-velocity-x", passwd_)->initialized()) {
-            S_->GetFieldData("surface-velocity-x", passwd_)->PutScalar(1.0);
+            S_->GetFieldData("surface-velocity-x", passwd_)->PutScalar(0.0);
             S_->GetField("surface-velocity-x", passwd_)->set_initialized();
         }
         
@@ -228,7 +241,7 @@ namespace ShallowWater {
         
     }
     
-    std::vector<double> ShallowWater_PK::PhysFlux(std::vector<double> U) {
+    std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U) {
         std::vector<double> F;
         
         F.resize(3);
@@ -245,10 +258,31 @@ namespace ShallowWater {
         F[0] = h*u;
         F[1] = h*u*u+0.5*g*h*h;
         F[2] = h*u*v;
-        
+
         return F;
     }
     
+    std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U) {
+        std::vector<double> G;
+
+        G.resize(3);
+
+        double h, u, v, g = 9.81;
+
+        // SW conservative variables: (h, hu, hv)
+        h = U[0];
+        u = U[1]/U[0];
+        v = U[2]/U[0];
+
+        // Form vector of y-fluxes G(U) = (hv, huv, hv^2 + 1/2 gh^2)
+
+        G[0] = h*v;
+        G[1] = h*u*v;
+        G[2] = h*v*v+0.5*g*h*h;
+
+        return G;
+    }
+
     std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U) {
             std::vector<double> S;
 
@@ -263,7 +297,7 @@ namespace ShallowWater {
 
             // Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
 
-            double dBathx = 1., dBathy = 0.;
+            double dBathx = 0., dBathy = 0.;
 
             S[0] = 0.;
             S[1] = g*h*dBathx;
@@ -272,7 +306,7 @@ namespace ShallowWater {
             return S;
         }
 
-    std::vector<double> ShallowWater_PK::NumFlux(std::vector<double> UL,std::vector<double> UR) {
+    std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR) {
         std::vector<double> FL, FR, F;
         
         double hL, uL, vL, hR, uR, vR, g = 9.81;
@@ -288,23 +322,56 @@ namespace ShallowWater {
 
         F.resize(3);
         
-        FL = PhysFlux(UL);
-        FR = PhysFlux(UR);
+        FL = PhysFlux_x(UL);
+        FR = PhysFlux_x(UR);
         
         double SL, SR, Smax;
 
-        SL = uL + std::sqrt(g*hL);
-        SR = uR + std::sqrt(g*hR);
+        SL = std::max(uL + std::sqrt(g*hL),vL + std::sqrt(g*hL));
+        SR = std::max(uR + std::sqrt(g*hR),vR + std::sqrt(g*hR));
 
         Smax = std::max(SL,SR);
 
         for (int i = 0; i < 3; i++) {
-            F[i] = 0.5*(FL[i]+FR[i]); // - 0.5*Smax*(UR[i]-UL[i]);
+            F[i] = 0.5*(FL[i]+FR[i]) - 0.5*Smax*(UR[i]-UL[i]);
         }
         
         return F;
     }
     
+    std::vector<double> ShallowWater_PK::NumFlux_y(std::vector<double> UL,std::vector<double> UR) {
+        std::vector<double> GL, GR, G;
+
+        double hL, uL, vL, hR, uR, vR, g = 9.81;
+
+		// SW conservative variables: (h, hu, hv)
+		hL = UL[0];
+		uL = UL[1]/UL[0];
+		vL = UL[2]/UL[0];
+
+		hR = UR[0];
+		uR = UR[1]/UR[0];
+		vR = UR[2]/UR[0];
+
+        G.resize(3);
+
+        GL = PhysFlux_y(UL);
+        GR = PhysFlux_y(UR);
+
+        double SL, SR, Smax;
+
+        SL = std::max(uL + std::sqrt(g*hL),vL + std::sqrt(g*hL));
+        SR = std::max(uR + std::sqrt(g*hR),vR + std::sqrt(g*hR));
+
+        Smax = std::max(SL,SR);
+
+        for (int i = 0; i < 3; i++) {
+            G[i] = 0.5*(GL[i]+GR[i]) - 0.5*Smax*(UR[i]-UL[i]);
+        }
+
+        return G;
+    }
+
     std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U) {
         std::vector<double> S;
 
@@ -315,6 +382,10 @@ namespace ShallowWater {
         return S;
 
         }
+
+    double ShallowWater_PK::get_dt() {
+    	return 0.001;
+    }
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
