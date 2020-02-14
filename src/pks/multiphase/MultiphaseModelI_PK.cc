@@ -528,10 +528,18 @@ void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
 /* ******************************************************************* 
 * Map for indices
 ******************************************************************* */
-std::pair<int, int> MultiphaseModelI_PK::EquationToSolution(int neqn) {
-  if (neqn == 0) return std::make_pair(0, 0);
-  if (neqn == 1) return std::make_pair(1, 0);
-  return std::make_pair(2, neqn - 2);
+SolutionStructure MultiphaseModelI_PK::EquationToSolution(int neqn)
+{
+  SolutionStructure soln(neqn, 0, -1);
+  if (neqn == 0) return soln;
+ 
+  soln.matching_eqn = -1;  // derivative dEval_dSoln may be non-zero
+  if (neqn == 1) return soln;
+
+  soln.var = 2;
+  soln.comp = neqn - 2;
+  soln.matching_eqn = neqn - 1;  // dEval_dSoln=0 for all eqns except this
+  return soln;
 }
 
 
@@ -549,13 +557,6 @@ void MultiphaseModelI_PK::ModifyEvaluators(int neqn)
     auto eval = S_->GetFieldEvaluator(x_liquid_key_);
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
-
-    // mole fraction is second in the dependencies set
-    /*
-    eval = S_->GetFieldEvaluator(advection_liquid_key_);
-    Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->set_subvector(1, n, kH_[n]);
-    Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->HasFieldChanged(S_.ptr(), passwd_, true);
-    */
   }
 }
 

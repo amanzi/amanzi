@@ -112,7 +112,7 @@ class SuperMap {
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
-} // namespace
-} // namespace
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif

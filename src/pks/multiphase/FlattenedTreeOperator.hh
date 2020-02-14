@@ -32,7 +32,9 @@
 ****************************************************************** */ 
 
 namespace Amanzi {
-namespace Multiphase {
+namespace Operators {
+
+class SuperMap;
 
 class FlattenedTreeOperator : public Operators::TreeOperator {
  public:
@@ -40,14 +42,19 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
   FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   ~FlattenedTreeOperator() {};
 
+  // modified algorithms that use two supermaps
+  virtual void SymbolicAssembleMatrix();
+  virtual void AssembleMatrix();
+
   // only assembled matrix is allowed
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
 
  private:
   Teuchos::RCP<TreeVectorSpace> tvs_flat_;
+  Teuchos::RCP<SuperMap> smap_flat_;
 };
 
-}  // namespace Multiphase
+}  // namespace Operators
 }  // namespace Amanzi
 
 

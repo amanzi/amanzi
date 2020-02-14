@@ -58,8 +58,8 @@ class TreeOperator {
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
 
-  void SymbolicAssembleMatrix();
-  void AssembleMatrix();
+  virtual void SymbolicAssembleMatrix();
+  virtual void AssembleMatrix();
 
   const TreeVectorSpace& DomainMap() const { return *tvs_; }
   const TreeVectorSpace& RangeMap() const { return *tvs_; }

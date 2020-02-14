@@ -97,7 +97,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void InitMPSolutionVector() = 0;
   virtual void InitMPPreconditioner() = 0;
   virtual void PopulateBCs(int icomp, bool flag) = 0;
-  virtual std::pair<int, int> EquationToSolution(int neqn) = 0;
+  virtual SolutionStructure EquationToSolution(int neqn) = 0;
   virtual void ModifyEvaluators(int neqn) = 0;
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
@@ -147,7 +147,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
   // matrix and preconditioner
-  Teuchos::RCP<FlattenedTreeOperator> op_preconditioner_, op_pc_solver_;
+  Teuchos::RCP<Operators::FlattenedTreeOperator> op_preconditioner_, op_pc_solver_;
   bool op_pc_assembled_;
 
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;

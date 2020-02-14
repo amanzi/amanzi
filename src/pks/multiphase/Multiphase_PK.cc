@@ -407,7 +407,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // preconditioner is model-specific. It is created in the scope of global assembly to 
   // reduce memory footprint for large number of components.
-  op_preconditioner_ = Teuchos::rcp(new FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+  op_preconditioner_ = Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   InitMPPreconditioner();
 
   std::string pc_name = mp_list_->get<std::string>("preconditioner");
@@ -418,7 +418,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // linear solver
   op_pc_solver_ = op_preconditioner_;
   std::string solver_name = mp_list_->get<std::string>("linear solver");
-  AmanziSolvers::LinearOperatorFactory<FlattenedTreeOperator, TreeVector, TreeVectorSpace> sfactory;
+  AmanziSolvers::LinearOperatorFactory<Operators::FlattenedTreeOperator, TreeVector, TreeVectorSpace> sfactory;
   op_pc_solver_ = sfactory.Create(solver_name, *linear_operator_list_, op_preconditioner_);
 
   // initialize time integrator

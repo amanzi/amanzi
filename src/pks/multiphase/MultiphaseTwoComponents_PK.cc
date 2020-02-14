@@ -444,10 +444,15 @@ void MultiphaseTwoComponents_PK::PopulateBCs(int icomp, bool flag)
 /* ******************************************************************* 
 * Map for indices
 ******************************************************************* */
-std::pair<int, int> MultiphaseTwoComponents_PK::EquationToSolution(int neqn) {
-  if (neqn == 0) return std::make_pair(0, 0);
-  if (neqn == 1) return std::make_pair(1, 0);
-  return std::make_pair(2, neqn - 2);
+SolutionStructure MultiphaseTwoComponents_PK::EquationToSolution(int neqn)
+{
+  SolutionStructure soln(neqn, 0, -1);
+  if (neqn < 2) return soln;
+
+  soln.var = 2;
+  soln.comp = neqn - 2;
+  soln.matching_eqn = -1;  // derivative dEval_dSoln may be non-zero
+  return soln;
 }
 
 

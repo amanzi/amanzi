@@ -53,7 +53,7 @@ class MultiphaseModelI_PK: public Multiphase_PK {
   virtual void InitMPPreconditioner() override;
   virtual void PopulateBCs(int icomp, bool flag) override;
 
-  virtual std::pair<int, int> EquationToSolution(int neqn) override;
+  virtual SolutionStructure EquationToSolution(int neqn) override;
   virtual void ModifyEvaluators(int neqn) override;
 
  private:
