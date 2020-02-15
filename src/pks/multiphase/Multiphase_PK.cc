@@ -495,8 +495,9 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // make a copy of primary and conservative fields
+  int nsoln = soln_names_.size();
   std::vector<CompositeVector> copies;
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < nsoln; ++i) {
     copies.push_back(*S_->GetFieldData(soln_names_[i]));
   }
   CompositeVector ql_copy(*S_->GetFieldData(darcy_flux_liquid_key_));
@@ -517,7 +518,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // recover the original fields
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < nsoln; ++i) {
       *S_->GetFieldData(soln_names_[i], passwd_) = copies[i];
     }
     *S_->GetFieldData(darcy_flux_liquid_key_, passwd_) = ql_copy;

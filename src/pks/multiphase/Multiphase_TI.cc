@@ -490,6 +490,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
     op_preconditioner_->SetOperatorBlock(n, i, pde->global_operator());
  
+    // -- derivatives
     Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
 
     Key key = eqns_[n].constraint.first;
@@ -591,23 +592,26 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } 
   }
 
+  // concentration error
+  auto dxc = *du->SubVector(1)->Data()->ViewComponent("cell");
+  int n = dxc.NumVectors();
+
+  double error_x = 0.0;
+  for (int c = 0; c < ncells_owned_; c++) {
+    for (int i = 0; i < n; ++i) {
+      error_x = std::max(error_x, fabs(dxc[i][c]));
+    }
+  }
+
   // saturation error
-  auto dsc = *du->SubVector(1)->Data()->ViewComponent("cell");
+  auto dsc = *du->SubVector(2)->Data()->ViewComponent("cell");
 
   double error_s = 0.0;
   for (int c = 0; c < ncells_owned_; c++) {
     error_s = std::max(error_s, fabs(dsc[0][c]));
   }
 
-  // concentration error
-  auto dxc = *du->SubVector(2)->Data()->ViewComponent("cell");
-
-  double error_x = 0.0;
-  for (int c = 0; c < ncells_owned_; c++) {
-    error_x = std::max(error_x, fabs(dxc[0][c]));
-  }
-
-  return error_p + error_s + error_x;
+  return error_p + error_x + error_s;
 }
 
 }  // namespace Multiphase

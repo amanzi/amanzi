@@ -9,8 +9,7 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution variables: pressure liquid, saturation liquid, molar
-  fraction of gas.
+  Variables: pressure liquid, mole gas fraction, saturation liquid.
 */
 
 // TPLs
@@ -332,23 +331,23 @@ MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
                                       Teuchos::RCP<TreeVector> du)
 {
   // clip mole fraction to range [0; 1]
-  const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
-  auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
+  const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
+  auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
 
-  for (int i = 0; i < u2c.NumVectors(); ++i) {
+  for (int i = 0; i < u1c.NumVectors(); ++i) {
     for (int c = 0; c < ncells_owned_; ++c) {
-      // du2c[i][c] = std::min(du2c[i][c], u2c[i][c]);
-      // du2c[i][c] = std::max(du2c[i][c], u2c[i][c] - 1.0);
+      // du1c[i][c] = std::min(du1c[i][c], u1c[i][c]);
+      // du1c[i][c] = std::max(du1c[i][c], u1c[i][c] - 1.0);
     }    
   }
 
   // clip saturation (residual saturation is missing, FIXME)
-  const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
-  auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
+  const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
+  auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; ++c) {
-    // du1c[0][c] = std::min(du1c[0][c], u1c[0][c]);
-    // du1c[0][c] = std::max(du1c[0][c], u1c[0][c] - 1.0);
+    // du2c[0][c] = std::min(du2c[0][c], u2c[0][c]);
+    // du2c[0][c] = std::max(du2c[0][c], u2c[0][c] - 1.0);
   }
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
@@ -361,8 +360,8 @@ MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
 void MultiphaseModelI_PK::InitMPSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(saturation_liquid_key_);
   soln_names_.push_back(x_gas_key_);
+  soln_names_.push_back(saturation_liquid_key_);
 
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto field = Teuchos::rcp(new TreeVector());
@@ -419,11 +418,11 @@ void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
   auto& bc_model_p = op_bcs_[0]->bc_model();
   auto& bc_value_p = op_bcs_[0]->bc_value();
 
-  auto& bc_model_s = op_bcs_[1]->bc_model();
-  auto& bc_value_s = op_bcs_[1]->bc_value();
+  auto& bc_model_x = op_bcs_[1]->bc_model();
+  auto& bc_value_x = op_bcs_[1]->bc_value();
 
-  auto& bc_model_x = op_bcs_[2]->bc_model();
-  auto& bc_value_x = op_bcs_[2]->bc_value();
+  auto& bc_model_s = op_bcs_[2]->bc_model();
+  auto& bc_value_s = op_bcs_[2]->bc_value();
 
   // initialize to zero
   int nfaces = bc_model_p.size();
@@ -456,18 +455,10 @@ void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
           bc_value_p[f] = it->second[0] * factor;
         }
       } else if (bcs_[i]->component_id() == icomp) {
-        if (icomp > 0) {
-          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-            int f = it->first;
-            bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
-            bc_value_x[f] = it->second[0] * factor;
-          }
-        } else {
-          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-            int f = it->first;
-            bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
-            bc_value_s[f] = it->second[0] * factor;
-          }
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value_x[f] = it->second[0] * factor;
         }
       }
     }
@@ -497,11 +488,11 @@ void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
         missed_bc_faces_++;
       }
 
-      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE)
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
-
       if (bc_model_x[f] == Operators::OPERATOR_BC_NONE)
         bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
+
+      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE)
+        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
     }
   }
 
@@ -532,13 +523,15 @@ SolutionStructure MultiphaseModelI_PK::EquationToSolution(int neqn)
 {
   SolutionStructure soln(neqn, 0, -1);
   if (neqn == 0) return soln;
- 
-  soln.matching_eqn = -1;  // derivative dEval_dSoln may be non-zero
-  if (neqn == 1) return soln;
 
-  soln.var = 2;
-  soln.comp = neqn - 2;
-  soln.matching_eqn = neqn - 1;  // dEval_dSoln=0 for all eqns except this
+  if (neqn == num_primary_ + 1) {
+    soln.var = 2;
+    return soln;
+  }
+ 
+  soln.var = 1;
+  soln.comp = neqn - 1;
+  soln.matching_eqn = neqn;  // dEval_dSoln=0 for all eqns except this
   return soln;
 }
 
