@@ -41,7 +41,7 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
 
     for (auto kt = cvs->begin(); kt != cvs->end(); ++kt) {
       AMANZI_ASSERT(nvec == cvs->NumVectors(*kt));
-      cvs0->AddComponent(*kt, schema.StringToKind(*kt), 1);  // FIXME
+      cvs0->AddComponent(*kt, schema.StringToKind(*kt), 1);
     }
     CompositeVector cv(*cvs0);
 

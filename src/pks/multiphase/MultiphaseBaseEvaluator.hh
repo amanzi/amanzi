@@ -32,7 +32,11 @@ class MultiphaseBaseEvaluator : public SecondaryVariableFieldEvaluator {
 
   bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request, bool force) {
     bool ok = SecondaryVariableFieldEvaluator::HasFieldChanged(S, request);
-    if (force) UpdateField_(S);
+    if (force) {
+      UpdateField_(S);
+      requests_.clear();
+      requests_.insert(request);
+    }
     return ok || force;
   }
 

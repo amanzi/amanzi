@@ -189,6 +189,7 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.set<std::string>("my key", advection_liquid_key_)
          .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
          .set<Teuchos::Array<int> >("powers", dep_powers);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetFieldEvaluator(advection_liquid_key_, eval);

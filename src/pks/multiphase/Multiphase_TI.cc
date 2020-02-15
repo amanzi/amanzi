@@ -144,7 +144,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         Key fname = eqns_[n].diffusion[phase].second;
         S_->GetFieldEvaluator(fname)->HasFieldChanged(S_.ptr(), passwd_);
         auto& tmp = *S_->GetFieldData(fname)->ViewComponent("cell");
-        int m = std::min(std::max(0, n - 1), tmp.NumVectors() - 1);
+        int m = std::min(sol.comp, tmp.NumVectors() - 1);
         for (int c = 0; c < ncells_owned_; ++c) {
           comp_c[0][c] = tmp[m][c];
         }
