@@ -39,7 +39,7 @@ class WRMmp_vanGenuchten : public WRMmp {
   virtual double dKdS(double sl, const std::string& phase);
 
  private:
-  void Init_(double srw, double srn, double n, double Pr, double reg);
+  void Init_(double srw, double srn, double n, double Pr, double reg_kr, double reg_pc);
 
   double k_relative_gas_(double sle);
   double k_relative_liquid_(double sle);
@@ -47,17 +47,17 @@ class WRMmp_vanGenuchten : public WRMmp {
   double dKdS_gas_(double sle);
   double dKdS_liquid_(double sle);
 
-  double VGM(double sg);
-  double mod_VGM(double sg);
-  double deriv_VGM(double sg);
-  double deriv_mod_VGM(double sg);
+  double capillaryPressure_(double sle);
+  double dPc_dS_(double sle);
 
  private:
-  double Pr_, srl_, srg_, n_, m_, eps_;
+  double Pr_, srl_, srg_, n_, m_;
 
   double reg_kl_;
-  WhetStone::SplinePolynomial spline_kl_;
-  WhetStone::Polynomial grad_spline_kl_;
+  WhetStone::SplineCubic spline_kl_;
+
+  double reg_pc_;
+  WhetStone::SplineExteriorLinear spline_pc_;
 
   static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
 };

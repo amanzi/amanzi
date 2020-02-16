@@ -16,34 +16,60 @@
 #define AMANZI_WHETSTONE_SPLINE_POLYNOMIAL_HH_
 
 #include "Polynomial.hh"
-#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class SplinePolynomial : public WhetStoneFunction {
+// base class for splines
+class SplinePolynomial {
  public:
   SplinePolynomial() {};
   ~SplinePolynomial() {};
 
-  void Setup(double x0, double f0, double df0,
-             double x1, double f1, double df1);
+  virtual void Setup(double x0, double f0, double df0,
+                     double x1, double f1, double df1) = 0;
 
-  virtual double Value(const AmanziGeometry::Point& xp) const {
-    return poly_.Value(xp);
-  }
+  virtual double Value(double x) const = 0;
+  virtual double GradientValue(double x) const = 0;
+};
 
-  double Value(double x) const {
-    AmanziGeometry::Point xp(1);
-    xp[0] = x;
-    return poly_.Value(xp);
-  }
+
+// cubic interpolant between two points
+class SplineCubic : public SplinePolynomial {
+ public:
+  SplineCubic() {};
+  ~SplineCubic() {};
+
+  virtual void Setup(double x0, double f0, double df0,
+                     double x1, double f1, double df1);
+
+  virtual double Value(double x) const;
+  virtual double GradientValue(double x) const;
 
   // access
   const Polynomial poly() const { return poly_; } 
+  const Polynomial grad() const { return grad_; } 
 
  private:
   Polynomial poly_;
+  Polynomial grad_;
+};
+
+
+// linear interpolant exterior to the interval defined by two points
+class SplineExteriorLinear : public SplinePolynomial {
+ public:
+  SplineExteriorLinear() {};
+  ~SplineExteriorLinear() {};
+
+  virtual void Setup(double x0, double f0, double df0,
+                     double x1, double f1, double df1);
+
+  virtual double Value(double x) const;
+  virtual double GradientValue(double x) const;
+
+ private:
+  double x0_, f0_, df0_, x1_, f1_, df1_;
 };
 
 }  // namespace WhetStone

@@ -535,7 +535,6 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     pde->AddAccumulationTerm(fone, "cell");
   }
 
-
   // finalize preconditioner
   if (!op_pc_assembled_) {
     op_preconditioner_->SymbolicAssembleMatrix();

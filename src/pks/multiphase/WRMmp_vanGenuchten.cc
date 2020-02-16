@@ -15,7 +15,6 @@
 
 // Amanzi
 #include "errors.hh"
-#include "VectorObjects.hh"
 
 // Amanzi::Multiphase
 #include "MultiphaseDefs.hh"
@@ -33,32 +32,39 @@ WRMmp_vanGenuchten::WRMmp_vanGenuchten(Teuchos::ParameterList& plist)
   double srg = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
   double n = plist.get<double>("van Genuchten n", MULTIPHASE_WRM_EXCEPTION);
   double Pr = plist.get<double>("van Genuchten entry pressure", MULTIPHASE_WRM_EXCEPTION);
-  double reg = plist.get<double>("regularization interval", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
+  double reg_kr = plist.get<double>("regularization interval kr", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
+  double reg_pc = plist.get<double>("regularization interval pc", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
 
-  Init_(srl, srg, n, Pr, reg);
+  Init_(srl, srg, n, Pr, reg_kr, reg_pc);
 }
 
-void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, double reg)
+void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr,
+                               double reg_kr, double reg_pc)
 {
   srl_ = srl;
   srg_ = srg;
   n_ = n;
   m_ = 1.0 - 1.0 / n_;
   Pr_ = Pr;
-  eps_ = 1.0e-3;
+  reg_kl_ = reg_kr;
+  reg_pc_ = reg_pc;
 
-  reg_kl_ = reg;
   if (reg_kl_ > 0.0) {
     double se0(1.0 - reg_kl_), se1(1.0);
     spline_kl_.Setup(se0, k_relative_liquid_(se0), dKdS_liquid_(se0),
                      se1, 1.0, 0.0);
-    grad_spline_kl_ = (WhetStone::Gradient(spline_kl_.poly()))[0];
 
-    if (grad_spline_kl_.NormInf() > MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT) {
+    if (spline_kl_.grad().NormInf() > MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT) {
       Errors::Message msg;
       msg << "Gradient of regularization spline exceeds threshold " << MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT;
       Exceptions::amanzi_throw(msg);
     }
+  }
+
+  if (reg_pc_ > 0.0) {
+    double se0(reg_pc_), se1(1.0 - reg_pc_);
+    spline_pc_.Setup(se0, capillaryPressure_(se0), dPc_dS_(se0),
+                     se1, capillaryPressure_(se1), dPc_dS_(se1));
   }
 }
 
@@ -68,10 +74,12 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, doub
 ****************************************************************** */
 double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
 {
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
   if (phase == "liquid") {
-    double sle = (sl - srl_) / (1.0 - srl_);
-    if (sle < 0.0) {
+    if (sle <= 0.0) {
       return 0.0;
+    } else if (sle >= 1.0) {
+      return 1.0;
     } else if (sle > 1.0 - reg_kl_) {
       return spline_kl_.Value(sle);
     } else {
@@ -79,7 +87,6 @@ double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
     }
   }
   else if (phase == "gas") {
-    double sle = (sl - srl_) / (1.0 - srl_ - srg_);
     if (sle <= 0.0) {
       return 1.0;
     } else if (sle >= 1.0) {
@@ -108,20 +115,19 @@ double WRMmp_vanGenuchten::k_relative_gas_(double sle) {
 ****************************************************************** */
 double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
 {
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
   if (phase == "liquid") {
-    double sle = (sl - srl_) / (1.0 - srl_);
-    if (sle < 0.0) {
+    if (sle <= 0.0) {
+      return 0.0;
+    } else if (sle >= 1.0) {
       return 0.0;
     } else if (sle > 1.0 - reg_kl_) {
-      AmanziGeometry::Point x(1);
-      x[0] = sle;
-      return grad_spline_kl_.Value(x);
+      return spline_kl_.GradientValue(sle);
     } else {
       return dKdS_liquid_(sle);
     }
   }
   else if (phase == "gas") {
-    double sle = (sl - srl_) / (1.0 - srl_ - srg_);
     if (sle <= 0.0) {
       return 0.0;
     } else if (sle >= 1.0) {
@@ -164,13 +170,13 @@ double WRMmp_vanGenuchten::dKdS_gas_(double sle) {
 ****************************************************************** */
 double WRMmp_vanGenuchten::capillaryPressure(double sl)
 {
-  double sg = 1.0 - sl;
-  if (sg - srg_ < 1e-15) {
-    return mod_VGM(srg_) + deriv_mod_VGM(srg_) * (sg - srg_);
-  } else if (sg + srl_ - 1.0 > -1e-15) {
-    return mod_VGM(1.0 - srl_) + deriv_mod_VGM(1.0 - srl_) * (sg - 1.0 + srl_);
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+  if (sle <= reg_pc_) {
+    return spline_pc_.Value(sle);
+  } else if (sle >= 1.0 - reg_pc_) {
+    return spline_pc_.Value(sle);
   } else {
-    return mod_VGM(sg);
+    return capillaryPressure_(sle);
   }
 }
 
@@ -180,13 +186,14 @@ double WRMmp_vanGenuchten::capillaryPressure(double sl)
 ****************************************************************** */
 double WRMmp_vanGenuchten::dPc_dS(double sl)
 {
-  double sg = 1.0 - sl;
-  if (sg - srg_ < 1e-15) {
-    return -deriv_mod_VGM(srg_);
-  } else if (sg + srl_ - 1.0 > -1e-15) {
-    return -deriv_mod_VGM(1.0 - srl_);
+  double factor = 1.0 / (1.0 - srl_ - srg_);
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+  if (sle <= reg_pc_) {
+    return factor * spline_pc_.GradientValue(sle);
+  } else if (sle >= 1.0 - reg_pc_) {
+    return factor * spline_pc_.GradientValue(sle);
   } else {
-    return -deriv_mod_VGM(sg);  // negative wrt sl
+    return dPc_dS_(sle);
   }
 }
 
@@ -194,29 +201,13 @@ double WRMmp_vanGenuchten::dPc_dS(double sl)
 /* ******************************************************************
 * Return irreducible residual saturation of the phase.                                          
 ****************************************************************** */
-double WRMmp_vanGenuchten::VGM(double sg) {
-  double sl = 1.0 - sg;
-  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+double WRMmp_vanGenuchten::capillaryPressure_(double sle) {
   return Pr_ * pow(pow(sle, -1.0 / m_) - 1.0, 1.0 / n_);
 }
 
 
-double WRMmp_vanGenuchten::mod_VGM(double sg) {
-  double s_mod = srg_ + (1.0 - eps_) * (sg - srg_) + eps_/2.0 * (1.0 - srl_ - srg_);
-  return VGM(s_mod) - VGM(srg_ + eps_/2 * (1.0 - srl_ - srg_));
-}
-
-
-double WRMmp_vanGenuchten::deriv_VGM(double sg) { // wrt sg
-  double sl = 1.0 - sg;
-  double sle = (sl - srl_)/(1.0 - srl_ - srg_);
-  return Pr_ / (m_ * n_) * pow(pow(sle, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(sle, -1.0/m_ - 1.0) / (1.0 - srl_ - srg_);
-}
-
-
-double WRMmp_vanGenuchten::deriv_mod_VGM(double sg) { // wrt sg
-  double s_mod = srg_ + (1.0 - eps_) * (sg - srg_) + eps_/2.0 * (1.0 - srl_ - srg_);
-  return (1.0 - eps_) * deriv_VGM(s_mod);
+double WRMmp_vanGenuchten::dPc_dS_(double sle) {
+  return -Pr_ / (m_ * n_) * pow(pow(sle, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(sle, -1.0/m_ - 1.0) / (1.0 - srl_ - srg_);
 }
 
 }  // namespace Multiphase

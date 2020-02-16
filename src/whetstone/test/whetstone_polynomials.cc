@@ -205,11 +205,12 @@ TEST(SPLINE_POLYNOMIALS) {
   std::cout << "Splines.." << std::endl; 
 
   // polynomail x^3
-  AmanziGeometry::Point x0(1), x1(1), xp(1);
+  double xp;
+  AmanziGeometry::Point x0(1), x1(1);
   x0[0] = 0.0;
   x1[0] = 1.0;
-  xp[0] = 0.2;
-  SplinePolynomial sp0;
+  xp = 0.2;
+  SplineCubic sp0;
   sp0.Setup(x0[0], 0.0, 0.0, x1[0], 1.0, 3.0);
   CHECK_CLOSE(0.008, sp0.Value(xp), 1e-15);
 
@@ -221,11 +222,17 @@ TEST(SPLINE_POLYNOMIALS) {
 
   auto g1 = Gradient(p1);
 
-  SplinePolynomial sp1;
+  SplineCubic sp1;
   sp1.Setup(x0[0], p1.Value(x0), g1[0].Value(x0),
             x1[0], p1.Value(x1), g1[0].Value(x1));
 
   p1 -= sp1.poly();
   CHECK_CLOSE(0.0, p1.NormInf(), 1e-15);
+
+  // exterior linear interpolant
+  SplineExteriorLinear sp2;
+  sp2.Setup(1.0, 1.0, 2.0,  2.0, 3.0, 1.5);
+  CHECK_CLOSE(0.0, sp2.Value(0.5), 1e-15);
+  CHECK_CLOSE(3.3, sp2.Value(2.2), 1e-15);
 }
 
