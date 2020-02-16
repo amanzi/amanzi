@@ -30,10 +30,10 @@ class WRMmp_BrooksCorey : public WRMmp {
   ~WRMmp_BrooksCorey() {};
   
   // required methods from the base class
-  double k_relative(double Sw, std::string phase_name);
+  double k_relative(double Sw, const std::string& phase);
   double capillaryPressure(double saturation);
   double dPc_dS(double saturation);
-  double dKdS(double Sw, std::string phase_name);
+  double dKdS(double Sw, const std::string& phase);
 
   void Init_(double S_rw, double S_rn, double pd, double lambda);
 

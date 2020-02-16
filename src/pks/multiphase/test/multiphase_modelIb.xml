@@ -91,6 +91,7 @@
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
+        <Parameter name="regularization interval" type="double" value="0.01"/>
       </ParameterList>
     </ParameterList>
 

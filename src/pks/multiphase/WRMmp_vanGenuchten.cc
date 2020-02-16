@@ -13,7 +13,11 @@
 #include <string>
 #include <iostream>
 
+// Amanzi
 #include "errors.hh"
+#include "VectorObjects.hh"
+
+// Amanzi::Multiphase
 #include "MultiphaseDefs.hh"
 #include "WRMmp_vanGenuchten.hh"
 
@@ -29,11 +33,12 @@ WRMmp_vanGenuchten::WRMmp_vanGenuchten(Teuchos::ParameterList& plist)
   double srg = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
   double n = plist.get<double>("van Genuchten n", MULTIPHASE_WRM_EXCEPTION);
   double Pr = plist.get<double>("van Genuchten entry pressure", MULTIPHASE_WRM_EXCEPTION);
+  double reg = plist.get<double>("regularization interval", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
 
-  Init_(srl, srg, n, Pr);
+  Init_(srl, srg, n, Pr, reg);
 }
 
-void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr)
+void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, double reg)
 {
   srl_ = srl;
   srg_ = srg;
@@ -41,66 +46,111 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr)
   m_ = 1.0 - 1.0 / n_;
   Pr_ = Pr;
   eps_ = 1.0e-3;
+
+  reg_kl_ = reg;
+  if (reg_kl_ > 0.0) {
+    double se0(1.0 - reg_kl_), se1(1.0);
+    spline_kl_.Setup(se0, k_relative_liquid_(se0), dKdS_liquid_(se0),
+                     se1, 1.0, 0.0);
+    grad_spline_kl_ = (WhetStone::Gradient(spline_kl_.poly()))[0];
+
+    if (grad_spline_kl_.NormInf() > MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT) {
+      Errors::Message msg;
+      msg << "Gradient of regularization spline exceeds threshold " << MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT;
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 }
 
 
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRMmp_vanGenuchten::k_relative(double sl, std::string phase_name)
+double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
 {
   double sle = (sl - srl_) / (1.0 - srl_ - srg_);
-  if (phase_name == "liquid") {
-    if (sle < 1.0e-09) {
+  if (phase == "liquid") {
+    if (sle < 0.0) {
       return 0.0;
-    } else if (sle - 1.0 > -1.0e-09) {
-      return 1.0;
+    } else if (sle > 1.0 - reg_kl_) {
+      return spline_kl_.Value(sle);
     } else {
-      double tmp = pow(sle, 0.5) * pow(1.0 - pow(1.0 - pow(sle, 1.0 / m_), m_), 2.0);
-      return tmp; 
+      return k_relative_liquid_(sle);
     }
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     if (sle < 1.0e-09) {
       return 1.0;
     } else if(sle - 1.0 > -1.0e-09) {
       return 0.0;
     } else {
-      return pow(1.0 - sle, 0.5) * pow(1.0 - pow(sle, 1.0 / m_), 2.0 * m_);
+      return k_relative_gas_(sle);
     }
   }
 }
 
 
 /* ******************************************************************
+* Relative permeability wrt to effective saturation.
+****************************************************************** */
+double WRMmp_vanGenuchten::k_relative_liquid_(double sle) {
+  return pow(sle, 0.5) * pow(1.0 - pow(1.0 - pow(sle, 1.0 / m_), m_), 2.0);
+}
+
+double WRMmp_vanGenuchten::k_relative_gas_(double sle) {
+  return pow(1.0 - sle, 0.5) * pow(1.0 - pow(sle, 1.0 / m_), 2.0 * m_);
+}
+
+
+/* ******************************************************************
 * Derivative of relative permeability wrt liquid saturation
 ****************************************************************** */
-double WRMmp_vanGenuchten::dKdS(double sl, std::string phase_name)
+double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
 {
-  double sle = 0.0;
-  double factor = 1.0 / (1.0 - srl_ - srg_);
-  sle = (sl - srl_) / (1.0 - srl_ - srg_);
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
 
-  if (phase_name == "liquid") {
-    if (sle < 1.0e-09) {
+  if (phase == "liquid") {
+    if (sle < 0.0) {
       return 0.0;
-    } else if (sle - 1.0 > -1.0e-09) {
-      return 0.5 * factor;
+    } else if (sle > 1.0 - reg_kl_) {
+      AmanziGeometry::Point x(1);
+      x[0] = sle;
+      return grad_spline_kl_.Value(x);
     } else {
-      return factor*0.5*pow(sle,-0.5)*pow(1.0 - pow(1.0 - pow(sle,1.0/m_),m_),2.0) + 
-        2.0*(1.0 - pow(1.0 - pow(sle, 1.0/m_),m_))*pow(1.0 - pow(sle, 1.0/m_), m_ - 1.0)*pow(sle, 1.0/m_ - 0.5)*factor;
+      return dKdS_liquid_(sle);
     }
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     if (sle < 1.0e-09) {
+      double factor = 1.0 / (1.0 - srl_ - srg_);
       return -0.5 * factor;
     } else if (sle - 1.0 > -1.0e-09) {
       return 0.0;
     } else {
-      return -factor*0.5*pow(1.0 - sle,-0.5)*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_) - 
-      factor*pow(1.0 - sle, 0.5)*2.0*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_ - 1.0)*pow(sle, 1.0/m_ - 1.0);
+      return dKdS_gas_(sle);
     }
   }
+}
+
+
+/* ******************************************************************
+* Derivative of relative permeability wrt effective saturation
+****************************************************************** */
+double WRMmp_vanGenuchten::dKdS_liquid_(double sle) {
+  double factor = 1.0 / (1.0 - srl_ - srg_);
+  double a1 = std::pow(sle, 1.0 / m_);
+  double a2 = 1.0 - a1;
+  double a3 = std::pow(a2, m_ - 1.0);
+  double a4 = 1.0 - a3 * a2;
+  double a5 = a4 * (a4 / 2 + 2 * a3 * a1);
+
+  return factor * a5 / std::pow(sle, 0.5);
+}
+
+double WRMmp_vanGenuchten::dKdS_gas_(double sle) {
+  double factor = 1.0 / (1.0 - srl_ - srg_);
+  return -factor*0.5*pow(1.0 - sle,-0.5)*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_) - 
+      factor*pow(1.0 - sle, 0.5)*2.0*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_ - 1.0)*pow(sle, 1.0/m_ - 1.0);
 }
 
 

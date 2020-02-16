@@ -42,14 +42,14 @@ void WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
+double WRMmp_Simple::k_relative(double Sw, const std::string& phase)
 {
   double Swe = 0.0;
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "liquid") {
+  if (phase == "liquid") {
     return pow(Swe, 2.0);
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     return pow(1.0 - Swe, 2.0);
   }
 
@@ -60,15 +60,15 @@ double WRMmp_Simple::k_relative(double Sw, std::string phase_name)
 /* ******************************************************************
 * Derivative of relative permeability wrt liquid saturation. 
 ****************************************************************** */
-double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
+double WRMmp_Simple::dKdS(double Sw, const std::string& phase)
 {
   double Swe = 0.0;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "liquid") {
+  if (phase == "liquid") {
     return 2.0 * Swe * factor;
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     return - 2.0 * (1.0 - Swe) * factor;
   }
 }
@@ -79,13 +79,6 @@ double WRMmp_Simple::dKdS(double Sw, std::string phase_name)
 ****************************************************************** */
 double WRMmp_Simple::capillaryPressure(double Sw)
 {
-  /*
-  double gamma = 3.0;
-  double Pd = 1.0;
-  double Swe = 0.0;
-  Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  return Pd * pow(Swe, -1.0/gamma);
-  */
   // use simple linear capillary pressure for now
   return coef_ * pow(1.0 - Sw, exponent_);
 }
@@ -97,13 +90,6 @@ double WRMmp_Simple::capillaryPressure(double Sw)
 ****************************************************************** */
 double WRMmp_Simple::dPc_dS(double Sw)
 {
-  /*
-  double gamma = 3.0;
-  double Pd = 1.0;
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  double factor = 1.0/(1.0 - S_rw_ - S_rn_);
-  return Pd * factor * (-1.0/gamma) * pow(Swe, -1.0/gamma - 1.0); 
-  */
   return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
 }
 

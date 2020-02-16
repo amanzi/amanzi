@@ -17,8 +17,11 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "Factory.hh"
+#include "SplinePolynomial.hh"
 
+// Multiphase
 #include "WRMmp.hh"
 
 namespace Amanzi {
@@ -30,20 +33,31 @@ class WRMmp_vanGenuchten : public WRMmp {
   ~WRMmp_vanGenuchten() {};
   
   // required methods from the base class
-  double k_relative(double sl, std::string phase_name);
-  double capillaryPressure(double saturation);
-  double dPc_dS(double saturation);
-  double dKdS(double sl, std::string phase_name);
-
-  void Init_(double srw, double srn, double n, double Pr);
+  virtual double k_relative(double sl, const std::string& phase);
+  virtual double capillaryPressure(double saturation);
+  virtual double dPc_dS(double saturation);
+  virtual double dKdS(double sl, const std::string& phase);
 
  private:
+  void Init_(double srw, double srn, double n, double Pr, double reg);
+
+  double k_relative_gas_(double sle);
+  double k_relative_liquid_(double sle);
+
+  double dKdS_gas_(double sle);
+  double dKdS_liquid_(double sle);
+
   double VGM(double sg);
   double mod_VGM(double sg);
   double deriv_VGM(double sg);
   double deriv_mod_VGM(double sg);
 
+ private:
   double Pr_, srl_, srg_, n_, m_, eps_;
+
+  double reg_kl_;
+  WhetStone::SplinePolynomial spline_kl_;
+  WhetStone::Polynomial grad_spline_kl_;
 
   static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
 };

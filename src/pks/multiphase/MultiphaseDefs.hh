@@ -15,26 +15,13 @@
 namespace Amanzi {
 namespace Multiphase {
 
-// special bits for submodels
-const int MULTIPHASE_TIME_INTEGRATION_PICARD = 1;
-const int MULTIPHASE_TIME_INTEGRATION_BACKWARD_EULER = 2;  // Only for testing.
-const int MULTIPHASE_TIME_INTEGRATION_BDF1 = 3;
-
 // time intervals
-const double MULTIPHASE_INITIAL_DT = 1e-8;  // [sec]
-const double MULTIPHASE_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
+const double MULTIPHASE_INITIAL_DT = 1e-8;
+const double MULTIPHASE_MAXIMUM_DT = 3.15e+10;  // 1000 years
 
-const double MULTIPHASE_WRM_REGULARIZATION_INTERVAL = 0.0;
-const double MULTIPHASE_WRM_EXCEPTION = -1.0;  // will trigger exception
-
-const int MULTIPHASE_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
-const int MULTIPHASE_TI_ERROR_CONTROL_SATURATION = 2;
-const int MULTIPHASE_TI_ERROR_CONTROL_RESIDUAL = 4;
-
-const double MULTIPHASE_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;  // defaults for time integrations
-const int MULTIPHASE_TI_MAX_ITERATIONS = 400;
-
-const int MULTIPHASE_DT_ADAPTIVE = 1;
+const double MULTIPHASE_WRM_REGULARIZATION_INTERVAL = 0.01;
+const double MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT = 1.0e+8;
+const double MULTIPHASE_WRM_EXCEPTION = -1.0;  // triggers exception
 
 }  // namespace Flow
 }  // namespace Amanzi

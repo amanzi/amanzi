@@ -20,15 +20,17 @@ namespace WhetStone {
 /* ******************************************************************
 * Calculate mesh velocity in cell c. 
 ****************************************************************** */
-SplinePolynomial::SplinePolynomial(
-    const AmanziGeometry::Point& x0, double f0, double df0,
-    const AmanziGeometry::Point& x1, double f1, double df1)
+void SplinePolynomial::Setup(double x0, double f0, double df0,
+                             double x1, double f1, double df1)
 {
-  double dx = norm(x1 - x0);
+  double dx = x1 - x0;
   double df = f1 - f0;
 
+  AmanziGeometry::Point p0(1);
+  p0[0] = x0;
+
   poly_.Reshape(1, 3);
-  poly_.set_origin(x0);
+  poly_.set_origin(p0);
 
   poly_(0) = f0;
   poly_(1) = df0;

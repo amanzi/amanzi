@@ -11,6 +11,8 @@
   Molar mobility is defined as the product of molar density and mobility.
 */
 
+#include "errors.hh"
+
 #include "ProductEvaluator.hh"
 
 namespace Amanzi {

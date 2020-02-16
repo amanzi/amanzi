@@ -41,11 +41,11 @@ void WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda
 }
 
 
-double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
+double WRMmp_BrooksCorey::k_relative(double Sw, const std::string& phase)
 {
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
   double Sne = 1.0 - Swe;
-  if (phase_name == "liquid") {
+  if (phase == "liquid") {
     if (Swe < -1e-12) {
       return 0.0;
     } else if (Swe > 1.0) {
@@ -54,7 +54,7 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
       return pow(Swe,(2.0+3.0*lambda_)/lambda_);
     }
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     if (Swe < -1e-12) {
       return 1.0;
     } else if (Swe > 1.0) {
@@ -69,14 +69,14 @@ double WRMmp_BrooksCorey::k_relative(double Sw, std::string phase_name)
 /* *********************************************************************
 * TBW
 ***********************************************************************/
-double WRMmp_BrooksCorey::dKdS(double Sw, std::string phase_name)
+double WRMmp_BrooksCorey::dKdS(double Sw, const std::string& phase)
 {
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase_name == "liquid") {
+  if (phase == "liquid") {
     return factor*(2.0 + 3.0*lambda_)/lambda_ * pow(Swe, (2.0 + 3.0*lambda_)/lambda_ - 1.0);
   }
-  else if (phase_name == "gas") {
+  else if (phase == "gas") {
     return -(lambda_ + 2.0)/lambda_*factor*pow(1.0-Swe,2.0)*pow(Swe,(lambda_+2.0)/lambda_-1.0) - 
       2.0*factor*(1.0-Swe)*(1.0 - pow(Swe,(lambda_+2.0)/lambda_));
   }

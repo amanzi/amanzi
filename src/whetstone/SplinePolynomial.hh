@@ -23,11 +23,19 @@ namespace WhetStone {
 
 class SplinePolynomial : public WhetStoneFunction {
  public:
-  SplinePolynomial(const AmanziGeometry::Point& x0, double f0, double df0,
-                   const AmanziGeometry::Point& x1, double f1, double df1);
+  SplinePolynomial() {};
   ~SplinePolynomial() {};
 
+  void Setup(double x0, double f0, double df0,
+             double x1, double f1, double df1);
+
   virtual double Value(const AmanziGeometry::Point& xp) const {
+    return poly_.Value(xp);
+  }
+
+  double Value(double x) const {
+    AmanziGeometry::Point xp(1);
+    xp[0] = x;
     return poly_.Value(xp);
   }
 
