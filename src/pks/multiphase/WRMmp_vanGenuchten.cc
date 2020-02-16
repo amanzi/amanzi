@@ -68,8 +68,8 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, doub
 ****************************************************************** */
 double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
 {
-  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
   if (phase == "liquid") {
+    double sle = (sl - srl_) / (1.0 - srl_);
     if (sle < 0.0) {
       return 0.0;
     } else if (sle > 1.0 - reg_kl_) {
@@ -79,9 +79,10 @@ double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
     }
   }
   else if (phase == "gas") {
-    if (sle < 1.0e-09) {
+    double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+    if (sle <= 0.0) {
       return 1.0;
-    } else if(sle - 1.0 > -1.0e-09) {
+    } else if (sle >= 1.0) {
       return 0.0;
     } else {
       return k_relative_gas_(sle);
@@ -107,9 +108,8 @@ double WRMmp_vanGenuchten::k_relative_gas_(double sle) {
 ****************************************************************** */
 double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
 {
-  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
-
   if (phase == "liquid") {
+    double sle = (sl - srl_) / (1.0 - srl_);
     if (sle < 0.0) {
       return 0.0;
     } else if (sle > 1.0 - reg_kl_) {
@@ -121,10 +121,10 @@ double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
     }
   }
   else if (phase == "gas") {
-    if (sle < 1.0e-09) {
-      double factor = 1.0 / (1.0 - srl_ - srg_);
-      return -0.5 * factor;
-    } else if (sle - 1.0 > -1.0e-09) {
+    double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+    if (sle <= 0.0) {
+      return 0.0;
+    } else if (sle >= 1.0) {
       return 0.0;
     } else {
       return dKdS_gas_(sle);
@@ -149,8 +149,13 @@ double WRMmp_vanGenuchten::dKdS_liquid_(double sle) {
 
 double WRMmp_vanGenuchten::dKdS_gas_(double sle) {
   double factor = 1.0 / (1.0 - srl_ - srg_);
-  return -factor*0.5*pow(1.0 - sle,-0.5)*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_) - 
-      factor*pow(1.0 - sle, 0.5)*2.0*pow(1.0 - pow(sle, 1.0/m_), 2.0*m_ - 1.0)*pow(sle, 1.0/m_ - 1.0);
+  double a1 = std::pow(sle, 1.0 / m_);
+  double a2 = 1.0 - a1;
+  double a3 = std::pow(a2, 2 * m_ - 1.0);
+  double a4 = std::pow(a2, 2 * m_);
+  double b1 = 2 * std::pow(1.0 - sle, 0.5);
+
+  return -factor * (a4 / b1 + a3 * b1 * std::pow(sle, 1.0/m_ - 1.0));
 }
 
 
