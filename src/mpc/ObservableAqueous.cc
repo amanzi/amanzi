@@ -60,7 +60,9 @@ int ObservableAqueous::ComputeRegionSize()
 
   if (variable_ == "aqueous mass flow rate" ||
       variable_ == "aqueous volumetric flow rate" ||
-      variable_ == "fractures aqueous volumetric flow rate") {  // flux needs faces
+      variable_ == "fractures aqueous volumetric flow rate" ||
+      variable_ == "pressure head face")    
+    {  // flux needs faces
     region_size_ = mesh_->get_set_size(region_,
                                        Amanzi::AmanziMesh::FACE,
                                        Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -111,6 +113,7 @@ void ObservableAqueous::ComputeObservation(
   const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
+
   
   unit = "";
 
@@ -127,7 +130,7 @@ void ObservableAqueous::ComputeObservation(
       Exceptions::amanzi_throw(msg);
     }
     const Epetra_MultiVector& pd = *S.GetFieldData("particle_density")->ViewComponent("cell");    
-  
+    
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
@@ -146,6 +149,28 @@ void ObservableAqueous::ComputeObservation(
     *value = CalculateWaterTable_(S, entity_ids_);
     *volume = 1.0;
     unit = "m";
+  } else if (variable_ == "pressure head face") {
+    const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("face");
+    const Epetra_MultiVector& pressure_c = *S.GetFieldData("pressure")->ViewComponent("cell");    
+    const auto& fmap = *S.GetFieldData("pressure")->Map().Map("face", true);
+    Amanzi::AmanziMesh::Entity_ID_List cells;
+    
+    //double grav = 9.80;
+    for (int i = 0; i < region_size_; i++) {
+      int f = entity_ids_[i];
+      mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+      
+      int c = cells[0];
+      double sq = mesh_->face_area(f);
+      int g = fmap.FirstPointInElement(f);        
+      *volume += sq;
+      *value  += pressure[0][g] * sq;
+      //*value += pressure_c[0][c] * sq;
+      
+      //std::cout << region_<< ": "<<pressure[0][g] << " "<<pressure[0][g] /  (grav * rho) <<" "<<sq<<" "<<*volume<<"\n";
+    }     
+    unit = "m";
+    
   } else if (variable_ == "aqueous saturation") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -212,7 +237,8 @@ void ObservableAqueous::ComputeObservation(
     double density(1.0);
     if (variable_ == "aqueous mass flow rate") density = rho;
     const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
-
+    const auto& fmap = *S.GetFieldData("darcy_flux")->Map().Map("face", true);
+    
     if (obs_boundary_) { // observation is on a boundary set
       Amanzi::AmanziMesh::Entity_ID_List cells;
 
@@ -223,9 +249,10 @@ void ObservableAqueous::ComputeObservation(
         int sign, c = cells[0];
         const auto& normal = mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
-
-        *value  += sign * darcy_flux[0][f] * density;
+        int g = fmap.FirstPointInElement(f);        
+        *value  += sign * darcy_flux[0][g] * density;
         *volume += area;
+        std::cout<< region_ <<" face "<<f<<": darcy "<<darcy_flux[0][g]<<" "<<sign<<" "<<density<<" "<<*volume<<"\n";
       }
     } else if (obs_planar_) {  // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
