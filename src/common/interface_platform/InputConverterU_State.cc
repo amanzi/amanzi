@@ -61,6 +61,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
   double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
+  out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);

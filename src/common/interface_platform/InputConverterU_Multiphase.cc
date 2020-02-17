@@ -72,6 +72,18 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(const std::string& 
   // boundary and initial conditions
   out_list.sublist("boundary conditions") = TranslateMultiphaseBCs_();
 
+  // operators
+  std::string disc_method("fv-default, fv-default");
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+      disc_method, "", "", "upwind: face", "vapor matrix", true);
+
+  out_list.sublist("operators").sublist("molecular diffusion operator") =
+      out_list.sublist("operators").sublist("diffusion operator");
+
+  out_list.sublist("operators").sublist("advection operator")
+      .set<std::string>("discretization primary", "upwind")
+      .set<int>("reconstruction order", 0);
+
   return out_list;
 }
 

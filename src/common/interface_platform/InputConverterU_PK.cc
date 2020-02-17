@@ -378,6 +378,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
+    if (nonlinear_coef != "") tmp_list.set("nonlinear coefficient", nonlinear_coef);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
   }
