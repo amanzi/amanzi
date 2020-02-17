@@ -183,7 +183,9 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  S->RequireFieldCopy("prev_water_content", "wc_copy", "state");
+  if (S_->HasField("water_content")) {
+    S->RequireFieldCopy("prev_water_content", "wc_copy", "state");
+  }
   Amanzi::PK_MPCStrong<PK_BDF>::Initialize(S);
 }
   
