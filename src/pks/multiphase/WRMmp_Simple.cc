@@ -42,14 +42,14 @@ void WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRMmp_Simple::k_relative(double Sw, const std::string& phase)
+double WRMmp_Simple::k_relative(double Sw, int phase)
 {
   double Swe = 0.0;
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase == "liquid") {
+  if (phase == MULTIPHASE_PHASE_LIQUID) {
     return pow(Swe, 2.0);
   }
-  else if (phase == "gas") {
+  else if (phase == MULTIPHASE_PHASE_GAS) {
     return pow(1.0 - Swe, 2.0);
   }
 
@@ -60,15 +60,15 @@ double WRMmp_Simple::k_relative(double Sw, const std::string& phase)
 /* ******************************************************************
 * Derivative of relative permeability wrt liquid saturation. 
 ****************************************************************** */
-double WRMmp_Simple::dKdS(double Sw, const std::string& phase)
+double WRMmp_Simple::dKdS(double Sw, int phase)
 {
   double Swe = 0.0;
   double factor = 1.0/(1.0 - S_rw_ - S_rn_);
   Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  if (phase == "liquid") {
+  if (phase == MULTIPHASE_PHASE_LIQUID) {
     return 2.0 * Swe * factor;
   }
-  else if (phase == "gas") {
+  else if (phase == MULTIPHASE_PHASE_GAS) {
     return - 2.0 * (1.0 - Swe) * factor;
   }
 }

@@ -61,6 +61,9 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr,
     }
   }
 
+  // We use smooth linear extrapolation at ends points.
+  // Alternative regularization can be found in Adv Water Res., Vol 73, 2014, (E.Marchand, P.Knabner 
+  // "Results of the MoMaS benchmark for gas phase appearance and disappearance using generalized MHFE")
   if (reg_pc_ > 0.0) {
     double se0(reg_pc_), se1(1.0 - reg_pc_);
     spline_pc_.Setup(se0, capillaryPressure_(se0), dPc_dS_(se0),
@@ -72,10 +75,10 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr,
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
+double WRMmp_vanGenuchten::k_relative(double sl, int phase)
 {
   double sle = (sl - srl_) / (1.0 - srl_ - srg_);
-  if (phase == "liquid") {
+  if (phase == MULTIPHASE_PHASE_LIQUID) {
     if (sle <= 0.0) {
       return 0.0;
     } else if (sle >= 1.0) {
@@ -86,7 +89,7 @@ double WRMmp_vanGenuchten::k_relative(double sl, const std::string& phase)
       return k_relative_liquid_(sle);
     }
   }
-  else if (phase == "gas") {
+  else if (phase == MULTIPHASE_PHASE_GAS) {
     if (sle <= 0.0) {
       return 1.0;
     } else if (sle >= 1.0) {
@@ -113,10 +116,10 @@ double WRMmp_vanGenuchten::k_relative_gas_(double sle) {
 /* ******************************************************************
 * Derivative of relative permeability wrt liquid saturation
 ****************************************************************** */
-double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
+double WRMmp_vanGenuchten::dKdS(double sl, int phase)
 {
   double sle = (sl - srl_) / (1.0 - srl_ - srg_);
-  if (phase == "liquid") {
+  if (phase == MULTIPHASE_PHASE_LIQUID) {
     if (sle <= 0.0) {
       return 0.0;
     } else if (sle >= 1.0) {
@@ -127,7 +130,7 @@ double WRMmp_vanGenuchten::dKdS(double sl, const std::string& phase)
       return dKdS_liquid_(sle);
     }
   }
-  else if (phase == "gas") {
+  else if (phase == MULTIPHASE_PHASE_GAS) {
     if (sle <= 0.0) {
       return 0.0;
     } else if (sle >= 1.0) {

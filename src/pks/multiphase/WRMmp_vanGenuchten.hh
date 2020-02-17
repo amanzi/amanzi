@@ -33,10 +33,10 @@ class WRMmp_vanGenuchten : public WRMmp {
   ~WRMmp_vanGenuchten() {};
   
   // required methods from the base class
-  virtual double k_relative(double sl, const std::string& phase);
+  virtual double k_relative(double sl, int phase);
   virtual double capillaryPressure(double saturation);
   virtual double dPc_dS(double saturation);
-  virtual double dKdS(double sl, const std::string& phase);
+  virtual double dKdS(double sl, int phase);
 
  private:
   void Init_(double srw, double srn, double n, double Pr, double reg_kr, double reg_pc);

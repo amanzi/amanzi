@@ -45,7 +45,7 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  private:
   Teuchos::RCP<WRMmpPartition> wrm_;
  
-  std::string phase_name_;
+  int phase_;
   Key saturation_liquid_key_;
 };
 

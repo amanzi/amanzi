@@ -30,11 +30,12 @@ class WRMmp_Simple : public WRMmp {
   ~WRMmp_Simple() {};
   
   // required methods from the base class
-  double k_relative(double Sw, const std::string& phase);
-  double capillaryPressure(double saturation);
-  double dPc_dS(double saturation);
-  double dKdS(double Sw, const std::string& phase);
+  virtual double k_relative(double Sw, int phase);
+  virtual double capillaryPressure(double saturation);
+  virtual double dPc_dS(double saturation);
+  virtual double dKdS(double Sw, int phase);
 
+ private:
   void Init_(double S_rw, double S_rn, double coef);
 
  private:
@@ -43,7 +44,7 @@ class WRMmp_Simple : public WRMmp {
   static Utils::RegisteredFactory<WRMmp, WRMmp_Simple> factory_;
 };
 
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
  
 #endif

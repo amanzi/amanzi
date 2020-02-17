@@ -12,6 +12,7 @@
   Relative permeability as a function of liquid saturation.
 */
 
+#include "MultiphaseDefs.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "RelPermEvaluator.hh"
 
@@ -26,9 +27,14 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
   : SecondaryVariableFieldEvaluator(plist),
     wrm_(wrm)
 {
-  phase_name_ = plist.get<std::string>("phase name");
   my_key_ = plist.get<std::string>("my key");
   saturation_liquid_key_ = plist.get<std::string>("saturation key", "saturation_liquid");
+
+  std::string name = plist.get<std::string>("phase name");
+  if (name == "liquid")
+    phase_ = MULTIPHASE_PHASE_LIQUID;
+  else if (name == "gas")
+    phase_ = MULTIPHASE_PHASE_GAS;
 
   dependencies_.insert(saturation_liquid_key_);
 }
@@ -59,7 +65,7 @@ void RelPermEvaluator::EvaluateField_(
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(sat_c[0][c], phase_name_);
+    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(sat_c[0][c], phase_);
   }
 }
 
@@ -77,7 +83,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dKdS(sat_c[0][c], phase_name_);
+    result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dKdS(sat_c[0][c], phase_);
   }
 }
 

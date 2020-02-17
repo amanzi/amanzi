@@ -25,11 +25,11 @@ class WRMmp {
   WRMmp() {};
   virtual ~WRMmp() {};
 
-  virtual double k_relative(double Sw, const std::string& phase_name) = 0;
+  virtual double k_relative(double Sw, int phase) = 0;
   virtual double capillaryPressure(double s) = 0;
   virtual double dPc_dS(double s) = 0;
   virtual double dKdPc(double pc) { return 0.0; }
-  virtual double dKdS(double Sw, const std::string& phase_name) = 0;
+  virtual double dKdS(double Sw, int phase) = 0;
 };
 
 }  // namespace Flow
