@@ -31,7 +31,7 @@ void Transport_PK::CreateDefaultState(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
 {
   std::string name("state"); 
-  S_->RequireScalar("fluid_density", name);
+  S_->RequireScalar("const_fluid_density", name);
 
   if (!S_->HasField(saturation_liquid_key_)) {
     S_->RequireField(saturation_liquid_key_, name)->SetMesh(mesh)->SetGhosted(true)
@@ -61,8 +61,8 @@ void Transport_PK::CreateDefaultState(
   S_->Setup();
  
   // set popular default values
-  *(S_->GetScalarData("fluid_density", name)) = 1000.0;
-  S_->GetField("fluid_density", name)->set_initialized();
+  *(S_->GetScalarData("const_fluid_density", name)) = 1000.0;
+  S_->GetField("const_fluid_density", name)->set_initialized();
 
   S_->GetFieldData(saturation_liquid_key_, name)->PutScalar(1.0);
   S_->GetField(saturation_liquid_key_, name)->set_initialized();

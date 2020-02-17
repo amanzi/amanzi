@@ -292,10 +292,10 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">

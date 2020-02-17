@@ -79,7 +79,6 @@ class SuperMapLumped {
   // sum(NumDofs(comp) for comp in components), in this array.
   std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
 
- protected:
   // meta-data accessors
   int Offset(const std::string& compname) const { return offsets_.at(compname); }
   int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
@@ -88,6 +87,7 @@ class SuperMapLumped {
     return counts_.at(compname) + ghosted_counts_.at(compname); }
   int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
 
+ protected:
   // iterate over compnames
   typedef std::vector<std::string>::const_iterator name_iterator;
   name_iterator begin() const { return compnames_.begin(); }

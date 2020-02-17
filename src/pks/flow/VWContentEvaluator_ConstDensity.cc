@@ -57,7 +57,7 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
   const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
 
-  double rho = *S->GetScalarData("fluid_density");
+  double rho = *S->GetScalarData("const_fluid_density");
   double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
@@ -99,7 +99,7 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
   const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
   const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
 
-  double rho = *S->GetScalarData("fluid_density");
+  double rho = *S->GetScalarData("const_fluid_density");
   double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");

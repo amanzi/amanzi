@@ -233,8 +233,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity
-  if (!S->HasField("fluid_viscosity")) {
-    S->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("const_fluid_viscosity")) {
+    S->RequireScalar("const_fluid_viscosity", passwd_);
   }
 
   // -- effective fracture permeability
@@ -376,7 +376,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize diffusion operator and solver.
   // -- instead of scaling K, we scale the elemental mass matrices 
-  double mu = *S->GetScalarData("fluid_viscosity");
+  double mu = *S->GetScalarData("const_fluid_viscosity");
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
@@ -454,7 +454,7 @@ void Darcy_PK::InitializeFields_()
 void Darcy_PK::InitializeStatistics_(bool init_darcy)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    double mu = *S_->GetScalarData("fluid_viscosity");
+    double mu = *S_->GetScalarData("const_fluid_viscosity");
     std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
     std::string ts_name = (ti_name == "BDF1") ? ti_list_->sublist(ti_name).get<std::string>("timestep controller type") 
                                               : "timestep controller is not defined";

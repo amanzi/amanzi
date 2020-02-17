@@ -109,11 +109,11 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  S->GetField("const_fluid_density", "flow")->set_initialized();
 
-  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  S->GetField("fluid_viscosity", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
+  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
@@ -234,11 +234,11 @@ void Run_3D_DarcyWell(std::string controller) {
   S->GetField("permeability", "flow")->set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  S->GetField("const_fluid_density", "flow")->set_initialized();
 
-  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  S->GetField("fluid_viscosity", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
+  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
@@ -336,11 +336,11 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   S->GetField("permeability", "flow")->set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  S->GetField("const_fluid_density", "flow")->set_initialized();
 
-  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  S->GetField("fluid_viscosity", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
+  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");

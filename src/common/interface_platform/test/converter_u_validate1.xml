@@ -222,10 +222,10 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80665e+00}"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.002e-03"/>
       </ParameterList>
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="permeability">
