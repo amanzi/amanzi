@@ -471,6 +471,13 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         pk_master_["energy"] = true;
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 8;
+
+      } else if (strcmp(tagname, "multiphase") == 0) {
+        GetAttributeValueS_(jnode, "state", "on");
+        model = GetAttributeValueS_(jnode, "model");
+        pk_model_["multiphase"] = model;
+        pk_master_["multiphase"] = true;
+        transient_model += 16;
       } 
     }
 
@@ -538,6 +545,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       pk_master_["thermal richards"] = true;
       PopulatePKTree_(pk_tree_list, "flow and energy");
       break;
+    case 16: 
+      pk_master_["multiphase"] = true;
+      PopulatePKTree_(pk_tree_list, "multiphase");
+      break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
     }
@@ -585,6 +596,9 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "energy") {
     pk_tree.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
+  }
+  else if (pk_name == "multiphase") {
+    pk_tree.sublist("multiphase").set<std::string>("PK type", pk_model_["multiphase"]);    
   }
   else if (pk_name == "coupled flow") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow");
@@ -852,6 +866,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       }
       else if (it->first == "chemistry fracture") {
         out_list.sublist(it->first) = TranslateChemistry_("fracture");
+      }
+      // -- multiphase PKs
+      else if (it->first == "multiphase") {
+        out_list.sublist(it->first) = TranslateMultiphase_("matrix");
       }
       // -- coupled PKs
       else if (it->first == "coupled flow") {

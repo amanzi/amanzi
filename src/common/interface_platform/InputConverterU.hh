@@ -125,7 +125,7 @@ class InputConverterU : public InputConverter {
 
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
-  Teuchos::ParameterList TranslateWRM_();
+  Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
@@ -134,6 +134,7 @@ class InputConverterU : public InputConverter {
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_(const std::string& domain);
+  Teuchos::ParameterList TranslateMolecularDiffusion_();
   Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_(const std::string& domain);
   void TranslateTransportBCsGroup_(
@@ -157,6 +158,10 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();
+
+  // -- multiphase
+  Teuchos::ParameterList TranslateMultiphase_(const std::string& domain);
+  Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- mpc pks
   bool coupled_flow_, coupled_transport_;

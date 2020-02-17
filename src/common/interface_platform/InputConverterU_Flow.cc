@@ -91,7 +91,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
         .set<std::string>("limiter", "Barth-Jespersen");
     flow_list = &out_list;
 
-    out_list.sublist("water retention models") = TranslateWRM_();
+    out_list.sublist("water retention models") = TranslateWRM_("flow");
     out_list.sublist("porosity models") = TranslatePOM_();
     if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
@@ -204,7 +204,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 /* ******************************************************************
 * Create list of water retention models.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateWRM_()
+Teuchos::ParameterList InputConverterU::TranslateWRM_(const std::string& pk_name)
 {
   Teuchos::ParameterList out_list;
 
@@ -266,11 +266,17 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
       wrm_list.set<std::string>("water retention model", "van Genuchten")
           .set<Teuchos::Array<std::string> >("regions", regions)
           .set<double>("van Genuchten m", m)
+          .set<double>("van Genuchten n", 1.0 / (1 - m))
           .set<double>("van Genuchten l", ell)
           .set<double>("van Genuchten alpha", alpha)
           .set<double>("residual saturation", sr)
-          .set<double>("regularization interval", krel_smooth)
           .set<std::string>("relative permeability model", rel_perm);
+      if (pk_name == "flow") {
+        wrm_list.set<double>("regularization interval", krel_smooth);
+      } else if (pk_name == "multiphase") {
+        wrm_list.set<double>("regularization interval kr", krel_smooth)
+                .set<double>("regularization interval pc", krel_smooth);
+      }
       
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         Teuchos::ParameterList& file_list = wrm_list.sublist("output");

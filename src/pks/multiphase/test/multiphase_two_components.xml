@@ -61,22 +61,12 @@
     </ParameterList>
 
     <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
-    <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
       <Parameter name="global solve" type="bool" value="true"/>
       <Parameter name="correction blocks" type="Array(int)" value="{0}"/>
-      <Parameter name="preconditioner" type="Array(string)" value="{Hypre AMG, Hypre AMG}"/>
-    </ParameterList>
-
-    <ParameterList name="constraints">
-      <ParameterList name="operators">
-        <ParameterList name="advection operator">
-          <Parameter name="discretization primary" type="string" value="upwind"/>
-          <Parameter name="reconstruction order" type="int" value="0"/>
-        </ParameterList>
-      </ParameterList>
+      <Parameter name="preconditioner" type="Array(string)" value="{Hypre AMG}"/>
     </ParameterList>
 
     <ParameterList name="water retention models">
