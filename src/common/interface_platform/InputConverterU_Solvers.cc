@@ -95,6 +95,13 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     }
   }
 
+  // direct solver
+  Teuchos::ParameterList& amesos_list = out_list.sublist("AMESOS");
+  amesos_list.set<std::string>("direct method", "amesos");
+  amesos_list.sublist("amesos parameters")
+      .template set<std::string>("solver name", "basker")
+      .template set<int>("amesos version", 2);
+
   return out_list;
 }
 

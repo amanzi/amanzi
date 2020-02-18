@@ -269,7 +269,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_(const std::string& pk_name
           .set<double>("van Genuchten n", 1.0 / (1 - m))
           .set<double>("van Genuchten l", ell)
           .set<double>("van Genuchten alpha", alpha)
-          .set<double>("residual saturation", sr)
+          .set<double>("residual saturation liquid", sr)
           .set<std::string>("relative permeability model", rel_perm);
       if (pk_name == "flow") {
         wrm_list.set<double>("regularization interval", krel_smooth);
@@ -301,7 +301,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_(const std::string& pk_name
           .set<double>("Brooks Corey lambda", lambda)
           .set<double>("Brooks Corey alpha", alpha)
           .set<double>("Brooks Corey l", ell)
-          .set<double>("residual saturation", sr)
+          .set<double>("residual saturation liquid", sr)
           .set<double>("regularization interval", krel_smooth)
           .set<std::string>("relative permeability model", rel_perm);
 
@@ -504,7 +504,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
           .set<double>("van Genuchten m", m)
           .set<double>("van Genuchten l", ell)
           .set<double>("van Genuchten alpha", alpha)
-          .set<double>("residual saturation", sr)
+          .set<double>("residual saturation liquid", sr)
           .set<std::string>("relative permeability model", rel_perm);
     } else if (strcmp(model.c_str(), "brooks_corey")) {
       double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
@@ -515,7 +515,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
           .set<double>("Brooks Corey lambda", lambda)
           .set<double>("Brooks Corey alpha", alpha)
           .set<double>("Brooks Corey l", ell)
-          .set<double>("residual saturation", sr)
+          .set<double>("residual saturation liquid", sr)
           .set<std::string>("relative permeability model", rel_perm);
     }
   }

@@ -652,6 +652,7 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{9.89062549999999985e-02}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -795,6 +796,13 @@
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

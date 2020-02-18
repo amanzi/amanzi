@@ -358,14 +358,15 @@ Teuchos::ParameterList InputConverterU::TranslateMolecularDiffusion_()
     }
   }
 
-  out_list.set<Teuchos::Array<std::string> >("primary component names", aqueous_names);
   out_list.set<Teuchos::Array<std::string> >("aqueous names", aqueous_names);
-  out_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
   out_list.set<Teuchos::Array<double> >("aqueous values", aqueous_values);
-  out_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
   out_list.set<Teuchos::Array<double> >("molar masses", molar_masses);
-  out_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
-  out_list.set<Teuchos::Array<double> >("Henry dimensionless constants", henry_coef);
+  if (gaseous_names.size() > 0) {
+    out_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
+    out_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
+    out_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
+    out_list.set<Teuchos::Array<double> >("Henry dimensionless constants", henry_coef);
+  }
 
   return out_list;
 }

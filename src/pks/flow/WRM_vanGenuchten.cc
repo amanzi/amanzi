@@ -33,7 +33,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(Teuchos::ParameterList& plist)
   double m = plist.get<double>("van Genuchten m", FLOW_WRM_EXCEPTION);
   double alpha = plist.get<double>("van Genuchten alpha", FLOW_WRM_EXCEPTION);
   double l = plist.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
-  double sr = plist.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+  double sr = plist.get<double>("residual saturation liquid", FLOW_WRM_EXCEPTION);
   double pc0 = plist.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
   std::string krel_function = plist.get<std::string>("relative permeability model", "Mualem");
 

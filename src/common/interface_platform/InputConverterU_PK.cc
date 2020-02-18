@@ -104,6 +104,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
     solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
     solver->set<bool>("modify correction", modify_correction);
+    solver->set<std::string>("monitor", "monitor update");
   }
   else if (nonlinear_solver == "nka") {
     bdf1.set<std::string>("solver type", "nka");

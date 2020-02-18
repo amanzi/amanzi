@@ -53,7 +53,7 @@
     <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="primary component names" type="Array(string)" value="{H2}"/>
+      <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
@@ -77,7 +77,7 @@
         <Parameter name="van Genuchten m" type="double" value="0.32886"/>
         <Parameter name="van Genuchten n" type="double" value="1.49"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
-        <Parameter name="van Genuchten entry pressure" type="double" value="2.0e6"/>
+        <Parameter name="van Genuchten alpha" type="double" value="5.0e-7"/>
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>

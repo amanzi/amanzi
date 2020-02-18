@@ -56,7 +56,7 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
   // liquid molar fraction is the primary solution
   if (!S->HasField(molar_density_liquid_key_)) {
     component_names_ = mp_list_->sublist("molecular diffusion")
-       .get<Teuchos::Array<std::string> >("primary component names").toVector();
+       .get<Teuchos::Array<std::string> >("aqueous names").toVector();
     std::vector<std::vector<std::string> > subfield_names(1);
     subfield_names[0] = component_names_;
 

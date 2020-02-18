@@ -637,6 +637,7 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tritium}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{0.0}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -703,6 +704,7 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tritium}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{0.0}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -773,6 +775,13 @@
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

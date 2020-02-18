@@ -116,7 +116,7 @@
           <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
           <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
-          <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="150.00000000000000000e+00"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">

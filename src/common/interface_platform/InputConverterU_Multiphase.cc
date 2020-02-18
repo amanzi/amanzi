@@ -22,9 +22,11 @@ namespace AmanziInput {
 /* ******************************************************************
 * Create multiphase list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateMultiphase_(const std::string& domain)
+Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
+    const std::string& domain, Teuchos::ParameterList& state_list)
 {
   Teuchos::ParameterList out_list;
+  multiphase_ = true;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating multiphase, domain=" << domain << std::endl;
@@ -83,6 +85,47 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(const std::string& 
   out_list.sublist("operators").sublist("advection operator")
       .set<std::string>("discretization primary", "upwind")
       .set<int>("reconstruction order", 0);
+
+  // additional state list
+  auto& fic = state_list.sublist("initial conditions");
+  auto& fev = state_list.sublist("field evaluators");
+
+  // -- density
+  auto& tmp = fev.sublist("molar_density_gas");
+  tmp.set<std::string>("field evaluator type", "eos")
+     .set<std::string>("eos basis", "molar")
+     .set<std::string>("molar density key", "molar_density_gas")
+     .set<std::string>("pressure key", "pressure_gas");
+  tmp.sublist("EOS parameters")
+     .set<std::string>("eos type", "ideal gas")
+     .set<double>("molar mass of gas", 28.9647e-03);  // dry air (not used ?)
+
+  AddIndependentFieldEvaluator_(fev, "molar_density_liquid", "All", rho_ / MOLAR_MASS_WATER);
+
+  // -- viscosity
+  double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
+  AddIndependentFieldEvaluator_(fev, "viscosity_liquid", "All", viscosity);
+
+  // -- diffusion
+  auto diff = out_list.sublist("molecular diffusion").get<Teuchos::Array<double> >("aqueous values").toVector();
+  AddIndependentFieldEvaluator_(fev, "molecular_diff_liquid", "All", diff[0]);
+
+  diff = out_list.sublist("molecular diffusion").get<Teuchos::Array<double> >("gaseous values").toVector();
+  AddIndependentFieldEvaluator_(fev, "molecular_diff_gas", "All", diff[0]);
+
+  // -- pressure
+  fic.sublist("pressure_liquid") = fic.sublist("pressure");
+  fic.remove("pressure");
+
+  // -- saturation
+  fic.sublist("saturatiob_liquid") = fic.sublist("saturation");
+  fic.remove("saturation");
+
+  // -- temperature
+  fev.sublist("temperature") = fic.sublist("temperature");
+  fev.sublist("temperature")
+     .set<std::string>("field evaluator type", "independent variable");
+  fic.remove("temperature");
 
   return out_list;
 }

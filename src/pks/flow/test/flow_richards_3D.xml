@@ -141,7 +141,7 @@
 	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
 	  <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
 	  <Parameter name="van Genuchten m" type="double" value="0.5"/>
-	  <Parameter name="residual saturation" type="double" value="0.1"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.1"/>
 	</ParameterList>
 	<ParameterList name="WRM for Material 2">
 	  <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
@@ -150,7 +150,7 @@
 	  <Parameter name="Brooks Corey lambda" type="double" value="1.0"/>
 	  <Parameter name="Brooks Corey l" type="double" value="0.3"/>
 	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
-	  <Parameter name="residual saturation" type="double" value="0.1"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.1"/>
 	</ParameterList>
       </ParameterList>
 

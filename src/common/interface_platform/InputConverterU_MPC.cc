@@ -803,7 +803,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 /* ******************************************************************
 * Translate PKs list
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterList& cd_list)
+Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 {
   Teuchos::ParameterList out_list;
 
@@ -815,7 +815,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   DOMNode* node;
 
   // create PKs list
-  Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
+  Teuchos::ParameterList tp_list = glist.sublist("cycle driver").sublist("time periods");
 
   for (auto it = tp_list.begin(); it != tp_list.end(); ++it) {
     if ((it->second).isList()) {
@@ -869,7 +869,8 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       }
       // -- multiphase PKs
       else if (it->first == "multiphase") {
-        out_list.sublist(it->first) = TranslateMultiphase_("matrix");
+        auto& tmp = glist.sublist("state");
+        out_list.sublist(it->first) = TranslateMultiphase_("matrix", tmp);
       }
       // -- coupled PKs
       else if (it->first == "coupled flow") {

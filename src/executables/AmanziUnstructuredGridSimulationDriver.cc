@@ -52,6 +52,7 @@
 #include "pks_energy_registration.hh"
 #include "pks_multiphase_registration.hh"
 #include "wrm_flow_registration.hh"
+#include "wrmmp_registration.hh"
 
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)

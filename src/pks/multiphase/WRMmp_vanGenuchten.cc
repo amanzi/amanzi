@@ -29,12 +29,13 @@ namespace Multiphase {
 WRMmp_vanGenuchten::WRMmp_vanGenuchten(Teuchos::ParameterList& plist)
 {
   double srl = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
-  double srg = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
+  double srg = plist.get<double>("residual saturation gas", 0.0);
   double n = plist.get<double>("van Genuchten n", MULTIPHASE_WRM_EXCEPTION);
-  double Pr = plist.get<double>("van Genuchten entry pressure", MULTIPHASE_WRM_EXCEPTION);
+  double alpha = plist.get<double>("van Genuchten alpha", MULTIPHASE_WRM_EXCEPTION);
   double reg_kr = plist.get<double>("regularization interval kr", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
   double reg_pc = plist.get<double>("regularization interval pc", MULTIPHASE_WRM_REGULARIZATION_INTERVAL);
 
+  double Pr = 1.0 / alpha;
   Init_(srl, srg, n, Pr, reg_kr, reg_pc);
 }
 

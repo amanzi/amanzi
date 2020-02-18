@@ -139,7 +139,7 @@
 	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
 	  <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
 	  <Parameter name="van Genuchten m" type="double" value="0.31138"/>
-	  <Parameter name="residual saturation" type="double" value="0.074"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.074"/>
 	</ParameterList>
       </ParameterList>
 

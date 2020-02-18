@@ -380,6 +380,13 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="flow steady">
@@ -408,9 +415,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
           <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.29769011160134973e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.9467e-04"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
@@ -422,9 +430,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
           <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.27161749745676511e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
@@ -436,9 +445,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
           <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.42979696883042595e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
@@ -672,7 +682,8 @@
       </ParameterList>
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>
-        <Parameter name="aqueous values" type="Array(double)" value="{1.00000000000000006e-09}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{9.89062549999999985e-02}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -770,9 +781,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
           <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.29769011160134973e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.9467e-04"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
@@ -784,9 +796,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
           <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.27161749745676511e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
@@ -798,9 +811,10 @@
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
           <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.42979696883042595e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
