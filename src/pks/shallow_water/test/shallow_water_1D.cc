@@ -57,7 +57,7 @@ TEST(SHALLOW_WATER_1D) {
     if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
     RCP<const Mesh> mesh;
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1, request_faces,
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 2.0, 10, 2, request_faces,
 			   request_edges);
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 

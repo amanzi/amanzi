@@ -33,6 +33,8 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 
+#include "WhetStoneMeshUtils.hh"
+
 namespace Amanzi {
 namespace ShallowWater {
     
@@ -80,6 +82,8 @@ class ShallowWater_PK : public PK_Physical,
     std::vector<double> PhysFlux_y(std::vector<double>);
                             
     std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
+
+    std::vector<double> NumFlux_xn(std::vector<double> UL,std::vector<double> UR, Amanzi::AmanziGeometry::Point normal);
 
     std::vector<double> NumFlux_y(std::vector<double>,std::vector<double>);
 

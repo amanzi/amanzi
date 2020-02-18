@@ -59,7 +59,6 @@ namespace ShallowWater {
         Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
         Epetra_MultiVector& vy_vec_c_old(h_vec_c);
 
-
         // Shallow water equations have the form
          // U_t + F_x(U) + G_y(U) = Sr(U)
 
@@ -81,14 +80,20 @@ namespace ShallowWater {
       		 // mesh sizes
       		 double dx, dy;
 
-      		 Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
+      		 Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
 
       		 mesh_->cell_get_edges(c,&cedges);
+      		 mesh_->cell_get_faces(c,&cfaces,true);
 
-			 //    	for (int i = 0; i < cedges.size(); i++) {
-			 //        	std::cout << cedges[i] << " "<< mesh->edge_length(i) << " ";
-			 //    	}
-			 //    	std::cout << std::endl;
+      		 Amanzi::AmanziMesh::Entity_ID_List adjcells;
+			 mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
+			 unsigned int nadj = adjcells.size();
+
+      		 Amanzi::AmanziGeometry::Point evec(2), normal(2);
+      		 double farea;
+
+//      		 std::cout << "------------------" << std::endl;
+//      		 std::cout << "c = " << c << std::endl;
 
       		 dx = mesh_->edge_length(0);
       		 dy = mesh_->edge_length(1);
@@ -96,42 +101,143 @@ namespace ShallowWater {
       		 // cell volume
       		 double vol = mesh_->cell_volume(c);
 
-//      		 std::cout << "dx = " << dx << ", dy = " << dy << ", vol = " << vol << std::endl;
-
-             std::vector<double> FL, FR;  // fluxes
+             std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
              std::vector<double> S;       // source term
              std::vector<double> UL, UR, U;  // data for the fluzes
              
              UL.resize(3);
              UR.resize(3);
              
+             FS.resize(3);
+
+             FNum.resize(3);
+
+             for (int i = 0; i < 3; i++) FS[i] = 0.;
+
+             for (int f = 0; f < cfaces.size(); f++) {
+
+				 int orientation;
+				 normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+				 mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+				 farea = mesh_->face_area(cfaces[f]);
+
+				 double vn, vt;
+
+				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
+				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
+
+				 UL[0] = h_vec_c[0][c];
+				 UL[1] = h_vec_c[0][c]*vn; //vx_vec_c[0][c];
+				 UL[2] = h_vec_c[0][c]*vt; //vy_vec_c[0][c];
+
+				 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+
+//				 std::cout << "c = " << c << ", cn = " << cn << std::endl;
+
+//				 std::cout << "face = " << f << std::endl;
+
+				 if (cn == -1) {
+ 					 UR[0] = UL[0];
+ 					 UR[1] = UL[1];
+ 					 UR[2] = UL[2];
+				 }
+				 else {
+					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
+					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
+ 					 UR[0] = h_vec_c[0][cn];
+ 					 UR[1] = h_vec_c[0][cn]*vn; //vx_vec_c[0][cn];
+ 					 UR[2] = h_vec_c[0][cn]*vt; //vy_vec_c[0][cn];
+				 }
+
+				 normal[0] /= farea; normal[1] /= farea;
+//				 std::cout << "normal = " << normal << std::endl;
+
+//				 for (int i = 0; i < 3; i++) {
+//					 std::cout << "UL[i] = " << UL[i] << std::endl;
+//				 }
+//
+//				 for (int i = 0; i < 3; i++) {
+//					 std::cout << "UR[i] = " << UR[i] << std::endl;
+//				 }
+
+				 FNum_rot = NumFlux_x(UL,UR);
+
+//				 for (int i = 0; i < 3; i++) {
+//					 std::cout << "FNum_rot[i] = " << FNum_rot[i] << std::endl;
+//				 }
+
+				 FNum[0] = FNum_rot[0];
+				 FNum[1] = FNum_rot[1]*normal[0] - FNum_rot[2]*normal[1];
+				 FNum[2] = FNum_rot[1]*normal[1] + FNum_rot[2]*normal[0];
+
+//				 for (int i = 0; i < 3; i++) {
+//					 std::cout << "FNum[i] = " << FNum[i] << std::endl;
+//				 }
+
+//				 std::cout << "farea = " << farea << std::endl;
+
+				 for (int i = 0; i < 3; i++) {
+					 FS[i] += FNum[i]*farea;
+				 }
+
+             } // faces
+
+             UR[0] = h_vec_c[0][c];
+             UR[1] = h_vec_c[0][c]*vx_vec_c[0][c];
+             UR[2] = h_vec_c[0][c]*vy_vec_c[0][c];
              if (c == 0) {
-            	 UL[0] = 10.;
-            	 UL[1] = 10.;
-            	 UL[2] = 0.;
+//            	 UL[0] = 10.;
+//            	 UL[1] = 10.;
+//            	 UL[2] = 0.;
+            	 UL[0] = UR[0];
+            	 UL[1] = UR[1];
+            	 UL[2] = UR[2];
              }
              else {
 				 UL[0] = h_vec_c[0][c-1];
 				 UL[1] = h_vec_c[0][c-1]*vx_vec_c[0][c-1];
 				 UL[2] = h_vec_c[0][c-1]*vy_vec_c[0][c-1];
              }
-             UR[0] = h_vec_c[0][c];
-             UR[1] = h_vec_c[0][c]*vx_vec_c[0][c];
-             UR[2] = h_vec_c[0][c]*vy_vec_c[0][c];
              FL = NumFlux_x(UL,UR);
-             
+
+//             for (int i = 0; i < 3; i++) {
+//				 std::cout << "UL[i] = " << UL[i] << std::endl;
+//			 }
+//
+//			 for (int i = 0; i < 3; i++) {
+//				 std::cout << "UR[i] = " << UR[i] << std::endl;
+//			 }
+//
+//             for (int i = 0; i < 3; i++) {
+//				 std::cout << "FL[i] = " << FL[i] << std::endl;
+//			 }
+
              UL[0] = h_vec_c[0][c];
 			 UL[1] = h_vec_c[0][c]*vx_vec_c[0][c];
 			 UL[2] = h_vec_c[0][c]*vy_vec_c[0][c];
 			 if (c == ncells_owned-1) {
-
-			 }
-			 else {
 				 UR[0] = UL[0];
 				 UR[1] = UL[1];
 				 UR[2] = UL[2];
 			 }
+			 else {
+				 UR[0] = h_vec_c[0][c+1];
+				 UR[1] = h_vec_c[0][c+1]*vx_vec_c[0][c+1];
+				 UR[2] = h_vec_c[0][c+1]*vy_vec_c[0][c+1];
+			 }
              FR = NumFlux_x(UL,UR);
+
+//             for (int i = 0; i < 3; i++) {
+//				 std::cout << "UL[i] = " << UL[i] << std::endl;
+//			 }
+//
+//			 for (int i = 0; i < 3; i++) {
+//				 std::cout << "UR[i] = " << UR[i] << std::endl;
+//			 }
+//
+//             for (int i = 0; i < 3; i++) {
+//				 std::cout << "FR[i] = " << FR[i] << std::endl;
+//			 }
 
              U.resize(3);
 
@@ -141,7 +247,9 @@ namespace ShallowWater {
              S = NumSrc(U);
 
              for (int i = 0; i < 3; i++) {
-            	 U_new[i] = U[i] - dt/dx*(FR[i]-FL[i]) + dt/vol*S[i];
+//            	 U_new[i] = U[i] - dt/dx*(FR[i]-FL[i]) + dt*S[i];
+            	 U_new[i] = U[i] - dt/vol*FS[i] + dt*S[i];
+//                 std::cout << "FS[i] = " << dt/vol*FS[i] << ", FR[i]-FL[i] = " << dt/dx*(FR[i]-FL[i]) << std::endl;
              }
 
              h_vec_c[0][c]  = U_new[0];
@@ -327,8 +435,8 @@ namespace ShallowWater {
         
         double SL, SR, Smax;
 
-        SL = std::max(uL + std::sqrt(g*hL),vL + std::sqrt(g*hL));
-        SR = std::max(uR + std::sqrt(g*hR),vR + std::sqrt(g*hR));
+        SL = std::max(std::fabs(uL) + std::sqrt(g*hL),std::fabs(vL) + std::sqrt(g*hL));
+        SR = std::max(std::fabs(uR) + std::sqrt(g*hR),std::fabs(vR) + std::sqrt(g*hR));
 
         Smax = std::max(SL,SR);
 
@@ -339,6 +447,39 @@ namespace ShallowWater {
         return F;
     }
     
+    std::vector<double> ShallowWater_PK::NumFlux_xn(std::vector<double> UL,std::vector<double> UR, Amanzi::AmanziGeometry::Point normal) {
+        std::vector<double> FL, FR, F;
+
+        double hL, uL, vL, hR, uR, vR, g = 9.81;
+
+		// SW conservative variables: (h, hu, hv)
+		hL = UL[0];
+		uL = UL[1]/UL[0];
+		vL = UL[2]/UL[0];
+
+		hR = UR[0];
+		uR = UR[1]/UR[0];
+		vR = UR[2]/UR[0];
+
+        F.resize(3);
+
+        FL = PhysFlux_x(UL);
+        FR = PhysFlux_x(UR);
+
+        double SL, SR, Smax;
+
+        SL = std::max(uL + std::sqrt(g*hL),vL + std::sqrt(g*hL));
+        SR = std::max(uR + std::sqrt(g*hR),vR + std::sqrt(g*hR));
+
+        Smax = std::max(SL,SR);
+
+        for (int i = 0; i < 3; i++) {
+            F[i] = 0.5*(FL[i]+FR[i]) - 0.5*Smax*(UR[i]-UL[i]);
+        }
+
+        return F;
+    }
+
     std::vector<double> ShallowWater_PK::NumFlux_y(std::vector<double> UL,std::vector<double> UR) {
         std::vector<double> GL, GR, G;
 
