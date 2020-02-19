@@ -42,7 +42,7 @@ When hydraulic head is prescribed at both boundaries as
 the analytic solution :eq:`generalSoln` for hydraulic head in each subregion (:math:`h_i`, [L]) becomes
 
 	.. math:: 
-		h_i &= (h_L - h_0) \frac{x}{L} + h_0, i=1,2
+		h_i = (h_L - h_0) \frac{x}{L} + h_0, i=1,2
 		:label: specificSoln_materials_parallel
 
 where :math:`L` = domain length [L]. The volumetric flowrate per unit area through a porous medium, 
@@ -57,7 +57,7 @@ where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
 Applying Equation :eq:`DarcyVel_materials_parallel` to each subregion using Equation :eq:`specificSoln_materials_parallel` yields
 
 	.. math:: 
-		U_i &= K_i\frac{h_0 - h_L}{L}, i=1,2
+		U_i = K_i\frac{h_0 - h_L}{L}, i=1,2
 		:label: specificDarcyVel_materials_parallel
 
 Note that the hydraulic head and Darcy velocity in each subregion are independent of the properties of
