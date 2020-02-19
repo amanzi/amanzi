@@ -70,7 +70,7 @@ add_amanzi_library(multiphase
 # Install Targets
 #
 set(multiphase_inc_files 
-  Multipahase_PK.hh
+  Multiphase_PK.hh
   MultiphaseModelI_PK.hh MultiphaseTwoComponents_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
