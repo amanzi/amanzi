@@ -107,10 +107,16 @@ void ObservableAqueous::ComputeObservation(
   //double volume, value;
   Errors::Message msg;
   int dim = mesh_->space_dimension();
-  double rho = *S.GetScalarData("const_fluid_density");
-  const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
-  const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
+  double rho = *S.GetScalarData("fluid_density");
+  Key head_key = Keys::getKey(domain_, "hydraulic_head");
+  Key poro_key = Keys::getKey(domain_, "porosity");
+  Key sat_key = Keys::getKey(domain_, "saturation_liquid");
+  Key pressure_key = Keys::getKey(domain_, "pressure");
+  Key perm_key =Keys::getKey(domain_, "permeability");    
+  
+  const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
+  const Epetra_MultiVector& ws = *S.GetFieldData(sat_key)->ViewComponent("cell");
+  const Epetra_MultiVector& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
   
   unit = "";
 
@@ -122,11 +128,13 @@ void ObservableAqueous::ComputeObservation(
       *value  += porosity[0][c] * ws[0][c] * vol;
     }
   } else if (variable_ == "gravimetric water content") {
-    if (!S.HasField("particle_density")) {
+    Key pd_key = Keys::getKey(domain_, "particle_density");
+    if (!S.HasField(pd_key)) {
       msg << "Observation \""  << variable_ << "\" requires field \"particle_density\".\n";
       Exceptions::amanzi_throw(msg);
     }
-    const Epetra_MultiVector& pd = *S.GetFieldData("particle_density")->ViewComponent("cell");    
+    
+    const Epetra_MultiVector& pd = *S.GetFieldData(pd_key)->ViewComponent("cell");    
   
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -154,7 +162,7 @@ void ObservableAqueous::ComputeObservation(
       *value  += ws[0][c] * vol;
     }    
   } else if (variable_ == "hydraulic head") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
  
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -164,8 +172,8 @@ void ObservableAqueous::ComputeObservation(
     }
     unit = "m";
   } else if (variable_ == "permeability-weighted hydraulic head") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
-    const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
+    const Epetra_MultiVector& perm = *S.GetFieldData(perm_key)->ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -176,7 +184,7 @@ void ObservableAqueous::ComputeObservation(
     }
     unit = "m";
   } else if (variable_ == "drawdown") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -191,8 +199,8 @@ void ObservableAqueous::ComputeObservation(
     //   *value = od.begin()->(*value) * (*volume) - (*value);
     // }
   } else if (variable_ == "permeability-weighted drawdown") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
-    const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
+    const Epetra_MultiVector& perm = *S.GetFieldData(perm_key)->ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -211,31 +219,46 @@ void ObservableAqueous::ComputeObservation(
              variable_ == "aqueous volumetric flow rate") {
     double density(1.0);
     if (variable_ == "aqueous mass flow rate") density = rho;
-    const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
-
+    Key darcy_flux_key = Keys::getKey(domain_, "darcy_flux");
+    Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
+    const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_flux_key)->ViewComponent("face");
+    if (domain_ == "fracture")
+      aperture_rcp = S.GetFieldData("fracture-aperture")->ViewComponent("cell");
+    const auto& fmap = *S.GetFieldData(darcy_flux_key)->Map().Map("face", true);
+    Amanzi::AmanziMesh::Entity_ID_List cells;
+    
     if (obs_boundary_) { // observation is on a boundary set
-      Amanzi::AmanziMesh::Entity_ID_List cells;
-
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
         mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
 
-        int sign, c = cells[0];
+	int sign, c = cells[0];
         const auto& normal = mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
-
-        *value  += sign * darcy_flux[0][f] * density;
-        *volume += area;
+        int g = fmap.FirstPointInElement(f);
+        double scale = 1.;
+        if (domain_ == "fracture")
+          scale = (*aperture_rcp)[0][c];
+            
+        *value  += sign * darcy_flux[0][g] * density * scale;
+        *volume += area * scale;
       }
     } else if (obs_planar_) {  // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f);
-        double area = mesh_->face_area(f);
+        int g = fmap.FirstPointInElement(f);        
+        double area = mesh_->face_area(g);
         double sign = reg_normal_ * face_normal / area;
+        double scale = 1.;
+        if (domain_ == "fracture"){
+          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+          int c = cells[0];
+          scale = (*aperture_rcp)[0][c];
+        }
     
-        *value  += sign * darcy_flux[0][f] * density;
-        *volume += area;
+        *value  += sign * darcy_flux[0][g] * density * scale;
+        *volume += area * scale;
       }
     } else {
       msg << "Observations of \"aqueous mass flow rate\" and \"aqueous volumetric flow rate\""
@@ -244,33 +267,9 @@ void ObservableAqueous::ComputeObservation(
     }
     unit = "kg/s";
 
-  // fractures
-  } else if (variable_ == "fractures aqueous volumetric flow rate") {
-    const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
-    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture-aperture")->ViewComponent("cell");
-
-    if (obs_boundary_) {
-      Amanzi::AmanziMesh::Entity_ID_List cells;
-
-      for (int i = 0; i != region_size_; ++i) {
-        int f = entity_ids_[i];
-        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-
-        int sign, c = cells[0];
-        const auto& normal = mesh_->face_normal(f, false, c, &sign);
-        double area = mesh_->face_area(f);
-
-        *value  += sign * darcy_flux[0][f] * aperture[0][c];
-        *volume += area * aperture[0][c];
-      }
-    } else {
-      msg << "Observation \"" << variable_ << "\" is only possible for boundary side sets";
-      Exceptions::amanzi_throw(msg);
-    }
-    unit = "kg/s";
-
   } else if (variable_ == "pH") {
-    const Epetra_MultiVector& pH = *S.GetFieldData("pH")->ViewComponent("cell");
+    Key ph_key =Keys::getKey(domain_, "pH");
+    const Epetra_MultiVector& pH = *S.GetFieldData(ph_key)->ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
