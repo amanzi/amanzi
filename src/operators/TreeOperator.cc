@@ -214,6 +214,14 @@ void TreeOperator::AssembleMatrix() {
 
 
 /* ******************************************************************
+* Modifier
+****************************************************************** */
+void TreeOperator::DiagonalShift(double shift) {
+  Amat_->DiagonalShift(shift);
+}
+
+
+/* ******************************************************************
 * Create preconditioner using name and a factory.
 ****************************************************************** */
 void TreeOperator::InitPreconditioner(

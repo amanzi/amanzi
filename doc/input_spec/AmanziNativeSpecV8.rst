@@ -3528,6 +3528,15 @@ This section to be written.
   </ParameterList>
 
 
+Multiphase PK
+-------------
+
+Mathematical models
+...................
+
+The conceptual PDE model for the isothermal multiphase equations are
+
+
 Coupled process kernels
 =======================
 

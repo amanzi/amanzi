@@ -57,7 +57,7 @@ TEST(MULTIPHASE_MODEL_I) {
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 5);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -119,4 +119,21 @@ TEST(MULTIPHASE_MODEL_I) {
   }
 
   S->WriteStatistics(vo);
+
+  // verification
+  double dmin, dmax;
+  const auto& sl = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  sl.MinValue(&dmin);
+  sl.MaxValue(&dmax);
+  CHECK(dmin >= 0.0 && dmax <= 1.0);
+  
+  S->GetFieldData("ncp_fg")->NormInf(&dmax);
+  CHECK(dmax <= 1.0e-14);
+
+  double vmin[2], vmax[2];
+  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  xg.MinValue(vmin);
+  xg.MaxValue(vmax);
+  CHECK(vmin[0] >= 0.0 && vmax[0] <= 1.0);
+  CHECK(vmin[1] >= 0.0 && vmax[1] <= 1.0);
 }

@@ -72,6 +72,9 @@ class TreeOperator {
   void InitializePreconditioner(Teuchos::ParameterList& plist);
   void UpdatePreconditioner();
 
+  // modifier
+  void DiagonalShift(double shift);
+
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 

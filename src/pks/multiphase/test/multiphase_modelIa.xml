@@ -49,8 +49,6 @@
     <Parameter name="linear solver" type="string" value="AMESOS"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
-    <Parameter name="number aqueous components" type="int" value="1"/>
-    <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
