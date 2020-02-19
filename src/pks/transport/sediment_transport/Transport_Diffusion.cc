@@ -44,7 +44,7 @@ namespace SedimentTransport{
   for (int c = 0; c < ncells_owned; ++c) {
     double mol_den = mol_density[0][c];
     double ponded_depth = ws[0][c];
-     D_[c] *= km[0][c] * mol_den * ponded_depth;
+    D_[c].PutScalar(km[0][c] * mol_den * ponded_depth);
   }
 }
 
