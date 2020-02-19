@@ -610,7 +610,13 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     error_s = std::max(error_s, fabs(dsc[0][c]));
   }
 
-  return error_p + error_x + error_s;
+  double error = error_p + error_x + error_s;
+#ifdef HAVE_MPI
+  double buf = error;
+  du->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
+#endif
+
+  return error;
 }
 
 }  // namespace Multiphase

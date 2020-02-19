@@ -105,7 +105,7 @@ if (BUILD_TESTS)
     file(COPY ${DataFiles} DESTINATION ${MULTIPHASE_BINARY_DIR}/test/)
   endif()
 
-  set(amanzi_libs multiphase state mesh_factory whetstone operators flow
+  set(amanzi_libs multiphase state mesh_factory whetstone operators 
                   geometry mesh_functions functions eos pks)
 
   # Unit tests:

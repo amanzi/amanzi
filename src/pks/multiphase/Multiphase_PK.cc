@@ -270,7 +270,6 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   ncp_ = mp_list_->get<std::string>("NCP function", "min");
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
-  num_aqueous_ = mp_list_->get<int>("number aqueous components");
   num_primary_ = component_names_.size();
 
   // some defaults
@@ -441,6 +440,13 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize other fields
   InitializeFields_();
+
+  // io
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
+               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -528,6 +534,9 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     return failed;
   }
 
+  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
+  ChangedSolution();
+
   dt_ = dt_next_;
   num_itrs_++;
 
@@ -540,10 +549,6 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  // update time integration history
-  bdf1_dae_->CommitSolution(t_new - t_old, soln_);
-  ChangedSolution();
-
   // miscalleneous fields
   *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
   *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);

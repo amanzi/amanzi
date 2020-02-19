@@ -55,7 +55,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
   virtual double get_dt() override { return dt_; }
-  virtual void set_dt(double) override {};
+  virtual void set_dt(double dt) override { dt_ = dt; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
@@ -121,8 +121,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln_;
   std::vector<std::string> soln_names_;
   std::vector<std::string> component_names_; 
-  int num_aqueous_, num_gaseous_, num_primary_;
-  int num_phases_;
+  int num_primary_, num_phases_;
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_liquid_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
