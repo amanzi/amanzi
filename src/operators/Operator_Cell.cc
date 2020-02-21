@@ -50,7 +50,7 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.csr.size() == ncells_owned);
   auto Xc = X.ViewComponent("cell");
   auto Yc = Y.ViewComponent("cell");
   const auto dv = op.diag->getLocalViewDevice(); 
@@ -72,38 +72,61 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.csr.size() == nfaces_owned);
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
-  Kokkos::vector<WhetStone::DenseVector> v;
-  Kokkos::vector<WhetStone::DenseVector> Av;
-  v.resize(op.matrices.size()); 
-  Av.resize(op.matrices.size());
-  for(int i = 0 ; i < op.matrices.size(); ++i){
-    v[i].reshape(op.matrices[i].NumCols()); 
-    Av[i].reshape(op.matrices[i].NumRows()); 
-  } 
+  CSR_Vector csr_v;
+  CSR_Vector csr_Av; 
+  Kokkos::resize(csr_v.row_map_,op.csr.size()+1);
+  Kokkos::resize(csr_Av.row_map_,op.csr.size()+1);
 
-  Kokkos::vector<WhetStone::DenseMatrix> local_matrices = op.matrices; 
+  // CSR version 
+  // 1. Compute size  
+  for (int i=0; i!=op.csr.size(); ++i) {
+    csr_v.row_map_(i) = op.csr.size(i,0);
+    csr_Av.row_map_(i) = op.csr.size(i,1); 
+  }    
+  csr_v.prefix_sum(); 
+  csr_Av.prefix_sum(); 
+
+  // 2. Resize csr
+  Kokkos::resize(csr_v.entries_,csr_v.row_map_(csr_v.row_map_.extent(0)-1));
+  Kokkos::resize(csr_Av.entries_,csr_Av.row_map_(csr_Av.row_map_.extent(0)-1));
+
+  CSR_Matrix local_csr = op.csr; 
 
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell",
-      op.matrices.size(),
+      op.csr.size(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
 
-        WhetStone::DenseVector& vv = v[f];
-        WhetStone::DenseVector& Avv = Av[f]; 
+        const int vv_s0 = csr_v.row_map_(f); 
+        const int vv_s1 = csr_v.row_map_(f+1);
+        const int vv_s = vv_s1-vv_s0; 
+        WhetStone::DenseVector vv(
+          Kokkos::subview(csr_v.entries_,
+            Kokkos::make_pair(vv_s0,vv_s1)),vv_s);
+        const int Avv_s0 = csr_Av.row_map_(f); 
+        const int Avv_s1 = csr_Av.row_map_(f+1);
+        const int Avv_s = vv_s1-vv_s0; 
+        WhetStone::DenseVector Avv(
+          Kokkos::subview(csr_Av.entries_,
+            Kokkos::make_pair(Avv_s0,Avv_s1)),Avv_s);
         
         for (int n = 0; n != ncells; ++n) {
           vv(n) = Xc(cells[n],0);
         }
-        local_matrices[f].Multiply(vv, Avv, false);
+        WhetStone::DenseMatrix lm(
+          Kokkos::subview(local_csr.entries_,
+            Kokkos::make_pair(local_csr.row_map_(f),local_csr.row_map_(f+1))),
+          local_csr.size(f,0),local_csr.size(f,1)); 
+        lm.Multiply(vv,Avv,false); 
 
         for (int n = 0; n != ncells; ++n) {
           Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));

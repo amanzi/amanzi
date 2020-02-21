@@ -81,7 +81,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // Setters and Setup
   //
   // Note that these default setters can be overridden to do actual work.
-  virtual void SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K) {
+  virtual void SetTensorCoefficient(const CSR_Tensor& K) {
     K_ = K;
   }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
@@ -106,13 +106,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
   // Lumped Setters for lazy developers
-  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
+  void Setup(const CSR_Tensor& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
     SetScalarCoefficient(k, dkdp);
   }
-  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
+  void Setup(const CSR_Tensor& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const double rho,
@@ -122,7 +122,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     SetDensity(rho);
     SetGravity(g);
   }
-  void Setup(const Kokkos::vector<WhetStone::Tensor>& K,
+  void Setup(const CSR_Tensor& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const Teuchos::RCP<const CompositeVector>& rho,
@@ -265,7 +265,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   
  protected:
   Teuchos::ParameterList plist_;
-  Kokkos::vector<WhetStone::Tensor> K_;
+  CSR_Tensor K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation

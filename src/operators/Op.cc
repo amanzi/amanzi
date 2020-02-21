@@ -26,10 +26,10 @@ namespace Operators {
 void
 Op::Zero()
 {
-  if (matrices.size()) {
+  if (csr.size()) {
     Kokkos::parallel_for(
       "Op::Zero",
-      matrices.size(),
+      csr.size(),
                          KOKKOS_LAMBDA(const int i) {
                            Zero(i);
                          });
@@ -55,8 +55,14 @@ Op::Matches(int match_schema, int matching_rule)
 // -- rescale local matrices in the container using a double
 void Op::Rescale(double scaling)
 {
-  if (matrices.size())
-    for (int i = 0; i != matrices.size(); ++i) matrices[i] *= scaling;
+  if (csr.size())
+    for (int i = 0; i != csr.size(); ++i){
+      WhetStone::DenseMatrix lm(
+        Kokkos::subview(csr.entries_,
+          Kokkos::make_pair(csr.row_map_(i),csr.row_map_(i+1))),
+        csr.size(i,0),csr.size(i,1)); 
+      lm *= scaling; 
+    }
   if (diag.get()) diag->scale(scaling);
 }
 

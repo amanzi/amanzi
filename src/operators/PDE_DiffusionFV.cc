@@ -106,7 +106,17 @@ void PDE_DiffusionFV::Init()
   if (K_.size() == 0){
     WhetStone::Tensor t(mesh_->space_dimension(),1);
     t(0,0) = 1.0;
-    K_.resize(ncells_owned,t);
+    auto t_v = t.data(); 
+    Kokkos::resize(K_.row_map_,2);
+    Kokkos::resize(K_.entries_,t.size());
+    Kokkos::resize(K_.sizes_,1,3); 
+    K_.row_map_(0) = 0; 
+    K_.row_map_(1) = t.mem(); 
+    K_.sizes_(0,0) = t.dimension(); 
+    K_.sizes_(0,1) = t.rank(); 
+    K_.sizes_(0,2) = t.size();
+    for(int i = 0 ; i < t_v.extent(0); ++i)
+      K_.entries_(i) = t_v(i); 
   } 
 
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
@@ -133,7 +143,7 @@ void PDE_DiffusionFV::Init()
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const Kokkos::vector<WhetStone::Tensor>& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const CSR_Tensor& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -184,14 +194,18 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     // preparing upwind data
     const auto k_face = ScalarCoefficientFaces(true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
-    Kokkos::vector<WhetStone::DenseMatrix> local_matrices = local_op_->matrices; 
+    CSR_Matrix local_csr = local_op->csr; 
     
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          WhetStone::DenseMatrix& Aface = local_matrices[f];
+          WhetStone::DenseMatrix Aface(
+            Kokkos::subview(local_csr.entries_,
+              Kokkos::make_pair(local_csr.row_map_(f),local_csr.row_map_(f+1))),
+            local_csr.size(f,0),local_csr.size(f,1)); 
+
           double tij = trans_face(f,0) * k_face(f,0);
 
           for (int i = 0; i != Aface.NumRows(); ++i) {
@@ -498,7 +512,10 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor& Kc = K_[c]; 
+          WhetStone::Tensor Kc(
+            Kokkos::subview(K_.entries_,
+              Kokkos::make_pair(K_.row_map_(c),K_.row_map_(c+1))),
+              K_.size(c,0),K_.size(c,1), K_.size(c,2)); 
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

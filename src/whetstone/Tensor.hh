@@ -56,14 +56,21 @@ class Tensor {
   //     data_(other.data_) {}
   
   // deep copy
-  KOKKOS_INLINE_FUNCTION
-  void assign(const Tensor& other) {
-    if (this != &other) {
-      assert(size_ == other.size_);
-      for(int i = 0 ; i < size_; ++i){
-        data_[i] = other.data_[i]; 
-      }
-    }
+  //KOKKOS_INLINE_FUNCTION
+  //void assign(const Tensor& other) {
+  // if (this != &other) {
+  //    assert(size_ == other.size_);
+  //    for(int i = 0 ; i < size_; ++i){
+  //      data_[i] = other.data_[i]; 
+  //    }
+  //  }
+  //}
+
+  KOKKOS_INLINE_FUNCTION Tensor(Kokkos::View<double*> data, int d, int rank, int size){
+    d_ = d; 
+    rank_ = rank; 
+    data_ = data; 
+    size_ = size;
   }
 
   /*******************************************************************
@@ -267,6 +274,7 @@ class Tensor {
   KOKKOS_INLINE_FUNCTION int dimension() const { return d_; }
   KOKKOS_INLINE_FUNCTION int rank() const { return rank_; }
   KOKKOS_INLINE_FUNCTION int size() const { return size_; }
+  KOKKOS_INLINE_FUNCTION int mem() const {return size_*size_; }
   KOKKOS_INLINE_FUNCTION Kokkos::View<double*> data() { return data_; }
   KOKKOS_INLINE_FUNCTION Kokkos::View<double*> data() const { return data_; }
   KOKKOS_INLINE_FUNCTION double* data_ptr() { return &data_[0];}

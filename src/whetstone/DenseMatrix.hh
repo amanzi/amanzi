@@ -50,6 +50,14 @@ class DenseMatrix {
               );//, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(int mrow, int ncol, const Kokkos::View<double*>& data);
 
+  KOKKOS_INLINE_FUNCTION
+  DenseMatrix(Kokkos::View<double*> data, const int& mrow, const int& ncol){
+    m_ = mrow;
+    n_ = ncol;
+    mem_ = m_ * n_;
+    data_ = data; 
+  }
+
   DenseMatrix(const DenseMatrix& other)
   {
     m_ = other.m_;

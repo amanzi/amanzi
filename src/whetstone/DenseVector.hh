@@ -38,12 +38,6 @@ class DenseVector {
   }
 
   KOKKOS_INLINE_FUNCTION 
-  DenseVector(Kokkos::View<double*> base, int mrow): m_(mrow), mem_(mrow){
-    //assert(base.extent(0)>=mrow); 
-    data_ = base; 
-  }
-
-  KOKKOS_INLINE_FUNCTION 
   DenseVector(Kokkos::View<double*> base)
       : m_(base.extent(0)),
         mem_(base.extent(0)),
@@ -65,6 +59,13 @@ class DenseVector {
       Kokkos::resize(data_, mem_);
       Kokkos::deep_copy(data_, other.data_);
     }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  DenseVector(Kokkos::View<double*> data, const int& mrow){
+    m_ = mrow;
+    mem_ = m_;
+    data_ = data; 
   }
 
 
