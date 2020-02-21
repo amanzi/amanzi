@@ -6,11 +6,13 @@ Usage: parse_logfile.py out.log
 
 NOTE: This is deprecated -- please use plot_timestep_history.py instead.
 """
+from __future__ import print_function
+from __future__ import division
 
 import numpy as np
 
 def print_headers():
-    print "cycle, time, dt, iteration count, wallclock avg (s)"
+    print("cycle, time, dt, iteration count, wallclock avg (s)")
 
 def split_header(line):
     """Cleans a line and splits off the VerboseObject header and remainder of the line"""

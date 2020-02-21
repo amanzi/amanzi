@@ -127,14 +127,36 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
+  // scaling for permeability
+  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
+
+  // permeability type - scalar or tensor?
+  Teuchos::ParameterList& perm_list_ = S->FEList().sublist("permeability");
+  std::string perm_type_ = perm_list_.get<std::string>("permeability type", "scalar");
+
+  if (perm_type_ == "scalar") {
+    perm_tensor_rank_ = 1;
+    num_perm_vals_ = 1;
+  } else if (perm_type_ == "horizontal and vertical") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = 2;
+  } else if (perm_type_ == "diagonal tensor") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = mesh_->space_dimension();
+  } else if (perm_type_ == "full tensor") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = (mesh_->space_dimension() == 3) ? 6 : 3;
+  } else {
+    Errors::Message message("`permeability type` must be one of the following: \"scalar\", \"diagonal tensor\", \"full tensor\", or \"horizontal and vertical\".");
+    Exceptions::amanzi_throw(message);
+  }
+
   // -- linear tensor coefficients
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
-    (*K_)[c].Init(mesh_->space_dimension(),1);
+    (*K_)[c].Init(mesh_->space_dimension(),perm_tensor_rank_);
   }
-  // scaling for permeability
-  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
   
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
@@ -394,7 +416,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
   S->RequireField(perm_key_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, num_perm_vals_);
   S->RequireFieldEvaluator(perm_key_);
 
   // -- water content, and evaluator
