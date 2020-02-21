@@ -345,6 +345,56 @@ class Mesh2D(object):
         coords = np.array([Xc, Yc, Zc])
         return cls(coords.transpose(), conn)
 
+    @classmethod
+    def from_Transect_GuideX(cls, x, z, guide, nsteps):
+        """Creates a 2D surface strip mesh from transect data"""
+        assert type(guide) == np.ndarray
+        assert guide.shape[1] == 3
+
+        # coordinates
+        Xc = x
+        Yc = np.zeros_like(x)
+        Zc = z
+        
+        nsteps = guide.shape[0]
+
+        xnew = np.zeros_like(x)
+        ynew = np.zeros(len(x))
+        znew = np.zeros_like(x)        
+        
+        xnew[:] = Xc[:]
+        ynew[:] = Yc[:]
+        znew[:] = Zc[:]
+      
+        for i in range(nsteps):
+            print(Yc)
+            for j in range(len(x)):
+                xnew[j] = xnew[j] + guide[j][0]
+                ynew[j] = ynew[j] + guide[j][1]
+                znew[j] = znew[j] + guide[j][2]
+            
+            Xc =  np.concatenate([Xc, xnew])
+            Yc =  np.concatenate([Yc, ynew])
+            Zc =  np.concatenate([Zc, znew])
+
+
+
+        # y = np.array([0,1,2])
+        # Xc, Yc = np.meshgrid(x, y)
+        # Xc = Xc.flatten()
+        # Yc = Yc.flatten()
+        # Zc = np.concatenate([z,z,z])
+
+        # connectivity
+        ns = len(x)
+        conn = []
+        for j in range(nsteps):
+            for i in range(ns-1):
+                conn.append([j*ns + i, j*ns + i + 1, (j+1)*ns + i + 1, (j+1)*ns + i ])
+
+        coords = np.array([Xc, Yc, Zc])
+        return cls(coords.transpose(), conn)
+
 
     
 
