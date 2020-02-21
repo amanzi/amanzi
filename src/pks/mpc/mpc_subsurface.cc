@@ -551,10 +551,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       // ComputeDivCorrection(flux, kr_uw, dkrdT, 
       //                      S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false));
 
-      // double l2norm;
-      // S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false)->Norm2(&l2norm);
-      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivq_dT"<<l2norm<<"\n";
-
 
     }
 
@@ -566,7 +562,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     dWC_dT_->AddAccumulationTerm(*dWC_dT, h, "cell", false);
 
 
-    // std::cout << "1/h * DWC/DT" << std::endl;
     // CompositeVector dbg(*dWC_dT); dbg = *dWC_dT; dbg.Scale(1./h); dbg.Print(std::cout);
     
 
@@ -605,10 +600,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       // ComputeDivCorrection(flux, uw_Kappa, dKappa_dp, 
       //                      S_next_->GetFieldData(ddivKgT_dp_key_, name_)->ViewComponent("cell", false));
-      // double l2norm;
-      // S_next_->GetFieldData( ddivKgT_dp_key_ , name_)->ViewComponent("cell", false)->Norm2(&l2norm);
-      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivKgT_dp"<<l2norm<<"\n";
-
     }
 
 

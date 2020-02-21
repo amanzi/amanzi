@@ -120,9 +120,6 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-      //if (abs(tcc_flux) > 1e-9)
-      // if ((mesh_->face_centroid(f)[0]>9.5)&&(mesh_->face_centroid(f)[0]<10.5)&& (abs(mesh_->face_centroid(f)[1]-0.5)<1e-6))
-      //   std::cout<<mesh_->get_comm()->MyPID()<<" c "<<c1<<" mass "<<tcc_flux<<" "<<mesh_->face_centroid(f)<<"\n";
       
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = limiter_->getValue(c1, xf);

@@ -1455,7 +1455,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.
-  if ((du->Data()->HasComponent("boundary_face")) && compute_boundary_values_) {
+  if (du->Data()->HasComponent("boundary_face"))  {
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
   }
 
