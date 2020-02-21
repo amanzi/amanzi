@@ -142,7 +142,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key viscosity_liquid_key_, viscosity_gas_key_;
   Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
   Key molar_density_liquid_key_, molar_density_gas_key_;
-  Key tws_key_, tcs_key_;
+  Key tws_key_, tcs_key_, prev_tws_key_, prev_tcs_key_;
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
   // matrix and preconditioner

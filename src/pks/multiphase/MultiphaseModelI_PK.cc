@@ -55,6 +55,7 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
 
   diffusion_liquid_key_ = Keys::getKey(domain_, "diffusion_liquid"); 
   diffusion_vapor_key_ = Keys::getKey(domain_, "diffusion_vapor"); 
+  diffusion_gas_key_ = Keys::getKey(domain_, "diffusion_gas"); 
 
   // gas mole fraction is the primary solution
   if (!S->HasField(x_gas_key_)) {
@@ -133,7 +134,7 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(pressure_vapor_key_, eval);
   }
 
-  // -- coefficient for diffusion operator in liquid phase
+  // -- coefficient for water vapor diffusion operator in liquid phase
   if (!S->HasField(diffusion_vapor_key_)) {
     S->RequireField(diffusion_vapor_key_, diffusion_vapor_key_)
       ->SetMesh(mesh_)->SetGhosted(true)
@@ -247,11 +248,12 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::Array<int> dep_powers(2, 1);
+    Teuchos::Array<int> dep_powers(3, 1);
     Teuchos::Array<std::string> dep_names;
 
     dep_names.push_back(molecular_diff_liquid_key_);
     dep_names.push_back(molar_density_liquid_key_);
+    dep_names.push_back(saturation_liquid_key_);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("my key", diffusion_liquid_key_)
@@ -260,6 +262,28 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetFieldEvaluator(diffusion_liquid_key_, eval);
+  }
+
+  // -- coefficient for diffusion operator in gas phase
+  if (!S->HasField(diffusion_gas_key_)) {
+    S->RequireField(diffusion_gas_key_, diffusion_gas_key_)
+      ->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::Array<int> dep_powers(3, 1);
+    Teuchos::Array<std::string> dep_names;
+
+    dep_names.push_back(molecular_diff_gas_key_);
+    dep_names.push_back(molar_density_gas_key_);
+    dep_names.push_back(saturation_gas_key_);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", diffusion_gas_key_)
+         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<Teuchos::Array<int> >("powers", dep_powers);
+
+    auto eval = Teuchos::rcp(new ProductEvaluator(elist));
+    S->SetFieldEvaluator(diffusion_gas_key_, eval);
   }
 
   // mole fraction of water vapor

@@ -81,8 +81,8 @@
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        <Parameter name="regularization interval kr" type="double" value="0.01"/>
-        <Parameter name="regularization interval pc" type="double" value="0.02"/>
+        <Parameter name="regularization interval kr" type="double" value="0.02"/>
+        <Parameter name="regularization interval pc" type="double" value="0.03"/>
       </ParameterList>
     </ParameterList>
 
@@ -105,8 +105,8 @@
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
-          <Parameter name="max divergent iterations" type="int" value="10"/>
-          <Parameter name="limit iterations" type="int" value="120"/>
+          <Parameter name="max divergent iterations" type="int" value="3"/>
+          <Parameter name="limit iterations" type="int" value="40"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>

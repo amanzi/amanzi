@@ -48,7 +48,6 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
   molar_density_water_key_ = Keys::getKey(domain_, "molar_density_water"); 
 
   diffusion_liquid_key_ = Keys::getKey(domain_, "diffusion_liquid"); 
-  diffusion_gas_key_ = Keys::getKey(domain_, "diffusion_gas"); 
 
   molecular_diff_liquid_key_ = Keys::getKey(domain_, "molecular_diff_liquid"); 
   molecular_diff_gas_key_ = Keys::getKey(domain_, "molecular_diff_gas"); 

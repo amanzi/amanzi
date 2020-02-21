@@ -112,6 +112,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   tws_key_ = Keys::getKey(domain_, "total_water_storage");
   tcs_key_ = Keys::getKey(domain_, "total_component_storage");
+  prev_tws_key_ = Keys::getKey(domain_, "prev_total_water_storage");
+  prev_tcs_key_ = Keys::getKey(domain_, "prev_total_component_storage");
 
   ncp_f_key_ = Keys::getKey(domain_, "ncp_f"); 
   ncp_g_key_ = Keys::getKey(domain_, "ncp_g"); 
@@ -219,15 +221,15 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // fields from previous time step
-  if (!S->HasField("prev_total_water_storage")) {
-    S->RequireField("prev_total_water_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_tws_key_)) {
+    S->RequireField(prev_tws_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_total_water_storage", passwd_)->set_io_vis(false);
+    S->GetField(prev_tws_key_, passwd_)->set_io_vis(false);
   }
-  if (!S->HasField("prev_total_component_storage")) {
-    S->RequireField("prev_total_component_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_tcs_key_)) {
+    S->RequireField(prev_tcs_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_total_component_storage", passwd_)->set_io_vis(false);
+    S->GetField(prev_tcs_key_, passwd_)->set_io_vis(false);
   }
 
   // complimantary constraints fields
@@ -457,8 +459,8 @@ void Multiphase_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeFieldFromField_("prev_total_water_storage", "total_water_storage", true);
-  InitializeFieldFromField_("prev_total_component_storage", "total_component_storage", true);
+  InitializeFieldFromField_(prev_tws_key_, tws_key_, true);
+  InitializeFieldFromField_(prev_tcs_key_, tcs_key_, true);
 
   InitializeField(S_.ptr(), passwd_, darcy_flux_liquid_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, darcy_flux_gas_key_, 0.0);
@@ -501,13 +503,17 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // make a copy of primary and conservative fields
-  int nsoln = soln_names_.size();
+  auto copy_names = soln_names_;
+  copy_names.push_back(prev_tws_key_);
+  copy_names.push_back(prev_tcs_key_);
+  copy_names.push_back(darcy_flux_liquid_key_);
+  copy_names.push_back(darcy_flux_gas_key_);
+
+  int ncopy = copy_names.size();
   std::vector<CompositeVector> copies;
-  for (int i = 0; i < nsoln; ++i) {
-    copies.push_back(*S_->GetFieldData(soln_names_[i]));
+  for (int i = 0; i < ncopy; ++i) {
+    copies.push_back(*S_->GetFieldData(copy_names[i]));
   }
-  CompositeVector ql_copy(*S_->GetFieldData(darcy_flux_liquid_key_));
-  CompositeVector qg_copy(*S_->GetFieldData(darcy_flux_gas_key_));
 
   // initialization
   if (num_itrs_ == 0) {
@@ -517,6 +523,13 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     num_itrs_++;
   }
 
+  // update previous fields
+  S_->GetFieldEvaluator(tws_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetFieldEvaluator(tcs_key_)->HasFieldChanged(S_.ptr(), passwd_);
+
+  *S_->GetFieldData(prev_tws_key_, passwd_) = *S_->GetFieldData(tws_key_);
+  *S_->GetFieldData(prev_tcs_key_, passwd_) = *S_->GetFieldData(tcs_key_);
+
   // trying to make a step
   bool failed(false);
   failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
@@ -524,11 +537,9 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // recover the original fields
-    for (int i = 0; i < nsoln; ++i) {
-      *S_->GetFieldData(soln_names_[i], passwd_) = copies[i];
+    for (int i = 0; i < ncopy; ++i) {
+      *S_->GetFieldData(copy_names[i], passwd_) = copies[i];
     }
-    *S_->GetFieldData(darcy_flux_liquid_key_, passwd_) = ql_copy;
-    *S_->GetFieldData(darcy_flux_gas_key_, passwd_) = qg_copy;
 
     ChangedSolution();
     return failed;
@@ -550,8 +561,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // miscalleneous fields
-  *S_->GetFieldData("prev_total_component_storage", passwd_) = *S_->GetFieldData(tcs_key_);
-  *S_->GetFieldData("prev_total_water_storage", passwd_) = *S_->GetFieldData(tws_key_);
+  // *S_->GetFieldData(prev_tws_key_, passwd_) = *S_->GetFieldData(tws_key_);
+  // *S_->GetFieldData(prev_tcs_key_, passwd_) = *S_->GetFieldData(tcs_key_);
 
   S_->GetFieldEvaluator(advection_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& mobility_gc = *S_->GetFieldData(advection_gas_key_)->ViewComponent("cell");

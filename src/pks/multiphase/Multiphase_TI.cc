@@ -104,7 +104,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         // -- upwind cell-centered coefficient
         auto flux = S_->GetFieldData(flux_names_[phase], passwd_);
         kr_c = *S_->GetFieldData(key)->ViewComponent("cell");
-        kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME (BC data)
+        kr->ViewComponent("dirichlet_faces")->PutScalar(0.0);  // FIXME (BC data for non FV scheme)
         upwind_->Compute(*flux, *kr, op_bcs_[sol.var]->bc_model(), *kr);
 
         // -- form operator
