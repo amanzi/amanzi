@@ -60,7 +60,7 @@ class LinearMaterialsParallel(object):
         L = self.x_1 - self.x_0
         K1 = self.rho * self.g * self.k1 / self.mu
         K2 = self.rho * self.g * self.k2 / self.mu
-        for i in xrange(len(coords[:,0])):
+        for i in range(len(coords[:,0])):
             x = coords[i,0]
             head[i] = (hL - h0)*(x/L) + h0
         return head

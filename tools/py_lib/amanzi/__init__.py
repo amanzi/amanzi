@@ -1,6 +1,6 @@
-import command
-import interface
-import module
-import mpc
-import trilinos
-import region
+from . import command
+from . import interface
+from . import module
+from . import mpc
+from . import trilinos
+from . import region

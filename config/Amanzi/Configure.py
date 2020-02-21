@@ -22,7 +22,7 @@ class AmanziArch(object):
         break
     if not found:
       arch = os.environ.get('AMANZI_ARCH')
-      if arch != None:
+      if arch is not None:
         found = 1
       else:
         arch = ''
@@ -37,8 +37,8 @@ class AmanziArch(object):
         msg ='*******************************************************************************\n'\
             +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
             +'*******************************************************************************\n'
-        print msg
-        if not framework is None:
+        print(msg)
+        if framework is not None:
           framework.logClear()
           import traceback
           if hasattr(framework, 'log'):
@@ -250,7 +250,7 @@ class Configure(config.base.Configure):
     import time
     if not os.path.isdir(os.path.join(self.arch.arch, 'include')):
       os.makedirs(os.path.join(self.arch.arch,'include'))
-    fd = file(os.path.join(self.arch.arch,'include', self.project+'configinfo.h'), 'w')
+    fd = open(os.path.join(self.arch.arch,'include', self.project+'configinfo.h'), 'w')
     fd.write('static const char *'+self.project+'configureruntime = "'+time.ctime(time.time())+'";\n')
     fd.write('static const char *'+self.project+'configureoptions = "'+self.framework.getOptionsString(['configModules', 'optionsModule']).replace('\"','\\"')+'";\n')
     fd.close()
@@ -262,7 +262,7 @@ class Configure(config.base.Configure):
     import script
     if not os.path.isdir(os.path.join(self.arch.arch, 'include')):
       os.makedirs(os.path.join(self.arch.arch,'include'))
-    fd = file(os.path.join(self.arch.arch,'include', self.project+'machineinfo.h'),'w')
+    fd = open(os.path.join(self.arch.arch,'include', self.project+'machineinfo.h'),'w')
     fd.write('static const char *'+self.project+'machineinfo = \"\\n\"\n')
     fd.write('\"-----------------------------------------\\n\"\n')
     fd.write('\"Libraries compiled on %s on %s \\n\"\n' % (time.ctime(time.time()), platform.node()))
@@ -309,9 +309,9 @@ class Configure(config.base.Configure):
     if 'optionsModule' in args:
       if nargs.Arg.parseArgument(args['optionsModule'])[1] == self.Project+'.compilerOptions':
         del args['optionsModule']
-    if not self.PROJECT+'_ARCH' in args:
+    if self.PROJECT+'_ARCH' not in args:
       args[self.PROJECT+'_ARCH'] = self.PROJECT+'_ARCH='+str(self.arch.arch)
-    f = file(scriptName, 'w')
+    f = open(scriptName, 'w')
     f.write('#!'+sys.executable+'\n')
     f.write('if __name__ == \'__main__\':\n')
     f.write('  import sys\n')
@@ -326,8 +326,8 @@ class Configure(config.base.Configure):
     f.write('  configure.ConfigurationManager('+self.Project+').configure(configure_options)\n')
     f.close()
     try:
-      os.chmod(scriptName, 0775)
-    except OSError, e:
+      os.chmod(scriptName, 0o775)
+    except OSError as e:
       self.framework.logPrint('Unable to make reconfigure script executable:\n'+str(e))
     self.framework.actions.addArgument(self.Project, 'File creation', 'Created '+scriptName+' for automatic reconfiguration')
     return

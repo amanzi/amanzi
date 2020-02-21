@@ -38,12 +38,12 @@ def CheckVersion(ncp_pre_lines):
             if ( int(version_major) == 1 and int(version_minor) == 2 or int(version_patch) == 0 ):
                 break
             else:
-                print 'Error: This scripts translates version 1.2.0 to 1.2.1'
-                print '       But this input file is version', version_string
+                print('Error: This scripts translates version 1.2.0 to 1.2.1')
+                print('       But this input file is version', version_string)
                 sys.exit()
 
     if ( version_string == '' ):
-        print 'Error: The version string is empty!'
+        print('Error: The version string is empty!')
         sys.exit()
 
     return version_string
@@ -81,12 +81,12 @@ def WriteModel(xml_output,Model_lines):
         elif ( TIMode_tag ):
             if ( 'name="Transient"' in line ):
                 TIModeTransient=True
-            elif ('</ParameterList>' in  line):
+            elif ('</ParameterList>' in line):
                 TIMode_tag=False
     
     # Transient with Static
     TransientWithStatic_fix=FlowOff and TransportOn and TIModeTransient
-    print 'TransientWithStatic_fix ', TransientWithStatic_fix, FlowOff, TransportOn, TIModeTransient
+    print('TransientWithStatic_fix ', TransientWithStatic_fix, FlowOff, TransportOn, TIModeTransient)
     
     TIMode_tag=False
     for line in Model_lines:
@@ -103,7 +103,7 @@ def WriteModel(xml_output,Model_lines):
                     xml_output.write("%s\n" % ( re.sub(r'name="Transient"','name="Transient with Static Flow"', line)) )
                 else:
                     xml_output.write("%s\n" % ( line ) )
-            elif ('</ParameterList>' in  line):
+            elif ('</ParameterList>' in line):
                 TIMode_tag=False
                 xml_output.write("%s\n" % ( line ) )
             else:
@@ -193,7 +193,7 @@ for line in xml_lines:
 #
 lev_spc.append(lev_spc[len(lev_spc)-1]+2)
 
-print 'Debugging: Level indentation = ', lev_spc
+print('Debugging: Level indentation = ', lev_spc)
 
 #
 # Break up file into sections

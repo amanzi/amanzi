@@ -19,8 +19,8 @@ class ObservationData(object):
 
     def getObservationData(self):
         obs_fid = open(self.obs_file)
-        obs_fid.next() # pop header line "name, region,..."
-        obs_fid.next() # pop header line "===="
+        next(obs_fid) # pop header line "name, region,..."
+        next(obs_fid) # pop header line "===="
 
         for line in obs_fid:
             [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
@@ -30,16 +30,16 @@ class ObservationData(object):
             var_name = var_name.strip()
 
             key = (var_ref,region)
-            if not self.observations.has_key(key):
+            if key not in self.observations:
                 self.observations[key] = self.Data(var_ref, region, obs_type, var_name)
 
             self.observations[key].times.append(float(time.strip()))
             self.observations[key].data.append(float(value.strip()))
 
     def printSummary(self):
-        print "Read observation data file:", self.obs_file
+        print("Read observation data file:", self.obs_file)
         for key in self.observations.keys():
-            print "  obs:", key[0], "on region", key[1]
+            print("  obs:", key[0], "on region", key[1])
 
 
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
     p.set_defaults(obs_file = "observation.out") #need to get observation.out from input 
     (options, args) = p.parse_args()
 
-    print "Found filename", options.obs_file
-    print " creating ObservationData object"
+    print("Found filename", options.obs_file)
+    print(" creating ObservationData object")
     obs = ObservationData(options.obs_file)
     obs.getObservationData()
     obs.printSummary()

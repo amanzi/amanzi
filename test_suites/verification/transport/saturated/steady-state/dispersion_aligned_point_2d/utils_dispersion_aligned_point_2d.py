@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml,directory):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
 
@@ -52,7 +52,7 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
         elif ( Obs_lines[key]['vary'] is 'y'):
             vary_coord=1
 
-        for obs in Obs_data.observations.itervalues(): 
+        for obs in Obs_data.observations.values(): 
             if ( obs.coordinate[slice_coord] == Obs_lines[key]['slice'][1] ):
                 Obs_scatter[key]['distance'].append(obs.coordinate[vary_coord])
                 Obs_scatter[key]['Tc99'].append(obs.data[0])

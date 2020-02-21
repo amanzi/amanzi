@@ -6,7 +6,7 @@ from amanzi_xml.utils.io import extractDoxygenXML
 import amanzi_xml.utils.search as search
 import amanzi_xml.common.parameter as parameter
 import amanzi_xml.common.parameter_list as parameter_list
-import mesh_entity
+from . import mesh_entity
 
 
 def createConstantFunction(value):
@@ -32,7 +32,7 @@ def createFunctionSpec(spec_name, region, component, func):
 
     pl = parameter_list.ParameterList(spec_name)
     pl.append(region_p)
-    pl.append(entity_p)
+    pl.append(entity_p) # TODO: entity_p undefined: did you mean component_p?
     pl.sublist("function").append(func)
     return pl
         

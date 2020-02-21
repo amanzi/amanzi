@@ -19,24 +19,24 @@ def GetOBS_AmanziU(path,obs_name,comp):
     # read the rest
     obs = []
     for line in datafile.readlines():
-	vals = line.split(",")
-	obs.append(vals)
+        vals = line.split(",")
+        obs.append(vals)
     # get individual observations
     ob_names = []
     for ob in obs:
         if (ob[1] not in ob_names):
-	    ob_names.append(ob[1])
+            ob_names.append(ob[1])
     obs_coords = {}
     obs_values = {}
     for name in ob_names:
-	tmp_coords = []
-	tmp_values = []
-	for ob in obs:
-	    if (ob[1] == name):
-		tmp_coords.append(float(ob[len(ob)-2]))
-		tmp_values.append(float(ob[len(ob)-1]))
-	obs_coords[name] = np.array(tmp_coords)
-	obs_values[name] = np.array(tmp_values)
+        tmp_coords = []
+        tmp_values = []
+        for ob in obs:
+            if (ob[1] == name):
+                tmp_coords.append(float(ob[len(ob)-2]))
+                tmp_values.append(float(ob[len(ob)-1]))
+        obs_coords[name] = np.array(tmp_coords)
+        obs_values[name] = np.array(tmp_values)
 
     datafile.close()
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     path_to_golden = "golden_output"
     if len(sys.argv) > 1:
-	path_to_golden = sys.argv[1]
+        path_to_golden = sys.argv[1]
         path_to_golden += "/golden_output"
 
     try:
@@ -81,30 +81,30 @@ if __name__ == "__main__":
     # Diff
     msg = ""
     if (unstruct and unstruct_gold):
-	err = {}
-	for ob in c_amanziU_gold.keys():
+        err = {}
+        for ob in c_amanziU_gold.keys():
             diff = c_amanziU_gold[ob] - c_amanziU[ob]
             error = np.linalg.norm(diff)
-	    err[ob] = error
+            err[ob] = error
 
     # Report
         tol = 1e-8
-	total_error = 0
-	for ob in err:
-	    if (err[ob] > tol):
-		total_error += 1
+        total_error = 0
+        for ob in err:
+            if (err[ob] > tol):
+                total_error += 1
 
         if total_error > 0 :
-	    msg = msg + "Comparison Failed"
-	    for ob in err:
-	        msg = msg +  "\n  error("+str(ob)+") = " + str(err[ob])
+            msg = msg + "Comparison Failed"
+            for ob in err:
+                msg = msg +  "\n  error("+str(ob)+") = " + str(err[ob])
             sys.exit(msg)
         else:
-	    msg = msg + "Comparison Passed"
-	    for ob in err:
-	        msg = msg +  "\n  error("+str(ob)+") = " + str(err[ob])
-	    print msg
+            msg = msg + "Comparison Passed"
+            for ob in err:
+                msg = msg +  "\n  error("+str(ob)+") = " + str(err[ob])
+            print(msg)
     else:
-	msg = msg + "Comparison Failed"
-	msg = msg + "\n  tests results or golden_output missing"
+        msg = msg + "Comparison Failed"
+        msg = msg + "\n  tests results or golden_output missing"
         sys.exit(msg)

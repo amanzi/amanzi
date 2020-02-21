@@ -23,14 +23,14 @@ def loadDataFile(Obs_xml):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     
     return Obs_data
 
 def plotDualPorosityObservations(Obs_xml, Obs_data, axes1):
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         pass
 
     axes1.scatter(obs.times, obs.data, marker='+', s=25, c='b', label="Amanzi-U")
