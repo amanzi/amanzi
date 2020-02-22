@@ -54,7 +54,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   // -- gas pressure
   S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto pg = S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
+  auto pg = *S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
 
   // -- molar densities
   S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);

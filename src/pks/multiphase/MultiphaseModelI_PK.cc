@@ -355,6 +355,14 @@ MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
                                       Teuchos::RCP<const TreeVector> u,
                                       Teuchos::RCP<TreeVector> du)
 {
+  // clip liquid pressure to stays positive
+  const auto& u0c = *u->SubVector(0)->Data()->ViewComponent("cell");
+  auto& du0c = *du->SubVector(0)->Data()->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    du0c[0][c] = std::min(du0c[0][c], u0c[0][c]);
+  }
+
   // clip mole fraction to range [0; 1]
   const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
   auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
