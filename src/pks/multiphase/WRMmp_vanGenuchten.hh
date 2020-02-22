@@ -44,11 +44,11 @@ class WRMmp_vanGenuchten : public WRMmp {
   double k_relative_gas_(double sle);
   double k_relative_liquid_(double sle);
 
-  double dKdS_gas_(double sle);
-  double dKdS_liquid_(double sle);
+  double dKdSe_gas_(double sle);
+  double dKdSe_liquid_(double sle);
 
   double capillaryPressure_(double sle);
-  double dPc_dS_(double sle);
+  double dPc_dSe_(double sle);
 
  private:
   double Pr_, srl_, srg_, n_, m_;

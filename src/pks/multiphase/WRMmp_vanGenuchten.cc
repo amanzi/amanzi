@@ -52,7 +52,7 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr,
 
   if (reg_kl_ > 0.0) {
     double se0(1.0 - reg_kl_), se1(1.0);
-    spline_kl_.Setup(se0, k_relative_liquid_(se0), dKdS_liquid_(se0),
+    spline_kl_.Setup(se0, k_relative_liquid_(se0), dKdSe_liquid_(se0),
                      se1, 1.0, 0.0);
 
     if (spline_kl_.grad().NormInf() > MULTIPHASE_WRM_REGULARIZATION_MAX_GRADIENT) {
@@ -67,8 +67,8 @@ void WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr,
   // "Results of the MoMaS benchmark for gas phase appearance and disappearance using generalized MHFE")
   if (reg_pc_ > 0.0) {
     double se0(reg_pc_), se1(1.0 - reg_pc_);
-    spline_pc_.Setup(se0, capillaryPressure_(se0), dPc_dS_(se0),
-                     se1, capillaryPressure_(se1), dPc_dS_(se1));
+    spline_pc_.Setup(se0, capillaryPressure_(se0), dPc_dSe_(se0),
+                     se1, capillaryPressure_(se1), dPc_dSe_(se1));
   }
 }
 
@@ -119,16 +119,17 @@ double WRMmp_vanGenuchten::k_relative_gas_(double sle) {
 ****************************************************************** */
 double WRMmp_vanGenuchten::dKdS(double sl, int phase)
 {
-  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+  double factor = 1.0 / (1.0 - srl_ - srg_);
+  double sle = factor * (sl - srl_);
   if (phase == MULTIPHASE_PHASE_LIQUID) {
     if (sle <= 0.0) {
       return 0.0;
     } else if (sle >= 1.0) {
       return 0.0;
     } else if (sle > 1.0 - reg_kl_) {
-      return spline_kl_.GradientValue(sle);
+      return factor * spline_kl_.GradientValue(sle);
     } else {
-      return dKdS_liquid_(sle);
+      return factor * dKdSe_liquid_(sle);
     }
   }
   else if (phase == MULTIPHASE_PHASE_GAS) {
@@ -137,7 +138,7 @@ double WRMmp_vanGenuchten::dKdS(double sl, int phase)
     } else if (sle >= 1.0) {
       return 0.0;
     } else {
-      return dKdS_gas_(sle);
+      return factor * dKdSe_gas_(sle);
     }
   }
 }
@@ -146,26 +147,24 @@ double WRMmp_vanGenuchten::dKdS(double sl, int phase)
 /* ******************************************************************
 * Derivative of relative permeability wrt effective saturation
 ****************************************************************** */
-double WRMmp_vanGenuchten::dKdS_liquid_(double sle) {
-  double factor = 1.0 / (1.0 - srl_ - srg_);
+double WRMmp_vanGenuchten::dKdSe_liquid_(double sle) {
   double a1 = std::pow(sle, 1.0 / m_);
   double a2 = 1.0 - a1;
   double a3 = std::pow(a2, m_ - 1.0);
   double a4 = 1.0 - a3 * a2;
   double a5 = a4 * (a4 / 2 + 2 * a3 * a1);
 
-  return factor * a5 / std::pow(sle, 0.5);
+  return a5 / std::pow(sle, 0.5);
 }
 
-double WRMmp_vanGenuchten::dKdS_gas_(double sle) {
-  double factor = 1.0 / (1.0 - srl_ - srg_);
+double WRMmp_vanGenuchten::dKdSe_gas_(double sle) {
   double a1 = std::pow(sle, 1.0 / m_);
   double a2 = 1.0 - a1;
   double a3 = std::pow(a2, 2 * m_ - 1.0);
   double a4 = std::pow(a2, 2 * m_);
   double b1 = 2 * std::pow(1.0 - sle, 0.5);
 
-  return -factor * (a4 / b1 + a3 * b1 * std::pow(sle, 1.0/m_ - 1.0));
+  return -(a4 / b1 + a3 * b1 * std::pow(sle, 1.0/m_ - 1.0));
 }
 
 
@@ -191,13 +190,13 @@ double WRMmp_vanGenuchten::capillaryPressure(double sl)
 double WRMmp_vanGenuchten::dPc_dS(double sl)
 {
   double factor = 1.0 / (1.0 - srl_ - srg_);
-  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
+  double sle = factor * (sl - srl_);
   if (sle <= reg_pc_) {
     return factor * spline_pc_.GradientValue(sle);
   } else if (sle >= 1.0 - reg_pc_) {
     return factor * spline_pc_.GradientValue(sle);
   } else {
-    return dPc_dS_(sle);
+    return factor * dPc_dSe_(sle);
   }
 }
 
@@ -210,8 +209,8 @@ double WRMmp_vanGenuchten::capillaryPressure_(double sle) {
 }
 
 
-double WRMmp_vanGenuchten::dPc_dS_(double sle) {
-  return -Pr_ / (m_ * n_) * pow(pow(sle, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(sle, -1.0/m_ - 1.0) / (1.0 - srl_ - srg_);
+double WRMmp_vanGenuchten::dPc_dSe_(double sle) {
+  return -Pr_ / (m_ * n_) * pow(pow(sle, -1.0/m_) - 1.0, 1.0/n_ - 1.0) * pow(sle, -1.0/m_ - 1.0);
 }
 
 }  // namespace Multiphase

@@ -80,8 +80,8 @@
         <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        <Parameter name="regularization interval kr" type="double" value="0.01"/>
-        <Parameter name="regularization interval pc" type="double" value="0.01"/>
+        <Parameter name="regularization interval kr" type="double" value="0.005"/>
+        <Parameter name="regularization interval pc" type="double" value="0.001"/>
       </ParameterList>
     </ParameterList>
 
@@ -121,7 +121,7 @@
           <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-        <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+        <Parameter name="extrapolate initial guess" type="bool" value="false"/>
         <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
         <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
         <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
