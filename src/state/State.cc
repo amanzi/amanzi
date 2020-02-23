@@ -913,7 +913,7 @@ void State::Setup() {
       f_it->second->CreateData();
     }
     // std::cout<<"Field "<<f_it->first<<": ";
-    // if ( f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
     //   auto com_vec = f_it->second->GetFieldData();
     //     for (CompositeVector::name_iterator comp=com_vec->begin();
     //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";

@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     return Obs_data
@@ -33,7 +33,7 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
 
     # === SPECIAL CODE ==== for linear flow problems
     # Collect the z-values from observations
-    z_vals = [coord[2] for coord in Obs_xml.coordinates.itervalues()]
+    z_vals = [coord[2] for coord in Obs_xml.coordinates.values()]
     z_vals.sort()
     z_vals = set(z_vals)
     colors = ['b','g','r']
@@ -41,18 +41,18 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
 
     # Create dictionary for scatter plots
     scatter_data={}
-    for key in cmap.keys():
+    for key in list(cmap.keys()):
         scatter_data[key]={}
         scatter_data[key]['x']=[]
         scatter_data[key]['pressure']=[]
 
     # Collect observations in scatter_data
-    for obs in Obs_data.observations.itervalues(): 
+    for obs in Obs_data.observations.values(): 
         scatter_data[obs.coordinate[2]]['x'].append(obs.coordinate[0])
         scatter_data[obs.coordinate[2]]['pressure'].append(obs.data)
 
     # Plot the observations
-    for key in cmap.keys():
+    for key in list(cmap.keys()):
         axes1.scatter(scatter_data[key]['x'],scatter_data[key]['pressure'],c=cmap[key],marker='s',s=25,label='Amanzi')
 
     # Set labels and title
@@ -74,7 +74,7 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     coords[:,0] = x
 
     # Plot a line for each z-coordinate in the observations
-    for (z_val, color) in cmap.iteritems():
+    for (z_val, color) in cmap.items():
         coords[:,1] = z_val
         pressure = mymodel.pressure(coords)
         axes1.plot(x,pressure,color,label='$z = %0.2f $'%z_val)
@@ -86,7 +86,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     coordinates = []
     mymodel = model_linear_head_head_1d.createFromXML(filename)
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         coordinates.append([obs.coordinate[0], obs.coordinate[2]])
         pressure_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
 

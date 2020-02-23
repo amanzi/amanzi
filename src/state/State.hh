@@ -368,7 +368,7 @@ class State {
 
   // Position accessor and mutators.
   int position() const { return position_in_tp_; }
-  void set_position(int pos ) { position_in_tp_ = pos;}
+  void set_position(int pos ) { position_in_tp_ = pos; }
 
  private:
 

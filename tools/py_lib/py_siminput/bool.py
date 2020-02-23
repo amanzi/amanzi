@@ -32,21 +32,21 @@ class Bool:
         elif b in self.false:
             self.state = 0
         else:
-            raise TypeError, b + " unrecogonized value for Bool."
+            raise TypeError(b + " unrecogonized value for Bool.")
 
 # Test code:
 if __name__ == '__main__':
     x= Bool()
-    if ( x() ): print 'failed.'
-    if ( x(0) ): print 'failed.'
-    if ( x('f') ): print 'failed.'
-    if ( x('false') ): print 'failed.'
-    if ( x(False) ): print 'failed.'
-    if ( not x(1) ): print 'failed.'
-    if ( not x('t') ): print 'failed.'
-    if ( not x('true') ): print 'failed.'
-    if ( not x(True) ): print 'failed.'
-    print `x`, str(x)
+    if ( x() ): print('failed.')
+    if ( x(0) ): print('failed.')
+    if ( x('f') ): print('failed.')
+    if ( x('false') ): print('failed.')
+    if ( x(False) ): print('failed.')
+    if ( not x(1) ): print('failed.')
+    if ( not x('t') ): print('failed.')
+    if ( not x('true') ): print('failed.')
+    if ( not x(True) ): print('failed.')
+    print(repr(x), str(x))
     x = Bool('f')
-    print `x`, str(x)
+    print(repr(x), str(x))
 

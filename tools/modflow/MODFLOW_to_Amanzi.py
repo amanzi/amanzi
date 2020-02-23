@@ -29,7 +29,7 @@ def load_params(infile):
     # Load parameters file
     try:
         f = open(infile,'r')
-    except:
+    except Exception:
         print("ERROR: Could not open parameters file "+infile)
         print("Verify the filename is correct and the filename is located relative")
         print("to the directory this script was executed")
@@ -44,7 +44,7 @@ def load_params(infile):
                 try:
                     key = nline.split("=")[0].strip()
                     val = nline.split("=")[1].strip()
-                except:
+                except Exception:
                     print("ERROR IN LINE: " + line.strip("\n"))
                     print("Parameter line must be in the format: PARAM=VALUE")
                     exit(1)
@@ -52,7 +52,7 @@ def load_params(infile):
                 try:
                     key = line.split("=")[0].strip()
                     val = line.split("=")[1].strip()
-                except:
+                except Exception:
                     print("ERROR IN LINE: " + line.strip("\n"))
                     print("Parameter line must be in the format: PARAM=VALUE")
                     exit(1)
@@ -83,8 +83,8 @@ def verify_params(dict):
     
     # Search dictionary and prompt for missing values
     for key in params:
-        if (not key in dict) or (key in dict and dict[key]==''):
-            prompt = raw_input("Enter the value for {}: ".format(key))
+        if (key not in dict) or (key in dict and dict[key]==''):
+            prompt = input("Enter the value for {}: ".format(key))
             
             if prompt != '':
                 dict[key] = prompt
@@ -113,7 +113,7 @@ def write_fs_file(l):
 # Main function
 def main(argv=None):
     
-    if argv == None:
+    if argv is None:
         argv = sys.argv
     
     parser = argparse.ArgumentParser(description = "Convert Modflow to Amanzi")
@@ -275,7 +275,7 @@ def main(argv=None):
     
     hexmesh.dump_avs2(export_name)
     
-    if (VIEW_IN_PARAVIEW == True):
+    if VIEW_IN_PARAVIEW:
         hexmesh.paraview()
 
 if __name__ == "__main__":

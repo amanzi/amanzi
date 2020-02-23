@@ -1331,7 +1331,7 @@ double Mesh_MSTK::mineigenvalue(const double A[3][3]) const {
       r = r/2.0;
       if ( r <= -1)
         phi = pi/3.0;
-      else if  ( r>=1)
+      else if (r>=1)
         phi = 0;
       else
         phi = acos(r)/3.0;

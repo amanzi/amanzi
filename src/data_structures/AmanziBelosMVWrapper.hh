@@ -205,17 +205,17 @@ void CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A, std::
 template<class Vector>
 void CompositeMultiVector<Vector>::MvNorm(std::vector<MagnitudeType> &normvec, Belos::NormType type) const
 {
-  if(type == Belos::TwoNorm)
+  if (type == Belos::TwoNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
       cmv_[i]->Norm2(&normvec[i]);
   }
-  else if(type == Belos::OneNorm)
+  else if (type == Belos::OneNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
       cmv_[i]->Norm1(&normvec[i]);
   }
-  else // if(type == Belos::InfNorm)
+  else // if (type == Belos::InfNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
       cmv_[i]->NormInf(&normvec[i]);

@@ -19,7 +19,7 @@ def load_amanzi_obs():
 
 def load_ana_solution():
     # load data from analytic solution
-    ana_data =numpy.genfromtxt('analytic/test_h_tr.dat')
+    ana_data = numpy.genfromtxt('analytic/test_h_tr.dat')
     return ana_data
 
 def plottest(axes1, obstimes, obsdata, ana_data):
@@ -27,11 +27,11 @@ def plottest(axes1, obstimes, obsdata, ana_data):
     axes1.set_xlabel('Time after pumping [days]')
     axes1.set_title('Drawdown at Observation Well with Distance r1  = 24m and r2 = 100m ')
     
-    ntime1 = len(ana_data[:,0])/2
-    ntime2= len(ana_data[:,0])
+    ntime1 = int(len(ana_data[:,0])/2)
+    ntime2 = int(len(ana_data[:,0]))
 
-    ntime3 = len(obstimes[:,0])
-    ntime4 = len(obstimes[:,1])
+    ntime3 = int(len(obstimes[:,0]))
+    ntime4 = int(len(obstimes[:,1]))
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Analytical Solution: r=24m')
     axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         obsdata = []
         obstimes = []
-        for obs in obs_data.observations.itervalues():
+        for obs in obs_data.observations.values():
             obsdata.append(obs.data)
             obstimes.append(obs.times)
 

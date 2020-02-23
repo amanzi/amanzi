@@ -251,7 +251,7 @@ void ObservableAqueous::ComputeObservation(
         double area = mesh_->face_area(g);
         double sign = reg_normal_ * face_normal / area;
         double scale = 1.;
-        if (domain_ == "fracture"){
+        if (domain_ == "fracture") {
           mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
           int c = cells[0];
           scale = (*aperture_rcp)[0][c];

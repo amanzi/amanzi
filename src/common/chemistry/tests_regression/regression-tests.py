@@ -86,16 +86,16 @@ def convert_list_to_dictionary(input_list):
     return output_dict
 
 def display_available_tests(available_tests):
-    print "Available tests: "
+    print("Available tests: ")
     for t in sorted(available_tests.keys()):
-        print "    {0}".format(t)
+        print("    {0}".format(t))
 
 def display_available_suites(suites):
-    print "Available test suites: "
+    print("Available test suites: ")
     for s in suites.keys():
-        print "    {0} :".format(s)
+        print("    {0} :".format(s))
         for t in suites[s].split():
-            print "        {0}".format(t)
+            print("        {0}".format(t))
 
 def identify_tests(options, available_suites, available_tests):
     tests_to_run = {}
@@ -111,7 +111,7 @@ def identify_tests(options, available_suites, available_tests):
             if t in available_tests.keys():
                 tests_to_run[t] = available_tests[t]
             else:
-                print "Unknown test specified on command line: {0}".format(t)
+                print("Unknown test specified on command line: {0}".format(t))
 
     # if suite or list
     # of suites is given, convert to a list of tests and run them.
@@ -122,16 +122,16 @@ def identify_tests(options, available_suites, available_tests):
                     if t in available_tests.keys():
                         tests_to_run[t] = available_tests[t]
                     else:
-                        print "Unknown test \'{0}\' specified in suite \'{1}\'".format(t, s)
+                        print("Unknown test \'{0}\' specified in suite \'{1}\'".format(t, s))
             else:
-                print "Unknown test suite specified on command line: {0}".format(s)
+                print("Unknown test suite specified on command line: {0}".format(s))
 
     if options.debug:
-        print "Found tests:"
+        print("Found tests:")
         for t in tests_to_run.keys():
-            print "    {0} : ".format(t)
+            print("    {0} : ".format(t))
             for k in tests_to_run[t].keys():
-                print "        {0} : {1}".format(k, tests_to_run[t][k])
+                print("        {0} : {1}".format(k, tests_to_run[t][k]))
 
     return tests_to_run
 
@@ -143,14 +143,14 @@ def run_tests(options, tests_to_run):
         cmdline = "{0} ".format(options.executable[0])
         cmdline += "{0} {1} ".format(setup['input arg'], input_file)
         if options.verbose or not options.do_tests:
-            print 80*'-'
-            print "Running test \'{0}\' with the command:\n\t{1}".format(r, cmdline)
+            print(80*'-')
+            print("Running test \'{0}\' with the command:\n\t{1}".format(r, cmdline))
             verification_name = None
             if 'verification' in test_info:
                 verification_name = test_info['verification']
-            print "    verification problem : {0}".format(verification_name)
+            print("    verification problem : {0}".format(verification_name))
         else:
-            print "{0} ....".format(r),
+            print("{0} ....".format(r))
         if options.do_tests:
             results_name = r + '.stdout'
             subprocess.Popen(['mv', '-f', results_name, results_name+'.old'], 
@@ -165,25 +165,25 @@ def run_tests(options, tests_to_run):
                     results_hash.update(line)
             #print results_hash.hexdigest()
             if test_info['hash'] == results_hash.hexdigest():
-                    print "Passed"
+                print("Passed")
             else:
                 num_failed += 1
-                print "Failed:"
+                print("Failed:")
                 if options.verbose:
-                    print "Expected hash: {0}".format(test_info['hash'])
-                    print "Received hash: {0}".format(results_hash.hexdigest())
+                    print("Expected hash: {0}".format(test_info['hash']))
+                    print("Received hash: {0}".format(results_hash.hexdigest()))
                     verified_results_name = setup['results dir'] + r + '.test'
                     diff_command = 'diff {0} {1}'.format(results_name, 
                                                          verified_results_name)
-                    print diff_command
+                    print(diff_command)
 
-    print 80*'-'
+    print(80*'-')
     if not options.do_tests:
-        print "End of dry run."
+        print("End of dry run.")
     elif num_failed:
-        print "FAILURE: {0} of {1} tests failed.".format(num_failed, len(tests_to_run))
+        print("FAILURE: {0} of {1} tests failed.".format(num_failed, len(tests_to_run)))
     else:
-        print "SUCCESS: {0} tests passed.".format(len(tests_to_run))
+        print("SUCCESS: {0} tests passed.".format(len(tests_to_run)))
 
 
 if __name__ == "__main__":

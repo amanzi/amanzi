@@ -286,8 +286,8 @@ class MeshLogicalFactory {
   int
   AddFace(int f,
           const Entity_ID_List& cells,
-          const AmanziGeometry::Point& normal,
-          const std::vector<double>& lengths,
+          const std::vector<AmanziGeometry::Point>& bisectors,
+          const std::vector<int>& dirs,
           double area);
 
   // Add a set from a list of entities
@@ -308,9 +308,11 @@ class MeshLogicalFactory {
  protected:
   std::vector<double> cell_volumes_;
   std::vector<double> cell_lengths_;
+  std::vector<double> face_areas_;
   std::vector<Entity_ID_List> face_cell_list_;
-  std::vector<std::vector<double> > face_cell_lengths_;
-  std::vector<AmanziGeometry::Point> face_area_normals_;
+  std::vector<std::vector<AmanziGeometry::Point> > face_cell_bisectors_;
+  std::vector<std::vector<int> > face_cell_dirs_;
+
   std::vector<AmanziGeometry::Point> cell_centroids_;
 
   Comm_ptr_type comm_;
@@ -318,6 +320,7 @@ class MeshLogicalFactory {
 
   std::map<std::string, Entity_ID_List> seg_cells_;
   std::map<std::string, Entity_ID_List> seg_faces_;
+  std::map<std::string, AmanziGeometry::Point> seg_orientations_;
 
   bool calculated_volume_;
 

@@ -10,6 +10,6 @@
     :license: BSD, see LICENSE for details.
 """
 
-from .hello import *
+from .autorun import *
 __import__('pkg_resources').declare_namespace(__name__)
 
