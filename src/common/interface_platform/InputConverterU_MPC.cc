@@ -638,7 +638,7 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
   }
   else if (pk_name == "coupled flow and transport") {
-    Teuchos::ParameterList& tmp_list = pk_tree.sublist("cpupled flow and transport");
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and transport");
     tmp_list.set<std::string>("PK type", "flow reactive transport");
     PopulatePKTree_(tmp_list, "coupled flow");
     PopulatePKTree_(tmp_list, "coupled transport");
