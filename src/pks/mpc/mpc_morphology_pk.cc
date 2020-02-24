@@ -246,7 +246,6 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
     while (fail){
       S_next_ -> set_time(t_old + dt_done + dt_next);
       S_inter_-> set_time(t_old + dt_done);
-      //      std::cout<<"DEBUG: flow_pk_ -> AdvanceStep "<<t_old + dt_done<<" -> "<<t_old + dt_done + dt_next<<"\n";
       fail = flow_pk_ -> AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
       fail |= !flow_pk_->ValidStep();
       
@@ -259,25 +258,19 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
     master_dt_ = dt_next;
     //flow_pk_ -> CalculateDiagnostics(S_next_);
-    flow_pk_ -> CommitStep(t_old  + dt_done, t_old + dt_done + dt_next, S_next_);
-    //std::cout<<"DEBUG: flow_pk_ -> CommitStep "<<t_old + dt_done<<" -> "<<t_old + dt_done + dt_next<<"\n";
-
-   
+    flow_pk_ -> CommitStep(t_old  + dt_done, t_old + dt_done + dt_next, S_next_);  
     slave_dt_ = sed_transport_pk_->get_dt(); 
     if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os()<<"Slave dt="<<slave_dt_<<" Master dt="<<master_dt_<<"\n"; 
    
     fail = sed_transport_pk_->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
-    //std::cout<<"DEBUG: sed_transport_pk_ -> AdvanceStep "<<t_old + dt_done<<" -> "<<t_old + dt_done + dt_next<<"\n";      
-
-    
+   
     if (fail){
       dt_next /= 2;
     }else{
       S_inter_ -> set_intermediate_time(t_old + dt_done + dt_next);
       sed_transport_pk_->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_next_);
-      //std::cout<<"DEBUG: sed_transport_pk_ -> CommitStep "<<t_old + dt_done<<" -> "<<t_old + dt_done + dt_next<<"\n";      
       dt_done += dt_next;
 
       // we're done with this time step, copy the state

@@ -21,9 +21,7 @@ namespace Amanzi {
     WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
   {
 
-    //std::cout << *global_list<<"\n";
-    //exit(0);
-      // Create verbosity object.
+    // Create verbosity object.
     vo_ = Teuchos::null;
     Teuchos::ParameterList vlist;
     vlist.sublist("verbose object") = global_list -> sublist("verbose object");

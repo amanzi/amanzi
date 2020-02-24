@@ -1443,11 +1443,6 @@ void SedimentTransport_PK::ComputeAddSourceTerms(double tp, double dtp,
         //add_mass += dtp * value; 
         tcc[imap][c] += dtp * value;
         mass_sediment_source_ += value;
-
-        //   double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];         
-        //   std::cout<<MyPID<<" "<<"Source name "<<srcs_[m]->name()<<" cell "<<c<<" dt "<<dtp<<" value "<<
-        //      value<<" values[k] "<<values[k]<<
-        //     "  + mass "<<dtp * value<<" water "<<vol_phi_ws_den<<" cons "<<(*conserve_qty_)[i][c]<<" cntr "<<mesh_->cell_centroid(c)<<"\n";
         
       }
     }

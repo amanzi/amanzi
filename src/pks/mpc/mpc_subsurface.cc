@@ -170,7 +170,9 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       else divq_plist.set("Newton correction", "approximate Jacobian");
      
       divq_plist.set("exclude primary terms", true);
+
       Operators::PDE_DiffusionFactory opfactory;
+
       ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
       dWC_dT_block_ = ddivq_dT_->global_operator();
     }
@@ -219,7 +221,9 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
       
       ddivKgT_dp_plist.set("exclude primary terms", true);
+
       Operators::PDE_DiffusionFactory opfactory;
+
       if (dE_dp_block_ == Teuchos::null) {
         ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
         dE_dp_block_ = ddivKgT_dp_->global_operator();
@@ -547,10 +551,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       // ComputeDivCorrection(flux, kr_uw, dkrdT, 
       //                      S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false));
 
-      // double l2norm;
-      // S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false)->Norm2(&l2norm);
-      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivq_dT"<<l2norm<<"\n";
-
 
     }
 
@@ -562,7 +562,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     dWC_dT_->AddAccumulationTerm(*dWC_dT, h, "cell", false);
 
 
-    // std::cout << "1/h * DWC/DT" << std::endl;
     // CompositeVector dbg(*dWC_dT); dbg = *dWC_dT; dbg.Scale(1./h); dbg.Print(std::cout);
     
 
@@ -601,10 +600,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       // ComputeDivCorrection(flux, uw_Kappa, dKappa_dp, 
       //                      S_next_->GetFieldData(ddivKgT_dp_key_, name_)->ViewComponent("cell", false));
-      // double l2norm;
-      // S_next_->GetFieldData( ddivKgT_dp_key_ , name_)->ViewComponent("cell", false)->Norm2(&l2norm);
-      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivKgT_dp"<<l2norm<<"\n";
-
     }
 
 
@@ -705,6 +700,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivhq_dp_->UpdateFlux(up->SubVector(0)->Data().ptr(), adv_flux_ptr);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
+
       ddivhq_dp_->ApplyBCs(false, true, false);
 
 
@@ -714,6 +710,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dT_->UpdateMatrices(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dT_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
+
       ddivhq_dT_->ApplyBCs(false, true, false);
 
 
@@ -725,16 +722,14 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     Teuchos::RCP<const CompositeVector> dE_dp =
       S_next_->GetFieldData(Keys::getDerivKey(e_key_, pres_key_));
     dE_dp_->AddAccumulationTerm(*dE_dp, h, "cell", false);
-
-    // std::cout << "1/h * DE/Dp" << std::endl;
-    // dbg = *dE_dp; dbg.Scale(1./h); dbg.Print(std::cout);
-    
+   
     // write for debugging
     std::vector<std::string> vnames;
     vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
     db_->WriteVectors(vnames, vecs, false);
+    
 
     // finally assemble the full system, dump if requested, and form the inverse
     if (assemble) {

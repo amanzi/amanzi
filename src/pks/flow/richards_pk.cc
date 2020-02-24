@@ -393,8 +393,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- primary variables
 
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
-
-  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+  
+  if (compute_boundary_values_) 
+    matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
   
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
 
@@ -403,7 +404,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   
 }
 
@@ -478,6 +478,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
   
   
+
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -581,9 +582,11 @@ void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
     matrix_diff_->ApplyBCs(true, true, true);
 
+
     // derive fluxes
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
     matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
 
     if (compute_boundary_values_){
       Epetra_MultiVector& pres_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
@@ -595,6 +598,7 @@ void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
         pres_bf[0][bf] =  BoundaryFaceValue(f, *pres);
       }
     }      
+
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -698,6 +702,7 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
   UpdateVelocity_(S.ptr());
 };
 
@@ -729,8 +734,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> flux_dir = S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
+
       face_matrix_diff_->SetDensity(rho);
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+      //if (!pres->HasComponent("face"))
       face_matrix_diff_->ApplyBCs(true, true, true);
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
 
@@ -1448,7 +1455,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.
-  if (du->Data()->HasComponent("boundary_face")) {
+  if (du->Data()->HasComponent("boundary_face"))  {
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
   }
 
