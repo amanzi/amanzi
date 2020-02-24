@@ -101,16 +101,16 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasField("total_component_concentration")) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<"total_component_concentration"<<" doesn't exist in state";
+      msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
     cv = S.GetFieldData("total_component_concentration");
     vector = cv->ViewComponent("cell", true);
-  }else{
+  } else {
     if (!S.HasField(var)) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+      msg <<"InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetFieldData(var);

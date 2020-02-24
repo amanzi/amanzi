@@ -8,7 +8,7 @@
 
   Field evaluator for total water storage, the conserved quantity:
 
-    TCS = phi * rho_l * s_l.
+    TCS = phi * (eta_l * s_l + eta_g * s_g * x_v)
 */
 
 #include "TotalWaterStorage.hh"

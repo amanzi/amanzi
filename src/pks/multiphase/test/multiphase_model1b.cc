@@ -30,11 +30,11 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseTwoComponents_PK.hh"
+#include "MultiphaseModel1_PK.hh"
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_2P2C) {
+TEST(MULTIPHASE_MODEL_I) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -44,10 +44,10 @@ TEST(MULTIPHASE_2P2C) {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model I" << std::endl;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Xg" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_two_components.xml";
+  std::string xmlFileName = "test/multiphase_model1b.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -56,7 +56,7 @@ TEST(MULTIPHASE_2P2C) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
 
   // create screen io
@@ -70,7 +70,7 @@ TEST(MULTIPHASE_2P2C) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseTwoComponents_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MultiphaseModel1_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();
@@ -91,8 +91,8 @@ TEST(MULTIPHASE_2P2C) {
   int iloop(0);
   bool failed = true;
   double t(0.0), tend(1.57e+12), dt(1.5768e+7), dt_max(3e+10);
-  while (t < tend && iloop < 400) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
+  while (t < tend && iloop < 200) {
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
 
     MPK->CommitStep(t, t + dt, S);
     S->advance_cycle();
@@ -107,13 +107,11 @@ TEST(MULTIPHASE_2P2C) {
       io->InitializeCycle(t, iloop);
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-      const auto& u3 = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
+      const auto& u2 = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
-      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
       io->FinalizeCycle();
 
       S->WriteStatistics(vo);
@@ -130,9 +128,12 @@ TEST(MULTIPHASE_2P2C) {
   CHECK(dmin >= 0.0 && dmax <= 1.0);
   
   S->GetFieldData("ncp_fg")->NormInf(&dmax);
-  CHECK(dmax <= 2.0e-14);
+  CHECK(dmax <= 1.0e-14);
 
-  const auto& xg = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-  xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
+  double vmin[2], vmax[2];
+  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  xg.MinValue(vmin);
+  xg.MaxValue(vmax);
+  CHECK(vmin[0] >= 0.0 && vmax[0] <= 1.0);
+  CHECK(vmin[1] >= 0.0 && vmax[1] <= 1.0);
 }

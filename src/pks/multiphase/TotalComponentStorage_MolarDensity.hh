@@ -27,10 +27,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorageTest : public MultiphaseBaseEvaluator {
+class TotalComponentStorage_MolarDensity : public MultiphaseBaseEvaluator {
  public:
-  TotalComponentStorageTest(Teuchos::ParameterList& plist);
-  TotalComponentStorageTest(const TotalComponentStorageTest& other);
+  TotalComponentStorage_MolarDensity(Teuchos::ParameterList& plist);
+  TotalComponentStorage_MolarDensity(const TotalComponentStorage_MolarDensity& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -47,6 +47,7 @@ class TotalComponentStorageTest : public MultiphaseBaseEvaluator {
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
+  Key molar_density_liquid_key_, molar_density_gas_key_;
 };
 
 }  // namespace Multiphase

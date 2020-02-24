@@ -17,11 +17,11 @@
 #include "Teuchos_RCP.hpp"
 
 // Multiphase
-#include "MultiphaseTwoComponents_PK.hh"
+#include "MultiphaseJaffre_PK.hh"
 #include "NCP_F.hh"
 #include "NCP_HenryLaw.hh"
 #include "ProductEvaluator.hh"
-#include "TotalComponentStorageTest.hh"
+#include "TotalComponentStorage_MolarDensity.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -29,7 +29,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Standard constructor
 ****************************************************************** */
-MultiphaseTwoComponents_PK::MultiphaseTwoComponents_PK(
+MultiphaseJaffre_PK::MultiphaseJaffre_PK(
     Teuchos::ParameterList& pk_tree,
     const Teuchos::RCP<Teuchos::ParameterList>& glist,
     const Teuchos::RCP<State>& S,
@@ -40,7 +40,7 @@ MultiphaseTwoComponents_PK::MultiphaseTwoComponents_PK(
 /* ******************************************************************
 * Setup
 ****************************************************************** */
-void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
+void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   Multiphase_PK::Setup(S);
 
@@ -99,9 +99,11 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist;
     elist.set<std::string>("my key", tcs_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
-         .set<std::string>("porosity key", porosity_key_);
+         .set<std::string>("porosity key", porosity_key_)
+         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
+         .set<std::string>("molar density gas key", molar_density_gas_key_);
 
-    eval_tcs_ = Teuchos::rcp(new TotalComponentStorageTest(elist));
+    eval_tcs_ = Teuchos::rcp(new TotalComponentStorage_MolarDensity(elist));
     S->SetFieldEvaluator(tcs_key_, eval_tcs_);
   }
 
@@ -227,7 +229,7 @@ void MultiphaseTwoComponents_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Push data to the state
 ****************************************************************** */
-void MultiphaseTwoComponents_PK::CommitStep(
+void MultiphaseJaffre_PK::CommitStep(
     double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Multiphase_PK::CommitStep(t_old, t_new, S);
@@ -241,7 +243,7 @@ void MultiphaseTwoComponents_PK::CommitStep(
 * Modifies nonlinear update du using .. TBW
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-MultiphaseTwoComponents_PK::ModifyCorrection(
+MultiphaseJaffre_PK::ModifyCorrection(
     double h, Teuchos::RCP<const TreeVector> res,
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> du)
@@ -273,7 +275,7 @@ MultiphaseTwoComponents_PK::ModifyCorrection(
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */
-void MultiphaseTwoComponents_PK::InitMPSolutionVector()
+void MultiphaseJaffre_PK::InitMPSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
   soln_names_.push_back(molar_density_liquid_key_);
@@ -290,7 +292,7 @@ void MultiphaseTwoComponents_PK::InitMPSolutionVector()
 /* ******************************************************************* 
 * Create matrix structure of pairs of evaluators and scalar factors
 ******************************************************************* */
-void MultiphaseTwoComponents_PK::InitMPPreconditioner()
+void MultiphaseJaffre_PK::InitMPPreconditioner()
 {
   eqns_.resize(num_primary_ + 2);
 
@@ -326,7 +328,7 @@ void MultiphaseTwoComponents_PK::InitMPPreconditioner()
 /* ******************************************************************* 
 * Populate boundary conditions for various bc types
 ******************************************************************* */
-void MultiphaseTwoComponents_PK::PopulateBCs(int icomp, bool flag)
+void MultiphaseJaffre_PK::PopulateBCs(int icomp, bool flag)
 {
   // calculus of variations produces zero for fixed BCs
   double factor = (flag) ? 1.0 : 0.0;
@@ -435,7 +437,7 @@ void MultiphaseTwoComponents_PK::PopulateBCs(int icomp, bool flag)
 /* ******************************************************************* 
 * Map for indices
 ******************************************************************* */
-SolutionStructure MultiphaseTwoComponents_PK::EquationToSolution(int neqn)
+SolutionStructure MultiphaseJaffre_PK::EquationToSolution(int neqn)
 {
   SolutionStructure soln(neqn, 0, -1);
   return soln;
@@ -445,13 +447,13 @@ SolutionStructure MultiphaseTwoComponents_PK::EquationToSolution(int neqn)
 /* ******************************************************************* 
 * Tweak evaluators.
 ******************************************************************* */
-void MultiphaseTwoComponents_PK::ModifyEvaluators(int neqn)
+void MultiphaseJaffre_PK::ModifyEvaluators(int neqn)
 {
   if (neqn > 0) {
     int ifield(0), n(neqn - 1);
     // ifield is dummy here
-    Teuchos::rcp_dynamic_cast<TotalComponentStorageTest>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
-    Teuchos::rcp_dynamic_cast<TotalComponentStorageTest>(eval_tcs_)->HasFieldChanged(S_.ptr(), passwd_, true);
+    Teuchos::rcp_dynamic_cast<TotalComponentStorage_MolarDensity>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
+    Teuchos::rcp_dynamic_cast<TotalComponentStorage_MolarDensity>(eval_tcs_)->HasFieldChanged(S_.ptr(), passwd_, true);
 
     // mole fraction is second in the dependencies set
     auto eval = S_->GetFieldEvaluator(advection_liquid_key_);

@@ -9,13 +9,11 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Reimplementation of the original multiphase mode for testing.
-  Solution vectors are pressure (l), saturation (l), and hydrogen 
-  molar density (l).
+  Solution vector: liquid pressure, liquid saturation, molar gas density.
 */
 
-#ifndef AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
-#define AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
+#ifndef AMANZI_MULTIPHASE_MODEL2_PK_HH_
+#define AMANZI_MULTIPHASE_MODEL2_PK_HH_
 
 // Amanzi
 #include "Key.hh"
@@ -27,19 +25,19 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseTwoComponents_PK: public Multiphase_PK {
+class MultiphaseModel2_PK: public Multiphase_PK {
  public:
-  MultiphaseTwoComponents_PK(Teuchos::ParameterList& pk_tree,
-                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                             const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<TreeVector>& soln);
+  MultiphaseModel2_PK(Teuchos::ParameterList& pk_tree,
+                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                      const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& soln);
 
-  ~MultiphaseTwoComponents_PK() {};
+  ~MultiphaseModel2_PK() {};
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual std::string name() override { return "multiphase 2p2c"; }
+  virtual std::string name() override { return "multiphase pl sl ng"; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -61,13 +59,14 @@ class MultiphaseTwoComponents_PK: public Multiphase_PK {
  private:
   int missed_bc_faces_;
 
-  Key advection_water_key_, molar_density_water_key_;
-  Key diffusion_liquid_key_;
+  Key advection_water_key_, pressure_vapor_key_, x_vapor_key_;
+  Key diffusion_liquid_key_, diffusion_gas_key_, diffusion_vapor_key_; 
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
+  Key tcc_liquid_key_, tcc_gas_key_;
 
  private:
   // factory registration
-  static RegisteredPKFactory<MultiphaseTwoComponents_PK> reg_;
+  static RegisteredPKFactory<MultiphaseModel2_PK> reg_;
 };
 
 }  // namespace Multiphase

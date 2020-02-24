@@ -48,15 +48,17 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         MultiphaseModelI_PK.cc MultiphaseTwoComponents_PK.cc
+                         MultiphaseJaffre_PK.cc
+                         MultiphaseModel1_PK.cc MultiphaseModel2_PK.cc
                          Multiphase_Utils.cc
-                         NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc
+                         NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
                          SaturationGasEvaluator.cc
                          TotalWaterStorage.cc 
-                         TotalComponentStorage.cc TotalComponentStorageTest.cc
+                         TotalComponentStorage.cc
+                         TotalComponentStorage_MolarDensity.cc
                          VaporPressureEvaluator.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
-                         MoleFractionLiquid.cc PressureGasEvaluator.cc
+                         MoleFractionLiquid.cc TccLiquid.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          FlattenedTreeOperator.cc)
 
@@ -71,12 +73,13 @@ add_amanzi_library(multiphase
 #
 set(multiphase_inc_files 
   Multiphase_PK.hh
-  MultiphaseModelI_PK.hh MultiphaseTwoComponents_PK.hh
+  MultiphaseJaffre_PK.hh
+  MultiphaseModel1_PK.hh MultiphaseModel2_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
-  MoleFractionLiquid.hh
-  NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh
+  MoleFractionLiquid.hh TccLiquid.hh
+  NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
   SaturationGasEvaluator.hh
@@ -108,20 +111,28 @@ if (BUILD_TESTS)
   set(amanzi_libs multiphase state mesh_factory whetstone operators 
                   geometry mesh_functions functions eos pks)
 
-  # Unit tests:
-  add_amanzi_test(multiphase_modelIa multiphase_modelIa
+  # Unit tests: Jaffre
+  add_amanzi_test(multiphase_jaffre multiphase_jaffre
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_modelIa.cc
+                  SOURCE    test/Main.cc test/multiphase_jaffre.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(multiphase_modelIb multiphase_modelIb
+  # Unit tests: Pl-Sl-Xg
+  add_amanzi_test(multiphase_model1a multiphase_model1a
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_modelIb.cc
+                  SOURCE    test/Main.cc test/multiphase_model1a.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(multiphase_two_components multiphase_two_components
+  add_amanzi_test(multiphase_model1b multiphase_model1b
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_two_components.cc
+                  SOURCE    test/Main.cc test/multiphase_model1b.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Unit tests: Pl-Sl-Cg
+  add_amanzi_test(multiphase_model2a multiphase_model2a
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_model2a.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 

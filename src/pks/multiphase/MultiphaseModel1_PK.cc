@@ -17,7 +17,7 @@
 
 // Multiphase
 #include "MoleFractionLiquid.hh"
-#include "MultiphaseModelI_PK.hh"
+#include "MultiphaseModel1_PK.hh"
 #include "NCP_F.hh"
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
@@ -32,7 +32,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Standard constructor
 ****************************************************************** */
-MultiphaseModelI_PK::MultiphaseModelI_PK(Teuchos::ParameterList& pk_tree,
+MultiphaseModel1_PK::MultiphaseModel1_PK(Teuchos::ParameterList& pk_tree,
                                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                          const Teuchos::RCP<State>& S,
                                          const Teuchos::RCP<TreeVector>& soln)
@@ -42,7 +42,7 @@ MultiphaseModelI_PK::MultiphaseModelI_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************
 * Setup
 ****************************************************************** */
-void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
+void MultiphaseModel1_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   Multiphase_PK::Setup(S);
 
@@ -337,7 +337,7 @@ void MultiphaseModelI_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Push data to the state
 ****************************************************************** */
-void MultiphaseModelI_PK::CommitStep(
+void MultiphaseModel1_PK::CommitStep(
     double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Multiphase_PK::CommitStep(t_old, t_new, S);
@@ -351,7 +351,7 @@ void MultiphaseModelI_PK::CommitStep(
 * Modifies nonlinear update du using .. TBW
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+MultiphaseModel1_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                                       Teuchos::RCP<const TreeVector> u,
                                       Teuchos::RCP<TreeVector> du)
 {
@@ -390,7 +390,7 @@ MultiphaseModelI_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
 /* ******************************************************************* 
 * Create vector of solutions
 ******************************************************************* */
-void MultiphaseModelI_PK::InitMPSolutionVector()
+void MultiphaseModel1_PK::InitMPSolutionVector()
 {
   soln_names_.push_back(pressure_liquid_key_);
   soln_names_.push_back(x_gas_key_);
@@ -407,7 +407,7 @@ void MultiphaseModelI_PK::InitMPSolutionVector()
 /* ******************************************************************* 
 * Populate structure of equations with names of evqluators.
 ******************************************************************* */
-void MultiphaseModelI_PK::InitMPPreconditioner()
+void MultiphaseModel1_PK::InitMPPreconditioner()
 {
   eqns_.resize(num_primary_ + 2);
 
@@ -443,7 +443,7 @@ void MultiphaseModelI_PK::InitMPPreconditioner()
 /* ******************************************************************* 
 * Populate boundary conditions for various bc types
 ******************************************************************* */
-void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
+void MultiphaseModel1_PK::PopulateBCs(int icomp, bool flag)
 {
   // calculus of variations produces zero for fixed BCs
   double factor = (flag) ? 1.0 : 0.0;
@@ -552,7 +552,7 @@ void MultiphaseModelI_PK::PopulateBCs(int icomp, bool flag)
 /* ******************************************************************* 
 * Map for indices
 ******************************************************************* */
-SolutionStructure MultiphaseModelI_PK::EquationToSolution(int neqn)
+SolutionStructure MultiphaseModel1_PK::EquationToSolution(int neqn)
 {
   SolutionStructure soln(neqn, 0, -1);
   if (neqn == 0) return soln;
@@ -572,7 +572,7 @@ SolutionStructure MultiphaseModelI_PK::EquationToSolution(int neqn)
 /* ******************************************************************* 
 * Tweak evaluators.
 ******************************************************************* */
-void MultiphaseModelI_PK::ModifyEvaluators(int neqn)
+void MultiphaseModel1_PK::ModifyEvaluators(int neqn)
 {
   if (neqn > 0) {
     int ifield(0), n(neqn - 1);

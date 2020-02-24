@@ -9,11 +9,13 @@
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution vector: pressure (l), saturation (l), mole fraction (g).
+  Reimplementation of the original multiphase mode for testing.
+  Solution vectors are pressure (l), saturation (l), and hydrogen 
+  molar density (l).
 */
 
-#ifndef AMANZI_MULTIPHASE_MODEL_I_PK_HH_
-#define AMANZI_MULTIPHASE_MODEL_I_PK_HH_
+#ifndef AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
+#define AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
 
 // Amanzi
 #include "Key.hh"
@@ -25,19 +27,19 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseModelI_PK: public Multiphase_PK {
+class MultiphaseJaffre_PK: public Multiphase_PK {
  public:
-  MultiphaseModelI_PK(Teuchos::ParameterList& pk_tree,
-                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                      const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& soln);
+  MultiphaseJaffre_PK(Teuchos::ParameterList& pk_tree,
+                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                             const Teuchos::RCP<State>& S,
+                             const Teuchos::RCP<TreeVector>& soln);
 
-  ~MultiphaseModelI_PK() {};
+  ~MultiphaseJaffre_PK() {};
 
   // modifying interface for PKs
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual std::string name() override { return "multiphase reduced"; }
+  virtual std::string name() override { return "multiphase jaffre"; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -59,13 +61,13 @@ class MultiphaseModelI_PK: public Multiphase_PK {
  private:
   int missed_bc_faces_;
 
-  Key advection_water_key_, pressure_vapor_key_, x_vapor_key_;
-  Key diffusion_liquid_key_, diffusion_gas_key_, diffusion_vapor_key_; 
+  Key advection_water_key_, molar_density_water_key_;
+  Key diffusion_liquid_key_;
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
 
  private:
   // factory registration
-  static RegisteredPKFactory<MultiphaseModelI_PK> reg_;
+  static RegisteredPKFactory<MultiphaseJaffre_PK> reg_;
 };
 
 }  // namespace Multiphase

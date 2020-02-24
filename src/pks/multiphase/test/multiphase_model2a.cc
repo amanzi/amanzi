@@ -30,7 +30,7 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseModelI_PK.hh"
+#include "MultiphaseModel2_PK.hh"
 
 
 /* **************************************************************** */
@@ -44,10 +44,10 @@ TEST(MULTIPHASE_MODEL_I) {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model I" << std::endl;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Ng" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_modelIa.xml";
+  std::string xmlFileName = "test/multiphase_model2a.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -70,7 +70,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseModelI_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MultiphaseModel2_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();
@@ -107,11 +107,11 @@ TEST(MULTIPHASE_MODEL_I) {
       io->InitializeCycle(t, iloop);
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+      const auto& u2 = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "mole density gas", AmanziMesh::CELL);
       io->FinalizeCycle();
 
       S->WriteStatistics(vo);
@@ -130,8 +130,7 @@ TEST(MULTIPHASE_MODEL_I) {
   S->GetFieldData("ncp_fg")->NormInf(&dmax);
   CHECK(dmax <= 1.0e-14);
 
-  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  const auto& xg = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
   xg.MinValue(&dmin);
-  xg.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0);
+  CHECK(dmin >= 0.0);
 }

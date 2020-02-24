@@ -30,7 +30,7 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseModelI_PK.hh"
+#include "MultiphaseModel1_PK.hh"
 
 
 /* **************************************************************** */
@@ -44,10 +44,10 @@ TEST(MULTIPHASE_MODEL_I) {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model I" << std::endl;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Xg" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_modelIb.xml";
+  std::string xmlFileName = "test/multiphase_model1a.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -70,7 +70,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseModelI_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MultiphaseModel1_PK(pk_tree, plist, S, soln));
 
   MPK->Setup(S.ptr());
   S->Setup();
@@ -92,7 +92,7 @@ TEST(MULTIPHASE_MODEL_I) {
   bool failed = true;
   double t(0.0), tend(1.57e+12), dt(1.5768e+7), dt_max(3e+10);
   while (t < tend && iloop < 200) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2; }
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
     MPK->CommitStep(t, t + dt, S);
     S->advance_cycle();
@@ -130,10 +130,8 @@ TEST(MULTIPHASE_MODEL_I) {
   S->GetFieldData("ncp_fg")->NormInf(&dmax);
   CHECK(dmax <= 1.0e-14);
 
-  double vmin[2], vmax[2];
   const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
-  xg.MinValue(vmin);
-  xg.MaxValue(vmax);
-  CHECK(vmin[0] >= 0.0 && vmax[0] <= 1.0);
-  CHECK(vmin[1] >= 0.0 && vmax[1] <= 1.0);
+  xg.MinValue(&dmin);
+  xg.MaxValue(&dmax);
+  CHECK(dmin >= 0.0 && dmax <= 1.0);
 }

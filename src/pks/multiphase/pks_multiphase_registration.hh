@@ -9,14 +9,16 @@
   Self-registering factory for multiphase PKs.
 */
 
-#include "MultiphaseModelI_PK.hh"
-#include "MultiphaseTwoComponents_PK.hh"
+#include "MultiphaseJaffre_PK.hh"
+#include "MultiphaseModel1_PK.hh"
+#include "MultiphaseModel2_PK.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-RegisteredPKFactory<MultiphaseModelI_PK> MultiphaseModelI_PK::reg_("multiphase pl sl xg");
-RegisteredPKFactory<MultiphaseTwoComponents_PK> MultiphaseTwoComponents_PK::reg_("multiphase 2p2c");
+RegisteredPKFactory<MultiphaseJaffre_PK> MultiphaseJaffre_PK::reg_("multiphase jaffre");
+RegisteredPKFactory<MultiphaseModel1_PK> MultiphaseModel1_PK::reg_("multiphase pl sl xg");
+RegisteredPKFactory<MultiphaseModel2_PK> MultiphaseModel2_PK::reg_("multiphase pl sl ng");
 
 }  // namespace Multiphase
 }  // namespace Amanzi

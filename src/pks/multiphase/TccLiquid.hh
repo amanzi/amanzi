@@ -29,9 +29,9 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MoleFractionLiquid : public MultiphaseBaseEvaluator {
+class TccLiquid : public MultiphaseBaseEvaluator {
  public:
-  MoleFractionLiquid(Teuchos::ParameterList& plist);
+  TccLiquid(Teuchos::ParameterList& plist);
 
   // interface methods from FieldEvaluator
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -43,7 +43,7 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  private:
-  std::string x_gas_key_, pressure_gas_key_;
+  std::string tcc_gas_key_;
 };
 
 }  // namespace Flow
