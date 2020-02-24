@@ -489,7 +489,7 @@ Mesh_MSTK::Mesh_MSTK(
 //---------------------------------------------------------
 Mesh_MSTK::Mesh_MSTK(
   const Teuchos::RCP<const Mesh>& parent_mesh,
-  const Kokkos::View<Entity_ID*>& entity_ids, const Entity_kind entity_kind,
+  const Entity_ID_List& entity_ids, const Entity_kind entity_kind,
   const bool flatten, const Comm_ptr_type& comm,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
   const Teuchos::RCP<const Teuchos::ParameterList>& plist,
@@ -525,11 +525,11 @@ Mesh_MSTK::Mesh_MSTK(
   //
   // MESH_Enable_LocalIDSearch(parent_mesh_mstk);
 
-  int nent = entity_ids.extent(0);
+  int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
   for (int i = 0; i < nent; ++i) {
     MEntity_ptr ent =
-      MEntFromID[entity_dim](parent_mesh_mstk, entity_ids(i) + 1);
+      MEntFromID[entity_dim](parent_mesh_mstk, entity_ids[i] + 1);
     List_Add(src_ents, ent);
   }
 
@@ -1231,8 +1231,8 @@ Mesh_MSTK::cell_get_type(const Entity_ID cellid) const
 //---------------------------------------------------------
 void
 Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
-                                           Kokkos::View<Entity_ID*>& faceids,
-                                           Kokkos::View<int*>& face_dirs) const
+                                           Entity_ID_List& faceids,
+                                           std::vector<int>& face_dirs) const
 {
   MEntity_ptr cell = nullptr;
 
@@ -1247,8 +1247,8 @@ Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       List_ptr rfaces = MR_Faces((MRegion_ptr)cell);
       nf = List_Num_Entries(rfaces);
 
-      Kokkos::resize(faceids, nf);
-      Kokkos::resize(face_dirs, nf);
+      faceids.resize(nf);
+      face_dirs.resize(nf); 
 
       /* base face */
 
@@ -1300,12 +1300,12 @@ Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
           if (fadj != face0 && !MEnt_IsMarked(fadj, mkid)) {
             if (MF_UsesEntity(fadj, fe, MEDGE)) {
               lid = MEnt_ID(fadj);
-              faceids(nf) = lid - 1;
+              faceids[nf] = lid - 1;
 
 
               int fdir = (MR_FaceDir_i((MRegion_ptr)cell, i) == 1) ? 1 : -1;
               if (faceflip[lid - 1]) fdir *= -1;
-              face_dirs(nf) = fdir;
+              face_dirs[nf] = fdir;
 
               MEnt_Mark(fadj, mkid);
               nf++;
@@ -1319,11 +1319,11 @@ Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       /* Add the base face */
 
       lid = MEnt_ID(face0);
-      faceids(nf) = lid - 1;
+      faceids[nf] = lid - 1;
 
       fdir0 = fdir0 ? 1 : -1;
       if (faceflip[lid - 1]) fdir0 *= -1;
-      face_dirs(nf) = fdir0;
+      face_dirs[nf] = fdir0;
       nf++;
 
       /* If there is a last remaining face, it is the top face */
@@ -1334,11 +1334,11 @@ Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       while ((fopp = List_Next_Entry(rfaces, &idx))) {
         if (fopp != face0 && !MEnt_IsMarked(fopp, mkid)) {
           lid = MEnt_ID(fopp);
-          faceids(nf) = lid - 1;
+          faceids[nf] = lid - 1;
 
           int fdir = (MR_FaceDir_i((MRegion_ptr)cell, i) == 1) ? 1 : -1;
           if (faceflip[lid - 1]) fdir *= -1;
-          face_dirs(nf) = fdir;
+          face_dirs[nf] = fdir;
           nf++;
           break;
         }
@@ -1358,8 +1358,8 @@ Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
 
 void
 Mesh_MSTK::cell_get_faces_and_dirs_unordered(
-  const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-  Kokkos::View<int*>& face_dirs) const
+  const Entity_ID cellid, Entity_ID_List& faceids,
+  std::vector<int>& face_dirs) const
 {
   MEntity_ptr cell;
 
@@ -1371,13 +1371,13 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(
 
     rfaces = MR_Faces((MRegion_ptr)cell);
     nrf = List_Num_Entries(rfaces);
-    Kokkos::resize(faceids, nrf);
+    faceids.resize(nrf);
 
     size_t j = 0;
     for (int i = 0; i < nrf; ++i) {
       MFace_ptr face = List_Entry(rfaces, i);
       int lid = MEnt_ID(face);
-      faceids(j++) = lid - 1; // assign to next spot by dereferencing iterator
+      faceids[j++] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(rfaces);
@@ -1394,14 +1394,14 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(
     }
     */
 
-    Kokkos::resize(face_dirs, nrf);
+    face_dirs.resize(nrf); 
 
     j = 0;
     for (int i = 0; i < nrf; ++i) {
-      int lid = faceids(i);
+      int lid = faceids[i];
       int fdir = 2 * MR_FaceDir_i((MRegion_ptr)cell, i) - 1;
       fdir = faceflip[lid] ? -fdir : fdir;
-      face_dirs(j++) = fdir; // assign to next spot by dereferencing iterator
+      face_dirs[j++] = fdir; // assign to next spot by dereferencing iterator
     }
 
   } else { // manifold_dimension() = 2; surface or 2D mesh
@@ -1411,13 +1411,13 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(
     fedges = MF_Edges((MFace_ptr)cell, 1, 0);
     nfe = List_Num_Entries(fedges);
 
-    Kokkos::resize(faceids, nfe);
+    faceids.resize(nfe); 
 
     size_t j = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges, i);
       int lid = MEnt_ID(edge);
-      faceids(j++) = lid - 1; // assign to next spot by dereferencing iterator
+      faceids[j++] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fedges);
@@ -1435,13 +1435,14 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(
     }
     */
 
-    Kokkos::resize(face_dirs, nfe);
+    face_dirs.resize(nfe); 
+
     j = 0;
     for (int i = 0; i < nfe; ++i) {
-      int lid = faceids(i);
+      int lid = faceids[i];
       int fdir = 2 * MF_EdgeDir_i((MFace_ptr)cell, i) - 1;
       fdir = faceflip[lid] ? -fdir : fdir;
-      face_dirs(j++) = fdir; // assign to next spot by dereferencing iterator
+      face_dirs[j++] = fdir; // assign to next spot by dereferencing iterator
     }
   }
 }
@@ -1449,8 +1450,8 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(
 
 void
 Mesh_MSTK::cell_get_faces_and_dirs_internal_(
-  const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-  Kokkos::View<int*>& face_dirs) const
+  const Entity_ID cellid, Entity_ID_List& faceids,
+  std::vector<int>& face_dirs) const
 {
   AMANZI_ASSERT(faces_initialized);
   cell_get_faces_and_dirs_unordered(cellid, faceids, face_dirs);
@@ -1459,7 +1460,7 @@ Mesh_MSTK::cell_get_faces_and_dirs_internal_(
 
 void
 Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
-                                    Kokkos::View<Entity_ID*>& edgeids) const
+                                    Entity_ID_List& edgeids) const
 {
   AMANZI_ASSERT(edges_initialized);
 
@@ -1475,13 +1476,13 @@ Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 
     redges = MR_Edges((MRegion_ptr)cell);
     nre = List_Num_Entries(redges);
-    Kokkos::resize(edgeids, nre);
+    edgeids.resize(nre); 
 
     size_t ite = 0;
     for (int i = 0; i < nre; ++i) {
       MEdge_ptr edge = List_Entry(redges, i);
       int lid = MEnt_ID(edge);
-      edgeids(ite++) = lid - 1; // assign to next spot by dereferencing iterator
+      edgeids[ite++] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(redges);
@@ -1504,13 +1505,14 @@ Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
     List_ptr fedges;
     fedges = MF_Edges((MFace_ptr)cell, 1, 0);
     nfe = List_Num_Entries(fedges);
-    Kokkos::resize(edgeids, nfe);
+
+    edgeids.resize(nfe); 
 
     size_t ite = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges, i);
       int lid = MEnt_ID(edge);
-      edgeids(ite++) = lid - 1; // assign to next spot by dereferencing iterator
+      edgeids[ite++] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fedges);
@@ -1536,13 +1538,13 @@ Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 //---------------------------------------------------------
 void
 Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(
-  const Entity_ID cellid, Kokkos::View<Entity_ID*>& edgeids,
-  Kokkos::View<int*>* edgedirs) const
+  const Entity_ID cellid, Entity_ID_List& edgeids,
+  std::vector<int>* edgedirs) const
 {
   AMANZI_ASSERT(manifold_dimension() == 2);
 
   if (!edgedirs)
-    cell_get_edges(cellid, edgeids);
+    cell_get_edges_internal_(cellid, edgeids);
   else {
     AMANZI_ASSERT(edges_initialized);
 
@@ -1557,16 +1559,16 @@ Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(
     List_ptr fedges;
     fedges = MF_Edges((MFace_ptr)cell, 1, 0);
     nfe = List_Num_Entries(fedges);
-    Kokkos::resize(edgeids, nfe);
-    Kokkos::resize(*edgedirs, nfe);
+    edgeids.resize(nfe);
+    edgedirs->resize(nfe);  
 
     size_t ite = 0;
     size_t itd = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges, i);
       int lid = MEnt_ID(edge);
-      edgeids(ite++) = lid - 1; // assign to next spot by dereferencing iterator
-      (*edgedirs)(itd++) =
+      edgeids[ite++] = lid - 1; // assign to next spot by dereferencing iterator
+      (*edgedirs)[itd++] =
         2 * MF_EdgeDir_i((MFace_ptr)cell, i) - 1; // convert [0,1] to [-1,1]
     }
 
@@ -1604,7 +1606,7 @@ Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(
 //---------------------------------------------------------
 void
 Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
-                          Kokkos::View<Entity_ID*>& nodeids) const
+                          Entity_ID_List& nodeids) const
 {
   MEntity_ptr cell;
   int nn, lid;
@@ -1633,10 +1635,10 @@ Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
     List_ptr rverts = MR_Vertices(cell);
 
     nn = List_Num_Entries(rverts);
-    Kokkos::resize(nodeids, nn);
+    nodeids.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       lid = MEnt_ID(List_Entry(rverts, i));
-      nodeids(i) = lid - 1; // assign to next spot by dereferencing iterator
+      nodeids[i] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(rverts);
@@ -1644,10 +1646,10 @@ Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
     List_ptr fverts = MF_Vertices(cell, 1, 0);
 
     nn = List_Num_Entries(fverts);
-    Kokkos::resize(nodeids, nn);
+    nodeids.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       lid = MEnt_ID(List_Entry(fverts, i));
-      nodeids(i) = lid - 1; // assign to next spot by dereferencing iterator
+      nodeids[i] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fverts);
@@ -1657,8 +1659,8 @@ Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
 
 void
 Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-                                             Kokkos::View<Entity_ID*>& edgeids,
-                                             Kokkos::View<int*>* edge_dirs,
+                                             Entity_ID_List& edgeids,
+                                             std::vector<int>* edge_dirs,
                                              bool ordered) const
 {
   // AMANZI_ASSERT(edgeids != nullptr);
@@ -1676,13 +1678,13 @@ Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
 
     fedges = MF_Edges((MFace_ptr)face, 1, 0);
     nfe = List_Num_Entries(fedges);
-    Kokkos::resize(edgeids, nfe);
+    edgeids.resize(nfe); 
 
     size_t ite = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges, i);
       int lid = MEnt_ID(edge);
-      edgeids(ite++) = lid - 1; // assign to next spot by dereferencing iterator
+      edgeids[ite++] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fedges);
@@ -1700,15 +1702,13 @@ Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
     */
 
     if (edge_dirs) {
-    Kokkos:
-      resize(*edge_dirs, nfe);
-
+      edge_dirs->resize(nfe); 
       size_t itd = 0;
       for (int i = 0; i < nfe; ++i) {
-        int lid = edgeids(i);
+        int lid = edgeids[i];
         int edir = 2 * MF_EdgeDir_i((MFace_ptr)face, i) - 1;
         edir = edgeflip[lid] ? -edir : edir;
-        (*edge_dirs)(itd++) =
+        (*edge_dirs)[itd++] =
           edir; // assign to next spot by dereferencing iterator
       }
     }
@@ -1719,12 +1719,12 @@ Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
     // direction of 1
 
     MEdge_ptr edge = (MEdge_ptr)face;
-    Kokkos::resize(edgeids, 1);
-    edgeids(0) = MEnt_ID(edge) - 1;
+    edgeids.resize(1);
+    edgeids[0] = MEnt_ID(edge) - 1;
 
     if (edge_dirs) {
-      Kokkos::resize(*edge_dirs, 1);
-      (*edge_dirs)(0) = 1;
+      edge_dirs->resize(1); 
+      (*edge_dirs)[0] = 1;
     }
   }
 }
@@ -1740,7 +1740,7 @@ Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
 //---------------------------------------------------------
 void
 Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
-                          Kokkos::View<Entity_ID*>& nodeids) const
+                          Entity_ID_List& nodeids) const
 {
   MEntity_ptr genface;
   int nn, lid;
@@ -1768,22 +1768,22 @@ Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
     AMANZI_ASSERT(fverts != nullptr);
 
     nn = List_Num_Entries(fverts);
-    Kokkos::resize(nodeids, nn);
+    nodeids.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       lid = MEnt_ID(List_Entry(fverts, i));
-      nodeids(i) = lid - 1; // assign to next spot by dereferencing iterator
+      nodeids[i] = lid - 1; // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fverts);
 
   } else { // Surface mesh or 2D mesh
-    Kokkos::resize(nodeids, 2);
+    nodeids.resize(2); 
     if (faceflip[faceid]) {
-      nodeids(0) = MEnt_ID(ME_Vertex(genface, 1)) - 1;
-      nodeids(1) = MEnt_ID(ME_Vertex(genface, 0)) - 1;
+      nodeids[0] = MEnt_ID(ME_Vertex(genface, 1)) - 1;
+      nodeids[1] = MEnt_ID(ME_Vertex(genface, 0)) - 1;
     } else {
-      nodeids(0) = MEnt_ID(ME_Vertex(genface, 0)) - 1;
-      nodeids(1) = MEnt_ID(ME_Vertex(genface, 1)) - 1;
+      nodeids[0] = MEnt_ID(ME_Vertex(genface, 0)) - 1;
+      nodeids[1] = MEnt_ID(ME_Vertex(genface, 1)) - 1;
     }
   }
 }
@@ -1817,7 +1817,7 @@ Mesh_MSTK::edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0,
 //---------------------------------------------------------
 void
 Mesh_MSTK::node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& cellids) const
+                          Entity_ID_List& cellids) const
 {
   int idx, lid, nc;
   List_ptr cell_list;
@@ -1866,7 +1866,7 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
     cell_list = MV_Faces(mv);
 
   nc = List_Num_Entries(cell_list);
-  Kokkos::resize(cellids, nc); // resize to maximum size possible
+  cellids.resize(nc); 
   size_t it = 0;
 
   int n = 0;
@@ -1875,20 +1875,21 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
     if (MEnt_PType(ment) == PGHOST) {
       if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        cellids(it++) =
+        cellids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     } else {
       if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        cellids(it++) =
+        cellids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     }
   }
-  Kokkos::resize(cellids, n);
+
+  cellids.resize(n);
 
   List_Delete(cell_list);
 
@@ -1905,7 +1906,7 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
 //---------------------------------------------------------
 void
 Mesh_MSTK::node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& faceids) const
+                          Entity_ID_List& faceids) const
 {
   int idx, lid, n;
   List_ptr face_list;
@@ -1954,7 +1955,7 @@ Mesh_MSTK::node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
     face_list = MV_Edges(mv);
 
   int nf = List_Num_Entries(face_list);
-  Kokkos::resize(faceids, nf);
+  faceids.resize(nf); 
   size_t it = 0;
   idx = 0;
   n = 0;
@@ -1962,21 +1963,20 @@ Mesh_MSTK::node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
     if (MEnt_PType(ment) == PGHOST) {
       if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        faceids(it++) =
+        faceids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     } else {
       if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        faceids(it++) =
+        faceids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     }
   }
-  Kokkos::resize(faceids,
-                 n); // resize to the actual number of faces being returned
+  faceids.resize(n); 
 
   List_Delete(face_list);
 
@@ -1994,7 +1994,7 @@ Mesh_MSTK::node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
 void
 Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Kokkos::View<Entity_ID*>& faceids) const
+                               Entity_ID_List& faceids) const
 {
   int idx, lid, n;
   List_ptr cell_list;
@@ -2011,7 +2011,7 @@ Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
     mr = (MRegion_ptr)cell_id_to_handle[cellid];
     List_ptr rfaces = MR_Faces(mr);
 
-    Kokkos::resize(faceids, List_Num_Entries(rfaces)); // resize to maximum size
+    faceids.resize(List_Num_Entries(rfaces)); // resize to maximum size
     size_t it = 0;
 
     idx = 0;
@@ -2022,26 +2022,26 @@ Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
       if (MEnt_PType(mf) == PGHOST) {
         if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(mf);
-          faceids(it++) =
+          faceids[it++] =
             lid - 1; // assign to next spot by dereferencing iterator
           ++n;
         }
       } else {
         if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(mf);
-          faceids(it++) =
+          faceids[it++] =
             lid - 1; // assign to next spot by dereferencing iterator
           ++n;
         }
       }
     }
-    Kokkos::resize(faceids, n);
+    faceids.resize(n); 
     List_Delete(rfaces);
   } else {
     mf = (MFace_ptr)cell_id_to_handle[cellid];
     List_ptr fedges = MF_Edges(mf, 1, 0);
 
-    Kokkos::resize(faceids, List_Num_Entries(fedges));
+    faceids.resize(List_Num_Entries(fedges));
     size_t it = 0;
 
     idx = 0;
@@ -2052,20 +2052,20 @@ Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
       if (MEnt_PType(me) == PGHOST) {
         if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(me);
-          faceids(it++) =
+          faceids[it++] =
             lid - 1; // assign to next spot by dereferencing iterator
           ++n;
         }
       } else {
         if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(me);
-          faceids(it++) =
+          faceids[it++] =
             lid - 1; // assign to next spot by dereferencing iterator
           ++n;
         }
       }
     }
-    Kokkos::resize(faceids, n);
+    faceids.resize(n); 
     List_Delete(fedges);
   }
 }
@@ -2078,7 +2078,7 @@ Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
 //---------------------------------------------------------
 void
 Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& cellids) const
+                          Entity_ID_List& cellids) const
 {
   int idx, lid, nc;
   List_ptr cell_list;
@@ -2098,7 +2098,7 @@ Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
     cell_list = ME_Faces(me);
 
   nc = List_Num_Entries(cell_list);
-  Kokkos::resize(cellids, nc); // resize to maximum size possible
+  cellids.resize(nc); 
   size_t it = 0;
 
   int n = 0;
@@ -2107,21 +2107,20 @@ Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
     if (MEnt_PType(ment) == PGHOST) {
       if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        cellids(it++) =
+        cellids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     } else {
       if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
         lid = MEnt_ID(ment);
-        cellids(it++) =
+        cellids[it++] =
           lid - 1; // assign to next spot by dereferencing iterator
         ++n;
       }
     }
   }
-  Kokkos::resize(cellids,
-                 n); // resize to the actual number of cells being returned
+  cellids.resize(n); 
 
   List_Delete(cell_list);
 }
@@ -2133,14 +2132,12 @@ Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
 void
 Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
                                     const Parallel_type ptype,
-                                    Kokkos::View<Entity_ID*>& cellids) const
+                                    Entity_ID_List& cellids) const
 {
   int lid, n;
 
   AMANZI_ASSERT(faces_initialized);
-
-  // TODO change if GPU
-  std::vector<Entity_ID> cellids_vec;
+  cellids.clear(); 
 
   if (manifold_dimension() == 3) {
     MFace_ptr mf = (MFace_ptr)face_id_to_handle[faceid];
@@ -2150,20 +2147,18 @@ Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     if (ptype == Parallel_type::ALL) {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs, &idx)))
-        cellids_vec.push_back(MR_ID(mr) - 1);
+        cellids.push_back(MR_ID(mr) - 1);
     } else {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs, &idx))) {
         if (MEnt_PType(mr) == PGHOST) {
           if (ptype == Parallel_type::GHOST)
-            cellids_vec.push_back(MR_ID(mr) - 1);
+            cellids.push_back(MR_ID(mr) - 1);
         } else if (ptype == Parallel_type::OWNED)
-          cellids_vec.push_back(MR_ID(mr) - 1);
+          cellids.push_back(MR_ID(mr) - 1);
       }
     }
     List_Delete(fregs);
-    Kokkos::resize(cellids, cellids_vec.size());
-    for (int i = 0; i < cellids_vec.size(); ++i) cellids(i) = cellids_vec[i];
 
   } else {
     MEdge_ptr me = (MEdge_ptr)face_id_to_handle[faceid];
@@ -2173,20 +2168,18 @@ Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     if (ptype == Parallel_type::ALL) {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces, &idx)))
-        cellids_vec.push_back(MF_ID(mf) - 1);
+        cellids.push_back(MF_ID(mf) - 1);
     } else {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces, &idx))) {
         if (MEnt_PType(mf) == PGHOST) {
           if (ptype == Parallel_type::GHOST)
-            cellids_vec.push_back(MF_ID(mf) - 1);
+            cellids.push_back(MF_ID(mf) - 1);
         } else if (ptype == Parallel_type::OWNED)
-          cellids_vec.push_back(MF_ID(mf) - 1);
+          cellids.push_back(MF_ID(mf) - 1);
       }
     }
     List_Delete(efaces);
-    Kokkos::resize(cellids, cellids_vec.size());
-    for (int i = 0; i < cellids_vec.size(); ++i) cellids(i) = cellids_vec[i];
   }
 }
 
@@ -2203,21 +2196,20 @@ Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
 void
 Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
                                    const Parallel_type ptype,
-                                   Kokkos::View<Entity_ID*>& fadj_cellids) const
+                                   Entity_ID_List& fadj_cellids) const
 {
   int lid;
 
   AMANZI_ASSERT(faces_initialized);
 
-  Kokkos::resize(fadj_cellids, 0);
-
+  fadj_cellids.clear(); 
+  
   if (manifold_dimension() == 3) {
     MRegion_ptr mr = (MRegion_ptr)cell_id_to_handle[cellid];
 
     List_ptr rfaces = MR_Faces(mr);
     int idx = 0;
     MFace_ptr mf;
-    size_t fadj_cellids_size = 0;
     while ((mf = List_Next_Entry(rfaces, &idx))) {
       List_ptr fregs = MF_Regions(mf);
       int idx2 = 0;
@@ -2227,14 +2219,12 @@ Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
           if (MEnt_PType(mr2) == PGHOST) {
             if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
-              Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-              fadj_cellids(fadj_cellids_size++) = lid - 1;
+              fadj_cellids.push_back(lid-1); 
             }
           } else {
             if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
-              Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-              fadj_cellids(fadj_cellids_size++) = lid - 1;
+              fadj_cellids.push_back(lid-1); 
             }
           }
         }
@@ -2250,7 +2240,6 @@ Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
     List_ptr fedges = MF_Edges(mf, 1, 0);
     int idx = 0;
     MEdge_ptr me;
-    size_t fadj_cellids_size = 0;
     while ((me = List_Next_Entry(fedges, &idx))) {
       List_ptr efaces = ME_Faces(me);
       int idx2 = 0;
@@ -2260,14 +2249,12 @@ Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
           if (MEnt_PType(mf2) == PGHOST) {
             if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
-              Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-              fadj_cellids(fadj_cellids_size++) = lid - 1;
+              fadj_cellids.push_back(lid-1); 
             }
           } else {
             if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
-              Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-              fadj_cellids(fadj_cellids_size++) = lid - 1;
+              fadj_cellids.push_back(lid-1); 
             }
           }
         }
@@ -2288,12 +2275,12 @@ Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 void
 Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
                                    const Parallel_type ptype,
-                                   Kokkos::View<Entity_ID*>& nadj_cellids) const
+                                   Entity_ID_List& nadj_cellids) const
 {
   int lid, mkid;
   List_ptr cell_list;
 
-  Kokkos::resize(nadj_cellids, 0);
+  nadj_cellids.clear(); 
 
   mkid = MSTK_GetMarker();
 
@@ -2304,7 +2291,6 @@ Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
     List_ptr rvertices = MR_Vertices(mr);
     int idx = 0;
     MVertex_ptr mv;
-    size_t nadj_cellids_size = 0;
     while ((mv = List_Next_Entry(rvertices, &idx))) {
       List_ptr vregs = MV_Regions(mv);
       int idx2 = 0;
@@ -2316,14 +2302,12 @@ Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
           if (MEnt_PType(mr2) == PGHOST) {
             if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
-              Kokkos::resize(nadj_cellids, nadj_cellids.extent(0) + 1);
-              nadj_cellids(nadj_cellids_size++) = lid - 1;
+              nadj_cellids.push_back(lid-1); 
             }
           } else {
             if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
-              Kokkos::resize(nadj_cellids, nadj_cellids.extent(0) + 1);
-              nadj_cellids(nadj_cellids_size++) = lid - 1;
+              nadj_cellids.push_back(lid-1); 
             }
           }
         }
@@ -2339,7 +2323,6 @@ Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
     List_ptr fverts = MF_Vertices(mf, 1, 0);
     int idx = 0;
     MVertex_ptr mv;
-    size_t nadj_cellids_size = 0;
     while ((mv = List_Next_Entry(fverts, &idx))) {
       List_ptr vfaces = MV_Faces(mv);
       int idx2 = 0;
@@ -2351,14 +2334,12 @@ Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
           if (MEnt_PType(mf2) == PGHOST) {
             if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
-              Kokkos::resize(nadj_cellids, nadj_cellids.extent(0) + 1);
-              nadj_cellids(nadj_cellids_size++) = lid - 1;
+              nadj_cellids.push_back(lid-1); 
             }
           } else {
             if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
-              Kokkos::resize(nadj_cellids, nadj_cellids.extent(0) + 1);
-              nadj_cellids(nadj_cellids_size++) = lid - 1;
+              nadj_cellids.push_back(lid-1); 
             }
           }
         }
@@ -2404,7 +2385,7 @@ Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
 //---------------------------------------------------------
 void
 Mesh_MSTK::cell_get_coordinates(
-  const Entity_ID cellid, Kokkos::View<AmanziGeometry::Point*>& ccoords) const
+  const Entity_ID cellid, std::vector<AmanziGeometry::Point>& ccoords) const
 {
   MEntity_ptr cell;
   double coords[3];
@@ -2418,10 +2399,10 @@ Mesh_MSTK::cell_get_coordinates(
 
     nn = List_Num_Entries(rverts);
 
-    Kokkos::resize(ccoords, nn);
+    ccoords.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       MV_Coords(List_Entry(rverts, i), coords);
-      ccoords(i).set(spdim, coords); // same as (*it).set()
+      ccoords[i].set(spdim, coords); // same as (*it).set()
     }
 
     List_Delete(rverts);
@@ -2430,10 +2411,10 @@ Mesh_MSTK::cell_get_coordinates(
 
     nn = List_Num_Entries(fverts);
 
-    Kokkos::resize(ccoords, nn);
+    ccoords.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       MV_Coords(List_Entry(fverts, i), coords);
-      ccoords(i).set(spdim, coords); // same as (*it).set()
+      ccoords[i].set(spdim, coords); // same as (*it).set()
     }
 
     List_Delete(fverts);
@@ -2447,7 +2428,7 @@ Mesh_MSTK::cell_get_coordinates(
 //---------------------------------------------------------
 void
 Mesh_MSTK::face_get_coordinates(
-  const Entity_ID faceid, Kokkos::View<AmanziGeometry::Point*>& fcoords) const
+  const Entity_ID faceid, std::vector<AmanziGeometry::Point>& fcoords) const
 {
   MEntity_ptr genface;
   double coords[3];
@@ -2463,10 +2444,10 @@ Mesh_MSTK::face_get_coordinates(
     List_ptr fverts = MF_Vertices((MFace_ptr)genface, dir, 0);
 
     int nn = List_Num_Entries(fverts);
-    Kokkos::resize(fcoords, nn);
+    fcoords.resize(nn); 
     for (int i = 0; i < nn; ++i) {
       MV_Coords(List_Entry(fverts, i), coords);
-      fcoords(i).set(spdim, coords); // same as (*it).set()
+      fcoords[i].set(spdim, coords); // same as (*it).set()
     }
 
     List_Delete(fverts);
@@ -2480,13 +2461,13 @@ Mesh_MSTK::face_get_coordinates(
       ev[0] = ME_Vertex((MEdge_ptr)genface, 1);
     }
 
-    Kokkos::resize(fcoords, 2);
+    fcoords.resize(2); 
 
     MV_Coords(ev[0], coords);
-    (fcoords(0)).set(spdim, coords);
+    (fcoords[0]).set(spdim, coords);
 
     MV_Coords(ev[1], coords);
-    (fcoords(1)).set(spdim, coords);
+    (fcoords[1]).set(spdim, coords);
   }
 }
 
@@ -2577,13 +2558,13 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       }
 
       Entity_ID_List cells1;
-      Kokkos::View<Entity_ID*> cells;
+      Entity_ID_List cells;
 
       node_get_cells(minnode, Parallel_type::ALL, cells);
 
-      int ncells = cells.extent(0);
+      int ncells = cells.size();
       for (int ic = 0; ic < ncells; ic++) {
-        Entity_ID icell = cells(ic);
+        Entity_ID icell = cells[ic];
 
         // Check if point is contained in cell
         if (point_in_cell(rgnpnt, icell))
@@ -2595,13 +2576,13 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       if (celldim == 2) {
         int ncells = num_entities(CELL, Parallel_type::ALL);
         for (int ic = 0; ic < ncells; ic++) {
-          Kokkos::View<AmanziGeometry::Point*> ccoords("", space_dim_);
+          std::vector<AmanziGeometry::Point> ccoords(space_dim_);
 
           cell_get_coordinates(ic, ccoords);
 
           bool on_plane = true;
-          for (int j = 0; j < ccoords.extent(0); ++j) {
-            if (!region->inside(ccoords(j))) {
+          for (int j = 0; j < ccoords.size(); ++j) {
+            if (!region->inside(ccoords[j])) {
               on_plane = false;
               break;
             }
@@ -2719,13 +2700,13 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       int nface = num_entities(FACE, Parallel_type::ALL);
 
       for (int iface = 0; iface < nface; iface++) {
-        Kokkos::View<AmanziGeometry::Point*> fcoords("", space_dim_);
+        std::vector<AmanziGeometry::Point> fcoords(space_dim_);
 
         face_get_coordinates(iface, fcoords);
 
         bool on_plane = true;
-        for (int j = 0; j < fcoords.extent(0); ++j) {
-          if (!region->inside(fcoords(j))) {
+        for (int j = 0; j < fcoords.size(); ++j) {
+          if (!region->inside(fcoords[j])) {
             on_plane = false;
             break;
           }
@@ -3007,8 +2988,8 @@ void
 Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
                                      const Entity_kind kind,
                                      const Parallel_type ptype,
-                                     Kokkos::View<Entity_ID*>& setents,
-                                     Kokkos::View<double*>* vofs) const
+                                     Entity_ID_List& setents,
+                                     std::vector<double>* vofs) const
 {
   int idx, i, lid;
   MSet_ptr mset(NULL), mset1(NULL), mset2(NULL);
@@ -3137,7 +3118,18 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   } else if ((rgn->type() == AmanziGeometry::BOX_VOF) ||
              (rgn->type() == AmanziGeometry::LINE_SEGMENT)) {
     // Call routine from the base class and exit.
-    Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
+    Kokkos::View<Entity_ID*> setents_view;
+    Kokkos::View<double*> vofs_view;  
+    Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents_view, &vofs_view);
+    // Copy back 
+    setents.resize(setents_view.extent(0));
+    vofs->resize(vofs_view.extent(0));  
+    for(int i = 0 ; i < setents_view.extent(0); ++i){
+      setents[i] = setents_view[i]; 
+    }
+    for(int i = 0; i < vofs_view.extent(0); ++i){
+      (*vofs)[i] = vofs_view[i]; 
+    }
     return;
   } else {
     // Modify region/set name by prefixing it with the type of
@@ -3214,7 +3206,7 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   }
 #endif
 
-  Kokkos::resize(setents, nent_loc);
+  setents.resize(nent_loc); 
   size_t it = 0;
   // Entity_ID_List::iterator it = setents->begin();
 
@@ -3226,7 +3218,7 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1, &idx))) {
         if (MEnt_PType(ment) != PGHOST) {
-          setents(it++) =
+          setents[it++] =
             MEnt_ID(ment) - 1; // assign to next spot by dereferencing iterator
           ++nent_loc;
         }
@@ -3236,7 +3228,7 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1, &idx))) {
         if (MEnt_PType(ment) == PGHOST) {
-          setents(it++) =
+          setents[it++] =
             MEnt_ID(ment) - 1; // assign to next spot by dereferencing iterator
           ++nent_loc;
         }
@@ -3245,15 +3237,14 @@ Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     case Parallel_type::ALL:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1, &idx))) {
-        setents(it++) =
+        setents[it++] =
           MEnt_ID(ment) - 1; // assign to next spot by dereferencing iterator
         ++nent_loc;
       }
       break;
     default: {}
     }
-
-    Kokkos::resize(setents, nent_loc);
+    setents.resize(nent_loc); 
   }
 
   // Check if there were no entities left on any processor after

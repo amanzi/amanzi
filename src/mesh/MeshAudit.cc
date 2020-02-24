@@ -373,14 +373,14 @@ MeshAudit::check_cell_to_nodes() const
 {
   AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
   AmanziMesh::Entity_ID_List free_nodes;
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  std::vector<AmanziMesh::Entity_ID> cnode;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
       mesh_->cell_get_nodes(j, cnode); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < cnode.extent(0); ++k) {
-        if (cnode(k) >= nnode) invalid_refs = true;
+      for (int k = 0; k < cnode.size(); ++k) {
+        if (cnode[k] >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -412,12 +412,12 @@ MeshAudit::check_cell_to_nodes() const
 bool
 MeshAudit::check_node_refs_by_cells() const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  std::vector<AmanziMesh::Entity_ID> cnode;
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     mesh_->cell_get_nodes(j, cnode); // this should not fail
-    for (int k = 0; k < cnode.extent(0); ++k) ref[cnode(k)] = true;
+    for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
   }
 
   AmanziMesh::Entity_ID_List free_nodes;
@@ -531,14 +531,14 @@ bool
 MeshAudit::check_face_to_nodes() const
 {
   AmanziMesh::Entity_ID_List bad_faces, bad_faces1;
-  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
+  std::vector<AmanziMesh::Entity_ID> fnode;
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     try {
       mesh_->face_get_nodes(j, fnode); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < fnode.extent(0); ++k) {
-        if (fnode(k) >= nnode) invalid_refs = true;
+      for (int k = 0; k < fnode.size(); ++k) {
+        if (fnode[k] >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_faces.push_back(j);
     } catch (...) {
@@ -570,12 +570,12 @@ MeshAudit::check_face_to_nodes() const
 bool
 MeshAudit::check_node_refs_by_faces() const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
+  std::vector<AmanziMesh::Entity_ID> fnode;
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     mesh_->face_get_nodes(j, fnode);
-    for (int k = 0; k < fnode.extent(0); ++k) ref[fnode(k)] = true;
+    for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
   }
 
   AmanziMesh::Entity_ID_List free_nodes;
@@ -646,7 +646,7 @@ MeshAudit::check_cell_degeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  std::vector<AmanziMesh::Entity_ID> cnode;
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
@@ -677,10 +677,10 @@ MeshAudit::check_cell_degeneracy() const
 bool
 MeshAudit::check_cell_to_faces_to_nodes() const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  AmanziMesh::Entity_ID_List cnode;
   Kokkos::View<AmanziMesh::Entity_ID*> cface;
   AmanziMesh::Entity_ID_List fnode_ref;
-  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
+  AmanziMesh::Entity_ID_List fnode;
   Kokkos::View<int*> fdirs;
   AmanziMesh::Entity_ID_List bad_cells0;
   AmanziMesh::Entity_ID_List bad_cells1;
@@ -706,11 +706,11 @@ MeshAudit::check_cell_to_faces_to_nodes() const
       bad_face = true;
     else {
       for (int k = 0; k < cface.extent(0); ++k) {
-        mesh_->face_get_nodes(cface(k), fnode); // this should not fail
+        mesh_->face_get_nodes(cface[k], fnode); // this should not fail
 
         int nfn = AmanziMesh::nfnodes_std[ctype][k];
 
-        if (fnode.extent(0) != nfn) {
+        if (fnode.size() != nfn) {
           bad_face = true;
           break;
         }
@@ -718,7 +718,7 @@ MeshAudit::check_cell_to_faces_to_nodes() const
         fnode_ref.clear();
         for (int i = 0; i < nfn; ++i) {
           int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
-          fnode_ref.push_back(cnode(nodenum));
+          fnode_ref.push_back(cnode[nodenum]);
         }
 
         int dir = same_face(fnode, fnode_ref); // should be the same face
@@ -804,20 +804,20 @@ bool
 MeshAudit::check_cell_to_coordinates() const
 {
   int spdim = mesh_->space_dimension();
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  std::vector<AmanziMesh::Entity_ID> cnode;
   AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    Kokkos::View<AmanziGeometry::Point*> x0;
+    std::vector<AmanziGeometry::Point> x0;
     try {
       mesh_->cell_get_coordinates(j, x0); // this may fail
       mesh_->cell_get_nodes(j, cnode);    // this should not fail
-      for (int k = 0; k < cnode.extent(0); ++k) {
+      for (int k = 0; k < cnode.size(); ++k) {
         AmanziGeometry::Point xref(spdim);
         bool bad_data = false;
-        mesh_->node_get_coordinates(cnode(k), &xref); // this should not fail
+        mesh_->node_get_coordinates(cnode[k], &xref); // this should not fail
         for (int i = 0; i < spdim; i++)
-          if (x0(k)[i] != xref[i]) {
+          if (x0[k][i] != xref[i]) {
             bad_data = true;
             bad_cells.push_back(j);
             break;
@@ -859,20 +859,20 @@ bool
 MeshAudit::check_face_to_coordinates() const
 {
   int spdim = mesh_->space_dimension();
-  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
+  std::vector<AmanziMesh::Entity_ID> fnode;
   AmanziMesh::Entity_ID_List bad_faces, bad_faces_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     try {
-      Kokkos::View<AmanziGeometry::Point*> x0;
+      std::vector<AmanziGeometry::Point> x0;
       bool bad_data = false;
       mesh_->face_get_coordinates(j, x0); // this may fail
       mesh_->face_get_nodes(j, fnode);    // this should not fail
-      for (int k = 0; k < fnode.extent(0); ++k) {
+      for (int k = 0; k < fnode.size(); ++k) {
         AmanziGeometry::Point xref(spdim);
-        mesh_->node_get_coordinates(fnode(k), &xref); // this should not fail
+        mesh_->node_get_coordinates(fnode[k], &xref); // this should not fail
         for (int i = 0; i < spdim; i++)
-          if (x0(k)[i] != xref[i]) {
+          if (x0[k][i] != xref[i]) {
             bad_data = true;
             bad_faces.push_back(j);
             break;
@@ -1674,7 +1674,7 @@ MeshAudit::check_get_set(AmanziMesh::Set_ID sid, AmanziMesh::Entity_kind kind,
   }
 
   // Get the set.
-  Kokkos::View<AmanziMesh::Entity_ID*> set;
+  AmanziMesh::Entity_ID_List set;
   try {
     std::string set_name = mesh_->geometric_model()->FindRegion(sid)->name();
     mesh_->get_set_entities(set_name, kind, ptype, set); // this may fail
@@ -1685,8 +1685,8 @@ MeshAudit::check_get_set(AmanziMesh::Set_ID sid, AmanziMesh::Entity_kind kind,
 
   // Check that all values were assigned.
   bool bad_data = false;
-  for (int j = 0; j < set.extent(0); ++j)
-    if (set(j) == UINT_MAX) bad_data = true;
+  for (int j = 0; j < set.size(); ++j)
+    if (set[j] == UINT_MAX) bad_data = true;
   if (bad_data) {
     os_ << "  ERROR: not all values assigned by get_set()" << std::endl;
     return true;
@@ -1866,12 +1866,12 @@ MeshAudit::check_node_partition() const
   // Mark all the nodes contained by owned cells.
   bool owned[nnode];
   for (int j = 0; j < nnode; ++j) owned[j] = false;
-  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  AmanziMesh::Entity_ID_List cnode;
   for (AmanziMesh::Entity_ID j = 0;
        j < mesh_->cell_map(false)->getNodeNumElements();
        ++j) {
     mesh_->cell_get_nodes(j, cnode);
-    for (int k = 0; k < cnode.extent(0); ++k) owned[cnode(k)] = true;
+    for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
@@ -1894,15 +1894,19 @@ MeshAudit::check_node_partition() const
 
 // Returns true if the values in the list are distinct -- no repeats.
 
-bool
-MeshAudit::distinct_values(
-  const Kokkos::View<AmanziMesh::Entity_ID*>& list) const
+bool MeshAudit::distinct_values(const AmanziMesh::Entity_ID_List &list) const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> copy(list);
+  AmanziMesh::Entity_ID_List copy(list);
+  sort(copy.begin(), copy.end());
+  return (adjacent_find(copy.begin(),copy.end()) == copy.end());
+}
 
-  sort(copy.data(), copy.data() + copy.extent(0));
-  return (adjacent_find(copy.data(), copy.data() + copy.extent(0)) ==
-          copy.data() + copy.extent(0));
+void MeshAudit::write_list(const AmanziMesh::Entity_ID_List &list, unsigned int max_out) const
+{
+  int num_out = min((unsigned int) list.size(), max_out);
+  for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
+  if (num_out < list.size()) os_ << " [" << list.size()-num_out << " items omitted]";
+  os_ << std::endl;
 }
 
 
@@ -1911,19 +1915,16 @@ MeshAudit::distinct_values(
 // but with opposite orientations.  Returns 0 if the lists describe different
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
-
-int
-MeshAudit::same_face(const Kokkos::View<AmanziMesh::Entity_ID*> fnode1,
-                     const AmanziMesh::Entity_ID_List fnode2) const
+int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMesh::Entity_ID_List fnode2) const
 {
-  int nn = fnode1.extent(0);
+  int nn = fnode1.size();
 
   if (nn != fnode2.size()) return 0;
 
   // Locate position in fnode1 of fnode2[0].
   int i, n;
   for (i = 0, n = -1; i < nn; ++i)
-    if (fnode1(i) == fnode2[0]) {
+    if (fnode1[i] == fnode2[0]) {
       n = i;
       break;
     }
@@ -1931,38 +1932,27 @@ MeshAudit::same_face(const Kokkos::View<AmanziMesh::Entity_ID*> fnode1,
 
   if (nn == 2) {
     // These are edges in a 2D mesh
+    
+    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
+    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
+    
+    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
+    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
 
-    if (n == 0 && fnode1(1) == fnode2[1]) return 1;
-    if (n == 1 && fnode1(0) == fnode2[1]) return -1;
-
-    if (n == 0 && fnode1(1) == fnode2[1]) return 1;
-    if (n == 1 && fnode1(0) == fnode2[1]) return -1;
-
-  } else {
+  }
+  else {
     for (i = 1; i < nn; ++i)
-      if (fnode1((n + i) % nn) != fnode2[i]) break;
-    if (i == nn) return 1; // they match
+      if (fnode1[(n+i)%nn] != fnode2[i]) break;
+    if (i == nn) return 1;  // they match
 
     // Modify the permutation to reverse the orientation of fnode1.
-
+    
     for (i = 1; i < nn; ++i)
-      if (fnode1((n - i + nn) % nn) != fnode2[i]) break;
-    if (i == nn) return -1; // matched nodes but orientation is reversed
+      if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
+    if (i == nn) return -1;   // matched nodes but orientation is reversed
   }
 
   return 0; // different faces
-}
-
-
-void
-MeshAudit::write_list(const AmanziMesh::Entity_ID_List& list,
-                      unsigned int max_out) const
-{
-  int num_out = min((unsigned int)list.size(), max_out);
-  for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
-  if (num_out < list.size())
-    os_ << " [" << list.size() - num_out << " items omitted]";
-  os_ << std::endl;
 }
 
 bool

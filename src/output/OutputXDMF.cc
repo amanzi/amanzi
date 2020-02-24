@@ -124,14 +124,14 @@ OutputXDMF::WriteMesh_(int cycle)
   for (AmanziMesh::Entity_ID c = 0; c != cell_map->getNodeNumElements(); ++c) {
     AmanziMesh::Cell_type ctype = mesh_->cell_get_type(c);
     if (ctype != AmanziMesh::POLYGON) {
-      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      AmanziMesh::Entity_ID_List nodes;
       mesh_->cell_get_nodes(c, nodes);
-      local_conns += nodes.extent(0) + 1;
+      local_conns += nodes.size() + 1;
 
     } else if (manifold_dim == 2) {
-      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      AmanziMesh::Entity_ID_List nodes;
       mesh_->cell_get_nodes(c, nodes);
-      local_conns += nodes.extent(0) + 2;
+      local_conns += nodes.size() + 2;
 
     } else {
       Errors::Message message("OutputXDMF: Polyhedral meshes cannot yet be "
@@ -195,11 +195,11 @@ OutputXDMF::WriteMesh_(int cycle)
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
 
         // store nodes in the correct order
-        Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+        AmanziMesh::Entity_ID_List nodes;
         mesh_->cell_get_nodes(c, nodes);
 
-        for (int i = 0; i != nodes.extent(0); ++i) {
-          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes(i));
+        for (int i = 0; i != nodes.size(); ++i) {
+          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
         }
 
       } else if (space_dim == 2) {
@@ -207,12 +207,12 @@ OutputXDMF::WriteMesh_(int cycle)
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
 
         // store node count, then nodes in the correct order
-        Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+        AmanziMesh::Entity_ID_List nodes;
         mesh_->cell_get_nodes(c, nodes);
-        connv(lcv++, 0) = nodes.extent(0);
+        connv(lcv++, 0) = nodes.size();
 
-        for (int i = 0; i != nodes.extent(0); ++i) {
-          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes(i));
+        for (int i = 0; i != nodes.size(); ++i) {
+          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
         }
       }
     }

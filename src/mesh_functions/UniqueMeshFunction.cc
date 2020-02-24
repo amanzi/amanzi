@@ -33,11 +33,11 @@ UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
        ++region) {
     // Get all region IDs by the region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
-      Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+      AmanziMesh::Entity_ID_List id_list;
       mesh_->get_set_entities(
         *region, kind, AmanziMesh::Parallel_type::ALL, id_list);
-      for (int i = 0; i < id_list.extent(0); ++i)
-        this_spec_ids->insert(id_list(i));
+      for (int i = 0; i < id_list.size(); ++i)
+        this_spec_ids->insert(id_list[i]);
     } else {
       std::stringstream m;
       m << "Unknown region in processing mesh function spec: \"" << *region

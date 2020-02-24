@@ -107,7 +107,8 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            std::vector<int>& offset) const
 {
-  AmanziMesh::Entity_ID_View nodes, edges, faces;
+  AmanziMesh::Entity_ID_View faces;
+  AmanziMesh::Entity_ID_List nodes, edges; 
 
   offset.clear();
   offset.push_back(0);

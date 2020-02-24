@@ -61,9 +61,10 @@ Mesh::get_set_entities_box_vofs_(
       int ncells = num_entities(CELL, ptype);
       double volume;
 
-      Kokkos::View<Entity_ID*> faces, cnodes, fnodes;
+      Entity_ID_List cnodes, fnodes; 
+      Kokkos::View<Entity_ID*> faces;
       Kokkos::View<int*> dirs;
-      Kokkos::View<AmanziGeometry::Point*> polytope_nodes;
+      std::vector<AmanziGeometry::Point> polytope_nodes;
       std::vector<std::vector<int>> polytope_faces;
 
       size_t volume_fractions_size = 0;
@@ -79,13 +80,13 @@ Mesh::get_set_entities_box_vofs_(
           polytope_faces.resize(nfaces);
           for (int n = 0; n < nfaces; ++n) {
             face_get_nodes(faces(n), fnodes);
-            int nnodes = fnodes.extent(0);
+            int nnodes = fnodes.size();
 
             for (int i = 0; i < nnodes; ++i) {
               int j = (dirs(n) > 0) ? i : nnodes - i - 1;
               int pos = 0;
-              for (int p = 0; p < cnodes.extent(0); ++p) {
-                if (cnodes(p) == fnodes(j)) {
+              for (int p = 0; p < cnodes.size(); ++p) {
+                if (cnodes[p] == fnodes[j]) {
                   pos = p;
                   break;
                 }
@@ -140,7 +141,7 @@ Mesh::get_set_entities_box_vofs_(
       int nfaces = num_entities(FACE, ptype);
       double area;
 
-      Kokkos::View<AmanziGeometry::Point*> polygon;
+      std::vector<AmanziGeometry::Point> polygon;
       size_t volume_fractions_size = 0;
       for (int f = 0; f < nfaces; ++f) {
         face_get_coordinates(f, polygon);
@@ -211,12 +212,12 @@ unsigned int
 Mesh::get_set_size(const Set_ID setid, const Entity_kind kind,
                    const Parallel_type ptype) const
 {
-  Kokkos::View<Entity_ID*> ents;
+  Entity_ID_List ents;
   std::string setname = geometric_model()->FindRegion(setid)->name();
 
   get_set_entities(setname, kind, ptype, ents);
 
-  return ents.extent(0);
+  return ents.size();
 }
 
 
@@ -224,21 +225,21 @@ unsigned int
 Mesh::get_set_size(const std::string setname, const Entity_kind kind,
                    const Parallel_type ptype) const
 {
-  Kokkos::View<Entity_ID*> setents;
-  Kokkos::View<double*> vofs;
+  Entity_ID_List setents;
+  std::vector<double> vofs;
 
   get_set_entities_and_vofs(setname, kind, ptype, setents, &vofs);
 
-  return setents.extent(0);
+  return setents.size();
 }
 
 
 void
 Mesh::get_set_entities(const Set_ID setid, const Entity_kind kind,
                        const Parallel_type ptype,
-                       Kokkos::View<Entity_ID*>& entids) const
+                       std::vector<Entity_ID>& entids) const
 {
-  Kokkos::View<double*> vofs;
+  std::vector<double> vofs;
   std::string setname = geometric_model()->FindRegion(setid)->name();
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }

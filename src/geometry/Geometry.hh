@@ -43,18 +43,18 @@ namespace AmanziGeometry {
 // a face center and an edge of the face
 
 void
-polyhed_get_vol_centroid(const Kokkos::View<Point*>& ccoords,
+polyhed_get_vol_centroid(const std::vector<Point>& ccoords,
                          const unsigned int nf,
                          const std::vector<unsigned int> nfnodes,
-                         const Kokkos::View<Point*>& fcoords, double* volume,
+                         const std::vector<Point>& fcoords, double* volume,
                          Point* centroid);
 
 // Is point in polyhed
 
 bool
-point_in_polyhed(const Point testpnt, const Kokkos::View<Point*>& ccoords,
+point_in_polyhed(const Point testpnt, const std::vector<Point>& ccoords,
                  const unsigned int nf, const std::vector<unsigned int> nfnodes,
-                 const Kokkos::View<Point*>& fcoords);
+                 const std::vector<Point>& fcoords);
 
 
 // Compute area, centroid and normal of polygon
@@ -68,7 +68,7 @@ point_in_polyhed(const Point testpnt, const Kokkos::View<Point*>& ccoords,
 // weighted normals of the triangular facets
 
 void
-polygon_get_area_centroid_normal(const Kokkos::View<Point*>& coords,
+polygon_get_area_centroid_normal(const std::vector<Point>& coords,
                                  double* area, Point* centroid, Point* normal);
 
 
@@ -82,7 +82,7 @@ polygon_get_area_centroid_normal(const Kokkos::View<Point*>& coords,
 // Is point in polygon
 
 bool
-point_in_polygon(const Point testpnt, const Kokkos::View<Point*>& coords);
+point_in_polygon(const Point testpnt, const std::vector<Point>& coords);
 
 
 } // end namespace AmanziGeometry

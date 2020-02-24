@@ -77,7 +77,7 @@ CompositeVectorFunction::Compute(double time, CompositeVector& cv)
       if (kind == AmanziMesh::BOUNDARY_FACE) {
         if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
           // get the indices of the domain.
-          Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+          AmanziMesh::Entity_ID_List id_list;
           mesh->get_set_entities(*region,
                                  AmanziMesh::FACE,
                                  AmanziMesh::Parallel_type::OWNED,
@@ -88,16 +88,16 @@ CompositeVectorFunction::Compute(double time, CompositeVector& cv)
 
           // loop over indices
           Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
-          for (int id = 0; id < id_list.extent(0); ++id) {
+          for (int id = 0; id < id_list.size(); ++id) {
             mesh->face_get_cells(
-              id_list(id), AmanziMesh::Parallel_type::ALL, cells);
+              id_list[id], AmanziMesh::Parallel_type::ALL, cells);
             if (cells.extent(0) == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(
-                face_map.getGlobalElement(id_list(id)));
+                face_map.getGlobalElement(id_list[id]));
               AMANZI_ASSERT(bf >= 0);
 
               // get the coordinate
-              AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
+              AmanziGeometry::Point xf = mesh->face_centroid(id_list[id]);
               for (int i = 0; i != dim; ++i) args[i + 1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
@@ -117,22 +117,22 @@ CompositeVectorFunction::Compute(double time, CompositeVector& cv)
       } else {
         if (mesh->valid_set_name(*region, kind)) {
           // get the indices of the domain.
-          Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+          AmanziMesh::Entity_ID_List id_list;
           mesh->get_set_entities(
             *region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
 
           // convert
-          Kokkos::View<double**> txyz("txyz", dim + 1, id_list.extent(0));
+          Kokkos::View<double**> txyz("txyz", dim + 1, id_list.size());
           // Feed the array with data
-          for (int id = 0; id < id_list.extent(0); ++id) {
+          for (int id = 0; id < id_list.size(); ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;
             if (kind == AmanziMesh::CELL) {
-              xc = mesh->cell_centroid(id_list(id));
+              xc = mesh->cell_centroid(id_list[id]);
             } else if (kind == AmanziMesh::FACE) {
-              xc = mesh->face_centroid(id_list(id));
+              xc = mesh->face_centroid(id_list[id]);
             } else if (kind == AmanziMesh::NODE) {
-              mesh->node_get_coordinates(id_list(id), &xc);
+              mesh->node_get_coordinates(id_list[id], &xc);
             } else {
               AMANZI_ASSERT(0);
             }
@@ -141,15 +141,15 @@ CompositeVectorFunction::Compute(double time, CompositeVector& cv)
           } // for
 
           Kokkos::View<double**, Kokkos::LayoutLeft> result(
-            "result", id_list.extent(0), (*spec->second).size());
+            "result", id_list.size(), (*spec->second).size());
           spec->second->apply(txyz, result);
 
-          assert(id_list.extent(0) == result.extent(0));
+          assert(id_list.size() == result.extent(0));
           assert((*spec->second).size() == result.extent(1));
 
-          for (int id = 0; id < id_list.extent(0); ++id) {
+          for (int id = 0; id < id_list.size(); ++id) {
             for (int i = 0; i < (*spec->second).size(); ++i) {
-              compvec(id_list(id), i) = result(id, i);
+              compvec(id_list[id], i) = result(id, i);
             }
           }
 

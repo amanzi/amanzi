@@ -174,21 +174,25 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
     // loop over region/model pairs and execute the model
     for (const auto& region_model : models_) {
       // get a view of the entities to execute over
-      AmanziMesh::Entity_ID_View material_ids;
+      AmanziMesh::Entity_ID_List material_ids;
       results[0]->getMap()->Mesh()->get_set_entities(
         region_model.first,
         mesh_location,
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
+      AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
+      for(int i = 0 ; i < material_ids.size(); ++i){
+        material_ids_v[i] = material_ids[i]; 
+      }
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views);
 
       Kokkos::RangePolicy<typename Device_type::execution_space> range(
-        0, material_ids.extent(0));
+        0, material_ids_v.size());
       Kokkos::parallel_for(
         name_, range, KOKKOS_LAMBDA(const int i) {
-        (*region_model.second)(material_ids(i));
+        (*region_model.second)(material_ids_v[i]);
       });
     }
   }
@@ -236,12 +240,16 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
     // loop over region/model pairs and execute the model
     for (const auto& region_model : models_) {
       // get a view of the entities to execute over
-      AmanziMesh::Entity_ID_View material_ids;
+      AmanziMesh::Entity_ID_List material_ids;
       results[0]->getMap()->Mesh()->get_set_entities(
         region_model.first,
         mesh_location,
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
+      AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
+      for(int i = 0 ; i < material_ids.size(); ++i){
+        material_ids_v[i] = material_ids[i]; 
+      }
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views);
@@ -250,7 +258,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
                                    Model_type,
                                    Device_type>
         launcher(name_, wrt, dependencies_, *region_model.second);
-      launcher.launch(material_ids);
+      launcher.launch(material_ids_v);
     }
   }
 }

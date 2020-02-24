@@ -156,18 +156,18 @@ TEST_FIXTURE(reference_mesh, values1)
   CHECK_EQUAL(12, bf.size());
   bf.Compute(0.0);
 
-  Kokkos::View<Entity_ID*> face_list;
+  Entity_ID_List face_list;
   mesh->get_set_entities(RIGHT, FACE, Parallel_type::ALL, face_list);
-  for (int i = 0; i < face_list.extent(0); ++i)
-    CHECK_EQUAL(1.0, bf.find(face_list(i))->second);
+  for (int i = 0; i < face_list.size(); ++i)
+    CHECK_EQUAL(1.0, bf.find(face_list[i])->second);
 
   mesh->get_set_entities(FRONT, FACE, Parallel_type::ALL, face_list);
-  for (int i = 0; i < face_list.extent(0); ++i)
-    CHECK_EQUAL(2.0, bf.find(face_list(i))->second);
+  for (int i = 0; i < face_list.size(); ++i)
+    CHECK_EQUAL(2.0, bf.find(face_list[i])->second);
 
   mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, face_list);
-  for (int i = 0; i < face_list.extent(0); ++i)
-    CHECK_EQUAL(3.0, bf.find(face_list(i))->second);
+  for (int i = 0; i < face_list.size(); ++i)
+    CHECK_EQUAL(3.0, bf.find(face_list[i])->second);
 }
 
 

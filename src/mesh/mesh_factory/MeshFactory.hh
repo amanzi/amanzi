@@ -124,7 +124,7 @@ class MeshFactory {
   // this could likely be relaxed, but is easiest to require for now.
   Teuchos::RCP<Mesh>
   create(const Teuchos::RCP<const Mesh>& parent_mesh,
-         const Kokkos::View<Entity_ID*>& setids, const Entity_kind setkind,
+         const Entity_ID_List& setids, const Entity_kind setkind,
          const bool flatten = false, const bool request_faces = true,
          const bool request_edges = false);
 

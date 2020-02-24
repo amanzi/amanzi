@@ -72,17 +72,17 @@ TEST(MESH_DEFORM2D)
 
     // Deform the mesh
 
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodeids;
-    Kokkos::View<Amanzi::AmanziGeometry::Point*> finpos;
+    Amanzi::AmanziMesh::Entity_ID_List nodeids;
+    std::vector<Amanzi::AmanziGeometry::Point> finpos;
     Amanzi::AmanziGeometry::Point_List newpos;
 
     int status, nnodes;
 
     nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                 Amanzi::AmanziMesh::Parallel_type::OWNED);
-    Kokkos::resize(nodeids, nnodes);
+    nodeids.resize(nnodes); 
     for (int j = 0; j < nnodes; j++) {
-      nodeids(j) = j;
+      nodeids[j] = j;
 
       Amanzi::AmanziGeometry::Point oldcoord(2), newcoord(2);
 
@@ -171,18 +171,18 @@ TEST(MESH_DEFORM3D)
 
     // Deform the mesh
 
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodeids;
+    Amanzi::AmanziMesh::Entity_ID_List nodeids;
     Amanzi::AmanziGeometry::Point_List newpos;
-    Kokkos::View<Amanzi::AmanziGeometry::Point*> finpos;
+    std::vector<Amanzi::AmanziGeometry::Point> finpos;
 
     int status, nnodes;
     if (nproc == 1) {
       nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                   Amanzi::AmanziMesh::Parallel_type::OWNED);
-      Kokkos::resize(nodeids, nnodes);
+      nodeids.resize(nnodes);
       for (int j = 0; j < nnodes; j++) {
         double pi = 3.1415926;
-        nodeids(j) = j;
+        nodeids[j] = j;
 
         Amanzi::AmanziGeometry::Point oldcoord(3), newcoord(3);
 

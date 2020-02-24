@@ -89,10 +89,10 @@ class MeshAudit {
   std::ostream& os_;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const Kokkos::View<AmanziMesh::Entity_ID*>& list) const;
+  bool distinct_values(const AmanziMesh::Entity_ID_List& list) const;
   void write_list(const AmanziMesh::Entity_ID_List&, unsigned int) const;
   bool global_any(bool) const;
-  int same_face(const Kokkos::View<AmanziMesh::Entity_ID*>,
+  int same_face(const AmanziMesh::Entity_ID_List,
                 const AmanziMesh::Entity_ID_List) const;
 
   bool check_maps(const Map_ptr_type&, const Map_ptr_type&) const;

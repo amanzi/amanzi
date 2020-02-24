@@ -51,14 +51,6 @@ class Op_Face_Cell : public Op {
       csr.sizes_(f,1) = ncells; 
     }
     csr.prefix_sum(); 
-
-    // Matrices 
-    //matrices.resize(nfaces_owned);
-    //for (int f=0; f!=nfaces_owned; ++f) {
-    //  AmanziMesh::Entity_ID_View cells;
-    //  mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-    //  matrices[f].reshape(cells.extent(0), cells.extent(0));
-    //}    
   }
 
   virtual void

@@ -249,7 +249,7 @@ void ComputeNodeError(const AnalyticBase& ana,
   WhetStone::MFD3D_Lagrange mfd(plist, mesh);
 
   WhetStone::Polynomial poly(ana.dimension(), 1);
-  AmanziMesh::Entity_ID_View nodes;
+  AmanziMesh::Entity_ID_List nodes;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   auto p = p_vec.ViewComponent<AmanziDefaultHost>("node", false);

@@ -191,14 +191,14 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const Kokkos::View<Point*>& polytope) const
+  double intersect(const std::vector<Point>& polytope) const
   {
     std::vector<std::vector<int>> faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  virtual double intersect(const Kokkos::View<Point*>& polytope,
+  virtual double intersect(const std::vector<Point>& polytope,
                            const std::vector<std::vector<int>>& faces) const
   {
     return -1.0;

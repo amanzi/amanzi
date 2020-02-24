@@ -408,17 +408,17 @@ Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
 void
 Mesh_simple::cell_get_faces_and_dirs_internal_(
   const AmanziMesh::Entity_ID cellid,
-  Kokkos::View<AmanziMesh::Entity_ID*>& faceids,
-  Kokkos::View<int*>& cfacedirs) const
+  Entity_ID_List& faceids,
+  std::vector<int>& cfacedirs) const
 {
   unsigned int offset = (unsigned int)6 * cellid;
 
-  Kokkos::resize(faceids, 6);
-  Kokkos::resize(cfacedirs, 6);
+  faceids.resize(6);
+  cfacedirs.resize(6);
 
   for (int i = 0; i < 6; i++) {
-    faceids(i) = *(cell_to_face_.begin() + offset);
-    cfacedirs(i) = *(cell_to_face_dirs_.begin() + offset);
+    faceids[i] = *(cell_to_face_.begin() + offset);
+    cfacedirs[i] = *(cell_to_face_dirs_.begin() + offset);
     offset++;
   }
 }
@@ -426,14 +426,14 @@ Mesh_simple::cell_get_faces_and_dirs_internal_(
 
 void
 Mesh_simple::cell_get_nodes(AmanziMesh::Entity_ID cell,
-                            Kokkos::View<Entity_ID*>& nodeids) const
+                            Entity_ID_List& nodeids) const
 {
   unsigned int offset = (unsigned int)8 * cell;
 
-  Kokkos::resize(nodeids, 8);
+  nodeids.resize(8); 
 
   for (int i = 0; i < 8; i++) {
-    nodeids(i) = (*(cell_to_node_.begin() + offset));
+    nodeids[i] = (*(cell_to_node_.begin() + offset));
     offset++;
   }
 }
@@ -441,14 +441,14 @@ Mesh_simple::cell_get_nodes(AmanziMesh::Entity_ID cell,
 
 void
 Mesh_simple::face_get_nodes(AmanziMesh::Entity_ID face,
-                            Kokkos::View<Entity_ID*>& nodeids) const
+                            Entity_ID_List& nodeids) const
 {
   unsigned int offset = (unsigned int)4 * face;
 
-  Kokkos::resize(nodeids, 4);
+  nodeids.resize(4); 
 
   for (int i = 0; i < 4; i++) {
-    nodeids(i) = (*(face_to_node_.begin() + offset));
+    nodeids[i] = (*(face_to_node_.begin() + offset));
     offset++;
   }
 }
@@ -471,18 +471,18 @@ Mesh_simple::node_get_coordinates(const AmanziMesh::Entity_ID local_node_id,
 void
 Mesh_simple::face_get_coordinates(
   AmanziMesh::Entity_ID local_face_id,
-  Kokkos::View<AmanziGeometry::Point*>& fcoords) const
+  std::vector<AmanziGeometry::Point>& fcoords) const
 {
-  Kokkos::View<Entity_ID*> node_indices("", 4);
+  Entity_ID_List node_indices(4);
 
   face_get_nodes(local_face_id, node_indices);
 
-  Kokkos::resize(fcoords, node_indices.extent(0));
+  fcoords.resize(node_indices.size());
 
   AmanziGeometry::Point xyz(3);
-  for (int j = 0; j < node_indices.extent(0); ++j) {
-    node_get_coordinates(node_indices(j), &xyz);
-    fcoords(j) = xyz;
+  for (int j = 0; j < node_indices.size(); ++j) {
+    node_get_coordinates(node_indices[j], &xyz);
+    fcoords[j] = xyz;
   }
 }
 
@@ -490,18 +490,18 @@ Mesh_simple::face_get_coordinates(
 void
 Mesh_simple::cell_get_coordinates(
   AmanziMesh::Entity_ID local_cell_id,
-  Kokkos::View<AmanziGeometry::Point*>& ccoords) const
+  std::vector<AmanziGeometry::Point>& ccoords) const
 {
-  Kokkos::View<Entity_ID*> node_indices("", 8);
+  Entity_ID_List node_indices(8);
 
   cell_get_nodes(local_cell_id, node_indices);
 
-  Kokkos::resize(ccoords, node_indices.extent(0));
+  ccoords.resize(node_indices.size());
 
   AmanziGeometry::Point xyz(3);
-  for (int j = 0; j < node_indices.extent(0); ++j) {
-    node_get_coordinates(node_indices(j), &xyz);
-    ccoords(j) = xyz;
+  for (int j = 0; j < node_indices.size(); ++j) {
+    node_get_coordinates(node_indices[j], &xyz);
+    ccoords[j] = xyz;
   }
 }
 
@@ -547,14 +547,14 @@ Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id,
 void
 Mesh_simple::node_get_cells(const AmanziMesh::Entity_ID nodeid,
                             const AmanziMesh::Parallel_type ptype,
-                            Kokkos::View<Entity_ID*>& cellids) const
+                            Entity_ID_List& cellids) const
 {
   unsigned int offset = (unsigned int)9 * nodeid;
   unsigned int ncells = node_to_cell_[offset];
 
-  Kokkos::resize(cellids, ncells);
+  cellids.resize(ncells);
 
-  for (int i = 0; i < ncells; i++) cellids(i) = (node_to_cell_[offset + i + 1]);
+  for (int i = 0; i < ncells; i++) cellids[i] = (node_to_cell_[offset + i + 1]);
 }
 
 
@@ -564,14 +564,14 @@ Mesh_simple::node_get_cells(const AmanziMesh::Entity_ID nodeid,
 void
 Mesh_simple::node_get_faces(const AmanziMesh::Entity_ID nodeid,
                             const AmanziMesh::Parallel_type ptype,
-                            Kokkos::View<AmanziMesh::Entity_ID*>& faceids) const
+                            std::vector<AmanziMesh::Entity_ID>& faceids) const
 {
   unsigned int offset = (unsigned int)13 * nodeid;
   unsigned int nfaces = node_to_face_[offset];
 
-  Kokkos::resize(faceids, nfaces);
+  faceids.resize(nfaces);
 
-  for (int i = 0; i < nfaces; i++) faceids(i) = (node_to_face_[offset + i + 1]);
+  for (int i = 0; i < nfaces; i++) faceids[i] = (node_to_face_[offset + i + 1]);
 }
 
 
@@ -583,25 +583,23 @@ void
 Mesh_simple::node_get_cell_faces(
   const AmanziMesh::Entity_ID nodeid, const AmanziMesh::Entity_ID cellid,
   const AmanziMesh::Parallel_type ptype,
-  Kokkos::View<AmanziMesh::Entity_ID*>& faceids) const
+  AmanziMesh::Entity_ID_List& faceids) const
 {
   unsigned int offset = (unsigned int)6 * cellid;
 
-  Kokkos::resize(faceids, 0);
+  faceids.clear(); 
 
-  size_t faceids_size = 0;
   for (int i = 0; i < 6; i++) {
     Entity_ID cellfaceid = cell_to_face_[offset + i];
 
     unsigned int offset2 = (unsigned int)4 * cellfaceid;
 
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
+    Amanzi::AmanziMesh::Entity_ID_List fnodes;
     face_get_nodes(cellfaceid, fnodes);
 
     for (int j = 0; j < 4; j++) {
       if (face_to_node_[offset2 + j] == nodeid) {
-        Kokkos::resize(faceids, faceids.extent(0) + 1);
-        faceids(faceids_size++) = (cellfaceid);
+        faceids.push_back(cellfaceid); 
         break;
       }
     }
@@ -615,13 +613,13 @@ Mesh_simple::node_get_cell_faces(
 void
 Mesh_simple::face_get_cells_internal_(
   const AmanziMesh::Entity_ID faceid, const AmanziMesh::Parallel_type ptype,
-  Kokkos::View<AmanziMesh::Entity_ID*>& cellids) const
+  AmanziMesh::Entity_ID_List& cellids) const
 {
   unsigned int offset = (unsigned int)2 * faceid;
-  Kokkos::resize(cellids, 1);
+  cellids.resize(1); 
 
-  if (face_to_cell_[offset] != -1) cellids(0) = face_to_cell_[offset];
-  if (face_to_cell_[offset + 1] != -1) cellids(0) = face_to_cell_[offset + 1];
+  if (face_to_cell_[offset] != -1) cellids[0] = face_to_cell_[offset];
+  if (face_to_cell_[offset + 1] != -1) cellids[0] = face_to_cell_[offset + 1];
 }
 
 
@@ -641,11 +639,11 @@ Mesh_simple::face_get_cells_internal_(
 void
 Mesh_simple::cell_get_face_adj_cells(
   const AmanziMesh::Entity_ID cellid, const AmanziMesh::Parallel_type ptype,
-  Kokkos::View<AmanziMesh::Entity_ID*>& fadj_cellids) const
+  AmanziMesh::Entity_ID_List& fadj_cellids) const
 {
   unsigned int offset = (unsigned int)6 * cellid;
 
-  Kokkos::resize(fadj_cellids, 0);
+  fadj_cellids.clear();
   for (int i = 0; i < 6; i++) {
     Entity_ID faceid = cell_to_face_[offset];
 
@@ -653,13 +651,11 @@ Mesh_simple::cell_get_face_adj_cells(
 
     int adjcell0 = face_to_cell_[foffset];
     if (adjcell0 != -1 && adjcell0 != cellid) {
-      Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-      fadj_cellids(fadj_cellids.extent(0) - 1) = (adjcell0);
+      fadj_cellids.push_back(adjcell0);
     } else {
       int adjcell1 = face_to_cell_[foffset + 1];
       if (adjcell1 != -1 && adjcell1 != cellid) {
-        Kokkos::resize(fadj_cellids, fadj_cellids.extent(0) + 1);
-        fadj_cellids(fadj_cellids.extent(0) - 1) = (adjcell1);
+        fadj_cellids.push_back(adjcell1);
       }
     }
 
@@ -676,11 +672,11 @@ Mesh_simple::cell_get_face_adj_cells(
 void
 Mesh_simple::cell_get_node_adj_cells(
   const AmanziMesh::Entity_ID cellid, const AmanziMesh::Parallel_type ptype,
-  Kokkos::View<AmanziMesh::Entity_ID*>& nadj_cellids) const
+  AmanziMesh::Entity_ID_List& nadj_cellids) const
 {
   unsigned int offset = (unsigned int)8 * cellid;
 
-  Kokkos::resize(nadj_cellids, 8);
+  nadj_cellids.resize(8); 
 
   for (int i = 0; i < 8; i++) {
     Entity_ID nodeid = cell_to_node_[offset + i];
@@ -692,17 +688,16 @@ Mesh_simple::cell_get_node_adj_cells(
       Entity_ID nodecell = node_to_cell_[offset2 + j];
 
       unsigned int found = 0;
-      unsigned int size = nadj_cellids.extent(0);
+      unsigned int size = nadj_cellids.size();
       for (int k = 0; k < size; k++) {
-        if (nadj_cellids(k) == nodecell) {
+        if (nadj_cellids[k] == nodecell) {
           found = 1;
           break;
         }
       }
 
       if (!found) {
-        Kokkos::resize(nadj_cellids, nadj_cellids.extent(0) + 1);
-        nadj_cellids(nadj_cellids.extent(0) - 1) = nodecell;
+        nadj_cellids.push_back(nodecell);
       }
     }
   }
@@ -755,16 +750,14 @@ void
 Mesh_simple::get_set_entities_and_vofs(
   const std::string setname, const AmanziMesh::Entity_kind kind,
   const AmanziMesh::Parallel_type ptype,
-  Kokkos::View<AmanziMesh::Entity_ID*>& setents,
-  Kokkos::View<double*>* vofs) const
+  AmanziMesh::Entity_ID_List& setents,
+  std::vector<double>* vofs) const
 {
   // we ignore ptype since this is a serial implementation
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm =
     Mesh::geometric_model();
 
-  // assert (setents != NULL);
-  // setents->clear();
-  Kokkos::resize(setents, 0);
+  setents.clear(); 
 
   switch (kind) {
   case AmanziMesh::FACE: {
@@ -803,7 +796,7 @@ Mesh_simple::get_set_entities_and_vofs(
         for (int ix = 0; ix < nx_; ix++)
           for (int iz = 0; iz < nz_; iz++) {
             int face;
-            Kokkos::View<AmanziGeometry::Point*> fxyz;
+            std::vector<AmanziGeometry::Point> fxyz;
             bool inbox;
 
             face = xzface_index_(ix, 0, iz);
@@ -812,13 +805,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -833,13 +826,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -852,7 +845,7 @@ Mesh_simple::get_set_entities_and_vofs(
         for (int ix = 0; ix < nx_; ix++)
           for (int iy = 0; iy < ny_; iy++) {
             int face;
-            Kokkos::View<AmanziGeometry::Point*> fxyz;
+            std::vector<AmanziGeometry::Point> fxyz;
             bool inbox;
 
             face = xyface_index_(ix, iy, 0);
@@ -861,13 +854,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -882,13 +875,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -901,7 +894,7 @@ Mesh_simple::get_set_entities_and_vofs(
         for (int iy = 0; iy < ny_; iy++)
           for (int iz = 0; iz < nz_; iz++) {
             int face;
-            Kokkos::View<AmanziGeometry::Point*> fxyz;
+            std::vector<AmanziGeometry::Point> fxyz;
             bool inbox;
 
             face = yzface_index_(0, iy, iz);
@@ -910,13 +903,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -931,13 +924,13 @@ Mesh_simple::get_set_entities_and_vofs(
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++) cenpnt += fxyz(j);
+              for (int j = 0; j < 4; j++) cenpnt += fxyz[j];
               cenpnt /= 4.0;
 
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
               for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz(j))) {
+                if (!rgn->inside(fxyz[j])) {
                   inbox = false;
                   break;
                 }
@@ -958,8 +951,7 @@ Mesh_simple::get_set_entities_and_vofs(
       }
     }
 
-    Kokkos::resize(setents, ss.size());
-    for (int i = 0; i < ss.size(); ++i) { setents(i) = ss[i]; }
+    setents = ss; 
     break;
   }
 
@@ -999,12 +991,12 @@ Mesh_simple::get_set_entities_and_vofs(
           for (int iy = 0; iy < ny_; iy++)
             for (int iz = 0; iz < nz_; iz++) {
               int cell = cell_index_(ix, iy, iz);
-              Kokkos::View<AmanziGeometry::Point*> cxyz;
+              std::vector<AmanziGeometry::Point> cxyz;
               cell_get_coordinates(cell, cxyz);
 
               AmanziGeometry::Point cenpnt(Mesh::space_dimension());
 
-              for (int j = 0; j < 8; j++) cenpnt += cxyz(j);
+              for (int j = 0; j < 8; j++) cenpnt += cxyz[j];
               cenpnt /= 8.0;
 
               if (rgn->inside(cenpnt)) cs.push_back(cell);
@@ -1019,8 +1011,7 @@ Mesh_simple::get_set_entities_and_vofs(
       }
     }
 
-    Kokkos::resize(setents, cs.size());
-    for (int i = 0; i < cs.size(); ++i) { setents(i) = cs[i]; }
+    setents = cs; 
     break;
   }
 
@@ -1067,8 +1058,7 @@ Mesh_simple::get_set_entities_and_vofs(
       node_set_regions_.push_back(rgn);
     }
 
-    Kokkos::resize(setents, ns.size());
-    for (int i = 0; i < ns.size(); ++i) { setents(i) = ns[i]; }
+    setents = ns; 
     break;
   }
 
@@ -1088,7 +1078,7 @@ Mesh_simple::get_set_entities_and_vofs(
 int
 Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in,
                     const std::vector<double>& min_cell_volumes_in,
-                    const Kokkos::View<Entity_ID*>& fixed_nodes,
+                    const Entity_ID_List& fixed_nodes,
                     const bool move_vertical)
 {
   Errors::Message mesg("Deformation not implemented for Mesh_simple");
