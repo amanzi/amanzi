@@ -33,6 +33,7 @@ class VWContentEvaluatorFactory {
       vwc->Init_();
       return vwc;
     } else {
+      if (name == "two-phase") vwc_list.set<bool>("water vapor", true);
       Teuchos::RCP<VWContentEvaluator>
           vwc = Teuchos::rcp(new VWContentEvaluator(vwc_list));
       vwc->Init_();

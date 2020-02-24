@@ -233,7 +233,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
-        TranslateFieldIC_(node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+        TranslateFieldEvaluator_(node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
       }
     }
   }

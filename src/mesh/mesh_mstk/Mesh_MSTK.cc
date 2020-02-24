@@ -2698,7 +2698,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
     }
     else if ((region->type() == AmanziGeometry::PLANE)||
-             (region->type() == AmanziGeometry::POLYGON)){
+             (region->type() == AmanziGeometry::POLYGON)) {
 
       if (celldim == 2) {
 

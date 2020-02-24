@@ -28,7 +28,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   my_key_ = plist_.get<std::string>("energy key", "energy");
-  vapor_diffusion_ = plist_.get<bool>("vapor diffusion", true);
+  vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
 
   dependencies_.insert(std::string("porosity"));
 

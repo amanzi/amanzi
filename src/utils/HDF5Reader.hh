@@ -70,7 +70,7 @@ struct HDF5Reader {
     hid_t dataspace = H5Dget_space(dataset);
     hsize_t dims[2];
     int rank = H5Sget_simple_extent_dims(dataspace, dims, NULL);
-    if ( rank != 2 ) {
+    if (rank != 2) {
       Errors::Message message("HDF5Reader: error, dataset dimension is not equal to 2 ");
       Exceptions::amanzi_throw(message);
     }

@@ -11,6 +11,7 @@
 */
 
 #include <sstream>
+#include <typeinfo>
 
 // TPLs
 #include "EpetraExt_RowMatrixOut.h"
@@ -518,7 +519,8 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 void Operator::UpdatePreconditioner()
 {
   if (preconditioner_.get() == NULL) {
-    Errors::Message msg("Operator has no matrix or preconditioner for update.\n");
+    Errors::Message msg("Operator has no preconditioner, nothing to update.");
+    msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
   preconditioner_->Update(A_);

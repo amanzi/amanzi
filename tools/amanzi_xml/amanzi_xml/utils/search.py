@@ -1,4 +1,4 @@
-import errors
+from . import errors
 
 
 #
@@ -70,7 +70,7 @@ def replace_by_path(xml,names,value):
     """Replace value at end of path defined by list of name strings in decending hierarchical order."""
     find_by_path(xml,names).set('value',str(value))
 
-def depth (xml):
+def depth(xml):
     """Return depth of xml object"""
     return max([0] + [depth(child) + 1 for child in xml])
  
@@ -85,7 +85,7 @@ def replace_elem(xml, elem_sink, elem_src):
     """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""    
     pm = create_parent_map(xml)
     p_elem_sink = pm[elem_sink]
-    i = (i for i in range(len(p_elem_sink)) if p_elem_sink[i] == elem_sink).next()
+    i = next((i for i in range(len(p_elem_sink)) if p_elem_sink[i] == elem_sink))
     p_elem_sink[i] = elem_src
 
 def get_parent(xml,elem,level=1):
@@ -135,7 +135,7 @@ def print_path(xml,elem,level=None):
     for e in elems:
         s += "\n"+ind+e.attrib['name']
         ind += '    '
-    print s
+    print(s)
 
 def get_value(xml, name):
     """Return value associated with name

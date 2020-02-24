@@ -106,8 +106,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Energy list has only one sublist
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> tmp = Teuchos::sublist(pk_list, "energy", true);
-  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(tmp, tmp->begin()->first, true);
+  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "energy", true);
 
   // Create BCs objects
   // -- memory

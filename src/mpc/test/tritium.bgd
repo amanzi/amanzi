@@ -1,0 +1,6 @@
+<Primary Species
+Tritium  ;   9.00 ;   0.00 ;   1.01
+
+<General Kinetics
+  1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
+

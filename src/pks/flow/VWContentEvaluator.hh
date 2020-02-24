@@ -48,7 +48,7 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  bool vapor_phase_;
+  bool water_vapor_;
   Key saturation_key_, porosity_key_;
   
  private:

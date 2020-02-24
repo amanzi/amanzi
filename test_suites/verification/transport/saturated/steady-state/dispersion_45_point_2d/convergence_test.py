@@ -103,7 +103,7 @@ if __name__ == "__main__":
 	    msg = msg + "Comparison Passed"
 	    for ob in err:
 	        msg = msg +  "\n  error("+str(ob)+") = " + str(err[ob])
-	    print msg
+	    print(msg)
     else:
 	msg = msg + "Comparison Failed"
 	msg = msg + "\n  tests results or golden_output missing"

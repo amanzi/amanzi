@@ -1,5 +1,0 @@
-diff -ruNbB hypre-xsdk-0.2.0/CMakeLists.txt hypre-2.11.2-source/CMakeLists.txt
---- hypre-xsdk-0.2.0/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+++ hypre-2.11.2-source/CMakeLists.txt	2017-10-25 15:49:54.013631970 -0600
-@@ -0,0 +1 @@
-+add_subdirectory(src)

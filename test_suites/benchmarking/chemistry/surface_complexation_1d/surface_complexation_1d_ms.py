@@ -40,7 +40,7 @@ if __name__ == "__main__":
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
-        print 'error: parflow directory not found in ',PF_DIR
+        print('error: parflow directory not found in ',PF_DIR)
         raise
 
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
-	native = True
+    native = True
 
     except:
         native = False

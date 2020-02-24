@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${HDF5_VERSION_MAJOR} ${HDF5_VERSION_MINOR} ${HDF5_VERSION_PATCH})
 
 # --- Patch the original code
-set(HDF5_patch_file hdf5-1.8.8-comment.patch hdf5-1.8.8-disable-getpwuid.patch)
+set(HDF5_patch_file hdf5-1.10.6-rpath.patch)
 set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
                ${HDF5_sh_patch}
@@ -52,8 +52,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     URL          ${HDF5_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${HDF5_MD5_SUM}                  # md5sum of the archive file
                     # -- Patch 
-                    # PATCH_COMMAND ${HDF5_PATCH_COMMAND}
-		    PATCH_COMMAND
+                    PATCH_COMMAND ${HDF5_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HDF5_source_dir} 
 		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList

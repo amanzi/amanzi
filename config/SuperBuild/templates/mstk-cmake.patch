@@ -1,0 +1,15 @@
+diff -ruNbB MSTK-3_2_1/cmake/modules/FindExodusII.cmake mstk-3.2.1-source/cmake/modules/FindExodusII.cmake
+--- MSTK-3_2_1/cmake/modules/FindExodusII.cmake	2019-11-24 21:15:24.000000000 -0700
++++ mstk-3.2.1-source/cmake/modules/FindExodusII.cmake	2019-12-29 16:13:13.000000000 -0700
+@@ -108,7 +108,10 @@
+   endif ()
+   
+   # Add netCDF as a dependency of ExodusII
+-  target_link_libraries(${ExodusII_LIBRARIES} INTERFACE ${netCDF_LIBRARIES})
++  # target_link_libraries(${ExodusII_LIBRARIES} INTERFACE ${netCDF_LIBRARIES})
++  foreach(lib_ ${netCDF_LIBRARIES})
++    target_link_libraries(${ExodusII_LIBRARIES} INTERFACE netCDF::${lib_})
++  endforeach()
+ endif()
+   
+ # Hide these variables from the cache

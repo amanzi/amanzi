@@ -66,14 +66,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
   if (pk_model_["flow"] == "darcy") {
-    Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
-    darcy_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
-    if (darcy_list.sublist("fracture permeability models").numParams() > 0) {
-      darcy_list.sublist("physical models and assumptions")
+    out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
+    if (out_list.sublist("fracture permeability models").numParams() > 0) {
+      out_list.sublist("physical models and assumptions")
           .set<bool>("flow in fractures", true);
     }
 
-    flow_list = &darcy_list;
+    flow_list = &out_list;
     flow_single_phase_ = true;
 
     DOMNodeList* tmp = doc_->getElementsByTagName(mm.transcode("multiscale_model"));
@@ -84,23 +83,22 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
     }
 
   } else if (pk_model_["flow"] == "richards") {
-    Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
-    Teuchos::ParameterList& upw_list = richards_list.sublist("relative permeability");
+    Teuchos::ParameterList& upw_list = out_list.sublist("relative permeability");
     upw_list.set<std::string>("upwind method", rel_perm_out);
     upw_list.set<std::string>("upwind frequency", update_upwind);
     upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12)
         .set<std::string>("method", "cell-based").set<int>("polynomial order", 1)
         .set<std::string>("limiter", "Barth-Jespersen");
-    flow_list = &richards_list;
+    flow_list = &out_list;
 
-    richards_list.sublist("water retention models") = TranslateWRM_();
-    richards_list.sublist("porosity models") = TranslatePOM_();
-    if (richards_list.sublist("porosity models").numParams() > 0) {
+    out_list.sublist("water retention models") = TranslateWRM_();
+    out_list.sublist("porosity models") = TranslatePOM_();
+    if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
           .set<std::string>("porosity model", "compressible: pressure function");
     }
-    richards_list.sublist("multiscale models") = TranslateFlowMSM_();
-    if (richards_list.sublist("multiscale models").numParams() > 0) {
+    out_list.sublist("multiscale models") = TranslateFlowMSM_();
+    if (out_list.sublist("multiscale models").numParams() > 0) {
       msm = "dual continuum discontinuous matrix";
       flow_list->sublist("physical models and assumptions")
           .set<std::string>("multiscale model", msm);
@@ -135,7 +133,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
     modify_correction = true;
-    out_list.sublist("Richards problem").sublist("relative permeability")
+    out_list.sublist("relative permeability")
         .set<std::string>("upwind frequency", "every nonlinear iteration");
 
     if (disc_method != "fv-default" ||
@@ -151,7 +149,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 
   // Newton-Picard method requires to overwrite some parameters.
   if (nonlinear_solver == "newton-picard") {
-    out_list.sublist("Richards problem").sublist("relative permeability")
+    out_list.sublist("relative permeability")
         .set<std::string>("upwind frequency", "every nonlinear iteration");
   }
 

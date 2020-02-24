@@ -13,6 +13,8 @@
 
 import sys, os, subprocess
 
+assert sys.version_info.major >= 3, "Python 3.x is required to build documentation"
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -44,9 +46,7 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinxcontrib.bibtex',
 ]
 
-ext_matplotlib = ['matplotlib.sphinxext.only_directives',
-                  'matplotlib.sphinxext.plot_directive'
-]
+ext_matplotlib = ['matplotlib.sphinxext.plot_directive']
 
 ext_ipython = ['IPython.sphinxext.ipython_directive',
                'IPython.sphinxext.ipython_console_highlighting'
@@ -89,9 +89,11 @@ copyright = u'2016, Amanzi Development Team'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-amanzi_branch=subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip()
-amanzi_global_id=subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip()
-amanzi_latest_tag=subprocess.check_output('git tag -l amanzi-*', shell=True).split()[-1].rstrip()
+decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
+
+amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
+amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
+amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
@@ -141,7 +143,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinxdoc'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -171,6 +173,10 @@ html_theme = 'sphinxdoc'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_css_files = [
+  'fix_eq_position.css',
+]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -236,7 +242,7 @@ latex_elements = {
 'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\usepackage[version=3]{mhchem}\n\usepackage{amssymb,grffile}\n',
+'preamble': '\\usepackage[version=3]{mhchem}\n\\usepackage{amssymb,grffile}\n',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

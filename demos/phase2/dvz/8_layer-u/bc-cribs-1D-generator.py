@@ -44,7 +44,7 @@ parser.add_option("--stop-time", dest="end_time",
 (options,args) = parser.parse_args()
 
 if options.meshfile == None:
-    raise ValueError, "Please define a mesh file"
+    raise ValueError("Please define a mesh file")
 
 # ################################### #
 # Mesh                                #

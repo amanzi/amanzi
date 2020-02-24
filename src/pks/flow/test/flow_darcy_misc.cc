@@ -121,8 +121,7 @@ class DarcyProblem {
     } else if (!strcmp(type, "mass flux")) {
       func_list_name = "outward mass flux";
     }
-    Teuchos::ParameterList& flow_list = plist->sublist("PKs").get<Teuchos::ParameterList>("flow");
-    Teuchos::ParameterList& dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
+    Teuchos::ParameterList& dp_list = plist->sublist("PKs").get<Teuchos::ParameterList>("flow");
 
     Teuchos::ParameterList& bc_list = dp_list.get<Teuchos::ParameterList>("boundary conditions");
     Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
@@ -182,7 +181,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
-      // if(MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
+      // if (MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }

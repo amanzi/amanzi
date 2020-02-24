@@ -63,7 +63,7 @@ def getArrayFromString(buf,type='string',delim=','):
     test = type.lower()
     if test in _int_type_strings :
         return [int(s) for s in buf.split(delim)]
-    elif test in _real_type_strings :
+    elif test in _float_type_strings :
         return [float(s) for s in buf.split(delim)]
     else:
         return [str(s) for s in buf.split(delim)]
@@ -83,7 +83,7 @@ class InputTree(ElementTree):
 
         # Define the root element
         root = Element(root_tag)
-        if code_name != None:
+        if code_name is not None:
             root.set('code_name',code_name)
 
         self._setroot(root)
@@ -96,7 +96,7 @@ class InputTree(ElementTree):
     def dumpXML(self,file=sys.stdout,encoding='utf-8',xml_translate=None,*args):
 
         sortflag='name,label,type'
-        if xml_translate != None :
+        if xml_translate is not None :
             print_tree = xml_translate(self,*args)
             prettyprint(print_tree,file,encoding,sortflag=sortflag)
         else:
@@ -160,13 +160,13 @@ class InputTree(ElementTree):
                         sys.stderr.write("sortflag not formatted correctly, order won't be applied")
                         try:
                             items.sort(cmp=sortcmp)
-                        except:
+                        except Exception:
                             sys.stderr.write("sortcmp not a valid comparator, sorting alphabetically instead")
                             items.sort()
                 else:
                     try:
                         items.sort(cmp=sortcmp)
-                    except:
+                    except Exception:
                         sys.stderr.write("sortcmp not a valid comparator, sorting alphabetically instead")
                         items.sort()
                 ###
@@ -178,13 +178,13 @@ class InputTree(ElementTree):
                             k, xmlns = fixtag(k, namespaces)
                             if xmlns: xmlns_items.append(xmlns)
                     except TypeError:
-                        _raise_serialization_error(k)
+                        _raise_serialization_error(k) # TODO: undefined
                     try:
                         if isinstance(v, QName):
-                            v, xmlns = fixtag(v, namespaces)
+                            v, xmlns = fixtag(v, namespaces) # TODO: undefined
                             if xmlns: xmlns_items.append(xmlns)
                     except TypeError:
-                        _raise_serialization_error(v)
+                        _raise_serialization_error(v) # TODO: undefined
                     file.write(" %s=\"%s\"" % (_encode(k, encoding),
                                                _escape_attrib(v, encoding)))
                 for k, v in xmlns_items:
@@ -316,38 +316,38 @@ def BranchElement(name):
 # If run as a script, do some testing
 if __name__ == '__main__':
 
-   # Set up some input parameters and dump to STDOUT
-   input = InputTree()
+    # Set up some input parameters and dump to STDOUT
+    input = InputTree()
 
-   # Scalar Parameters
-   node = ParameterElement('Title','string','<< The Title >>')
-   input.attach(node)
+    # Scalar Parameters
+    node = ParameterElement('Title','string','<< The Title >>')
+    input.attach(node)
 
-   node = ParameterElement('Permability','double', 1.234e-5)
-   input.attach(node)
+    node = ParameterElement('Permability','double', 1.234e-5)
+    input.attach(node)
 
-   vec = [1.0,2.0,3.0]
-   node = ParameterElement('dvec', 'double',vec)
-   input.attach(node)
+    vec = [1.0,2.0,3.0]
+    node = ParameterElement('dvec', 'double',vec)
+    input.attach(node)
 
-   a = 3
-   node = ParameterElement('ivalue','int',a) 
+    a = 3
+    node = ParameterElement('ivalue','int',a) 
 
-   # Branch Elements
-   mesh = BranchElement('mesh')
-   input.attach(mesh)
-   cart_mesh = BranchElement('cartesian mesh')
-   mesh.append(cart_mesh)
+    # Branch Elements
+    mesh = BranchElement('mesh')
+    input.attach(mesh)
+    cart_mesh = BranchElement('cartesian mesh')
+    mesh.append(cart_mesh)
 
-   base_num_blocks = [0,1]
-   node = ParameterElement('base_num_blocks','int',base_num_blocks)
-   cart_mesh.append(node)
+    base_num_blocks = [0,1]
+    node = ParameterElement('base_num_blocks','int',base_num_blocks)
+    cart_mesh.append(node)
 
-   base_lower_left = [0.0,0.0]
-   node = ParameterElement('base_lower_left','int',base_lower_left)
-   cart_mesh.append(node)
+    base_lower_left = [0.0,0.0]
+    node = ParameterElement('base_lower_left','int',base_lower_left)
+    cart_mesh.append(node)
 
-   input.dumpXML()
+    input.dumpXML()
 
 
 

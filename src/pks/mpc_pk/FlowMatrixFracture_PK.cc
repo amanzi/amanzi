@@ -97,13 +97,11 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- flow (matrix)
   std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
   Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist(pks[0])
-                                         .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist(pks[1])
-                                         .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 

@@ -1,1 +1,1 @@
-from IndexWriter import *
+from .IndexWriter import *

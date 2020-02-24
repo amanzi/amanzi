@@ -24,11 +24,11 @@ class AmanziGroup : public NOX::Abstract::Group {
     const AmanziGroup<VectorClass>& sourceGroup = dynamic_cast<const AmanziGroup<VectorClass>&>(source);
 
     fn_ = sourceGroup.fn_;
-    if(Teuchos::nonnull(sourceGroup.x_))
+    if (Teuchos::nonnull(sourceGroup.x_))
       x_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(sourceGroup.x_->clone());
-    if(Teuchos::nonnull(sourceGroup.f_))
+    if (Teuchos::nonnull(sourceGroup.f_))
       f_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(sourceGroup.f_->clone());
-    if(Teuchos::nonnull(sourceGroup.dx_))
+    if (Teuchos::nonnull(sourceGroup.dx_))
       dx_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(sourceGroup.dx_->clone());
     is_f_ = sourceGroup.is_f_;
     is_jac_ = sourceGroup.is_jac_;
@@ -62,7 +62,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   NOX::Abstract::Group::ReturnType
   computeF() override {
     assert(Teuchos::nonnull(x_));
-    if(Teuchos::is_null(f_)) {
+    if (Teuchos::is_null(f_)) {
       f_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(x_->clone(NOX::ShapeCopy));
     }
     assert(Teuchos::nonnull(f_));
@@ -84,7 +84,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   NOX::Abstract::Group::ReturnType
   computeNewton(Teuchos::ParameterList& params) override {
     assert(Teuchos::nonnull(f_));
-    if(Teuchos::is_null(dx_)) {
+    if (Teuchos::is_null(dx_)) {
       dx_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(x_->clone(NOX::ShapeCopy));
     }
     assert(Teuchos::nonnull(dx_));

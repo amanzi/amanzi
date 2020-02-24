@@ -135,7 +135,7 @@ TEST(FLOW_2D_RICHARDS) {
     for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
     // modify the preconditioner
-    plist->sublist("PKs").sublist("flow").sublist("Richards problem")
+    plist->sublist("PKs").sublist("flow")
           .sublist("operators").sublist("diffusion operator").sublist("preconditioner")
           .set<std::string>("Newton correction", "approximate Jacobian");
   }
