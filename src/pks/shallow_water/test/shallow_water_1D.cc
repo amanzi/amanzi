@@ -57,8 +57,9 @@ TEST(SHALLOW_WATER_1D) {
     if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
     RCP<const Mesh> mesh;
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 2.0, 10, 2, request_faces,
-			   request_edges);
+//    mesh = meshfactory.create(0.0, 0.0, 10.0, 4.0, 100, 4, request_faces,
+//			   request_edges);
+    mesh = meshfactory.create("median63x64.exo",request_faces,request_edges);
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
     // create a state
@@ -100,7 +101,7 @@ TEST(SHALLOW_WATER_1D) {
     int iter = 0;
     bool flag = true;
     
-    while (t_new < 1.0) {
+    while (t_new < 0.5) {
 
         // initialize io
         Teuchos::ParameterList iolist;
@@ -115,11 +116,13 @@ TEST(SHALLOW_WATER_1D) {
         const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
         const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
         const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
         io.InitializeCycle(t_out, 1);
         io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
         io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
         io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+        io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
         io.FinalizeCycle();
 
         dt = SWPK.get_dt();

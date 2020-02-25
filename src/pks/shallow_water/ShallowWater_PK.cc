@@ -41,26 +41,38 @@ namespace ShallowWater {
     bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     {
 
+    	Comm_ptr_type comm = Amanzi::getDefaultComm();
+    	int MyPID = comm->MyPID();
+
     	double dt = t_new - t_old;
 
     	bool failed = false;
 
     	// save a copy of primary and conservative fields
-    	CompositeVector ponded_depth_copy(*S_->GetFieldData("surface-ponded_depth", passwd_));
-    	CompositeVector velocity_x_copy(*S_->GetFieldData("surface-velocity-x", passwd_));
-    	CompositeVector velocity_y_copy(*S_->GetFieldData("surface-velocity-y", passwd_));
+    	CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
+    	CompositeVector velocity_x_tmp(*S_->GetFieldData("surface-velocity-x", passwd_));
+    	CompositeVector velocity_y_tmp(*S_->GetFieldData("surface-velocity-y", passwd_));
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-    	Epetra_MultiVector& h_vec_c_old(h_vec_c);
+    	Epetra_MultiVector h_vec_c_tmp(h_vec_c);
         
         Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
-        Epetra_MultiVector& vx_vec_c_old(h_vec_c);
+        Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
         
         Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
-        Epetra_MultiVector& vy_vec_c_old(h_vec_c);
+        Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
+
+        // distribute data to ghost cells
+        S_->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
+        S_->GetFieldData("surface-velocity-x")->ScatterMasterToGhosted("cell");
+        S_->GetFieldData("surface-velocity-y")->ScatterMasterToGhosted("cell");
+
+        h_vec_c_tmp  = h_vec_c;
+        vx_vec_c_tmp = vx_vec_c;
+        vy_vec_c_tmp = vy_vec_c;
 
         // Shallow water equations have the form
-         // U_t + F_x(U) + G_y(U) = Sr(U)
+        // U_t + F_x(U) + G_y(U) = Sr(U)
 
          std::vector<double> U, U_new;
 
@@ -74,6 +86,8 @@ namespace ShallowWater {
          std::cout << "t_new = " << t_new << std::endl;
 
          U_new.resize(3);
+
+         int c_debug = -10;
 
       	 for (int c = 0; c < ncells_owned; c++) {
 
@@ -103,7 +117,7 @@ namespace ShallowWater {
 
              std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
              std::vector<double> S;       // source term
-             std::vector<double> UL, UR, U;  // data for the fluzes
+             std::vector<double> UL, UR, U;  // data for the fluxes
              
              UL.resize(3);
              UR.resize(3);
@@ -132,16 +146,26 @@ namespace ShallowWater {
 
 				 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
-//				 std::cout << "c = " << c << ", cn = " << cn << std::endl;
-
 //				 std::cout << "face = " << f << std::endl;
 
 				 if (cn == -1) {
  					 UR[0] = UL[0];
  					 UR[1] = UL[1];
  					 UR[2] = UL[2];
+// 					 int c_GID = mesh_->GID(c, AmanziMesh::CELL);
+//// 					 int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
+// 					 std::cout << "MyPID = " << MyPID << ", c = " << c << ", cn = " << cn << std::endl;
+// 					 std::cout << "MyPID = " << MyPID << ", c_GID = " << c << ", cn_GID = " << cn << std::endl;
+
 				 }
 				 else {
+					 int c_GID = mesh_->GID(c, AmanziMesh::CELL);
+ 			         int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
+// 			         cn = cn_GID;
+// 			         if (MyPID == 0) {
+//						 std::cout << "MyPID = " << MyPID << ", c = " << c << ", cn = " << cn << std::endl;
+//						 std::cout << "MyPID = " << MyPID << ", c_GID = " << c << ", cn_GID = " << cn << std::endl;
+// 			         }
 					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
 					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
  					 UR[0] = h_vec_c[0][cn];
@@ -150,15 +174,24 @@ namespace ShallowWater {
 				 }
 
 				 normal[0] /= farea; normal[1] /= farea;
-//				 std::cout << "normal = " << normal << std::endl;
 
-//				 for (int i = 0; i < 3; i++) {
-//					 std::cout << "UL[i] = " << UL[i] << std::endl;
-//				 }
-//
-//				 for (int i = 0; i < 3; i++) {
-//					 std::cout << "UR[i] = " << UR[i] << std::endl;
-//				 }
+				 if (MyPID == 0) {
+				 if (c == c_debug) {
+
+			     std::cout << "MyPID = " << MyPID << ", c = " << c << ", cn = " << cn << std::endl;
+
+				 std::cout << "normal = " << normal << std::endl;
+
+				 for (int i = 0; i < 3; i++) {
+					 std::cout << "UL[i] = " << UL[i] << std::endl;
+				 }
+
+				 for (int i = 0; i < 3; i++) {
+					 std::cout << "UR[i] = " << UR[i] << std::endl;
+				 }
+
+				 }
+				 }
 
 				 FNum_rot = NumFlux_x(UL,UR);
 
@@ -182,62 +215,62 @@ namespace ShallowWater {
 
              } // faces
 
-             UR[0] = h_vec_c[0][c];
-             UR[1] = h_vec_c[0][c]*vx_vec_c[0][c];
-             UR[2] = h_vec_c[0][c]*vy_vec_c[0][c];
-             if (c == 0) {
-//            	 UL[0] = 10.;
-//            	 UL[1] = 10.;
-//            	 UL[2] = 0.;
-            	 UL[0] = UR[0];
-            	 UL[1] = UR[1];
-            	 UL[2] = UR[2];
-             }
-             else {
-				 UL[0] = h_vec_c[0][c-1];
-				 UL[1] = h_vec_c[0][c-1]*vx_vec_c[0][c-1];
-				 UL[2] = h_vec_c[0][c-1]*vy_vec_c[0][c-1];
-             }
-             FL = NumFlux_x(UL,UR);
-
-//             for (int i = 0; i < 3; i++) {
-//				 std::cout << "UL[i] = " << UL[i] << std::endl;
-//			 }
+//             UR[0] = h_vec_c[0][c];
+//             UR[1] = h_vec_c[0][c]*vx_vec_c[0][c];
+//             UR[2] = h_vec_c[0][c]*vy_vec_c[0][c];
+//             if (c == 0) {
+////            	 UL[0] = 10.;
+////            	 UL[1] = 10.;
+////            	 UL[2] = 0.;
+//            	 UL[0] = UR[0];
+//            	 UL[1] = UR[1];
+//            	 UL[2] = UR[2];
+//             }
+//             else {
+//				 UL[0] = h_vec_c[0][c-1];
+//				 UL[1] = h_vec_c[0][c-1]*vx_vec_c[0][c-1];
+//				 UL[2] = h_vec_c[0][c-1]*vy_vec_c[0][c-1];
+//             }
+//             FL = NumFlux_x(UL,UR);
 //
-//			 for (int i = 0; i < 3; i++) {
-//				 std::cout << "UR[i] = " << UR[i] << std::endl;
-//			 }
+////             for (int i = 0; i < 3; i++) {
+////				 std::cout << "UL[i] = " << UL[i] << std::endl;
+////			 }
+////
+////			 for (int i = 0; i < 3; i++) {
+////				 std::cout << "UR[i] = " << UR[i] << std::endl;
+////			 }
+////
+////             for (int i = 0; i < 3; i++) {
+////				 std::cout << "FL[i] = " << FL[i] << std::endl;
+////			 }
 //
-//             for (int i = 0; i < 3; i++) {
-//				 std::cout << "FL[i] = " << FL[i] << std::endl;
+//             UL[0] = h_vec_c[0][c];
+//			 UL[1] = h_vec_c[0][c]*vx_vec_c[0][c];
+//			 UL[2] = h_vec_c[0][c]*vy_vec_c[0][c];
+//			 if (c == ncells_owned-1) {
+//				 UR[0] = UL[0];
+//				 UR[1] = UL[1];
+//				 UR[2] = UL[2];
 //			 }
-
-             UL[0] = h_vec_c[0][c];
-			 UL[1] = h_vec_c[0][c]*vx_vec_c[0][c];
-			 UL[2] = h_vec_c[0][c]*vy_vec_c[0][c];
-			 if (c == ncells_owned-1) {
-				 UR[0] = UL[0];
-				 UR[1] = UL[1];
-				 UR[2] = UL[2];
-			 }
-			 else {
-				 UR[0] = h_vec_c[0][c+1];
-				 UR[1] = h_vec_c[0][c+1]*vx_vec_c[0][c+1];
-				 UR[2] = h_vec_c[0][c+1]*vy_vec_c[0][c+1];
-			 }
-             FR = NumFlux_x(UL,UR);
-
-//             for (int i = 0; i < 3; i++) {
-//				 std::cout << "UL[i] = " << UL[i] << std::endl;
+//			 else {
+//				 UR[0] = h_vec_c[0][c+1];
+//				 UR[1] = h_vec_c[0][c+1]*vx_vec_c[0][c+1];
+//				 UR[2] = h_vec_c[0][c+1]*vy_vec_c[0][c+1];
 //			 }
+//             FR = NumFlux_x(UL,UR);
 //
-//			 for (int i = 0; i < 3; i++) {
-//				 std::cout << "UR[i] = " << UR[i] << std::endl;
-//			 }
-//
-//             for (int i = 0; i < 3; i++) {
-//				 std::cout << "FR[i] = " << FR[i] << std::endl;
-//			 }
+////             for (int i = 0; i < 3; i++) {
+////				 std::cout << "UL[i] = " << UL[i] << std::endl;
+////			 }
+////
+////			 for (int i = 0; i < 3; i++) {
+////				 std::cout << "UR[i] = " << UR[i] << std::endl;
+////			 }
+////
+////             for (int i = 0; i < 3; i++) {
+////				 std::cout << "FR[i] = " << FR[i] << std::endl;
+////			 }
 
              U.resize(3);
 
@@ -252,10 +285,22 @@ namespace ShallowWater {
 //                 std::cout << "FS[i] = " << dt/vol*FS[i] << ", FR[i]-FL[i] = " << dt/dx*(FR[i]-FL[i]) << std::endl;
              }
 
-             h_vec_c[0][c]  = U_new[0];
-             vx_vec_c[0][c] = U_new[1]/U_new[0];
-             vy_vec_c[0][c] = U_new[2]/U_new[0];
+             if (MyPID == 0) {
+            	 if (c == c_debug) {
+            		 for (int i = 0; i < 3; i++) {
+            			 std::cout << "U_new[i] = " << U_new[i] << std::endl;
+            		 }
+            	 }
+             }
+
+             h_vec_c_tmp[0][c]  = U_new[0];
+             vx_vec_c_tmp[0][c] = U_new[1]/U_new[0];
+             vy_vec_c_tmp[0][c] = U_new[2]/U_new[0];
       	 }
+
+      	h_vec_c  = h_vec_c_tmp;
+      	vx_vec_c = vx_vec_c_tmp;
+      	vy_vec_c = vy_vec_c_tmp;
 
 //       	 *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell") = h_vec_c;
 
@@ -279,6 +324,7 @@ namespace ShallowWater {
         velocity_x_key_     = Keys::getKey(domain_, "velocity-x");
         velocity_y_key_     = Keys::getKey(domain_, "velocity-y");
         ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
+        myPID_  		    = Keys::getKey(domain_, "PID");
 
         // primary fields
         
@@ -312,6 +358,12 @@ namespace ShallowWater {
             ->SetComponent("cell", AmanziMesh::CELL, 1);
         }
 
+        // PID
+	    if (!S->HasField(myPID_)) {
+		    S->RequireField(myPID_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+		    ->SetComponent("cell", AmanziMesh::CELL, 1);
+	    }
+
     }
     
     void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S) {
@@ -326,7 +378,7 @@ namespace ShallowWater {
 
         	for (int c = 0; c < ncells_owned; c++) {
         		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-        		if (xc[0] < 4.) {
+        		if (xc[0] < 0.3) {
         		   h_vec_c[0][c] = 4.;
         		}
 			    else {
@@ -347,6 +399,22 @@ namespace ShallowWater {
             S_->GetField("surface-velocity-y", passwd_)->set_initialized();
         }
         
+        Comm_ptr_type comm = Amanzi::getDefaultComm();
+        int MyPID = comm->MyPID();
+
+        if (!S_->GetField("surface-PID", passwd_)->initialized()) {
+
+//            S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(2.0);
+
+        	Epetra_MultiVector& PID_c = *S_->GetFieldData("surface-PID",passwd_)->ViewComponent("cell");
+
+        	for (int c = 0; c < ncells_owned; c++) {
+			    PID_c[0][c] = MyPID;
+        	}
+
+        	S_->GetField("surface-PID", passwd_)->set_initialized();
+        }
+
     }
     
     std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U) {
@@ -525,7 +593,7 @@ namespace ShallowWater {
         }
 
     double ShallowWater_PK::get_dt() {
-    	return 0.001;
+    	return 0.0005;
     }
 
 }  // namespace ShallowWater

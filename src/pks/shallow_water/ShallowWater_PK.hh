@@ -108,6 +108,7 @@ class ShallowWater_PK : public PK_Physical,
     Key velocity_x_key_;
     Key velocity_y_key_;
     Key ponded_depth_key_;
+    Key myPID_;
                             
     std::string passwd_;
                             
