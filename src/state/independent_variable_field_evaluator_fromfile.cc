@@ -87,9 +87,17 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
   HDF5Reader reader(filename_);
-  try {
-    reader.ReadData("/time", times_);
-  } catch (...) {
+  if (temporally_variable_){
+    try {
+      reader.ReadData("/time", times_);
+    } catch (...) {
+      std::stringstream messagestream;
+      messagestream << "Variable "<< my_key_ << " is defined as a field changing in time.\n"
+                    << " Dataset /time is not provided in file " << filename_<<"\n";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  }else{
     times_.push_back(1e+99);
   }
 
@@ -103,7 +111,7 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   }
 
   current_interval_ = -1;
-  t_before_ = -1;
+  t_before_ = -1e+99;
   t_after_ = times_[0];
 }
 
@@ -129,7 +137,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     // this should only be the case if we are somehow composing this function
     // with a time function that is not monotonic, i.e. doing a cyclic steady
     // state to repeat a year, and we have gone past the cycle.  Restart the interval.
-    t_before_ = -1;
+    t_before_ = -1e+99;
     t_after_ = times_[0];
     current_interval_ = -1;
     LoadFile_(0);
@@ -145,7 +153,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     *cv = *val_before_;
 
   } else if (t < t_after_) {
-    if (t_before_ == -1) {
+    if (t_before_ == -1e+99) {
       // to the left of the first point
       AMANZI_ASSERT(val_after_ != Teuchos::null);
       *cv = *val_after_;
