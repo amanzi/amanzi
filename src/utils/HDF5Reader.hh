@@ -65,6 +65,8 @@ struct HDF5Reader {
       std::string message("HDF5Reader: read error");
       Exceptions::amanzi_throw(message);
     }
+
+    H5Dclose(dataset);
   }
 
   void
