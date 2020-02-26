@@ -87,7 +87,7 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
   HDF5Reader reader(filename_);
-  if (temporally_variable_){
+  if (temporally_variable_) {
     try {
       reader.ReadData("/time", times_);
     } catch (...) {
@@ -97,7 +97,7 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-  }else{
+  } else{
     times_.push_back(1e+99);
   }
 
@@ -206,10 +206,11 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
   if (locname_ == "cell" &&
       (cv->HasComponent("boundary_face") || cv->HasComponent("face"))) 
     DeriveFaceValuesFromCellValues(*cv);
-
 }
 
-
+// ---------------------------------------------------------------------------
+// Verify existence of a field and load it 
+// ---------------------------------------------------------------------------
 void
 IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   // allocate data
@@ -237,7 +238,9 @@ IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   file_input->close_h5file();
 }
 
-
+// ---------------------------------------------------------------------------
+// Linear interpolation on interval (t_after_ - t_before_)
+// ---------------------------------------------------------------------------
 void
 IndependentVariableFieldEvaluatorFromFile::Interpolate_(double time,
         const Teuchos::Ptr<CompositeVector>& v) {
@@ -251,7 +254,7 @@ IndependentVariableFieldEvaluatorFromFile::Interpolate_(double time,
 
   double coef = (time - t_before_)/(t_after_ - t_before_);
   *v = *val_before_;
-  v->Update(coef, *val_after_, 1-coef);
+  v->Update(coef, *val_after_, 1.-coef);
 }
 
 
