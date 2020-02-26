@@ -85,8 +85,13 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   }
 
   // load times, ensure file is valid
+  // if there exists no times, default value is set to +infinity
   HDF5Reader reader(filename_);
-  reader.ReadData("/time", times_);
+  try {
+    reader.ReadData("/time", times_);
+  } catch (...) {
+    times_.push_back(1e+99);
+  }
 
   // check for increasing times
   for (int j = 1; j < times_.size(); ++j) {
@@ -215,7 +220,9 @@ IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   for (int j=0; j!=ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    file_input->readData(*vec(j), varname.str());
+    if (!file_input->readData(*vec(j), varname.str())) {
+      Exceptions::amanzi_throw(Errors::Message("Read ERROR! Variable is not found"));
+    }
   }
 
   // close file
