@@ -77,23 +77,16 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Xc = X.ViewComponent("cell", true);
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
-  CSR_Vector csr_v;
-  CSR_Vector csr_Av; 
-  Kokkos::resize(csr_v.row_map_,op.csr.size()+1);
-  Kokkos::resize(csr_Av.row_map_,op.csr.size()+1);
-
+  CSR_Vector csr_v(op.csr.size()+1);
+  CSR_Vector csr_Av(op.csr.size()+1); 
   // CSR version 
   // 1. Compute size  
   for (int i=0; i!=op.csr.size(); ++i) {
     csr_v.row_map_(i) = op.csr.size(i,0);
     csr_Av.row_map_(i) = op.csr.size(i,1); 
   }    
-  csr_v.prefix_sum(); 
-  csr_Av.prefix_sum(); 
-
-  // 2. Resize csr
-  Kokkos::resize(csr_v.entries_,csr_v.row_map_(csr_v.row_map_.extent(0)-1));
-  Kokkos::resize(csr_Av.entries_,csr_Av.row_map_(csr_Av.row_map_.extent(0)-1));
+  csr_v.prefix_sum_resize(); 
+  csr_Av.prefix_sum_resize(); 
 
   CSR_Matrix local_csr = op.csr; 
 
@@ -106,25 +99,16 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
         int ncells = cells.extent(0);
 
-        const int vv_s0 = csr_v.row_map_(f); 
-        const int vv_s1 = csr_v.row_map_(f+1);
-        const int vv_s = vv_s1-vv_s0; 
         WhetStone::DenseVector vv(
-          Kokkos::subview(csr_v.entries_,
-            Kokkos::make_pair(vv_s0,vv_s1)),vv_s);
-        const int Avv_s0 = csr_Av.row_map_(f); 
-        const int Avv_s1 = csr_Av.row_map_(f+1);
-        const int Avv_s = vv_s1-vv_s0; 
+          csr_v.at(f),csr_v.size(f));
         WhetStone::DenseVector Avv(
-          Kokkos::subview(csr_Av.entries_,
-            Kokkos::make_pair(Avv_s0,Avv_s1)),Avv_s);
+          csr_Av.at(f), csr_Av.size(f));
         
         for (int n = 0; n != ncells; ++n) {
           vv(n) = Xc(cells[n],0);
         }
         WhetStone::DenseMatrix lm(
-          Kokkos::subview(local_csr.entries_,
-            Kokkos::make_pair(local_csr.row_map_(f),local_csr.row_map_(f+1))),
+          local_csr.at(f),
           local_csr.size(f,0),local_csr.size(f,1)); 
         lm.Multiply(vv,Avv,false); 
 

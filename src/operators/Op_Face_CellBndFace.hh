@@ -70,10 +70,7 @@ class Op_Face_CellBndFace : public Op {
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          WhetStone::DenseMatrix lm(
-            Kokkos::subview(csr.entries_,
-              Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
-            csr.size(f,0),csr.size(f,1)); 
+          WhetStone::DenseMatrix lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
           Xc(cells(0), 0) += lm(0,0);
           if (cells.extent(0) > 1) {
             Kokkos::atomic_add(&Xc(cells(1),0), lm(1,1));
@@ -86,10 +83,7 @@ class Op_Face_CellBndFace : public Op {
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 2",
         import_same_face,
         KOKKOS_LAMBDA(const int bf) {          
-          WhetStone::DenseMatrix lm(
-            Kokkos::subview(csr.entries_,
-              Kokkos::make_pair(csr.row_map_(bf),csr.row_map_(bf+1))),
-            csr.size(bf,0),csr.size(bf,1)); 
+          WhetStone::DenseMatrix lm(csr.at(bf),csr.size(bf,0),csr.size(bf,1));
           // atomic not needed, each bf touched once
           Xbf(bf,0) += lm(1,1);
         });
@@ -101,10 +95,7 @@ class Op_Face_CellBndFace : public Op {
         import_permute_face.extent(0),
         KOKKOS_LAMBDA(const int bf_offset) {
           int f = import_permute_face(bf_offset); 
-          WhetStone::DenseMatrix lm(
-            Kokkos::subview(csr.entries_,
-              Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
-            csr.size(f,0),csr.size(f,1)); 
+          WhetStone::DenseMatrix lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
           // atomic not needed, each bf touched once
           Xbf(bf_offset+import_same_face,0) += lm(1,1);
         });
@@ -143,10 +134,7 @@ class Op_Face_CellBndFace : public Op {
             KOKKOS_LAMBDA(const int f) {
               AmanziMesh::Entity_ID_View cells;
               mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-              WhetStone::DenseMatrix lm(
-                Kokkos::subview(csr.entries_,
-                  Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
-                csr.size(f,0),csr.size(f,1)); 
+              WhetStone::DenseMatrix lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
               lm(0,0) *= s_c(cells(0),0);
               lm(1,0) *= s_c(cells(0),0);
               if (cells.extent(0) > 1) {
@@ -173,9 +161,7 @@ class Op_Face_CellBndFace : public Op {
           "Op_Face_CellBndFace::Rescale loop 2",
           import_same_face,
                              KOKKOS_LAMBDA(const int bf) {
-                                WhetStone::DenseMatrix lm(
-                                  Kokkos::subview(csr.entries_,
-                                    Kokkos::make_pair(csr.row_map_(bf),csr.row_map_(bf+1))),
+                                WhetStone::DenseMatrix lm(csr.at(bf),
                                   csr.size(bf,0),csr.size(bf,1)); 
                                lm(0,1) *= s_bnd(bf,0);
                                lm(1,1) *= s_bnd(bf,0);
@@ -186,9 +172,7 @@ class Op_Face_CellBndFace : public Op {
           import_permute_face.extent(0),
                              KOKKOS_LAMBDA(const int bf_offset) {
                                 int f = import_permute_face(bf_offset); 
-                                WhetStone::DenseMatrix lm(
-                                  Kokkos::subview(csr.entries_,
-                                    Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
+                                WhetStone::DenseMatrix lm(csr.at(f),
                                   csr.size(f,0),csr.size(f,1)); 
                                lm(0,1) *=
                                    s_bnd(bf_offset+import_same_face,0);

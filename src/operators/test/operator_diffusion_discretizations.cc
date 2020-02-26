@@ -198,8 +198,6 @@ SUITE(DIFFUSION) {
         ana, 1.1, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-#if 0 
-  
 
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
@@ -721,5 +719,4 @@ SUITE(DIFFUSION) {
   //       ana, 0.1, "HypreAMG", "DirichletNeumannBox", "Generate3D",
   //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
   // }
-  #endif 
 }

@@ -101,9 +101,7 @@ struct DiffusionFixture {
     // Access 
     for(int i = 0; i < ncells; ++i){
       WhetStone::Tensor Kc(
-        Kokkos::subview(K.entries_,
-          Kokkos::make_pair(K.row_map_(i),K.row_map_(i+1))),
-        K.size(i,0),K.size(i,1), K.size(i,2)); 
+        K.at(i),K.size(i,0),K.size(i,1), K.size(i,2)); 
     }
 
     op->SetTensorCoefficient(K);
@@ -155,9 +153,7 @@ struct DiffusionFixture {
     // Access 
     for(int i = 0; i < ncells; ++i){
       WhetStone::Tensor Kc(
-        Kokkos::subview(K.entries_,
-          Kokkos::make_pair(K.row_map_(i),K.row_map_(i+1))),
-        K.size(i,0),K.size(i,1), K.size(i,2)); 
+        K.at(i),K.size(i,0),K.size(i,1), K.size(i,2)); 
     }
     op->SetTensorCoefficient(K);
 

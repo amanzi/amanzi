@@ -10,31 +10,38 @@
 
 #pragma once 
 
-#include <tuple>
-
+/**
+ * @brief CSR data structure 
+ * @param T Type used for the entries_ 
+ * @param D Dimension = number of dimensions allocated in sizes
+ * This is used to reconstruct the Matrix/Tensor on the device
+ */
 template<typename T, int D> 
-class CSR{
-  
+struct CSR{
+
 static constexpr int dim = D;
-using size_type_ = typename std::tuple_element<dim, 
-    std::tuple<int, int*, int**>>::type; 
 
 public: 
 
-  CSR(){}
+  CSR() {}
 
-  CSR(const int& row_map_size, const int& entries_size){
-    row_map_size_ = row_map_size; 
-    entries_size_ = entries_size; 
-    Kokkos::resize(row_map_,row_map_size_+1); 
-    Kokkos::resize(sizes_,row_map_size_,dim);
-    Kokkos::resize(entries_,entries_size_);  
+  CSR(const int& row_map_size, const int& entries_size)
+  {
+    Kokkos::resize(row_map_,row_map_size+1); 
+    Kokkos::resize(sizes_,row_map_size,dim);
+    Kokkos::resize(entries_,entries_size);  
   }
 
-  // Build given the precomputed matrices? 
-  //CSR(Kokkos::View<> row_map, Kokkos::View<> entries, ){}
+  CSR(const int& row_map_size)
+  {
+    Kokkos::resize(row_map_,row_map_size+1); 
+    Kokkos::resize(sizes_,row_map_size,dim);
+  }
 
-  // Compute prefix sum 
+  /**
+   * @brief Compute the prefix sum of the row_map_ 
+   * The CSR is not usable before this operation
+   */ 
   void prefix_sum(){
     int tmp1 = row_map_(0);
     row_map_(0) = 0;
@@ -45,31 +52,60 @@ public:
     }
   }
 
-  void push_back(){
-
+  /**
+   * @brief Compute the prefix sum of the row_map_ 
+   * and resize the entries based on row_map_
+   * The CSR is not usable before this operation
+   */ 
+  void prefix_sum_resize(){
+    int tmp1 = row_map_(0);
+    row_map_(0) = 0;
+    for(int i = 0 ; i < row_map_.extent(0); ++i){ 
+      int tmp2 = row_map_(i+1);
+      row_map_(i+1) = tmp1 + row_map_(i);
+      tmp1 = tmp2;   
+    }
+    Kokkos::resize(entries_,row_map_(row_map_.extent(0)-1));  
   }
 
+  /** 
+   * @brief Return subview corresponding to element i
+   * @param i index of the element in row_map_
+   */
+  KOKKOS_INLINE_FUNCTION 
+  Kokkos::View<T*> at(const int& i) const {
+    return Kokkos::subview(
+      entries_,Kokkos::make_pair(row_map_(i),row_map_(i+1))); 
+  }
+
+  /** 
+   * @brief Return size of element idx
+   * @param idx Index of the element 
+   * @param d Dimension
+   */
   KOKKOS_INLINE_FUNCTION 
   int size(int idx, int d) const {
-    //if(d >= sizes_.extent(1)){
-    //  printf("size: %d < %d\n",d,sizes_.extent(1));
-    //}
     assert(idx <= sizes_.extent(0)); 
     assert(d <= sizes_.extent(1));
     return sizes_(idx,d);  
   }
 
+  KOKKOS_INLINE_FUNCTION 
+  int size(int i) const {
+    return row_map_(i+1)-row_map_(i);
+  }
+
+  /**
+   * @brief Number of elements stored in the CSR 
+   */
   KOKKOS_INLINE_FUNCTION
   int size() const{
     return row_map_.extent(0)-1; 
   }
 
-  Kokkos::View<T*> operator()(const int i){
-    Kokkos::View<T*> sv = Kokkos::subview(
-      entries_,Kokkos::make_pair(row_map_(i),row_map_(i+1))); 
-    return sv; 
-  }
-
+  /**
+   * @brief Copy constructor 
+   */
   CSR& operator=(const CSR& csr){
     Kokkos::resize(row_map_,csr.row_map_.extent(0)); 
     Kokkos::deep_copy(row_map_,csr.row_map_);
@@ -77,18 +113,15 @@ public:
     Kokkos::deep_copy(entries_,csr.entries_);
     Kokkos::resize(sizes_,csr.sizes_.extent(0),csr.sizes_.extent(1)); 
     Kokkos::deep_copy(sizes_,csr.sizes_);
-    row_map_size_ = csr.row_map_size_; 
-    entries_size_ = csr.entries_size_;     
     return *this; 
   }
 
-  Kokkos::View<int*> row_map_;
-  Kokkos::View<T*> entries_;
-  Kokkos::View<size_type_> sizes_; 
-  int row_map_size_, entries_size_; 
+  Kokkos::View<int*> row_map_; // Indices: number of element +1 
+  Kokkos::View<T*> entries_; // Values for all entries 
+  Kokkos::View<int**> sizes_; // Represent the sizes for matrices/tensors
 };
 
 // Definitions 
-using CSR_Matrix = CSR<double,2>; 
 using CSR_Vector = CSR<double,1>; 
-using CSR_Tensor = CSR<double,2>; 
+using CSR_Matrix = CSR<double,2>; 
+using CSR_Tensor = CSR<double,3>; 

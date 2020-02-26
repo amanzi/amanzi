@@ -58,9 +58,7 @@ void Op::Rescale(double scaling)
   if (csr.size())
     for (int i = 0; i != csr.size(); ++i){
       WhetStone::DenseMatrix lm(
-        Kokkos::subview(csr.entries_,
-          Kokkos::make_pair(csr.row_map_(i),csr.row_map_(i+1))),
-        csr.size(i,0),csr.size(i,1)); 
+        csr.at(i),csr.size(i,0),csr.size(i,1)); 
       lm *= scaling; 
     }
   if (diag.get()) diag->scale(scaling);

@@ -79,9 +79,7 @@ class Op {
   KOKKOS_INLINE_FUNCTION
   void Zero(const int i) {
     WhetStone::DenseMatrix lm(
-      Kokkos::subview(csr.entries_,
-        Kokkos::make_pair(csr.row_map_(i),csr.row_map_(i+1))),
-      csr.size(i,0),csr.size(i,1)); 
+      csr.at(i),csr.size(i,0),csr.size(i,1)); 
     lm.putScalar(0.); 
     // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
     //matrices(i).putScalar(0.);

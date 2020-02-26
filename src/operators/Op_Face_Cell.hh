@@ -37,10 +37,12 @@ class Op_Face_Cell : public Op {
       int ncells = cells.extent(0);   
       entries_size += ncells*ncells; 
     }    
+
+    csr = CSR_Matrix(nfaces_owned,entries_size); 
     // 2. Feed csr
-    Kokkos::resize(csr.row_map_,nfaces_owned+1);
-    Kokkos::resize(csr.entries_,entries_size);
-    Kokkos::resize(csr.sizes_,nfaces_owned,2);
+    //Kokkos::resize(csr.row_map_,nfaces_owned+1);
+    //Kokkos::resize(csr.entries_,entries_size);
+    //Kokkos::resize(csr.sizes_,nfaces_owned,2);
 
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
@@ -65,9 +67,7 @@ class Op_Face_Cell : public Op {
         KOKKOS_LAMBDA(const int f) {
           // Extract matrix 
           WhetStone::DenseMatrix lm(
-            Kokkos::subview(csr.entries_,
-              Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
-            csr.size(f,0),csr.size(f,1)); 
+            csr.at(f),csr.size(f,0),csr.size(f,1)); 
 
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -107,9 +107,7 @@ class Op_Face_Cell : public Op {
             AmanziMesh::Entity_ID_View cells;
             m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
             WhetStone::DenseMatrix lm(
-              Kokkos::subview(csr.entries_,
-                Kokkos::make_pair(csr.row_map_(f),csr.row_map_(f+1))),
-              csr.size(f,0),csr.size(f,1)); 
+              csr.at(f),csr.size(f,0),csr.size(f,1)); 
             lm(0,0) *= s_c(0, cells(0));
             if (cells.size() > 1) {
               lm(0,1) *= s_c(0, cells(1));          

@@ -235,9 +235,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc(
-            Kokkos::subview(K_.entries_,
-              Kokkos::make_pair(K_.row_map_(c),K_.row_map_(c+1))),
+          WhetStone::Tensor Kc(K_.at(c),
               K_.size(c,0),K_.size(c,1), K_.size(c,2)); 
 
           for (int i = 0; i < faces.extent(0); i++) {

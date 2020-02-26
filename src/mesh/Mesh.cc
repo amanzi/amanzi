@@ -118,6 +118,8 @@ Mesh::cache_cell_face_info_() const
   face_cell_ids_.row_map(0) = 0;
   face_cell_ptype_.row_map(0) = 0;
 
+  int cell_face_ids_size = 0; 
+  int cell_face_dirs_size = 0; 
   for (int c = 0; c < ncells; c++) {
     Entity_ID_List cell_face_ids_view;
     std::vector<int> cell_face_dirs_view;
@@ -132,17 +134,29 @@ Mesh::cache_cell_face_info_() const
       face_cell_ptype_.row_map(f)++;
     }
 
+    cell_face_ids_size += cell_face_ids_view.size();
+    cell_face_dirs_size += cell_face_dirs_view.size();
+  }
+
+  Kokkos::resize(cell_face_ids_.entries,cell_face_ids_size);
+  Kokkos::resize(cell_face_dirs_.entries,cell_face_dirs_size); 
+
+  for (int c = 0; c < ncells; c++) {
+    Entity_ID_List cell_face_ids_view;
+    std::vector<int> cell_face_dirs_view;
+    cell_get_faces_and_dirs_internal_(
+      c, cell_face_ids_view, cell_face_dirs_view);
+    int nf = cell_face_ids_view.size();
+
     // Save to the CRS
     cell_face_ids_.row_map(c + 1) =
       cell_face_ids_.row_map(c) + cell_face_ids_view.size();
-    Kokkos::resize(cell_face_ids_.entries, cell_face_ids_.row_map(c + 1));
     for (int fi = 0; fi < cell_face_ids_view.size(); ++fi) {
       cell_face_ids_.entries(cell_face_ids_.row_map(c) + fi) =
         cell_face_ids_view[fi];
     }
     cell_face_dirs_.row_map(c + 1) =
       cell_face_dirs_.row_map(c) + cell_face_dirs_view.size();
-    Kokkos::resize(cell_face_dirs_.entries, cell_face_dirs_.row_map(c + 1));
     for (int fd = 0; fd < cell_face_dirs_view.size(); ++fd) {
       cell_face_dirs_.entries(cell_face_dirs_.row_map(c) + fd) =
         cell_face_dirs_view[fd];
@@ -297,19 +311,29 @@ Mesh::cache_face2edge_info_() const
   face_edge_ids_.row_map(0) = 0;
   face_edge_dirs_.row_map(0) = 0;
 
+  int face_edge_ids_size = 0; 
   for (int f = 0; f < nfaces; f++) {
     Entity_ID_List fedgeids;
     std::vector<int> fedgedirs;
-
     face_get_edges_and_dirs_internal_(f, fedgeids, &fedgedirs, true);
     face_edge_ids_.row_map(f + 1) =
       face_edge_ids_.row_map(f) + fedgeids.size();
     face_edge_dirs_.row_map(f + 1) =
       face_edge_dirs_.row_map(f) + fedgedirs.size();
-    Kokkos::resize(face_edge_ids_.entries,
-                   face_edge_ids_.entries.extent(0) + fedgeids.size());
-    Kokkos::resize(face_edge_dirs_.entries,
-                   face_edge_dirs_.entries.extent(0) + fedgedirs.size());
+    face_edge_ids_size += fedgeids.size();
+  }
+
+  Kokkos::resize(face_edge_ids_.entries,face_edge_ids_size); 
+  Kokkos::resize(face_edge_dirs_.entries,face_edge_ids_size); 
+
+  for (int f = 0; f < nfaces; f++) {
+    Entity_ID_List fedgeids;
+    std::vector<int> fedgedirs;
+    face_get_edges_and_dirs_internal_(f, fedgeids, &fedgedirs, true);
+    face_edge_ids_.row_map(f + 1) =
+      face_edge_ids_.row_map(f) + fedgeids.size();
+    face_edge_dirs_.row_map(f + 1) =
+      face_edge_dirs_.row_map(f) + fedgedirs.size();
     for (int i = 0; i < fedgeids.size(); ++i) {
       face_edge_ids_.entries(face_edge_ids_.row_map(f) + i) = fedgeids[i];
       face_edge_dirs_.entries(face_edge_dirs_.row_map(f) + i) = fedgedirs[i];
@@ -331,6 +355,8 @@ Mesh::cache_cell2edge_info_() const
 
   if (space_dim_ == 2) {
     Kokkos::resize(cell_2D_edge_dirs_.row_map, ncells + 1);
+    int cell_edge_ids_entries_size = 0; 
+    int cell_2D_edge_dirs_entries_size = 0; 
     for (int c = 0; c < ncells; c++) {
       Entity_ID_List cell_edge_ids_tmp;
       std::vector<int> cell_2D_edge_dirs_tmp;
@@ -340,12 +366,20 @@ Mesh::cache_cell2edge_info_() const
         cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
       cell_2D_edge_dirs_.row_map(c + 1) =
         cell_2D_edge_dirs_.row_map(c) + cell_2D_edge_dirs_tmp.size();
-      Kokkos::resize(cell_edge_ids_.entries,
-                     cell_edge_ids_.entries.extent(0) +
-                       cell_edge_ids_tmp.size());
-      Kokkos::resize(cell_2D_edge_dirs_.entries,
-                     cell_2D_edge_dirs_.entries.extent(0) +
-                       cell_2D_edge_dirs_tmp.size());
+      cell_edge_ids_entries_size += cell_edge_ids_tmp.size(); 
+      cell_2D_edge_dirs_entries_size += cell_2D_edge_dirs_tmp.size();
+    }
+    Kokkos::resize(cell_edge_ids_.entries,cell_edge_ids_entries_size); 
+    Kokkos::resize(cell_2D_edge_dirs_.entries,cell_2D_edge_dirs_entries_size);
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cell_edge_ids_tmp;
+      std::vector<int> cell_2D_edge_dirs_tmp;
+      cell_2D_get_edges_and_dirs_internal_(
+        c, cell_edge_ids_tmp, &cell_2D_edge_dirs_tmp);
+      cell_edge_ids_.row_map(c + 1) =
+        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
+      cell_2D_edge_dirs_.row_map(c + 1) =
+        cell_2D_edge_dirs_.row_map(c) + cell_2D_edge_dirs_tmp.size();
       for (int i = 0; i < cell_edge_ids_tmp.size(); ++i) {
         cell_edge_ids_.entries(cell_edge_ids_.row_map(c) + i) =
           cell_edge_ids_tmp[i];
@@ -353,21 +387,27 @@ Mesh::cache_cell2edge_info_() const
           cell_2D_edge_dirs_tmp[i];
       }
     }
-  } else
+  } else  {
+    int cell_edge_ids_size = 0; 
     for (int c = 0; c < ncells; c++) {
       Entity_ID_List cell_edge_ids_tmp;
       cell_get_edges_internal_(c, cell_edge_ids_tmp);
       cell_edge_ids_.row_map(c + 1) =
         cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
-      Kokkos::resize(cell_edge_ids_.entries,
-                     cell_edge_ids_.entries.extent(0) +
-                       cell_edge_ids_tmp.size());
+      cell_edge_ids_size += cell_edge_ids_tmp.size();
+    }
+    Kokkos::resize(cell_edge_ids_.entries,cell_edge_ids_size); 
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cell_edge_ids_tmp;
+      cell_get_edges_internal_(c, cell_edge_ids_tmp);
+      cell_edge_ids_.row_map(c + 1) =
+        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
       for (int i = 0; i < cell_edge_ids_tmp.size(); ++i) {
         cell_edge_ids_.entries(cell_edge_ids_.row_map(c) + i) =
           cell_edge_ids_tmp[i];
       }
     }
-
+  }
   cell2edge_info_cached_ = true;
 }
 
@@ -501,15 +541,19 @@ Mesh::cache_cell_get_faces_and_bisectors_() const {
   Kokkos::resize(cell_faces_bisectors_.row_map,ncells+1); 
   cell_faces_bisectors_.row_map(0) = 0; 
   
+  int entries_size = 0; 
   for(int i = 0 ; i < ncells; ++i){
     Kokkos::View<Entity_ID*> faceids;
     cell_get_faces(i, faceids);
-    Kokkos::resize(cell_faces_bisectors_.entries,
-                   cell_faces_bisectors_.row_map(i) + faceids.extent(0)); 
+    entries_size += faceids.size(); 
+  }
+  Kokkos::resize(cell_faces_bisectors_.entries,entries_size); 
+  for(int i = 0 ; i < ncells; ++i){
+    Kokkos::View<Entity_ID*> faceids;
+    cell_get_faces(i, faceids);
     AmanziGeometry::Point cc = cell_centroid(i);
     cell_faces_bisectors_.row_map(i + 1) = faceids.extent(0) +
        cell_faces_bisectors_.row_map(i);
-    //Kokkos::resize(bisectors, faceids.extent(0));
     for (int j = 0; j < faceids.extent(0); ++j) {
       cell_faces_bisectors_.entries(cell_faces_bisectors_.row_map(i)+j) = 
         face_centroid(faceids(j)) - cc;
@@ -680,11 +724,12 @@ Mesh::compute_face_geometric_quantities_() const
   Kokkos::resize(face_normals_.row_map, nfaces + 1);
   face_normals_.row_map(0) = 0;
 
+  // Find size 
+  int entries_size = 0; 
   for (int i = 0; i < nfaces; i++) {
     double area;
     AmanziGeometry::Point centroid(space_dim_);
     std::vector<AmanziGeometry::Point> normals;
-
     // normal0 and normal1 are outward normals of the face with
     // respect to the cell0 and cell1 of the face. The natural normal
     // of the face points out of cell0 and into cell1. If one of these
@@ -692,9 +737,16 @@ Mesh::compute_face_geometric_quantities_() const
     compute_face_geometry_(i, &area, &centroid, normals);
     face_areas_(i) = area;
     face_centroids_(i) = centroid;
+    entries_size += normals.size(); 
+  }
 
-    Kokkos::resize(face_normals_.entries,
-                   face_normals_.row_map(i) + normals.size());
+  Kokkos::resize(face_normals_.entries,entries_size); 
+
+  for (int i = 0; i < nfaces; i++) {
+    double area;
+    AmanziGeometry::Point centroid(space_dim_);
+    std::vector<AmanziGeometry::Point> normals;
+    compute_face_geometry_(i, &area, &centroid, normals);
     for (int j = 0; j < normals.size(); ++j) {
       face_normals_.entries(face_normals_.row_map(i) + j) = normals[j];
     }
@@ -1461,9 +1513,6 @@ Mesh::build_columns(const std::string& setname) const
     "Mesh::build_columns loop 2",
     nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
 
-  //Kokkos::resize(column_cells_.row_map, 1);
-  //column_cells_.row_map(0) = 0;
-
   Entity_ID_List top_faces;
   get_set_entities(setname, FACE, Parallel_type::ALL, top_faces);
 
@@ -1543,12 +1592,6 @@ Mesh::build_columns() const
   Kokkos::parallel_for(
     "Mesh::build_columns loop 2",
     nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
-
-  //Kokkos::resize(column_cells_.row_map, 1);
-  //column_cells_.row_map(0) = 0;
-
-  //Kokkos::resize(column_faces_.row_map, 1);
-  //column_faces_.row_map(0) = 0;
 
   // Find the faces at the top of the domain. We assume that these are all
   // the boundary faces whose normal points in the positive z-direction

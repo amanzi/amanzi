@@ -202,9 +202,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
           WhetStone::DenseMatrix Aface(
-            Kokkos::subview(local_csr.entries_,
-              Kokkos::make_pair(local_csr.row_map_(f),local_csr.row_map_(f+1))),
-            local_csr.size(f,0),local_csr.size(f,1)); 
+            local_csr.at(f),local_csr.size(f,0),local_csr.size(f,1)); 
 
           double tij = trans_face(f,0) * k_face(f,0);
 
@@ -513,9 +511,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor Kc(
-            Kokkos::subview(K_.entries_,
-              Kokkos::make_pair(K_.row_map_(c),K_.row_map_(c+1))),
-              K_.size(c,0),K_.size(c,1), K_.size(c,2)); 
+            K_.at(c),K_.size(c,0),K_.size(c,1), K_.size(c,2)); 
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
