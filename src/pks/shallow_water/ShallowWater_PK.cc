@@ -593,7 +593,42 @@ namespace ShallowWater {
         }
 
     double ShallowWater_PK::get_dt() {
-    	return 0.0005;
+
+    	double h, u, v, g = 9.81;
+		double S, Smax;
+		double vol, dx, dx_min;
+		double dt;
+		double CFL = 0.9;
+
+    	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+		Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
+		Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
+
+		int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+		dt = 1.e10;
+		for (int c = 0; c < ncells_owned; c++) {
+			h = h_vec_c[0][c];
+			u = vx_vec_c[0][c];
+			v = vy_vec_c[0][c];
+			S = std::max(u + std::sqrt(g*h),v + std::sqrt(g*h));
+			vol = mesh_->cell_volume(c);
+			dx = std::sqrt(vol);
+			dt = std::min(dt,dx/S);
+		}
+
+		Comm_ptr_type comm = Amanzi::getDefaultComm();
+		int MyPID = comm->MyPID();
+
+		double dt_min;
+
+//		std::cout << "MyPID = " << MyPID << ", dt = " << dt << std::endl;
+
+		mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
+
+//		std::cout << "MyPID = " << MyPID << ", dt_min = " << dt_min << std::endl;
+
+    	return CFL*dt_min;
     }
 
 }  // namespace ShallowWater
