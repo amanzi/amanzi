@@ -235,19 +235,16 @@
       </ParameterList>
 
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.095445115010332e-01"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="filename" type="string" value="test/aperture.h5"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="variable name" type="string" value="fracture-aperture"/>
+        <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="constant in time" type="bool" value="true"/>        
+        <Parameter name="mesh entity" type="string" value="cell"/>
+        <Parameter name="number of DoFs" type="int" value="1"/>
       </ParameterList>
+            
     </ParameterList>
 
     <ParameterList name="initial conditions">
