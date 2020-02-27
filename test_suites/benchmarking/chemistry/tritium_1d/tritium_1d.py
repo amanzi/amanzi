@@ -57,7 +57,8 @@ if __name__ == "__main__":
     local_path = ""
 
     # subplots
-    fig, ax = plt.subplots() 
+    fig = plt.figure(figsize=[7.25,5.25])
+    ax = fig.add_subplot()
         
     # AmanziS + Alqumia + PFlotran chemistry
     try:
@@ -132,13 +133,13 @@ if __name__ == "__main__":
 
     # Do plot
     if (native > 0):
-        nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',label='AmanziU(2nd-Order)+Native',linewidth=2)
+        nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',markersize=8,label='AmanziU(2nd-Order)+Native',linewidth=2)
 
     if (unstruct > 0):
         alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
 
     if (unstruct_crunch > 0):
-        alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
+        alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',markersize=8,label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
 
     if (struct > 0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
@@ -146,8 +147,8 @@ if __name__ == "__main__":
     if (struct_crunch > 0):
         sam_crunch = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
 
-    pfl = ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
-    crunch = ax.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow(OS3D)',linewidth=2)
+    pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+    crunch = ax.plot(x_crunchflow, c_crunchflow,'m*',markersize=10,label='CrunchFlow(OS3D)',linewidth=2)
 
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
@@ -157,17 +158,17 @@ if __name__ == "__main__":
     # ax.set_ylim(0,.0001)
 
     # plot adjustments
-    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
+    plt.subplots_adjust(left=0.22,bottom=0.15,right=0.99,top=0.90)
     plt.legend(loc='upper right',fontsize=10)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     # Do subplot to zoom in on interface
-    a = plt.axes([.65, .25, .3, .35])
+    a = plt.axes([.65, .30, .32, .3])
     a.set_xlim(43,57)
     a.set_ylim(0,.0001)
     if (native > 0):
-        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',markersize=9,label='Amanzi+Alquimia(PFloTran)',linewidth=2)
     if (unstruct > 0):
         alqs = a.plot(x_amanziU, c_amanziU,'r-',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
     if (unstruct_crunch > 0):
@@ -177,11 +178,11 @@ if __name__ == "__main__":
     if (struct_crunch>0):
         sams_crunch = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
 
-    pfls = a.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
-    cfs = a.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow',linewidth=2)
+    pfls = a.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+    cfs = a.plot(x_crunchflow, c_crunchflow,'m*',markersize=9,label='CrunchFlow',linewidth=2)
     plt.title('Zoom near interface')
     
-    # plt.show()
+    plt.show()
     plt.savefig(root+"_1d.png",format="png")
     # plt.close()
 

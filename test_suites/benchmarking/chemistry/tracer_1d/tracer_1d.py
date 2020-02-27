@@ -107,18 +107,19 @@ if __name__ == "__main__":
 
 
 # plotting --------------------------------------------------------
-    fig, ax = plt.subplots()
-
+    fig = plt.figure(figsize=[7.00,5.25])
+    ax = fig.add_subplot()
+    
     # pflotran
-    ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
+    ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
 
     # crunchflow
     ax.plot(x_crunchflow, c_crunchflow,'m--',label='CrunchFlow GIMRT',linewidth=2)
-    ax.plot(x_crunchOS3D, c_crunchOS3D,'m*',label='CrunchFlow OS3D',linewidth=2) 
+    ax.plot(x_crunchOS3D, c_crunchOS3D,'m*',markersize=10,label='CrunchFlow OS3D',linewidth=2) 
 
     # unstruct amanzi native
     if native>0:
-        ax.plot(x_amanzi_native, c_amanzi_native,'rx',label='AmanziU+Native',linewidth=2)
+        ax.plot(x_amanzi_native, c_amanzi_native,'rx',markersize=8,label='AmanziU+Native',linewidth=2)
 
     # unstruct amanzi alquimia + pflotran
     if alq>0:
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
 
     # plot adjustments
-    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
+    plt.subplots_adjust(left=0.22,bottom=0.15,right=0.95,top=0.90)
     plt.legend(loc='upper right',fontsize=13)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
