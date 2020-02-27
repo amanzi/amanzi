@@ -19,7 +19,7 @@
 #  ATS
 #    Executable
 #
-
+include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
