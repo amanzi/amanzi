@@ -10,8 +10,7 @@
 add_subdirectory(constitutive_relations)
 #add_subdirectory(morphology_pk)
 
-
-
+include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${ATS_SOURCE_DIR}/pks)
