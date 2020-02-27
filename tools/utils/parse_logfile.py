@@ -188,6 +188,27 @@ if __name__ == "__main__":
             if len(fnames) > 1:
                 c = cm(float(i)/(len(fnames)-1))
             else:
+
+#                 if type(args.colors[i]) is float:
+#                     c = cm(args.colors[i])
+#                 else:
+#                     c = args.colors[i]
+#             data[0][:,1] = data[0][:,1]/366
+#             plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=c, label=fname)
+#             if data[1].shape != (0,):
+#                 data[1][:,1] = data[1][:,1]/366.
+#                 plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=c)
+#             plt.xlabel("time [years]")
+# #            plt.xlabel("time [days]")
+#             plt.ylabel("dt [days]")
+#             plt.legend(loc='lower left')
+#             plt.subplot(122)
+#             plt.semilogy(data[0][:,0], data[0][:,2], '-x', color=c)
+#             if data[1].shape != (0,):
+#                 plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=c)
+#             plt.xlabel("cycles [-]")
+#             plt.ylabel("dt [days]")
+
                 c = 'b'
         else:
             if type(args.colors[i]) is float:
@@ -198,6 +219,7 @@ if __name__ == "__main__":
         plot(data, axs, c, fname)
 
     decorate_axs(axs)
+
     plt.show()
     sys.exit(0)
 

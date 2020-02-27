@@ -60,7 +60,7 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
  
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  //std::cout<<*pk_list;
+
   tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   if (tp_list_->isParameter("component names")) {
@@ -319,7 +319,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<const CompositeVector> cv;
 
   ws_ = S->GetFieldData(saturation_key_)->ViewComponent("cell", false); 
-  ws_prev_ = S -> GetFieldData(prev_saturation_key_) -> ViewComponent("cell", false);
+  ws_prev_ = S->GetFieldData(prev_saturation_key_) -> ViewComponent("cell", false);
 
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
@@ -386,10 +386,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
             bc->tcc_index().push_back(i);
-          }
-          //          std::cout << "tcc_names "<<tcc_names<<"\n";
-          //std::cout << "tcc_index "<<tcc_index<<"\n";
-          
+          }         
           bc->set_state(S_);
           bcs_.push_back(bc);
         } else if (name == "subgrid") {
@@ -408,10 +405,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
             bc->tcc_index().push_back(i);
-          }
-          //          std::cout << "tcc_names "<<tcc_names<<"\n";
-          //std::cout << "tcc_index "<<tcc_index<<"\n";
-          
+          }         
           bc->set_state(S_);
           bcs_.push_back(bc);
 
@@ -624,21 +618,8 @@ void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0,
         double vmin0, vmax0, vavg0;
         double vmin1, vmax1, vavg1;
         
-        // f0.ViewComponent("cell")->MinValue(&vmin0);
-        // f1.ViewComponent("cell")->MinValue(&vmin1);
- 
-        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
-        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
-
         f0 = f1;
-
-        // f0.ViewComponent("cell")->MinValue(&vmin0);
-        // f1.ViewComponent("cell")->MinValue(&vmin1);
- 
-        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
-        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
-        // *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
-      
+    
         S->GetField(field0, passwd_)->set_initialized();
         if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite)){
           *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
@@ -797,9 +778,6 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   // We use original tcc and make a copy of it later if needed.
   tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-
-  // tcc_prev.Norm2(&norm_old);
-  // std::cout<<"norm tcc  "<<norm_old<<"\n";  
 
   
   // calculate stable time step    
@@ -1337,8 +1315,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        // if ((c2 < 0) && fabs(tcc_flux) >1e-17) std::cout <<MyPID<<":u "<<u<<" cell "<<c1<<" "<<c2<<" face "<<f<<
-        //                                          " tcc "<<tcc_prev[i][c1]<<" tcc_flux "<<tcc_flux<<" cntr "<<mesh_->face_centroid(f)<<"\n";
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_solutes_bc_[i] -= tcc_flux;
         //AmanziGeometry::Point normal = mesh_->face_normal(f);
@@ -1382,11 +1358,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     double time = t_physics_;
     ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
-
-  // if (domain_name_ == "surface") {
-  //   std::cout<<*conserve_qty_<<"\n";
-  // }
-  
+ 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
@@ -1671,11 +1643,8 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
   // tmp1 = mass1;
   // mesh_->get_comm()->SumAll(&tmp1, &mass1, 1);
 
-
-  //std::cout<<"Time "<<tp<<"\n";
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-    //std::cout<<srcs_[m]->name()<<"\n";    
     srcs_[m]->Compute(t0, tp); 
 
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
@@ -1683,7 +1652,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
       int c = it->first;
       std::vector<double>& values = it->second;
 
-      //      std::cout<<c<<": "<<ncells_owned<<" "<<values[0]<<"\n";
       if (c >= ncells_owned) continue;
 
       for (int k = 0; k < tcc_index.size(); ++k) {
@@ -1706,16 +1674,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         //add_mass += dtp * value; 
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
-
-        // if ((mesh_->cell_centroid(c)[0]>9.5)&&(mesh_->cell_centroid(c)[0]<10.5)){
-
-        //   double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-          
-        //   std::cout<<MyPID<<" "<<"Source name "<<srcs_[m]->name()<<" cell "<<c<<" dt "<<dtp<<" value "<<
-        //      value<<" values[k] "<<values[k]<<
-        //     "  + mass "<<dtp * value<<" water "<<vol_phi_ws_den<<" cons "<<(*conserve_qty_)[i][c]<<" cntr "<<mesh_->cell_centroid(c)<<"\n";
-        // }
-        
+       
       }
     }
   }
@@ -1728,8 +1687,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
   // tmp1 = add_mass;
   // mesh_->get_comm()->SumAll(&tmp1, &add_mass, 1);
 
-
-  // std::cout<<std::setprecision(10)<<mass1<<" "<<mass2<<" "<<add_mass<<" "<<mass2 - mass1<<"\n";
   
 }
 

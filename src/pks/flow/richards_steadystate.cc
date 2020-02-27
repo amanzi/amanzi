@@ -121,17 +121,16 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   //   std::cout << "  S^-1 * dfp = " << (*f1->Data())("cell",c) << std::endl;
   //   std::cout << std::endl;
   // }
-
-  /*
+  
+  
   // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-  std::stringstream filename_s;
-  filename_s << "schur_" << S_next_->cycle() << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
-
-  */
-
+  // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+  // std::stringstream filename_s;
+  // filename_s << "schur_" << S_next_->cycle() << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  // *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
+  
+ 
 };
 
 
@@ -184,7 +183,6 @@ void RichardsSteadyState::FunctionalResidual(double t_old, double t_new, Teuchos
 
   // evaulate water content, because otherwise it is never done.
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  
 
 #if DEBUG_FLAG
   // dump s_old, s_new

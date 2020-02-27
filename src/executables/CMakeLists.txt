@@ -148,4 +148,3 @@ add_amanzi_executable(ats
   LINK_LIBS ${fates_link_libs} ${ats_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
-
