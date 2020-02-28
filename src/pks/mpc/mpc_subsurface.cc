@@ -24,7 +24,7 @@ with freezing.
 #include "permafrost_model.hh"
 #include "liquid_ice_model.hh"
 #include "richards.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_subsurface.hh"
 

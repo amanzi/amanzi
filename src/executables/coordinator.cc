@@ -24,7 +24,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziTypes.hh"
 
 #include "InputAnalysis.hh"
+
 #include "Units.hh"
+
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
 #include "Checkpoint.hh"
@@ -126,11 +128,13 @@ void Coordinator::coordinator_init() {
 
   // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
+
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
       analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
       analysis.RegionAnalysis();
       analysis.OutputBCs();
     }
+
   }
 
   
@@ -164,6 +168,7 @@ void Coordinator::initialize() {
   // -- BDF history to allow projection to continue correctly.
 
   int size = comm_->NumProc();
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   //---
@@ -179,9 +184,9 @@ void Coordinator::initialize() {
     S_->set_time(t0_);
     // }
   }
-
   // Restart from checkpoint, part 2.
   if (restart_) {
+
     // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
     //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
     //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
@@ -194,16 +199,15 @@ void Coordinator::initialize() {
     t0_ = S_->time();
     cycle0_ = S_->cycle();
     //}
+
     
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
       if (boost::starts_with(mesh->first, "column")){
         DeformCheckpointMesh(S_.ptr(), mesh->first);
       }
-    }
-    
-  }
-  
+    }   
+  }  
   // double check columns
   if(restart_){
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -214,27 +218,41 @@ void Coordinator::initialize() {
     }
   }
 
-  
-  // Initialize the state (initializes all dependent variables).
+
+// Initialize the state (initializes all dependent variables).
   //S_->Initialize();
+  
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
-  //S_->WriteStatistics(vo_);
 
-  S_->WriteStatistics(vo_);
+  // *vo_->os() << "Statistic after InitializeFields " << restart_filename_ << std::endl;  
+  // S_->WriteStatistics(vo_);
+
+  S_->InitializeEvaluators();
+  // *vo_->os() << "Statistic after InitializeEvaluators " << restart_filename_ << std::endl;  
+  // S_->WriteStatistics(vo_);
+  
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
-  //S_->WriteStatistics(vo_);
-
-  S_->CheckNotEvaluatedFieldsInitialized();
+  
+  //Restore consistency with evaluators
   S_->InitializeEvaluators();
-  //  S_->WriteStatistics(vo_);
 
-
+  // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
+
+  // Write dependency graph.
+  S_->WriteDependencyGraph();
+
+  // Reset io_vis flags using blacklist and whitelist
+  S_->InitializeIOFlags(); 
+
+  // *vo_->os() << "Statistic before Commit " << restart_filename_ << std::endl;
+
   S_->WriteStatistics(vo_);
 
 
@@ -647,7 +665,7 @@ void Coordinator::cycle_driver() {
    
   }
 
-  //  exit(0);
+  ////exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -674,7 +692,7 @@ void Coordinator::cycle_driver() {
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
         *vo_->os() << "Cycle = " << S_->cycle();
-        *vo_->os() << std::setprecision(15) << ",  Time [days] = "<< S_->time() / (60*60*24);
+        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
         *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
         *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;

@@ -100,6 +100,11 @@ public:
                           const Teuchos::RCP<State>& S_next);
 
 
+  virtual Teuchos::RCP<PK_t> get_subpk(int i);
+
+ protected: // data
+
+
  protected:
   // this does not work.  fail etc
   void init_(const Teuchos::RCP<State>& S);
@@ -266,6 +271,18 @@ void MPC<PK_t>::set_states(const Teuchos::RCP<const State>& S,
   }
 };
 
+
+template <class PK_t>
+Teuchos::RCP<PK_t> MPC<PK_t>::get_subpk(int i){
+
+  if (i >= sub_pks_.size()) {
+    return Teuchos::null;
+  }else{
+    return sub_pks_.at(i);
+  }
+
+}
+
 // protected constructor of subpks
 template <class PK_t>
 void MPC<PK_t>::init_(const Teuchos::RCP<State>& S)
@@ -286,6 +303,7 @@ void MPC<PK_t>::init_(const Teuchos::RCP<State>& S)
     sub_pks_.push_back(pk);
   }
 };
+
 
 } // close namespace Amanzi
 
