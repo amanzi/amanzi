@@ -92,15 +92,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
   double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  std::vector<const WhetStoneFunction*> funcs(2);
+
   // selecting regularized basis (parameter integrals_ is not used)
   Basis_Regularized<AmanziMesh::Mesh> basis;
   basis.Init(mesh_, c, order_ + 1, integrals_.poly());
-
-  // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-
-  std::vector<const WhetStoneFunction*> funcs(2);
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
   Polynomial pc(d_, order_), pf(d_ - 1, order_), pe(d_ - 2, order_);

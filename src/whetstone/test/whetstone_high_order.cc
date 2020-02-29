@@ -27,6 +27,7 @@
 #include "MFD3D_Lagrange.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
+#include "VEM_RaviartThomasSerendipity.hh"
 #include "Tensor.hh"
 
 
@@ -499,3 +500,72 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
   A3d -= A2d;
   CHECK(A3d.NormInf() <= 1e-12 * A2d.NormInf());
 }
+
+
+/* ******************************************************************
+* Serendipity 3D Raviart-Thomas element
+****************************************************************** */
+void HighOrderRaviartThomasSerendipity(const std::string& filename) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: High-order Raviart-Thomas Serendipity element, file=" << filename << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+  int d = mesh->space_dimension();
+
+  Teuchos::ParameterList plist; 
+  plist.set<int>("method order", 1);
+  VEM_RaviartThomasSerendipity vem_ho(plist, mesh);
+
+  int c(0);
+  Tensor T(d, 1);
+  T(0, 0) = 1.0;
+
+  // high-order schemes
+  for (int k = 2; k < 3; ++k) {
+    DenseMatrix Ak, G1, G2;
+    vem_ho.set_order(k);
+    vem_ho.MassMatrix(c, T, Ak);
+
+    printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
+    PrintMatrix(Ak, "%8.3f ", 12);
+
+    // verify SPD propery
+    int nrows = Ak.NumRows();
+    for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
+
+    // verify exact integration property
+    DenseMatrix G = vem_ho.G();
+    G.InverseSPD();
+
+    PolynomialOnMesh integrals;
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
+
+    Polynomial ptmp, poly(d, k);
+    Basis_Regularized<AmanziMesh::Mesh> basis;
+    basis.Init(mesh, 0, k, ptmp);
+
+    GrammMatrixGradients(T, poly, integrals, basis, G1);
+    G2 = G1.SubMatrix(1, G1.NumRows(), 1, G1.NumCols());
+
+    G2 -= G;
+    std::cout << "Norm of dG=" << G2.NormInf() << " " << G.NormInf() << std::endl;      
+    CHECK(G2.NormInf() <= 1e-12 * G.NormInf());
+  }
+}
+
+
+TEST(HIGH_ORDER_RAVIART_THOMAS_SERENDIPITY) {
+  HighOrderRaviartThomasSerendipity("test/cube_unit.exo");
+  HighOrderRaviartThomasSerendipity("test/cube_unit_rotated.exo");
+  // HighOrderRaviartThomasSerendipity("test/cube_half.exo");
+} 
+
+

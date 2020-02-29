@@ -59,6 +59,7 @@ add_amanzi_library(whetstone
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc
                           VEM_NedelecSerendipityType2.cc
+                          VEM_RaviartThomasSerendipity.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -95,6 +96,8 @@ add_amanzi_library(whetstone
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh
+                           VEM_NedelecSerendipityType2.hh
+                           VEM_RaviartThomasSerendipity.hh
                            bilinear_form_registration.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 

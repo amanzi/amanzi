@@ -38,7 +38,7 @@ class DenseVector {
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
   // primary members 
-  // -- smart memory management: preserves data only for vector reduction
+  // -- smart memory management that preserves data
   void Reshape(int mrow);
   void Regroup(int stride1, int stride2);
 

@@ -145,7 +145,7 @@ class DenseMatrix {
 
   double NormInf() const {
     double a = 0.0;
-    for (int i = 0; i < m_ * n_; i++) a = std::max(a, data_[i]);
+    for (int i = 0; i < m_ * n_; i++) a = std::max(a, std::fabs(data_[i]));
     return a;
   }
 
