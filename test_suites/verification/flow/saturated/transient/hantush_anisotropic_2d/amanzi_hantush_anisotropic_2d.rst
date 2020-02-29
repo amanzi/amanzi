@@ -154,7 +154,7 @@ Variables
 Results and Comparison
 ----------------------
 
-.. plot:: amanzi_hantush_anisotropic_2d.py
+.. plot:: verification/confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.py
           :align: center
 
        
@@ -190,10 +190,6 @@ About
   .. * porflow4_6.exo
 
 * Analytic Solution:
-
-  * Directory: analytic/
-   
-    * test_h_tr.dat
 
 
 .. todo::
