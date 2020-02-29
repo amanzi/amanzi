@@ -8,7 +8,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 #include "elevation_evaluator_column.hh"
 
@@ -39,9 +38,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
  
   // Get the elevation and slope values from the domain mesh.
   Key domain = Keys::getDomain(my_keys_[0]);
- 
-  auto surface_mesh =
-    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -175,10 +171,10 @@ void ElevationEvaluatorColumn::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       base_por_key_ = Keys::readKey(plist_, name.str(), "base porosity", "base_porosity");
       dependencies_.insert(base_por_key_);
     }
-    } /*else {
+  } else {
     Errors::Message msg("ElevationEvaluatorColumn: this evaluator should be used for columnar meshes only.");
     Exceptions::amanzi_throw(msg);
-    }  */ // keep it for a while!!
+  }
 
   ElevationEvaluator::EnsureCompatibility(S.ptr());
 }

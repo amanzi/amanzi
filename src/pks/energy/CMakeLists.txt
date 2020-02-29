@@ -5,99 +5,88 @@
 #    Flow PK class
 #
 
-# ATS include directories
-
 # additional common components
 add_subdirectory(constitutive_relations)
 
-# PKs
-add_subdirectory(constant_temperature)
-add_subdirectory(advection_diffusion)
-add_subdirectory(base)
-add_subdirectory(two_phase)
-add_subdirectory(three_phase)
-add_subdirectory(surface_ice)
+# ATS include directories
+include_directories(${ATS_SOURCE_DIR}/pks)
+include_directories(${ATS_SOURCE_DIR}/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/enthalpy)
+include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/energy)
+include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/internal_energy)
+include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/thermal_conductivity)
+include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/source_terms)
+include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
+
+
+set(ats_energy_src_files
+  energy_base_pk.cc
+  energy_base_physics.cc
+  energy_base_ti.cc
+  energy_surface_ice.cc
+  energy_two_phase.cc
+  energy_three_phase.cc
+  energy_interfrost.cc
+  )
+
+set(ats_energy_inc_files
+  energy_bc_factory.hh
+  energy_base.hh
+  energy_surface_ice.hh
+  energy_two_phase.hh
+  energy_three_phase.hh
+  energy_interfrost.hh
+  )
+
+
+set(ats_energy_link_libs
+  ${Teuchos_LIBRARIES}
+  ${Epetra_LIBRARIES}
+  error_handling
+  atk
+  mesh
+  data_structures
+  whetstone
+  operators
+  solvers
+  time_integration
+  state
+  pks
+  ats_operators
+  ats_eos
+  ats_pks
+  ats_energy_relations
+  )
+
+
+add_amanzi_library(ats_energy
+                   SOURCE ${ats_energy_src_files}
+                   HEADERS ${ats_energy_inc_files}
+		   LINK_LIBS ${ats_energy_link_libs})
+
+
 
 #================================================
 # register evaluators/factories/pks
-
-# advection_diffusion/
+register_evaluator_with_factory(
+  HEADERFILE energy_surface_ice_reg.hh
+  LISTNAME   ATS_ENERGY_PKS_REG
+  )
 
 register_evaluator_with_factory(
-  HEADERFILE advection_diffusion/advection_diffusion_pk_reg.hh
-  LISTNAME   ENERGY_ADVECTION_DIFFUSION_REG
+  HEADERFILE energy_three_phase_reg.hh
+  LISTNAME   ATS_ENERGY_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE energy_two_phase_reg.hh
+  LISTNAME   ATS_ENERGY_PKS_REG
   )
 
 generate_evaluators_registration_header(
-  HEADERFILE energy_advection_diffusion_registration.hh
-  LISTNAME   ENERGY_ADVECTION_DIFFUSION_REG
-  INSTALL    True
-  )
- 
-
-# constant_temperature/
-
-register_evaluator_with_factory(
-  HEADERFILE constant_temperature/constant_temperature_reg.hh
-  LISTNAME   ENERGY_CONSTANT_TEMPERATURE_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_constant_temperature_registration.hh
-  LISTNAME   ENERGY_CONSTANT_TEMPERATURE_REG
+  HEADERFILE ats_energy_pks_registration.hh
+  LISTNAME   ATS_ENERGY_PKS_REG
   INSTALL    True
   )
 
-# surface_ice/
-
-register_evaluator_with_factory(
-  HEADERFILE surface_ice/energy_surface_ice_reg.hh
-  LISTNAME   ENERGY_SURFACE_ICE_REG
-  )
-
-
-register_evaluator_with_factory(
-  HEADERFILE surface_ice/surface_subgrid_ice_energy_evaluator_reg.hh
-  LISTNAME   ENERGY_SURFACE_ICE_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_surface_ice_registration.hh
-  LISTNAME   ENERGY_SURFACE_ICE_REG
-  INSTALL    True
-  )
-
-
-# three_phase/
-
-register_evaluator_with_factory(
-  HEADERFILE three_phase/three_phase_reg.hh
-  LISTNAME   ENERGY_THREE_PHASE_REG
-  )
-# register_evaluator_with_factory(
-#   HEADERFILE three_phase/interfrost_energy_reg.hh
-#   LISTNAME   ENERGY_THREE_PHASE_REG
-#   )
-# register_evaluator_with_factory(
-#   HEADERFILE three_phase/interfrost_energy_evaluator_reg.hh
-#   LISTNAME   ENERGY_THREE_PHASE_REG
-#   )
-generate_evaluators_registration_header(
-  HEADERFILE energy_three_phase_registration.hh
-  LISTNAME   ENERGY_THREE_PHASE_REG
-  INSTALL    True
-  )
-
-
-# two_phase/
-
-register_evaluator_with_factory(
-  HEADERFILE two_phase/two_phase_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_two_phase_registration.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  INSTALL    True
-  )

@@ -16,7 +16,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "eos_constant_molar_mass.hh"
 
 namespace Amanzi {
@@ -28,9 +28,9 @@ class EOSWater : public EOSConstantMolarMass {
 public:
   explicit EOSWater(Teuchos::ParameterList& eos_plist);
 
-  virtual double MassDensity(double T, double p);
-  virtual double DMassDensityDT(double T, double p);
-  virtual double DMassDensityDp(double T, double p);
+  virtual double MassDensity(std::vector<double>& params) override;
+  virtual double DMassDensityDT(std::vector<double>& params) override;
+  virtual double DMassDensityDp(std::vector<double>& params) override;
 
 private:
   Teuchos::ParameterList eos_plist_;

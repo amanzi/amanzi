@@ -27,28 +27,32 @@ class EOSConstantMolarMass : public EOS {
   EOSConstantMolarMass() : M_(0.0) {}
   explicit EOSConstantMolarMass(double M) : M_(M) {}
 
-  virtual double MolarDensity(double T, double p) {
-    return MassDensity(T,p) / M_;
+  virtual double MolarDensity(std::vector<double>& params) {   
+    return MassDensity(params) / M_;
   }
 
-  virtual double DMolarDensityDT(double T, double p) {
-    return DMassDensityDT(T,p) / M_;
+  virtual double DMolarDensityDT(std::vector<double>& params) {
+    
+    return DMassDensityDT(params) / M_;
   }
 
-  virtual double DMolarDensityDp(double T, double p) {
-    return DMassDensityDp(T,p) / M_;
+  virtual double DMolarDensityDp(std::vector<double>& params) {
+
+    return DMassDensityDp(params) / M_;
   }
 
-  virtual double MassDensity(double T, double p) {
-    return MolarDensity(T,p) * M_;
+  virtual double MassDensity(std::vector<double>& params) {
+    
+    return MolarDensity(params) * M_;
   }
 
-  virtual double DMassDensityDT(double T, double p) {
-    return DMolarDensityDT(T,p) * M_;
+  virtual double DMassDensityDT(std::vector<double>& params) {
+    
+    return DMolarDensityDT(params) * M_;
   }
 
-  virtual double DMassDensityDp(double T, double p) {
-    return DMolarDensityDp(T,p) * M_;
+  virtual double DMassDensityDp(std::vector<double>& params) {   
+    return DMolarDensityDp(params) * M_;
   }
 
   virtual bool IsConstantMolarMass() { return true; }

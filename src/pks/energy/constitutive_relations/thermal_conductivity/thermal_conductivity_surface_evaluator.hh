@@ -34,12 +34,11 @@ class ThermalConductivitySurfaceEvaluator :
  protected:
   // dependencies
   Key uf_key_;
-  Key height_key_, vpd_key_;
+  Key height_key_;
 
   double K_liq_;
   double K_ice_;
   double min_K_;
-  bool sg_model_;
 };
 
 } // namespace

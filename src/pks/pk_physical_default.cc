@@ -33,7 +33,9 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
 
   // verbose object
-  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+  if (plist_->isSublist(name_ + " verbose object")) 
+    plist_->set("verbose object", plist_->sublist(name_ + " verbose object"));
+  vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), name_, *plist_));
 }
 
 // -----------------------------------------------------------------------------
@@ -123,13 +125,13 @@ bool PK_Physical_Default::ValidStep() {
 
   if (max_valid_change_ > 0.0) {
     const CompositeVector& var_new = *S_next_->GetFieldData(key_);
-    const CompositeVector& var_old = *S_->GetFieldData(key_);
+    const CompositeVector& var_old = *S_inter_->GetFieldData(key_);
     CompositeVector dvar(var_new);
     dvar.Update(-1., var_old, 1.);
     double change = 0.;
     dvar.NormInf(&change);
     if (change > max_valid_change_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max primary variable change="
                    << change << " > limit=" << max_valid_change_ << std::endl;
       return false;
@@ -189,6 +191,7 @@ void PK_Physical_Default::Initialize(const Teuchos::Ptr<State>& S) {
 };
 
 
+
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
@@ -196,21 +199,39 @@ void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Com
   cv->ScatterMasterToGhosted("cell");
   Teuchos::Ptr<const CompositeVector> cv_const(cv);
   const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
-  Epetra_MultiVector& cv_f = *cv->ViewComponent("face",false);
 
-  int f_owned = cv_f.MyLength();
-  for (int f=0; f!=f_owned; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
+  if (cv->HasComponent("face")) {
+    Epetra_MultiVector& cv_f = *cv->ViewComponent("face",false);
 
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += cv_c[0][cells[n]];
+    int f_owned = cv_f.MyLength();
+    for (int f=0; f!=f_owned; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+
+      double face_value = 0.0;
+      for (int n=0; n!=ncells; ++n) {
+        face_value += cv_c[0][cells[n]];
+      }
+      cv_f[0][f] = face_value / ncells;
     }
-    cv_f[0][f] = face_value / ncells;
+  } else if (cv->HasComponent("boundary_face")) {
+    Epetra_MultiVector& cv_bf = *cv->ViewComponent("boundary_face",false);
+    const auto& bfmap = cv->Mesh()->exterior_face_map(false);
+    const auto& fmap = cv->Mesh()->face_map(false);
+
+    int bf_owned = cv_bf.MyLength();
+    for (int bf=0; bf!=bf_owned; ++bf) {
+      auto f = fmap.LID(bfmap.GID(bf));
+      AmanziMesh::Entity_ID_List cells;
+      cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+      AMANZI_ASSERT(ncells == 1);
+      cv_bf[0][bf] = cv_c[0][cells[0]];
+    }
   }
 };
 
+  
 
 } // namespace

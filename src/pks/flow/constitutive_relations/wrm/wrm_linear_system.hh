@@ -15,7 +15,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "wrm.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

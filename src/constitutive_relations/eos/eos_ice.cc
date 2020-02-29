@@ -30,22 +30,48 @@ EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
   InitializeFromPlist_();
 };
 
-double EOSIce::MassDensity(double T, double p) {
+double EOSIce::MassDensity(std::vector<double>& params) {
+  //AMANZI_ASSERT (params.size() >= 2);
+  double T = params[0];
+  double p = params[1];
+                                                
+  p = std::max(p, 101325.);
+
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
-double EOSIce::DMassDensityDT(double T, double p) {
+
+double EOSIce::DMassDensityDT(std::vector<double>& params) {
+  //AMANZI_ASSERT (params.size() >= 2);
+
+  double T = params[0];
+  double p = params[1];
+                                                   
+  p = std::max(p, 101325.);
+
   double dT = T - kT0_;
   double rho1bar = kb_ + 2.0*kc_*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
-double EOSIce::DMassDensityDp(double T, double p) {
-  double dT = T - kT0_;
-  double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
-  return rho1bar * kalpha_;
+
+double EOSIce::DMassDensityDp(std::vector<double>& params) {
+  //AMANZI_ASSERT (params.size() >= 2);
+  double T = params[0];
+  double p = params[1];
+
+  if (p < 101325.) {
+    return 0.;
+  } else {
+    double T = params[0];
+    double p = params[1];          
+    double dT = T - kT0_;
+    double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
+    return rho1bar * kalpha_;
+  }
+
 };
 
 

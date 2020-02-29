@@ -7,7 +7,7 @@
 #ifndef AMANZI_RELATIONS_MULTIPLICATIVE_EVALUATOR_
 #define AMANZI_RELATIONS_MULTIPLICATIVE_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -19,7 +19,7 @@ class MultiplicativeEvaluator : public SecondaryVariableFieldEvaluator {
   // constructor format for all derived classes
   explicit
   MultiplicativeEvaluator(Teuchos::ParameterList& plist);
-  MultiplicativeEvaluator(const MultiplicativeEvaluator& other);
+  MultiplicativeEvaluator(const MultiplicativeEvaluator& other) = default;
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -31,6 +31,7 @@ class MultiplicativeEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   double coef_;
+  bool positive_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,MultiplicativeEvaluator> factory_;

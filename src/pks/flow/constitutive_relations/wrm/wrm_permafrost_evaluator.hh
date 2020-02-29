@@ -13,7 +13,7 @@
 #include "wrm_partition.hh"
 #include "wrm_permafrost_model.hh"
 #include "secondary_variables_field_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

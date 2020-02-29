@@ -12,7 +12,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "dbc.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "surface_relperm_model.hh"
 
 namespace Amanzi {

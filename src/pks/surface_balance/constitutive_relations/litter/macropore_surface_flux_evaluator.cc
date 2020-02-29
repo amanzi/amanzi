@@ -119,9 +119,7 @@ Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->MacroporeSurfaceFlux(pM_v[0][i], ps_v[0][i], krs_v[0][i], krM_v[0][i], K_v[0][i]);
-      if (i == 49) std::cout <<  "flux (pos -> macro): " << result_v[0][i] << std::endl;
-        
+      result_v[0][i] = model_->MacroporeSurfaceFlux(pM_v[0][i], ps_v[0][i], krs_v[0][i], krM_v[0][i], K_v[0][i]);        
     }
   }
 }

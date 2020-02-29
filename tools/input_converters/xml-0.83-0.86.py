@@ -14,7 +14,7 @@ def removeID(xml):
     except KeyError:
         pass
     for el in xml:
-        if el.attrib['type'] == 'ParameterList':
+        if 'type' in el.keys() and el.attrib['type'] == 'ParameterList':
             removeID(el)
         else:
             try:

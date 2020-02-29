@@ -187,8 +187,8 @@ class MassBalanceFromVis(object):
         # load the vis files
         self._keys, self.times, self._dat = parse_ats.readATS(dirname, timeunits='d')
         self._keys_s, self.times_s, self._dat_s = parse_ats.readATS(dirname, 'visdump_surface_data.h5', timeunits='d')
-        if len(self._keys) is not len(self._keys_s):
-            print "Warning: surface and subsurface visualization files are of different lengths!"
+        if len(self._keys) != len(self._keys_s):
+            print "Warning: surface and subsurface visualization files are of different lengths! (%d, %d)"%(len(self._keys),len(self._keys_s))
         self.length = min(len(self._keys), len(self._keys_s))
 
         # save cell volume instead of loading it repeatedly
@@ -295,7 +295,7 @@ class MassBalanceFromVis(object):
         Note that some simulations may not include surface energy balance!
         """
         try:
-            return -self.integrate('evaporation',i,True)
+            return self.integrate('evaporation',i,True)
         except KeyError:
             return 0.0
         
@@ -422,9 +422,11 @@ class MassBalanceFromVis(object):
 
 
 # plotting functions
-def get_axs():
+def get_axs(figsize=None):
     """Gets a list of axes for use in mass balance plots."""
-    fig, axs = plt.subplots(3,2, figsize=(10,12))
+    if figsize is None:
+        figsize = (10,12)
+    fig, axs = plt.subplots(3,2, figsize=figsize)
     return axs.flatten()
 
 def plot(sim, axs, color='b', symbol=None, label=None, derived_runoff=True, derived_seepage=True):

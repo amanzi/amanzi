@@ -22,7 +22,7 @@ UNITS: M/{mol,kg}
 #include "Teuchos_ParameterList.hpp"
 
 #include "iem.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Energy {

@@ -9,7 +9,7 @@
 #ifndef AMANZI_FLOWRELATIONS_SURFACE_KR_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_SURFACE_KR_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 #include "surface_relperm_model.hh"
 

@@ -14,12 +14,12 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "eos.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Relations {
 
-class EOSFactory : public Utils::Factory<EOS> {
+class EOSFactory : public Amanzi::Utils::Factory<EOS> {
 
 public:
   Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist);

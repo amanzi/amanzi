@@ -26,7 +26,7 @@ Channels are: 0 = land/ice/water, 1 = snow.
 * `"emissivity ground surface [-]`" ``[double]`` **0.92** Defaults to that of tundra.
 * `"emissivity snow [-]`" ``[double]`` **0.98**
 
-* `"snow density key`" ``[string]`` **DOMAIN-snow_density** 
+* `"snow density key`" ``[string]`` **SNOW_DOMAIN-density** 
 * `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth** 
 * `"unfrozen fraction key`" ``[string]`` **DOMAIN-unfrozen_fraction**
 
@@ -36,7 +36,7 @@ Channels are: 0 = land/ice/water, 1 = snow.
 #ifndef ALBEDO_EVALUATOR_HH_
 #define ALBEDO_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {

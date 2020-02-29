@@ -27,24 +27,19 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   PK_BDF_Default::Setup(S);
 
   // boundary conditions
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   
-  // convergence criteria
+  // convergence criteria is based on a conserved quantity
   if (conserved_key_.empty()) {
-    if (plist_->isParameter("conserved quantity suffix")) {
-      Key conserved_default = Keys::getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
-      conserved_key_ = plist_->get<std::string>("conserved quantity key", conserved_default);
-    } else {
-      conserved_key_ = plist_->get<std::string>("conserved quantity key");
-    }
+    conserved_key_ = Keys::readKey(*plist_, domain_, "conserved quantity");
   }
   S->RequireField(conserved_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
   S->RequireFieldEvaluator(conserved_key_);
 
+  // cell volume used throughout
   if (cell_vol_key_.empty()) {
-    cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            Keys::getKey(domain_, "cell_volume"));
+    cell_vol_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
   }
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
@@ -64,8 +59,11 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
   // Just calls both subclass's initialize.  NOTE - order is important here --
   // PhysicalBase grabs the primary variable and stuffs it into the solution,
   // which must be done prior to BDFBase initializing the timestepper.
+
+
   PK_Physical_Default::Initialize(S);
   PK_BDF_Default::Initialize(S);
+
 }
 
 
@@ -73,11 +71,14 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
-  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_->GetFieldData(conserved_key_)
+        Teuchos::RCP<const TreeVector> res) {
+  // Abs tol based on old conserved quantity -- we know these have been vetted
+  // at some level whereas the new quantity is some iterate, and may be
+  // anything from negative to overflow.
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& conserved = *S_inter_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
-  const Epetra_MultiVector& cv = *S_->GetFieldData(cell_vol_key_)
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
   // VerboseObject stuff.
@@ -85,8 +86,13 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
 
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
+
+  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
+  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+  const MPI_Comm& comm = mpi_comm_p->Comm();
 
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
@@ -129,9 +135,11 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
-      double norm;
-      dvec_v.Norm2(&norm);
-      AMANZI_ASSERT(norm < 1.e-15);
+      // double norm;
+      // dvec_v.Norm2(&norm);
+
+      //      AMANZI_ASSERT(norm < 1.e-15);
+
     }
 
     // Write out Inf norms too.
@@ -145,7 +153,8 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr;
-      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
       AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -156,7 +165,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_l = enorm_val;
 
   int ierr;
-  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, comm);
   AMANZI_ASSERT(!ierr);
   return enorm_val;
 };

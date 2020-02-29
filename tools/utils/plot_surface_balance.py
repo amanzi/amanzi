@@ -12,29 +12,56 @@ from matplotlib import pyplot as plt
 import matplotlib.cm
 import parse_ats
 import itertools
-    
+import colors
 
-def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-new',
+def get_filename_base(base, suffix):
+    if suffix is not None:
+        fname = "visdump_{0}_{1}_data.h5".format(base, suffix)
+    else:
+        fname = "visdump_{0}_data.h5".format(base)
+    return fname
+
+def get_filename(directory, base, suffix):
+    return os.path.join(directory, get_filename_base(base, suffix))
+
+
+def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-new', domain_suffix=None,
                  negate=False, label=None, hackfactor=None, divide_by_cell_volume=False):
     if version == '0.86':
         if varname == 'pressure' or varname == 'temperature':
-            prefix = "surface-"
+            if domain_suffix is None:
+                prefix = "surface-"
+            else:
+                prefix = "surface_{0}-".format(domain_suffix)
         else:
             prefix = ""
     elif version == 'dev':
-        prefix = "surface-"
+        if domain_suffix is None:
+            prefix = "surface-"
+        else:
+            prefix = "surface_{0}-".format(domain_suffix)
     elif version == 'dev-new':
         if varname.startswith('snow'):
             varname = varname[5:]
-            prefix = 'snow-'
+            if domain_suffix is None:
+                prefix = 'snow-'
+            else:
+                prefix = 'snow_{0}-'.format(domain_suffix)
         else:
-            prefix = 'surface-'
+            if domain_suffix is None:
+                prefix = 'surface-'
+            else:
+                prefix = 'surface_{0}-'.format(domain_suffix)
     else:
         raise RuntimeError("Unrecognized version '%s'"%version)
     sd = parse_ats.getSurfaceData(keys, dat, prefix+varname)
 
     if divide_by_cell_volume:
-        cv = parse_ats.getSurfaceData(keys, dat, 'surface-cell_volume')
+        if domain_suffix is None:
+            cv_key = 'surface-cell_volume'
+        else:
+            cv_key = 'surface_{0}-cell_volume'.format(domain_suffix)
+        cv = parse_ats.getSurfaceData(keys, dat, cv_key)
         sd = sd / cv
     
     if negate:
@@ -46,12 +73,12 @@ def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-n
     if hackfactor is not None:
         sd = sd * hackfactor
 
-    ax.plot(times, sd, style, color=color, label=label)
+    ax.plot(times*365.25, sd, style, color=color, label=label, markerfacecolor='none')
     ax.set_ylabel(varname)
-    ax.set_xlabel("time [yr]")
+    ax.set_xlabel("time [d]")
 
 
-def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=None, hackfactor=None):
+def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=None, hackfactor=None, domain_suffix=None):
     """Plot data provided as a (keys,times,dat) tuple on a set of axes."""
     if marker is not None:
         style = '-'+marker
@@ -68,44 +95,52 @@ def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=N
         ktds = (ktd[0], ktd[1], ktd[2][1])
     ktd = (ktd[0], ktd[1], ktd[2][0])
 
-    plot_surface(ktd,ax[0], color, 'incoming_shortwave_radiation', style=style, version=version, label=label)
+    plot_surface(ktd,ax[0], color, 'incoming_shortwave_radiation', style=style, version=version, label=label, domain_suffix=domain_suffix)
     try:
-        plot_surface(ktd, ax[1], color, 'incoming_longwave_radiation', style=style, version=version)
+        plot_surface(ktd, ax[1], color, 'incoming_longwave_radiation', style=style, version=version, domain_suffix=domain_suffix)
     except KeyError:
         print "Cannot find longwave radiation (old runs may not have this).  Skipping..."
 
     if version == '0.86':
-        plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version, negate=True)
+        plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version, negate=True, domain_suffix=domain_suffix)
     else:
-        plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version)
-    plot_surface(ktd, ax[3], color, 'qE_latent_heat', style=style, version=version)
-    plot_surface(ktd, ax[4], color, 'qE_sensible_heat', style=style, version=version)
+        plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version, domain_suffix=domain_suffix)
+    #plot_surface(ktd, ax[3], color, 'qE_latent_heat', style=style, version=version, domain_suffix=domain_suffix)
+    plot_surface(ktd, ax[3], color, 'evaporative_flux', style=style, version=version, domain_suffix=domain_suffix)
+    plot_surface(ktd, ax[4], color, 'qE_sensible_heat', style=style, version=version, domain_suffix=domain_suffix)
 
     if version == '0.86':
-        plot_surface(ktd, ax[5], color, 'total_energy_source', style=style, hackfactor=hackfactor, divide_by_cell_volume=True)
+        plot_surface(ktd, ax[5], color, 'total_energy_source', style=style, hackfactor=hackfactor, divide_by_cell_volume=True, domain_suffix=domain_suffix)
     else:
-        plot_surface(ktd, ax[5], color, 'total_energy_source', style=style, hackfactor=hackfactor)
+        plot_surface(ktd, ax[5], color, 'total_energy_source', style=style, hackfactor=hackfactor, domain_suffix=domain_suffix)
         
-    plot_surface(ktds, ax[6][0], color, 'snow_temperature', style=style, version=version)
-    plot_surface(ktds, ax[6][1], colors.darken(color), 'snow_depth', style=style2, version=version)
+    plot_surface(ktds, ax[6][0], color, 'snow_temperature', style=style, version=version, domain_suffix=domain_suffix)
+    plot_surface(ktds, ax[6][1], colors.darken(color), 'snow_depth', style=style2, version=version, domain_suffix=domain_suffix)
 
-    plot_surface(ktd, ax[7][0], color, 'temperature', style=style, version=version)
-    plot_surface(ktd, ax[7][1], colors.darken(color), 'ponded_depth', style=style2, version=version)
+    plot_surface(ktd, ax[7][0], color, 'temperature', style=style, version=version, domain_suffix=domain_suffix)
+    plot_surface(ktd, ax[7][1], colors.darken(color), 'ponded_depth', style=style2, version=version, domain_suffix=domain_suffix)
 
-    plot_surface(ktd, ax[8], color, 'unfrozen_fraction', style=style, version=version)
+    plot_surface(ktd, ax[8], color, 'unfrozen_fraction', style=style, version=version, domain_suffix=domain_suffix)
 
 
-def get_version(dirname):
-    if os.path.isfile(os.path.join(dirname, 'visdump_snow_data.h5')):
+def get_version(dirname, domain_suffix):
+    if os.path.isfile(get_filename(dirname, 'snow', domain_suffix)):
         version = 'dev-new'
+    elif os.path.isfile(get_filename(dirname, 'snow', None)):
+        version = 'dev-new'
+        domain_suffix = None
     else:
-        d = h5py.File(os.path.join(dirname, 'visdump_surface_data.h5'), 'r')
-        if 'surface-precipitation_rain.cell.0' in d.keys():
+        d = h5py.File(get_filename(dirname, 'surface', domain_suffix), 'r')
+        if domain_suffix is None:
+            precip_key = 'surface-precipitation_rain.cell.0'
+        else:
+            precip_key = 'surface_{0}-precipitation_rain.cell.0'.format(domain_suffix)
+        if precip_key in d.keys():
             version = 'dev'
         else:
             version = '0.86'
         d.close()
-    return version
+    return version, domain_suffix
 
     
 def get_axs():
@@ -117,9 +152,7 @@ def get_axs():
         
 if __name__ == "__main__":
     import sys
-
     import argparse
-    import colors
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("INPUT_DIRECTORIES", nargs="+", type=str,
                         help="List of directories to plot.")
@@ -129,23 +162,25 @@ if __name__ == "__main__":
     parser.add_argument("--colormap", "-m", type=str,
                         default="jet",
                         help="Colormap used to pick a color.")
+    parser.add_argument("--domain_suffix", type=str,
+                        help="Suffix of surface and snow domains.")
     args = parser.parse_args()
 
     cm = colors.cm_mapper(0,1,args.colormap)
     fig, axs = get_axs()
 
-    fnames = args.INPUT_DIRECTORIES
-    markers = reversed(['x', '+', 'o', '^', 'v', 's'][0:len(fnames)])
-    for i,(fname,marker) in enumerate(zip(fnames, itertools.cycle(markers))):
-        version = get_version(fname)
-        print("Directory %s got version: %s"%(fname,version))
+    dirnames = args.INPUT_DIRECTORIES
+    markers = reversed(['x', '+', 'o', '^', 'v', 's'][0:len(dirnames)])
+    for i,(dirname,marker) in enumerate(zip(dirnames, itertools.cycle(markers))):
+        version, domain_suffix = get_version(dirname, args.domain_suffix)
+        print("Directory %s got version: %s and domain_suffix: %r"%(dirname,version, domain_suffix))
         hackfactor = None
-        if fname == "run-transient4":
+        if dirname == "run-transient4":
             hackfactor = 2.0
             
         if args.colors is None:
-            if len(fnames) > 1:
-                c = cm(float(i)/(len(fnames)-1))
+            if len(dirnames) > 1:
+                c = cm(float(i)/(len(dirnames)-1))
             else:
                 c = 'b'
         else:
@@ -154,17 +189,17 @@ if __name__ == "__main__":
             else:
                 c = args.colors[i]
 
-        ktd = parse_ats.readATS(fname, "visdump_surface_data.h5")
+        ktd = parse_ats.readATS(dirname, get_filename_base('surface', domain_suffix))
         if version == 'dev-new':
-            ktds = parse_ats.readATS(fname, 'visdump_snow_data.h5')[2]
+            ktds = parse_ats.readATS(dirname, get_filename_base('snow', domain_suffix))[2]
         else:
             ktds = None
-        plot_surface_balance((ktd[0], ktd[1], (ktd[2],ktds)), axs, c, label=fname, hackfactor=hackfactor, version=version, marker=marker)
+        plot_surface_balance((ktd[0], ktd[1], (ktd[2],ktds)), axs, c, label=dirname, hackfactor=hackfactor, version=version, marker=marker, domain_suffix=domain_suffix)
         if ktds is not None:
             ktds.close()
         ktd[2].close()
 
     plt.tight_layout()
     axs[0].legend(bbox_to_anchor=(0., 1., 3.6, .05), loc=3,
-               ncol=len(fnames), mode="expand", borderaxespad=0.)
+               ncol=len(dirnames), mode="expand", borderaxespad=0.)
     plt.show()

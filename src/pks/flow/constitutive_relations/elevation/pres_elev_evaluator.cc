@@ -15,7 +15,7 @@ PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   Key domain = Keys::getDomain(my_key_);
 
-  pres_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
+  pres_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(pres_key_);
   elev_key_ = plist_.get<std::string>("elevation key", Keys::getKey(domain,"elevation"));
   dependencies_.insert(elev_key_);

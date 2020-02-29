@@ -9,7 +9,7 @@
 #ifndef AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
 #define AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 #include "iem_water_vapor.hh"
 

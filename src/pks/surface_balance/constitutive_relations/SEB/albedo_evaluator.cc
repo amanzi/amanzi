@@ -33,7 +33,7 @@ Channels are: 0 = land/ice/water, 1 = snow.
 * `"unfrozen fraction key`" ``[string]`` **DOMAIN-unfrozen_fraction**
 
 */
-
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "albedo_evaluator.hh"
 #include "seb_physics_defs.hh"
@@ -123,59 +123,6 @@ AlbedoEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void
 AlbedoEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
-//   if (wrt_key == snow_dens_key_) {
-//     Errors::Message message("AlbedoEvaluator: NotImplementedError: does not implement partial derivative of albedo wrt snow density.");
-//     Exceptions::amanzi_throw(message);
-//   }    
-
-//   // collect dependencies
-//   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
-//   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
-//   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
-
-//   // collect output vecs
-//   auto& dalbedo = *results[0]->ViewComponent("cell",false);
-//   auto& demissivity = *results[1]->ViewComponent("cell",false);
-
-//   demissivity(1)->PutScalar(0.);
-//   dalbedo(1)->PutScalar(0.);
-
-//   if (wrt_key == ponded_depth_key_) {
-//     for (unsigned int c=0; c!=dalbedo.MyLength(); ++c) {
-//       if (ponded_depth[0][c] > 0.1) {
-//         dalbedo[0][c] = 0.;
-//       } else if (ponded_depth[0][c] <= 0.) {
-//         dalbedo[0][c] = 0.;
-//       } else {
-//         double albedo_water = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
-//         dalbedo[0][c] = (albedo_water - a_tundra_)/0.1;
-//       }
-
-//       if (ponded_depth[0][c] > 0.02) {
-//         demissivity[0][c] = 0.;
-//       } else if (ponded_depth[0][c] <= 0.) {
-//         demissivity[0][c] = 0.;
-//       } else {
-//         double emissivity_water = unfrozen_fraction[0][c] * e_water_ + (1-unfrozen_fraction[0][c]) * e_ice_;
-//         demissivity[0][c] = (emissivity_water - e_tundra_)/0.02;
-//       }
-//     }
-//   } else if (wrt_key == unfrozen_fraction_key_) {
-//     for (unsigned int c=0; c!=dalbedo.MyLength(); ++c) {
-//       if (ponded_depth[0][c] == 0.) {
-//         dalbedo[0][c] = 0.;
-//         demissivity[0][c] = 0.;
-//       } else {
-//         dalbedo[0][c] = std::min(1., ponded_depth[0][c] / 0.1) * (a_water_ - a_ice_);
-//         demissivity[0][c] = std::min(1., ponded_depth[0][c] / 0.02) * (e_water_ - e_ice_);
-//       }
-//     }
-//   } else {
-//     Errors::Message message("AlbedoEvaluator: NotImplementedError: does not implement partial derivative.");
-//     Exceptions::amanzi_throw(message);
-//   }
-// }
-
 
 
 void
@@ -186,6 +133,11 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  CompositeVectorSpace domain_fac_snow;
+  domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
+      ->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  
   CompositeVectorSpace domain_fac_owned;
   domain_fac_owned.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -207,7 +159,11 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   // Loop over dependencies, making sure they are the same mesh
   for (auto key : dependencies_) {
     auto fac = S->RequireField(key);
-    fac->Update(domain_fac);
+    if (boost::starts_with(key, domain_snow_)) {
+      fac->Update(domain_fac_snow);
+    } else {
+      fac->Update(domain_fac);
+    }
 
     // Recurse into the tree to propagate info to leaves.
     S->RequireFieldEvaluator(key)->EnsureCompatibility(S);

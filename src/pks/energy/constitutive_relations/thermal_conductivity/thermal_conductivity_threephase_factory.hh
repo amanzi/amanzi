@@ -14,7 +14,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "thermal_conductivity_threephase.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Energy {

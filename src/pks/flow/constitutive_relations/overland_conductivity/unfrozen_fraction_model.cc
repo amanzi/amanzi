@@ -30,6 +30,8 @@ UnfrozenFractionModel::UnfrozenFractionModel(Teuchos::ParameterList& plist) :
     Exceptions::amanzi_throw(message);
   }
   T0_ = plist_.get<double>("freezing point [K]", 273.15);
+
+  min_uf_ = plist_.get<double>("minimum unfrozen fraction [-]", 0.);
 }
 
 double UnfrozenFractionModel::UnfrozenFraction(double temp) const {
@@ -38,9 +40,9 @@ double UnfrozenFractionModel::UnfrozenFraction(double temp) const {
   if (adj_temp > halfwidth_) {
     uf = 1.;
   } else if (adj_temp < -halfwidth_) {
-    uf = 0.;
+    uf = min_uf_;
   } else {
-    uf = (std::sin(pi_/2. * adj_temp/halfwidth_) + 1.)/2.;
+    uf = std::max(min_uf_, (std::sin(pi_/2. * adj_temp/halfwidth_) + 1.)/2.);
   }
   return uf;
 }

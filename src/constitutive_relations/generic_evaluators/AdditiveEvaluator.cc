@@ -12,14 +12,29 @@ namespace Relations {
 AdditiveEvaluator::AdditiveEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  Teuchos::Array<std::string> deps =
-      plist_.get<Teuchos::Array<std::string> >("evaluator dependencies");
-
-  for (Teuchos::Array<std::string>::iterator dep=deps.begin();
-       dep!=deps.end(); ++dep) {
-    Key pname = *dep + std::string(" coefficient");
-    coefs_[*dep] = plist.get<double>(pname, 1.0);
-  }  
+  Teuchos::Array<std::string> names;
+  if (!plist.isParameter("evaluator dependencies")) {
+    if (plist.isParameter("evaluator dependency suffixes")) {
+      names = plist_.get<Teuchos::Array<std::string> >("evaluator dependency suffixes");
+      Key domain = Keys::getDomain(my_key_);
+      for (auto name : names) {
+        Key varname = Keys::getKey(domain, name);
+        dependencies_.insert(varname);
+        Key pname = name + std::string(" coefficient");
+        coefs_[varname] = plist.get<double>(pname, 1.0);
+      }
+    } else {
+      Errors::Message msg;
+      msg << "AdditiveEvaluator for: \"" << my_key_ << "\" has no dependencies.";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    names = plist.get<Teuchos::Array<std::string> >("evaluator dependencies");
+    for (auto name : names) {
+      Key pname = name + std::string(" coefficient");
+      coefs_[name] = plist.get<double>(pname, 1.0);
+    }  
+  }
 }
 
 

@@ -10,7 +10,7 @@ Energy for a two-phase, liquid+water vapor evaluator.
 #ifndef AMANZI_ENERGY_LIQUID_GAS_ENERGY_EVALUATOR_HH_
 #define AMANZI_ENERGY_LIQUID_GAS_ENERGY_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

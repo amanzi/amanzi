@@ -42,7 +42,6 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[1];
   
   // call the MPC's setup, which calls the sub-pk's setups
-
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   // require the coupling fields, claim ownership
@@ -56,8 +55,8 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   precon_surf_ = surf_flow_pk_->preconditioner();
 
   // -- push the surface local ops into the subsurface global operator
-  for (Operators::Operator::op_iterator op = precon_surf_->OpBegin();
-       op != precon_surf_->OpEnd(); ++op) {
+  for (Operators::Operator::op_iterator op = precon_surf_->begin();
+       op != precon_surf_->end(); ++op) {
     precon_->OpPushBack(*op);
   }
 
@@ -155,6 +154,8 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << "Precon applying subsurface operator." << std::endl;
   int ierr = lin_solver_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
 
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Precon applying  CopySubsurfaceToSurface." << std::endl;
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pu->SubVector(0)->Data(),
                           Pu->SubVector(1)->Data().ptr());
@@ -181,7 +182,7 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << " Surface precon:" << std::endl;
     surf_db_->WriteVectors(vnames, vecs, true);
   }
-  
+
   return (ierr > 0) ? 0 : 1;
 }
 
@@ -278,7 +279,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 
   // -- accumulate globally
   int n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);
   bool modified = (n_modified > 0) || (damping < 1.);
 
   // -- calculate consistent subsurface cells

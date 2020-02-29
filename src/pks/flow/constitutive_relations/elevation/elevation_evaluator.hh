@@ -41,6 +41,7 @@ class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 protected:
   bool updated_once_;
   bool dynamic_mesh_;
+  Key deformation_key_;
 
 };
 

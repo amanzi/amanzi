@@ -11,7 +11,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "wrm.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "wrm_factory.hh"
 
 namespace Amanzi {

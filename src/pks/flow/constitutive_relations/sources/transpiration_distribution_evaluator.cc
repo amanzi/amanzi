@@ -43,14 +43,17 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
     Exceptions::amanzi_throw(message);
   }
 
+  limiter_local_ = false;
   if (plist_.isSublist("water limiter function")) {
     Amanzi::FunctionFactory fac;
     limiter_ = Teuchos::rcp(fac.Create(plist_.sublist("water limiter function")));
+  } else {
+    limiter_local_ = plist_.get<bool>("water limiter local", true);
   }
   
   // - pull Keys from plist
   // dependency: pressure
-  f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "relative_permeability");
+  f_wp_key_ = Keys::readKey(plist_, domain_name, "plant wilting factor", "plant_wilting_factor");
   dependencies_.insert(f_wp_key_);
 
   // dependency: rooting_depth_fraction
@@ -58,8 +61,8 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(f_root_key_);
 
   // dependency: transpiration
-  trans_total_key_ = Keys::readKey(plist_, surface_name, "total transpiration", "transpiration");
-  dependencies_.insert(trans_total_key_);
+  potential_trans_key_ = Keys::readKey(plist_, surface_name, "potential transpiration", "potential_transpiration");
+  dependencies_.insert(potential_trans_key_);
 
   // dependency: cell volume, surface cell volume
   cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
@@ -68,6 +71,10 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(surf_cv_key_);
 
   npfts_ = plist_.get<int>("number of PFTs", 1);
+  trans_on_date_ = plist_.get<double>("transpiration turn on date",111.) //days after winter solstice, PRMS defaults
+                   - 10; // converted to days after Jan 1
+  trans_off_date_ = plist_.get<double>("transpiration turn off date",264) // days after winter solstice, PRMS defaults
+                    - 10; // converted to days after Jan 1
 }
 
 
@@ -81,31 +88,40 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
 
   // on the surface
-  const Epetra_MultiVector& trans_total = *S->GetFieldData(trans_total_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& potential_trans = *S->GetFieldData(potential_trans_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& surf_cv = *S->GetFieldData(surf_cv_key_)->ViewComponent("cell", false);
 
   double p_atm = *S->GetScalarData("atmospheric_pressure");
 
+  // check for winter (FIXME -- evergreens!)
+  if (!TranspirationPeriod(S->time())) {
+    result->PutScalar(0.);
+    return;
+  }
+    
   // result, on the subsurface
   const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
   Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
-  
+
   for (int pft=0; pft!=result_v.NumVectors(); ++pft) {
-    for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
+    for (int sc=0; sc!=potential_trans.MyLength(); ++sc) {
       double column_total = 0.;
       double f_root_total = 0.;
       double f_wp_total = 0.;
+      double var_dz = 0.;
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
         column_total += f_wp[0][c] * f_root[pft][c] * cv[0][c];
         result_v[pft][c] = f_wp[0][c] * f_root[pft][c];
+	if (f_wp[0][c] * f_root[pft][c] > 0)
+	  var_dz += cv[0][c];
       }
-      if (column_total <= 0. && trans_total[pft][sc] > 0.) {
-        Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
-        Exceptions::amanzi_throw(message);
-      }
+      // if (column_total <= 0. && potential_trans[pft][sc] > 0.) {
+      //   Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
+      //   Exceptions::amanzi_throw(message);
+      // }
     
       if (column_total > 0.) {
-        double coef = trans_total[pft][sc] * surf_cv[0][sc] / column_total;
+        double coef = potential_trans[pft][sc] * surf_cv[0][sc] / column_total;
         if (limiter_.get()) {
           auto column_total_vector = std::vector<double>(1, column_total / surf_cv[0][sc]);
           double limiting_factor = (*limiter_)(column_total_vector);
@@ -113,21 +129,32 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           AMANZI_ASSERT(limiting_factor <= 1.);
           coef *= limiting_factor;
         }
-          
+        
         for (auto c : subsurf_mesh.cells_of_column(sc)) {
           result_v[pft][c] = result_v[pft][c] * coef;
+          if (limiter_local_) {
+            result_v[pft][c] *= f_wp[0][c];
+          }
+	}
+	
+      } else {
+        for (auto c : subsurf_mesh.cells_of_column(sc)) {
+          result_v[pft][c] = 0.;
         }
       }
 
-#ifdef ENABLE_DBC
-      double new_col_total = 0.;
-      for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        new_col_total += result_v[pft][c] * cv[0][c];
-      }
-      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
-#endif
+      //assert (result_v[0][0] <= potential_trans[0][0]);
+// THIS ENFORCES no limiter
+// #ifdef ENABLE_DBC
+//       double new_col_total = 0.;
+//       for (auto c : subsurf_mesh.cells_of_column(sc)) {
+//         new_col_total += result_v[pft][c] * cv[0][c];
+//       }
+//       AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]*surf_cv[0][sc]) < 1.e-8);
+// #endif
     }
   }
+
 }
 
 
@@ -174,7 +201,7 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   surf_fac.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, npfts_);
-  S->RequireField(trans_total_key_)->Update(surf_fac);
+  S->RequireField(potential_trans_key_)->Update(surf_fac);
 
   CompositeVectorSpace surf_fac_one;
   surf_fac_one.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
@@ -189,6 +216,12 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   }
 }
 
+bool
+TranspirationDistributionEvaluator::TranspirationPeriod(double time) {
+  double doy = fmod(time/86400.,365.);
+  if (doy >= trans_on_date_  && doy <= trans_off_date_) return true;
+  else return false;
+}
 
 } //namespace
 } //namespace

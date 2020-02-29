@@ -49,14 +49,7 @@ class MPCCoupledWaterSplitFlux : public MPC<PK> {
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
 
-  // -- initialize in reverse order
-  virtual void Initialize(const Teuchos::Ptr<State>& S) {
-    sub_pks_[1]->Initialize(S);
-    CopyPrimaryToStar(S, S);
-    S->GetField("surface_star-pressure", "star")->set_initialized();
-    sub_pks_[0]->Initialize(S);
-  }
-
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
   virtual void Setup(const Teuchos::Ptr<State>& S);
   
   // -- advance each sub pk dt.

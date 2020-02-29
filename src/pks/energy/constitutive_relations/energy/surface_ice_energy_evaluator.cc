@@ -48,42 +48,35 @@ SurfaceIceEnergyEvaluator::InitializeFromPlist_()
 {
   // Set up my dependencies
   // - defaults to prefixed via domain
-  Key domain_name = Keys::getDomainPrefix(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
 
   // - pull Keys from plist
   // dependency: ponded_depth
-  h_key_ = plist_.get<std::string>("ponded depth key",
-          domain_name+"ponded_depth");
+  h_key_ = Keys::readKey(plist_, domain_name, "ponded depth", "ponded_depth");
   dependencies_.insert(h_key_);
 
   // dependency: unfrozen_fraction
-  eta_key_ = plist_.get<std::string>("unfrozen fraction key",
-          domain_name+"unfrozen_fraction");
+  eta_key_ = Keys::readKey(plist_, domain_name, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(eta_key_);
 
   // dependency: molar_density_liquid
-  nl_key_ = plist_.get<std::string>("molar density liquid key",
-          domain_name+"molar_density_liquid");
+  nl_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
   dependencies_.insert(nl_key_);
 
   // dependency: internal_energy_liquid
-  ul_key_ = plist_.get<std::string>("internal energy liquid key",
-          domain_name+"internal_energy_liquid");
+  ul_key_ = Keys::readKey(plist_, domain_name, "internal energy liquid", "internal_energy_liquid");
   dependencies_.insert(ul_key_);
 
   // dependency: molar_density_ice
-  ni_key_ = plist_.get<std::string>("molar density ice key",
-          domain_name+"molar_density_ice");
+  ni_key_ = Keys::readKey(plist_, domain_name, "molar density ice", "molar_density_ice");
   dependencies_.insert(ni_key_);
 
   // dependency: internal_energy_ice
-  ui_key_ = plist_.get<std::string>("internal energy ice key",
-          domain_name+"internal_energy_ice");
+  ui_key_ = Keys::readKey(plist_, domain_name, "internal energy ice", "internal_energy_ice");
   dependencies_.insert(ui_key_);
 
   // dependency: cell_volume
-  cv_key_ = plist_.get<std::string>("cell volume key",
-          domain_name+"cell_volume");
+  cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
 }
 

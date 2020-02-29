@@ -11,7 +11,7 @@
 #define AMANZI_RELATIONS_ISOBARIC_EOS_EVALUATOR_HH_
 
 #include "eos.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
@@ -43,8 +43,8 @@ class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
 
   // Keys for fields
   // dependencies
-  Key temp_key_;
-  Key pres_key_;
+  Key pres_key_;  
+  Key dep_key_;
   Key a_key_;
 
  private:

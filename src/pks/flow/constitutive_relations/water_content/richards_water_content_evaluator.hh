@@ -33,7 +33,7 @@ EVALUATORS:
 #ifndef AMANZI_FLOW_RICHARDS_WATER_CONTENT_EVALUATOR_HH_
 #define AMANZI_FLOW_RICHARDS_WATER_CONTENT_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

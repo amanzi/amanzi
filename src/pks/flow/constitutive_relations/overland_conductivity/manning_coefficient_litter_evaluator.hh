@@ -12,7 +12,7 @@ Manning's coefficient that varies based on litter thickness and ponded depth.
 
 #include "Teuchos_RCP.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

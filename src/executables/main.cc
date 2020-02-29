@@ -17,42 +17,20 @@
 #include "errors.hh"
 #include "simulation_driver.hh"
 
+// registration files
 #include "state_evaluators_registration.hh"
 
-#include "constitutive_relations_eos_registration.hh"
-#include "constitutive_relations_surface_subsurface_fluxes_registration.hh"
-#include "constitutive_relations_generic_evaluators_registration.hh"
-
-#include "flow_relations_registration.hh"
-#include "flow_icy_overland_registration.hh"
-#include "flow_overland_pressure_registration.hh"
-#include "flow_permafrost_registration.hh"
-#include "flow_richards_registration.hh"
-#include "transport_amanzi_registration.hh"
-
-// #include "pks_transport_registration.hh"
-#include "multiscale_transport_registration.hh"
-#include "mdm_transport_registration.hh"
-
-#include "surface_balance_SEB_registration.hh"
-#include "BGC_registration.hh"
-
-//#include "chemistry_amanzi_registration.hh"
-//#include "pks_chemistry_registration.hh"
-#include "mpc_pks_registration.hh"
-#include "mpc_registration.hh"
-
-#include "deformation_registration.hh"
-
-#include "energy_advection_diffusion_registration.hh"
-// #include "energy_constant_temperature_registration.hh"
-#include "energy_relations_registration.hh"
-#include "energy_surface_ice_registration.hh"
-#include "energy_two_phase_registration.hh"
-#include "energy_three_phase_registration.hh"
-
-
-
+#include "ats_relations_registration.hh"
+#include "ats_transport_registration.hh"
+#include "ats_energy_pks_registration.hh"
+#include "ats_energy_relations_registration.hh"
+#include "ats_flow_pks_registration.hh"
+#include "ats_flow_relations_registration.hh"
+#include "ats_deformation_registration.hh"
+#include "ats_bgc_registration.hh"
+#include "ats_surface_balance_registration.hh"
+#include "ats_mpc_registration.hh"
+#include "ats_sediment_transport_registration.hh"
 
 
 

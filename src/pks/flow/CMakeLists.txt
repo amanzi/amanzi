@@ -6,124 +6,126 @@
 #
 
 add_subdirectory(constitutive_relations)
-add_subdirectory(richards)
-add_subdirectory(permafrost)
-#add_subdirectory(overland)
-add_subdirectory(icy_overland)
-add_subdirectory(overland_pressure)
-add_subdirectory(snow_distribution)
 
-#=========================================================================================
+# ATS include directories
+include_directories(${ATS_SOURCE_DIR}/pks)
+include_directories(${ATS_SOURCE_DIR}/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/water_content)
+include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/wrm)
+include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/overland_conductivity)
+include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/elevation)
+include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/sources)
+include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
 
-# icy_overland/
+
+
+set(ats_flow_src_files
+  predictor_delegate_bc_flux.cc
+  richards_pk.cc
+  richards_ti.cc
+  richards_physics.cc
+  richards_steadystate.cc
+  permafrost_pk.cc
+  interfrost.cc
+  overland_pressure_pk.cc
+  overland_pressure_physics.cc
+  overland_pressure_ti.cc
+  overland_pk.cc
+  overland_physics.cc
+  overland_ti.cc
+  icy_overland.cc
+  snow_distribution_pk.cc
+  snow_distribution_physics.cc
+  snow_distribution_ti.cc
+  )
+
+set(ats_flow_inc_files
+  flow_bc_factory.hh
+  predictor_delegate_bc_flux.hh
+  richards.hh
+  richards_steadystate.hh
+  permafrost.hh
+  interfrost.hh
+  overland_pressure.hh
+  overland.hh
+  icy_overland.hh
+  snow_distribution.hh
+  )
+
+
+set(ats_flow_link_libs
+  ${Teuchos_LIBRARIES}
+  ${Epetra_LIBRARIES}
+  error_handling
+  atk
+  mesh
+  data_structures
+  whetstone
+  operators
+  solvers
+  time_integration
+  state
+  pks
+  ats_operators
+  ats_eos
+  ats_pks
+  ats_flow_relations
+  )
+
+
+add_amanzi_library(ats_flow
+                   SOURCE ${ats_flow_src_files}
+                   HEADERS ${ats_flow_inc_files}
+		   LINK_LIBS ${ats_flow_link_libs})
+
+
+#
+# generate registration files
+#
 register_evaluator_with_factory(
-  HEADERFILE icy_overland/icy_height_evaluator_reg.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
+  HEADERFILE richards_pk_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
   )
 
 register_evaluator_with_factory(
-  HEADERFILE icy_overland/icy_overland_reg.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
+  HEADERFILE richards_steadystate_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE permafrost_pk_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE interfrost_pk_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE overland_pk_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE overland_pressure_pk_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE icy_overland_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE snow_distribution_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
   )
 
 generate_evaluators_registration_header(
-  HEADERFILE flow_icy_overland_registration.hh
-  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
-  INSTALL    True
-  )
-
-# overland/
-# register_evaluator_with_factory(
-#   HEADERFILE overland/overland_pk_reg.hh
-#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-#   )
-
-register_evaluator_with_factory(
-  HEADERFILE snow_distribution/snow_distribution_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-
-# overland_pressure/
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/height_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-# overland_pressure/
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/volumetric_height_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/volumetric_height_subgrid_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/effective_height_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/overland_pressure_pk_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/overland_pressure_water_content_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/overland_subgrid_water_content_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE flow_overland_pressure_registration.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  INSTALL    True
-  )
-
-
-# permafrost/
-
-register_evaluator_with_factory(
-  HEADERFILE permafrost/permafrost_pk_reg.hh
-  LISTNAME   PERMAFROST_EVAL_FAC
-  )
-
-
-# register_evaluator_with_factory(
-#   HEADERFILE permafrost/interfrost_pk_reg.hh
-#   LISTNAME   PERMAFROST_EVAL_FAC
-#   )
-
-generate_evaluators_registration_header(
-  HEADERFILE flow_permafrost_registration.hh
-  LISTNAME   PERMAFROST_EVAL_FAC
-  INSTALL    True
-  )
-
-
-# richards/
-
-register_evaluator_with_factory(
-  HEADERFILE richards/richards_pk_reg.hh
-  LISTNAME   RICHARDS_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE richards/richards_steadystate_reg.hh
-  LISTNAME   RICHARDS_EVAL_FAC
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE flow_richards_registration.hh
-  LISTNAME   RICHARDS_EVAL_FAC
+  HEADERFILE ats_flow_pks_registration.hh
+  LISTNAME   ATS_FLOW_PKS_REG
   INSTALL    True
   )
 

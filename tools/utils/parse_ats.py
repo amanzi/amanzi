@@ -6,8 +6,7 @@ import argparse
 
 def get_keys(dat, time_range=None):
     """Collect all time index keys, optionally only those in a given 2-tuple of start and end time."""
-    keys = dat[dat.keys()[0]].keys()
-    keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
+    keys = sorted(dat[next(iter(dat.keys()))].keys(), key=int)
 
     if time_range is not None:
         all_times = get_times(dat, keys)
@@ -16,11 +15,10 @@ def get_keys(dat, time_range=None):
 
 def get_times(dat, keys=None):
     """Get the times in the file, optionally at a given list of time index keys."""
-    a_field = dat.keys()[0]
+    a_field = next(iter(dat.keys()))
 
     if keys is None:
-        keys = dat[dat.keys()[0]].keys()
-        keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
+        keys = get_keys(dat)
 
     times = [dat[a_field][key].attrs['Time'] for key in keys]
     return times
@@ -32,8 +30,7 @@ def get_keys_and_times(dat, time_range=None):
         keys = [key for key,time in zip(all_keys,all_times) if time_range[0] <= time <= time_range[1]]
         times = [time for time in all_times if time_range[0] <= time <= time_range[1]]        
     else:
-        keys = dat[list(dat.keys())[0]].keys()
-        keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
+        keys = get_keys(dat)
         times = get_times(dat, keys)
 
     return keys, times

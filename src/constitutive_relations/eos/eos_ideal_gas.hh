@@ -13,7 +13,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "eos_constant_molar_mass.hh"
 
 namespace Amanzi {
@@ -25,9 +25,9 @@ class EOSIdealGas : public EOSConstantMolarMass {
 public:
   explicit EOSIdealGas(Teuchos::ParameterList& eos_plist);
 
-  virtual double MolarDensity(double T, double p);
-  virtual double DMolarDensityDT(double T, double p);
-  virtual double DMolarDensityDp(double T, double p);
+  virtual double MolarDensity(std::vector<double>& params) override;
+  virtual double DMolarDensityDT(std::vector<double>& params) override;
+  virtual double DMolarDensityDp(std::vector<double>& params) override;
 
 protected:
   virtual void InitializeFromPlist_();

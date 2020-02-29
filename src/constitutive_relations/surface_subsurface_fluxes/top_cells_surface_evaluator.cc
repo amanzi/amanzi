@@ -15,9 +15,17 @@ namespace Relations {
 
 TopCellsSurfaceEvaluator::TopCellsSurfaceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("subsurface key");
-  dependency_key_ = plist_.get<std::string>("surface key");
+  auto domain = Keys::getDomain(my_key_);
+  std::string surf_domain;
+  if (Keys::getDomain(my_key_).empty()) {
+    surf_domain = "surface";
+  } else {
+    surf_domain = Key("surface_")+domain;
+  }
+  surf_domain = plist_.get<std::string>("surface domain name", surf_domain);
+  dependency_key_ = Keys::readKey(plist_, surf_domain, "surface", Keys::getVarName(my_key_));
   dependencies_.insert(dependency_key_);
+
   negate_ = plist_.get<bool>("negate", false);
 }
 
