@@ -18,18 +18,18 @@ class Space_Vector(Fixed_Vector):
     '''
     def __init__(self, spec):
         if len(spec) not in (1,2,3):
-            raise TypeError, 'Initializer must be a list of length'\
-                  ' 1,2, or 3'
+            raise TypeError('Initializer must be a list of length'\
+                  ' 1,2, or 3')
         Fixed_Vector.__init__(self, 'd', spec)
         self._flag = 'vector_lite'
         
 # Test:
 if __name__ == '__main__':
     x = Space_Vector([0.2])
-    print x
+    print(x)
 
     x = Space_Vector([0.2, 33.4])
-    print x
+    print(x)
 
     x[1] = 2.2
-    print x
+    print(x)

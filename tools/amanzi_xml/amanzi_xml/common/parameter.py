@@ -1,4 +1,4 @@
-import base
+from . import base
 import amanzi_xml.utils.io as io
 
 _valid_parameter_types = ['double', 'int', 'string', 'bool']
@@ -127,7 +127,7 @@ class Parameter(base.TeuchosBaseXML):
             self.set('type', "Array(%s)"%self._basetype)
             self._isarray = True
         else:
-            raise RunTimeError("Unknown Parameter type %s"%ptype)
+            raise RuntimeError("Unknown Parameter type %s"%ptype)
 
         self.set('value', None)
 

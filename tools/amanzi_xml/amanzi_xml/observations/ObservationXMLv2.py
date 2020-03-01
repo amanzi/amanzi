@@ -58,8 +58,8 @@ class ObservationXMLv2(object):
         return obs_file
 
     def printSummary(self):
-        print "Read input file:", self.filename
-        print "  Found", len(self.obs_lists), "observations"
+        print("Read input file:", self.filename)
+        print("  Found", len(self.obs_lists), "observations")
 
 
 if __name__ == "__main__":
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     p.set_defaults(obs_file = "f.xml") #need to get observation.out from input 
     (options, args) = p.parse_args()
 
-    print "Found input filename", options.input_file
-    print " creating ObservationXMLv2 object"
+    print("Found input filename", options.input_file)
+    print(" creating ObservationXMLv2 object")
     obs = ObservationXMLv2(options.input_file)
     obs.printSummary()

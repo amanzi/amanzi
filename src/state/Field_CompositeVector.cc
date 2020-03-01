@@ -460,8 +460,7 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
     }
   } else {
 
-   
-    if (subfield_names_.size() != data_->NumComponents()){
+    if (subfield_names_.size() != data_->NumComponents()) {
       subfield_names_.resize(data_->NumComponents());
     }
 

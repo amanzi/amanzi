@@ -61,10 +61,10 @@ class Dump_XML:
         self.indent_increment = '   '
         # define the mapping of types
         self.type_map = {}
-        self.type_map[types.FloatType]  = 'real'
-        self.type_map[types.IntType]    = 'int'
-        self.type_map[types.LongType]   = 'int'
-        self.type_map[types.StringType] = 'string'
+        self.type_map[float]  = 'real'
+        self.type_map[int]    = 'int'
+        self.type_map[int]   = 'int'
+        self.type_map[bytes] = 'string'
         self.type_map[get_type(Bool())]  = 'bool'
         if x is not None:
             self.dump(x, filename)
@@ -137,7 +137,7 @@ class Dump_XML:
         vector_map['b']  = 'bool'
         file.write(indent + '<vector')
         file.write(' type="' + vector_map[v.typecode] + '"')
-        file.write(' length="' + `len(v)` + '"')
+        file.write(' length="' + repr(len(v)) + '"')
         file.write(' flag="' + v._flag + '"')
         file.write('>\n')
         ip = indent + self.indent_increment
@@ -158,10 +158,10 @@ class Dump_XML:
         indent = Current indentation level.
         file   = An open file stream.
         '''
-        if vtype not in self.type_map.keys():
-            raise TypeError, `v` + ' has unrecogonized type: ' + \
-                  `vtype` + '\nMust be one of ' + \
-                  `self.type_map.keys()`
+        if vtype not in list(self.type_map.keys()):
+            raise TypeError(repr(v) + ' has unrecogonized type: ' + \
+                  repr(vtype) + '\nMust be one of ' + \
+                  repr(list(self.type_map.keys())))
         mtype = self.type_map[vtype]
         file.write(indent + '<' + mtype + '>')
         file.write(xml.sax.saxutils.escape(str(v)))
@@ -222,11 +222,11 @@ class Dump_Output:
                 self._dump_recursive(v, file, fullName)
             elif isinstance(v, Vector):
                 # We have a vector
-                file.write(`len(v)` + ' # ' + fullName + '\n')
+                file.write(repr(len(v)) + ' # ' + fullName + '\n')
                 for i in range(len(v)):
                     file.write(str(v[i]) + '\n')
             else:
-                file.write(`v` + ' # ' + fullName + '\n')
+                file.write(repr(v) + ' # ' + fullName + '\n')
 
 ########################################################################
 
@@ -285,20 +285,20 @@ class Dump_Python:
                 file.write(fullName + ' = Space_Vector([')
                 for i in range(len(v)):
                     if i > 0: file.write(',')
-                    file.write(`v[i]`)
+                    file.write(repr(v[i]))
                 file.write(']\n')
             elif isinstance(v, Vector):
                 # We have a vector
                 file.write(fullName + ' = Vector(' + \
-                           `v.typecode` + ', ' + `len(v)` + ')\n')
+                           repr(v.typecode) + ', ' + repr(len(v)) + ')\n')
                 for i in range(len(v)):
-                    file.write(fullName + '[' + `i` + \
-                               '] = ' + `v[i]` + '\n')
+                    file.write(fullName + '[' + repr(i) + \
+                               '] = ' + repr(v[i]) + '\n')
             elif isinstance(v, Bool):
                 # We have a bool
-                file.write(fullName + ' = Bool("' + `v` + '")\n')
+                file.write(fullName + ' = Bool("' + repr(v) + '")\n')
             else:
-                file.write(fullName + ' = ' + `v` + '\n')
+                file.write(fullName + ' = ' + repr(v) + '\n')
 
 ########################################################################
 
@@ -346,7 +346,7 @@ class Dump_Doc:
                 c = x._constraint[name]
                 file.write(format_paragraph(x._doc[name], pad))
                 # Use get_type(v) instead of c.type
-                file.write(pad + `get_type(v)` + '\n')
+                file.write(pad + repr(get_type(v)) + '\n')
                 (doc, also) = c.doc_constraints(x, name)
                 if doc:
                     file.write(format_paragraph(doc, pad))
@@ -354,7 +354,7 @@ class Dump_Doc:
                     # Allow nested Input_Interfaces
                     self._dump_recursive(v, file, fullName, basePad + '     ')
                 else:
-                    file.write(pad + 'Present Value =  ' + `v` + '\n')
+                    file.write(pad + 'Present Value =  ' + repr(v) + '\n')
 
 ########################################################################
 

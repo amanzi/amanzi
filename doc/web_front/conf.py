@@ -13,6 +13,8 @@
 
 import sys, os, subprocess
 
+assert sys.version_info.major >= 3, 'Python 3.x is required to build documentation'
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -30,12 +32,12 @@ extensions = ['sphinx.ext.todo',
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              'matplotlib.sphinxext.only_directives',
+              #'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive',
               'IPython.sphinxext.ipython_console_highlighting',
               'IPython.sphinxext.ipython_directive', 
               'sphinxcontrib.tikz',
-              'sphinxcontrib.autorun',
+              'extensions.autorun',
               ]
 
 
@@ -64,9 +66,11 @@ copyright = u'2016, Amanzi Development Team'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-amanzi_branch=subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip()
-amanzi_global_id=subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip()
-amanzi_latest_tag=subprocess.check_output('git tag -l amanzi-*', shell=True).split()[-1].rstrip()
+decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
+
+amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
+amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
+amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
@@ -204,7 +208,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\usepackage[version=3]{mhchem}',
+'preamble': '\\usepackage[version=3]{mhchem}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

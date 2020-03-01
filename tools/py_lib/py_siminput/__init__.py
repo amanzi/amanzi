@@ -3,9 +3,9 @@
 # Written by Robert B. Lowrie (CCS-2)
 #
 
-import bool
-import input_interface
-import run
-import space_vector
-import type_check
-import vector
+from . import bool
+from . import input_interface
+from . import run
+from . import space_vector
+from . import type_check
+from . import vector

@@ -25,7 +25,7 @@ def loadDataFile(Obs_xml):
 
 def plotSingleFractureObservations(Obs_xml, Obs_data, axes1):
     regions = []
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         regions.append(obs.region)
 
     colors = ['b','g','r']
@@ -34,7 +34,7 @@ def plotSingleFractureObservations(Obs_xml, Obs_data, axes1):
     legends = ["bottom region","fracture","outlet"]
     lmap = dict((region,legend) for (region,legend) in zip(regions, legends))
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         color = cmap[obs.region]
         legend = lmap[obs.region]
         axes1.scatter(obs.times, numpy.log10(obs.data), marker='s', s=25, c=color, label=legend)

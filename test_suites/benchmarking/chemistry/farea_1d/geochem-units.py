@@ -106,10 +106,10 @@ class Mineral(object):
 
 if __name__ == "__main__":
 
-    print """
+    print("""
 ASCEM 2012 F-Area Phase 2 Demo : Geochemistry unit conversions from
 data provided by Sergio Bea to pflotran/amanzi input
-"""
+""")
     minerals = []
     quartz = Mineral()
     quartz.setup(name = "Quartz",
@@ -137,21 +137,21 @@ data provided by Sergio Bea to pflotran/amanzi input
                    cec_sitesnm2 = 0.0)
     minerals.append(goethite)
 
-    print "Original data :\n"
+    print("Original data :\n")
     for m in minerals:
-        print m
+        print(m)
 
-    print "\nConverted data :"
-    print "\n-- Mineral SSA"
+    print("\nConverted data :")
+    print("\n-- Mineral SSA")
     for m in minerals:
-        print "  {0} = {1} [cm^2/cm^3 bulk]".format(m.name, m.ssa_cm2cm3())
+        print("  {0} = {1} [cm^2/cm^3 bulk]".format(m.name, m.ssa_cm2cm3()))
 
-    print "\n-- Surface Complexation Site Density"
+    print("\n-- Surface Complexation Site Density")
     for m in minerals:
-        print "  {0} = {1} [moles/m^3 bulk]".format(m.name, m.site_density_mm3b())
+        print("  {0} = {1} [moles/m^3 bulk]".format(m.name, m.site_density_mm3b()))
 
-    print "\n-- Cation Exchange Capacity"
+    print("\n-- Cation Exchange Capacity")
     for m in minerals:
-        print "  {0} = {1} [moles/m^3 bulk]".format(m.name, m.cec_mm3b())
+        print("  {0} = {1} [moles/m^3 bulk]".format(m.name, m.cec_mm3b()))
 
 

@@ -23,3 +23,4 @@ jobs:
       script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       - docker run --rm $DOCKER_USERNAME/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-2 /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
+

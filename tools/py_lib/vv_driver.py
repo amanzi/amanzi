@@ -23,7 +23,7 @@ except ImportError:
 try:
   import subprocess as process
 except ImportError:
-  raise ImportError, 'Script requires the subprocess module found in Python 2.4 and higher'
+  raise ImportError('Script requires the subprocess module found in Python 2.4 and higher')
 
 
 # --- Parse command line
@@ -113,28 +113,28 @@ parser.add_option("--compare-tol", dest="compare_tol", default=0.05,
 
 # Check the number of processors
 if options.nprocs is None:
-  print 'Setting number of processors to default value of 1'
+  print('Setting number of processors to default value of 1')
   options.nprocs=1
 
 # Check the input file
 if options.input is None:
-  raise NameError, 'Must define an input file'
+  raise NameError('Must define an input file')
 
 if not os.path.exists(options.input):
-  raise ValueError, options.input + ' does not exist'
+  raise ValueError(options.input + ' does not exist')
 
 input_tree=Amanzi.trilinos.InputList(options.input)
 
 # Check h5copy
 if options.h5copy is None:
-  print 'Searching for h5copy'
+  print('Searching for h5copy')
   search_cmd = Amanzi.command.Command('which','h5copy')
   if search_cmd.exit_code != 0:
-    raise RuntimeError, 'Failed to find h5copy'
+    raise RuntimeError('Failed to find h5copy')
   options.h5copy=search_cmd.output
 else:
   if not os.path.exists(options.h5copy):
-    raise ValueError, options.h5copy + ' does not exist'
+    raise ValueError(options.h5copy + ' does not exist')
 
 # --- Pre-run activities
 
@@ -149,37 +149,37 @@ output_basename=viz_ctrl.find_parameter('File Name Base').get_value()
 
 #  - Remove old output files
 if options.clobber:
-  print 'Remove old checkpoint, plot and V&V result files'
+  print('Remove old checkpoint, plot and V&V result files')
   for old_checkpoint in glob.glob('checkpoint*.h5'):
     try:
       os.remove(old_checkpoint)
     except:
-      print 'Failed to delete ' + old_checkpoint
+      print('Failed to delete ' + old_checkpoint)
       raise
   plot_regex=output_basename+'_*'
   for old_plot_file in glob.glob(plot_regex):
     try:
       os.remove(old_plot_file)
     except:
-      print 'Failed to delete ' + old_plot_file
+      print('Failed to delete ' + old_plot_file)
       raise
   if os.path.exists(options.vv_results):
     try:
       os.remove(options.vv_results)
     except:
-      print 'Failed to delete ' + options.vv_results
+      print('Failed to delete ' + options.vv_results)
       raise
 
 # --- Run amanzi
-print '>>>>>>>>> LAUNCHING AMANZI <<<<<<<<'
+print('>>>>>>>>> LAUNCHING AMANZI <<<<<<<<')
 amanzi=Amanzi.interface.AmanziInterface(options.binary)
 amanzi.input=options.input
 amanzi.output=options.output
 amanzi.error=options.error
 amanzi.nprocs=options.nprocs
 amanzi.run()
-print 'Amanzi exit code ' + str(amanzi.exit_code)
-print '>>>>>>>>> Amanzi RUN COMPLETE <<<<<<<<'
+print('Amanzi exit code ' + str(amanzi.exit_code))
+print('>>>>>>>>> Amanzi RUN COMPLETE <<<<<<<<')
 
 # --- Process output
 
@@ -192,19 +192,19 @@ mesh_file=amanzi.find_mesh_file()
 # Viz Files
 amanzi.find_data_files(output_basename)
 if len(amanzi.data_files) == 0:
-  print 'No XDMF XML files found'
+  print('No XDMF XML files found')
 else:
-  print 'Found ' + str(len(amanzi.data_files)) + ' XMF files.'
+  print('Found ' + str(len(amanzi.data_files)) + ' XMF files.')
 
 # - Find the correct file to data mine
 if options.extract_data != None:
-  print '>>>>>>>> Processing Amanzi Output <<<<<<<<'
-  print 'Searching for dataset "' + options.extract_data + '"'
+  print('>>>>>>>> Processing Amanzi Output <<<<<<<<')
+  print('Searching for dataset "' + options.extract_data + '"')
   search_files = []
   for output in amanzi.data_files:
     if options.extract_data in output.datasets:
       search_files.append(output)
-  print 'Found ' + str(len(search_files)) + ' files containing dataset "' + options.extract_data + '"'    
+  print('Found ' + str(len(search_files)) + ' files containing dataset "' + options.extract_data + '"')    
   
   source_file=None
   if options.extract_time == 'last':
@@ -213,7 +213,7 @@ if options.extract_data != None:
     try:
       source_file=sorted_list[-1]
     except:
-      print 'Search file list is empty'
+      print('Search file list is empty')
   else:
     idx=0
     while source_file == None and idx < len(search_files):
@@ -231,14 +231,14 @@ if options.extract_data != None:
       try:
         serialize=process.Popen(serialize_args)
       except:
-        print 'Failed to serialize the output data'
+        print('Failed to serialize the output data')
         raise
       else:
         serialize.wait()
-        print 'Serialize command returned ' + str(serialize.returncode)
+        print('Serialize command returned ' + str(serialize.returncode))
     else:
       extract_source_file=output_basename+'_data.h5'
-    print 'Will extract "' + options.extract_data + '" from ' + source_file.filename
+    print('Will extract "' + options.extract_data + '" from ' + source_file.filename)
     group_name=options.extract_data+'/'+str(source_file.cycle)
     h5copy_args = [options.h5copy]
     h5copy_args.append('--input='+extract_source_file)
@@ -248,17 +248,17 @@ if options.extract_data != None:
     try:
       h5copy=process.Popen(h5copy_args)
     except:
-      print 'Failed to extract "' +options.extract_data + '"'
+      print('Failed to extract "' +options.extract_data + '"')
     else:
       h5copy.wait()
-      print 'h5copy returned ' + str(h5copy.returncode)
+      print('h5copy returned ' + str(h5copy.returncode))
   
     # Compare data if data file is set
     if options.compare_file != None:
       try:
-        print 'Will compare dataset ' + options.compare_dataset + ' found in ' + options.compare_file
+        print('Will compare dataset ' + options.compare_dataset + ' found in ' + options.compare_file)
       except:
-        print 'Please define a dataset name to compare'
+        print('Please define a dataset name to compare')
         raise
 
       h5diff_args=[options.h5diff]
@@ -270,22 +270,22 @@ if options.extract_data != None:
       try:
         h5diff=process.Popen(h5diff_args)
       except:
-        print 'Failed to open h5diff process pipe'
+        print('Failed to open h5diff process pipe')
       else:
         h5diff.wait()
-        print 'h5diff returned ' + str(h5diff.returncode)
+        print('h5diff returned ' + str(h5diff.returncode))
 
       if h5diff.returncode == 0:
-        print 'Results passed h5diff test with relative tolerance set to ' + str(options.compare_tol)
+        print('Results passed h5diff test with relative tolerance set to ' + str(options.compare_tol))
       elif h5diff.returncode == 1:
-        print 'Results FAILED h5diff test with relative tolerance set to ' + str(options.compare_tol)
+        print('Results FAILED h5diff test with relative tolerance set to ' + str(options.compare_tol))
       else:
-        print h5diff_args
-        print 'h5diff failed'
+        print(h5diff_args)
+        print('h5diff failed')
 
   else:
-    print 'Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time
+    print('Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time)
 
-  print '>>>>>>>> Processing Amanzi Output COMPLETE <<<<<<<<'
+  print('>>>>>>>> Processing Amanzi Output COMPLETE <<<<<<<<')
 
 sys.exit(amanzi.exit_code)

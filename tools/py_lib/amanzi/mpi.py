@@ -18,13 +18,13 @@ class MpiInterface(CommandInterface):
           
     def num_procs(self,n):
         ntype = type(n)
-        if ntype is types.IntType:
+        if isinstance(ntype,int):
             np = n
-        elif ntype is types.StringType:
+        elif isinstance(ntype,str):
             try:
                 stripped = str(int(n))
-            except:
-                print n, 'is not an integer'
+            except Exception:
+                print(n, 'is not an integer')
 
             np = int(n)
 
@@ -48,21 +48,21 @@ class MpiInterface(CommandInterface):
 
 
     def _dump_state(self):
-        print ''
-        print '################################################################################'
-        print ''
-        print 'command:', self.command
-        print 'args:', self.args
-        print 'exit_code:', self.exit_code
-        print ''
-        print '################################################################################'
-        print ''
+        print('')
+        print('################################################################################')
+        print('')
+        print('command:', self.command)
+        print('args:', self.args)
+        print('exit_code:', self.exit_code)
+        print('')
+        print('################################################################################')
+        print('')
 
     def run(self,binary=None,binary_args=None):
-        if binary != None:
+        if binary is not None:
             self.add_args(binary)
 
-        if binary_args != None:
+        if binary_args is not None:
             self.add_args(binary_args)
 
         CommandInterface.run(self)
@@ -74,9 +74,9 @@ if __name__ == '__main__':
 
     mpi = MpiInterface()
 
-    print mpi.command
-    print mpi.mpirun_exe
-    print mpi.args
+    print(mpi.command)
+    print(mpi.mpirun_exe)
+    print(mpi.args)
 
     # Passing args as a list
     mpi.num_procs(4)
@@ -93,15 +93,10 @@ if __name__ == '__main__':
     try:
         mpi.num_procs('blah')
         mpi._dump_state()
-    except:
-        print 'Passed the invalid proc test'
+    except Exception:
+        print('Passed the invalid proc test')
 
     # Resetting the number of procs
     mpi.num_procs(8)
     mpi._dump_state()
-
-
-
-
-
 

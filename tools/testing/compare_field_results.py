@@ -146,14 +146,14 @@ of the most recent output file to be used in the comparison."""
     tree = ET.parse(input_xml)
     root = tree.getroot()
     if root.tag != 'amanzi_input':
-        raise RuntimeError, 'The given XML file is not a valid Amanzi input.'
+        raise RuntimeError('The given XML file is not a valid Amanzi input.')
     if 'type' not in root.attrib.keys():
-        raise RuntimeError, 'Could not find a type (structured/unstructured) in the given Amanzi input.'
+        raise RuntimeError('Could not find a type (structured/unstructured) in the given Amanzi input.')
 
     # Find the simulation type.
     file_type = root.attrib['type'].lower()
     if file_type not in ['structured', 'unstructured']:
-        raise RuntimeError, 'Invalid simulation type in given Amanzi input: %s'%file_type
+        raise RuntimeError('Invalid simulation type in given Amanzi input: %s' % file_type)
 
     # Now find the output prefix.
     output = root.find('output')

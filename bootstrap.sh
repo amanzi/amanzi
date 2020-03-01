@@ -356,8 +356,8 @@ Value in brackets indicates default setting.
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
 
-  build_amanzi            build TPLs and Amanzi
-  build_user_guide        build TPLs, Amanzi, and UserGuide
+  build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
+  build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
 
 
 Tool definitions:
