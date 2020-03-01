@@ -246,10 +246,9 @@ void Coordinator::initialize() {
   S_->CheckAllFieldsInitialized();
 
   // Write dependency graph.
-  S_->WriteDependencyGraph();
-
+  //S_->WriteDependencyGraph();
   // Reset io_vis flags using blacklist and whitelist
-  S_->InitializeIOFlags(); 
+  //S_->InitializeIOFlags(); 
 
   // *vo_->os() << "Statistic before Commit " << restart_filename_ << std::endl;
 

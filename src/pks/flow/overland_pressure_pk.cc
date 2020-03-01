@@ -542,13 +542,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
   }
 
-  // Initialize BC data structures
-
-  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
   
   // Initialize BC values
   bc_head_->Compute(S->time());
@@ -937,11 +930,11 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
        bc_lvl != bc_level_flux_lvl_->end(); ++bc_lvl, ++bc_vel){
 
     int f = bc_lvl->first;
-    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+    markers[f] = Operators::OPERATOR_BC_NEUMANN;
     double val = bc_lvl->second;
-    if (elevation[0][f] > val) bc_values_[f] = 0;
+    if (elevation[0][f] > val) values[f] = 0;
     else {
-      bc_values_[f] = val * bc_vel->second;
+      values[f] = val * bc_vel->second;
     }
   }
   

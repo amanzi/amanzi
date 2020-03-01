@@ -61,29 +61,29 @@ Coupled_ReactiveTransport_PK_ATS::Coupled_ReactiveTransport_PK_ATS(
 void Coupled_ReactiveTransport_PK_ATS::cast_sub_pks_(){
 
   tranport_pk_ = Teuchos::rcp_dynamic_cast<CoupledTransport_PK>(sub_pks_[transport_pk_index_]);
-  ASSERT(tranport_pk_ != Teuchos::null);
+  AMANZI_ASSERT(tranport_pk_ != Teuchos::null);
   
   chemistry_pk_ = Teuchos::rcp_dynamic_cast<WeakMPC>(sub_pks_[chemistry_pk_index_]);
-  ASSERT(chemistry_pk_ != Teuchos::null);
+  AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   tranport_pk_subsurface_ = 
     Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(tranport_pk_->get_subpk(0));
-  ASSERT(tranport_pk_subsurface_!= Teuchos::null);
+  AMANZI_ASSERT(tranport_pk_subsurface_!= Teuchos::null);
   tranport_pk_overland_ = 
     Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(tranport_pk_->get_subpk(1));
-  ASSERT(tranport_pk_overland_!= Teuchos::null);
+  AMANZI_ASSERT(tranport_pk_overland_!= Teuchos::null);
 
   chemistry_pk_subsurface_ = 
     Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(chemistry_pk_->get_subpk(0));
-  ASSERT(chemistry_pk_subsurface_!= Teuchos::null);
+  AMANZI_ASSERT(chemistry_pk_subsurface_!= Teuchos::null);
   chemistry_pk_overland_ = 
     Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(chemistry_pk_->get_subpk(1));
-  ASSERT(chemistry_pk_overland_!= Teuchos::null);
+  AMANZI_ASSERT(chemistry_pk_overland_!= Teuchos::null);
 
   //std::cout<<tranport_pk_overland_->domain_name()<<" "<<chemistry_pk_overland_->domain_name()<<"\n";
   // std::cout<<tranport_pk_subsurface_->domain_name()<<" "
-  ASSERT(tranport_pk_overland_->domain_name() == chemistry_pk_overland_->domain_name());
-  ASSERT(tranport_pk_subsurface_->domain_name() == chemistry_pk_subsurface_->domain_name());
+  AMANZI_ASSERT(tranport_pk_overland_->domain_name() == chemistry_pk_overland_->domain_name());
+  AMANZI_ASSERT(tranport_pk_subsurface_->domain_name() == chemistry_pk_subsurface_->domain_name());
 
 }
 

@@ -687,16 +687,16 @@ double Transport_PK_ATS::StableTimeStep()
 
 
   // modify estimate for other models
-  if (multiscale_porosity_) {
-    const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-    const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  // if (multiscale_porosity_) {
+  //   const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  //   const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
-    double dtg = S_->final_time() - S_->initial_time();
-    for (int c = 0; c < ncells_owned; ++c) {
-      double flux_liquid = (wcm[0][c] - wcm_prev[0][c]) / dtg;
-      msp_->second[(*msp_->first)[c]]->UpdateStabilityOutflux(flux_liquid, &total_outflux[c]);
-    }
-  }
+  //   double dtg = S_->final_time() - S_->initial_time();
+  //   for (int c = 0; c < ncells_owned; ++c) {
+  //     double flux_liquid = (wcm[0][c] - wcm_prev[0][c]) / dtg;
+  //     msp_->second[(*msp_->first)[c]]->UpdateStabilityOutflux(flux_liquid, &total_outflux[c]);
+  //   }
+  // }
 
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
@@ -1824,7 +1824,6 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
           //   *vo_->os() << vo_->color("yellow") << "No liquid phase in the sources. No mixing occured." << vo_->reset() << std::endl;
           // }
         }                       
->>>>>>> origin/modif4chemistry:src/pks/transport/transport_amanzi/Transport_PK.cc
       }
     }
   }

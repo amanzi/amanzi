@@ -1348,7 +1348,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 ****************************************************************** */
 void Richards::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) p[0][c] = std::max(p[0][c], pmin);
 }
 
@@ -1446,7 +1446,7 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 
         MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
         MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
-        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value;
         MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
         MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
         *vo_->os() << "   faces (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
