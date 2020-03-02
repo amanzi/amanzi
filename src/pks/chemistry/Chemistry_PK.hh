@@ -65,6 +65,8 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
+  Key domain_name() { return domain_; }
+  int num_aqueous_components() {return number_aqueous_components_;}
 
  protected:
   void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
