@@ -98,7 +98,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
+  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::1Phase", vlist)); 
 
   // Call the base class initialize.
   Energy_PK::Initialize(S);
@@ -201,7 +201,7 @@ bool EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of pressure
+  // save a copy of primary unknwon
   CompositeVector temperature_copy(*S_->GetFieldData(temperature_key_, passwd_));
 
   // swap conserved field (i.e., energy) and save
