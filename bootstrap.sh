@@ -750,6 +750,13 @@ List of INPUT parameters
     crunchtope=${geochemistry}
   fi
 
+  if [ "${ats_physics}" -eq "${FALSE}" ]; then
+    if [ "${clm}" -eq "${TRUE}" ]; then
+      error_message "Option 'clm' requires option 'ats_physics'"
+      exit_now 30
+    fi
+  fi
+
   # check compatibility
   if [ "${geochemistry}" -eq "${FALSE}" ]; then
     if [ "${pflotran}" -eq "${TRUE}" ]; then
@@ -1559,6 +1566,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
@@ -1677,6 +1685,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \

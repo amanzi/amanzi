@@ -136,6 +136,7 @@
 #                - update NetCDF-C to 4.7.3
 #                - update NetCDF-Fortran to 4.5.2
 #   0.97.1       - update MSTK to 3.3.1
+#   0.97.2       - added CLM
 
 include(CMakeParseArguments)
 
@@ -531,4 +532,16 @@ set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
+
+#
+# TPL: CLM
+#
+set(CLM_VERSION_MAJOR 0)
+set(CLM_VERSION_MINOR 1)
+set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
+set(CLM_URL_STRING    "https://github.com/jbeisman/stunning-parakeet/archive")
+set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
+set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
+set(CLM_MD5_SUM       6b43a962157983146c709cd07026ecc7)
 
