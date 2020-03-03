@@ -169,13 +169,17 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
   }
 
   if (!surface_only_){
-    poro_key_ = "base_porosity";
+    poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "base_porosity");
     if (!S->HasField(poro_key_)){    
       S->RequireField(poro_key_, "state")->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
       S->RequireFieldEvaluator(poro_key_);
     }
+    sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
+    suc_key_ = Keys::readKey(*plist_, domain_, "suction", "suction_head");
   }
+
+  S->RequireScalar("atmospheric_pressure");
   
 }
 
@@ -205,8 +209,9 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
 
 
   
-  if (surface_only_) ncells_per_col_ = 1;
-  else{
+  if (surface_only_) {
+    ncells_per_col_ = 1;
+  }else{
     for (unsigned int col=0; col!=ncells_owned_; ++col) {
       int f = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
       BGC::ColIterator col_iter(*mesh_, f);
@@ -221,7 +226,7 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   int array_size = ncells_per_col_*ncells_owned_;
   t_soil_.resize(array_size);
-  sat_.resize(array_size);
+  vsm_.resize(array_size);
   eff_poro_.resize(array_size);
   poro_.resize(array_size);
   suc_.resize(array_size);
@@ -313,52 +318,111 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
   if (run_photo){
 
     for (unsigned int c=0; c<ncells_owned_; ++c){
+      
       if (surface_only_){
         t_soil_[c] = air_temp[0][c];
         poro_[c] = 0.5;
-        eff_poro_[c] = 0.5;
-        sat_[c] = poro_[c];
-        suc_[c] = -10;
+        eff_poro_[c] = poro_[c];
+        vsm_[c] = 1.*poro_[c];
+        suc_[c] = 0.;
       }else{
 
         S_next_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_next_.ptr(), name_);
         const Epetra_Vector& poro_vec = *(*S_next_->GetFieldData(poro_key_)->ViewComponent("cell", false))(0);        
         FieldToColumn_(c, poro_vec, poro_.data() + c*ncells_per_col_, ncells_per_col_);
 
+        eff_poro_.assign(poro_.begin(), poro_.end());
+
+        if (S_next_->HasField(sat_key_)){
+          S_next_->GetFieldEvaluator(sat_key_)->HasFieldChanged(S_next_.ptr(), name_);
+          const Epetra_Vector& sat_vec = *(*S_next_->GetFieldData(sat_key_)->ViewComponent("cell", false))(0);        
+          FieldToColumn_(c, sat_vec, vsm_.data() + c*ncells_per_col_, ncells_per_col_);
+
+          for(int i=0;i<vsm_.size();i++) vsm_[i] *= poro_[i];
+          
+        }else{
+          vsm_.assign(poro_.begin(), poro_.end());  // No saturation in state. Fully saturated assumption;
+        }
+
+        if (S_next_->HasField(suc_key_)){
+          
+          S_next_->GetFieldEvaluator(suc_key_)->HasFieldChanged(S_next_.ptr(), name_);
+          const Epetra_Vector& suc_vec = *(*S_next_->GetFieldData(suc_key_)->ViewComponent("cell", false))(0);        
+          FieldToColumn_(c, suc_vec, suc_.data() + c*ncells_per_col_, ncells_per_col_);
+          
+        }else{
+          for(int i=0;i<suc_.size();i++) suc_[i] = 0.;  // No suction is defined in State;
+        }
+
+
       }
 
     }    
 
     int array_size = t_soil_.size();
-    wrap_btran(&array_size, t_soil_.data(), poro_.data(), eff_poro_.data(), sat_.data(), suc_.data());
+    wrap_btran(&array_size, t_soil_.data(), poro_.data(), eff_poro_.data(), vsm_.data(), suc_.data());
 
     PhotoSynthesisInput photo_input;
     // calculate fractional day length
     double t_days = S_inter_->time() / 86400.;
+
     int doy = std::floor(std::fmod(t_days, 365.25));
     if (doy == 0) doy = 365;
 
-    
-    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+    int   radnum = 2; //number of radiation bands
+    double jday; //julian days (1-365)
+    double patm = *S_next_->GetScalarData("atmospheric_pressure");
     QSat qsat;
+    
 
+    photo_input.dayl_factor = DayLength(site_[0].latdeg, doy);
+
+    // double es, esdT, qs, qsdT;
+    // qsat(air_temp[0][c], patm, &es, &esdT, &qs, &qsdT);
+    // photo_input.eair = es*humidity[0][c];
+    // double o2a = 209460.0;
+    // photo_input.cair = co2a[0][c] * patm * 1.e-6;
+    // photo_input.oair = o2a * patm * 1.e-6;
+    // photo_input.t_veg = air_temp[0][c];
+    // photo_input.tgcm = air_temp[0][c];
+    // photo_input.esat_tv = es;
+    // photo_input.eair = patm;
+
+    double es, esdT, qs, qsdT;
+    qsat(air_temp[0][c], patm, &es, &esdT, &qs, &qsdT);
+    
+    photo_input.esat_tv = es;               // Saturated vapor pressure in leaves (Pa)
+    //photo_input.esat_tv = 2300.;
+
+    photo_input.eair = humidity[0][c] * es;                  // Air water vapor pressure (Pa)
+    //photo_input.eair = 2000.;
+
+    double o2a = 209460.0;
+    photo_input.oair = o2a * patm * 1.e-6;                    // Oxygen partial pressure
+    //photo_input.oair = 21280;
+    
+    photo_input.cair = co2a[0][c] * patm * 1.e-6;             // CO2 partial pressure
+    //photo_input.cair = 5985;
+    
+    photo_input.rb = 1./wind[0][c];                       // Boundary layer resistance (s/m)
+    //photo_input.rb = 3.;
 
     
-    for (unsigned int c=0; c<ncells_owned_; ++c){
-      photo_input.dayl_factor = DayLength(site_[c].latdeg, doy);
+    photo_input.t_veg = air_temp[0][0];        // Leaf temperature (K)
+    photo_input.tgcm = air_temp[0][0];         // Air temperature (K)
+    photo_input.albgrd[0] = 0.15;
+    photo_input.albgrd[1] = 0.15;
+    photo_input.albgri[0] = 0.1;
+    photo_input.albgri[1] = 0.1;
+    photo_input.solad[0] = 200.0;
+    photo_input.solad[1] = 40.0;
+    photo_input.solai[0] = 50.0;
+    photo_input.solai[1] = 10.0;    
+    jday = 1.0 + (t_new - t_site_dym_)/dt_site_dym_;
 
-      double es, esdT, qs, qsdT;
-      qsat(air_temp[0][c], patm, &es, &esdT, &qs, &qsdT);
-      photo_input.eair = es*humidity[0][c];
-
-      double o2a = 209460.0;
-      photo_input.cair = co2a[0][c] * patm * 1.e-6;
-      photo_input.oair = o2a * patm * 1.e-6;
-      photo_input.t_veg = air_temp[0][c];
-      photo_input.tgcm = air_temp[0][c];
-      photo_input.esat_tv = es;
-      photo_input.eair = patm;      
-    }
+    wrap_sunfrac(&radnum, photo_input.solad, photo_input.solai);
+    wrap_canopy_radiation(&jday,&radnum, photo_input.albgrd, photo_input.albgri);           
+    wrap_photosynthesis( &dt_photosynthesis_, &patm, &array_size, t_soil_.data(), &photo_input);  
 
     t_photosynthesis_ = t_new;
     
@@ -369,7 +433,7 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
   std::vector<double> prec24_patch(1);
   std::vector<double> rh24_patch(1);
   std::vector<double> wind24_patch(1);
-  std::vector<double>  h2osoi_vol_col;
+  std::vector<double> h2osoi_vol_col;
 
   if (run_veg_dym){
     for (int c=0; c<ncells_owned_; c++){
@@ -382,21 +446,18 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
       rh24_patch[0] = humidity[0][c];
 
 
-      if (surface_only_){
-        h2osoi_vol_col.resize(1);
-        h2osoi_vol_col[0] = 0.5;
-      }else{
-
-        h2osoi_vol_col.resize(ncells_per_col_);
-        
-        S_next_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_next_.ptr(), name_);
-        const Epetra_Vector& poro_vec = *(*S_next_->GetFieldData(poro_key_)->ViewComponent("cell", false))(0);        
-        FieldToColumn_(c, poro_vec, h2osoi_vol_col.data(), ncells_per_col_);
-
-      }      
+      // if (surface_only_){
+      //   h2osoi_vol_col.resize(1);
+      //   h2osoi_vol_col[0] = 0.5;
+      // }else{
+      //   h2osoi_vol_col.resize(ncells_per_col_);        
+      //   S_next_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_next_.ptr(), name_);
+      //   const Epetra_Vector& poro_vec = *(*S_next_->GetFieldData(poro_key_)->ViewComponent("cell", false))(0);        
+      //   FieldToColumn_(c, poro_vec, h2osoi_vol_col.data(), ncells_per_col_);
+      // }      
              
       dynamics_driv_per_site(&clump_, &s, &(site_[c]), &dtime,
-                             h2osoi_vol_col.data(),
+                             vsm_.data() + c*ncells_per_col_,  // column data for volumetric soil moisture content
                              temp_veg24_patch.data(),
                              prec24_patch.data(),
                              rh24_patch.data(),

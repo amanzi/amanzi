@@ -43,6 +43,10 @@ namespace BGC {
     double rb;           // boundary layer resistance (s/m)
     double t_veg;        // vegetation temperature (Kelvin)
     double tgcm;         // air temperature at agcm reference height (Kelvin)
+    double solad[2]; //direct radiation (W/m**2); 1=visible lights; 2=near infrared radition
+    double solai[2]; //diffuse radiation (W/m**2); 1=visible lights; 2=near infrared radition
+    double albgrd[2]; //!ground albedo (direct) 1=visiable; 2=near infrared (nir)
+    double albgri[2]; //ground albedo (diffuse) 1=visiable; 2=near infrared (nir)    
   } PhotoSynthesisInput;
 
 
@@ -64,7 +68,10 @@ namespace BGC {
                                 double*);
 
     void wrap_btran(int*, double*, double*, double*, double*, double*);
-    void wrap_photosynthesis(double*, double*, int*, double*, PhotoSynthesisInput*);      
+    void wrap_photosynthesis(double*, double*, int*, double*, PhotoSynthesisInput*);
+    void wrap_sunfrac(int* array_size, double *forc_solad, double *forc_solai);
+    void wrap_canopy_radiation(double* jday, int* array_size, double* albgrd, double *albgri);    
+    
     void calculate_biomass(double*  ats_biomass_array, int nsites, int num_scls);
   
 #ifdef __cplusplus
@@ -125,9 +132,13 @@ namespace BGC {
     Key domain_surf_;
     Key trans_key_;
     Key precip_key_, air_temp_key_, humidity_key_, wind_key_, co2a_key_;
-    Key poro_key_;
+    Key poro_key_, sat_key_, suc_key_;
     Key met_decomp_key_, cel_decomp_key_, lig_decomp_key_;
-    std::vector<double> t_soil_, sat_, eff_poro_, poro_, suc_;
+    std::vector<double> t_soil_;  // soil temperature
+    std::vector<double> vsm_; // volumetric soil moisture vsm_ = S * poro;
+    std::vector<double> poro_; // porosity
+    std::vector<double> eff_poro_; //effective porosity  = porosity - vol_ice 
+    std::vector<double> suc_; //suction head
 
     int patchno_, nlevdecomp_, nlevsclass_;
     int ncells_owned_, ncells_per_col_, clump_;
