@@ -27,7 +27,7 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_THERMAL_RICHARDS) {
+TEST(MPC_DRIVER_THERMAL_DARCY_DFN) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -35,23 +35,23 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS) {
   auto comm = Amanzi::getDefaultComm();
   
   // read the main parameter list
-  std::string xmlInFileName = "test/mpc_thermal_richards.xml";
+  std::string xmlInFileName = "test/mpc_thermal_darcy_dfn.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
-  // For now create one geometric model from all the regions in the spec
+  // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  // create mesh
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 216.0, 120.0, 54, 60);
-  AMANZI_ASSERT(!mesh.is_null());
+  // extract fractures mesh
+  std::vector<std::string> setnames;
+  setnames.push_back("fracture 1");
+  setnames.push_back("fracture 2");
+
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
