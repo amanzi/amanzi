@@ -1,8 +1,8 @@
 # -*- mode: cmake -*-
 
 #
-#  Amanzi
-#   Transport process kernel
+#  
+#   Sediment transport process kernel
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -51,27 +51,71 @@
 #
 # Library: transport
 #
-set(transport_inc_files
+set(sed_transport_inc_files
   sediment_transport_pk.hh
-  erosion_evaluator.hh settlement_evaluator.hh trapping_evaluator.hh organic_matter_evaluator.hh
+  erosion_evaluator.hh
+  settlement_evaluator.hh
+  trapping_evaluator.hh
+  organic_matter_evaluator.hh
   )
 
-set(transport_src_files sediment_transport_pk.cc
+set(sed_transport_src_files
+  sediment_transport_pk.cc
   Transport_Diffusion.cc
-  erosion_evaluator.cc settlement_evaluator.cc trapping_evaluator.cc organic_matter_evaluator.cc)
+  erosion_evaluator.cc
+  settlement_evaluator.cc
+  trapping_evaluator.cc
+  organic_matter_evaluator.cc)
 
-add_library(pk_sediment_transport 
-            ${transport_src_files}
-)
+set(sed_transport_link_libs
+    ${Teuchos_LIBRARIES}
+    ${Epetra_LIBRARIES}
+    error_handling
+    atk
+    mesh
+    data_structures
+    whetstone
+    operators
+    solvers
+    time_integration
+    state
+    pks
+    ats_operators
+    ats_eos
+    ats_pks
+    )
 
-install(TARGETS pk_sediment_transport DESTINATION lib)
+add_amanzi_library(ats_sed_transport
+                   SOURCE ${sed_transport_src_files}
+                   HEADERS ${sed_transport_inc_files}
+		   LINK_LIBS ${sed_transport_link_libs})
 
-#                   LINK_LIBS geometry mesh error_handling state data_structures 
-#                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
+register_evaluator_with_factory(
+  HEADERFILE sediment_transport_reg.hh
+  LISTNAME   SED_TRANSPORT_REG
+  )
 
-if ( 0 )
-#if ( BUILD_TESTS )
-    # Add UnitTest includes
-    include_directories(${UnitTest_INCLUDE_DIRS})
 
-endif()
+#sediment diposition and erosion rates
+register_evaluator_with_factory(
+  HEADERFILE erosion_evaluator_reg.hh
+  LISTNAME SED_TRANSPORT_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE settlement_evaluator_reg.hh
+  LISTNAME SED_TRANSPORT_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE trapping_evaluator_reg.hh
+  LISTNAME SED_TRANSPORT_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE organic_matter_evaluator_reg.hh
+  LISTNAME SED_TRANSPORT_REG
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE ats_sediment_transport_registration.hh   
+  LISTNAME SED_TRANSPORT_REG  
+  INSTALL  True 
+  )

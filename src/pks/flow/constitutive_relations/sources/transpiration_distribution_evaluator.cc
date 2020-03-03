@@ -43,9 +43,12 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
     Exceptions::amanzi_throw(message);
   }
 
+  limiter_local_ = false;
   if (plist_.isSublist("water limiter function")) {
     Amanzi::FunctionFactory fac;
     limiter_ = Teuchos::rcp(fac.Create(plist_.sublist("water limiter function")));
+  } else {
+    limiter_local_ = plist_.get<bool>("water limiter local", true);
   }
   
   // - pull Keys from plist
@@ -113,19 +116,23 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           AMANZI_ASSERT(limiting_factor <= 1.);
           coef *= limiting_factor;
         }
-          
+        
         for (auto c : subsurf_mesh.cells_of_column(sc)) {
           result_v[pft][c] = result_v[pft][c] * coef;
+          if (limiter_local_) {
+            result_v[pft][c] *= f_wp[0][c];
+          }
         }
       }
 
-#ifdef ENABLE_DBC
-      double new_col_total = 0.;
-      for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        new_col_total += result_v[pft][c] * cv[0][c];
-      }
-      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]*surf_cv[0][sc]) < 1.e-8);
-#endif
+// THIS ENFORCES no limiter
+// #ifdef ENABLE_DBC
+//       double new_col_total = 0.;
+//       for (auto c : subsurf_mesh.cells_of_column(sc)) {
+//         new_col_total += result_v[pft][c] * cv[0][c];
+//       }
+//       AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]*surf_cv[0][sc]) < 1.e-8);
+// #endif
     }
   }
 }

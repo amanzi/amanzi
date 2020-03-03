@@ -49,6 +49,7 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
   Key surf_cv_key_;
   int npfts_;
 
+  bool limiter_local_;
   Teuchos::RCP<Function> limiter_;
   
  private:

@@ -14,6 +14,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "AmanziComm.hh"
 #include "AmanziTypes.hh"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
@@ -108,7 +110,15 @@ createMesh(Teuchos::ParameterList& mesh_plist,
   } else if (mesh_type == "logical mesh") {
     // -- from logical mesh file
     Amanzi::AmanziMesh::MeshLogicalFactory fac(comm, gm);
-    auto mesh = fac.Create(mesh_plist.sublist("logical mesh parameters"));
+    auto log_mesh_params = mesh_plist.sublist("logical mesh parameters");
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    if (log_mesh_params.isParameter("read from file")) {
+      auto filename = log_mesh_params.get<std::string>("read from file");
+      auto my_list_in_other_file = Teuchos::getParametersFromXmlFile(filename);
+      mesh = fac.Create(*my_list_in_other_file);
+    } else {
+      mesh = fac.Create(log_mesh_params);
+    }
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);

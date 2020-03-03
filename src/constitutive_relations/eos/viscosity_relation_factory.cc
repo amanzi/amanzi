@@ -10,11 +10,6 @@
 #include <string>
 #include "viscosity_relation_factory.hh"
 
-// explicity instantitate the static data of Factory<Viscosity>
-template<> 
-Amanzi::Utils::Factory<Amanzi::Relations::ViscosityRelation>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Relations::ViscosityRelation>::map_;
-
 namespace Amanzi {
 namespace Relations {
 
