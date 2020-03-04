@@ -16,6 +16,13 @@ from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
+PLOT_TITLE_SIZE=20
+AXES_FONT_SIZE=16
+AXES_TICK_SIZE=15
+
+PFLOTRAN_LINE_COLOR='blue'
+PFLOTRAN_LINE_WIDTH=4
+CRUNCH_MARKER_SIZE=10
 
 if __name__ == "__main__":
 
@@ -289,42 +296,42 @@ if __name__ == "__main__":
         if alq: 
             ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
         if alq_crunch:
-            ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
+            ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
         if native:
             ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
 
-        ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'m-',linewidth=2)
-        ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*')
+        ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+        ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
 
         if alq:
             ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU(2nd-O)+Alq(PFT)')
         if alq_crunch:
-            ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12,label='AmanziU(2nd-O)+Alq(CF)')
+            ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE,label='AmanziU(2nd-O)+Alq(CF)')
         if native:
             ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
 
-        ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'m-',linewidth=2)
-        ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*')
+        ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+        ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
 
         if i==0:
             if alq:
                 ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
-                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
+                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
             if native:
                 ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 
-            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=2)
-            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=7)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=CRUNCH_MARKER_SIZE)
         else:
             if alq:
                 ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
-                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
+                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
             if native:
                 ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 
-            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',linewidth=2)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
 
     #import pdb; pdb.set_trace()
     if (struct>0):
@@ -341,10 +348,10 @@ if __name__ == "__main__":
     # ax[0].set_xlim((18,32))
   
     # axes
-    ax[2].set_xlabel("Distance (m)",fontsize=20)
-    ax[0].set_ylabel("Total Ca concentration [mol/L]",fontsize=15)
-    ax[1].set_ylabel("pH",fontsize=20)
-    ax[2].set_ylabel("Calcite volume fraction",fontsize=15)
+    ax[2].set_xlabel("Distance (m)",fontsize=AXES_FONT_SIZE)
+    ax[0].set_ylabel("Total Ca\nconcentration [mol/L]",fontsize=AXES_FONT_SIZE)
+    ax[1].set_ylabel("pH",fontsize=AXES_FONT_SIZE)
+    ax[2].set_ylabel("Calcite\nvolume fraction",fontsize=AXES_FONT_SIZE)
 
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
@@ -356,11 +363,20 @@ if __name__ == "__main__":
         ax[1].legend(loc='lower right')#,fontsize=13) 
 
     ax[2].legend(loc='lower right')#,fontsize=13)
-    plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
-    plt.tick_params(axis='x', which='major', labelsize=20)
+    plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=PLOT_TITLE_SIZE)
+    ax[0].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-4,-4))
+    ax[1].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(0,0))
+    ax[2].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-6,-6))
+
+    ax[0].tick_params(axis='y', which='major', labelsize=AXES_TICK_SIZE)
+    ax[1].tick_params(axis='y', which='major', labelsize=AXES_TICK_SIZE)
+    ax[2].tick_params(axis='y', which='major', labelsize=AXES_TICK_SIZE)
+    ax[2].tick_params(axis='x', which='major', labelsize=AXES_TICK_SIZE)
+    #plt.tick_params(axis='y', which='major', labelsize=10)
 
     # pyplot.show()
-    plt.savefig(local_path+"calcite_1d.png",format="png")
+    #plt.savefig(local_path+"calcite_1d.png",format="png") <----
+    plt.show()
     # plt.close()
 
     # set x lim
