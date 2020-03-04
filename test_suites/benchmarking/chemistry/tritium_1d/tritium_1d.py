@@ -182,7 +182,7 @@ if __name__ == "__main__":
     cfs = a.plot(x_crunchflow, c_crunchflow,'m*',markersize=9,label='CrunchFlow',linewidth=2)
     plt.title('Zoom near interface')
     
-    plt.show()
+    # plt.show()
     plt.savefig(root+"_1d.png",format="png")
     # plt.close()
 
