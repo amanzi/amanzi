@@ -44,7 +44,6 @@ plt.tick_params(axis='both', which='major', labelsize=14)
 #loaded_modules = ', '.join(sorted(sys.modules.keys()))
 #if "sphinx.ext.todo" not in loaded_modules:
 #    plt.show()
-plt.show()
 
 # Create/Write the table:
 #
