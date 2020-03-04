@@ -84,5 +84,5 @@ ExternalProject_Add(${CLM_BUILD_TARGET}
 
 include(BuildLibraryName)
 build_library_name(clm CLM_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-global_set(CLM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX})
-global_set(CLM_DIR ${TPL_INSTALL_PREFIX})
+set(CLM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+set(CLM_DIR ${TPL_INSTALL_PREFIX})

@@ -8,6 +8,7 @@ cd @CLM_source_dir@
 # Manual install required for 4.0.x versions
 clm_dir=@TPL_INSTALL_PREFIX@/clm
 tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
+tpl_inc_dir=@TPL_INSTALL_PREFIX@/include
 if [ ! -e ${clm_dir} ]; then mkdir -p ${clm_dir} ; fi
 if [ ! -e ${tpl_lib_dir} ]; then mkdir -p ${tpl_lib_dir} ; fi
 
@@ -17,5 +18,6 @@ if [ "$rc" -ne "0" ]; then
   exit $rc
 fi
 cp src/libclm.a ${tpl_lib_dir}
+cp src/*.mod ${tpl_inc_dir}
 
 exit $?

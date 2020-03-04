@@ -141,6 +141,7 @@ petsc=${TRUE}
 pflotran=${FALSE}
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
+ats_dev=${FALSE}
 shared=${FALSE}
 silo=${FALSE}
 
@@ -325,6 +326,8 @@ Configuration:
   --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
+
+  --ats_dev               use bootstrap to build ATS without cloning new repository ['"${ats_devs}"']
   
 
 Build features:
@@ -471,6 +474,7 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    ats_dev             = '"${ats_dev}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -1656,10 +1660,13 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
         exit_now 30
     fi
 
-    git_submodule_clone "src/physics/ats"
-
-    if [ ! -z "${ats_branch}" ]; then
-    git_change_branch_ats ${ats_branch}
+    if [ "${ats_dev}" -eq "${TRUE}" ]; then
+        status_message "Build ATS without cloning new repository (ats_dev = ${ats_dev})"
+    else
+        git_submodule_clone "src/physics/ats"
+        if [ ! -z "${ats_branch}" ]; then
+            git_change_branch_ats ${ats_branch}
+        fi
     fi
 fi
 
@@ -1742,7 +1749,7 @@ if [ ${dry_run} == "${FALSE}" ]; then
         status_message "Amanzi build-stage 2: complete"
     fi
   else
-    make -j ${parallel_jobs}
+    make -j ${parallel_jobs} VERBOSE=1
     if [ $? -ne 0 ]; then
         error_message "Failed to build Amanzi"
         exit_now 50

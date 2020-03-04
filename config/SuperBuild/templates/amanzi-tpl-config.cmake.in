@@ -142,4 +142,4 @@ set(SuperLU_DIR @SuperLU_DIR@ CACHE PATH "SuperLU installation prefix")
 set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefix")
 
 # CLM
-set(CLM_DIR @CLM_DIR@ CACHE PATH "CLM installation prefix")
+set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
