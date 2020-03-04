@@ -291,8 +291,26 @@ if __name__ == "__main__":
         for j, comp in enumerate(components):
             ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran')
             bx[j].plot(x_pflotran, v_pflotran[i][j],'m-')
-            ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
-            bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
+
+            ax[j].text(
+                0.03,
+                0.85,
+                comp,
+                fontsize=15,
+                bbox=dict(facecolor='white', alpha=1.0),
+                transform=ax[j].transAxes,
+                horizontalalignment='left'
+            )
+
+            bx[j].text(
+                0.97,
+                0.85,
+                comp,
+                fontsize=15,
+                bbox=dict(facecolor='white', alpha=1.0),
+                transform=bx[j].transAxes,
+                horizontalalignment='right'
+            )
 
     if (struct>0):
         for j in range(len(amanzi_compS)):
@@ -305,21 +323,41 @@ if __name__ == "__main__":
             bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
-    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
-    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
+    ax[nrows-1].set_xlabel("Distance (m)",fontsize=15)
+    bx[nrows-1].set_xlabel("Distance (m)",fontsize=15)
 
     # for i,comp in enumerate(components):
     for i,comp in enumerate(components):
         ax[i].set_ylabel("Total Concen. [mol/L]",fontsize=15)
         bx[i].set_ylabel("Total Sorb. [mol/m3]",fontsize=15)
+        bx[i].yaxis.tick_right()
+        bx[i].yaxis.set_label_position("right")
+
+    # Set axes to be shared + only have ticks on the bottom row
+    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(nrows)])
+    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(nrows)])
+
+    for i in range(nrows-1):
+        ax[i].set_xticklabels([])
+        bx[i].set_xticklabels([])
+
+    ax[nrows-1].autoscale()
+    bx[nrows-1].autoscale()
 
     # plot adjustments
     ax[0].legend(fontsize=12,loc='lower right')
-    bx[0].legend(fontsize=12,loc='lower right')
+    #bx[0].legend(fontsize=12,loc='lower right')
 
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
 
-    plt.tick_params(axis='both', which='major', labelsize=15)
+    # Set scientific notation ticks and tick size
+    AXES_TICK_SIZE=15
+    from matplotlib.ticker import FormatStrFormatter
+    for i in range(nrows):
+        ax[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-2,-2))
+        bx[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(0,0))
+        ax[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
+        bx[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
   
     plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
 
