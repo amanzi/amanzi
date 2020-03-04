@@ -29,14 +29,32 @@ namespace Energy {
 /* ******************************************************************
 * Default constructor for Energy PK.
 ****************************************************************** */
-Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<State> S) :
+Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                     const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<TreeVector>& soln) :
+    PK_PhysicalBDF(pk_tree, glist, S, soln),
     glist_(glist),
     vo_(Teuchos::null),
     passwd_("thermal")
 {
+  std::string pk_name = pk_tree.name();
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
+
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  ep_list_ = Teuchos::sublist(pk_list, pk_name, true);
+
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
+   
+  // domain name
+  domain_ = ep_list_->get<std::string>("domain name", "domain");
+
+  // create verbosity object
   S_ = S;
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

@@ -39,7 +39,10 @@ namespace Energy {
 
 class Energy_PK : public PK_PhysicalBDF {
  public:
-  Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
+  Energy_PK(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+            const Teuchos::RCP<State>& S,
+            const Teuchos::RCP<TreeVector>& soln);
   virtual ~Energy_PK() {};
 
   // methods required by PK interface

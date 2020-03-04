@@ -9,11 +9,11 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Darcy flow in matrix and fracture network.
+  Process kernel that couples flow and energy in matrix and fractures.
 */
 
-#ifndef AMANZI_DARCY_MATRIX_FRACTURE_PK_HH_
-#define AMANZI_DARCY_MATRIX_FRACTURE_PK_HH_
+#ifndef AMANZI_FLOW_ENERGY_MATRIX_FRACTURE_PK_HH_
+#define AMANZI_FLOW_ENERGY_MATRIX_FRACTURE_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -26,12 +26,12 @@
 
 namespace Amanzi {
 
-class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
+class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                        const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln);
+  FlowEnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                              const Teuchos::RCP<State>& S,
+                              const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -45,8 +45,10 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   // virtual void CommitStep(double t_old, double t_new);
 
-  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
+  virtual void FunctionalResidual(
+      double t_old, double t_new,
+      Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
+      Teuchos::RCP<TreeVector> f);
   
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -54,7 +56,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
-  std::string name() { return "flow matrix-fracture"; } 
+  std::string name() { return "thermal flow matrix fracture"; } 
 
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
@@ -71,7 +73,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<VerboseObject> vo_;
 
   // factory registration
-  static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;
+  static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
 };
 
 }  // namespace Amanzi

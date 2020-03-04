@@ -60,6 +60,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
       FlowEnergy_PK.hh
+      FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
@@ -73,6 +74,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
       FlowEnergy_PK.cc
+      FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc

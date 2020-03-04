@@ -34,18 +34,12 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln) :
-    Energy_PK(glist, S),
+    Energy_PK(pk_tree, glist, S, soln),
     soln_(soln)
 {
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(pk_list, "energy", true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
-   
-  // domain name
-  domain_ = ep_list_->get<std::string>("domain name", "domain");
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
+  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 }
 
 
@@ -96,11 +90,6 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   double t_old = S->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
   double t_new = t_old + dt_;
-
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 
   // Call the base class initialize.
   Energy_PK::Initialize(S);
