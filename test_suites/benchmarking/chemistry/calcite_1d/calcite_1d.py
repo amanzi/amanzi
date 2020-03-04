@@ -375,8 +375,7 @@ if __name__ == "__main__":
     #plt.tick_params(axis='y', which='major', labelsize=10)
 
     # pyplot.show()
-    #plt.savefig(local_path+"calcite_1d.png",format="png") <----
-    plt.show()
+    plt.savefig(local_path+"calcite_1d.png",format="png")
     # plt.close()
 
     # set x lim

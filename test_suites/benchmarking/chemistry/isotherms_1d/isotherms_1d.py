@@ -17,6 +17,8 @@ from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
+AXES_TICK_SIZE=15
+LINE_WIDTH=4
 
 if __name__ == "__main__":
 
@@ -225,14 +227,14 @@ if __name__ == "__main__":
     i = 0 # hardwired 50 years -- because the second entry in the list was taken at cycle 71 = 50 years.
 
 #  pflotran
-    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
-    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
+    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH,label='PFloTran')    
+    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH)
 
-    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=2,label='Langmuir PFloTran ')    
-    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=2)
+    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH,label='Langmuir PFloTran ')    
+    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH)
 
-    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=2,label='Freundlich PFloTran')    
-    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=2)
+    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH,label='Freundlich PFloTran')    
+    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH)
 
 # crunchflow
     if crunch:
@@ -253,35 +255,35 @@ if __name__ == "__main__":
 
 # unstructured alquimia pflotran
     if alq:
-        ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=2)
-        ax[1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=LINE_WIDTH)
+        ax[1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(PFT)')
 
-        ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=2)
-        ax[3].plot(x_alquimia, v_alquimia[i][1],color='k',linestyle='--',linewidth=2,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=LINE_WIDTH)
+        ax[3].plot(x_alquimia, v_alquimia[i][1],color='k',linestyle='--',linewidth=LINE_WIDTH,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
 
-        ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=2)
-        ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=2,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH)
+        ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
 
 # unstructured alquimia crunch
     if alqc:
-        ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
-        ax[1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
+        ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=LINE_WIDTH)
+        ax[1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
 # structured alquimia pflotran
     if (struct>0):
-        sam = ax[0].plot(x_amanziS, c_amanziS[0],'g-',label='AmanziS+Alq(PFT)',linewidth=2)
-        samv = ax[1].plot(x_amanziS, v_amanziS[0],'g-',linewidth=2)
+        sam = ax[0].plot(x_amanziS, c_amanziS[0],'g-',label='AmanziS+Alq(PFT)',linewidth=LINE_WIDTH)
+        samv = ax[1].plot(x_amanziS, v_amanziS[0],'g-',linewidth=LINE_WIDTH)
 
-        sam1 = ax[2].plot(x_amanziS, c_amanziS[1],'k*',label='Langmuir AmanziS+Alq(PFT)',linewidth=2)
-        samv1 = ax[3].plot(x_amanziS, v_amanziS[1],'k*',linewidth=2)
+        sam1 = ax[2].plot(x_amanziS, c_amanziS[1],'k*',label='Langmuir AmanziS+Alq(PFT)',linewidth=LINE_WIDTH)
+        samv1 = ax[3].plot(x_amanziS, v_amanziS[1],'k*',linewidth=LINE_WIDTH)
 
-        sam2 = ax[2].plot(x_amanziS, c_amanziS[2],'c*',label='Freundlich AmanziS+Alq(PFT)',linewidth=2)
-        samv2 = ax[3].plot(x_amanziS, v_amanziS[2],'c*',linewidth=2)
+        sam2 = ax[2].plot(x_amanziS, c_amanziS[2],'c*',label='Freundlich AmanziS+Alq(PFT)',linewidth=LINE_WIDTH)
+        samv2 = ax[3].plot(x_amanziS, v_amanziS[2],'c*',linewidth=LINE_WIDTH)
 
 # structured alquimia crunch
     if (struct_c>0):
-        samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
-        samcv = ax[1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=2) #,markersize=20) 
+        samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=LINE_WIDTH) 
+        samcv = ax[1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=LINE_WIDTH) #,markersize=20) 
 
     # axes
     ax[0].set_title("Kd linear sorption model",fontsize=15)
@@ -295,20 +297,17 @@ if __name__ == "__main__":
     ax[3].set_ylabel("Total B, C \n Sorbed Concent. \n [mol/m3]",fontsize=15)
 
     ax[0].legend(loc='upper right',fontsize=10)
-    ax[1].legend(loc='upper right',fontsize=10)
-    ax[0].set_xlim(left=30,right=70)
-    ax[1].set_xlim(left=30,right=70)
-
     ax[2].legend(loc='upper right',fontsize=10)
-    ax[3].legend(loc='upper right',fontsize=8)
-    ax[2].set_xlim(left=30,right=70)
-    ax[3].set_xlim(left=30,right=70)
 
     # plot adjustments
     plt.tight_layout() 
-    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
+    plt.subplots_adjust(left=0.20,bottom=0.08,right=0.95,top=0.90)
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-    plt.tick_params(axis='both', which='major', labelsize=15)
+
+    for i in range(4):
+        ax[i].set_xlim(left=30,right=70)
+        ax[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
+        ax[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-4,-4))
 
     # pyplot.show()
     plt.savefig(root+"_1d.png",format="png")
