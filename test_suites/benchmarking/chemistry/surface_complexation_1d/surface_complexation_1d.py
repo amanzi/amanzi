@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 import run_amanzi_standard
 import numpy as np
@@ -17,6 +18,7 @@ from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
+AXES_TICK_SIZE=15
 
 if __name__ == "__main__":
 
@@ -317,8 +319,26 @@ if __name__ == "__main__":
     for j, comp in enumerate(components):
         ax[j].plot(x_pflotran, u_pflotran[i][j],color='m',linestyle='-',linewidth=6,label='PFloTran')
         bx[j].plot(x_pflotran, v_pflotran[i][j],color='m',linestyle='-',linewidth=2)
-        ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
-        bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
+
+        ax[j].text(
+            0.03,
+            0.85,
+            comp,
+            fontsize=15,
+            bbox=dict(facecolor='white', alpha=1.0),
+            transform=ax[j].transAxes,
+            horizontalalignment='left'
+        )
+
+        bx[j].text(
+            0.97,
+            0.85,
+            comp,
+            fontsize=15,
+            bbox=dict(facecolor='white', alpha=1.0),
+            transform=bx[j].transAxes,
+            horizontalalignment='right'
+        )
 
     px.plot(x_pflotran, pH_pflotran[i],color='m',linestyle='-',linewidth=2,label='PFloTran')
 
@@ -378,31 +398,65 @@ if __name__ == "__main__":
 
 
     # axes
-    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
-    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
+    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=AXES_TICK_SIZE)
+    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=AXES_TICK_SIZE)
 
     # for i,comp in enumerate(components):
-    i=1
-    ax[i].set_ylabel("Total Concentration [mol/L]",fontsize=15)
-    bx[i].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+    #i=1
+    #ax[i].set_ylabel("Total Concentration [mol/L]",fontsize=15)
+    #bx[i].set_ylabel("",fontsize=15)
 
-    px.set_xlabel("Distance(m)",fontsize=15)
-    px.set_ylabel("pH",fontsize=15)
+    plt.gcf().text(0.03, 0.65, 'Total Concentration [mol/L]',rotation=90,fontsize=20,verticalalignment='center',horizontalalignment='center')
+    plt.gcf().text(0.94, 0.65, 'Total Sorbed Concent. [mol/m3]',rotation=-90,fontsize=20,verticalalignment='center',horizontalalignment='center')
+    #    bx[j].text(
+    #        0.97,
+    #        0.85,
+    #        comp,
+    #        fontsize=15,
+    #        bbox=dict(facecolor='white', alpha=1.0),
+    #        transform=bx[j].transAxes,
+    #        horizontalalignment='right'
+    #    )
+
+    # Move ticks on bx to right-hand side
+    main_rows = len(components)
+    for i in range(main_rows):
+        bx[i].yaxis.tick_right()
+        bx[i].yaxis.set_label_position("right")
+
+    # Set axes to be shared + only have ticks on the bottom row
+    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
+    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
+
+    for i in range(main_rows-1):
+        ax[i].set_xticklabels([])
+        bx[i].set_xticklabels([])
+
+    ax[main_rows-1].autoscale()
+    bx[main_rows-1].autoscale()
+
+    # Set scientific notation ticks and tick size
+    for i in range(main_rows):
+        ax[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(0,0))
+        bx[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(0,0))
+        ax[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
+        bx[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
+
+    px.set_xlabel("Distance (m)",fontsize=AXES_TICK_SIZE)
+    px.set_ylabel("pH",fontsize=AXES_TICK_SIZE)
 
     # for i,comp in enumerate(components):
     #     ax[i].set_ylim(bottom=0)
     #     bx[i].set_ylim(bottom=0)
     px.set_ylim(bottom=4.8)
+    px.tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
 
     # plot adjustments
-    ax[0].legend(fontsize=15)
-    bx[0].legend(fontsize=15)
+    # Ignore the ax, bx legends as px is more aesthetics + will
+    # be the same legend as all other subplots
     px.legend(fontsize=15,loc='upper right')
 
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
-
-    plt.tick_params(axis='both', which='major', labelsize=15)
-  
     plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
 
     plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
