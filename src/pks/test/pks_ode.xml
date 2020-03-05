@@ -156,8 +156,8 @@
       <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="fixed" />
@@ -171,8 +171,8 @@
       <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="fixed" />
@@ -186,8 +186,8 @@
       <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="fixed" />
@@ -199,13 +199,13 @@
     <ParameterList name="C, backward euler, large step" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
       <Parameter name="primary variable key" type="string" value="primaryC" />
-      <Parameter name="initial time step" type="double" value="0.5" />
+      <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
         <ParameterList name="verbose object" type="ParameterList">
           <Parameter name="verbosity level" type="string" value="high" />
         </ParameterList>
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <ParameterList name="verbose object" type="ParameterList">
             <Parameter name="verbosity level" type="string" value="high" />
           </ParameterList>
@@ -231,8 +231,8 @@
       <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="1.0" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
@@ -252,8 +252,8 @@
       <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="1.0" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
@@ -274,8 +274,8 @@
       <Parameter name="maximum time step" type="double" value="1." />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
@@ -296,8 +296,8 @@
       <Parameter name="maximum time step" type="double" value="0.1" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
@@ -322,8 +322,8 @@
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="extrapolate initial guess" type="bool" value="true" />
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
@@ -371,8 +371,8 @@
       </ParameterList>
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="fixed" />
@@ -387,8 +387,8 @@
       </ParameterList>
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
-        <Parameter name="solver type" type="string" value="nka" />
-        <ParameterList name="nka parameters" type="ParameterList">
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
