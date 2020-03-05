@@ -325,12 +325,12 @@ set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f)
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 2)
+set(ASCEMIO_VERSION_MINOR 3)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_SAVEAS_FILE    ${ASCEMIO_ARCHIVE_FILE})
-set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
+set(ASCEMIO_MD5_SUM       de556a774b4ef7dc223f4611a39c978c)
 
 #
 # TPL: MSTK
@@ -441,7 +441,7 @@ set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "0bf557717ec1cf692828e250f95c1dcaba4f01c9")
+set(Trilinos_GIT_TAG        "master")
 
 #
 # TPL: SEACAS

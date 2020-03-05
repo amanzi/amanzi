@@ -246,14 +246,14 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-		    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+		                GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
                     GIT_TAG ${Trilinos_GIT_TAG}      
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
-			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
-				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
+			                                -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
+				                              -DTpetraCore_ENABLE_TESTS:BOOL=ON
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
