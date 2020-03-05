@@ -53,6 +53,9 @@ endif()
 
 # share libraries -- disabled by default
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+if (BUILD_STATIC_LIBS)
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_EXE_LINKER_FLAGS:STRING=-ldl")
+endif()
 
 # --- Add external project build 
 ExternalProject_Add(${NetCDF_BUILD_TARGET}
