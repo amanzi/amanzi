@@ -251,7 +251,7 @@ def PlotAnalyticSoln(solution, analytic, slice, obs_slices, axes1):
     # Convert horizontal axis to float and shift to align the source
     hv = [float(i) - float(soln['source'][coord]) for i in soln[coord]]
     vv = [float(i) for i in soln['c']]
-    axes1.plot(hv,vv)
+    axes1.plot(hv,vv,label=analytic[slice]['plot_props']['label'])
 
 
 def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
