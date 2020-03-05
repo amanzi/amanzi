@@ -387,8 +387,14 @@
       </ParameterList>
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="high" />
+        </ParameterList>
         <Parameter name="solver type" type="string" value="Newton" />
         <ParameterList name="Newton parameters" type="ParameterList">
+          <ParameterList name="verbose object" type="ParameterList">
+            <Parameter name="verbosity level" type="string" value="high" />
+          </ParameterList>
           <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
         </ParameterList>
         <Parameter name="timestep controller type" type="string" value="standard" />
