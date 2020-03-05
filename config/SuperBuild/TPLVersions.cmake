@@ -543,5 +543,5 @@ set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
 set(CLM_URL_STRING    "https://github.com/jbeisman/stunning-parakeet/archive")
 set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
 set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
-set(CLM_MD5_SUM       6b43a962157983146c709cd07026ecc7)
+set(CLM_MD5_SUM       c3c1d8302f54e54d7c3639a2cf448fd7)
 
