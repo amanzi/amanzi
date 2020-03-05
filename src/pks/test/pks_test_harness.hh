@@ -76,7 +76,10 @@ createRunMPC(const std::string& mpc_name, const std::string& pk_A_name,
              const std::string& pk_B_name,
              const std::string& filename = "test/pks_ode.xml")
 {
-  std::cout << "Test: " << mpc_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << mpc_name << std::endl
+            << "================================================================================" << std::endl;
+      
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
@@ -116,7 +119,9 @@ std::unique_ptr<Run>
 createRunODE(const std::string& pk_name,
              const std::string& filename = "test/pks_ode.xml")
 {
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
@@ -149,7 +154,9 @@ template <class PK_t>
 std::unique_ptr<Run>
 createRunPDE(const std::string& pk_name, const std::string& filename)
 {
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));

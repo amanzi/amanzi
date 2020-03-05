@@ -199,7 +199,7 @@
     <ParameterList name="C, backward euler, large step" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
       <Parameter name="primary variable key" type="string" value="primaryC" />
-      <Parameter name="initial time step" type="double" value="1." />
+      <Parameter name="initial time step" type="double" value="0.5" />
       <ParameterList name="time integrator" type="ParameterList">
         <ParameterList name="verbose object" type="ParameterList">
           <Parameter name="verbosity level" type="string" value="high" />

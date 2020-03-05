@@ -49,7 +49,9 @@ std::unique_ptr<Run>
 createExplicit(const std::string& eqn_name, const std::string& ti_name)
 {
   std::string pk_name = eqn_name + ", " + ti_name;
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
@@ -96,7 +98,9 @@ std::unique_ptr<Run>
 createExplicitSubcycled(const std::string& eqn_name, const std::string& ti_name)
 {
   std::string pk_name = eqn_name + ", " + ti_name + " subcycled";
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
@@ -144,7 +148,9 @@ createImplicit(const std::string& eqn_name, const std::string& qualifier = "")
 {
   std::string pk_name = eqn_name + ", backward euler";
   if (!qualifier.empty()) pk_name = pk_name + ", " + qualifier;
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
@@ -194,7 +200,9 @@ createImplicitSubcycled(const std::string& eqn_name,
   std::string pk_name = eqn_name + ", backward euler subcycled";
   if (!qualifier.empty()) pk_name = pk_name + ", " + qualifier;
 
-  std::cout << "Test: " << pk_name << std::endl;
+  std::cout << std::endl
+            << "Test: " << pk_name << std::endl
+            << "================================================================================" << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));

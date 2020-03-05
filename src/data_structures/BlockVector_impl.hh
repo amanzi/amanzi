@@ -453,16 +453,39 @@ BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB,
                                          Scalar scalarThis)
 {
   for (const auto& name : *this) {
-    if (A.GetComponent_(name)->getNumVectors() > 1) {
-      Errors::Message message("Not implemented multiply: Tpetra does not "
-                              "provide elementwise multiply.");
+    // There is a nasty gotcha here -- if this is A, when we call getVector we
+    // clobber data and break things without erroring.  But this being B is ok.
+    //
+    if (B.GetComponent_(name) != this->GetComponent(name) &&
+        A.GetComponent_(name) == this->GetComponent(name)) {
+      if (B.GetComponent_(name)->getNumVectors() > 1) {
+        Errors::Message message("Not implemented multiply: Tpetra does not "
+                "provide multivector elementwise multiply.");
+        Exceptions::amanzi_throw(message);
+      }
+    
+      GetComponent_(name)->elementWiseMultiply(
+          scalarAB,
+          *B.GetComponent_(name)->getVector(0),
+          *A.GetComponent_(name),
+          scalarThis);
+    } else if (B.GetComponent_(name) == this->GetComponent(name) &&
+               A.GetComponent_(name) == this->GetComponent(name)) {
+      Errors::Message message("Unclear whether, in elementWiseMultiply(), A,B,& this can all be the same vector.");
       Exceptions::amanzi_throw(message);
+    } else {
+      if (A.GetComponent_(name)->getNumVectors() > 1) {
+        Errors::Message message("Not implemented multiply: Tpetra does not "
+                "provide multivector elementwise multiply.");
+        Exceptions::amanzi_throw(message);
+      }
+    
+      GetComponent_(name)->elementWiseMultiply(
+          scalarAB,
+          *A.GetComponent_(name)->getVector(0),
+          *B.GetComponent_(name),
+          scalarThis);
     }
-    GetComponent_(name)->elementWiseMultiply(
-      scalarAB,
-      *A.GetComponent_(name)->getVector(0),
-      *B.GetComponent_(name),
-      scalarThis);
   }
 };
 

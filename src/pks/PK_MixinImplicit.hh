@@ -54,7 +54,6 @@ class PK_MixinImplicit : public Base_t {
  protected:
   // timestep size
   double dt_;
-  bool assemble_preconditioner_;
 
   // tags for start and end of step Note these are here to limit how tightly
   // integrated time integration is to a PK/dag.  If time integrators worked
@@ -85,10 +84,6 @@ void
 PK_MixinImplicit<Base_t>::Setup()
 {
   Base_t::Setup();
-
-  // preconditioner assembly
-  assemble_preconditioner_ =
-    plist_->template get<bool>("assemble preconditioner", true);
 
   // set up tags
   tag_old_ = "";
