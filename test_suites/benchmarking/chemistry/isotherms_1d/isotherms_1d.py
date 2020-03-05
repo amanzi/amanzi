@@ -227,14 +227,14 @@ if __name__ == "__main__":
     i = 0 # hardwired 50 years -- because the second entry in the list was taken at cycle 71 = 50 years.
 
 #  pflotran
-    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH,label='PFloTran')    
-    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH)
+    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH,label='PFloTran')
+    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=LINE_WIDTH,label='PFloTran')
 
-    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH,label='Langmuir PFloTran ')    
-    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH)
+    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH,label='Langmuir PFloTran')
+    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=LINE_WIDTH,label='Langmuir PFloTran')
 
-    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH,label='Freundlich PFloTran')    
-    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH)
+    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH,label='Freundlich PFloTran')
+    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=LINE_WIDTH,label='Freundlich PFloTran')
 
 # crunchflow
     if crunch:
@@ -243,30 +243,30 @@ if __name__ == "__main__":
  
 # native 
     if native:
-        ax[0].plot(x_native, u_native[i][0],color='b',linestyle='None',marker='x')
+        ax[0].plot(x_native, u_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native')
         ax[1].plot(x_native, v_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native')
 
-        ax[2].plot(x_native, u_native[i][1],color='k',linestyle='None',marker='x')
+        ax[2].plot(x_native, u_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native')
         ax[3].plot(x_native, v_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native')
 
-        ax[2].plot(x_native, u_native[i][2],color='c',linestyle='None',marker='x')
+        ax[2].plot(x_native, u_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native')
         ax[3].plot(x_native, v_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native')
 
 
 # unstructured alquimia pflotran
     if alq:
-        ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=LINE_WIDTH)
+        ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(PFT)')
         ax[1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(PFT)')
 
-        ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=LINE_WIDTH)
+        ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=LINE_WIDTH,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
         ax[3].plot(x_alquimia, v_alquimia[i][1],color='k',linestyle='--',linewidth=LINE_WIDTH,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
 
-        ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH)
+        ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
         ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
 
 # unstructured alquimia crunch
     if alqc:
-        ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=LINE_WIDTH)
+        ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(CF)')
         ax[1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
 # structured alquimia pflotran
