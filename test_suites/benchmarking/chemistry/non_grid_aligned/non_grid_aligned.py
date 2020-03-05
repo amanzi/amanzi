@@ -63,7 +63,7 @@ if __name__ == "__main__":
     local_path = "" 
 
     # subplots
-    plt.subplots(1,figsize=(10,8))
+    plt.subplots(1,figsize=(11,8))
     
     # Amanzi + Native chemistry
     try:
@@ -74,25 +74,25 @@ if __name__ == "__main__":
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,comp,nodesx=nodesx,nodesy=nodesy)
 
-    except:
+    except Exception:
         pass    
       
     extent = [0.0, 0.60, 0.0, 0.50]
     
     # plot adjustments
-    plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
-    plt.suptitle("Amanzi 2D Non-grid Aligned\n"+"Flow and Transport",x=0.57,fontsize=20)
+    #plt.subplots_adjust(left=0.0,bottom=0.15,right=0.99,top=0.90)
+    plt.suptitle("Amanzi 2D Non-grid Aligned Flow and Transport",fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     plt.xlabel("X (m)",fontsize=20)
     plt.ylabel("Y (m)",fontsize=20)
 
     plt.imshow(z_native, vmin=z_native.min(), vmax=z_native.max(), origin='lower',extent=extent,cmap=cm.bwr)
-    cbar = plt.colorbar(shrink=.8)
+    cbar = plt.colorbar(shrink=.8, format='%.2e')
 
     cbar.ax.tick_params(axis='both', which='both', labelsize=20)
-    cbar.ax.set_ylabel('Calcite\n'+'volume\n'+'fraction [-]',fontsize=20,rotation=0)
-    cbar.ax.yaxis.set_label_coords(-1.0, 1.15)
+    cbar.ax.set_ylabel('Calcite volume\nfraction [-]',fontsize=20,rotation=0)
+    cbar.ax.yaxis.set_label_coords(4., 1.15)
 
     # plt.show()
     plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
