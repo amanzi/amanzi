@@ -269,14 +269,14 @@ if __name__ == "__main__":
     if alq:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',c=PFLOTRAN_LINE_COLOR)
-            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-')
+            ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
+            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
 
     if alq_crunch:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)',c=PFLOTRAN_LINE_COLOR)
-            bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],'r*')
+            ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)',markersize=MARKER_SIZE)
+            bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)',markersize=MARKER_SIZE)
 
     if native:
         i = 0  # hardwired for time '71'
@@ -287,14 +287,14 @@ if __name__ == "__main__":
     if crunch:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):
-            ax[j].plot(x_crunchflow, u_crunchflow[i][j],'m*',label='CrunchFlow',markersize=MARKER_SIZE)
-            bx[j].plot(x_crunchflow, v_crunchflow[i][j],'m*',markersize=MARKER_SIZE)
+            ax[j].plot(x_crunchflow, u_crunchflow[i][j],'b*',label='CrunchFlow',markersize=MARKER_SIZE)
+            bx[j].plot(x_crunchflow, v_crunchflow[i][j],'b*',label='CrunchFlow',markersize=MARKER_SIZE)
     
     if pflotran:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):
             ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
-            bx[j].plot(x_pflotran, v_pflotran[i][j],'m-',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
+            bx[j].plot(x_pflotran, v_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
 
             ax[j].text(
                 0.03,
