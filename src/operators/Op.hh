@@ -90,7 +90,7 @@ class Op {
 
   // linear operator functionality.
   virtual void
-  GetLocalDiagCopy(CompositeVector& X) const = 0;
+  SumLocalDiag(CompositeVector& X) const = 0;
 
   virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,

@@ -61,6 +61,7 @@ set(operators_inc_files
   Operator.hh
   Operator_Cell.hh
   Operator_CellBndFace.hh
+  Operator_Factory.hh
   TreeOperator.hh
   BCs.hh
   PDE_HelperBCsList.hh
@@ -77,6 +78,7 @@ set(operators_src_files
   Operator.cc
   Operator_Cell.cc
   Operator_CellBndFace.cc
+  Operator_Factory.cc
   TreeOperator.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc

@@ -85,7 +85,7 @@ class PK_PDE_Explicit : public Base_t {
   {
     Base_t::Initialize();
     this->S_->template GetW<CompositeVector>(this->key_, "", this->key_)
-      .PutScalar(0.);
+      .putScalar(0.);
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
@@ -109,7 +109,8 @@ class PK_PDE_Explicit : public Base_t {
       this->S_->template Get<CompositeVector>("cell_volume", tag_inter_);
 
     // dudt = -dudt_eval / cv
-    f.Data()->ReciprocalMultiply(-1.0, cv, dudt, 0.);
+    f.Data()->reciprocal(cv);
+    f.Data()->elementWiseMultiply(-1.0, dudt, *f.Data(), 0.);
 
     std::cout << "Dudt at t = " << t << std::endl;
     std::cout << "================================================"
@@ -212,7 +213,7 @@ class PK_PDE_Implicit : public Base_t {
     Base_t::Initialize();
     auto& ic_cv =
       this->S_->template GetW<CompositeVector>(this->key_, "", this->key_);
-    ic_cv.PutScalar(0.);
+    ic_cv.putScalar(0.);
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
@@ -242,15 +243,14 @@ class PK_PDE_Implicit : public Base_t {
   {
     const auto& lin_op = this->S_->template GetDerivative<Operators::Operator>(
       res_key_, tag_new_, this->key_, tag_new_);
-    lin_op.ApplyInverse(*u->Data(), *Pu->Data());
+    lin_op.applyInverse(*u->Data(), *Pu->Data());
     return 0;
   }
 
   double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
   {
-    double norm = 0.;
-    du->NormInf(&norm);
+    double norm = du->normInf();
     std::cout << "     error = " << norm << std::endl;
     return norm;
   }

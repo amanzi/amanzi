@@ -17,7 +17,7 @@
 #include "UniqueHelpers.hh"
 #include "Operator_Factory.hh"
 #include "Operator_Cell.hh"
-#include "Operator_FaceCell.hh"
+//#include "Operator_FaceCell.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -35,11 +35,10 @@ Operator_Factory::Create() {
 
     if (operator_type == "Operator_Cell") {
       // build the CVS from the global schema
-      Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-      cvs->SetMesh(mesh_)->SetGhosted(true);
-      cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-
-      return Teuchos::rcp(new Operator_Cell(cvs, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
+      CompositeVectorSpace cvs;
+      cvs.SetMesh(mesh_)->SetGhosted(true);
+      cvs.AddComponent("cell", AmanziMesh::CELL, 1);
+      return Teuchos::rcp(new Operator_Cell(cvs.getMap(), *plist_, OPERATOR_SCHEMA_DOFS_CELL));
 
     } else {
       Errors::Message msg;
@@ -48,14 +47,12 @@ Operator_Factory::Create() {
     }
 
   } else if (cvs_row_.size() != 0) {
-    if (cvs_row_.HasComponent("cell")) {
-      if (cvs_row_.HasComponent("face")) {
-        auto cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvs_row_));
-        return Teuchos::rcp(new Operator_FaceCell(cvs_row, *plist_));
-      } else {
-        auto cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvs_row_));
-        return Teuchos::rcp(new Operator_Cell(cvs_row, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
-      }
+    if (cvs_row_->HasComponent("cell")) {
+      // if (cvs_row_->HasComponent("face")) {
+      //   return Teuchos::rcp(new Operator_FaceCell(cvs_row_, *plist_));
+      // } else {
+        return Teuchos::rcp(new Operator_Cell(cvs_row_, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
+      // }
     } else {
       Errors::Message msg;
       msg << "Operator_Factory: unsupported CompositeVector's component.";

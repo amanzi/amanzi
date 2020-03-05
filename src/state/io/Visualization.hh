@@ -28,6 +28,7 @@
 
 #include "IOEvent.hh"
 #include "Output.hh"
+#include "Data_Initializers.hh"
 
 namespace Amanzi {
 
@@ -48,7 +49,7 @@ class Visualization : public IOEvent {
   typename std::enable_if<!Output::writes<T>::value>::type
   Write(const Teuchos::ParameterList& attrs, const T& t) const
   {
-    UserWriteVis(*this, attrs, t);
+    Data_Initializers::UserWriteVis(*this, attrs, t);
   }
 
   // output-provided writing

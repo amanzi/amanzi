@@ -29,6 +29,12 @@ class Op_Cell_Cell : public Op {
     diag = Teuchos::rcp(new MultiVector_type(mesh->cell_map(false), 1));
   }
 
+  virtual void
+  SumLocalDiag(CompositeVector& X) const {
+    X.GetComponent("cell", false)->update(1., *diag, 1.);
+  }
+
+  
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);

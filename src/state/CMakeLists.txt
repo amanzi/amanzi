@@ -21,8 +21,8 @@ project(STATE)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
-#include_directories(${OPERATORS_SOURCE_DIR})
-#include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
@@ -68,7 +68,7 @@ set(state_inc_files
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
-#  evaluator/Evaluator_OperatorApply.hh
+  evaluator/Evaluator_OperatorApply.hh
 #  evaluator/Evaluator_PDE_Diffusion.hh
 #  evaluator/Evaluator_PDE_Accumulation.hh
 #  evaluator/Evaluator_BCs.hh
@@ -101,7 +101,7 @@ set(state_src_files
   evaluator/EvaluatorSecondary.cc
   evaluator/EvaluatorSecondaryMonotype.cc
   evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
-#  evaluator/Evaluator_OperatorApply.cc
+  evaluator/Evaluator_OperatorApply.cc
 #  evaluator/Evaluator_PDE_Diffusion.cc
 #  evaluator/Evaluator_PDE_Accumulation.cc
 #  evaluator/Evaluator_BCs.cc

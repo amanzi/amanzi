@@ -438,7 +438,7 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
 {
   X.putScalarMasterAndGhosted(0.);
   for (auto& op : *this) {
-    op->GetLocalDiagCopy(X);
+    op->SumLocalDiag(X);
   }
   X.GatherGhostedToMaster();
 }

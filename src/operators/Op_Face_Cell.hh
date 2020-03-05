@@ -56,7 +56,7 @@ class Op_Face_Cell : public Op {
   }
 
   virtual void
-  GetLocalDiagCopy(CompositeVector& X) const
+  SumLocalDiag(CompositeVector& X) const
   {
     auto Xv = X.ViewComponent("cell", true);
 

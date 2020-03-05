@@ -29,8 +29,9 @@ Where:
   Aji, rhs_Aji         | are not-necessarily diagonal, local operators and their
                        | RHSs applied to the xj.
   rhs_1 ... rhs_k      | are arbitrary source terms which CANNOT NOT BE AFFECTED
-BY | boundary conditions (i.e, for conservation equations | discretized using
-control volume methods, BCs affect only | faces while sources are on cells.
+                       | BY boundary conditions (i.e, for conservation equations
+                       | discretized using control volume methods, BCs affect
+                       | only faces while sources are on cells.
 
 Note that we can infer some constraints here:
 
