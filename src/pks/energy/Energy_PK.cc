@@ -63,10 +63,16 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  energy_key_ = "energy";
-  prev_energy_key_ = "prev_energy";
-  enthalpy_key_ = "enthalpy";
-  conductivity_key_ = "thermal_conductivity";
+  // keys
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
+
+  energy_key_ = Keys::getKey(domain_, "energy"); 
+  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
+  enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
+  conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
+
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
 
 
@@ -91,7 +97,6 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
  
   std::vector<int> ndofs(2, 1);
   
-  temperature_key_ = Keys::getKey(domain_, "temperature"); 
   if (!S->HasField(temperature_key_)) {
     S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
@@ -103,15 +108,15 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // conserved quantity from the last time step.
-  if (!S->HasField("prev_energy")) {
-    S->RequireField("prev_energy", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_energy_key_)) {
+    S->RequireField(prev_energy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_energy", passwd_)->set_io_vis(false);
+    S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
   }
 
   // Fields for energy as independent PK
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
@@ -188,10 +193,10 @@ void Energy_PK::InitializeFields_()
         *vo_->os() << "initialized temperature to default value 298 K." << std::endl;  
   }
 
-  if (S_->GetField("darcy_flux")->owner() == passwd_) {
-    if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
-      S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
-      S_->GetField("darcy_flux", passwd_)->set_initialized();
+  if (S_->GetField(darcy_flux_key_)->owner() == passwd_) {
+    if (!S_->GetField(darcy_flux_key_, passwd_)->initialized()) {
+      S_->GetFieldData(darcy_flux_key_, passwd_)->PutScalar(0.0);
+      S_->GetField(darcy_flux_key_, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized darcy_flux to default value 0.0" << std::endl;  

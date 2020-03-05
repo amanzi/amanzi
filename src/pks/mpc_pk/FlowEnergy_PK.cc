@@ -34,6 +34,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
   // we will use a few parameter lists
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
   my_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  domain_ = my_list_->template get<std::string>("domain name", "domain");
   
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
@@ -53,6 +54,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
+
+  // keys
 
   // Require primary field for this PK, which is pressure
   // Fields for solids

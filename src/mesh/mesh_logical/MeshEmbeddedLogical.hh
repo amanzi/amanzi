@@ -218,7 +218,7 @@ class MeshEmbeddedLogical : public Mesh {
 
   virtual
   void node_set_coordinates(const Entity_ID nodeid,
-                            const AmanziGeometry::Point ncoord);
+                            const AmanziGeometry::Point ncoord) override;
 
 
   virtual
@@ -275,7 +275,7 @@ class MeshEmbeddedLogical : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Entity_ID_List *entids,
-                                 std::vector<double> *vofs) const;
+                                 std::vector<double> *vofs) const override;
 
   // Miscellaneous functions
   virtual

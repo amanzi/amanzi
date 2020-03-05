@@ -26,18 +26,13 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
     my_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
   }
 
-  // Set up my dependencies.
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("viscosity")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  // set up my dependencies
+  std::string domain("");
+  auto end = my_key_.find_first_of("-");
+  if (end != std::string::npos) domain = my_key_.substr(0, end);
 
   // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string("temperature"));
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 
   // Construct my Viscosity model

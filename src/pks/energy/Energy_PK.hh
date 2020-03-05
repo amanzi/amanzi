@@ -123,8 +123,8 @@ class Energy_PK : public PK_PhysicalBDF {
   // names of state fields 
   Key temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_;
-  Key conductivity_key_;
+  Key enthalpy_key_, conductivity_key_;
+  Key darcy_flux_key_, particle_density_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 

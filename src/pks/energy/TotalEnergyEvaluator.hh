@@ -42,6 +42,7 @@ class TotalEnergyEvaluator : public SecondaryVariableFieldEvaluator {
 
  private:
   bool vapor_diffusion_;
+  Key particle_density_key_;
 };
 
 }  // namespace Energy

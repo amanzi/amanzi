@@ -109,7 +109,6 @@ TEST(ENERGY_CONVERGENCE) {
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
-    pref.push_back(Framework::STK);
 
     MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
@@ -130,13 +129,14 @@ TEST(ENERGY_CONVERGENCE) {
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-    Teuchos::ParameterList pk_tree;
+    Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
-    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
+    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
     EPK->Setup(S.ptr());
@@ -213,13 +213,11 @@ TEST(ENERGY_PRECONDITIONER) {
   int num_itrs[2];
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
-    pref.push_back(Framework::STK);
 
     MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
@@ -232,13 +230,14 @@ TEST(ENERGY_PRECONDITIONER) {
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-    Teuchos::ParameterList pk_tree;
+    Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
-    Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
+    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
     EPK->Setup(S.ptr());

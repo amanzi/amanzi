@@ -46,20 +46,13 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
     my_keys_.push_back(a_key_);
   }
 
-  // Set up my dependencies.
-  std::size_t end = a_key_.find_first_of("_");
-  std::string domain_name = a_key_.substr(0,end);
-  if (domain_name == std::string("density") ||
-      domain_name == std::string("molar") ||
-      domain_name == std::string("mass")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  // set up my dependencies
+  std::string domain("");
+  auto end = a_key_.find_first_of("-");
+  if (end != std::string::npos) domain = a_key_.substr(0, end);
 
   // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string("temperature"));
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 
   // -- pressure

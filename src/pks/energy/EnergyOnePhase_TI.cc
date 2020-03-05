@@ -9,8 +9,11 @@
   Author: Konstantin Lipnikov
 */
 
-#include "FieldEvaluator.hh"
+// Amanzi
+#include "Key.hh"
 
+// Amanzi::Energy
+#include "FieldEvaluator.hh"
 #include "EnergyOnePhase_PK.hh"
 
 namespace Amanzi {
@@ -55,7 +58,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
   const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
   const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
 
-  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
+  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
@@ -91,8 +94,9 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
-  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-  CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
+  auto der_name = Keys::getDerivKey(energy_key_, temperature_key_);
+  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
+  CompositeVector& dEdT = *S_->GetFieldData(der_name, energy_key_);
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
@@ -100,10 +104,11 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData(darcy_flux_key_);
 
-    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-    Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData("denthalpy_dtemperature");
+    der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
+    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
+    Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData(der_name);
 
     op_preconditioner_advection_->Setup(*darcy_flux);
     op_preconditioner_advection_->UpdateMatrices(darcy_flux.ptr(), dHdT.ptr());

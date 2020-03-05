@@ -30,19 +30,20 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
   my_key_ = plist_.get<std::string>("energy key", "energy");
   vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
 
-  dependencies_.insert(std::string("porosity"));
+  particle_density_key_ = plist_.get<std::string>("particle density key");
 
-  dependencies_.insert(std::string("saturation_liquid"));
-  dependencies_.insert(std::string("molar_density_liquid"));
-  dependencies_.insert(std::string("internal_energy_liquid"));
+  dependencies_.insert("porosity");
+  dependencies_.insert("saturation_liquid");
+  dependencies_.insert("molar_density_liquid");
+  dependencies_.insert("internal_energy_liquid");
 
   if (vapor_diffusion_) {
-    dependencies_.insert(std::string("molar_density_gas"));
-    dependencies_.insert(std::string("internal_energy_gas"));
+    dependencies_.insert("molar_density_gas");
+    dependencies_.insert("internal_energy_gas");
   }
 
-  dependencies_.insert(std::string("internal_energy_rock"));
-  dependencies_.insert(std::string("particle_density"));
+  dependencies_.insert("internal_energy_rock");
+  dependencies_.insert(particle_density_key_);
 }
 
 
@@ -80,7 +81,7 @@ void TotalEnergyEvaluator::EvaluateField_(
 
   const auto& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
   const auto& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell");
-  const auto& rho_rock = *S->GetFieldData("particle_density")->ViewComponent("cell");
+  const auto& rho_rock = *S->GetFieldData(particle_density_key_)->ViewComponent("cell");
 
   auto& result_v = *result->ViewComponent("cell");
   int ncells = result->size("cell");
@@ -115,7 +116,7 @@ void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
 
   const auto& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
   const auto& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell");
-  const auto& rho_rock = *S->GetFieldData("particle_density")->ViewComponent("cell");
+  const auto& rho_rock = *S->GetFieldData(particle_density_key_)->ViewComponent("cell");
 
   auto& result_v = *result->ViewComponent("cell");
   int ncells = result->size("cell");
@@ -160,7 +161,7 @@ void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c];
     }
-  } else if (wrt_key == "particle_density") {
+  } else if (wrt_key == particle_density_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c];
     }

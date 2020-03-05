@@ -59,7 +59,8 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
   ee_list.set<std::string>("energy key", energy_key_)
-         .set<bool>("vapor diffusion", true);
+         .set<bool>("vapor diffusion", true)
+         .set<std::string>("particle density key", particle_density_key_);
   Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
   S_->SetFieldEvaluator(energy_key_, ee);
 
@@ -69,7 +70,7 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   Teuchos::ParameterList enth_plist = ep_list_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  auto enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S_->SetFieldEvaluator(enthalpy_key_, enth);
 
   // -- thermal conductivity
@@ -130,7 +131,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, mesh_));
 
-  const CompositeVector& flux = *S->GetFieldData("darcy_flux");
+  const CompositeVector& flux = *S->GetFieldData(darcy_flux_key_);
   op_matrix_advection_->Setup(flux);
   op_advection_ = op_matrix_advection_->global_operator();
 
