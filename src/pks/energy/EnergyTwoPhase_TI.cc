@@ -49,9 +49,9 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   const Epetra_MultiVector& e0 = *S_->GetFieldData(prev_energy_key_)->ViewComponent("cell");
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
-  int nsize = g_c.MyLength();
-  for (int i = 0; i < nsize; ++i) {
-    g_c[0][i] += (e1[0][i] - e0[0][i]) / dt;
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->cell_volume(c) / dt;
+    g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
   }
 
   // advect tmp = molar_density_liquid * enthalpy 

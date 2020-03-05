@@ -26,7 +26,7 @@ analytic_soln = utils_dispersion_45_point_2d.AnalyticSolutions(analytic,obs_slic
 slice='x=0.0'
 
 # Plot the data:
-fig1 = plt.figure()
+fig1 = plt.figure(figsize=(10,6))
 axes1 = fig1.add_axes([0.15,0.15,0.80,0.80])
 axes1.set_yscale('log')
 axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
@@ -36,10 +36,11 @@ axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
 utils_dispersion_45_point_2d.PlotObservations(obs_scatter,slice,subtests,axes1)
 utils_dispersion_45_point_2d.PlotAnalyticSoln(analytic_soln,analytic,slice,obs_slices,axes1)
 
-axes1.legend(loc='lower left')
+axes1.legend(loc='lower left',fontsize=14)
 axes1.set_xlabel('Transverse Distance from Plume Centerline, y[m]',fontsize=14)
-axes1.set_ylabel('Concentration [kg/m$^3$]',fontsize=14)
-axes1.text(75,0.002,'Concentration at x=0, and t=1440 days.',fontsize=14)
+axes1.set_ylabel('Concentration [$kg/m^3$]',fontsize=14)
+axes1.set_title('Concentration at $x=0$ and $t=1440$ days',fontsize=14)
+plt.tick_params(axis='both', which='major', labelsize=14)
 
 #plt.show()
 
