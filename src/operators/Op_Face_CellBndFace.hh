@@ -39,22 +39,9 @@ class Op_Face_CellBndFace : public Op {
          name, mesh) {
 
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-    // CSR version 
-    // 1. Compute size 
-    int entries_size = 0; 
+    csr = std::move(CSR_Matrix(nfaces_owned));
     for (int f=0; f!=nfaces_owned; ++f) {
-      entries_size += 2*2; 
-    }    
-    // 2. Feed csr
-    Kokkos::resize(csr.row_map_,nfaces_owned+1);
-    Kokkos::resize(csr.entries_,entries_size);
-    Kokkos::resize(csr.sizes_,nfaces_owned,2);
-
-    for (int f=0; f!=nfaces_owned; ++f) {
-      csr.row_map_(f) = 2*2;
-      csr.sizes_(f,0) = 2;
-      csr.sizes_(f,1) = 2; 
+      csr.set_shape(f, {2,2});
     }
     csr.prefix_sum(); 
   }

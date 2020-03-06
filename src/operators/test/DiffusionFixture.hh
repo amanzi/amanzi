@@ -69,41 +69,24 @@ struct DiffusionFixture {
     // construct the operator
     op = Teuchos::rcp(new PDE_Diffusion_type(plist.sublist("PK operator").sublist(name), mesh));
     op->Init();
+
     // modify diffusion coefficient
-    CSR_Tensor K;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    // 1. get size
-    int entries_size = 0; 
-    for (int c = 0; c < ncells; c++) {
+    CompositeVectorSpace K_map;
+    K_map.SetMesh(mesh);
+    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    auto K = Teuchos::rcp(new TensorVector(K_map));
+    for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      entries_size += Kc.mem(); 
+      K->set_shape(c, Kc.dimension(), Kc.rank());
     }
-    Kokkos::resize(K.row_map_, ncells+1);
-    Kokkos::resize(K.entries_,entries_size);
-    Kokkos::resize(K.sizes_,ncells, 3);
-    int cur = 0; 
-    for (int c = 0; c < ncells; c++) {
+    K->Init();
+
+    for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      K.row_map_(c) = Kc.mem();
-      K.sizes_(c,0) = Kc.dimension(); 
-      K.sizes_(c,1) = Kc.rank(); 
-      K.sizes_(c,2) = Kc.size(); 
-      auto Kc_v = Kc.data(); 
-      for(int i = 0 ; i < Kc_v.extent(0); ++i){
-        K.entries_(cur+i) = Kc_v(i); 
-      }
-      cur += Kc_v.extent(0); 
+      K->at(c).assign(ana->TensorDiffusivity(xc, 0.0));
     }
-    K.prefix_sum();
-
-    // Access 
-    for(int i = 0; i < ncells; ++i){
-      WhetStone::Tensor Kc(
-        K.at(i),K.size(i,0),K.size(i,1), K.size(i,2)); 
-    }
-
+    
     op->SetTensorCoefficient(K);
     // boundary condition
     bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
@@ -122,39 +105,22 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    CSR_Tensor K;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    // 1. get size
-    int entries_size = 0; 
-    for (int c = 0; c < ncells; c++) {
+    CompositeVectorSpace K_map;
+    K_map.SetMesh(mesh);
+    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    auto K = Teuchos::rcp(new TensorVector(K_map));
+    for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
-      entries_size += Kc.mem(); 
+      const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
+      K->set_shape(c, Kc.dimension(), Kc.rank());
     }
-    Kokkos::resize(K.row_map_, ncells+1);
-    Kokkos::resize(K.entries_,entries_size);
-    Kokkos::resize(K.sizes_,ncells, 3);
-    int cur = 0; 
-    for (int c = 0; c < ncells; c++) {
+    K->Init();
+
+    for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana->TensorDiffusivity(xc, 0.0);
-      K.row_map_(c) = Kc.mem();
-      K.sizes_(c,0) = Kc.dimension(); 
-      K.sizes_(c,1) = Kc.rank(); 
-      K.sizes_(c,2) = Kc.size(); 
-      auto Kc_v = Kc.data(); 
-      for(int i = 0 ; i < Kc_v.extent(0); ++i){
-        K.entries_(cur+i) = Kc_v(i); 
-      }
-      cur += Kc_v.extent(0); 
+      K->at(c).assign(ana->TensorDiffusivity(xc, 0.0));
     }
-    K.prefix_sum();
     
-    // Access 
-    for(int i = 0; i < ncells; ++i){
-      WhetStone::Tensor Kc(
-        K.at(i),K.size(i,0),K.size(i,1), K.size(i,2)); 
-    }
     op->SetTensorCoefficient(K);
 
     // boundary condition

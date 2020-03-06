@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "WhetStoneMeshUtils.hh"
+//#include "WhetStoneMeshUtils.hh"
 
 #include "OperatorUtils.hh"
 #include "Operator_Cell.hh"
@@ -34,16 +34,7 @@ void PDE_Accumulation::AddAccumulationTerm(
     const CompositeVector& du, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  Epetra_MultiVector& diag = *op->diag;
-  const Epetra_MultiVector& duc = *du.ViewComponent(name);
-
-  int n = duc.MyLength();
-  int m = duc.NumVectors();
-  for (int k = 0; k < m; k++) {
-    for (int i = 0; i < n; i++) {
-      diag[k][i] += duc[k][i];
-    } 
-  }
+  op->diag->update(*du.GetComponent(name, false));
 }
 
 
@@ -54,30 +45,19 @@ void PDE_Accumulation::AddAccumulationTerm(
     const CompositeVector& du, double dT, const std::string& name, bool volume)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  Epetra_MultiVector& diag = *op->diag;
-
-  const Epetra_MultiVector& duc = *du.ViewComponent(name);
+  auto& diag = op->diag;
+  auto du_c = *du.GetComponent(name, false);
 
   int n = duc.MyLength();
   int m = duc.NumVectors();
 
   if (volume) {
-    CompositeVector vol(du);
+    MultiVector_type vol(du_c.getMap(), 1);
     CalculateEntityVolume_(vol, name);
-    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
-
-    for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) {
-        diag[k][i] += volc[0][i] * duc[k][i] / dT;
-      } 
-    }
+    op->diag->elementWiseMultiply(1.0/dT, vol, *du.GetComponent(name, false), 1.0);
 
   } else {
-    for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) {
-        diag[k][i] += duc[k][i] / dT;
-      } 
-    }
+    op->diag->update(1.0/dT, *du.GetComponent(name, false), 1.0);
   }
 }
 
@@ -265,25 +245,26 @@ void PDE_Accumulation::CalculateEntityVolume_(
     volume.GatherGhostedToMaster(name);
 
   } else if (name == "node" && volume.HasComponent("node")) {
-    Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
-    vol.PutScalar(0.0);
+    AMANZI_ASSERT(0 && "PDE_Accumulation on nodes not yet implemented");
+    // Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
+    // vol.PutScalar(0.0);
 
-    for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
+    // for (int c = 0; c != ncells_owned; ++c) {
+    //   mesh_->cell_get_nodes(c, &nodes);
+    //   int nnodes = nodes.size();
 
-      double cellvolume = mesh_->cell_volume(c);
-      std::vector<double> weights(nnodes, 1.0 / nnodes);
+    //   double cellvolume = mesh_->cell_volume(c);
+    //   std::vector<double> weights(nnodes, 1.0 / nnodes);
 
-      if (mesh_->space_dimension() == 2) {
-        WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
-      }
+    //   if (mesh_->space_dimension() == 2) {
+    //     WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
+    //   }
 
-      for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += weights[i] * cellvolume; 
-      }
-    }
-    volume.GatherGhostedToMaster(name);
+    //   for (int i = 0; i < nnodes; i++) {
+    //     vol[0][nodes[i]] += weights[i] * cellvolume; 
+    //   }
+    // }
+    // volume.GatherGhostedToMaster(name);
 
   } else {
     AMANZI_ASSERT(false);

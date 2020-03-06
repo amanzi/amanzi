@@ -191,6 +191,8 @@ class PK_PDE_Implicit : public Base_t {
     re_list.set("rhs coefficients", rhs_coefs);
 
     // -- preconditioner for evaluating inverse
+    re_list.sublist("preconditioner").set("preconditioner type", "diagonal");
+    /*
     re_list.sublist("preconditioner").set("preconditioner type", "boomer amg");
     re_list.sublist("preconditioner")
       .sublist("boomer amg parameters")
@@ -204,6 +206,7 @@ class PK_PDE_Implicit : public Base_t {
     re_list.sublist("preconditioner")
       .sublist("boomer amg parameters")
       .set("verbosity", 0);
+    */
     auto res_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(res_key_, this->tag_new_, res_eval);
   }

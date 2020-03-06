@@ -29,30 +29,15 @@ class Op_Face_Cell : public Op {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     // CSR version 
-    // 1. Compute size 
-    int entries_size = 0; 
-    for (int f=0; f!=nfaces_owned; ++f) {
-      AmanziMesh::Entity_ID_View cells;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);   
-      int ncells = cells.extent(0);   
-      entries_size += ncells*ncells; 
-    }    
-
-    csr = CSR_Matrix(nfaces_owned,entries_size); 
-    // 2. Feed csr
-    //Kokkos::resize(csr.row_map_,nfaces_owned+1);
-    //Kokkos::resize(csr.entries_,entries_size);
-    //Kokkos::resize(csr.sizes_,nfaces_owned,2);
+    csr = CSR_Matrix(nfaces_owned); 
 
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
-      csr.row_map_(f) = ncells*ncells;
-      csr.sizes_(f,0) = ncells;
-      csr.sizes_(f,1) = ncells; 
+      csr.set_shape(f, {ncells, ncells});
     }
-    csr.prefix_sum(); 
+    csr.prefix_sum();
   }
 
   virtual void

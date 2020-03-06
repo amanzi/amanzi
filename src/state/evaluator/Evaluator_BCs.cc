@@ -75,8 +75,8 @@ Evaluator_BCs::Update_(State& S)
 {
   auto& result = S.GetW<Operators::BCs>(
     my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
-  auto& model = result.bc_model();
-  auto& value = result.bc_value();
+  auto model = result.bc_model();
+  auto value = result.bc_value();
 
   // overwrite with actual BCs
   int i = 0;
@@ -84,8 +84,8 @@ Evaluator_BCs::Update_(State& S)
     const auto& bc_value =
       S.Get<Functions::BoundaryFunction>(dep.first, dep.second);
     for (const auto& fv : bc_value) {
-      model[fv.first] = bc_types_[i];
-      value[fv.first] = fv.second;
+      model(fv.first) = bc_types_[i];
+      value(fv.first) = fv.second;
     }
     ++i;
   }

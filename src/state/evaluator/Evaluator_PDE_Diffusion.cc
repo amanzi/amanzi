@@ -16,6 +16,7 @@ Lots of options here, document me!
 
 */
 
+#include "CSR_Factory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Op_Factory.hh"
@@ -79,7 +80,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     lop_fac.set_schema(schema);
 
     // push schema to the rhs cvs
-    CompositeVectorSpace cvs = Operators::cvsFromSchema(schema, rhs_fac.Mesh());
+    CompositeVectorSpace cvs = Operators::cvsFromSchema(schema, rhs_fac.Mesh(), true);
     rhs_fac.Update(cvs);
 
     // require scalar coef on the space required by little_k option of
@@ -93,7 +94,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
       S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
     bc_fac.set_mesh(rhs_fac.Mesh());
     bc_fac.set_kind(AmanziMesh::FACE);
-    bc_fac.set_type(Operators::DOF_Type::SCALAR);
+    bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
     // require tensors on cells
@@ -207,16 +208,15 @@ Evaluator_PDE_Diffusion::Update_(State& S)
 
   Operators::PDE_DiffusionFactory diff_fac;
   auto pde = diff_fac.Create(plist_, global_op);
-  pde->set_local_matrices(A_lop);
+  pde->set_local_op(A_lop);
 
   Teuchos::RCP<const Operators::BCs> bcs =
     S.GetPtr<Operators::BCs>(bcs_key_, my_tag_);
   pde->SetBCs(bcs, bcs);
 
-  const auto& K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
-  Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata =
-    Teuchos::rcpFromRef(K.data);
-  pde->SetTensorCoefficient(Kdata);
+  Teuchos::RCP<const TensorVector> K =
+      S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
+  pde->SetTensorCoefficient(K);
 
   // at least this is const!
   Teuchos::RCP<const CompositeVector> kr =
@@ -252,7 +252,7 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key,
           true); // turn off the primary terms, just the Jacobian
   auto pde = diff_fac.Create(plist_, global_op);
   if (!jac_op_key_.empty()) {
-    pde->set_jacobian_matrices(
+    pde->set_jacobian_op(
       S.GetPtrW<Operators::Op>(jac_op_key_, my_tag_, jac_op_key_));
   }
 
@@ -262,10 +262,8 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key,
   pde->SetBCs(bcs, bcs);
 
   // set the tensor coef
-  const auto& K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
-  Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata =
-    Teuchos::rcpFromRef(K.data);
-  pde->SetTensorCoefficient(Kdata);
+  const auto& K = S.Get<CSR_Tensor>(tensor_coef_key_, my_tag_);
+  pde->SetTensorCoefficient(K);
 
   // set the scalar coef and derivatives
   Teuchos::RCP<const CompositeVector> kr =

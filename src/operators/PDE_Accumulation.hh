@@ -120,20 +120,20 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   // -- modifiers for diagonal operators
   void AddAccumulationTerm(const CompositeVector& du, const std::string& name);
   void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name, bool volume=true);
-  // -- modifiers for diagonal operators and rhs
-  void AddAccumulationRhs(const CompositeVector& s1,
-                          const CompositeVector& s2,
-                          double alpha,
-                          const std::string& name,
-                          bool volume);
-  // -- linearized update methods with storage terms
-  void AddAccumulationDelta(const CompositeVector& u0,
-                            const CompositeVector& s0, const CompositeVector& ss,
-                            double dT, const std::string& name);
-  void AddAccumulationDelta(const CompositeVector& u0,
-                            double dT, const std::string& name);
-  void AddAccumulationDeltaNoVolume(const CompositeVector& u0, const CompositeVector& ss,
-                                    const std::string& name);
+  // // -- modifiers for diagonal operators and rhs
+  // void AddAccumulationRhs(const CompositeVector& s1,
+  //                         const CompositeVector& s2,
+  //                         double alpha,
+  //                         const std::string& name,
+  //                         bool volume);
+  // // -- linearized update methods with storage terms
+  // void AddAccumulationDelta(const CompositeVector& u0,
+  //                           const CompositeVector& s0, const CompositeVector& ss,
+  //                           double dT, const std::string& name);
+  // void AddAccumulationDelta(const CompositeVector& u0,
+  //                           double dT, const std::string& name);
+  // void AddAccumulationDeltaNoVolume(const CompositeVector& u0, const CompositeVector& ss,
+  //                                   const std::string& name);
 
   // -- operator modification
   void ApplyBCs();

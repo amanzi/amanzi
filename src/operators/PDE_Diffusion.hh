@@ -18,6 +18,7 @@
 
 #include "exceptions.hh"
 #include "Tensor.hh"
+#include "TensorVector.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
@@ -81,7 +82,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // Setters and Setup
   //
   // Note that these default setters can be overridden to do actual work.
-  virtual void SetTensorCoefficient(const CSR_Tensor& K) {
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K) {
     K_ = K;
   }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
@@ -106,13 +107,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   }
 
   // Lumped Setters for lazy developers
-  void Setup(const CSR_Tensor& K,
+  void Setup(const Teuchos::RCP<const TensorVector>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
     SetScalarCoefficient(k, dkdp);
   }
-  void Setup(const CSR_Tensor& K,
+  void Setup(const Teuchos::RCP<const TensorVector>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const double rho,
@@ -122,7 +123,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     SetDensity(rho);
     SetGravity(g);
   }
-  void Setup(const CSR_Tensor& K,
+  void Setup(const Teuchos::RCP<const TensorVector>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const Teuchos::RCP<const CompositeVector>& rho,
@@ -265,7 +266,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   
  protected:
   Teuchos::ParameterList plist_;
-  CSR_Tensor K_;
+  Teuchos::RCP<const TensorVector> K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation

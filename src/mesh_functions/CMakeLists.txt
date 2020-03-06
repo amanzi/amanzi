@@ -32,23 +32,31 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(mesh_functions_src_files BoundaryFunction.cc
-  UniqueMeshFunction.cc
-  DynamicBoundaryFunction.cc
-  MaterialMeshFunction.cc
+set(mesh_functions_src_files
+  #UniqueMeshFunction.cc
+  #BoundaryFunction.cc
+  #BoundaryFunctionFactory.cc
+  #DynamicBoundaryFunction.cc
+  #MaterialMeshFunction.cc
   #MeshPartition.cc
   CompositeVectorFunction.cc
   CompositeVectorFunctionFactory.cc
+  BCsFunction.cc
+  BCsFunctionFactory.cc
   )
 
-set(mesh_functions_inc_files MeshFunction.hh
-  BoundaryFunction.hh
-  UniqueMeshFunction.hh
-  DynamicBoundaryFunction.hh
-  MaterialMeshFunction.hh
+set(mesh_functions_inc_files
+  MeshFunction.hh
+  #UniqueMeshFunction.hh
+  #BoundaryFunction.hh
+  #BoundaryFunctionFactory.hh
+  #DynamicBoundaryFunction.hh
+  #MaterialMeshFunction.hh
   #MeshPartition.hh
   CompositeVectorFunction.hh
   CompositeVectorFunctionFactory.hh
+  BCsFunction.hh
+  BCsFunctionFactory.hh
   )
 
 set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})

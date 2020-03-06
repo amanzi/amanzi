@@ -1,4 +1,3 @@
-
 /*
   Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -10,6 +9,13 @@
 
 #pragma once 
 
+#include "Kokkos_Core.hpp"
+
+namespace Amanzi {
+
+template<typename T, int D> 
+class CSR_Factory;
+
 /**
  * @brief CSR data structure 
  * @param T Type used for the entries_ 
@@ -17,7 +23,7 @@
  * This is used to reconstruct the Matrix/Tensor on the device
  */
 template<typename T, int D> 
-struct CSR{
+class CSR{
 
 static constexpr int dim = D;
 
@@ -50,22 +56,39 @@ public:
       row_map_(i+1) = tmp1 + row_map_(i);
       tmp1 = tmp2;   
     }
+    if (entries_.extent(0) < row_map_(row_map_.extent(0)-1))
+      Kokkos::resize(entries_, row_map_(row_map_.extent(0)-1));
   }
 
+  // /**
+  //  * @brief Compute the prefix sum of the row_map_ 
+  //  * and resize the entries based on row_map_
+  //  * The CSR is not usable before this operation
+  //  */ 
+  // void prefix_sum_resize(){
+  //   int tmp1 = row_map_(0);
+  //   row_map_(0) = 0;
+  //   for(int i = 0 ; i < row_map_.extent(0); ++i){ 
+  //     int tmp2 = row_map_(i+1);
+  //     row_map_(i+1) = tmp1 + row_map_(i);
+  //     tmp1 = tmp2;   
+  //   }
+  //   Kokkos::resize(entries_,row_map_(row_map_.extent(0)-1));
+  // }
+
   /**
-   * @brief Compute the prefix sum of the row_map_ 
-   * and resize the entries based on row_map_
-   * The CSR is not usable before this operation
+   * @brief Set the shape of the ith entry
+   * @param i index of the element in row_map_
+   * @param shape shape of the ith entry
+   * @param size storage for the ith entry
    */ 
-  void prefix_sum_resize(){
-    int tmp1 = row_map_(0);
-    row_map_(0) = 0;
-    for(int i = 0 ; i < row_map_.extent(0); ++i){ 
-      int tmp2 = row_map_(i+1);
-      row_map_(i+1) = tmp1 + row_map_(i);
-      tmp1 = tmp2;   
+  void set_shape(const int& i, const std::array<int,D>& shape, int size=-1) {
+    int total = 1;
+    for (int d=0; d!=D; ++d) {
+      sizes_(i,d) = shape[d];
+      total *= shape[d];
     }
-    Kokkos::resize(entries_,row_map_(row_map_.extent(0)-1));  
+    row_map_(i) = size < 0 ? total : size;
   }
 
   /** 
@@ -100,13 +123,13 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int size() const{
-    return row_map_.extent(0)-1; 
+    return row_map_.extent(0)-1;
   }
 
   /**
    * @brief Copy constructor 
    */
-  CSR& operator=(const CSR& csr){
+  void assign(const CSR& csr){
     Kokkos::resize(row_map_,csr.row_map_.extent(0)); 
     Kokkos::deep_copy(row_map_,csr.row_map_);
     Kokkos::resize(entries_,csr.entries_.extent(0)); 
@@ -116,12 +139,19 @@ public:
     return *this; 
   }
 
+  
+ protected:
   Kokkos::View<int*> row_map_; // Indices: number of element +1 
   Kokkos::View<T*> entries_; // Values for all entries 
   Kokkos::View<int**> sizes_; // Represent the sizes for matrices/tensors
+
+  friend class CSR_Factory<T,D>;
 };
 
 // Definitions 
 using CSR_Vector = CSR<double,1>; 
 using CSR_Matrix = CSR<double,2>; 
 using CSR_Tensor = CSR<double,3>; 
+
+
+} // namespace Amanzi

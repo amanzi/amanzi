@@ -5,13 +5,12 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-
+    Ethan Coon (coonet@ornl.gov)
 */
 
 //!
 
-#ifndef AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
-#define AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
+#pragma once
 
 #include <string>
 #include <utility>
@@ -45,4 +44,4 @@ class CompositeVectorFunction {
 } // namespace Functions
 } // namespace Amanzi
 
-#endif
+

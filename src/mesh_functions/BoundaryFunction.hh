@@ -5,32 +5,25 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      (v1) Neil Carlson
-      (v2) Ethan Coon
+    Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//!
 
-#ifndef AMANZI_BOUNDARY_FUNCTION_HH_
-#define AMANZI_BOUNDARY_FUNCTION_HH_
+#pragma once
 
-#include <vector>
-#include <map>
 #include <string>
 
 #include "Teuchos_RCP.hpp"
-
 #include "Mesh.hh"
-#include "MultiFunction.hh"
-#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 namespace Functions {
 
-class BoundaryFunction : public UniqueMeshFunction {
+class BCsFunction {
  public:
-  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : UniqueMeshFunction(mesh), finalized_(false){};
+  BCsFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+      : mesh_(mesh) {}
 
   void Define(const std::vector<std::string>& regions,
               const Teuchos::RCP<const MultiFunction>& f);
@@ -57,4 +50,3 @@ class BoundaryFunction : public UniqueMeshFunction {
 } // namespace Amanzi
 
 
-#endif

@@ -77,16 +77,16 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Xc = X.ViewComponent("cell", true);
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
-  CSR_Vector csr_v(op.csr.size()+1);
-  CSR_Vector csr_Av(op.csr.size()+1); 
+  CSR_Vector csr_v(op.csr.size());
+  CSR_Vector csr_Av(op.csr.size()); 
   // CSR version 
   // 1. Compute size  
   for (int i=0; i!=op.csr.size(); ++i) {
-    csr_v.row_map_(i) = op.csr.size(i,0);
-    csr_Av.row_map_(i) = op.csr.size(i,1); 
+    csr_v.set_shape(i, {op.csr.size(i,0)});
+    csr_Av.set_shape(i, {op.csr.size(i,1)});
   }    
-  csr_v.prefix_sum_resize(); 
-  csr_Av.prefix_sum_resize(); 
+  csr_v.prefix_sum(); 
+  csr_Av.prefix_sum(); 
 
   CSR_Matrix local_csr = op.csr; 
 

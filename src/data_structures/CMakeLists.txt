@@ -58,6 +58,7 @@ set(data_structures_src_files BlockSpace.cc
 
 set(data_structures_inc_files DataStructuresHelpers.hh
   VectorHarness.hh
+  CSR.hh
   BlockSpace.hh
   BlockVector_decl.hh
   BlockVector_impl.hh
@@ -72,6 +73,7 @@ set(data_structures_inc_files DataStructuresHelpers.hh
   TreeVector_Utils.hh
   TreeVector.hh
   TreeMatrix.hh
+  TensorVector.hh
   #GraphFE.hh
   #MatrixFE.hh
   #NoxVector.hh

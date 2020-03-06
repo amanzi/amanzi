@@ -38,7 +38,7 @@ Operator_Factory::Create() {
       CompositeVectorSpace cvs;
       cvs.SetMesh(mesh_)->SetGhosted(true);
       cvs.AddComponent("cell", AmanziMesh::CELL, 1);
-      return Teuchos::rcp(new Operator_Cell(cvs.getMap(), *plist_, OPERATOR_SCHEMA_DOFS_CELL));
+      return Teuchos::rcp(new Operator_Cell(cvs.CreateSpace(), *plist_, OPERATOR_SCHEMA_DOFS_CELL));
 
     } else {
       Errors::Message msg;
@@ -46,7 +46,7 @@ Operator_Factory::Create() {
       Exceptions::amanzi_throw(msg);
     }
 
-  } else if (cvs_row_.size() != 0) {
+  } else if (cvs_row_->size() != 0) {
     if (cvs_row_->HasComponent("cell")) {
       // if (cvs_row_->HasComponent("face")) {
       //   return Teuchos::rcp(new Operator_FaceCell(cvs_row_, *plist_));

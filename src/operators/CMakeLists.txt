@@ -69,6 +69,7 @@ set(operators_inc_files
   PDE_Diffusion.hh
   PDE_DiffusionFV.hh
   PDE_DiffusionFVwithGravity.hh
+  PDE_DiffusionFactory.hh
   )
 
 set(operators_src_files

@@ -24,7 +24,7 @@
 
 #include "DenseVector.hh"
 
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Core.hpp"
 #include "exceptions.hh"
 #include "errors.hh"
 
@@ -37,7 +37,6 @@ const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
 
 class Tensor {
  public:
-
 
   KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0) {}
 
@@ -286,6 +285,11 @@ class Tensor {
 
   // Default assigment implies view semantics
   Tensor& operator=(const Tensor& other) = default;
+
+  void assign(const Tensor& other) {
+    if (other.d_ != d_ || other.rank_ != rank_) Init(other.d_, other.rank_);
+    Kokkos::deep_copy(data_, other.data_);
+  }
   
  private:
 
@@ -348,6 +352,16 @@ void
 TensorToVector(const Tensor& T, DenseVector& v);
 void
 VectorToTensor(const DenseVector& v, Tensor& T);
+
+
+// identity is used frequently
+KOKKOS_INLINE_FUNCTION Tensor Tensor_ONE()
+{
+  Kokkos::View<double*> t_identity("identity", 1);
+  t_identity(0) = 1.0;
+  return Tensor(t_identity, 1,1,1);
+}
+
 
 } // namespace WhetStone
 } // namespace Amanzi

@@ -74,7 +74,7 @@ class PDE_DiffusionFV : public PDE_Diffusion {
   
   // main virtual members
   // -- setup
-  virtual void SetTensorCoefficient(const CSR_Tensor& K) override;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 

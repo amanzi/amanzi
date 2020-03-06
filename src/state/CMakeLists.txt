@@ -69,12 +69,12 @@ set(state_inc_files
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
   evaluator/Evaluator_OperatorApply.hh
-#  evaluator/Evaluator_PDE_Diffusion.hh
-#  evaluator/Evaluator_PDE_Accumulation.hh
-#  evaluator/Evaluator_BCs.hh
+  evaluator/Evaluator_PDE_Diffusion.hh
+  evaluator/Evaluator_PDE_Accumulation.hh
+  evaluator/Evaluator_BCs.hh
   evaluator/EvaluatorSecondaryMonotypeAdditive.hh
   evaluator/EvaluatorSecondaryMonotypeMultiplicative.hh
-#  evaluator/EvaluatorCellVolume.hh
+  evaluator/EvaluatorCellVolume.hh
 #  evaluator/cell_volume_evaluator.hh
 #  evaluator/deforming_cell_volume_evaluator.hh
 #  evaluator/rank_evaluator.hh
@@ -102,10 +102,10 @@ set(state_src_files
   evaluator/EvaluatorSecondaryMonotype.cc
   evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
   evaluator/Evaluator_OperatorApply.cc
-#  evaluator/Evaluator_PDE_Diffusion.cc
-#  evaluator/Evaluator_PDE_Accumulation.cc
-#  evaluator/Evaluator_BCs.cc
-#  evaluator/EvaluatorCellVolume.cc
+  evaluator/Evaluator_PDE_Diffusion.cc
+  evaluator/Evaluator_PDE_Accumulation.cc
+  evaluator/Evaluator_BCs.cc
+  evaluator/EvaluatorCellVolume.cc
 #  evaluator/cell_volume_evaluator.cc
 #  evaluator/deforming_cell_volume_evaluator.cc
 #  evaluator/rank_evaluator.cc

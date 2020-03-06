@@ -103,22 +103,6 @@ void PDE_DiffusionFV::Init()
     Exceptions::amanzi_throw(msg);
   }
 
-  if (K_.size() == 0){
-    WhetStone::Tensor t(mesh_->space_dimension(),1);
-    t(0,0) = 1.0;
-    auto t_v = t.data(); 
-    Kokkos::resize(K_.row_map_,2);
-    Kokkos::resize(K_.entries_,t.size());
-    Kokkos::resize(K_.sizes_,1,3); 
-    K_.row_map_(0) = 0; 
-    K_.row_map_(1) = t.mem(); 
-    K_.sizes_(0,0) = t.dimension(); 
-    K_.sizes_(0,1) = t.rank(); 
-    K_.sizes_(0,2) = t.size();
-    for(int i = 0 ; i < t_v.extent(0); ++i)
-      K_.entries_(i) = t_v(i); 
-  } 
-
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
     if (plist_.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface Jacobian terms";
@@ -143,7 +127,7 @@ void PDE_DiffusionFV::Init()
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const CSR_Tensor& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -495,11 +479,15 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
   transmissibility_->putScalar(0.);
+  if (!K_.get()) K_ = Teuchos::rcp(new TensorVector());
 
   {
     auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->space_dimension(); 
+
+    WhetStone::Tensor Kc_ONE = WhetStone::Tensor_ONE();
+    const TensorVector& K = *K_.get();    
 
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ComputeTransmissibility",
@@ -510,8 +498,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc(
-            K_.at(c),K_.size(c,0),K_.size(c,1), K_.size(c,2)); 
+          WhetStone::Tensor Kc = K.size() == 0 ? Kc_ONE : K_->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
