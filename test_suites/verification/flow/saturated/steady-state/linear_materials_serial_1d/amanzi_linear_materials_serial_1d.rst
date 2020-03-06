@@ -2,7 +2,7 @@ Steady-State One-Dimensional Flow: Materials in Serial
 ======================================================
 
 Capabilities Tested
-------------------
+-------------------
 This one-dimensional, steady-state test shows Amanzi's capability to
 simulate flow through a saturated porous medium with constant properties.  
 Capabilities tested include,

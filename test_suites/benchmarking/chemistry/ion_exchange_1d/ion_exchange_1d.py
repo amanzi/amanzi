@@ -16,6 +16,10 @@ from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
+AXES_TICK_SIZE=15
+PFLOTRAN_LINE_COLOR='m'
+LINE_WIDTH=4.5
+MARKER_SIZE=7
 
 if __name__ == "__main__":
 
@@ -265,61 +269,98 @@ if __name__ == "__main__":
     if alq:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)')
-            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-')
+            ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
+            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
 
     if alq_crunch:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)')
-            bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],'r*')
+            ax[j].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)',markersize=MARKER_SIZE)
+            bx[j].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],'r*',label='AmanziU+Alq(CF)',markersize=MARKER_SIZE)
 
     if native:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx')
+            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx',c=PFLOTRAN_LINE_COLOR)
             bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],'rx',label='AmanziU Native Chem')
 
     if crunch:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):
-            ax[j].plot(x_crunchflow, u_crunchflow[i][j],'m*',label='CrunchFlow')
-            bx[j].plot(x_crunchflow, v_crunchflow[i][j],'m*')
+            ax[j].plot(x_crunchflow, u_crunchflow[i][j],'b*',label='CrunchFlow',markersize=MARKER_SIZE)
+            bx[j].plot(x_crunchflow, v_crunchflow[i][j],'b*',label='CrunchFlow',markersize=MARKER_SIZE)
     
     if pflotran:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):
-            ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran')
-            bx[j].plot(x_pflotran, v_pflotran[i][j],'m-')
-            ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
-            bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
+            ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
+            bx[j].plot(x_pflotran, v_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
+
+            ax[j].text(
+                0.03,
+                0.85,
+                comp,
+                fontsize=15,
+                bbox=dict(facecolor='white', alpha=1.0),
+                transform=ax[j].transAxes,
+                horizontalalignment='left'
+            )
+
+            bx[j].text(
+                0.97,
+                0.85,
+                comp,
+                fontsize=15,
+                bbox=dict(facecolor='white', alpha=1.0),
+                transform=bx[j].transAxes,
+                horizontalalignment='right'
+            )
 
     if (struct>0):
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS, u_amanziS[j],'g-')#,label='AmanziS+Alq(PFT)')
+            ax[j].plot(x_amanziS, u_amanziS[j],'g-',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(PFT)')
             bx[j].plot(x_amanziS, v_amanziS[j],'g-',label='AmanziS+Alq(PFT)')
 
     if (struct_c > 0):
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')#,label='AmanziS+Alq(CF)')
+            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(CF)')
             bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
-    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
-    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
+    ax[nrows-1].set_xlabel("Distance (m)",fontsize=15)
+    bx[nrows-1].set_xlabel("Distance (m)",fontsize=15)
 
     # for i,comp in enumerate(components):
     for i,comp in enumerate(components):
         ax[i].set_ylabel("Total Concen. [mol/L]",fontsize=15)
         bx[i].set_ylabel("Total Sorb. [mol/m3]",fontsize=15)
+        bx[i].yaxis.tick_right()
+        bx[i].yaxis.set_label_position("right")
+
+    # Set axes to be shared + only have ticks on the bottom row
+    ax[0].get_shared_x_axes().join(*[ax[i] for i in range(nrows)])
+    bx[0].get_shared_x_axes().join(*[bx[i] for i in range(nrows)])
+
+    for i in range(nrows-1):
+        ax[i].set_xticklabels([])
+        bx[i].set_xticklabels([])
+
+    ax[nrows-1].autoscale()
+    bx[nrows-1].autoscale()
 
     # plot adjustments
     ax[0].legend(fontsize=12,loc='lower right')
-    bx[0].legend(fontsize=12,loc='lower right')
+    #bx[0].legend(fontsize=12,loc='lower right')
 
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
 
-    plt.tick_params(axis='both', which='major', labelsize=15)
+    # Set scientific notation ticks and tick size
+    from matplotlib.ticker import FormatStrFormatter
+    for i in range(nrows):
+        ax[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-2,-2))
+        bx[i].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(0,0))
+        ax[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
+        bx[i].tick_params(axis='both', which='major', labelsize=AXES_TICK_SIZE)
   
     plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
 

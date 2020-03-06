@@ -14,7 +14,7 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # extract cell coordinates
     if (dim == 1):
-        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
+        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])//4,0])
     if (dim == 3):
         y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0::4,2])
 
@@ -23,7 +23,7 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # extract concentration array
     alltimes = [int(n) for n in amanzi_file[comp].keys()]
-    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+    time = list(amanzi_file[comp].keys())[alltimes.index(max(alltimes))]
 
     c_amanziU = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
@@ -129,7 +129,7 @@ def GetXY_AmanziU_Values(path, root, comp, start, stop, step):
 
     # extract data array with maximum time stamp
     alltimes = [int(n) for n in amanzi_file[comp].keys()]
-    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+    time = list(amanzi_file[comp].keys())[alltimes.index(max(alltimes))]
 
     tmp = np.array(amanzi_file[comp][time][start:stop]).flatten()
     values = tmp[::step]
