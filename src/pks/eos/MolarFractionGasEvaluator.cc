@@ -30,10 +30,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
     my_key_ = plist_.get<std::string>("molar fraction key");
 
   // set up dependencies
-  std::string domain("");
-  auto end = my_key_.find_first_of("-");
-  if (end != std::string::npos) domain = my_key_.substr(0, end);
-
+  std::string domain = Keys::getDomain(my_key_);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 }

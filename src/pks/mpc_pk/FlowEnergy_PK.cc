@@ -46,7 +46,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 ******************************************************************* */
 void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
   int dim = mesh_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
@@ -56,42 +56,54 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
 
   // keys
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
+  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
+  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+
+  energy_key_ = Keys::getKey(domain_, "energy");
+  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
+  effective_pressure_key_ = Keys::getKey(domain_, "effective_pressure");
+
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
-  if (!S->HasField("particle_density")) {
-    S->RequireField("particle_density", "particle_density")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(particle_density_key_)) {
+    S->RequireField(particle_density_key_, particle_density_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("particle_density");
+    S->RequireFieldEvaluator(particle_density_key_);
   }
 
-  if (!S->HasField("internal_energy_rock")) {
-    elist.sublist("internal_energy_rock")
+  if (!S->HasField(ie_rock_key_)) {
+    elist.sublist(ie_rock_key_)
          .set<std::string>("field evaluator type", "iem")
-         .set<std::string>("internal energy key", "internal_energy_rock");
-    elist.sublist("internal_energy_rock").sublist("IEM parameters")
+         .set<std::string>("internal energy key", ie_rock_key_);
+    elist.sublist(ie_rock_key_).sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
          .set<double>("heat capacity [J/mol-K]", 620.0);
   }
 
   // Fields for gas
   // -- internal energy
-  if (!S->HasField("internal_energy_gas")) {
-    elist.sublist("internal_energy_gas")
+  if (!S->HasField(ie_gas_key_)) {
+    elist.sublist(ie_gas_key_)
          .set<std::string>("field evaluator type", "iem water vapor")
-         .set<std::string>("internal energy key", "internal_energy_gas");
+         .set<std::string>("internal energy key", ie_gas_key_);
   }
 
   // -- molar density
-  if (!S->HasField("molar_density_gas")) {
-    elist.sublist("molar_density_gas")
+  if (!S->HasField(mol_density_gas_key_)) {
+    elist.sublist(mol_density_gas_key_)
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
-         .set<std::string>("molar density key", "molar_density_gas");
-    elist.sublist("molar_density_gas").sublist("EOS parameters")
+         .set<std::string>("molar density key", mol_density_gas_key_);
+    elist.sublist(mol_density_gas_key_).sublist("EOS parameters")
          .set<std::string>("eos type", "vapor in gas");
-    elist.sublist("molar_density_gas").sublist("EOS parameters")
+    elist.sublist(mol_density_gas_key_).sublist("EOS parameters")
          .sublist("gas EOS parameters")
          .set<std::string>("eos type", "ideal gas")
          .set<double>("molar mass of gas", 28.9647e-03);  // dry air
@@ -109,32 +121,32 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for liquid
   // -- internal energy
-  if (!S->HasField("internal_energy_liquid")) {
-    elist.sublist("internal_energy_liquid")
+  if (!S->HasField(ie_liquid_key_)) {
+    elist.sublist(ie_liquid_key_)
          .set<std::string>("field evaluator type", "iem")
-         .set<std::string>("internal energy key", "internal_energy_liquid");
-    elist.sublist("internal_energy_liquid")
+         .set<std::string>("internal energy key", ie_liquid_key_);
+    elist.sublist(ie_liquid_key_)
          .sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
          .set<double>("heat capacity [J/mol-K]", 76.0);
   }
 
   // -- molar and mass density
-  if (!S->HasField("molar_density_liquid")) {
-    elist.sublist("molar_density_liquid")
+  if (!S->HasField(mol_density_liquid_key_)) {
+    elist.sublist(mol_density_liquid_key_)
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "both")
-         .set<std::string>("molar density key", "molar_density_liquid")
-         .set<std::string>("mass density key", "mass_density_liquid");
-    elist.sublist("molar_density_liquid").sublist("EOS parameters")
+         .set<std::string>("molar density key", mol_density_liquid_key_)
+         .set<std::string>("mass density key", mass_density_liquid_key_);
+    elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
          .set<std::string>("eos type", "liquid water");
-    elist.sublist("molar_density_liquid")
+    elist.sublist(mol_density_liquid_key_)
          .sublist("verbose object").set<std::string>("verbosity level", "medium");
 
-    S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(mol_density_liquid_key_, mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("molar_density_liquid");
-    S->RequireFieldEvaluator("mass_density_liquid");
+    S->RequireFieldEvaluator(mol_density_liquid_key_);
+    S->RequireFieldEvaluator(mass_density_liquid_key_);
   }
 
   // -- viscosity model
@@ -153,14 +165,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Other fields
-  if (!S->HasField("effective_pressure")) {
-    elist.sublist("effective_pressure")
+  if (!S->HasField(effective_pressure_key_)) {
+    elist.sublist(effective_pressure_key_)
          .set<std::string>("field evaluator type", "effective_pressure");
 
-    S->RequireField("effective_pressure", "effective_pressure")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(effective_pressure_key_, effective_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("effective_pressure");
-    S->GetField("effective_pressure", "effective_pressure")->set_io_vis(false);
+    S->RequireFieldEvaluator(effective_pressure_key_);
+    S->GetField(effective_pressure_key_, effective_pressure_key_)->set_io_vis(false);
   }
 
   // inform other PKs about strong coupling
@@ -219,9 +231,9 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // energy
   // -- swap conserved energies (current and previous)
-  S_->GetFieldEvaluator("energy")->HasFieldChanged(S_.ptr(), "thermal");
-  const CompositeVector& e = *S_->GetFieldData("energy");
-  CompositeVector& e_prev = *S_->GetFieldData("prev_energy", "thermal");
+  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), "thermal");
+  const CompositeVector& e = *S_->GetFieldData(energy_key_);
+  CompositeVector& e_prev = *S_->GetFieldData(prev_energy_key_, "thermal");
 
   CompositeVector e_prev_copy(e_prev);
   e_prev = e;
@@ -232,7 +244,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (fail) {
     // revover the original conserved quantaties
     *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
-    *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
+    *S_->GetFieldData(prev_energy_key_, "thermal") = e_prev_copy;
     if (S_->HasField("water_content")) {
       *S_->GetFieldData("prev_water_content", "flow") =
           *S_->GetFieldCopyData("prev_water_content", "wc_copy", "state");

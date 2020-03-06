@@ -65,11 +65,25 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& elist = S->FEList();
 
   // primary and secondary fields for matrix affected by non-uniform
-  // distribution of DOFs
+  // distribution of DOFs, so we need to define it here
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "pressure");
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator("pressure", eval);
+  }
+
+  if (!S->HasField("temperature")) {
+    *S->RequireField("temperature", "energy")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "temperature");
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator("temperature", eval);
   }
 
   // -- darcy flux

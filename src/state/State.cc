@@ -400,9 +400,12 @@ State::RequireFieldEvaluator(Key key) {
 
   // cannot find the evaluator, error
   if (evaluator == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Model for field \"" << key << "\" cannot be created in State.";
-    Errors::Message message(messagestream.str());
+    std::stringstream msg;
+    msg << "\nModel for field \"" << key << "\" cannot be created in State.\n";
+    // for (auto fe = field_evaluator_begin(); fe != field_evaluator_end(); ++fe) {
+    //   msg << fe->first << ":\n" << fe->second;
+    // }
+    Errors::Message message(msg.str());
     Exceptions::amanzi_throw(message);
   }
   return evaluator;

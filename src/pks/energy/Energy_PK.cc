@@ -71,6 +71,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
@@ -127,16 +128,11 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 ****************************************************************** */
 void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  // Energy list has only one sublist
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "energy", true);
-
   // Create BCs objects
   // -- memory
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
-  Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", true)));
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
@@ -172,7 +168,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeFields_();
 
   // other parameters
-  prec_include_enthalpy_ = ep_list->sublist("operators")
+  prec_include_enthalpy_ = ep_list_->sublist("operators")
                                    .get<bool>("include enthalpy in preconditioner", true);
 }
 
@@ -212,7 +208,7 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
   bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, passwd_);
   if (update) {
-    const Epetra_MultiVector& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
+    const auto& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
     WhetStone::Tensor Ktmp(dim, 1);
 
     K.clear();

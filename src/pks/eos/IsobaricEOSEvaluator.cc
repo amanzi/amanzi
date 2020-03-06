@@ -47,9 +47,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // set up my dependencies
-  std::string domain("");
-  auto end = a_key_.find_first_of("-");
-  if (end != std::string::npos) domain = a_key_.substr(0, end);
+  std::string domain = Keys::getDomain(a_key_);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));

@@ -20,14 +20,12 @@ namespace AmanziEOS {
 * Constructor.
 ******************************************************************* */
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    SecondaryVariableFieldEvaluator(plist)
+{
   if (my_key_ == std::string("")) {
     my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
   }
-
-  std::string domain("");
-  auto end = my_key_.find_first_of("-");
-  if (end != std::string::npos) domain = my_key_.substr(0, end);
+  std::string domain = Keys::getDomain(my_key_);
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));

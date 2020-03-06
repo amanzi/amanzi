@@ -19,19 +19,15 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
-
+    SecondaryVariableFieldEvaluator(plist)
+{
   // my keys
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
   }
 
   // set up my dependencies
-  std::string domain("");
-  auto end = my_key_.find_first_of("-");
-  if (end != std::string::npos) domain = my_key_.substr(0, end);
-
-  // -- temperature
+  std::string domain = Keys::getDomain(my_key_);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 
@@ -39,13 +35,13 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
   AMANZI_ASSERT(plist_.isSublist("viscosity model parameters"));
   ViscosityBaseFactory visc_fac;
   visc_ = visc_fac.CreateViscosity(plist_.sublist("viscosity model parameters"));
-};
+}
 
 
 ViscosityEvaluator::ViscosityEvaluator(const ViscosityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     visc_(other.visc_),
-    temp_key_(other.temp_key_) {}
+    temp_key_(other.temp_key_) {};
 
 
 Teuchos::RCP<FieldEvaluator> ViscosityEvaluator::Clone() const {

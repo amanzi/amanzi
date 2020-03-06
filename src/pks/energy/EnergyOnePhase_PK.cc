@@ -62,7 +62,8 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist = ep_list_->sublist("energy evaluator");
     elist.set<std::string>("energy key", energy_key_)
          .set<bool>("vapor diffusion", false)
-         .set<std::string>("particle density key", particle_density_key_);
+         .set<std::string>("particle density key", particle_density_key_)
+         .set<std::string>("internal energy rock key", ie_rock_key_);
     Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
     S->SetFieldEvaluator(energy_key_, ee);
   }
@@ -74,6 +75,7 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_);
+
     Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
     S->SetFieldEvaluator(enthalpy_key_, enth);
   }
@@ -84,6 +86,8 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
+    elist.set("thermal conductivity key", conductivity_key_);
+
     Teuchos::RCP<TCMEvaluator_OnePhase> tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
     S->SetFieldEvaluator(conductivity_key_, tcm);
   }

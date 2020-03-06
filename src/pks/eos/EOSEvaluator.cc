@@ -49,10 +49,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // set up my dependencies
-  std::string domain("");
-  auto end = key.find_first_of("-");
-  if (end != std::string::npos) domain = key.substr(0, end);
-
+  std::string domain = Keys::getDomain(key);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 

@@ -23,11 +23,10 @@ namespace Energy {
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
-  }
+  my_key_ = plist_.get<std::string>("thermal conductivity key");
+  auto prefix = Keys::getDomainPrefix(my_key_);
 
-  temperature_key_ = plist_.get<std::string>("temperature key", "temperature");
+  temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   dependencies_.insert(temperature_key_);
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));

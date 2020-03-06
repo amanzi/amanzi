@@ -54,31 +54,42 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField(energy_key_)) {
+    S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
-  ee_list.set<std::string>("energy key", energy_key_)
-         .set<bool>("vapor diffusion", true)
-         .set<std::string>("particle density key", particle_density_key_);
-  Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
-  S_->SetFieldEvaluator(energy_key_, ee);
+    Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
+    ee_list.set<std::string>("energy key", energy_key_)
+           .set<bool>("vapor diffusion", true)
+           .set<std::string>("particle density key", particle_density_key_)
+           .set<std::string>("internal energy rock key", ie_rock_key_);
+    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
+    S_->SetFieldEvaluator(energy_key_, ee);
+  }
 
   // -- advection of enthalpy
-  S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField(enthalpy_key_)) {
+    S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList enth_plist = ep_list_->sublist("enthalpy evaluator");
-  enth_plist.set("enthalpy key", enthalpy_key_);
-  auto enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-  S_->SetFieldEvaluator(enthalpy_key_, enth);
+    Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
+    elist.set("enthalpy key", enthalpy_key_);
+
+    auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
+    S_->SetFieldEvaluator(enthalpy_key_, enth);
+  }
 
   // -- thermal conductivity
-  S_->RequireField(conductivity_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList tcm_plist = ep_list_->sublist("thermal conductivity evaluator");
-  Teuchos::RCP<TCMEvaluator_TwoPhase> tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(tcm_plist));
-  S_->SetFieldEvaluator(conductivity_key_, tcm);
+  if (!S_->HasField(conductivity_key_)) {
+    S_->RequireField(conductivity_key_)->SetMesh(mesh_)
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
+    elist.set("thermal conductivity key", conductivity_key_);
+
+    auto tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(elist));
+    S_->SetFieldEvaluator(conductivity_key_, tcm);
+  }
 }
 
 
