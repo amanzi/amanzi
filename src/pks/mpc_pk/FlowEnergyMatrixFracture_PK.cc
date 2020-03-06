@@ -12,7 +12,7 @@
   Process kernel that couples flow and energy in matrix and fractures.
 */
 
-#include "Darcy_PK.hh"
+#include "FlowEnergy_PK.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -139,9 +139,9 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   PK_MPCStrong<PK_BDF>::Initialize(S);
 
-  // diagonal blocks in tree operator and the Darcy PKs
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
+  // diagonal blocks in tree operator are the FlowEnergy PKs
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[1]);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));

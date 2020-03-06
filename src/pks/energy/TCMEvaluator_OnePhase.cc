@@ -29,6 +29,9 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
   temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   dependencies_.insert(temperature_key_);
 
+  porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
+  dependencies_.insert(porosity_key_);
+
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   tc_ = Teuchos::rcp(new AmanziEOS::ThermalConductivity_Water(sublist));
@@ -62,7 +65,7 @@ void TCMEvaluator_OnePhase::EvaluateField_(
 {
   // pull out the dependencies
   const Epetra_MultiVector& temp_c = *S->GetFieldData(temperature_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& poro_c = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& poro_c = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
   int ncomp = result->size("cell", false);

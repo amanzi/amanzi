@@ -125,6 +125,7 @@ class Energy_PK : public PK_PhysicalBDF {
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_, conductivity_key_;
   Key darcy_flux_key_, particle_density_key_, ie_rock_key_;
+  Key mol_density_liquid_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 

@@ -69,6 +69,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
+  sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
+  prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
+
+  wc_key_ = Keys::getKey(domain_, "water_content");
+  prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
+
   // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
@@ -198,8 +204,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  if (S_->HasField("water_content")) {
-    S->RequireFieldCopy("prev_water_content", "wc_copy", "state");
+  if (S_->HasField(wc_key_)) {
+    S->RequireFieldCopy(prev_wc_key_, "wc_copy", "state");
   }
   Amanzi::PK_MPCStrong<PK_BDF>::Initialize(S);
 }
@@ -212,20 +218,20 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // flow
   // -- swap saturations (current and previous)
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
-  const CompositeVector& sat = *S_->GetFieldData("saturation_liquid");
-  CompositeVector& sat_prev = *S_->GetFieldData("prev_saturation_liquid", "flow");
+  S_->GetFieldEvaluator(sat_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
+  const CompositeVector& sat = *S_->GetFieldData(sat_liquid_key_);
+  CompositeVector& sat_prev = *S_->GetFieldData(prev_sat_liquid_key_, "flow");
 
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
 
   // -- swap water_contents (current and previous)
-  if (S_->HasField("water_content")) {
-    S_->CopyField("prev_water_content", "wc_copy", "state");
+  if (S_->HasField(wc_key_)) {
+    S_->CopyField(prev_wc_key_, "wc_copy", "state");
 
-    S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-    CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
-    CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+    S_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_.ptr(), "flow");
+    CompositeVector& wc = *S_->GetFieldData(wc_key_, wc_key_);
+    CompositeVector& wc_prev = *S_->GetFieldData(prev_wc_key_, "flow");
     wc_prev = wc;
   }
 
@@ -243,15 +249,16 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (fail) {
     // revover the original conserved quantaties
-    *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
+    *S_->GetFieldData(prev_sat_liquid_key_, "flow") = sat_prev_copy;
     *S_->GetFieldData(prev_energy_key_, "thermal") = e_prev_copy;
-    if (S_->HasField("water_content")) {
-      *S_->GetFieldData("prev_water_content", "flow") =
-          *S_->GetFieldCopyData("prev_water_content", "wc_copy", "state");
+    if (S_->HasField(wc_key_)) {
+      *S_->GetFieldData(prev_wc_key_, "flow") =
+          *S_->GetFieldCopyData(prev_wc_key_, "wc_copy", "state");
     }
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored prev_saturation_liquid, prev_water_content, prev_energy" << std::endl;
+    *vo_->os() << "Step failed. Restored " << prev_sat_liquid_key_ 
+               << ", " << prev_wc_key_ << ", " << prev_energy_key_ << std::endl;
   }
 
   return fail;

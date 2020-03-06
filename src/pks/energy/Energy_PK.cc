@@ -73,6 +73,8 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
 

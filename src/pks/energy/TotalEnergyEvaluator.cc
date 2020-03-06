@@ -88,7 +88,7 @@ void TotalEnergyEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result) 
 {
-  const auto& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& s_l = *S->GetFieldData(sat_liquid_key_)->ViewComponent("cell");
   const auto& n_l = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
   const auto& u_l = *S->GetFieldData(ie_liquid_key_)->ViewComponent("cell");
 
