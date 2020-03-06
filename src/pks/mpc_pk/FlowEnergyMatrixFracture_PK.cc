@@ -78,7 +78,7 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField("temperature")) {
-    *S->RequireField("temperature", "energy")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+    *S->RequireField("temperature", "thermal")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "temperature");
@@ -109,21 +109,25 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // inform dependent PKs about coupling
-  // -- flow (matrix)
-  std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
-  Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist(pks[0])
-                                         .sublist("physical models and assumptions");
+  // -- flow 
+  auto & mflow = glist_->sublist("PKs").sublist("flow matrix")
+                        .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
-  // -- flow (fracture)
-  Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist(pks[1])
-                                         .sublist("physical models and assumptions");
+  auto& fflow = glist_->sublist("PKs").sublist("flow fracture")
+                       .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
-  // modify time integrator
-  ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
+  // -- energy
+  auto& menergy = glist_->sublist("PKs").sublist("energy matrix")
+                         .sublist("physical models and assumptions");
+  menergy.set<std::string>("coupled matrix fracture energy", "matrix");
 
-  // process other PKs.
+  auto& fenergy = glist_->sublist("PKs").sublist("energy fracture")
+                         .sublist("physical models and assumptions");
+  fenergy.set<std::string>("coupled matrix fracture energy", "fracture");
+
+  // process other PKs
   PK_MPCStrong<PK_BDF>::Setup(S);
 }
 

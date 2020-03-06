@@ -40,7 +40,9 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::1Phase", vlist)); 
+  std::string ioname = "Energy1Phase";
+  if (domain_ != "domain") ioname += "-" + domain_;
+  vo_ =  Teuchos::rcp(new VerboseObject(ioname, vlist)); 
 }
 
 

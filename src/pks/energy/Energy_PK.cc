@@ -88,17 +88,16 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // require primary state variables
-  std::vector<std::string> names(2);
-  names[0] = "cell";
-  names[1] = "face";
- 
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL;
-  locations[1] = AmanziMesh::FACE;
- 
-  std::vector<int> ndofs(2, 1);
-  
   if (!S->HasField(temperature_key_)) {
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+ 
+    std::vector<int> ndofs(2, 1);
+    std::vector<AmanziMesh::Entity_kind> locations(2);
+    locations[0] = AmanziMesh::CELL;
+    locations[1] = AmanziMesh::FACE;
+ 
     S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
@@ -106,6 +105,9 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S->SetFieldEvaluator(temperature_key_, temperature_eval_);
+  } else {
+    temperature_eval_ = 
+        Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(temperature_key_));
   }
 
   // conserved quantity from the last time step.
