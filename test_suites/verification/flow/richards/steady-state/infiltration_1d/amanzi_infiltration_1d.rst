@@ -17,31 +17,34 @@ functions, Mualem-van Genuchten :cite:`scinfil-Mualem_1976` :cite:`scinfil-vanGe
 steady-state and transient tests with Dirichlet and Neumann boundary
 conditions.
 
-This is documentation for the Amanzi run that is intended to compare
+This documentation is intended to compare
 the results from Amanzi against the semi-analytical results documented
 in "A set of Analytical Benchmarks to Test Numerical Models of Flow
 and Transport in Soils." by J. Vanderborght,
-et. al. http://vzj.geoscienceworld.org/content/4/1/206.abstract :cite:`scinfil-vanderborght2005set`.
+et. al. http://vzj.geoscienceworld.org/content/4/1/206.abstract :cite:`scinfil-vanderborght2005set`,
+see the first line in Table 3 of that paper. 
+We consider three cases of the steady-state flux in a layered soil profile. 
+The presure profiles should match that in the Vanderborght paper.
+The difference between the cases is as follows:
 
-This page is a summary of the first test case noted as the first line
-in Table 3 of that paper.  It is three cases that are all
-"Steady-state flux in layered soil profiles".  The difference between
-the three cases is as follows:
-case #1 is 0.5 m of clay and 1.5 m of sand;
-case #2 is 0.5 m of loam and 1.5 m of sand;
-case #3 is 1.5 m of loam and 0.5 m of sand.
-The results should match that in the Vanderborght paper.
+ * case #1 is 0.5 m of clay and 1.5 m of sand;
+ * case #2 is 0.5 m of loam and 1.5 m of sand;
+ * case #3 is 1.5 m of loam and 0.5 m of sand.
+
 
 
 Model
 -----
 
 Initial condition.
-Pressure :math:`\psi` for all x (depths) and t=0: -200cm (assume cm Hg) = 81747 Pa
+Pressure :math:`p` as the function of depths z and time t=0 is 81747 Pa.
 
 Boundary conditions. 
-The pressure at the bottom z=0m is 99630.6336 Pa.
-Flow at the opposite end, z=2m is fixed at 0.5 cm/d = 5.78703704E-8 m/s.
+The pressure at z=0m, the left end in the Figures below, is 99630.6336 Pa.
+The outflow at the opposite end, z=2m, is fixed at 0.5 cm/d = 5.78703704E-8 m/s.
+
+The absolute permeability tensor is isotropic but discontinuous.
+The porosity is constant in all tests, :math:`phi=0.43`.
 
 .. image:: geometry.png
   :align: center
@@ -51,11 +54,7 @@ Flow at the opposite end, z=2m is fixed at 0.5 cm/d = 5.78703704E-8 m/s.
 Problem Specification
 ---------------------
 
-We use a box domain with hight 2 m. The other dimenstions are equal to 1 m.
-
-
-Schematic
-~~~~~~~~~
+The problem is solved in a box domain with hight 2 m. The other box dimenstions are equal to 1 m.
 
 
 Mesh
@@ -64,18 +63,25 @@ Mesh
 We consider a column mesh with 200 cells in the vertical direction.
 
 
-Variables
-~~~~~~~~~
-
-
 Case #1: Sand Clay Layers
 -------------------------
 
 The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`sr=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472\cdot 10^{-11}`.
+
+The clay region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are :math:`alpha=1.02 \cdot 10^{-4}`, :math:`m=0.0909`, and 
+residual saturation is :math:`sr=0.25`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18\cdot 10^{-13}`.
 
 
 Results and Comparison
 ~~~~~~~~~~~~~~~~~~~~~~
+
+We compare with the Amanzi's golden data that were verified against the Vanderborght paper.
 
 .. plot:: verification/flow/richards/steady-steate/infiltration_clay_sand_1d/amanzi_infiltration_1d-c.py
    :align: center
@@ -85,10 +91,21 @@ Case #2 Loam Sand Layers
 ------------------------
 
 The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`sr=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11`.
+
+The loam region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are :math:`alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+residual saturation is :math:`sr=0.186047`.
+The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13}`.
 
 
 Results and Comparison
 ~~~~~~~~~~~~~~~~~~~~~~
+
+We compare with the Amanzi's golden data that were verified against the Vanderborght paper.
 
 .. plot:: verification/flow/richards/steady-steate/infiltration_loam_sand_1d/amanzi_infiltration_1d-a.py
    :align: center
@@ -98,10 +115,21 @@ Case #3: Sand Loam Layers
 -------------------------
 
 The steady-state solution is shown below.
+Now, we swap the sand is loam regions.
+The van Genuchten parameters are :math:`alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+residual saturation is :math:`sr=0.186047`.
+The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13}`.
+
+The sand region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`sr=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11`.
 
 
 Results and Comparison
 ~~~~~~~~~~~~~~~~~~~~~~
+
+We compare with the Amanzi's golden data that were verified against the Vanderborght paper.
 
 .. plot:: verification/flow/richards/steady-steate/infiltration_loam_sand_1d/amanzi_infiltration_1d-b.py
    :align: center
