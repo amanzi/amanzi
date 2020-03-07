@@ -44,7 +44,7 @@ The pressure at z=0m, the left end in the Figures below, is 99630.6336 Pa.
 The outflow at the opposite end, z=2m, is fixed at 0.5 cm/d = 5.78703704E-8 m/s.
 
 The absolute permeability tensor is isotropic but discontinuous.
-The porosity is constant in all tests, :math:`phi=0.43`.
+The porosity is constant in all tests, :math:`\phi=0.43`.
 
 .. image:: geometry.png
   :align: center
@@ -68,14 +68,14 @@ Case #1: Sand Clay Layers
 
 The steady-state solution is shown below.
 The sand region corresponds to the left part of the pressure profile.
-The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
-residual saturation is :math:`sr=0.104651`.
-The absolute permeability is given by the isotropic tensor :math:`K=1.18472\cdot 10^{-11}`.
+The van Genuchten parameters are :math:`\alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`s_r=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472\cdot 10^{-11} [m^2]`.
 
 The clay region corresponds to the right part of the pressure profile.
-The van Genuchten parameters are :math:`alpha=1.02 \cdot 10^{-4}`, :math:`m=0.0909`, and 
-residual saturation is :math:`sr=0.25`.
-The absolute permeability is given by the isotropic tensor :math:`K=1.18\cdot 10^{-13}`.
+The van Genuchten parameters are :math:`\alpha=1.02 \cdot 10^{-4}`, :math:`m=0.0909`, and 
+residual saturation is :math:`s_r=0.25`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18\cdot 10^{-13} [m^2]`.
 
 
 Results and Comparison
@@ -92,14 +92,14 @@ Case #2 Loam Sand Layers
 
 The steady-state solution is shown below.
 The sand region corresponds to the left part of the pressure profile.
-The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
-residual saturation is :math:`sr=0.104651`.
-The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11`.
+The van Genuchten parameters are :math:`\alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`s_r=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11 [m^2]`.
 
 The loam region corresponds to the right part of the pressure profile.
-The van Genuchten parameters are :math:`alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
-residual saturation is :math:`sr=0.186047`.
-The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13}`.
+The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+residual saturation is :math:`s_r=0.186047`.
+The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13} [m^2]`.
 
 
 Results and Comparison
@@ -116,14 +116,14 @@ Case #3: Sand Loam Layers
 
 The steady-state solution is shown below.
 Now, we swap the sand is loam regions.
-The van Genuchten parameters are :math:`alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
-residual saturation is :math:`sr=0.186047`.
-The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13}`.
+The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+residual saturation is :math:`s_r=0.186047`.
+The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13} [m^2]`.
 
 The sand region corresponds to the right part of the pressure profile.
-The van Genuchten parameters are :math:`alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
-residual saturation is :math:`sr=0.104651`.
-The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11`.
+The van Genuchten parameters are :math:`\alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
+residual saturation is :math:`s_r=0.104651`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11 [m^2]`.
 
 
 Results and Comparison
