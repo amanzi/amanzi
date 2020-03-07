@@ -4,7 +4,10 @@ Infiltration 1D
 Capabilities Tested
 -------------------
 
-For details on this test, see :ref:`about_sand_clay`.
+ * partially saturated one-dimensional flow
+ * steady-state flow
+ * pressure and flux boundary conditions
+ * porous medium with discontinuous properties (absolute permeability, van Genuchten models)
 
 
 Background
