@@ -26,10 +26,11 @@ et. al. http://vzj.geoscienceworld.org/content/4/1/206.abstract :cite:`scinfil-v
 This page is a summary of the first test case noted as the first line
 in Table 3 of that paper.  It is three cases that are all
 "Steady-state flux in layered soil profiles".  The difference between
-the three cases is the fact the first case a is loam over sand, b is
-sand over loam and c is clay over sand.  The labeling of the case is
-based on the Figure 2. results so files and data associated with case
-2a should match Fig 2. a in the Vanderborght paper.
+the three cases is as follows:
+case #1 is 0.5 m of clay and 1.5 m of sand;
+case #2 is 0.5 m of loam and 1.5 m of sand;
+case #3 is 1.5 m of loam and 0.5 m of sand.
+The results should match that in the Vanderborght paper.
 
 
 Model
@@ -39,8 +40,8 @@ Initial condition.
 Pressure :math:`\psi` for all x (depths) and t=0: -200cm (assume cm Hg) = 81747 Pa
 
 Boundary conditions. 
-Flow at surface for all time:  .5 cm/d = 5.78703704E-8 m/s 
-:math:`\partial \psi / \partial x` at 200cm depth=0
+The pressure at the bottom z=0m is 99630.6336 Pa.
+Flow at the opposite end, z=2m is fixed at 0.5 cm/d = 5.78703704E-8 m/s.
 
 .. image:: geometry.png
   :align: center
@@ -50,6 +51,8 @@ Flow at surface for all time:  .5 cm/d = 5.78703704E-8 m/s
 Problem Specification
 ---------------------
 
+We use a box domain with hight 2 m. The other dimenstions are equal to 1 m.
+
 
 Schematic
 ~~~~~~~~~
@@ -58,6 +61,8 @@ Schematic
 Mesh
 ~~~~
 
+We consider a column mesh with 200 cells in the vertical direction.
+
 
 Variables
 ~~~~~~~~~
@@ -65,6 +70,8 @@ Variables
 
 Case #1: Sand Clay Layers
 -------------------------
+
+The steady-state solution is shown below.
 
 
 Results and Comparison
@@ -77,8 +84,7 @@ Results and Comparison
 Case #2 Loam Sand Layers
 ------------------------
 
-An analytic solution for the elevation of the water table can be
-readily derived if vertical gradients and velocities in the saturated
+The steady-state solution is shown below.
 
 
 Results and Comparison
@@ -91,8 +97,7 @@ Results and Comparison
 Case #3: Sand Loam Layers
 -------------------------
 
-An analytic solution for the elevation of the water table can be
-readily derived if vertical gradients and velocities in the saturated
+The steady-state solution is shown below.
 
 
 Results and Comparison
@@ -116,7 +121,7 @@ References
 About
 -----
 
-* Directory:  testing/verification/flow/richards/steady-state/infiltration_clay_sand_1d
+* Directory:  testing/verification/flow/richards/steady-state/infiltration_1d
 
 * Author:  
 
