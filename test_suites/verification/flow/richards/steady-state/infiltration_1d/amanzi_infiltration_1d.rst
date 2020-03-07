@@ -1,5 +1,5 @@
-Sand Clay Layers
-================
+Infiltration 1D
+===============
 
 Capabilities Tested
 -------------------
@@ -63,10 +63,42 @@ Variables
 ~~~~~~~~~
 
 
-Results and Comparison
-----------------------
+Case #1: Sand Clay Layers
+-------------------------
 
-.. plot:: verification/flow/richards/steady-steate/infiltration_clay_sand_1d/amanzi_infiltration_clay_sand_1d.py
+
+Results and Comparison
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. plot:: verification/flow/richards/steady-steate/infiltration_clay_sand_1d/amanzi_infiltration_1d-c.py
+   :align: center
+
+
+Case #2 Loam Sand Layers
+------------------------
+
+An analytic solution for the elevation of the water table can be
+readily derived if vertical gradients and velocities in the saturated
+
+
+Results and Comparison
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. plot:: verification/flow/richards/steady-steate/infiltration_loam_sand_1d/amanzi_infiltration_1d-a.py
+   :align: center
+
+
+Case #3: Sand Loam Layers
+-------------------------
+
+An analytic solution for the elevation of the water table can be
+readily derived if vertical gradients and velocities in the saturated
+
+
+Results and Comparison
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. plot:: verification/flow/richards/steady-steate/infiltration_loam_sand_1d/amanzi_infiltration_1d-b.py
    :align: center
 
 
@@ -80,6 +112,7 @@ References
 
 .. _about_sand_clay:
 
+
 About
 -----
 
@@ -92,6 +125,8 @@ About
 * Input Files:
 
   * amanzi_infiltration_clay_sand_1d-u.xml
+  * amanzi_infiltration_loam_sand_1d-u.xml
+  * amanzi_infiltration_sand_loam_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  generated internally 

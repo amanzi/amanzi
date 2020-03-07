@@ -1,5 +1,5 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <model_description name="Richards-1D-infiltration_loam_sand" />
+    <model_description name="Richards-1D-infiltration_sand_loam" />
     <definitions>
       <macros>
 	<time_macro name="Observation Times">
@@ -109,7 +109,7 @@
           <parameters alpha="4.08622e-4" m="0.375" sr="0.186047" />
         </cap_pressure>
         <rel_perm model="mualem" />
-        <assigned_regions>Top Region</assigned_regions>
+        <assigned_regions>Bottom Region</assigned_regions>
       </material>
       <material name="sand">
         <mechanical_properties>
@@ -121,7 +121,7 @@
           <parameters alpha="1.532333E-03" m="0.6666667" sr="0.104651" />
         </cap_pressure>
         <rel_perm model="mualem" />
-        <assigned_regions>Bottom Region</assigned_regions>
+        <assigned_regions>Top Region</assigned_regions>
       </material>
     </materials>
     <phases>
@@ -161,18 +161,8 @@
       </boundary_condition>
     </boundary_conditions>
     <output>
-      <vis>
-        <base_filename>case_2a_plot</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every_100</cycle_macros>
-      </vis>
-      <checkpoint>
-        <base_filename>case_2a_checkpoint</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every_1000</cycle_macros>
-      </checkpoint>
       <observations>
-        <filename>observations.out</filename>
+        <filename>observations_2b.out</filename>
         <liquid_phase name="water">
           <aqueous_pressure>
             <assigned_regions>Obs_0</assigned_regions>
@@ -236,6 +226,16 @@
           </aqueous_pressure>
         </liquid_phase>
       </observations>
+      <vis>
+        <base_filename>case_2b_plot</base_filename>
+        <num_digits>5</num_digits>
+        <cycle_macros>Every_100</cycle_macros>
+      </vis>
+      <checkpoint>
+        <base_filename>case_2b_checkpoint</base_filename>
+        <num_digits>5</num_digits>
+        <cycle_macros>Every_1000</cycle_macros>
+      </checkpoint>
     </output>
   </amanzi_input>
   
