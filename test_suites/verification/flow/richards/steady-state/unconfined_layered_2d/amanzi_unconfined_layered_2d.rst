@@ -77,28 +77,30 @@ are selected. Input parameters for the numerical simulation are summarized as:
 * Domain (2D)
 
 	* :math:`x_{min} = z_{min} = 0`
-	* :math:`x_{max} = L = 1000 ft`
-	* :math:`z_{max} = 110 ft`
-		* confined aquifer thickness, :math:`b = 100 ft`
-		* confining unit thickness = :math:`10 ft`
-		* unconfined aquifer zone thickness = :math:`100 ft`
+	* :math:`x_{max} = L = 1000 ft`, :math:`z_{max} = 110 ft`
+	* confined aquifer thickness, :math:`b = 100 ft`
+	* confining unit thickness = :math:`10 ft`
+	* unconfined aquifer zone thickness = :math:`100 ft`
 
 * Boundary conditions
 
 	* no-flow prescribed at the :math:`z_{min}, z_{max}` boundaries
 	* no-flow prescribed at :math:`x_{min}, x_{max}` for confining unit
 	* prescribed hydraulic head at the x-coordinate boundaries
-		* confined aquifer: :math:`h(0) = 160 ft, h(L) = 120 ft`
-		* unconfined aquifer: :math:`h(0) = 170 ft, h(L) = 130 ft`
+	* confined aquifer: :math:`h(0) = 160 ft, h(L) = 120 ft`
+	* unconfined aquifer: :math:`h(0) = 170 ft, h(L) = 130 ft`
 
 * Material properties
 
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* Hydraulic conductivities
+
 		* confined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \cdot K_{xx}` 
 		* confining unit: :math:`K_{zz} = 0.001142 ft/d`, :math:`K_{xx} = K_{zz}/10` 
 		* unconfined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \cdot K_{xx}` 
+
 	* van Genuchten (1980) - Mualem (1976) parameters for a gravel based on Phifer et al. (2006):
+
 		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
@@ -108,6 +110,20 @@ are selected. Input parameters for the numerical simulation are summarized as:
 	* :math:`\Delta x = 20 ft, \Delta z = 2 ft`
 
 
+Results and Comparisons
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. plot:: verification/unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.py
+   :align: center
+
+(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
+
+.... include:: table_values.txt
+
+
+References
+~~~~~~~~~~
+
 Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513-522.
 
 Phifer, M. A., M. R. Millings, and G. P. Flach. 2006. *Hydraulic Property Data Package for the E-Area and Z-Area Soils, 
@@ -116,16 +132,5 @@ Cementitious Materials, and Waste Zones*. Savannah River National Laboratory tec
 Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318-333.
 
 van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
-
-
-Amanzi verification test results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. plot:: verification/unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.py
-   :align: center
-
-(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
-
-.... include:: table_values.txt
 
 

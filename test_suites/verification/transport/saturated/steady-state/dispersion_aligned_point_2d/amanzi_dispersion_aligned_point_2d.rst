@@ -207,10 +207,8 @@ About
 
 * Input Files:
 
-  * amanzi_dispersion_aligned_point_2d-u.xml 
-
-    * Spec Version 2.2, unstructured mesh framework
-    * mesh:  amanzi_dispersion_aligned_point_2d.exo
+  * amanzi_dispersion_aligned_point_2d-u.xml, Spec Version 2.3
+  * mesh is amanzi_dispersion_aligned_point_2d.exo
  
   .. * amanzi_dispersion_aligned_point_2d-s.xml
 
@@ -238,18 +236,6 @@ About
     * at123d-at_slice_x=0.list, at123d-at_slice_x=0.in,  
     * at123d-at_slice_x=420.list, at123d-at_slice_x=420.in
 
-
-Status
-~~~~~~
-
-  * Input Files:
-
-    * Version 2.2 - unstructured: runs 2D problem, results are in excellent agreement
-    * Version 1.2 - structured AMR: runs
-
-  * Documentation:
-
-    * Complete for unstructured mesh framework, including line plots and tables.
 
 .. todo:: 
 
