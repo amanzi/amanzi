@@ -76,11 +76,13 @@ by Fourier):
 .. math:: 
      \frac{\partial^2 h}{\partial r^2} 
    + \frac{1}{r} \frac{\partial h}{\partial r} 
-   = \frac{S}{T} \frac{\partial h}{\partial t},
+   = \frac{S}{T} \frac{\partial h}{\partial t} + Q,
 
 where :math:`h` is hydraulic head [m], :math:`r` is radial distance from 
 the well [m], :math:`S` is the aquifer storativity [-], :math:`T` is the 
-aquifer transmissivity [m\ :sup:`2`/s], and :math:`t` is time [s]. 
+aquifer transmissivity [m\ :sup:`2`/s], :math:`Q` is the volumetric pumping rate 
+of the well [L\ :sup:`3`/T], and :math:`t` is time [s]. 
+Mathematically, :math:`Q` is the point source.
 
 The analytical solution of drawdown as a function of time and distance
 is found to be:
