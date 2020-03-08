@@ -123,8 +123,7 @@ Variables
 * Material properties:
 
   * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
-
-    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+    derived from :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
   
   * porosity:    :math:`\phi=0.35` 
   * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
@@ -143,8 +142,8 @@ Results and Comparison
 ----------------------
 
 The plume structure is characterized by three line cuts.
-The first cut is given by line :math:`y=0` that goes through the well.
-The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
+The first cut is given by line :math:`y=x` that goes through the well.
+The two other cuts are given by tranverse cuts :math:`y=-x` and :math:`y=\sqrt{848}-x`.
 
 .. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d-a.py
    :align: center
@@ -184,10 +183,8 @@ About
 
 * Input Files:
 
-  * amanzi_dispersion_45_point_2d.xml
-
-    * Spec Version 2.3, unstructured mesh framework
-    * mesh:  amanzi_dispersion_45_point_2d.exo
+  * amanzi_dispersion_45_point_2d-u.xml, Spec Version 2.3
+  * mesh amanzi_dispersion_45_point_2d.exo
 
 .. * Mesh Files:
 
@@ -206,5 +203,5 @@ About
 
   * Documentation:
 
-    * write script to generate the x=420m slice [jpo]
+    * write script to generate the tranverse cut at distance 420 m from well [jpo]
     * need \*.list file for slice x=0? [jpo] 
