@@ -28,6 +28,8 @@
 #include "FunctionPolynomial.hh"
 #include "FunctionSeparable.hh"
 #include "errors.hh"
+#include "CompositeVectorSpace.hh"
+#include "MeshFunction.hh"
 
 #include "VerboseObject_objs.hh"
 
@@ -55,9 +57,9 @@ TEST_FIXTURE(reference_mesh, basic_patch)
     Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
 
   PatchSpace ps(mesh, true, "LEFT", AmanziMesh::FACE, 1, 1);
-  Patch<> p(ps);
+  Patch p(ps);
 
-  computeMeshFunction(f1, 0.0, p);
+  computeMeshFunction(*f1, 0.0, p);
   CHECK_EQUAL(4, p.size());
   CHECK_EQUAL(1.0, p.data(0,0));
   CHECK_EQUAL(1.0, p.data(3,0));
@@ -77,7 +79,7 @@ TEST_FIXTURE(reference_mesh, values1)
   mps.AddPatch("RIGHT", AmanziMesh::FACE, 1);
   mps.AddPatch("FRONT", AmanziMesh::FACE, 1);
   mps.AddPatch("BACK", AmanziMesh::FACE, 1);
-  MultiPatch<> mp(mps);
+  MultiPatch mp(mps);
 
   auto funcs = std::vector<Teuchos::RCP<const MultiFunction>>{f1,f2,f3};
 
@@ -124,19 +126,8 @@ TEST_FIXTURE(reference_mesh, into_vector)
     for (int i = 0; i < face_list.size(); ++i)
       CHECK_EQUAL(2.0, cv_v(face_list[i], 0));
 
-    mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, face_list);
+    mesh->get_set_entities("BACK", FACE, Parallel_type::ALL, face_list);
     for (int i = 0; i < face_list.size(); ++i)
       CHECK_EQUAL(3.0, cv_v(face_list[i], 0));
   }  
-}
-
-TEST_FIXTURE(reference_mesh, bad_input)
-{
-  Teuchos::RCP<MultiFunction> f =
-    Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
-
-  PatchSpace ps(mesh, true, "invalid", AmanziMesh::FACE, 1, 1);
-  Patch<> p(ps);
-
-  CHECK_THROW(computeMeshFunction(f1, 0.0, p), Errors::Message);
 }

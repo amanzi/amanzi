@@ -67,7 +67,8 @@ if (BUILD_TESTS)
       # file(COPY ${DataFiles} DESTINATION ${MFUNCS_BINARY_DIR}/test/)
     endif()
 
-    set(mesh_functions_test_link_libs mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+    set(mesh_functions_test_link_libs
+      mesh_factory ${mesh_functions_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
   add_amanzi_test(mesh_functions_boundary_function mesh_functions_boundary_function
                   KIND unit

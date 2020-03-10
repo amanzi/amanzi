@@ -28,22 +28,22 @@ namespace Functions {
 //
 // Computes function on a patch.
 //
-template<class Device=AmanziDefaultDevice>
+//template<class Device=AmanziDefaultDevice>
 inline void
-computeMeshFunction(const MultiFunction& f, double time, Patch<Device>& p);
+computeMeshFunction(const MultiFunction& f, double time, Patch& p);
 
 //
 // Compute functions on a multi-patch.
 //
-template<class Device=AmanziDefaultDevice>
+//template<class Device=AmanziDefaultDevice>
 inline void
 computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
-                    double time, MultiPatch<Device>& mp);
+                    double time, MultiPatch& mp);
 
 //
 // Compute set of functions on CompositeVector
 //
-template<class Device=AmanziDefaultDevice>
+//template<class Device=AmanziDefaultDevice>
 inline void
 computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
                          double time, const MultiPatchSpace& mp, CompositeVector& cv);
