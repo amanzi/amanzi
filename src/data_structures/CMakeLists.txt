@@ -79,6 +79,7 @@ set(data_structures_inc_files DataStructuresHelpers.hh
   #NoxVector.hh
   SuperMap.hh
   SuperMapLumped.hh
+  Patch.hh
   )
 
 set(data_structures_link_libs mesh
@@ -170,5 +171,10 @@ if (BUILD_TESTS)
     add_amanzi_test(data_structures_common_patterns, data_structures_common_patterns
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_common_patterns.cc
+                    LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(data_structures_patch, data_structures_patch
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_patch.cc
                     LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
 endif()

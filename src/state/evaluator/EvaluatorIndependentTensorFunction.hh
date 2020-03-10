@@ -32,10 +32,10 @@ class EvaluatorIndependentTensorFunction
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator& operator=(const Evaluator& other) override;
+  // virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentTensorFunction&
-  operator=(const EvaluatorIndependentTensorFunction& other);
+  // EvaluatorIndependentTensorFunction&
+  // operator=(const EvaluatorIndependentTensorFunction& other);
 
   virtual void EnsureCompatibility(State& S) override;
 

@@ -15,7 +15,6 @@
 #include "UnitTest++.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Vector.h"
 
 #include "MeshFactory.hh"
 #include "Mesh_simple.hh"

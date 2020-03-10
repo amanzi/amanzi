@@ -20,7 +20,6 @@ Lots of options here, document me!
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Op_Factory.hh"
-#include "BCs_Factory.hh"
 #include "Operator_Factory.hh"
 
 #include "Evaluator_PDE_Diffusion.hh"
@@ -93,7 +92,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     auto& bc_fac =
       S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
     bc_fac.set_mesh(rhs_fac.Mesh());
-    bc_fac.set_kind(AmanziMesh::FACE);
+    bc_fac.set_entity_kind(AmanziMesh::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
@@ -224,7 +223,7 @@ Evaluator_PDE_Diffusion::Update_(State& S)
   pde->SetScalarCoefficient(kr, Teuchos::null);
 
   // compute local ops
-  global_op->Init();
+  global_op->Zero();
 
   Teuchos::Ptr<const CompositeVector> u;
   if (!u_key_.empty()) u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
@@ -262,7 +261,8 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key,
   pde->SetBCs(bcs, bcs);
 
   // set the tensor coef
-  const auto& K = S.Get<CSR_Tensor>(tensor_coef_key_, my_tag_);
+  Teuchos::RCP<const TensorVector> K =
+      S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
   pde->SetTensorCoefficient(K);
 
   // set the scalar coef and derivatives
@@ -273,7 +273,7 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key,
   pde->SetScalarCoefficient(kr, dkr);
 
   // compute local ops
-  global_op->Init();
+  global_op->Zero();
   Teuchos::Ptr<const CompositeVector> u =
     S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatricesNewtonCorrection(Teuchos::null, u);

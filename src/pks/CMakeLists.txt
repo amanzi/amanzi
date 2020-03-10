@@ -104,6 +104,7 @@ if (BUILD_TESTS)
     mesh_factory
     data_structures
     mesh_functions
+    operators
     state
     solvers
     time_integration

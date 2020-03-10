@@ -32,43 +32,23 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(mesh_functions_src_files
-  #UniqueMeshFunction.cc
-  #BoundaryFunction.cc
-  #BoundaryFunctionFactory.cc
-  #DynamicBoundaryFunction.cc
-  #MaterialMeshFunction.cc
-  #MeshPartition.cc
-  CompositeVectorFunction.cc
-  CompositeVectorFunctionFactory.cc
-  BCsFunction.cc
-  BCsFunctionFactory.cc
-  )
-
 set(mesh_functions_inc_files
   MeshFunction.hh
-  #UniqueMeshFunction.hh
-  #BoundaryFunction.hh
-  #BoundaryFunctionFactory.hh
-  #DynamicBoundaryFunction.hh
-  #MaterialMeshFunction.hh
-  #MeshPartition.hh
   CompositeVectorFunction.hh
-  CompositeVectorFunctionFactory.hh
-  BCsFunction.hh
-  BCsFunctionFactory.hh
   )
 
 set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
-#
-# Library: mesh_functions
-#
-add_amanzi_library(mesh_functions
-  SOURCE ${mesh_functions_src_files}
-  HEADERS ${mesh_functions_inc_files}
-  LINK_LIBS ${mesh_functions_link_libs}
-  )
+# HEADER ONLY
+
+# #
+# # Library: mesh_functions
+# #
+# add_amanzi_library(mesh_functions
+#   SOURCE ${mesh_functions_src_files}
+#   HEADERS ${mesh_functions_inc_files}
+#   LINK_LIBS ${mesh_functions_link_libs}
+#   )
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -87,17 +67,11 @@ if (BUILD_TESTS)
       # file(COPY ${DataFiles} DESTINATION ${MFUNCS_BINARY_DIR}/test/)
     endif()
 
-    set(mesh_functions_test_link_libs mesh_functions mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+    set(mesh_functions_test_link_libs mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
-# these are currently broken
   add_amanzi_test(mesh_functions_boundary_function mesh_functions_boundary_function
                   KIND unit
                   SOURCE test/mesh_functions_boundary_function.cc
-                  LINK_LIBS ${mesh_functions_test_link_libs})
-
-  add_amanzi_test(mesh_functions_material_function mesh_functions_material_function
-                  KIND unit
-                  SOURCE test/mesh_functions_material_function.cc
                   LINK_LIBS ${mesh_functions_test_link_libs})
 
   add_amanzi_test(mesh_functions_composite_vector_function mesh_functions_composite_vector_function

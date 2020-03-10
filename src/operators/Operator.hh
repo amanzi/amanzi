@@ -223,8 +223,6 @@ class Operator {
   void InitializePreconditioner(Teuchos::ParameterList& plist);
   void UpdatePreconditioner();
 
-  void Init();
-
   // access
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }

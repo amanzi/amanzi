@@ -25,6 +25,7 @@ EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
     my_tag_(plist.get<std::string>("tag", "")),
     temporally_variable_(!plist.get<bool>("constant in time", false)),
     plist_(plist),
+    inted_(false),
     vo_(Keys::cleanPListName(plist.name()), plist)
 {}
 
@@ -41,6 +42,7 @@ EvaluatorIndependent_::operator=(const EvaluatorIndependent_& other)
     deriv_once_ = other.deriv_once_;
     temporally_variable_ = other.temporally_variable_;
     requests_ = other.requests_;
+    inited_ = other.inited_;
   }
   return *this;
 }
@@ -66,17 +68,20 @@ EvaluatorIndependent_::operator=(const Evaluator& other)
 void
 EvaluatorIndependent_::EnsureCompatibility(State& S)
 {
-  // set initialized -- initialization can happen on first evaluation.
-  S.GetRecordW(my_key_, my_tag_, my_key_).set_initialized();
+  if (!inited_) {
+    // set initialized -- initialization can happen on first evaluation.
+    S.GetRecordW(my_key_, my_tag_, my_key_).set_initialized();
 
-  // check plist for vis or checkpointing control
-  auto vis_check = std::string{ "visualize " + my_key_ };
-  bool io_my_key = plist_.get<bool>(vis_check, true);
-  S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);
+    // check plist for vis or checkpointing control
+    auto vis_check = std::string{ "visualize " + my_key_ };
+    bool io_my_key = plist_.get<bool>(vis_check, true);
+    S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);
 
-  auto chkp_check = std::string{ "checkpoint " + my_key_ };
-  bool checkpoint_my_key = plist_.get<bool>(chkp_check, false);
-  S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
+    auto chkp_check = std::string{ "checkpoint " + my_key_ };
+    bool checkpoint_my_key = plist_.get<bool>(chkp_check, false);
+    S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
+    inited_ = true;
+  }
 }
 
 // ---------------------------------------------------------------------------
