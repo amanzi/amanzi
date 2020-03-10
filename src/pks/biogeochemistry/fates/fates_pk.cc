@@ -37,7 +37,7 @@ FATES_PK::FATES_PK(Teuchos::ParameterList& pk_tree,
   dt_ = plist_->get<double>("max time step", 1.e99);  
   dt_photosynthesis_ = plist_->get<double>("photosynthesis time step", 1800);
   dt_site_dym_ = plist_->get<double>("veg dynamics time step", 86400);
-  surface_only_ = plist_->get<bool>("surface only", true);
+  surface_only_ = plist_->get<bool>("surface only", false);
 
 }
 
@@ -53,7 +53,9 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
   // my mesh is the subsurface mesh, but we need the surface mesh, index by column, as well
   mesh_surf_ = S->GetMesh("surface");
   if (!surface_only_) mesh_=S->GetMesh();
-  
+
+
+  mesh_->build_columns();
   //  soil_part_name_ = plist_->get<std::string>("soil partition name");
 
   int iulog=10;
@@ -132,7 +134,8 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
   //   S->RequireField(lig_decomp_key_, name_)->SetMesh(mesh_surf_)
   //     ->SetComponent("cell", AmanziMesh::CELL, nlevdecomp_);
   // }
-  
+
+
   precip_key_ = Keys::getKey(domain_surf_,"precipitation_rain");
   if (!S->HasField(precip_key_)){    
     S->RequireField(precip_key_, "state")->SetMesh(mesh_surf_)
@@ -169,14 +172,31 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
   }
 
   if (!surface_only_){
-    poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "base_porosity");
+    poro_key_ = Keys::readKey(*plist_, "domain", "porosity", "base_porosity");
     if (!S->HasField(poro_key_)){    
       S->RequireField(poro_key_, "state")->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
       S->RequireFieldEvaluator(poro_key_);
     }
-    sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
-    suc_key_ = Keys::readKey(*plist_, domain_, "suction", "suction_head");
+    soil_temp_key_ = Keys::getKey("domain","temperature");
+    if (!S->HasField(soil_temp_key_)){    
+      S->RequireField(soil_temp_key_, "state")->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(soil_temp_key_);
+    }    
+    sat_key_ = Keys::readKey(*plist_, "domain", "saturation", "saturation_liquid");
+    if (!S->HasField(sat_key_)){    
+      S->RequireField(sat_key_, "state")->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(sat_key_);
+    }        
+    suc_key_ = Keys::readKey(*plist_, "domain", "suction", "suction_head");
+    if (!S->HasField(suc_key_)){    
+      S->RequireField(suc_key_, "state")->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(suc_key_);
+    }            
+
   }
 
   S->RequireScalar("atmospheric_pressure");
@@ -212,7 +232,12 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
   if (surface_only_) {
     ncells_per_col_ = 1;
   }else{
+    
     for (unsigned int col=0; col!=ncells_owned_; ++col) {
+
+      // FieldToColumn_(col, poro, col_poro.ptr());
+      // ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
+      
       int f = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
       BGC::ColIterator col_iter(*mesh_, f);
       std::size_t ncol_cells = col_iter.size();
@@ -221,6 +246,7 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
       } else {
         AMANZI_ASSERT(ncol_cells == ncells_per_col_);
       }
+      
     }
   }
 
@@ -246,20 +272,38 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
   /* Preliminary initialization of FATES */
   init_ats_fates(&ncells_owned_, site_.data());
 
-  double zi[6], z[5], dz[5], dzsoil_decomp[5];
+
+  Teuchos::RCP<Epetra_SerialDenseVector> col_poro =
+    Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
+  Teuchos::RCP<Epetra_SerialDenseVector> col_depth =
+    Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
+  Teuchos::RCP<Epetra_SerialDenseVector> col_dz =
+    Teuchos::rcp(new Epetra_SerialDenseVector(ncells_per_col_));
+    
+  // S->GetFieldEvaluator(poro_key_)->HasFieldChanged(S, name_);
+  // const Epetra_Vector& poro = *(*S->GetFieldData(poro_key_)
+  //       			->ViewComponent("cell",false))(0);
+
+
+  
+  std::vector<double> zi(ncells_per_col_+1), z(ncells_per_col_), dz(ncells_per_col_);
+  std::vector<double> dzsoil_decomp(ncells_per_col_);
   /* Define soil layers */
-  zi[0] = 0;
-  for (int i=0; i<ncells_per_col_; i++){
-    zi[i+1] = zi[i] + 1;
-    z[i] = 0.5*(zi[i+1] + zi[i]);
-    dz[i] = 1;
-  }  
+  zi[0] = 0;  
   dzsoil_decomp[0] = 1;
 
   /* Initialize soil layers in FATES*/
-  for (int i=0; i<ncells_owned_; i++){
-    int s = i+1;    
-    init_soil_depths(&clump_, &s,  &(site_[i]), zi, dz, z, dzsoil_decomp);
+  for (int col=0; col<ncells_owned_; col++){
+    ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
+    // std::cout<<*col_depth<<"\n";
+    // std::cout<<*col_dz<<"\n";
+    for (int i=0;i<ncells_per_col_;i++){
+      dz[i] = (*col_dz)[i];
+      z[i] = (*col_depth)[i];
+      zi[i+1] = z[i] + dz[i];
+    }
+    int s = col+1;    
+    init_soil_depths(&clump_, &s,  &(site_[col]), zi.data(), dz.data(), z.data(), dzsoil_decomp.data());
   }
 
   /* Init cold start of FATES */
@@ -307,6 +351,9 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
   const Epetra_MultiVector& co2a = *S_next_->GetFieldData(co2a_key_)->ViewComponent("cell", false);
 
 
+  if (S_next_->cycle() == 1102){
+    std::cout<<"Reached cycle 1102\n";
+  }
   
   bool run_photo = false;
   bool run_veg_dym = false;
@@ -326,26 +373,31 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
         vsm_[c] = 1.*poro_[c];
         suc_[c] = 0.;
       }else{
-
-        S_next_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_next_.ptr(), name_);
-        const Epetra_Vector& poro_vec = *(*S_next_->GetFieldData(poro_key_)->ViewComponent("cell", false))(0);        
-        FieldToColumn_(c, poro_vec, poro_.data() + c*ncells_per_col_, ncells_per_col_);
-
+        
+        if (S_next_->HasField(soil_temp_key_)){
+          S_next_->GetFieldEvaluator(soil_temp_key_)->HasFieldChanged(S_next_.ptr(), name_);
+          const Epetra_Vector& temp_vec = *(*S_next_->GetFieldData(soil_temp_key_)->ViewComponent("cell", false))(0);        
+          FieldToColumn_(c, temp_vec, t_soil_.data() + c*ncells_per_col_, ncells_per_col_);
+        }
+        
+        
+        if (S_next_->HasField(poro_key_)){
+          S_next_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_next_.ptr(), name_);
+          const Epetra_Vector& poro_vec = *(*S_next_->GetFieldData(poro_key_)->ViewComponent("cell", false))(0);        
+          FieldToColumn_(c, poro_vec, poro_.data() + c*ncells_per_col_, ncells_per_col_);
+        }
         eff_poro_.assign(poro_.begin(), poro_.end());
 
         if (S_next_->HasField(sat_key_)){
           S_next_->GetFieldEvaluator(sat_key_)->HasFieldChanged(S_next_.ptr(), name_);
           const Epetra_Vector& sat_vec = *(*S_next_->GetFieldData(sat_key_)->ViewComponent("cell", false))(0);        
           FieldToColumn_(c, sat_vec, vsm_.data() + c*ncells_per_col_, ncells_per_col_);
-
-          for(int i=0;i<vsm_.size();i++) vsm_[i] *= poro_[i];
-          
+                   
         }else{
           vsm_.assign(poro_.begin(), poro_.end());  // No saturation in state. Fully saturated assumption;
         }
 
-        if (S_next_->HasField(suc_key_)){
-          
+        if (S_next_->HasField(suc_key_)){          
           S_next_->GetFieldEvaluator(suc_key_)->HasFieldChanged(S_next_.ptr(), name_);
           const Epetra_Vector& suc_vec = *(*S_next_->GetFieldData(suc_key_)->ViewComponent("cell", false))(0);        
           FieldToColumn_(c, suc_vec, suc_.data() + c*ncells_per_col_, ncells_per_col_);
@@ -353,12 +405,27 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
         }else{
           for(int i=0;i<suc_.size();i++) suc_[i] = 0.;  // No suction is defined in State;
         }
-
-
+        
       }
+    }
 
-    }    
 
+    std::cout<<"t_soil_\n";
+    for (auto ent : t_soil_) std::cout<<ent<<" ";
+    std::cout<<"\n";
+    std::cout<<"poro\n";
+    for (auto ent : poro_) std::cout<<ent<<" ";
+    std::cout<<"\n";
+    std::cout<<"eff_poro_\n";
+    for (auto ent : eff_poro_) std::cout<<ent<<" ";
+    std::cout<<"\n";
+    std::cout<<"vsm_\n";
+    for (auto ent : vsm_) std::cout<<ent<<" ";
+    std::cout<<"\n";
+    std::cout<<"suc_\n";
+    for (auto ent : suc_) std::cout<<ent<<" ";
+    std::cout<<"\n";
+    
     int array_size = t_soil_.size();
     wrap_btran(&array_size, t_soil_.data(), poro_.data(), eff_poro_.data(), vsm_.data(), suc_.data());
 
@@ -389,22 +456,22 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
     // photo_input.eair = patm;
 
     double es, esdT, qs, qsdT;
-    qsat(air_temp[0][c], patm, &es, &esdT, &qs, &qsdT);
+    qsat(air_temp[0][0], patm, &es, &esdT, &qs, &qsdT);
     
     photo_input.esat_tv = es;               // Saturated vapor pressure in leaves (Pa)
     //photo_input.esat_tv = 2300.;
 
-    photo_input.eair = humidity[0][c] * es;                  // Air water vapor pressure (Pa)
+    photo_input.eair = humidity[0][0] * es;                  // Air water vapor pressure (Pa)
     //photo_input.eair = 2000.;
 
     double o2a = 209460.0;
     photo_input.oair = o2a * patm * 1.e-6;                    // Oxygen partial pressure
     //photo_input.oair = 21280;
     
-    photo_input.cair = co2a[0][c] * patm * 1.e-6;             // CO2 partial pressure
+    photo_input.cair = co2a[0][0] * patm * 1.e-6;             // CO2 partial pressure
     //photo_input.cair = 5985;
     
-    photo_input.rb = 1./wind[0][c];                       // Boundary layer resistance (s/m)
+    photo_input.rb = 1./wind[0][0];                       // Boundary layer resistance (s/m)
     //photo_input.rb = 3.;
 
     
@@ -421,9 +488,10 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
     jday = 1.0 + (t_new - t_site_dym_)/dt_site_dym_;
 
     wrap_sunfrac(&radnum, photo_input.solad, photo_input.solai);
-    wrap_canopy_radiation(&jday,&radnum, photo_input.albgrd, photo_input.albgri);           
+    wrap_canopy_radiation(&jday, &radnum, photo_input.albgrd, photo_input.albgri);           
     wrap_photosynthesis( &dt_photosynthesis_, &patm, &array_size, t_soil_.data(), &photo_input);  
-
+  
+    
     t_photosynthesis_ = t_new;
     
   }

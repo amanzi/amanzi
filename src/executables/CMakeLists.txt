@@ -145,7 +145,7 @@ endif()
 
 add_amanzi_executable(ats
   SOURCE ${ats_src_files}
-  LINK_LIBS ${fates_link_libs} ${ats_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
+  LINK_LIBS  ${ats_link_libs} ${fates_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
 
