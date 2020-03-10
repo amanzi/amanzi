@@ -25,7 +25,7 @@ EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
     my_tag_(plist.get<std::string>("tag", "")),
     temporally_variable_(!plist.get<bool>("constant in time", false)),
     plist_(plist),
-    inted_(false),
+    inited_(false),
     vo_(Keys::cleanPListName(plist.name()), plist)
 {}
 

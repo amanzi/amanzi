@@ -161,13 +161,11 @@ TEST(STATE_PATCH_DATA)
   State s;
   s.RegisterDomainMesh(mesh);
 
-  auto& mps = s.Require<MultiPatch<AmanziDefaultDevice>,MultiPatchSpace>("multipatch", "", "multipatch");
-  mps.mesh = mesh;
-  mps.entity_kind = AmanziMesh::FACE;
+  auto& mps = s.Require<MultiPatch,MultiPatchSpace>("multipatch", "", "multipatch");
+  mps.set_mesh(mesh);
   mps.ghosted = false;
-  mps.n_dofs = 1;
-  mps.regions.push_back("box1");
-  mps.regions.push_back("box2");
+  mps.AddPatch("box1", AmanziMesh::FACE, 1);
+  mps.AddPatch("box2", AmanziMesh::FACE, 1);
 
   s.Setup();
 
@@ -175,15 +173,15 @@ TEST(STATE_PATCH_DATA)
   CHECK(s.HasData("multipatch"));
 
   {
-    auto& mp = s.GetW<MultiPatch<AmanziDefaultDevice>>("multipatch","","multipatch");
-    CHECK_EQUAL(14, mp.data.extent(0));
-    CHECK_EQUAL(1, mp.data.extent(1));
-    mp.data(3,0) = 1.0;
+    auto& mp = s.GetW<MultiPatch>("multipatch","","multipatch");
+    CHECK_EQUAL(7, mp[0].data.extent(0));
+    CHECK_EQUAL(1, mp[0].data.extent(1));
+    mp[0].data(3,0) = 1.0;
   }
 
   {
-    const auto& mp = s.Get<MultiPatch<AmanziDefaultDevice>>("multipatch", "");
-    CHECK_EQUAL(1.0, mp.data(3,0));
+    const auto& mp = s.Get<MultiPatch>("multipatch", "");
+    CHECK_EQUAL(1.0, mp[0].data(3,0));
   }  
 }
                     

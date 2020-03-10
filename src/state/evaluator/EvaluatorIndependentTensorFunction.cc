@@ -19,7 +19,6 @@
 */
 
 #include "EvaluatorIndependentTensorFunction.hh"
-#include "CompositeVectorFunctionFactory.hh"
 #include "UniqueHelpers.hh"
 
 namespace Amanzi {
@@ -106,8 +105,8 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
     auto& tv = S.Get<TensorVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
 
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
-                                                     tv.map);
+    func_ = Functions::createCompositeVectorFunction(plist_.sublist("function"),
+            tv.map.Mesh());
   }
 
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);

@@ -37,18 +37,22 @@ set(mesh_functions_inc_files
   CompositeVectorFunction.hh
   )
 
-set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
+set(mesh_functions_src_files
+  MeshFunction.cc
+  )
+
+set(mesh_functions_link_libs mesh_functions mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 # HEADER ONLY
 
-# #
-# # Library: mesh_functions
-# #
-# add_amanzi_library(mesh_functions
-#   SOURCE ${mesh_functions_src_files}
-#   HEADERS ${mesh_functions_inc_files}
-#   LINK_LIBS ${mesh_functions_link_libs}
-#   )
+#
+# Library: mesh_functions
+#
+add_amanzi_library(mesh_functions
+  SOURCE ${mesh_functions_src_files}
+  HEADERS ${mesh_functions_inc_files}
+  LINK_LIBS ${mesh_functions_link_libs}
+  )
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
