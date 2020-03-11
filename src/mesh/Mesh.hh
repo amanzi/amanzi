@@ -839,6 +839,18 @@ class Mesh {
                                 const Parallel_type ptype,
                               Entity_ID_List& entids) const;
 
+  void get_set_entities(const Set_ID setid, const Entity_kind kind,
+                        const Parallel_type ptype,
+                        Entity_ID_View& entids) const {
+    Entity_ID_List ids_list;
+    get_set_entities(setid, kind, ptype, ids_list);
+    Kokkos::resize(entids, ids_list.size());
+    {
+      Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
+      Kokkos::deep_copy(entids, ids_host);
+    }
+  }
+  
   // -- new interface. Since not all regions support volume fractions
   // (vofs), this vector is optional and could be empty.
   virtual void

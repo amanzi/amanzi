@@ -61,6 +61,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       KOKKOS_LAMBDA(const int c) {
         Yc(c,0) += Xc(c,0) * dv(c,0);
       });
+
+  // std::cout << "YcDiag = " << Yc(0,0) << "," << Yc(4,0) << "," << Yc(49,0) << std::endl;
+
   return 0;
 }
 
@@ -103,19 +106,35 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
           csr_v.at(f),csr_v.size(f));
         WhetStone::DenseVector Avv(
           csr_Av.at(f), csr_Av.size(f));
-        
+
+        bool debug = false;
         for (int n = 0; n != ncells; ++n) {
           vv(n) = Xc(cells[n],0);
+          if (cells[n] == 49) debug = true;
         }
         WhetStone::DenseMatrix lm(
           local_csr.at(f),
           local_csr.size(f,0),local_csr.size(f,1)); 
-        lm.Multiply(vv,Avv,false); 
+        lm.Multiply(vv,Avv,false);
+
+        // if (debug) {
+        //   std::cout << "f = " << f << std::endl
+        //             << "  v = " << vv(0);
+        //   if (ncells == 2) {
+        //     std::cout << "," << vv(1) << std::endl;
+        //   }
+        //   std::cout << " Av = " << Avv(0);
+        //   if (ncells == 2) {
+        //     std::cout << "," << Avv(1) << std::endl;
+        //   }
+        // }      
 
         for (int n = 0; n != ncells; ++n) {
           Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
         }
       });
+
+  // std::cout << "Yc_FC = " << Yc(0,0) << "," << Yc(4,0) << "," << Yc(49,0) << std::endl;
   return 0;
 }
 

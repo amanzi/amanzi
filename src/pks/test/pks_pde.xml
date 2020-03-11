@@ -43,6 +43,10 @@
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="forward euler" />
       </ParameterList>
+      <Parameter name="debug cells" type="Array(int)" value="{0,4,49}" />
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion FE implicit" type="ParameterList">
@@ -162,7 +166,7 @@
       </ParameterList>
 
       <ParameterList name="boundary_conditions" type="ParameterList">
-        <Parameter name="evaluator type" type="string" value="general boundary conditions" />
+        <Parameter name="evaluator type" type="string" value="boundary condition aggregator" />
         <ParameterList name="boundary functions" type="ParameterList">
           <ParameterList name="exterior_boundary_dirichlet_data" type="ParameterList">
             <Parameter name="boundary condition type" type="string" value="Dirichlet" />
@@ -174,7 +178,8 @@
       </ParameterList>
 
       <ParameterList name="exterior_boundary_dirichlet_data" type="ParameterList">
-        <Parameter name="evaluator type" type="string" value="boundary function" />
+        <Parameter name="evaluator type" type="string" value="boundary condition function" />
+        <Parameter name="boundary condition type" type="string" value="Dirichlet" />
         <Parameter name="list name" type="string" value="u" />
         <Parameter name="function name" type="string" value="u" />
         <ParameterList name="u">

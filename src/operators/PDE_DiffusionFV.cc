@@ -198,6 +198,10 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
             }
           }
         });
+    // {
+    //   const auto Am0 = local_csr.at(1);
+    //   std::cout << "Amat(0) = " << Am0(0) << "," << Am0(1) << "," << Am0(2) << "," << Am0(3) << std::endl;
+    // }
   }
 }
 
@@ -261,6 +265,10 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
 
+  //  AMANZI_ASSERT(bc_model(3) == OPERATOR_BC_DIRICHLET);
+  std::cout << "bc(3) = " << bc_model(3) << "," << bc_value(3) << std::endl;
+  std::cout << "bc(299) = " << bc_model(299) << "," << bc_value(299) << std::endl;
+  
   if (local_op_.get()) {
     auto local_op = local_op_.get(); 
     // prep views

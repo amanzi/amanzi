@@ -77,6 +77,8 @@ class PK_PDE_Explicit : public Base_t {
     re_list.set("additional rhss keys",
                 Teuchos::Array<std::string>(1, "source_cv"));
     re_list.set("rhs coefficients", Teuchos::Array<double>(1, -1.0));
+    std::vector<int> cells{0,4,49};
+    re_list.set("debug cells", Teuchos::Array<int>(cells));
     auto dudt_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(this->dudt_key_, this->tag_inter_, dudt_eval);
   }
@@ -102,6 +104,11 @@ class PK_PDE_Explicit : public Base_t {
     const auto& dudt =
       this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
+    std::cout << "Dudt at t = " << t << std::endl;
+    std::cout << "================================================"
+              << std::endl;
+    this->db_->WriteVector("dudt", dudt);
+    
     // evaluate cell volume
     this->S_->GetEvaluator("cell_volume", tag_inter_)
       .Update(*this->S_, this->name());
@@ -111,12 +118,7 @@ class PK_PDE_Explicit : public Base_t {
     // dudt = -dudt_eval / cv
     f.Data()->reciprocal(cv);
     f.Data()->elementWiseMultiply(-1.0, dudt, *f.Data(), 0.);
-
-    std::cout << "Dudt at t = " << t << std::endl;
-    std::cout << "================================================"
-              << std::endl;
-    std::cout << "  u = " << std::endl;
-    u.Print(std::cout);
+    this->db_->WriteVector("f", *f.Data());
   }
 
  protected:

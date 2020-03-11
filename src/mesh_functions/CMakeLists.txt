@@ -41,7 +41,7 @@ set(mesh_functions_src_files
   MeshFunction.cc
   )
 
-set(mesh_functions_link_libs mesh_functions mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
+set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 # HEADER ONLY
 
@@ -72,7 +72,7 @@ if (BUILD_TESTS)
     endif()
 
     set(mesh_functions_test_link_libs
-      mesh_factory ${mesh_functions_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+      mesh_functions mesh_factory ${mesh_functions_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
   add_amanzi_test(mesh_functions_boundary_function mesh_functions_boundary_function
                   KIND unit

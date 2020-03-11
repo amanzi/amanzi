@@ -47,6 +47,7 @@ class Evaluator_BCs : public EvaluatorSecondary {
 
  protected:
   std::vector<int> bc_types_;
+  bool inited_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_BCs> fac_;

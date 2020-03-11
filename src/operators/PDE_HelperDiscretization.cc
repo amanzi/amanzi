@@ -22,7 +22,7 @@ namespace Operators {
 * Simple constructors.
 ****************************************************************** */
 PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op) :
-    PDE_HelperDiscretization(global_op_->Mesh())
+    PDE_HelperDiscretization(global_op->Mesh())
 {
   global_op_ = global_op;
 }

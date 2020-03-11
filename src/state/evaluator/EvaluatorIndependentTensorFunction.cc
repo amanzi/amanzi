@@ -125,7 +125,7 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
         vec.extent(0),
         KOKKOS_LAMBDA(const int& i) {
           auto Ti = tv.at(j+i);
-          Ti.assign(WhetStone::Tensor(Kokkos::subview(vec, i, Kokkos::ALL), Ti.dimension(), Ti.rank(), Ti.size()));
+          Ti(0,0) = vec(i,0);
         });
     j += vec.extent(0);
   }

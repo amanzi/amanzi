@@ -10,10 +10,10 @@
 
 //!
 
-#include "evaluator/Evaluator_BoundaryFunction.hh"
+#include "evaluator/Evaluator_BCsFunction.hh"
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator, Evaluator_BoundaryFunction>
-  Evaluator_BoundaryFunction::fac_("boundary function");
+Utils::RegisteredFactory<Evaluator, Evaluator_BCsFunction>
+  Evaluator_BCsFunction::fac_("boundary condition function");
 
 } // namespace Amanzi

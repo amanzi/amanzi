@@ -165,6 +165,8 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   //
   bool has_derivs = S.HasDerivativeSet(my_keys_[0].first, my_keys_[0].second);
   if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
+    db_ = Teuchos::rcp(new Debugger(my_fac.Mesh(), std::string("OperatorApply: ")+my_keys_[0].first, plist_));
+
     // add the primary
     my_fac.AddComponent(primary_entity_, primary_entity_kind_, 1);
     CompositeVectorSpace my_fac_mesh_only(my_fac);
@@ -293,10 +295,13 @@ Evaluator_OperatorApply::Update_(State& S)
 
   const auto& x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
   x.ScatterMasterToGhosted();
+  db_->WriteVector("x", x);
   result.putScalarMasterAndGhosted(0.);
 
   int i = 0;
   for (const auto& op_key : op0_keys_) {
+    db_->WriteDivider();
+
     // create the global operator
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(result.Mesh());
@@ -306,14 +311,11 @@ Evaluator_OperatorApply::Update_(State& S)
     // do the apply
     S.Get<Operators::Op>(op_key, my_keys_[0].second)
       .ApplyMatrixFreeOp(&*global_op, x, result);
-    // std::cout << "Result after op0 op:" << std::endl;
-    // result.Print(std::cout);
+    db_->WriteVector(op_key+" Ax", result);
 
     // Ax - b
-    result.update(
-      -1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
-    // std::cout << "Result after op0 rhs:" << std::endl;
-    // result.Print(std::cout);
+    result.update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
+    db_->WriteVector(op_key+"Ax-b", result);
     ++i;
   }
 
@@ -324,6 +326,8 @@ Evaluator_OperatorApply::Update_(State& S)
 
     int k = 0;
     for (const auto& op_key : op_list) {
+      db_->WriteDivider();
+
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
@@ -333,16 +337,14 @@ Evaluator_OperatorApply::Update_(State& S)
       // do the apply
       S.Get<Operators::Op>(op_key, my_keys_[0].second)
         .ApplyMatrixFreeOp(&*global_op, xj, result);
-      // std::cout << "Result after offdiagonal op:" << std::endl;
-      // result.Print(std::cout);
+      db_->WriteVector(op_key+" Ax", result);
 
       // Ax - b
       result.update(
         -1.0,
         S.Get<CompositeVector>(op_rhs_keys_[j][k], my_keys_[0].second),
         1.0);
-      // std::cout << "Result after offdiagonal op rhs:" << std::endl;
-      // result.Print(std::cout);
+      db_->WriteVector(op_key+" Ax-b", result);
       ++k;
     }
     ++j;
@@ -351,12 +353,13 @@ Evaluator_OperatorApply::Update_(State& S)
   // add all the additional RHSs
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
+    db_->WriteDivider();
+
     result.update(rhs_scalars_[j],
                   S.Get<CompositeVector>(rhs_key, my_keys_[0].second),
                   1.0);
+    db_->WriteVector(rhs_key, result);
     ++j;
-    // std::cout << "Result after rhs " << j << ":" << std::endl;
-    // result.Print(std::cout);
   }
 }
 

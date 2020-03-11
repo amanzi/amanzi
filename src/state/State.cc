@@ -154,7 +154,7 @@ State::RequireEvaluator(const Key& key, const Key& tag)
     if (Keys::hasKey(f_it.second, tag) &&
         f_it.second.at(tag)->ProvidesKey(key, tag)) {
       auto& evaluator = f_it.second.at(tag);
-      SetEvaluator(key, evaluator);
+      SetEvaluator(key, tag, evaluator);
       return *evaluator;
     }
   }
@@ -303,6 +303,7 @@ State::Setup()
   for (auto& e : evaluators_) {
     for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {
+        AMANZI_ASSERT(r.second->ProvidesKey(e.first, r.first));
         Errors::Message message;
         message << "Evaluator \"" << e.first << "\" with tag \"" << r.first
                 << "\" does not provide its own key.";
