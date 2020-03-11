@@ -1849,8 +1849,6 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
   int nsrcs = srcs_.size();
   Key coupled_flux_key = "surface-surface_subsurface_flux";
 
-  const Epetra_MultiVector& flux_interface_ = *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
-
   for (int m = 0; m < nsrcs; m++) {    
     srcs_[m]->Compute(t0, t0); 
     std::vector<int> index = srcs_[m]->tcc_index();
@@ -1869,6 +1867,9 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
 
         if ((values[k] < 0)&&(tcc[imap][c]>1e-16)) {
           if (srcs_[m]->name() == "domain coupling") {
+            //val = std::max(val, fabs(values[k])/tcc[imap][c]);
+            //val = std::max(val, fabs(values[k]));
+            const Epetra_MultiVector& flux_interface_ = *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
 	    val = std::max(val, fabs(flux_interface_[0][c]));
           }
         }                              
