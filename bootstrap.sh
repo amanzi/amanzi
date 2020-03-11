@@ -327,7 +327,7 @@ Configuration:
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
 
-  --ats_dev               use bootstrap to build ATS without cloning new repository ['"${ats_devs}"']
+  --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
 
 Build features:
