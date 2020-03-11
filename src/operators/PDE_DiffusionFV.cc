@@ -479,7 +479,17 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
   transmissibility_->putScalar(0.);
-  if (!K_.get()) K_ = Teuchos::rcp(new TensorVector());
+  if (!K_.get()) {
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_)
+        ->SetGhosted(false)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    K_ = Teuchos::rcp(new TensorVector(cvs,false));
+    for (int c=0; c!=ncells_owned; ++c) {
+      K_->set_shape(c, mesh_->space_dimension(), 1);
+      K_->Init();
+    }
+  }
 
   {
     auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
@@ -498,7 +508,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc = K.size() == 0 ? Kc_ONE : K_->at(c);
+          WhetStone::Tensor Kc = K_->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
