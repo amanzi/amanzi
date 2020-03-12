@@ -7,19 +7,37 @@ SPHINXBUILD   = sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
 
-all: input_spec html
+.PHONY: all sphinx_help worktree html pdf input_spec deploy clean
 
-# Put it first so that "make" without argument is like "make help".
-help:
+all: html
+
+
+sphinx_help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+worktree:
+	cd build && git worktree add html gh-pages
+
+html:
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+pdf:
+	@$(SPHINXBUILD) -M pdf "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 input_spec:
 	$(MAKE) -C source/input_spec
 
+deploy: all
+	cd build/html && \
+	git add --all && \
+	git commit -m "Deployment to gh-pages" && \
+	git push origin gh-pages
+
+clean:
+	rm -rf build/html/*
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+#%: Makefile
+#	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
