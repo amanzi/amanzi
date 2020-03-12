@@ -233,18 +233,11 @@ class PK_PDE_Implicit : public Base_t {
     std::cout << "Updating residual at time t = " << t_new << std::endl;
     std::cout << "================================================"
               << std::endl;
-    // std::cout << "  u_old = ";
-    // u_old->Print(std::cout);
-    // std::cout << "  u_new = ";
-    // u_new->Print(std::cout);
     this->db_->WriteVector("u_old", u_old->Data().ptr());
     this->db_->WriteVector("u_new", u_new->Data().ptr());
     this->S_->GetEvaluator(res_key_, tag_new_).Update(*this->S_, this->name());
     *f->Data() = this->S_->template Get<CompositeVector>(res_key_, tag_new_);
     this->db_->WriteVector("res", f->Data().ptr());
-
-    // std::cout << "  res = ";
-    // f->Print(std::cout);
   }
 
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
