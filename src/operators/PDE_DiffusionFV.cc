@@ -484,11 +484,12 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     cvs.SetMesh(mesh_)
         ->SetGhosted(false)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-    K_ = Teuchos::rcp(new TensorVector(cvs,false));
+    auto K = Teuchos::rcp(new TensorVector(cvs,false));
     for (int c=0; c!=ncells_owned; ++c) {
-      K_->set_shape(c, mesh_->space_dimension(), 1);
-      K_->Init();
+      K->set_shape(c, mesh_->space_dimension(), 1);
+      K->Init();
     }
+    K_ = K;
   }
 
   {
