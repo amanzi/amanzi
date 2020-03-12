@@ -50,7 +50,7 @@ This approach is widely used in geochemical models (:cite:`chem-Lichtner_1985`, 
 Transport and Chemistry Coupling: Operator Splitting Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Amanzi uses the so-called Operator Spliting Aproach to couple transport and reaction processes :cite:`chem-Yeh_rt-evaluation_1989`. In the operator splitting approach, transport and chemistry are solved sequentially over the same time step, first transport and then chemistry. One advantage of this approach is that transport equations can be solved using linear solvers. Additionally, the non-linear chemical equations can be solved on a cell-by-cell basis in what is an embarassingly parallel problem. To access these advantages, the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product species (:math:`C_i`). Rather, transport operates on the total component concentrations (:math:`U_j`) as defined in eq. :eq:`totalcomponent`. Please see :doc:`transport` for details of the transport capabilities of Amanzi. Following transport, the chemical processes affecting the mass balance of all components are solved over the same timestep:
+Amanzi uses the operator spliting aproach to couple transport and reaction processes :cite:`chem-Yeh_rt-evaluation_1989`. In the operator splitting approach, transport and chemistry are solved sequentially over the same time step, first transport and then chemistry. One advantage of this approach is that transport equations can be solved using linear solvers. Additionally, the non-linear chemical equations can be solved on a cell-by-cell basis in what is an embarassingly parallel problem. To access these advantages, the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product species (:math:`C_i`). Rather, transport operates on the total component concentrations (:math:`U_j`) as defined in eq. :eq:`totalcomponent`. Please see :doc:`transport` for details of the transport capabilities of Amanzi. Following transport, the chemical processes affecting the mass balance of all components are solved over the same timestep:
 
 .. math::
    \frac{\partial (\phi s_l U_j)}{\partial t} 
@@ -103,7 +103,11 @@ Alquimia API
 
 Alquimia is an Application Programming Interface (API) that exposes the functionality of a geochemical engine to Amanzi. Alquimia does not perform any geochemical calculations itself. The geochemical engine is responsible for all geochemical calculations, and must provide a wrapper library that exactly conforms to the Alquimia API. Thus, the geochemical capabilities of Amanzi when using the Alquimia interface will depend on the geochemical engine of choice. That means that they can provide Amanzi with those capabilities or specific formulation not available in the native geochemical engine. 
 
-Currently, the geochemical capabilities of the reactive transport code PFloTran (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) are available within Amanzi through the Alquimia interface. These capabilities are described in the PFloTran's documentation. Some examples are available in the Amanzi documentation (:ref:`Benchmark Testing/Chemistry <sec-benchmarks-chemistry>`).
+Currently, the geochemical capabilities of the reactive transport code PFloTran 
+(http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) 
+and CrunchFlow (http://carlsteefel.com) are available within Amanzi through the Alquimia interface. 
+These capabilities are described in the documentation for these packages. 
+Some examples are available in the Amanzi documentation (:ref:`Benchmark Testing/Chemistry <sec-benchmarks-chemistry>`).
 
 References
 ~~~~~~~~~~

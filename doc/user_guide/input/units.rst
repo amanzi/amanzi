@@ -3,13 +3,14 @@ Units in Amanzi
 
 Internally, *Amanzi* uses SI units for length, time, mass, and
 concentration as indicated in the ``model_description/units``
-element. Although, it will eventually support the automatic
+element. The only exception is the mol/L unit for the concentration.
+Although, it will eventually support the automatic
 translation of popular units in an input file to SI units internally,
 at present, this translation is only supported by the unstructured component of *Amanzi*. 
 For example, the units for density, viscosity, pressure, hydraulic
 conductivity, and permeability are kg/m\ :sup:`3`\ , Pa :math:`\cdot`
 s, Pa, m/s, and m\ :sup:`2`\ , respectively.  Simulation outputs also
-use these dimensional units.
+use these units.
 
 Beyond dimensional units, the physical entities that are tracked in
 internal *Amanzi* calculations, and are often preferred for *Amanzi*

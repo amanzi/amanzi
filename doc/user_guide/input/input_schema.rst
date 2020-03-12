@@ -20,7 +20,7 @@ Amanzi solves a set of parameterized models for multiphase flow in porous media.
 * parameters controlling the selection of key algorithmic options and output,
 * a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
-The primary input to *Amanzi* is through an XML file. The Amanzi input XML format is defined in terms of the XML schema that can found in the Amanzi source code repository.  Users can construct models and generate compliant XML input files using the Akuna_ tool suite.  Users can also choose to generate compliant file using a text editor or other method.
+The primary input to *Amanzi* is through an XML file. The Amanzi input XML format is defined in terms of the XML schema that can be found in the Amanzi source code repository.  Users can construct models and generate compliant XML input files using the Akuna_ tool suite.  Users can also choose to generate compliant file using a text editor or other method.
 
 .. In practice, Amanzi is called by a "simulation coordinator" which
 .. manages the simulation instructions and orchestrates the flow of
