@@ -23,6 +23,7 @@
 #include "PK_MixinExplicit.hh"
 #include "PK_MixinLeaf.hh"
 
+#include "LinearOperatorFactory.hh"
 #include "Evaluator_OperatorApply.hh"
 #include "Evaluator_PDE_Accumulation.hh"
 #include "Operator_Factory.hh"
@@ -236,8 +237,11 @@ class PK_PDE_Implicit : public Base_t {
     // u_old->Print(std::cout);
     // std::cout << "  u_new = ";
     // u_new->Print(std::cout);
+    this->db_->WriteVector("u_old", u_old->Data().ptr());
+    this->db_->WriteVector("u_new", u_new->Data().ptr());
     this->S_->GetEvaluator(res_key_, tag_new_).Update(*this->S_, this->name());
     *f->Data() = this->S_->template Get<CompositeVector>(res_key_, tag_new_);
+    this->db_->WriteVector("res", f->Data().ptr());
 
     // std::cout << "  res = ";
     // f->Print(std::cout);
@@ -246,9 +250,25 @@ class PK_PDE_Implicit : public Base_t {
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                           Teuchos::RCP<TreeVector> Pu)
   {
-    const auto& lin_op = this->S_->template GetDerivative<Operators::Operator>(
-      res_key_, tag_new_, this->key_, tag_new_);
-    lin_op.applyInverse(*u->Data(), *Pu->Data());
+    if (!lin_solver_.get()) {
+      const auto& lin_op = this->S_->template GetDerivativePtr<Operators::Operator>(res_key_, tag_new_, this->key_, tag_new_);
+      
+      Teuchos::ParameterList ls_list;
+      ls_list.sublist("verbose object")
+          .set<std::string>("verbosity level", "high");
+      ls_list.set("iterative method", "gmres");
+      ls_list.sublist("gmres parameters").set("error tolerance", 1.e-10);
+      std::vector<std::string> crit = {"make one iteration", "relative residual"};
+      ls_list.sublist("gmres parameters").set("convergence criteria", Teuchos::Array<std::string>(crit));
+      ls_list.sublist("gmres parameters").sublist("verbose object")
+          .set<std::string>("verbosity level", "high");
+      
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeSpace> fac;
+      lin_solver_ = fac.Create(ls_list, lin_op);
+    }
+    this->db_->WriteVector("res", u->Data().ptr());
+    lin_solver_->applyInverse(*u->Data(), *Pu->Data());
+    this->db_->WriteVector("PC*res", Pu->Data().ptr());
     return 0;
   }
 
@@ -274,6 +294,8 @@ class PK_PDE_Implicit : public Base_t {
  protected:
   Key res_key_;
   Key conserved_key_;
+
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator,CompositeVector,CompositeSpace> > lin_solver_;
 
   using Base_t::tag_new_;
   using Base_t::tag_old_;

@@ -386,7 +386,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
       // collect all operators and jacobian info
       for (const auto& op_key : op0_keys_) {
         // FIX ME AND MAKE THIS CONST CORRECT --etc
-        std::cout << "Adding diffusion op to operator" << std::endl;
+        //std::cout << "Adding diffusion op to operator" << std::endl;
         global_op->OpPushBack(
           S.GetPtrW<Operators::Op>(op_key, my_keys_[0].second, op_key));
         if (S.GetEvaluator(op_key, my_keys_[0].second)
@@ -426,12 +426,12 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     }
 
     // symbolic assemble the first time
-    global_op->SymbolicAssembleMatrix();
+    //    global_op->SymbolicAssembleMatrix();
     global_op->InitializePreconditioner(plist_.sublist("preconditioner"));
   }
 
   // assemble
-  global_op->AssembleMatrix();
+  //global_op->AssembleMatrix();
   global_op->UpdatePreconditioner();
 }
 

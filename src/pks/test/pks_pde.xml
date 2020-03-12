@@ -61,7 +61,7 @@
         <Parameter name="solver type" type="string" value="Newton" />
         <ParameterList name="Newton parameters" type="ParameterList">
           <ParameterList name="verbose object" type="ParameterList">
-            <Parameter name="verbosity level" type="string" value="extreme" />
+            <Parameter name="verbosity level" type="string" value="high" />
           </ParameterList>
           <Parameter name="nonlinear tolerance" type="double" value="1.e-4" />
         </ParameterList>
