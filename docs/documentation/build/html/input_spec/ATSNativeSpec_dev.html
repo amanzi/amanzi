@@ -1,214 +1,560 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>ATS Native XML Input Specification V1 &#8212; ATS 1.0 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ATS Native XML Input Specification V1 &mdash; ATS 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="../index.html" class="icon icon-home"> ATS
+          
+
+          
+          </a>
+
+          
             
-  <div class="section" id="ats-native-xml-input-specification-v1">
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">ATS Native XML Input Specification V1</a></li>
+<li><a class="reference internal" href="#syntax-of-the-specification">Syntax of the Specification</a></li>
+<li><a class="reference internal" href="#symbol-index">Symbol Index</a></li>
+<li><a class="reference internal" href="#main">Main</a></li>
+<li><a class="reference internal" href="#mesh">Mesh</a><ul>
+<li><a class="reference internal" href="#generatedmesh">GeneratedMesh</a></li>
+<li><a class="reference internal" href="#meshfromfile">MeshFromFile</a></li>
+<li><a class="reference internal" href="#logicalmesh">LogicalMesh</a></li>
+<li><a class="reference internal" href="#surfacemesh">SurfaceMesh</a></li>
+<li><a class="reference internal" href="#subgridmeshes">SubgridMeshes</a></li>
+<li><a class="reference internal" href="#columnmeshes">ColumnMeshes</a></li>
+<li><a class="reference internal" href="#sperrymesh">SperryMesh</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#region">Region</a><ul>
+<li><a class="reference internal" href="#point">Point</a></li>
+<li><a class="reference internal" href="#box">Box</a></li>
+<li><a class="reference internal" href="#plane">Plane</a></li>
+<li><a class="reference internal" href="#labeled-set">Labeled Set</a></li>
+<li><a class="reference internal" href="#color-function">Color Function</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#coordinator">Coordinator</a></li>
+<li><a class="reference internal" href="#visualization">Visualization</a></li>
+<li><a class="reference internal" href="#checkpoint">Checkpoint</a></li>
+<li><a class="reference internal" href="#observation">Observation</a></li>
+<li><a class="reference internal" href="#pk">PK</a><ul>
+<li><a class="reference internal" href="#base-pks">Base PKs</a><ul>
+<li><a class="reference internal" href="#pkphysicalbase">PKPhysicalBase</a></li>
+<li><a class="reference internal" href="#pkbdfbase">PKBDFBase</a></li>
+<li><a class="reference internal" href="#pkphysicalbdfbase">PKPhysicalBDFBase</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#physical-pks">Physical PKs</a><ul>
+<li><a class="reference internal" href="#flow-pks">Flow PKs</a><ul>
+<li><a class="reference internal" href="#richards-pk">Richards PK</a></li>
+<li><a class="reference internal" href="#permafrost-flow-pk">Permafrost Flow PK</a></li>
+<li><a class="reference internal" href="#overland-flow-head-primary-variable-pk">Overland Flow, head primary variable PK</a></li>
+<li><a class="reference internal" href="#overland-flow-pressure-primary-variable-pk">Overland Flow, pressure primary variable, PK</a></li>
+<li><a class="reference internal" href="#snow-distribution-pk">Snow Distribution PK</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#energy-pks">Energy PKs</a><ul>
+<li><a class="reference internal" href="#advection-diffusion-pk">Advection Diffusion PK</a></li>
+<li><a class="reference internal" href="#energy-base-pk">Energy Base PK</a></li>
+<li><a class="reference internal" href="#two-phase-subsurface-energy-pk">Two-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#three-phase-subsurface-energy-pk">Three-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#id1">Three-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#surface-ice-energy-pk">Surface Ice Energy PK</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#surface-energy-balance-pks">Surface Energy Balance PKs</a><ul>
+<li><a class="reference internal" href="#surface-energy-balance-snow-monolithic-version">Surface Energy Balance / Snow – Monolithic Version</a></li>
+<li><a class="reference internal" href="#surface-energy-balance-generic-version">Surface Energy Balance – Generic Version</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#biogeochemistry">Biogeochemistry</a><ul>
+<li><a class="reference internal" href="#biogeochemistry-monolithic-version">Biogeochemistry – Monolithic Version</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#deformation">Deformation</a><ul>
+<li><a class="reference internal" href="#volumetric-deformation">Volumetric Deformation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mpcs">MPCs</a><ul>
+<li><a class="reference internal" href="#weakmpc">WeakMPC</a></li>
+<li><a class="reference internal" href="#strongmpc">StrongMPC</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#physical-mpcs">Physical MPCs</a><ul>
+<li><a class="reference internal" href="#coupled-water-mpc">Coupled Water MPC</a></li>
+<li><a class="reference internal" href="#subsurface-mpc">Subsurface MPC</a></li>
+<li><a class="reference internal" href="#permafrost-mpc">Permafrost MPC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#state">State</a><ul>
+<li><a class="reference internal" href="#field-evaluators">Field Evaluators</a><ul>
+<li><a class="reference internal" href="#field-evaluator-base-classes">Field Evaluator Base Classes</a><ul>
+<li><a class="reference internal" href="#primaryvariableevaluator">PrimaryVariableEvaluator</a></li>
+<li><a class="reference internal" href="#secondaryvariableevaluator">SecondaryVariableEvaluator</a></li>
+<li><a class="reference internal" href="#secondaryvariablesevaluator">SecondaryVariablesEvaluator</a></li>
+<li><a class="reference internal" href="#independentvariableevaluator">IndependentVariableEvaluator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#water-content">Water Content</a><ul>
+<li><a class="reference internal" href="#richardswatercontentevaluator">RichardsWaterContentEvaluator</a></li>
+<li><a class="reference internal" href="#richardswatercontentwithvaporevaluator">RichardsWaterContentWithVaporEvaluator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#surface-water-potential-surfaces">Surface Water potential surfaces</a><ul>
+<li><a class="reference internal" href="#surfaceelevation">SurfaceElevation</a></li>
+<li><a class="reference internal" href="#surfacepotential">SurfacePotential</a></li>
+<li><a class="reference internal" href="#snowsurfacepotential">SnowSurfacePotential</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#generic-evaluators">Generic Evaluators</a><ul>
+<li><a class="reference internal" href="#additiveevaluator">AdditiveEvaluator</a></li>
+<li><a class="reference internal" href="#multiplicativeevaluator">MultiplicativeEvaluator</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#initialconditions">InitialConditions</a><ul>
+<li><a class="reference internal" href="#initialization-of-constant-scalars">Initialization of constant scalars</a></li>
+<li><a class="reference internal" href="#initialization-of-constant-vectors">Initialization of constant vectors</a></li>
+<li><a class="reference internal" href="#initialization-of-scalar-fields">Initialization of scalar fields</a></li>
+<li><a class="reference internal" href="#initialization-of-tensor-fields">Initialization of tensor fields</a></li>
+<li><a class="reference internal" href="#initialization-from-a-file">Initialization from a file</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#boundaryconditions">BoundaryConditions</a><ul>
+<li><a class="reference internal" href="#flow-specific-boundary-conditions">Flow-specific Boundary Conditions</a><ul>
+<li><a class="reference internal" href="#dirichlet-pressure-boundary-conditions">Dirichlet (pressure) boundary conditions</a></li>
+<li><a class="reference internal" href="#neumann-mass-flux-boundary-conditions">Neumann (mass flux) boundary conditions</a></li>
+<li><a class="reference internal" href="#seepage-face-boundary-conditions">Seepage face boundary conditions</a></li>
+<li><a class="reference internal" href="#dirichlet-head-boundary-conditions">Dirichlet (head) boundary conditions</a></li>
+<li><a class="reference internal" href="#fixed-level-boundary-conditions">Fixed level boundary conditions</a></li>
+<li><a class="reference internal" href="#zero-head-gradient-boundary-conditions">Zero head gradient boundary conditions</a></li>
+<li><a class="reference internal" href="#critical-depth-boundary-conditions">Critical depth boundary conditions</a></li>
+<li><a class="reference internal" href="#dynamic-boundary-condutions">Dynamic boundary condutions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#time-integrators-solvers-and-other-mathematical-specs">Time integrators, solvers, and other mathematical specs</a><ul>
+<li><a class="reference internal" href="#timeintegrator">TimeIntegrator</a><ul>
+<li><a class="reference internal" href="#timestepcontrollerfixed">TimestepControllerFixed</a></li>
+<li><a class="reference internal" href="#timestepcontrollerstandard">TimestepControllerStandard</a></li>
+<li><a class="reference internal" href="#timestepcontrollersmarter">TimestepControllerSmarter</a></li>
+<li><a class="reference internal" href="#timestepcontrollerfromfile">TimestepControllerFromFile</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#linear-solver-spec">Linear Solver Spec</a></li>
+<li><a class="reference internal" href="#preconditioner">Preconditioner</a><ul>
+<li><a class="reference internal" href="#hypre-s-boomer-amg">Hypre’s Boomer AMG</a></li>
+<li><a class="reference internal" href="#trilinos-ml">Trilinos ML</a></li>
+<li><a class="reference internal" href="#block-ilu">Block ILU</a></li>
+<li><a class="reference internal" href="#indentity">Indentity</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#nonlinearsolver">NonlinearSolver</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#other-common-specs">Other Common Specs</a><ul>
+<li><a class="reference internal" href="#ioevent">IOEvent</a></li>
+<li><a class="reference internal" href="#verboseobject">VerboseObject</a></li>
+<li><a class="reference internal" href="#function">Function</a><ul>
+<li><a class="reference internal" href="#constant-function">Constant Function</a></li>
+<li><a class="reference internal" href="#tabular-function">Tabular Function</a></li>
+<li><a class="reference internal" href="#smooth-step-function">Smooth step Function</a></li>
+<li><a class="reference internal" href="#polynomial-function">Polynomial Function</a></li>
+<li><a class="reference internal" href="#multi-variable-linear-function">Multi-variable linear Function</a></li>
+<li><a class="reference internal" href="#separable-function">Separable Function</a></li>
+<li><a class="reference internal" href="#additive-function">Additive Function</a></li>
+<li><a class="reference internal" href="#multiplicative-function">Multiplicative Function</a></li>
+<li><a class="reference internal" href="#composition-function">Composition Function</a></li>
+<li><a class="reference internal" href="#piecewise-bilinear-function">Piecewise Bilinear Function</a></li>
+<li><a class="reference internal" href="#distance-function">Distance Function</a></li>
+<li><a class="reference internal" href="#monomial-function">Monomial Function</a></li>
+<li><a class="reference internal" href="#standard-math-function">Standard Math Function</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#operator">Operator</a><ul>
+<li><a class="reference internal" href="#operatoraccumulation">OperatorAccumulation</a></li>
+<li><a class="reference internal" href="#operatordiffusion">OperatorDiffusion</a></li>
+<li><a class="reference internal" href="#operatoradvection">OperatorAdvection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ATS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>ATS Native XML Input Specification V1</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/input_spec/ATSNativeSpec_dev.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="ats-native-xml-input-specification-v1">
 <h1><a class="toc-backref" href="#id4">ATS Native XML Input Specification V1</a><a class="headerlink" href="#ats-native-xml-input-specification-v1" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="table-of-contents">
-<p class="topic-title first"><strong>Table of Contents</strong></p>
+<p class="topic-title"><strong>Table of Contents</strong></p>
 <ul class="simple">
-<li><a class="reference internal" href="#ats-native-xml-input-specification-v1" id="id4">ATS Native XML Input Specification V1</a></li>
-<li><a class="reference internal" href="#syntax-of-the-specification" id="id5">Syntax of the Specification</a></li>
-<li><a class="reference internal" href="#symbol-index" id="id6">Symbol Index</a></li>
-<li><a class="reference internal" href="#main" id="id7">Main</a></li>
-<li><a class="reference internal" href="#mesh" id="id8">Mesh</a><ul>
-<li><a class="reference internal" href="#generatedmesh" id="id9">GeneratedMesh</a></li>
-<li><a class="reference internal" href="#meshfromfile" id="id10">MeshFromFile</a></li>
-<li><a class="reference internal" href="#logicalmesh" id="id11">LogicalMesh</a></li>
-<li><a class="reference internal" href="#surfacemesh" id="id12">SurfaceMesh</a></li>
-<li><a class="reference internal" href="#subgridmeshes" id="id13">SubgridMeshes</a></li>
-<li><a class="reference internal" href="#columnmeshes" id="id14">ColumnMeshes</a></li>
-<li><a class="reference internal" href="#sperrymesh" id="id15">SperryMesh</a></li>
+<li><p><a class="reference internal" href="#ats-native-xml-input-specification-v1" id="id4">ATS Native XML Input Specification V1</a></p></li>
+<li><p><a class="reference internal" href="#syntax-of-the-specification" id="id5">Syntax of the Specification</a></p></li>
+<li><p><a class="reference internal" href="#symbol-index" id="id6">Symbol Index</a></p></li>
+<li><p><a class="reference internal" href="#main" id="id7">Main</a></p></li>
+<li><p><a class="reference internal" href="#mesh" id="id8">Mesh</a></p>
+<ul>
+<li><p><a class="reference internal" href="#generatedmesh" id="id9">GeneratedMesh</a></p></li>
+<li><p><a class="reference internal" href="#meshfromfile" id="id10">MeshFromFile</a></p></li>
+<li><p><a class="reference internal" href="#logicalmesh" id="id11">LogicalMesh</a></p></li>
+<li><p><a class="reference internal" href="#surfacemesh" id="id12">SurfaceMesh</a></p></li>
+<li><p><a class="reference internal" href="#subgridmeshes" id="id13">SubgridMeshes</a></p></li>
+<li><p><a class="reference internal" href="#columnmeshes" id="id14">ColumnMeshes</a></p></li>
+<li><p><a class="reference internal" href="#sperrymesh" id="id15">SperryMesh</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#region" id="id16">Region</a><ul>
-<li><a class="reference internal" href="#point" id="id17">Point</a></li>
-<li><a class="reference internal" href="#box" id="id18">Box</a></li>
-<li><a class="reference internal" href="#plane" id="id19">Plane</a></li>
-<li><a class="reference internal" href="#labeled-set" id="id20">Labeled Set</a></li>
-<li><a class="reference internal" href="#color-function" id="id21">Color Function</a></li>
+<li><p><a class="reference internal" href="#region" id="id16">Region</a></p>
+<ul>
+<li><p><a class="reference internal" href="#point" id="id17">Point</a></p></li>
+<li><p><a class="reference internal" href="#box" id="id18">Box</a></p></li>
+<li><p><a class="reference internal" href="#plane" id="id19">Plane</a></p></li>
+<li><p><a class="reference internal" href="#labeled-set" id="id20">Labeled Set</a></p></li>
+<li><p><a class="reference internal" href="#color-function" id="id21">Color Function</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#coordinator" id="id22">Coordinator</a></li>
-<li><a class="reference internal" href="#visualization" id="id23">Visualization</a></li>
-<li><a class="reference internal" href="#checkpoint" id="id24">Checkpoint</a></li>
-<li><a class="reference internal" href="#observation" id="id25">Observation</a></li>
-<li><a class="reference internal" href="#pk" id="id26">PK</a><ul>
-<li><a class="reference internal" href="#base-pks" id="id27">Base PKs</a><ul>
-<li><a class="reference internal" href="#pkphysicalbase" id="id28">PKPhysicalBase</a></li>
-<li><a class="reference internal" href="#pkbdfbase" id="id29">PKBDFBase</a></li>
-<li><a class="reference internal" href="#pkphysicalbdfbase" id="id30">PKPhysicalBDFBase</a></li>
+<li><p><a class="reference internal" href="#coordinator" id="id22">Coordinator</a></p></li>
+<li><p><a class="reference internal" href="#visualization" id="id23">Visualization</a></p></li>
+<li><p><a class="reference internal" href="#checkpoint" id="id24">Checkpoint</a></p></li>
+<li><p><a class="reference internal" href="#observation" id="id25">Observation</a></p></li>
+<li><p><a class="reference internal" href="#pk" id="id26">PK</a></p>
+<ul>
+<li><p><a class="reference internal" href="#base-pks" id="id27">Base PKs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pkphysicalbase" id="id28">PKPhysicalBase</a></p></li>
+<li><p><a class="reference internal" href="#pkbdfbase" id="id29">PKBDFBase</a></p></li>
+<li><p><a class="reference internal" href="#pkphysicalbdfbase" id="id30">PKPhysicalBDFBase</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#physical-pks" id="id31">Physical PKs</a><ul>
-<li><a class="reference internal" href="#flow-pks" id="id32">Flow PKs</a><ul>
-<li><a class="reference internal" href="#richards-pk" id="id33">Richards PK</a></li>
-<li><a class="reference internal" href="#permafrost-flow-pk" id="id34">Permafrost Flow PK</a></li>
-<li><a class="reference internal" href="#overland-flow-head-primary-variable-pk" id="id35">Overland Flow, head primary variable PK</a></li>
-<li><a class="reference internal" href="#overland-flow-pressure-primary-variable-pk" id="id36">Overland Flow, pressure primary variable, PK</a></li>
-<li><a class="reference internal" href="#snow-distribution-pk" id="id37">Snow Distribution PK</a></li>
+<li><p><a class="reference internal" href="#physical-pks" id="id31">Physical PKs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#flow-pks" id="id32">Flow PKs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#richards-pk" id="id33">Richards PK</a></p></li>
+<li><p><a class="reference internal" href="#permafrost-flow-pk" id="id34">Permafrost Flow PK</a></p></li>
+<li><p><a class="reference internal" href="#overland-flow-head-primary-variable-pk" id="id35">Overland Flow, head primary variable PK</a></p></li>
+<li><p><a class="reference internal" href="#overland-flow-pressure-primary-variable-pk" id="id36">Overland Flow, pressure primary variable, PK</a></p></li>
+<li><p><a class="reference internal" href="#snow-distribution-pk" id="id37">Snow Distribution PK</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#energy-pks" id="id38">Energy PKs</a><ul>
-<li><a class="reference internal" href="#advection-diffusion-pk" id="id39">Advection Diffusion PK</a></li>
-<li><a class="reference internal" href="#energy-base-pk" id="id40">Energy Base PK</a></li>
-<li><a class="reference internal" href="#two-phase-subsurface-energy-pk" id="id41">Two-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#three-phase-subsurface-energy-pk" id="id42">Three-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#id1" id="id43">Three-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#surface-ice-energy-pk" id="id44">Surface Ice Energy PK</a></li>
+<li><p><a class="reference internal" href="#energy-pks" id="id38">Energy PKs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#advection-diffusion-pk" id="id39">Advection Diffusion PK</a></p></li>
+<li><p><a class="reference internal" href="#energy-base-pk" id="id40">Energy Base PK</a></p></li>
+<li><p><a class="reference internal" href="#two-phase-subsurface-energy-pk" id="id41">Two-Phase subsurface Energy PK</a></p></li>
+<li><p><a class="reference internal" href="#three-phase-subsurface-energy-pk" id="id42">Three-Phase subsurface Energy PK</a></p></li>
+<li><p><a class="reference internal" href="#id1" id="id43">Three-Phase subsurface Energy PK</a></p></li>
+<li><p><a class="reference internal" href="#surface-ice-energy-pk" id="id44">Surface Ice Energy PK</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#surface-energy-balance-pks" id="id45">Surface Energy Balance PKs</a><ul>
-<li><a class="reference internal" href="#surface-energy-balance-snow-monolithic-version" id="id46">Surface Energy Balance / Snow – Monolithic Version</a></li>
-<li><a class="reference internal" href="#surface-energy-balance-generic-version" id="id47">Surface Energy Balance – Generic Version</a></li>
+<li><p><a class="reference internal" href="#surface-energy-balance-pks" id="id45">Surface Energy Balance PKs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#surface-energy-balance-snow-monolithic-version" id="id46">Surface Energy Balance / Snow – Monolithic Version</a></p></li>
+<li><p><a class="reference internal" href="#surface-energy-balance-generic-version" id="id47">Surface Energy Balance – Generic Version</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#biogeochemistry" id="id48">Biogeochemistry</a><ul>
-<li><a class="reference internal" href="#biogeochemistry-monolithic-version" id="id49">Biogeochemistry – Monolithic Version</a></li>
+<li><p><a class="reference internal" href="#biogeochemistry" id="id48">Biogeochemistry</a></p>
+<ul>
+<li><p><a class="reference internal" href="#biogeochemistry-monolithic-version" id="id49">Biogeochemistry – Monolithic Version</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#deformation" id="id50">Deformation</a><ul>
-<li><a class="reference internal" href="#volumetric-deformation" id="id51">Volumetric Deformation</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#mpcs" id="id52">MPCs</a><ul>
-<li><a class="reference internal" href="#weakmpc" id="id53">WeakMPC</a></li>
-<li><a class="reference internal" href="#strongmpc" id="id54">StrongMPC</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#physical-mpcs" id="id55">Physical MPCs</a><ul>
-<li><a class="reference internal" href="#coupled-water-mpc" id="id56">Coupled Water MPC</a></li>
-<li><a class="reference internal" href="#subsurface-mpc" id="id57">Subsurface MPC</a></li>
-<li><a class="reference internal" href="#permafrost-mpc" id="id58">Permafrost MPC</a></li>
+<li><p><a class="reference internal" href="#deformation" id="id50">Deformation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#volumetric-deformation" id="id51">Volumetric Deformation</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#state" id="id59">State</a><ul>
-<li><a class="reference internal" href="#field-evaluators" id="id60">Field Evaluators</a><ul>
-<li><a class="reference internal" href="#field-evaluator-base-classes" id="id61">Field Evaluator Base Classes</a><ul>
-<li><a class="reference internal" href="#primaryvariableevaluator" id="id62">PrimaryVariableEvaluator</a></li>
-<li><a class="reference internal" href="#secondaryvariableevaluator" id="id63">SecondaryVariableEvaluator</a></li>
-<li><a class="reference internal" href="#secondaryvariablesevaluator" id="id64">SecondaryVariablesEvaluator</a></li>
-<li><a class="reference internal" href="#independentvariableevaluator" id="id65">IndependentVariableEvaluator</a></li>
+<li><p><a class="reference internal" href="#mpcs" id="id52">MPCs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#weakmpc" id="id53">WeakMPC</a></p></li>
+<li><p><a class="reference internal" href="#strongmpc" id="id54">StrongMPC</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#water-content" id="id66">Water Content</a><ul>
-<li><a class="reference internal" href="#richardswatercontentevaluator" id="id67">RichardsWaterContentEvaluator</a></li>
-<li><a class="reference internal" href="#richardswatercontentwithvaporevaluator" id="id68">RichardsWaterContentWithVaporEvaluator</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#surface-water-potential-surfaces" id="id69">Surface Water potential surfaces</a><ul>
-<li><a class="reference internal" href="#surfaceelevation" id="id70">SurfaceElevation</a></li>
-<li><a class="reference internal" href="#surfacepotential" id="id71">SurfacePotential</a></li>
-<li><a class="reference internal" href="#snowsurfacepotential" id="id72">SnowSurfacePotential</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#generic-evaluators" id="id73">Generic Evaluators</a><ul>
-<li><a class="reference internal" href="#additiveevaluator" id="id74">AdditiveEvaluator</a></li>
-<li><a class="reference internal" href="#multiplicativeevaluator" id="id75">MultiplicativeEvaluator</a></li>
+<li><p><a class="reference internal" href="#physical-mpcs" id="id55">Physical MPCs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#coupled-water-mpc" id="id56">Coupled Water MPC</a></p></li>
+<li><p><a class="reference internal" href="#subsurface-mpc" id="id57">Subsurface MPC</a></p></li>
+<li><p><a class="reference internal" href="#permafrost-mpc" id="id58">Permafrost MPC</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#initialconditions" id="id76">InitialConditions</a><ul>
-<li><a class="reference internal" href="#initialization-of-constant-scalars" id="id77">Initialization of constant scalars</a></li>
-<li><a class="reference internal" href="#initialization-of-constant-vectors" id="id78">Initialization of constant vectors</a></li>
-<li><a class="reference internal" href="#initialization-of-scalar-fields" id="id79">Initialization of scalar fields</a></li>
-<li><a class="reference internal" href="#initialization-of-tensor-fields" id="id80">Initialization of tensor fields</a></li>
-<li><a class="reference internal" href="#initialization-from-a-file" id="id81">Initialization from a file</a></li>
+<li><p><a class="reference internal" href="#state" id="id59">State</a></p>
+<ul>
+<li><p><a class="reference internal" href="#field-evaluators" id="id60">Field Evaluators</a></p>
+<ul>
+<li><p><a class="reference internal" href="#field-evaluator-base-classes" id="id61">Field Evaluator Base Classes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#primaryvariableevaluator" id="id62">PrimaryVariableEvaluator</a></p></li>
+<li><p><a class="reference internal" href="#secondaryvariableevaluator" id="id63">SecondaryVariableEvaluator</a></p></li>
+<li><p><a class="reference internal" href="#secondaryvariablesevaluator" id="id64">SecondaryVariablesEvaluator</a></p></li>
+<li><p><a class="reference internal" href="#independentvariableevaluator" id="id65">IndependentVariableEvaluator</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#boundaryconditions" id="id82">BoundaryConditions</a><ul>
-<li><a class="reference internal" href="#flow-specific-boundary-conditions" id="id83">Flow-specific Boundary Conditions</a><ul>
-<li><a class="reference internal" href="#dirichlet-pressure-boundary-conditions" id="id84">Dirichlet (pressure) boundary conditions</a></li>
-<li><a class="reference internal" href="#neumann-mass-flux-boundary-conditions" id="id85">Neumann (mass flux) boundary conditions</a></li>
-<li><a class="reference internal" href="#seepage-face-boundary-conditions" id="id86">Seepage face boundary conditions</a></li>
-<li><a class="reference internal" href="#dirichlet-head-boundary-conditions" id="id87">Dirichlet (head) boundary conditions</a></li>
-<li><a class="reference internal" href="#fixed-level-boundary-conditions" id="id88">Fixed level boundary conditions</a></li>
-<li><a class="reference internal" href="#zero-head-gradient-boundary-conditions" id="id89">Zero head gradient boundary conditions</a></li>
-<li><a class="reference internal" href="#critical-depth-boundary-conditions" id="id90">Critical depth boundary conditions</a></li>
-<li><a class="reference internal" href="#dynamic-boundary-condutions" id="id91">Dynamic boundary condutions</a></li>
+<li><p><a class="reference internal" href="#water-content" id="id66">Water Content</a></p>
+<ul>
+<li><p><a class="reference internal" href="#richardswatercontentevaluator" id="id67">RichardsWaterContentEvaluator</a></p></li>
+<li><p><a class="reference internal" href="#richardswatercontentwithvaporevaluator" id="id68">RichardsWaterContentWithVaporEvaluator</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#surface-water-potential-surfaces" id="id69">Surface Water potential surfaces</a></p>
+<ul>
+<li><p><a class="reference internal" href="#surfaceelevation" id="id70">SurfaceElevation</a></p></li>
+<li><p><a class="reference internal" href="#surfacepotential" id="id71">SurfacePotential</a></p></li>
+<li><p><a class="reference internal" href="#snowsurfacepotential" id="id72">SnowSurfacePotential</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#generic-evaluators" id="id73">Generic Evaluators</a></p>
+<ul>
+<li><p><a class="reference internal" href="#additiveevaluator" id="id74">AdditiveEvaluator</a></p></li>
+<li><p><a class="reference internal" href="#multiplicativeevaluator" id="id75">MultiplicativeEvaluator</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#initialconditions" id="id76">InitialConditions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#initialization-of-constant-scalars" id="id77">Initialization of constant scalars</a></p></li>
+<li><p><a class="reference internal" href="#initialization-of-constant-vectors" id="id78">Initialization of constant vectors</a></p></li>
+<li><p><a class="reference internal" href="#initialization-of-scalar-fields" id="id79">Initialization of scalar fields</a></p></li>
+<li><p><a class="reference internal" href="#initialization-of-tensor-fields" id="id80">Initialization of tensor fields</a></p></li>
+<li><p><a class="reference internal" href="#initialization-from-a-file" id="id81">Initialization from a file</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#boundaryconditions" id="id82">BoundaryConditions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#flow-specific-boundary-conditions" id="id83">Flow-specific Boundary Conditions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#dirichlet-pressure-boundary-conditions" id="id84">Dirichlet (pressure) boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#neumann-mass-flux-boundary-conditions" id="id85">Neumann (mass flux) boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#seepage-face-boundary-conditions" id="id86">Seepage face boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#dirichlet-head-boundary-conditions" id="id87">Dirichlet (head) boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#fixed-level-boundary-conditions" id="id88">Fixed level boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#zero-head-gradient-boundary-conditions" id="id89">Zero head gradient boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#critical-depth-boundary-conditions" id="id90">Critical depth boundary conditions</a></p></li>
+<li><p><a class="reference internal" href="#dynamic-boundary-condutions" id="id91">Dynamic boundary condutions</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#time-integrators-solvers-and-other-mathematical-specs" id="id92">Time integrators, solvers, and other mathematical specs</a><ul>
-<li><a class="reference internal" href="#timeintegrator" id="id93">TimeIntegrator</a><ul>
-<li><a class="reference internal" href="#timestepcontrollerfixed" id="id94">TimestepControllerFixed</a></li>
-<li><a class="reference internal" href="#timestepcontrollerstandard" id="id95">TimestepControllerStandard</a></li>
-<li><a class="reference internal" href="#timestepcontrollersmarter" id="id96">TimestepControllerSmarter</a></li>
-<li><a class="reference internal" href="#timestepcontrollerfromfile" id="id97">TimestepControllerFromFile</a></li>
+<li><p><a class="reference internal" href="#time-integrators-solvers-and-other-mathematical-specs" id="id92">Time integrators, solvers, and other mathematical specs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#timeintegrator" id="id93">TimeIntegrator</a></p>
+<ul>
+<li><p><a class="reference internal" href="#timestepcontrollerfixed" id="id94">TimestepControllerFixed</a></p></li>
+<li><p><a class="reference internal" href="#timestepcontrollerstandard" id="id95">TimestepControllerStandard</a></p></li>
+<li><p><a class="reference internal" href="#timestepcontrollersmarter" id="id96">TimestepControllerSmarter</a></p></li>
+<li><p><a class="reference internal" href="#timestepcontrollerfromfile" id="id97">TimestepControllerFromFile</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#linear-solver-spec" id="id98">Linear Solver Spec</a></li>
-<li><a class="reference internal" href="#preconditioner" id="id99">Preconditioner</a><ul>
-<li><a class="reference internal" href="#hypre-s-boomer-amg" id="id100">Hypre’s Boomer AMG</a></li>
-<li><a class="reference internal" href="#trilinos-ml" id="id101">Trilinos ML</a></li>
-<li><a class="reference internal" href="#block-ilu" id="id102">Block ILU</a></li>
-<li><a class="reference internal" href="#indentity" id="id103">Indentity</a></li>
+<li><p><a class="reference internal" href="#linear-solver-spec" id="id98">Linear Solver Spec</a></p></li>
+<li><p><a class="reference internal" href="#preconditioner" id="id99">Preconditioner</a></p>
+<ul>
+<li><p><a class="reference internal" href="#hypre-s-boomer-amg" id="id100">Hypre’s Boomer AMG</a></p></li>
+<li><p><a class="reference internal" href="#trilinos-ml" id="id101">Trilinos ML</a></p></li>
+<li><p><a class="reference internal" href="#block-ilu" id="id102">Block ILU</a></p></li>
+<li><p><a class="reference internal" href="#indentity" id="id103">Indentity</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#nonlinearsolver" id="id104">NonlinearSolver</a></li>
+<li><p><a class="reference internal" href="#nonlinearsolver" id="id104">NonlinearSolver</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#other-common-specs" id="id105">Other Common Specs</a><ul>
-<li><a class="reference internal" href="#ioevent" id="id106">IOEvent</a></li>
-<li><a class="reference internal" href="#verboseobject" id="id107">VerboseObject</a></li>
-<li><a class="reference internal" href="#function" id="id108">Function</a><ul>
-<li><a class="reference internal" href="#constant-function" id="id109">Constant Function</a></li>
-<li><a class="reference internal" href="#tabular-function" id="id110">Tabular Function</a></li>
-<li><a class="reference internal" href="#smooth-step-function" id="id111">Smooth step Function</a></li>
-<li><a class="reference internal" href="#polynomial-function" id="id112">Polynomial Function</a></li>
-<li><a class="reference internal" href="#multi-variable-linear-function" id="id113">Multi-variable linear Function</a></li>
-<li><a class="reference internal" href="#separable-function" id="id114">Separable Function</a></li>
-<li><a class="reference internal" href="#additive-function" id="id115">Additive Function</a></li>
-<li><a class="reference internal" href="#multiplicative-function" id="id116">Multiplicative Function</a></li>
-<li><a class="reference internal" href="#composition-function" id="id117">Composition Function</a></li>
-<li><a class="reference internal" href="#piecewise-bilinear-function" id="id118">Piecewise Bilinear Function</a></li>
-<li><a class="reference internal" href="#distance-function" id="id119">Distance Function</a></li>
-<li><a class="reference internal" href="#monomial-function" id="id120">Monomial Function</a></li>
-<li><a class="reference internal" href="#standard-math-function" id="id121">Standard Math Function</a></li>
+<li><p><a class="reference internal" href="#other-common-specs" id="id105">Other Common Specs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#ioevent" id="id106">IOEvent</a></p></li>
+<li><p><a class="reference internal" href="#verboseobject" id="id107">VerboseObject</a></p></li>
+<li><p><a class="reference internal" href="#function" id="id108">Function</a></p>
+<ul>
+<li><p><a class="reference internal" href="#constant-function" id="id109">Constant Function</a></p></li>
+<li><p><a class="reference internal" href="#tabular-function" id="id110">Tabular Function</a></p></li>
+<li><p><a class="reference internal" href="#smooth-step-function" id="id111">Smooth step Function</a></p></li>
+<li><p><a class="reference internal" href="#polynomial-function" id="id112">Polynomial Function</a></p></li>
+<li><p><a class="reference internal" href="#multi-variable-linear-function" id="id113">Multi-variable linear Function</a></p></li>
+<li><p><a class="reference internal" href="#separable-function" id="id114">Separable Function</a></p></li>
+<li><p><a class="reference internal" href="#additive-function" id="id115">Additive Function</a></p></li>
+<li><p><a class="reference internal" href="#multiplicative-function" id="id116">Multiplicative Function</a></p></li>
+<li><p><a class="reference internal" href="#composition-function" id="id117">Composition Function</a></p></li>
+<li><p><a class="reference internal" href="#piecewise-bilinear-function" id="id118">Piecewise Bilinear Function</a></p></li>
+<li><p><a class="reference internal" href="#distance-function" id="id119">Distance Function</a></p></li>
+<li><p><a class="reference internal" href="#monomial-function" id="id120">Monomial Function</a></p></li>
+<li><p><a class="reference internal" href="#standard-math-function" id="id121">Standard Math Function</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#operator" id="id122">Operator</a><ul>
-<li><a class="reference internal" href="#operatoraccumulation" id="id123">OperatorAccumulation</a></li>
-<li><a class="reference internal" href="#operatordiffusion" id="id124">OperatorDiffusion</a></li>
-<li><a class="reference internal" href="#operatoradvection" id="id125">OperatorAdvection</a></li>
+<li><p><a class="reference internal" href="#operator" id="id122">Operator</a></p>
+<ul>
+<li><p><a class="reference internal" href="#operatoraccumulation" id="id123">OperatorAccumulation</a></p></li>
+<li><p><a class="reference internal" href="#operatordiffusion" id="id124">OperatorDiffusion</a></p></li>
+<li><p><a class="reference internal" href="#operatoradvection" id="id125">OperatorAdvection</a></p></li>
 </ul>
 </li>
 </ul>
@@ -219,18 +565,19 @@
 <div class="section" id="syntax-of-the-specification">
 <h1><a class="toc-backref" href="#id5">Syntax of the Specification</a><a class="headerlink" href="#syntax-of-the-specification" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li>Input specification for each ParameterList entry consists of two parts.
+<li><p>Input specification for each ParameterList entry consists of two parts.
 First, a bulleted list defines the usage syntax and available options.
-This is followed by example snipets of XML code to demonstrate usage.</li>
-<li>In many cases, the input specifies data for a particular parameterized model, and ATS
+This is followed by example snipets of XML code to demonstrate usage.</p></li>
+<li><p>In many cases, the input specifies data for a particular parameterized model, and ATS
 supports a number of parameterizations.
 For example, initial data might be uniform (the value is required), or linear in y (the value
 and its gradient are required).
 Where ATS supports a number of parameterized models for quantity Z, the available
 models will be listed by name, and then will be described in the subsequent section.
-For example, the specification for an <cite>“X</cite>” list might begin with the following:<ul>
-<li><cite>“Y</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“default_value”</strong>, <cite>“other</cite>”, <cite>“valid</cite>”, <cite>“options</cite>”</li>
-<li>Z <code class="docutils literal notranslate"><span class="pre">[Z-spec]</span></code> Model for Z, choose exactly one of the following: (1) <cite>“z1</cite>”, or (2) <cite>“z2</cite>” (see below)</li>
+For example, the specification for an <cite>“X</cite>” list might begin with the following:</p>
+<ul>
+<li><p><cite>“Y</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“default_value”</strong>, <cite>“other</cite>”, <cite>“valid</cite>”, <cite>“options</cite>”</p></li>
+<li><p>Z <code class="docutils literal notranslate"><span class="pre">[Z-spec]</span></code> Model for Z, choose exactly one of the following: (1) <cite>“z1</cite>”, or (2) <cite>“z2</cite>” (see below)</p></li>
 </ul>
 </li>
 </ul>
@@ -239,8 +586,8 @@ The <cite>“Y</cite>” is a string parameter but the <cite>“Z</cite>” is g
 The options for <cite>“Z</cite>” will then be described as a spec:</p>
 <blockquote>
 <div><ul class="simple">
-<li><cite>“z1</cite>” applies model z1.  Requires <cite>“z1a</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code></li>
-<li><cite>“z2</cite>” applies model z2.  Requires <cite>“z2a</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> and <cite>“z2b</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code></li>
+<li><p><cite>“z1</cite>” applies model z1.  Requires <cite>“z1a</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code></p></li>
+<li><p><cite>“z2</cite>” applies model z2.  Requires <cite>“z2a</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> and <cite>“z2b</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code></p></li>
 </ul>
 </div></blockquote>
 <p>An example of using such a specification:</p>
@@ -256,15 +603,15 @@ The options for <cite>“Z</cite>” will then be described as a spec:</p>
 <p>Here, the user is defining X with Y=”hello”, and Z will be a z2 constructed with z2a=0.7 and z2b=3.</p>
 <p>Conventions:</p>
 <ul class="simple">
-<li>Reserved keywords and labels are <cite>“quoted and italicized</cite>” – these
+<li><p>Reserved keywords and labels are <cite>“quoted and italicized</cite>” – these
 labels or values of parameters in user-generated input files must
-match (using XML matching rules) the specified or allowable values.</li>
-<li>User-defined labels are indicated with ALL-CAPS, and are meant to
+match (using XML matching rules) the specified or allowable values.</p></li>
+<li><p>User-defined labels are indicated with ALL-CAPS, and are meant to
 represent a typical name given by a user - these can be names or
 numbers or whatever serves best the organization of the user input
-data.</li>
-<li>Bold values are default values, and are used if the Parameter
-is not provided.</li>
+data.</p></li>
+<li><p>Bold values are default values, and are used if the Parameter
+is not provided.</p></li>
 </ul>
 </div>
 <div class="section" id="symbol-index">
@@ -293,33 +640,28 @@ is not provided.</li>
 <p>The <cite>“main</cite>” ParameterList frames the entire input spec, and must contain
 one sublist for each of the following sections.</p>
 <ul>
-<li><p class="first"><cite>“mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[mesh-spec]</span></code>  See the <a class="reference internal" href="#mesh">Mesh</a> spec.</p>
-</li>
-<li><p class="first"><cite>“regions</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></p>
+<li><p><cite>“mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[mesh-spec]</span></code>  See the <a class="reference internal" href="#mesh">Mesh</a> spec.</p></li>
+<li><p><cite>“regions</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></p>
 <p>List of multiple <a class="reference internal" href="#region">Region</a> specs, each in its own sublist named uniquely by the user.</p>
 </li>
-<li><p class="first"><cite>“coordinator</cite>” <code class="docutils literal notranslate"><span class="pre">[coordinator-spec]</span></code>  See the <a class="reference internal" href="#coordinator">Coordinator</a> spec.</p>
-</li>
-<li><p class="first"><cite>“visualization</cite>” <code class="docutils literal notranslate"><span class="pre">[visualization-spec]</span></code> A <a class="reference internal" href="#visualization">Visualization</a> spec for the main mesh/domain.</p>
-</li>
-<li><p class="first"><cite>“visualization XX</cite>” <code class="docutils literal notranslate"><span class="pre">[visualization-spec]</span></code></p>
+<li><p><cite>“coordinator</cite>” <code class="docutils literal notranslate"><span class="pre">[coordinator-spec]</span></code>  See the <a class="reference internal" href="#coordinator">Coordinator</a> spec.</p></li>
+<li><p><cite>“visualization</cite>” <code class="docutils literal notranslate"><span class="pre">[visualization-spec]</span></code> A <a class="reference internal" href="#visualization">Visualization</a> spec for the main mesh/domain.</p></li>
+<li><p><cite>“visualization XX</cite>” <code class="docutils literal notranslate"><span class="pre">[visualization-spec]</span></code></p>
 <p>Potentially more than one other <a class="reference internal" href="#visualization">Visualization</a> specs, one for each domain <cite>“XX</cite>”.  e.g. <cite>“surface</cite>”</p>
 </li>
-<li><p class="first"><cite>“checkpoint</cite>” <code class="docutils literal notranslate"><span class="pre">[checkpoint-spec]</span></code> A <a class="reference internal" href="#checkpoint">Checkpoint</a> spec.</p>
-</li>
-<li><p class="first"><cite>“observations</cite>” <code class="docutils literal notranslate"><span class="pre">[observation-spec]</span></code> An <a class="reference internal" href="#observation">Observation</a> spec.</p>
-</li>
-<li><p class="first"><cite>“PKs</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></p>
+<li><p><cite>“checkpoint</cite>” <code class="docutils literal notranslate"><span class="pre">[checkpoint-spec]</span></code> A <a class="reference internal" href="#checkpoint">Checkpoint</a> spec.</p></li>
+<li><p><cite>“observations</cite>” <code class="docutils literal notranslate"><span class="pre">[observation-spec]</span></code> An <a class="reference internal" href="#observation">Observation</a> spec.</p></li>
+<li><p><cite>“PKs</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></p>
 <p>A list containing exactly one sublist, a <a class="reference internal" href="#pk">PK</a> spec with the top level PK.</p>
 </li>
-<li><p class="first"><cite>“state</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> A <a class="reference internal" href="#state">State</a> spec.</p>
-</li>
+<li><p><cite>“state</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> A <a class="reference internal" href="#state">State</a> spec.</p></li>
 </ul>
 </div>
 <div class="section" id="mesh">
 <h1><a class="toc-backref" href="#id8">Mesh</a><a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div>Simple wrapper that takes a ParameterList and generates all needed meshes.</div></blockquote>
+<div><p>Simple wrapper that takes a ParameterList and generates all needed meshes.</p>
+</div></blockquote>
 <p>All processes are simulated on a domain, which is discretized through a mesh.</p>
 <p>Multiple domains and therefore meshes can be used in a single simulation, and
 multiple meshes can be constructed on the fly.</p>
@@ -337,15 +679,15 @@ generation.  This is reasonably fast, even for big meshes, and can be done
 through providing a “verify mesh” option.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-typed-spec]</span></code></p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt><cite>“mesh type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> One of <cite>“generate mesh</cite>”, <cite>“read mesh file</cite>”,</dt>
-<dd><cite>“logical</cite>”, <cite>“surface</cite>”, <cite>“subgrid</cite>”, or <cite>“column</cite>”.</dd>
+<li><dl class="simple">
+<dt><cite>“mesh type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> One of <cite>“generate mesh</cite>”, <cite>“read mesh file</cite>”,</dt><dd><p><cite>“logical</cite>”, <cite>“surface</cite>”, <cite>“subgrid</cite>”, or <cite>“column</cite>”.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“_mesh_type_ parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[_mesh_type_-spec]</span></code> List of parameters
-associated with the type.</li>
-<li><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Perform a mesh audit.</li>
-<li><cite>“deformable mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Will this mesh be deformed?</li>
+<li><p><cite>“_mesh_type_ parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[_mesh_type_-spec]</span></code> List of parameters
+associated with the type.</p></li>
+<li><p><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Perform a mesh audit.</p></li>
+<li><p><cite>“deformable mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Will this mesh be deformed?</p></li>
 </ul>
 <div class="section" id="generatedmesh">
 <h2><a class="toc-backref" href="#id9">GeneratedMesh</a><a class="headerlink" href="#generatedmesh" title="Permalink to this headline">¶</a></h2>
@@ -355,9 +697,9 @@ of number of cells in each direction.</p>
 <p>Specified by <cite>“mesh type</cite>” of <cite>“generate mesh</cite>”.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-type-generate-mesh-spec]</span></code></p>
 <ul class="simple">
-<li><cite>“domain low coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of low corner of domain</li>
-<li><cite>“domain high coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of high corner of domain</li>
-<li><cite>“number of cells</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> the number of uniform cells in each coordinate direction</li>
+<li><p><cite>“domain low coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of low corner of domain</p></li>
+<li><p><cite>“domain high coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of high corner of domain</p></li>
+<li><p><cite>“number of cells</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> the number of uniform cells in each coordinate direction</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
@@ -380,19 +722,19 @@ II” file format, and loaded in ATS.</p>
 <p>Specified by <cite>“mesh type</cite>” of <cite>“read mesh file</cite>”.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-type-read-mesh-file-spec]</span></code></p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt><cite>“file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> name of pre-generated mesh file. Note that in the case of an</dt>
-<dd>Exodus II mesh file, the suffix of the serial mesh file must be .exo and
+<li><dl class="simple">
+<dt><cite>“file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> name of pre-generated mesh file. Note that in the case of an</dt><dd><p>Exodus II mesh file, the suffix of the serial mesh file must be .exo and
 the suffix of the parallel mesh file must be .par.
 When running in serial the code will read this the indicated file directly.
 When running in parallel and the suffix is .par, the code will instead read
 the partitioned files, that have been generated with a Nemesis tool and
 named as filename.par.N.r where N is the number of processors and r is the rank.
 When running in parallel and the suffix is .exo, the code will partition automatically
-the serial file.</dd>
+the serial file.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“format</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> format of pre-generated mesh file (<cite>“MSTK</cite>” or <cite>“Exodus II</cite>”)</li>
+<li><p><cite>“format</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> format of pre-generated mesh file (<cite>“MSTK</cite>” or <cite>“Exodus II</cite>”)</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
@@ -426,10 +768,10 @@ computation.</p>
 <p>Specified by <cite>“mesh type</cite>” of <cite>“surface</cite>”.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-type-surface-spec]</span></code></p>
 <ul class="simple">
-<li><cite>“surface sideset name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The <a class="reference internal" href="#region">Region</a> name containing all surface faces.</li>
-<li><cite>“surface sideset names</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code> A list of <a class="reference internal" href="#region">Region</a> names containing the surface faces.  Either this or the singular version must be specified.</li>
-<li><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Verify validity of surface mesh.</li>
-<li><cite>“export mesh to file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Export the lifted surface mesh to this filename.</li>
+<li><p><cite>“surface sideset name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The <a class="reference internal" href="#region">Region</a> name containing all surface faces.</p></li>
+<li><p><cite>“surface sideset names</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code> A list of <a class="reference internal" href="#region">Region</a> names containing the surface faces.  Either this or the singular version must be specified.</p></li>
+<li><p><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Verify validity of surface mesh.</p></li>
+<li><p><cite>“export mesh to file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Export the lifted surface mesh to this filename.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;ParameterList&quot;</span><span class="nt">&gt;</span>
@@ -464,14 +806,14 @@ entity local ID, in a provided region of the provided entity type.</p>
 <p>Specified by <cite>“mesh type</cite>” of <cite>“subgrid</cite>”.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-type-subgrid-spec]</span></code></p>
 <ul class="simple">
-<li><cite>“subgrid region name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Region on which each subgrid mesh will be associated.</li>
-<li><dl class="first docutils">
-<dt><cite>“entity kind</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> One of <cite>“cell</cite>”, <cite>“face</cite>”, etc.  Entity of the region (usually</dt>
-<dd><cite>“cell</cite>”) on which each subgrid mesh will be associated.</dd>
+<li><p><cite>“subgrid region name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Region on which each subgrid mesh will be associated.</p></li>
+<li><dl class="simple">
+<dt><cite>“entity kind</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> One of <cite>“cell</cite>”, <cite>“face</cite>”, etc.  Entity of the region (usually</dt><dd><p><cite>“cell</cite>”) on which each subgrid mesh will be associated.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“parent domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>domain</strong> Mesh which includes the above region.</li>
-<li><cite>“flyweight mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>False</strong> NOT SUPPORTED?  Allows a single mesh instead of one per entity.</li>
+<li><p><cite>“parent domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>domain</strong> Mesh which includes the above region.</p></li>
+<li><p><cite>“flyweight mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>False</strong> NOT SUPPORTED?  Allows a single mesh instead of one per entity.</p></li>
 </ul>
 </div>
 <div class="section" id="columnmeshes">
@@ -481,14 +823,14 @@ which generate a <a href="#id126"><span class="problematic" id="id127">ColumnMes
 <p>Specified by <cite>“mesh type</cite>” of <cite>“column</cite>”.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[mesh-type-column-spec]</span></code></p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt><cite>“parent domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The <a class="reference internal" href="#mesh">Mesh</a> name of the 3D mesh from which columns are generated.</dt>
-<dd>Note that the <cite>“build columns from set</cite>” parameter must be set in that mesh.</dd>
+<li><dl class="simple">
+<dt><cite>“parent domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The <a class="reference internal" href="#mesh">Mesh</a> name of the 3D mesh from which columns are generated.</dt><dd><p>Note that the <cite>“build columns from set</cite>” parameter must be set in that mesh.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Verify validity of surface mesh.</li>
-<li><cite>“deformable mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong>  Used for deformation PKs to allow non-const access.</li>
-<li><cite>“entity LID</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Local ID of the surface cell that is the top of the column.</li>
+<li><p><cite>“verify mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Verify validity of surface mesh.</p></li>
+<li><p><cite>“deformable mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong>  Used for deformation PKs to allow non-const access.</p></li>
+<li><p><cite>“entity LID</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Local ID of the surface cell that is the top of the column.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;ParameterList&quot;</span><span class="nt">&gt;</span>
@@ -526,7 +868,8 @@ coded currently for simplicity, this is ongoing work and will change a lot.</p>
 <div class="section" id="region">
 <h1><a class="toc-backref" href="#id16">Region</a><a class="headerlink" href="#region" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div>Region: a geometric or discrete subdomain (abstract)</div></blockquote>
+<div><p>Region: a geometric or discrete subdomain (abstract)</p>
+</div></blockquote>
 <p>Regions are geometrical constructs used in Amanzi to define subsets of
 the computational domain in order to specify the problem to be solved, and the
 output desired. Regions may represents zero-, one-, two- or three-dimensional
@@ -567,7 +910,7 @@ OR:
 END</p>
 <p>Notes:</p>
 <ul>
-<li><p class="first">Surface files contain labeled triangulated face sets.  The user is
+<li><p>Surface files contain labeled triangulated face sets.  The user is
 responsible for ensuring that the intersections with other surfaces
 in the problem, including the boundaries, are <em>exact</em> (<em>i.e.</em> that
 surface intersections are <em>watertight</em> where applicable), and that
@@ -577,8 +920,7 @@ define are ignored.</p>
 <p>Examples of surface files are given in the <em>Exodus II</em> file
 format here.</p>
 </li>
-<li><p class="first">Region names must NOT be repeated.</p>
-</li>
+<li><p>Region names must NOT be repeated.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList&gt;</span>  <span class="c">&lt;!-- parent list --&gt;</span>
@@ -643,11 +985,12 @@ region defined by the value 25 in color function file.</p>
 <div class="section" id="point">
 <h2><a class="toc-backref" href="#id17">Point</a><a class="headerlink" href="#point" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>RegionPoint: a point in space.</div></blockquote>
+<div><p>RegionPoint: a point in space.</p>
+</div></blockquote>
 <p>List <em>region: point</em> defines a point in space.
 This region consists of cells containing this point.</p>
 <ul class="simple">
-<li><cite>“coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of point in space.</li>
+<li><p><cite>“coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of point in space.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;DOWN_WIND150&quot;</span><span class="nt">&gt;</span> <span class="c">&lt;!-- parent list defining the name --&gt;</span>
@@ -661,13 +1004,14 @@ This region consists of cells containing this point.</p>
 <div class="section" id="box">
 <h2><a class="toc-backref" href="#id18">Box</a><a class="headerlink" href="#box" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>RegionBox: a rectangular region in space, defined by two corners</div></blockquote>
+<div><p>RegionBox: a rectangular region in space, defined by two corners</p>
+</div></blockquote>
 <p>List <em>region: box</em> defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.</p>
 <ul class="simple">
-<li><cite>“low coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of the boundary point with the lowest coordinates.</li>
-<li><cite>“high coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of the boundary points with the highest coordinates.</li>
+<li><p><cite>“low coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of the boundary point with the lowest coordinates.</p></li>
+<li><p><cite>“high coordinate</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Location of the boundary points with the highest coordinates.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;WELL&quot;</span><span class="nt">&gt;</span>  <span class="c">&lt;!-- parent list --&gt;</span>
@@ -682,11 +1026,12 @@ direction in which case they are equivalent to planes.</p>
 <div class="section" id="plane">
 <h2><a class="toc-backref" href="#id19">Plane</a><a class="headerlink" href="#plane" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>RegionPlane: A planar (infinite) region in space, defined by a point and a normal.</div></blockquote>
+<div><p>RegionPlane: A planar (infinite) region in space, defined by a point and a normal.</p>
+</div></blockquote>
 <p>List <em>region: plane</em> defines a plane using a point lying on the plane and normal to the plane.</p>
 <ul class="simple">
-<li><cite>“normal</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Normal to the plane.</li>
-<li><cite>“point</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Point in space.</li>
+<li><p><cite>“normal</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Normal to the plane.</p></li>
+<li><p><cite>“point</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> Point in space.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;TOP_SECTION&quot;</span><span class="nt">&gt;</span> <span class="c">&lt;!-- parent list --&gt;</span>
@@ -704,7 +1049,8 @@ direction in which case they are equivalent to planes.</p>
 <div class="section" id="labeled-set">
 <h2><a class="toc-backref" href="#id20">Labeled Set</a><a class="headerlink" href="#labeled-set" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>RegionLabeledSet: A region defined by a set of mesh entities in a mesh file</div></blockquote>
+<div><p>RegionLabeledSet: A region defined by a set of mesh entities in a mesh file</p>
+</div></blockquote>
 <p>The list <em>region: labeled set</em> defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
@@ -721,10 +1067,10 @@ requires <em>cell</em>, <em>face</em> or <em>node</em> as well as a label (which
 an integer).  The resulting region will have the dimensionality
 associated with the entities in the indicated set.</p>
 <ul class="simple">
-<li><cite>“label</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Set per label defined in the mesh file.</li>
-<li><cite>“file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> File name.</li>
-<li><cite>“format</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Currently, we only support mesh files in the “Exodus II” format.</li>
-<li><cite>“entity</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Type of the mesh object (cell, face, etc).</li>
+<li><p><cite>“label</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Set per label defined in the mesh file.</p></li>
+<li><p><cite>“file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> File name.</p></li>
+<li><p><cite>“format</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Currently, we only support mesh files in the “Exodus II” format.</p></li>
+<li><p><cite>“entity</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Type of the mesh object (cell, face, etc).</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;AQUIFER&quot;</span><span class="nt">&gt;</span>
@@ -746,38 +1092,39 @@ associated with the entities in the indicated set.</p>
 <div class="section" id="coordinator">
 <h1><a class="toc-backref" href="#id22">Coordinator</a><a class="headerlink" href="#coordinator" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div>Coordinator: Simulation controller and top-level driver</div></blockquote>
+<div><p>Coordinator: Simulation controller and top-level driver</p>
+</div></blockquote>
 <p>In the <cite>“cycle driver</cite>” sublist, the user specifies global control of the
 simulation, including starting and ending times and restart options.</p>
 <ul class="simple">
-<li><cite>“start time</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.</strong> Specifies the start of time in model time.</li>
-<li><cite>“start time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“s”</strong> One of <cite>“s</cite>”, <cite>“d</cite>”, or <cite>“yr</cite>”</li>
-<li><cite>“end time</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> Specifies the end of the simulation in model time.</li>
-<li><cite>“end time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“s”</strong> One of <cite>“s</cite>”, <cite>“d</cite>”, or <cite>“yr</cite>”</li>
-<li><dl class="first docutils">
-<dt><cite>“end cycle</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>optional</strong> If provided, specifies the end of the</dt>
-<dd>simulation in timestep cycles.</dd>
+<li><p><cite>“start time</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.</strong> Specifies the start of time in model time.</p></li>
+<li><p><cite>“start time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“s”</strong> One of <cite>“s</cite>”, <cite>“d</cite>”, or <cite>“yr</cite>”</p></li>
+<li><p><cite>“end time</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> Specifies the end of the simulation in model time.</p></li>
+<li><p><cite>“end time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“s”</strong> One of <cite>“s</cite>”, <cite>“d</cite>”, or <cite>“yr</cite>”</p></li>
+<li><dl class="simple">
+<dt><cite>“end cycle</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>optional</strong> If provided, specifies the end of the</dt><dd><p>simulation in timestep cycles.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><cite>“restart from checkpoint file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>optional</strong> If provided,</dt>
-<dd>specifies a path to the checkpoint file to continue a stopped simulation.</dd>
+<li><dl class="simple">
+<dt><cite>“restart from checkpoint file</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>optional</strong> If provided,</dt><dd><p>specifies a path to the checkpoint file to continue a stopped simulation.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><cite>“wallclock duration [hrs]</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>optional</strong> After this time, the</dt>
-<dd>simulation will checkpoint and end.</dd>
+<li><dl class="simple">
+<dt><cite>“wallclock duration [hrs]</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>optional</strong> After this time, the</dt><dd><p>simulation will checkpoint and end.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><cite>“required times</cite>” <code class="docutils literal notranslate"><span class="pre">[io-event-spec]</span></code> <strong>optional</strong> An <a class="reference internal" href="#ioevent">IOEvent</a> spec that</dt>
-<dd>sets a collection of times/cycles at which the simulation is guaranteed to
+<li><dl class="simple">
+<dt><cite>“required times</cite>” <code class="docutils literal notranslate"><span class="pre">[io-event-spec]</span></code> <strong>optional</strong> An <a class="reference internal" href="#ioevent">IOEvent</a> spec that</dt><dd><p>sets a collection of times/cycles at which the simulation is guaranteed to
 hit exactly.  This is useful for situations such as where data is provided
 at a regular interval, and interpolation error related to that data is to
-be minimized.</dd>
+be minimized.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“PK tree</cite>” <code class="docutils literal notranslate"><span class="pre">[pk-type-spec-list]</span></code> List of length one, the top level PK spec.</li>
+<li><p><cite>“PK tree</cite>” <code class="docutils literal notranslate"><span class="pre">[pk-type-spec-list]</span></code> List of length one, the top level PK spec.</p></li>
 </ul>
 <p>Note: Either <cite>“end cycle</cite>” or <cite>“end time</cite>” are required, and if
 both are present, the simulation will stop with whichever arrives
@@ -798,14 +1145,15 @@ separate ParameterLists, entitled <cite>“visualization</cite>” for the main 
 addition meshes, each will have a domain name and therefore admit a spec of
 the form: <cite>“visualization DOMAIN-NAME</cite>”.</p>
 <blockquote>
-<div>Visualization: a class for controlling simulation output.</div></blockquote>
+<div><p>Visualization: a class for controlling simulation output.</p>
+</div></blockquote>
 <p>Each list contains all parameters as in a <a class="reference internal" href="#ioevent">IOEvent</a> spec, and also:</p>
 <ul class="simple">
-<li><cite>“file name base</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>visdump_DOMAIN_data</strong></li>
-<li><cite>“dynamic mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Write mesh data for every
-visualization dump; this facilitates visualizing deforming meshes.</li>
-<li><cite>“time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>s</strong> A valid time unit to convert time
-into for output files.  One of <cite>“s</cite>”, <cite>“d</cite>”, <cite>“y</cite>”, or <cite>“yr 365</cite>”</li>
+<li><p><cite>“file name base</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>visdump_DOMAIN_data</strong></p></li>
+<li><p><cite>“dynamic mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Write mesh data for every
+visualization dump; this facilitates visualizing deforming meshes.</p></li>
+<li><p><cite>“time units</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>s</strong> A valid time unit to convert time
+into for output files.  One of <cite>“s</cite>”, <cite>“d</cite>”, <cite>“y</cite>”, or <cite>“yr 365</cite>”</p></li>
 </ul>
 <p>INCLUDES:
 * <code class="docutils literal notranslate"><span class="pre">[io-event-spec]</span></code> An <a class="reference internal" href="#ioevent">IOEvent</a> spec</p>
@@ -841,7 +1189,8 @@ all domains/meshes.</p>
 <div class="section" id="observation">
 <h1><a class="toc-backref" href="#id25">Observation</a><a class="headerlink" href="#observation" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div>Observable: Collects, reduces, and writes observations during a simulation.</div></blockquote>
+<div><p>Observable: Collects, reduces, and writes observations during a simulation.</p>
+</div></blockquote>
 <p>Observations are a localized-in-space but frequent in time view of
 data, designed to get at useful diagnostic quantities such as
 hydrographs, total water content, quantities at a point, etc.  These
@@ -857,26 +1206,26 @@ list of discrete times for its evaluation.  The observations are
 evaluated during the simulation and written to disk.</p>
 <p><code class="docutils literal notranslate"><span class="pre">[observation-spec]</span></code> consists of the following quantities:</p>
 <ul class="simple">
-<li><cite>“observation output filename</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> user-defined name for the file that the observations are written to.</li>
-<li><cite>“variable</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> any ATS variable used by any PK, e.g. <cite>“pressure</cite>” or <cite>“surface-water_content</cite>”</li>
-<li><cite>“region</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the label of a user-defined region</li>
-<li><cite>“location name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the mesh location of the thing to be measured, i.e. <cite>“cell</cite>”, <cite>“face</cite>”, or <cite>“node</cite>”</li>
-<li><cite>“functional</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the label of a function to apply to the variable across the region.  Valid functionals include:</li>
+<li><p><cite>“observation output filename</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> user-defined name for the file that the observations are written to.</p></li>
+<li><p><cite>“variable</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> any ATS variable used by any PK, e.g. <cite>“pressure</cite>” or <cite>“surface-water_content</cite>”</p></li>
+<li><p><cite>“region</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the label of a user-defined region</p></li>
+<li><p><cite>“location name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the mesh location of the thing to be measured, i.e. <cite>“cell</cite>”, <cite>“face</cite>”, or <cite>“node</cite>”</p></li>
+<li><p><cite>“functional</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> the label of a function to apply to the variable across the region.  Valid functionals include:</p></li>
 </ul>
 <blockquote>
 <div><ul class="simple">
-<li><cite>“observation data: point</cite>” returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.</li>
-<li><cite>“observation data: extensive integral</cite>” returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as <cite>“water_content</cite>” or <cite>“energy</cite>”.</li>
-<li><cite>“observation data: intensive integral</cite>” returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as <cite>“temperature</cite>” or <cite>“saturation_liquid</cite>”.</li>
+<li><p><cite>“observation data: point</cite>” returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.</p></li>
+<li><p><cite>“observation data: extensive integral</cite>” returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as <cite>“water_content</cite>” or <cite>“energy</cite>”.</p></li>
+<li><p><cite>“observation data: intensive integral</cite>” returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as <cite>“temperature</cite>” or <cite>“saturation_liquid</cite>”.</p></li>
 </ul>
 </div></blockquote>
 <p>For flux observations, additional options are available:</p>
 <ul class="simple">
-<li><cite>“direction normalized flux</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>optional</strong> Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.</li>
-<li><cite>“direction normalized flux direction</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong>
+<li><p><cite>“direction normalized flux</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>optional</strong> Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.</p></li>
+<li><p><cite>“direction normalized flux direction</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong>
 Provides the vector to dot the face normal with.  If this is not provided,
 then it is assumed that the faces integrated over are all boundary faces and
-that the default vector is the outward normal direction for each face.</li>
+that the default vector is the outward normal direction for each face.</p></li>
 </ul>
 <p>Additionally, each <code class="docutils literal notranslate"><span class="pre">[observation-spec]</span></code> contains all parameters as in a <a class="reference internal" href="#ioevent">IOEvent</a> spec, which are used to specify at which times/cycles the observation is collected.</p>
 <p>INCLUDES:
@@ -921,7 +1270,8 @@ that the default vector is the outward normal direction for each face.</li>
 <div class="section" id="pk">
 <h1><a class="toc-backref" href="#id26">PK</a><a class="headerlink" href="#pk" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div>The interface for a Process Kernel, an equation or system of equations.</div></blockquote>
+<div><p>The interface for a Process Kernel, an equation or system of equations.</p>
+</div></blockquote>
 <p>A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.</p>
@@ -931,7 +1281,7 @@ other PKs and represent the system of equations, or a Physical PK,
 which represents a single equation.</p>
 <p>All PKs have the following parameters in their spec:</p>
 <ul>
-<li><p class="first"><cite>“PK type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code></p>
+<li><p><cite>“PK type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code></p>
 <p>The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.</p>
 </li>
 </ul>
@@ -958,18 +1308,19 @@ which represents a single equation.</p>
 <div class="section" id="pkphysicalbase">
 <h3><a class="toc-backref" href="#id28">PKPhysicalBase</a><a class="headerlink" href="#pkphysicalbase" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).</div></blockquote>
+<div><p>A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">PKPhysicalBase</span></code> is a base class providing some functionality for PKs which
 are defined on a single mesh, and represent a single process model.  Typically
 all leaves of the PK tree will inherit from <code class="docutils literal notranslate"><span class="pre">PKPhysicalBase</span></code>.</p>
 <ul>
-<li><p class="first"><cite>“domain name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> e.g. <cite>“surface</cite>”.</p>
+<li><p><cite>“domain name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> e.g. <cite>“surface</cite>”.</p>
 <p>Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.</p>
 </li>
-<li><p class="first"><cite>“primary variable key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Sets the primary variable.</p>
+<li><p><cite>“primary variable key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Sets the primary variable.</p>
 <p>The primary variable associated with this PK, i.e. <cite>“pressure</cite>”, <cite>“temperature</cite>”, <cite>“surface_pressure</cite>”, etc.</p>
 </li>
-<li><p class="first"><cite>“initial condition</cite>” <code class="docutils literal notranslate"><span class="pre">[initial-conditions-spec]</span></code>  See <a class="reference internal" href="#initialconditions">InitialConditions</a>.</p>
+<li><p><cite>“initial condition</cite>” <code class="docutils literal notranslate"><span class="pre">[initial-conditions-spec]</span></code>  See <a class="reference internal" href="#initialconditions">InitialConditions</a>.</p>
 <blockquote>
 <div><p>Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.</p>
 </div></blockquote>
@@ -980,17 +1331,18 @@ all leaves of the PK tree will inherit from <code class="docutils literal notran
 <div class="section" id="pkbdfbase">
 <h3><a class="toc-backref" href="#id29">PKBDFBase</a><a class="headerlink" href="#pkbdfbase" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>A base class with default implementations of methods for a PK that can be implicitly integrated in time.</div></blockquote>
+<div><p>A base class with default implementations of methods for a PK that can be implicitly integrated in time.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">PKBDFBase</span></code> is a base class from which PKs that want to use the <code class="docutils literal notranslate"><span class="pre">BDF</span></code>
 series of implicit time integrators must derive.  It specifies both the
 <code class="docutils literal notranslate"><span class="pre">BDFFnBase</span></code> interface and implements some basic functionality for <code class="docutils literal notranslate"><span class="pre">BDF</span></code>
 PKs.</p>
 <ul>
-<li><p class="first"><cite>“initial time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.</strong></p>
+<li><p><cite>“initial time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.</strong></p>
 <p>The initial timestep size for the PK, this ensures that the initial timestep
 will not be <strong>larger</strong> than this value.</p>
 </li>
-<li><p class="first"><cite>“assemble preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>true</strong></p>
+<li><p><cite>“assemble preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>true</strong></p>
 <p>A flag for the PK to not assemble its preconditioner if it is not needed by
 a controlling PK.  This is usually set by the MPC, not by the user.</p>
 </li>
@@ -1000,11 +1352,10 @@ several additional specs are included.  For instance, in a strongly coupled
 flow and energy problem, these specs are included in the <code class="docutils literal notranslate"><span class="pre">StrongMPC</span></code> that
 couples the flow and energy PKs, not to the flow or energy PK itself.</p>
 <ul>
-<li><p class="first"><cite>“time integrator</cite>” <code class="docutils literal notranslate"><span class="pre">[implicit-time-integrator-typed-spec]</span></code> <strong>optional</strong>
+<li><p><cite>“time integrator</cite>” <code class="docutils literal notranslate"><span class="pre">[implicit-time-integrator-typed-spec]</span></code> <strong>optional</strong>
 A <a class="reference internal" href="#timeintegrator">TimeIntegrator</a>.  Note that this is only provided if this PK is not
-strongly coupled to other PKs.</p>
-</li>
-<li><p class="first"><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
+strongly coupled to other PKs.</p></li>
+<li><p><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
 Note that this is only used if this PK is not strongly coupled to other PKs.</p>
 <p>This spec describes how to form the (approximate) inverse of the preconditioner.</p>
 </li>
@@ -1014,32 +1365,33 @@ Note that this is only used if this PK is not strongly coupled to other PKs.</p>
 <div class="section" id="pkphysicalbdfbase">
 <h3><a class="toc-backref" href="#id30">PKPhysicalBDFBase</a><a class="headerlink" href="#pkphysicalbdfbase" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.</div></blockquote>
+<div><p>Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.</p>
+</div></blockquote>
 <p>A base class for all PKs that are both physical, in the sense that they
 implement an equation and are not couplers, and support the implicit
 integration interface.  This largely just supplies a default error norm based
 on error in conservation relative to the extent of the conserved quantity.</p>
 <ul class="simple">
-<li><cite>“absolute error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Absolute tolerance,
+<li><p><cite>“absolute error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Absolute tolerance,
 <span class="math notranslate nohighlight">\(a_tol\)</span> in the equation below.  Note that this default is often
 overridden by PKs with more physical values, and very rarely are these set
-by the user.</li>
-<li><cite>“relative error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Relative tolerance,
+by the user.</p></li>
+<li><p><cite>“relative error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Relative tolerance,
 <span class="math notranslate nohighlight">\(r_tol\)</span> in the equation below.  Note that this default is often
 overridden by PKs with more physical values, and very rarely are these set
-by the user.</li>
-<li><cite>“flux error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Relative tolerance on the
+by the user.</p></li>
+<li><p><cite>“flux error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.0</strong> Relative tolerance on the
 flux.  Note that this default is often overridden by PKs with more physical
-values, and very rarely are these set by the user.</li>
+values, and very rarely are these set by the user.</p></li>
 </ul>
 <p>By default, the error norm used by solvers is given by:</p>
 <p><span class="math notranslate nohighlight">\(ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )\)</span></p>
 <p>The defaults here are typically good, or else good defaults are set in the
 code, so these need not be supplied.</p>
-<dl class="docutils">
-<dt>NOTE: <code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">--&gt;</span></code> <a class="reference internal" href="#pkbdfbase">PKBDFBase</a></dt>
-<dd><code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">--&gt;</span></code> <a class="reference internal" href="#pkphysicalbase">PKPhysicalBase</a>
-<code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">(v)--&gt;</span></code> <a href="#id132"><span class="problematic" id="id133">PKDefaultBase_</span></a></dd>
+<dl class="simple">
+<dt>NOTE: <code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">--&gt;</span></code> <a class="reference internal" href="#pkbdfbase">PKBDFBase</a></dt><dd><p><code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">--&gt;</span></code> <a class="reference internal" href="#pkphysicalbase">PKPhysicalBase</a>
+<code class="docutils literal notranslate"><span class="pre">PKPhysicalBDFBase</span> <span class="pre">(v)--&gt;</span></code> <a href="#id132"><span class="problematic" id="id133">PKDefaultBase_</span></a></p>
+</dd>
 </dl>
 </div>
 </div>
@@ -1051,44 +1403,45 @@ code, so these need not be supplied.</p>
 <div class="section" id="richards-pk">
 <h4><a class="toc-backref" href="#id33">Richards PK</a><a class="headerlink" href="#richards-pk" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div>Two-phase, variable density Richards equation.</div></blockquote>
+<div><p>Two-phase, variable density Richards equation.</p>
+</div></blockquote>
 <p>Solves Richards equation:</p>
 <div class="math notranslate nohighlight">
 \[\frac{\partial \Theta}{\partial t} - \nabla \frac{k_r n_l}{\mu} K ( \nabla p + \rho g \cdot \hat{z} ) = Q_w\]</div>
 <p>Includes options from:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">[pk-physical-default-spec]</span></code> <a href="#id134"><span class="problematic" id="id135">PKPhysicalDefault_</span></a></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[pk-physical-default-spec]</span></code> <a href="#id134"><span class="problematic" id="id135">PKPhysicalDefault_</span></a></p></li>
 </ul>
 <p># <code class="docutils literal notranslate"><span class="pre">[pk-bdf-default-spec]</span></code> <a href="#id136"><span class="problematic" id="id137">PKBDFDefault_</span></a>
 * <code class="docutils literal notranslate"><span class="pre">[pk-physical-bdf-default-spec]</span></code> <a href="#id138"><span class="problematic" id="id139">PKPhysicalBDFDefault_</span></a></p>
 <p>Other variable names, typically not set as the default is basically always good:</p>
 <ul class="simple">
-<li><cite>“conserved quantity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-water_content</strong> Typically not set, default is good. <code class="docutils literal notranslate"><span class="pre">[mol]</span></code></li>
-<li><cite>“mass density key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_density_liquid</strong> liquid water density <code class="docutils literal notranslate"><span class="pre">[kg</span> <span class="pre">m^-3]</span></code></li>
-<li><cite>“molar density key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-molar_density_liquid</strong> liquid water density <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">m^-3]</span></code></li>
-<li><cite>“permeability key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-permeability</strong> permeability of the soil medium <code class="docutils literal notranslate"><span class="pre">[m^2]</span></code></li>
-<li><cite>“conductivity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-relative_permeability</strong> scalar coefficient of the permeability <code class="docutils literal notranslate"><span class="pre">[-]</span></code></li>
-<li><cite>“upwind conductivity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-upwind_relative_permeability</strong> upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents <span class="math notranslate nohighlight">\(\frac{n_l k_r}{\mu}\)</span>  <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">kg^-1</span> <span class="pre">s^1</span> <span class="pre">m^-2]</span></code></li>
-<li><cite>“darcy flux key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux</strong> mass flux across a face <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">s^-1]</span></code></li>
-<li><cite>“darcy flux direction key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux_direction</strong> direction of the darcy flux (used in upwinding <span class="math notranslate nohighlight">\(k_r\)</span>) <code class="docutils literal notranslate"><span class="pre">[??]</span></code></li>
-<li><cite>“darcy velocity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-darcy_velocity</strong> darcy velocity vector, interpolated from faces to cells <code class="docutils literal notranslate"><span class="pre">[m</span> <span class="pre">s^-1]</span></code></li>
-<li><cite>“darcy flux key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux</strong> mass flux across a face <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">s^-1]</span></code></li>
-<li><cite>“saturation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-saturation_liquid</strong> volume fraction of the liquid phase <code class="docutils literal notranslate"><span class="pre">[-]</span></code></li>
+<li><p><cite>“conserved quantity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-water_content</strong> Typically not set, default is good. <code class="docutils literal notranslate"><span class="pre">[mol]</span></code></p></li>
+<li><p><cite>“mass density key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_density_liquid</strong> liquid water density <code class="docutils literal notranslate"><span class="pre">[kg</span> <span class="pre">m^-3]</span></code></p></li>
+<li><p><cite>“molar density key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-molar_density_liquid</strong> liquid water density <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">m^-3]</span></code></p></li>
+<li><p><cite>“permeability key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-permeability</strong> permeability of the soil medium <code class="docutils literal notranslate"><span class="pre">[m^2]</span></code></p></li>
+<li><p><cite>“conductivity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-relative_permeability</strong> scalar coefficient of the permeability <code class="docutils literal notranslate"><span class="pre">[-]</span></code></p></li>
+<li><p><cite>“upwind conductivity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-upwind_relative_permeability</strong> upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents <span class="math notranslate nohighlight">\(\frac{n_l k_r}{\mu}\)</span>  <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">kg^-1</span> <span class="pre">s^1</span> <span class="pre">m^-2]</span></code></p></li>
+<li><p><cite>“darcy flux key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux</strong> mass flux across a face <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">s^-1]</span></code></p></li>
+<li><p><cite>“darcy flux direction key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux_direction</strong> direction of the darcy flux (used in upwinding <span class="math notranslate nohighlight">\(k_r\)</span>) <code class="docutils literal notranslate"><span class="pre">[??]</span></code></p></li>
+<li><p><cite>“darcy velocity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-darcy_velocity</strong> darcy velocity vector, interpolated from faces to cells <code class="docutils literal notranslate"><span class="pre">[m</span> <span class="pre">s^-1]</span></code></p></li>
+<li><p><cite>“darcy flux key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-mass_flux</strong> mass flux across a face <code class="docutils literal notranslate"><span class="pre">[mol</span> <span class="pre">s^-1]</span></code></p></li>
+<li><p><cite>“saturation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-saturation_liquid</strong> volume fraction of the liquid phase <code class="docutils literal notranslate"><span class="pre">[-]</span></code></p></li>
 </ul>
 <p>Discretization control:</p>
 <ul class="simple">
-<li><cite>“diffusion</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id140"><span class="problematic" id="id141">PDE_Diffusion_</span></a> spec describing the (forward) diffusion operator</li>
-<li><cite>“diffusion preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id142"><span class="problematic" id="id143">PDE_Diffusion_</span></a> spec describing the diffusive parts of the preconditioner.</li>
-<li><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id144"><span class="problematic" id="id145">LinearSolver_</span></a> spec.  Note
-that this is only used if this PK is not strongly coupled to other PKs.</li>
+<li><p><cite>“diffusion</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id140"><span class="problematic" id="id141">PDE_Diffusion_</span></a> spec describing the (forward) diffusion operator</p></li>
+<li><p><cite>“diffusion preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id142"><span class="problematic" id="id143">PDE_Diffusion_</span></a> spec describing the diffusive parts of the preconditioner.</p></li>
+<li><p><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id144"><span class="problematic" id="id145">LinearSolver_</span></a> spec.  Note
+that this is only used if this PK is not strongly coupled to other PKs.</p></li>
 </ul>
 <p>Boundary conditions:</p>
 <p>//* <cite>“boundary conditions</cite>” <code class="docutils literal notranslate"><span class="pre">[subsurface-flow-bc-spec]</span></code> Defaults to Neuman, 0 normal flux.  See <a class="reference internal" href="#flow-specific-boundary-conditions">Flow-specific Boundary Conditions</a></p>
 <p>Physics control:</p>
 <ul class="simple">
-<li><cite>“permeability rescaling</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Typically 1e7 or order <span class="math notranslate nohighlight">\(sqrt(K)\)</span> is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (<span class="math notranslate nohighlight">\(\rho / \mu\)</span>).</li>
-<li><cite>“permeability type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>‘scalar’</strong> The permeability type can be ‘scalar’, ‘horizontal and vertical’, ‘diagonal tensor’, or ‘full tensor’. This key is placed in state-&gt;field evaluators-&gt;permeability. The ‘scalar’ option requires 1 permeability value, ‘horizontal and vertical’ requires 2 values, ‘diagonal tensor’ requires 2 (2D) or 3 (3D) values, and ‘full tensor’ requires 3 (2D) or 6 (3D) values. The ordering of the permeability values in the input script is important: ‘horizontal and vertical’={xx/yy,zz}, ‘diagonal tensor’={xx,yy} or {xx,yy,zz}, ‘full tensor’={xx,yy,xy/yx} or {xx,yy,zz,xy/yx,xz/zx,yz/zy}.</li>
-<li><cite>“water retention evaluator</cite>” <code class="docutils literal notranslate"><span class="pre">[wrm-evaluator-spec]</span></code> The WRM.  This needs to go away!</li>
+<li><p><cite>“permeability rescaling</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Typically 1e7 or order <span class="math notranslate nohighlight">\(sqrt(K)\)</span> is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (<span class="math notranslate nohighlight">\(\rho / \mu\)</span>).</p></li>
+<li><p><cite>“permeability type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>‘scalar’</strong> The permeability type can be ‘scalar’, ‘horizontal and vertical’, ‘diagonal tensor’, or ‘full tensor’. This key is placed in state-&gt;field evaluators-&gt;permeability. The ‘scalar’ option requires 1 permeability value, ‘horizontal and vertical’ requires 2 values, ‘diagonal tensor’ requires 2 (2D) or 3 (3D) values, and ‘full tensor’ requires 3 (2D) or 6 (3D) values. The ordering of the permeability values in the input script is important: ‘horizontal and vertical’={xx/yy,zz}, ‘diagonal tensor’={xx,yy} or {xx,yy,zz}, ‘full tensor’={xx,yy,xy/yx} or {xx,yy,zz,xy/yx,xz/zx,yz/zy}.</p></li>
+<li><p><cite>“water retention evaluator</cite>” <code class="docutils literal notranslate"><span class="pre">[wrm-evaluator-spec]</span></code> The WRM.  This needs to go away!</p></li>
 </ul>
 <p>This PK additionally requires the following:</p>
 <p>EVALUATORS:
@@ -1108,45 +1461,46 @@ that this is only used if this PK is not strongly coupled to other PKs.</li>
 <div class="section" id="overland-flow-pressure-primary-variable-pk">
 <h4><a class="toc-backref" href="#id36">Overland Flow, pressure primary variable, PK</a><a class="headerlink" href="#overland-flow-pressure-primary-variable-pk" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div>Overland flow using the diffusion wave equation.</div></blockquote>
+<div><p>Overland flow using the diffusion wave equation.</p>
+</div></blockquote>
 <p>Solves the diffusion wave equation for overland flow with pressure as a primary variable:</p>
 <div class="math notranslate nohighlight">
 \[\frac{\partial \Theta}{\partial t} - \nabla n_l k \nabla h(p) = Q_w\]</div>
 <p>Options:</p>
 <p>Variable naming:</p>
 <ul class="simple">
-<li><cite>“domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“surface”</strong>  Defaults to the extracted surface mesh.</li>
-<li><cite>“primary variable</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The primary variable associated with this PK, typically <cite>“DOMAIN-pressure</cite>”</li>
+<li><p><cite>“domain</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“surface”</strong>  Defaults to the extracted surface mesh.</p></li>
+<li><p><cite>“primary variable</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> The primary variable associated with this PK, typically <cite>“DOMAIN-pressure</cite>”</p></li>
 </ul>
 <p>Other variable names, typically not set as the default is basically always good:</p>
 <ul class="simple">
-<li><cite>“conserved quantity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“DOMAIN-water_content”</strong> The conserved quantity name.</li>
+<li><p><cite>“conserved quantity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“DOMAIN-water_content”</strong> The conserved quantity name.</p></li>
 </ul>
 <p>Discretization control:</p>
 <ul class="simple">
-<li><cite>“diffusion</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id146"><span class="problematic" id="id147">PDE_Diffusion_</span></a> spec describing the (forward) diffusion operator</li>
-<li><cite>“diffusion preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id148"><span class="problematic" id="id149">PDE_Diffusion_</span></a> spec describing the diffusive parts of the preconditioner.</li>
+<li><p><cite>“diffusion</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id146"><span class="problematic" id="id147">PDE_Diffusion_</span></a> spec describing the (forward) diffusion operator</p></li>
+<li><p><cite>“diffusion preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> An <a href="#id148"><span class="problematic" id="id149">PDE_Diffusion_</span></a> spec describing the diffusive parts of the preconditioner.</p></li>
 </ul>
 <p>Time integration and timestep control:</p>
 <ul class="simple">
-<li><cite>“initial time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.</strong> Max initial time step size <code class="docutils literal notranslate"><span class="pre">[s]</span></code>.</li>
-<li><cite>“time integrator</cite>” <code class="docutils literal notranslate"><span class="pre">[implicit-time-integrator-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#timeintegrator">TimeIntegrator</a> spec.
-Note that this is only used if this PK is not strongly coupled to other PKs.</li>
-<li><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id150"><span class="problematic" id="id151">LinearSolver_</span></a> spec.  Note
-that this is only used if this PK is not strongly coupled to other PKs.</li>
-<li><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
-Note that this is only used if this PK is not strongly coupled to other PKs.</li>
-<li><cite>“initial condition</cite>” <code class="docutils literal notranslate"><span class="pre">[initial-conditions-spec]</span></code> See <a class="reference internal" href="#initialconditions">InitialConditions</a>.</li>
+<li><p><cite>“initial time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.</strong> Max initial time step size <code class="docutils literal notranslate"><span class="pre">[s]</span></code>.</p></li>
+<li><p><cite>“time integrator</cite>” <code class="docutils literal notranslate"><span class="pre">[implicit-time-integrator-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#timeintegrator">TimeIntegrator</a> spec.
+Note that this is only used if this PK is not strongly coupled to other PKs.</p></li>
+<li><p><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id150"><span class="problematic" id="id151">LinearSolver_</span></a> spec.  Note
+that this is only used if this PK is not strongly coupled to other PKs.</p></li>
+<li><p><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
+Note that this is only used if this PK is not strongly coupled to other PKs.</p></li>
+<li><p><cite>“initial condition</cite>” <code class="docutils literal notranslate"><span class="pre">[initial-conditions-spec]</span></code> See <a class="reference internal" href="#initialconditions">InitialConditions</a>.</p></li>
 </ul>
 <p>Error control:</p>
 <ul class="simple">
-<li><cite>“absolute error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>550.</strong> Defaults to 1 cm of water.  A small, but significant, amount of water.</li>
-<li><cite>“relative error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Take the error relative to the amount of water present in that cell.</li>
-<li><cite>“flux tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Multiplies the error in flux (on a face)
+<li><p><cite>“absolute error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>550.</strong> Defaults to 1 cm of water.  A small, but significant, amount of water.</p></li>
+<li><p><cite>“relative error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Take the error relative to the amount of water present in that cell.</p></li>
+<li><p><cite>“flux tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1</strong> Multiplies the error in flux (on a face)
 relative to the min of water in the neighboring cells.  Typically only
 changed if infiltration is very small and the boundary condition is not
 converging, at which point it can be decreased by an order of magnitude at a
-time until the boundary condition is satisfied.</li>
+time until the boundary condition is satisfied.</p></li>
 </ul>
 <p>Boundary conditions:</p>
 <p>xx* <cite>“boundary conditions</cite>” <code class="docutils literal notranslate"><span class="pre">[surface-flow-bc-spec]</span></code> Defaults to Neuman, 0 normal flux.</p>
@@ -1212,23 +1566,25 @@ time until the boundary condition is satisfied.</li>
 <div class="section" id="physical-mpcs">
 <h2><a class="toc-backref" href="#id55">Physical MPCs</a><a class="headerlink" href="#physical-mpcs" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>coupling is an art, and requires special off-diagonal work.  Physical MPCs can derive from default MPCs to provide special work.</div></blockquote>
+<div><p>coupling is an art, and requires special off-diagonal work.  Physical MPCs can derive from default MPCs to provide special work.</p>
+</div></blockquote>
 <div class="section" id="coupled-water-mpc">
 <h3><a class="toc-backref" href="#id56">Coupled Water MPC</a><a class="headerlink" href="#coupled-water-mpc" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>MPCCoupledWater: coupler which integrates surface and subsurface flow.</div></blockquote>
+<div><p>MPCCoupledWater: coupler which integrates surface and subsurface flow.</p>
+</div></blockquote>
 <p>Couples Richards equation to surface water through continuity of both pressure and fluxes.</p>
 <p>Currently requires that the subsurface discretization is a face-based
 discretization, i.e. one of the MFD methods.  Then the surface equations are
 directly added into the subsurface discrete equations.</p>
 <ul class="simple">
-<li><cite>“PKs order</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code> Supplies the names of the coupled PKs.
-The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).</li>
-<li><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id152"><span class="problematic" id="id153">LinearSolver_</span></a> spec.  Note
-that this is only used if this PK is not strongly coupled to other PKs.</li>
-<li><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
-Note that this is only used if this PK is not strongly coupled to other PKs.</li>
-<li><cite>“water delegate</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></li>
+<li><p><cite>“PKs order</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code> Supplies the names of the coupled PKs.
+The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).</p></li>
+<li><p><cite>“linear solver</cite>” <code class="docutils literal notranslate"><span class="pre">[linear-solver-typed-spec]</span></code> <strong>optional</strong> is a <a href="#id152"><span class="problematic" id="id153">LinearSolver_</span></a> spec.  Note
+that this is only used if this PK is not strongly coupled to other PKs.</p></li>
+<li><p><cite>“preconditioner</cite>” <code class="docutils literal notranslate"><span class="pre">[preconditioner-typed-spec]</span></code> <strong>optional</strong> is a <a class="reference internal" href="#preconditioner">Preconditioner</a> spec.
+Note that this is only used if this PK is not strongly coupled to other PKs.</p></li>
+<li><p><cite>“water delegate</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code></p></li>
 </ul>
 <blockquote>
 <div><p>Globalization hacks to deal with nonlinearity around the appearance/disappearance of surface water.</p>
@@ -1237,28 +1593,28 @@ when surface cells shift from dry to wet (i.e. the surface pressure goes
 from &lt; atmospheric pressure to &gt; atmospheric pressure.</p>
 <p>These methods work to alter the predictor around this nonlinearity.</p>
 <ul class="simple">
-<li><cite>“modify predictor with heuristic</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> This simply
+<li><p><cite>“modify predictor with heuristic</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> This simply
 limits the prediction to backtrack to just above atmospheric on both the
-first and second timesteps that take us over atmospheric.</li>
-<li><cite>“modify predictor damp and cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> The
+first and second timesteps that take us over atmospheric.</p></li>
+<li><p><cite>“modify predictor damp and cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> The
 second both limits (caps) and damps all surface cells to ensure that all
-nearby cells are also not overshooting.  This is the preferred method.</li>
+nearby cells are also not overshooting.  This is the preferred method.</p></li>
 </ul>
 <p>These methods work to alter the preconditioned correction for the same
 reasons described above.</p>
 <ul class="simple">
-<li><cite>“global water face limiter</cite>” <code class="docutils literal notranslate"><span class="pre">[default]</span></code> <strong>INF</strong> This is simply a limit
+<li><p><cite>“global water face limiter</cite>” <code class="docutils literal notranslate"><span class="pre">[default]</span></code> <strong>INF</strong> This is simply a limit
 to the maximum allowed size of the correction (in [Pa]) on all faces.  Any
-correction larger than this is set to this.</li>
-<li><cite>“cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> If a correction takes the
+correction larger than this is set to this.</p></li>
+<li><p><cite>“cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> If a correction takes the
 pressure on a surface cell from below atmospheric (dry) to above (wet),
 the correction is set to a value which results in the new iterate to being
-CAP_SIZE over atmospheric.</li>
-<li><cite>“damp the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> A damping factor (less than
+CAP_SIZE over atmospheric.</p></li>
+<li><p><cite>“damp the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> A damping factor (less than
 one) is calculated to multiply the correction such that the largest
 correction takes a cell to just above atmospheric.  All faces (globally)
-are affected.</li>
-<li><cite>“damp and cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> None of the above
+are affected.</p></li>
+<li><p><cite>“damp and cap the water spurt</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> None of the above
 should really be used.  Capping, when the cap is particularly severe,
 results in faces whose values are very out of equilibrium with their
 neighboring cells which are not capped.  Damping results in a tiny
@@ -1267,12 +1623,12 @@ This looks to do a combination, in which all things are damped, but faces
 that are initially expected to go from dry to wet are pre-scaled to ensure
 that, when damped, they are also (like the biggest change) allowed to go
 from dry to wet (so that multiple cells can wet in the same step).  This
-is the preferred method.</li>
+is the preferred method.</p></li>
 </ul>
 <p>In these methods, the following parameters are useful:</p>
 <ul class="simple">
-<li><cite>“cap over atmospheric</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>100 Pa</strong> This sets the max size over
-atmospheric to which things are capped or damped.</li>
+<li><p><cite>“cap over atmospheric</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>100 Pa</strong> This sets the max size over
+atmospheric to which things are capped or damped.</p></li>
 </ul>
 </div></blockquote>
 </div>
@@ -1328,9 +1684,9 @@ for inclusion of multiple phases.</p>
 <div class="section" id="richardswatercontentevaluator">
 <h4><a class="toc-backref" href="#id67">RichardsWaterContentEvaluator</a><a class="headerlink" href="#richardswatercontentevaluator" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div><dl class="docutils">
-<dt>The Richards water content evaluator is an algebraic evaluator for liquid only water content</dt>
-<dd>Generated via evaluator_generator with:</dd>
+<div><dl class="simple">
+<dt>The Richards water content evaluator is an algebraic evaluator for liquid only water content</dt><dd><p>Generated via evaluator_generator with:</p>
+</dd>
 </dl>
 </div></blockquote>
 <p>Richards water content evaluator: the standard form as a function of liquid saturation.</p>
@@ -1338,10 +1694,10 @@ for inclusion of multiple phases.</p>
 \[Theta = n * s * phi * cell volume\]</div>
 <p><code class="docutils literal notranslate"><span class="pre">[field-evaluator-type-richards-water-content-spec]</span></code></p>
 <ul class="simple">
-<li><cite>“porosity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-porosity</strong></li>
-<li><cite>“molar density liquid key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-molar_density_liquid</strong></li>
-<li><cite>“saturation liquid key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-saturation_liquid</strong></li>
-<li><cite>“cell volume key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-cell_volume</strong></li>
+<li><p><cite>“porosity key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-porosity</strong></p></li>
+<li><p><cite>“molar density liquid key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-molar_density_liquid</strong></p></li>
+<li><p><cite>“saturation liquid key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-saturation_liquid</strong></p></li>
+<li><p><cite>“cell volume key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN-cell_volume</strong></p></li>
 </ul>
 <p>EVALUATORS:
 - <cite>“porosity</cite>”
@@ -1363,14 +1719,15 @@ PermafrostWaterContentEvaluator
 <div class="section" id="surfaceelevation">
 <h4><a class="toc-backref" href="#id70">SurfaceElevation</a><a class="headerlink" href="#surfaceelevation" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div>MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.</div></blockquote>
+<div><p>MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.</p>
+</div></blockquote>
 <p>Evaluator type: <cite>“meshed elevation</cite>”</p>
 <p>Evaluates the z-coordinate and the magnitude of the slope :math:<code class="docutils literal notranslate"><span class="pre">|\nambla_h</span> <span class="pre">z|</span></code></p>
 <ul class="simple">
-<li><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Name the elevation variable. [m]</li>
-<li><cite>“slope magnitude key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>slope_magnitude</strong> Name the elevation variable. [-]</li>
-<li><cite>“dynamic mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Lets the evaluator know that the elevation changes in time, and adds the <cite>“deformation</cite>” dependency.</li>
-<li><cite>“parent domain name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN</strong> Domain name of the parent mesh, which is the 3D version of this domain.  Attempts to generate an intelligent default by stripping “surface” from this domain.</li>
+<li><p><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Name the elevation variable. [m]</p></li>
+<li><p><cite>“slope magnitude key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>slope_magnitude</strong> Name the elevation variable. [-]</p></li>
+<li><p><cite>“dynamic mesh</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> Lets the evaluator know that the elevation changes in time, and adds the <cite>“deformation</cite>” dependency.</p></li>
+<li><p><cite>“parent domain name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>DOMAIN</strong> Domain name of the parent mesh, which is the 3D version of this domain.  Attempts to generate an intelligent default by stripping “surface” from this domain.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;elevation&quot;</span><span class="nt">&gt;</span>
@@ -1382,14 +1739,15 @@ PermafrostWaterContentEvaluator
 <div class="section" id="surfacepotential">
 <h4><a class="toc-backref" href="#id71">SurfacePotential</a><a class="headerlink" href="#surfacepotential" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div>PresElevEvaluator: evaluates h + z</div></blockquote>
+<div><p>PresElevEvaluator: evaluates h + z</p>
+</div></blockquote>
 <p>Evaluator type: “”</p>
 <div class="math notranslate nohighlight">
 \[h + z\]</div>
 <ul class="simple">
-<li><cite>“my key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>pres_elev</strong> Names the surface water potential variable, h + z [m]</li>
-<li><cite>“height key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>ponded_depth</strong> Names the height variable. [m]</li>
-<li><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Names the elevation variable. [m]</li>
+<li><p><cite>“my key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>pres_elev</strong> Names the surface water potential variable, h + z [m]</p></li>
+<li><p><cite>“height key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>ponded_depth</strong> Names the height variable. [m]</p></li>
+<li><p><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Names the elevation variable. [m]</p></li>
 </ul>
 <p>NOTE: This is a legacy evaluator, and is not in the factory, so need not be in
 the input spec.  However, we include it here because this could easily be
@@ -1400,17 +1758,18 @@ would need to be added to the factory and the input spec.</p>
 <div class="section" id="snowsurfacepotential">
 <h4><a class="toc-backref" href="#id72">SnowSurfacePotential</a><a class="headerlink" href="#snowsurfacepotential" title="Permalink to this headline">¶</a></h4>
 <blockquote>
-<div>PresElevEvaluator: evaluates h + z</div></blockquote>
+<div><p>PresElevEvaluator: evaluates h + z</p>
+</div></blockquote>
 <p>Evaluator type: “snow skin potential”</p>
 <div class="math notranslate nohighlight">
 \[h + z + h_{{snow}} + dt * P_{{snow}}\]</div>
 <ul class="simple">
-<li><cite>“my key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>snow_skin_potential</strong> Names the potential variable evaluated [m]</li>
-<li><cite>“ponded depth key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>ponded_depth</strong> Names the surface water depth variable. [m]</li>
-<li><cite>“snow depth key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>snow_depth</strong> Names the snow depth variable. [m]</li>
-<li><cite>“precipitation snow key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>precipitation_snow</strong> Names the snow precipitation key. [m]</li>
-<li><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Names the elevation variable. [m]</li>
-<li><cite>“dt factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> A free-parameter factor for providing a time scale for diffusion of snow precipitation into low-lying areas.  Typically on the order of 1e4-1e7. This timestep times the wave speed of snow provides an approximate length of how far snow precip can travel.  Extremely tunable! [s]</li>
+<li><p><cite>“my key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>snow_skin_potential</strong> Names the potential variable evaluated [m]</p></li>
+<li><p><cite>“ponded depth key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>ponded_depth</strong> Names the surface water depth variable. [m]</p></li>
+<li><p><cite>“snow depth key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>snow_depth</strong> Names the snow depth variable. [m]</p></li>
+<li><p><cite>“precipitation snow key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>precipitation_snow</strong> Names the snow precipitation key. [m]</p></li>
+<li><p><cite>“elevation key</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>elevation</strong> Names the elevation variable. [m]</p></li>
+<li><p><cite>“dt factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> A free-parameter factor for providing a time scale for diffusion of snow precipitation into low-lying areas.  Typically on the order of 1e4-1e7. This timestep times the wave speed of snow provides an approximate length of how far snow precip can travel.  Extremely tunable! [s]</p></li>
 </ul>
 <p>NOTE: This is equivalent to a generic <a class="reference internal" href="#additiveevaluator">AdditiveEvaluator</a></p>
 <p>Example:</p>
@@ -1437,13 +1796,13 @@ would need to be added to the factory and the input spec.</p>
 <h2><a class="toc-backref" href="#id76">InitialConditions</a><a class="headerlink" href="#initialconditions" title="Permalink to this headline">¶</a></h2>
 <p>Initial condition specs are used in two places:</p>
 <ul class="simple">
-<li>within the <a class="reference internal" href="#pk">PK</a> spec which describes the initial condition of primary variables (true
-initial conditions), and</li>
-<li>in the <cite>“initial conditions</cite>” sublist of state, in which the value
+<li><p>within the <a class="reference internal" href="#pk">PK</a> spec which describes the initial condition of primary variables (true
+initial conditions), and</p></li>
+<li><p>in the <cite>“initial conditions</cite>” sublist of state, in which the value
 of atomic constants are provided (not really initial conditions and
 should be renamed).  These atomic values are not controlled by
 evaluators, and are not included in the DaG.  Likely these should be
-removed entirely.</li>
+removed entirely.</p></li>
 </ul>
 <div class="section" id="initialization-of-constant-scalars">
 <h3><a class="toc-backref" href="#id77">Initialization of constant scalars</a><a class="headerlink" href="#initialization-of-constant-scalars" title="Permalink to this headline">¶</a></h3>
@@ -1654,8 +2013,8 @@ boundaries (in [Pa]).</p>
 and subsurface flow PKs.  Typically seepage conditions are of the form:</p>
 <blockquote>
 <div><ul class="simple">
-<li>if <span class="math notranslate nohighlight">\(q \cdot \hat{n} &lt; 0\)</span>, then <span class="math notranslate nohighlight">\(q = 0\)</span></li>
-<li>if <span class="math notranslate nohighlight">\(p &gt; p0\)</span>, then <span class="math notranslate nohighlight">\(p = p0\)</span></li>
+<li><p>if <span class="math notranslate nohighlight">\(q \cdot \hat{n} &lt; 0\)</span>, then <span class="math notranslate nohighlight">\(q = 0\)</span></p></li>
+<li><p>if <span class="math notranslate nohighlight">\(p &gt; p0\)</span>, then <span class="math notranslate nohighlight">\(p = p0\)</span></p></li>
 </ul>
 </div></blockquote>
 <p>This ensures that flow is only out of the domain, but that the max pressure on
@@ -1697,8 +2056,8 @@ which point the precip is turned off and water seeps into runoff.  This
 capability is experimental and has not been well tested.</p>
 <blockquote>
 <div><ul class="simple">
-<li>if <span class="math notranslate nohighlight">\(q \cdot \hat{n} &lt; q0\)</span>, then <span class="math notranslate nohighlight">\(q = q0\)</span></li>
-<li>if <span class="math notranslate nohighlight">\(p &gt; p_atm\)</span>, then <span class="math notranslate nohighlight">\(p = p_atm\)</span></li>
+<li><p>if <span class="math notranslate nohighlight">\(q \cdot \hat{n} &lt; q0\)</span>, then <span class="math notranslate nohighlight">\(q = q0\)</span></p></li>
+<li><p>if <span class="math notranslate nohighlight">\(p &gt; p_atm\)</span>, then <span class="math notranslate nohighlight">\(p = p_atm\)</span></p></li>
 </ul>
 </div></blockquote>
 <p>Example: seepage with infiltration</p>
@@ -1810,72 +2169,67 @@ set an outward flux to take away runoff.  This condition is given by:</p>
 <div><p>&lt;Parameter name=”regions” type=”Array(string)” value=”{surface west}”/&gt;
 &lt;ParameterList name=”switch function”&gt;</p>
 <blockquote>
-<div><dl class="docutils">
-<dt>&lt;ParameterList name=”function-tabular”&gt;</dt>
-<dd>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
+<div><dl class="simple">
+<dt>&lt;ParameterList name=”function-tabular”&gt;</dt><dd><p>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
 &lt;Parameter name=”x header” type=”string” value=”Time” /&gt;
 &lt;Parameter name=”y header” type=”string” value=”Switch” /&gt;
-&lt;Parameter name=”form” type=”Array(string)” value=”{constant}”/&gt;</dd>
+&lt;Parameter name=”form” type=”Array(string)” value=”{constant}”/&gt;</p>
+</dd>
 </dl>
 <p>&lt;/ParameterList&gt;</p>
 </div></blockquote>
 <p>&lt;/ParameterList&gt;</p>
-<dl class="docutils">
-<dt>&lt;ParameterList name=”bcs”&gt;</dt>
-<dd><p class="first">&lt;Parameter name=”bc types” type=”Array(string)” value=”{head, mass flux}”/&gt;
+<dl>
+<dt>&lt;ParameterList name=”bcs”&gt;</dt><dd><p>&lt;Parameter name=”bc types” type=”Array(string)” value=”{head, mass flux}”/&gt;
 &lt;Parameter name=”bc functions” type=”Array(string)” value=”{boundary head, outward mass flux}”/&gt;</p>
-<dl class="docutils">
-<dt>&lt;ParameterList name=”mass flux”&gt;</dt>
-<dd><dl class="first last docutils">
-<dt>&lt;ParameterList name=”BC west”&gt;</dt>
-<dd><blockquote class="first">
+<dl>
+<dt>&lt;ParameterList name=”mass flux”&gt;</dt><dd><dl>
+<dt>&lt;ParameterList name=”BC west”&gt;</dt><dd><blockquote>
 <div><p>&lt;Parameter name=”regions” type=”Array(string)” value=”{surface west}”/&gt;
 &lt;ParameterList name=”outward mass flux”&gt;</p>
 <blockquote>
 <div><blockquote>
-<div><dl class="docutils">
-<dt>&lt;ParameterList name=”function-tabular”&gt;</dt>
-<dd>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
+<div><dl class="simple">
+<dt>&lt;ParameterList name=”function-tabular”&gt;</dt><dd><p>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
 &lt;Parameter name=”x header” type=”string” value=”Time” /&gt;
 &lt;Parameter name=”y header” type=”string” value=”Flux” /&gt;
-&lt;Parameter name=”form” type=”Array(string)” value=”{linear}”/&gt;</dd>
+&lt;Parameter name=”form” type=”Array(string)” value=”{linear}”/&gt;</p>
+</dd>
 </dl>
 <p>&lt;/ParameterList&gt;</p>
 </div></blockquote>
 <p>&lt;/ParameterList&gt;</p>
 </div></blockquote>
 </div></blockquote>
-<p class="last">&lt;/ParameterList&gt;</p>
+<p>&lt;/ParameterList&gt;</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <p>&lt;/ParameterList&gt;</p>
-<dl class="last docutils">
-<dt>&lt;ParameterList name=”head”&gt;</dt>
-<dd><blockquote class="first">
-<div><dl class="docutils">
-<dt>&lt;ParameterList name=”BC west”&gt;</dt>
-<dd><p class="first">&lt;Parameter name=”regions” type=”Array(string)” value=”{surface west}”/&gt;
+<dl>
+<dt>&lt;ParameterList name=”head”&gt;</dt><dd><blockquote>
+<div><dl>
+<dt>&lt;ParameterList name=”BC west”&gt;</dt><dd><p>&lt;Parameter name=”regions” type=”Array(string)” value=”{surface west}”/&gt;
 &lt;ParameterList name=”boundary head”&gt;</p>
 <blockquote>
-<div><dl class="docutils">
-<dt>&lt;ParameterList name=”function-tabular”&gt;</dt>
-<dd><blockquote class="first">
-<div>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
+<div><dl>
+<dt>&lt;ParameterList name=”function-tabular”&gt;</dt><dd><blockquote>
+<div><p>&lt;Parameter name=”file” type=”string” value=”../data/floodplain2.h5” /&gt;
 &lt;Parameter name=”x header” type=”string” value=”Time” /&gt;
 &lt;Parameter name=”y header” type=”string” value=”Head” /&gt;
-&lt;Parameter name=”form” type=”Array(string)” value=”{linear}”/&gt;</div></blockquote>
-<p class="last">&lt;/ParameterList&gt;</p>
+&lt;Parameter name=”form” type=”Array(string)” value=”{linear}”/&gt;</p>
+</div></blockquote>
+<p>&lt;/ParameterList&gt;</p>
 </dd>
 </dl>
 </div></blockquote>
-<p class="last">&lt;/ParameterList&gt;</p>
+<p>&lt;/ParameterList&gt;</p>
 </dd>
 </dl>
 <p>&lt;/ParameterList&gt;</p>
 </div></blockquote>
-<p class="last">&lt;/ParameterList&gt;</p>
+<p>&lt;/ParameterList&gt;</p>
 </dd>
 </dl>
 </dd>
@@ -1895,26 +2249,28 @@ set an outward flux to take away runoff.  This condition is given by:</p>
 <div class="section" id="timeintegrator">
 <h2><a class="toc-backref" href="#id93">TimeIntegrator</a><a class="headerlink" href="#timeintegrator" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>Factory for creating TimestepController objects</div></blockquote>
+<div><p>Factory for creating TimestepController objects</p>
+</div></blockquote>
 <p>A TimestepController object sets what size timestep to take.  This can be a
 variety of things, from fixed timestep size, to adaptive based upon error
 control, to adapter based upon simple nonlinear iteration counts.</p>
 <ul class="simple">
-<li><cite>“timestep controller type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Set the type.  One of the below types.</li>
-<li><cite>“timestep controller X parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> List of parameters for a timestep controller of type X.</li>
+<li><p><cite>“timestep controller type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Set the type.  One of the below types.</p></li>
+<li><p><cite>“timestep controller X parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> List of parameters for a timestep controller of type X.</p></li>
 </ul>
 <p>Available types include:</p>
 <ul class="simple">
-<li><a class="reference internal" href="#timestepcontrollerfixed">TimestepControllerFixed</a>  (type <cite>“fixed</cite>”), a constant timestep</li>
-<li><a class="reference internal" href="#timestepcontrollerstandard">TimestepControllerStandard</a> (type <cite>‘standard</cite>”), an adaptive timestep based upon nonlinear iterations</li>
-<li><a class="reference internal" href="#timestepcontrollersmarter">TimestepControllerSmarter</a> (type <cite>‘smarter</cite>”), an adaptive timestep based upon nonlinear iterations with more control</li>
-<li><a href="#id154"><span class="problematic" id="id155">TimestepControllerAdaptive_</span></a> (type <cite>“adaptive</cite>”), an adaptive timestep based upon error control.</li>
-<li><a class="reference internal" href="#timestepcontrollerfromfile">TimestepControllerFromFile</a> (type <cite>“from file</cite>”), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)</li>
+<li><p><a class="reference internal" href="#timestepcontrollerfixed">TimestepControllerFixed</a>  (type <cite>“fixed</cite>”), a constant timestep</p></li>
+<li><p><a class="reference internal" href="#timestepcontrollerstandard">TimestepControllerStandard</a> (type <cite>‘standard</cite>”), an adaptive timestep based upon nonlinear iterations</p></li>
+<li><p><a class="reference internal" href="#timestepcontrollersmarter">TimestepControllerSmarter</a> (type <cite>‘smarter</cite>”), an adaptive timestep based upon nonlinear iterations with more control</p></li>
+<li><p><a href="#id154"><span class="problematic" id="id155">TimestepControllerAdaptive_</span></a> (type <cite>“adaptive</cite>”), an adaptive timestep based upon error control.</p></li>
+<li><p><a class="reference internal" href="#timestepcontrollerfromfile">TimestepControllerFromFile</a> (type <cite>“from file</cite>”), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)</p></li>
 </ul>
 <div class="section" id="timestepcontrollerfixed">
 <h3><a class="toc-backref" href="#id94">TimestepControllerFixed</a><a class="headerlink" href="#timestepcontrollerfixed" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>Timestep controller providing constant timestep size.</div></blockquote>
+<div><p>Timestep controller providing constant timestep size.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">TimestepControllerFixed</span></code> is a simple timestep control mechanism which sets
 a constant timestep size.  Note that the actual timestep size is given by the
 minimum of PK’s initial timestep sizes.</p>
@@ -1922,50 +2278,53 @@ minimum of PK’s initial timestep sizes.</p>
 <div class="section" id="timestepcontrollerstandard">
 <h3><a class="toc-backref" href="#id95">TimestepControllerStandard</a><a class="headerlink" href="#timestepcontrollerstandard" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>Simple timestep control based upon previous iteration count.</div></blockquote>
+<div><p>Simple timestep control based upon previous iteration count.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">TimestepControllerStandard</span></code> is a simple timestep control mechanism
 which sets the next timestep based upon the previous timestep and how many
 nonlinear iterations the previous timestep took to converge.</p>
 <p>The timestep for step <span class="math notranslate nohighlight">\(k+1\)</span>, <span class="math notranslate nohighlight">\(\Delta t_{k+1}\)</span>, is given by:</p>
 <ul class="simple">
-<li>if <span class="math notranslate nohighlight">\(N_k &gt; N^{max}\)</span> then <span class="math notranslate nohighlight">\(\Delta t_{k+1} = f_{reduction} * \Delta t_{k}\)</span></li>
-<li>if <span class="math notranslate nohighlight">\(N_k &lt; N^{min}\)</span> then <span class="math notranslate nohighlight">\(\Delta t_{k+1} = f_{increase} * \Delta t_{k}\)</span></li>
-<li>otherwise <span class="math notranslate nohighlight">\(\Delta t_{k+1} = \Delta t_{k}\)</span></li>
+<li><p>if <span class="math notranslate nohighlight">\(N_k &gt; N^{max}\)</span> then <span class="math notranslate nohighlight">\(\Delta t_{k+1} = f_{reduction} * \Delta t_{k}\)</span></p></li>
+<li><p>if <span class="math notranslate nohighlight">\(N_k &lt; N^{min}\)</span> then <span class="math notranslate nohighlight">\(\Delta t_{k+1} = f_{increase} * \Delta t_{k}\)</span></p></li>
+<li><p>otherwise <span class="math notranslate nohighlight">\(\Delta t_{k+1} = \Delta t_{k}\)</span></p></li>
 </ul>
 <p>where <span class="math notranslate nohighlight">\(\Delta t_{k}\)</span> is the previous timestep and <span class="math notranslate nohighlight">\(N_k\)</span> is the number of
 nonlinear iterations required to solve step <span class="math notranslate nohighlight">\(k\)</span>:.</p>
 <ul class="simple">
-<li><cite>“max iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{max}\)</span>, decrease the timestep if the previous step took more than this.</li>
-<li><cite>“min iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{min}\)</span>, increase the timestep if the previous step took less than this.</li>
-<li><cite>“time step reduction factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_reduction\)</span>, reduce the previous timestep by this multiple.</li>
-<li><cite>“time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_increase\)</span>, increase the previous timestep by this multiple.</li>
-<li><cite>“max time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> The max timestep size allowed.</li>
-<li><cite>“min time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.</li>
+<li><p><cite>“max iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{max}\)</span>, decrease the timestep if the previous step took more than this.</p></li>
+<li><p><cite>“min iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{min}\)</span>, increase the timestep if the previous step took less than this.</p></li>
+<li><p><cite>“time step reduction factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_reduction\)</span>, reduce the previous timestep by this multiple.</p></li>
+<li><p><cite>“time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_increase\)</span>, increase the previous timestep by this multiple.</p></li>
+<li><p><cite>“max time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> The max timestep size allowed.</p></li>
+<li><p><cite>“min time step</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.</p></li>
 </ul>
 </div>
 <div class="section" id="timestepcontrollersmarter">
 <h3><a class="toc-backref" href="#id96">TimestepControllerSmarter</a><a class="headerlink" href="#timestepcontrollersmarter" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>Slightly smarter timestep controller based upon a history of previous timesteps.</div></blockquote>
+<div><p>Slightly smarter timestep controller based upon a history of previous timesteps.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">TimestepControllerSmarter</span></code> is based on <code class="docutils literal notranslate"><span class="pre">TimestepControllerStandard</span></code>, but
 also tries to be a bit smarter to avoid repeated increase/decrease loops where
 the step size decreases, converges in few iterations, increases, but then
 fails again.  It also tries to grow the step geometrically to more quickly
 recover from tricky nonlinearities.</p>
 <ul class="simple">
-<li><cite>“max iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{max}\)</span>, decrease the timestep if the previous step took more than this.</li>
-<li><cite>“min iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{min}\)</span>, increase the timestep if the previous step took less than this.</li>
-<li><cite>“time step reduction factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_reduction\)</span>, reduce the previous timestep by this multiple.</li>
-<li><cite>“time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_increase\)</span>, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.</li>
-<li><cite>“max time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>10.</strong> The max <span class="math notranslate nohighlight">\(f_increase\)</span> will ever get.</li>
-<li><cite>“growth wait after fail</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.</li>
-<li><cite>“count before increasing increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Require this many successive increasions before multiplying <span class="math notranslate nohighlight">\(f_increase\)</span> by itself.</li>
+<li><p><cite>“max iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{max}\)</span>, decrease the timestep if the previous step took more than this.</p></li>
+<li><p><cite>“min iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <span class="math notranslate nohighlight">\(N^{min}\)</span>, increase the timestep if the previous step took less than this.</p></li>
+<li><p><cite>“time step reduction factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_reduction\)</span>, reduce the previous timestep by this multiple.</p></li>
+<li><p><cite>“time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <span class="math notranslate nohighlight">\(f_increase\)</span>, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.</p></li>
+<li><p><cite>“max time step increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>10.</strong> The max <span class="math notranslate nohighlight">\(f_increase\)</span> will ever get.</p></li>
+<li><p><cite>“growth wait after fail</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.</p></li>
+<li><p><cite>“count before increasing increase factor</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> Require this many successive increasions before multiplying <span class="math notranslate nohighlight">\(f_increase\)</span> by itself.</p></li>
 </ul>
 </div>
 <div class="section" id="timestepcontrollerfromfile">
 <h3><a class="toc-backref" href="#id97">TimestepControllerFromFile</a><a class="headerlink" href="#timestepcontrollerfromfile" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>Timestep controller which loads a timestep history from file.</div></blockquote>
+<div><p>Timestep controller which loads a timestep history from file.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">TimestepControllerFromFile</span></code> loads a timestep history from a file, then
 advances the step size with those values.  This is mostly used for testing
 purposes, where we need to force the same timestep history as previous runs to
@@ -1973,8 +2332,8 @@ do regression testing.  Otherwise even machine roundoff can eventually alter
 number of iterations enough to alter the timestep history, resulting in
 solutions which are enough different to cause doubt over their correctness.</p>
 <ul class="simple">
-<li><cite>“file name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Path to hdf5 file containing timestep information.</li>
-<li><cite>“timestep header</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Name of the dataset containing the history of timestep sizes.</li>
+<li><p><cite>“file name</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Path to hdf5 file containing timestep information.</p></li>
+<li><p><cite>“timestep header</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> Name of the dataset containing the history of timestep sizes.</p></li>
 </ul>
 </div>
 </div>
@@ -1982,18 +2341,14 @@ solutions which are enough different to cause doubt over their correctness.</p>
 <h2><a class="toc-backref" href="#id98">Linear Solver Spec</a><a class="headerlink" href="#linear-solver-spec" title="Permalink to this headline">¶</a></h2>
 <p>For each solver, a few parameters are used:</p>
 <ul>
-<li><p class="first"><cite>“iterative method</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <cite>“pcg</cite>”, <cite>“gmres</cite>”, or <cite>“nka</cite>”</p>
+<li><p><cite>“iterative method</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <cite>“pcg</cite>”, <cite>“gmres</cite>”, or <cite>“nka</cite>”</p>
 <p>defines which method to use.</p>
 </li>
-<li><p class="first"><cite>“error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.e-6</strong> is used in the convergence test.</p>
-</li>
-<li><p class="first"><cite>“maximum number of iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>100</strong> is used in the convergence test.</p>
-</li>
-<li><p class="first"><cite>“convergence criteria</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code>  <strong>{“relative rhs”}</strong> specifies multiple convergence criteria. The list
-may include <cite>“relative residual</cite>”, <cite>“relative rhs</cite>”, and <cite>“absolute residual</cite>”, and <cite>“???? force once????</cite>”</p>
-</li>
-<li><p class="first"><cite>“size of Krylov space</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> is used in GMRES iterative method. The default value is 10.</p>
-</li>
+<li><p><cite>“error tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>1.e-6</strong> is used in the convergence test.</p></li>
+<li><p><cite>“maximum number of iterations</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>100</strong> is used in the convergence test.</p></li>
+<li><p><cite>“convergence criteria</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(string)]</span></code>  <strong>{“relative rhs”}</strong> specifies multiple convergence criteria. The list
+may include <cite>“relative residual</cite>”, <cite>“relative rhs</cite>”, and <cite>“absolute residual</cite>”, and <cite>“???? force once????</cite>”</p></li>
+<li><p><cite>“size of Krylov space</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> is used in GMRES iterative method. The default value is 10.</p></li>
 </ul>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;my solver&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;iterative method&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;gmres&quot;</span><span class="nt">/&gt;</span>
@@ -2014,8 +2369,8 @@ may include <cite>“relative residual</cite>”, <cite>“relative rhs</cite>�
 <p>These can be used by a process kernel lists to define a preconditioner.  The only common parameter required by all lists is the type:</p>
 <blockquote>
 <div><ul class="simple">
-<li><cite>“preconditioner type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“identity”</strong>, <cite>“boomer amg</cite>”, <cite>“trilinos ml</cite>”, <cite>“block ilu</cite>” ???</li>
-<li><cite>“PC TYPE parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> includes a list of parameters specific to the type of PC.</li>
+<li><p><cite>“preconditioner type</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>“identity”</strong>, <cite>“boomer amg</cite>”, <cite>“trilinos ml</cite>”, <cite>“block ilu</cite>” ???</p></li>
+<li><p><cite>“PC TYPE parameters</cite>” <code class="docutils literal notranslate"><span class="pre">[list]</span></code> includes a list of parameters specific to the type of PC.</p></li>
 </ul>
 </div></blockquote>
 <p>Example:</p>
@@ -2030,44 +2385,45 @@ may include <cite>“relative residual</cite>”, <cite>“relative rhs</cite>�
 <div class="section" id="hypre-s-boomer-amg">
 <h3><a class="toc-backref" href="#id100">Hypre’s Boomer AMG</a><a class="headerlink" href="#hypre-s-boomer-amg" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>PreconditionerBoomerAMG: HYPRE’s multigrid preconditioner.</div></blockquote>
+<div><p>PreconditionerBoomerAMG: HYPRE’s multigrid preconditioner.</p>
+</div></blockquote>
 <p>Internal parameters for Boomer AMG include</p>
 <ul class="simple">
-<li><cite>“tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> if is not zero, the preconditioner is dynamic
+<li><p><cite>“tolerance</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> if is not zero, the preconditioner is dynamic
 and approximate the inverse matrix with the prescribed tolerance (in
-the energy norm ???).</li>
-<li><cite>“smoother sweeps</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>3</strong> defines the number of smoothing loops. Default is 3.</li>
-<li><cite>“cycle applications</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>5</strong> defines the number of V-cycles.</li>
-<li><cite>“strong threshold</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.5</strong> defines the number of V-cycles. Default is 5.</li>
-<li><cite>“relaxation type</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>6</strong> defines the smoother to be used. Default is 6
-which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!</li>
-<li><cite>“coarsen type</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>0</strong> defines the coarsening strategy to be used. Default is 0
-which specifies a Falgout method. TODO: add others!</li>
-<li><cite>“max multigrid levels</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> optionally defined the maximum number of multigrid levels.</li>
-<li><dl class="first docutils">
-<dt><cite>“use block indices</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> If true, uses the <a href="#id2"><span class="problematic" id="id3">`</span></a>”systems of</dt>
-<dd>PDEs`” code with blocks given by the SuperMap, or one per DoF per entity
-type.</dd>
+the energy norm ???).</p></li>
+<li><p><cite>“smoother sweeps</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>3</strong> defines the number of smoothing loops. Default is 3.</p></li>
+<li><p><cite>“cycle applications</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>5</strong> defines the number of V-cycles.</p></li>
+<li><p><cite>“strong threshold</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.5</strong> defines the number of V-cycles. Default is 5.</p></li>
+<li><p><cite>“relaxation type</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>6</strong> defines the smoother to be used. Default is 6
+which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!</p></li>
+<li><p><cite>“coarsen type</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>0</strong> defines the coarsening strategy to be used. Default is 0
+which specifies a Falgout method. TODO: add others!</p></li>
+<li><p><cite>“max multigrid levels</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> optionally defined the maximum number of multigrid levels.</p></li>
+<li><dl class="simple">
+<dt><cite>“use block indices</cite>” <code class="docutils literal notranslate"><span class="pre">[bool]</span></code> <strong>false</strong> If true, uses the <a href="#id2"><span class="problematic" id="id3">`</span></a>”systems of</dt><dd><p>PDEs`” code with blocks given by the SuperMap, or one per DoF per entity
+type.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“number of functions</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>1</strong> Any value &gt; 1 tells Boomer AMG to
+<li><p><cite>“number of functions</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>1</strong> Any value &gt; 1 tells Boomer AMG to
 use the <cite>“systems of PDEs</cite>” code with strided block type.  Note that, to use
 this approach, unknowns must be ordered with DoF fastest varying (i.e. not
 the native Epetra_MultiVector order).  By default, it uses the <cite>“unknown</cite>”
-approach in which each equation is coarsened and interpolated independently.</li>
-<li><dl class="first docutils">
-<dt><cite>“nodal strength of connection norm</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> tells AMG to coarsen such</dt>
-<dd>that each variable has the same coarse grid - sometimes this is more
+approach in which each equation is coarsened and interpolated independently.</p></li>
+<li><dl class="simple">
+<dt><cite>“nodal strength of connection norm</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> tells AMG to coarsen such</dt><dd><p>that each variable has the same coarse grid - sometimes this is more
 “physical” for a particular problem. The value chosen here for nodal
 determines how strength of connection is determined between the
 coupled system.  I suggest setting nodal = 1, which uses a Frobenius
 norm.  This does NOT tell AMG to use nodal relaxation.
-Default is 0.</dd>
+Default is 0.</p>
+</dd>
 </dl>
 </li>
-<li><cite>“verbosity</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>0</strong> prints a summary of run time settings and
+<li><p><cite>“verbosity</cite>” <code class="docutils literal notranslate"><span class="pre">[int]</span></code> <strong>0</strong> prints a summary of run time settings and
 timing information to stdout.  <cite>“1</cite>” prints coarsening info, <cite>“2</cite>” prints
-smoothing info, and <cite>“3</cite>’” prints both.</li>
+smoothing info, and <cite>“3</cite>’” prints both.</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boomer amg parameters&quot;</span><span class="nt">&gt;</span>
@@ -2086,7 +2442,8 @@ smoothing info, and <cite>“3</cite>’” prints both.</li>
 <div class="section" id="trilinos-ml">
 <h3><a class="toc-backref" href="#id101">Trilinos ML</a><a class="headerlink" href="#trilinos-ml" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>PreconditionerML: Trilinos ML multigrid.</div></blockquote>
+<div><p>PreconditionerML: Trilinos ML multigrid.</p>
+</div></blockquote>
 <p>Internal parameters of Trilinos ML includes</p>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;ml parameters&quot;</span><span class="nt">&gt;</span>
@@ -2114,7 +2471,8 @@ smoothing info, and <cite>“3</cite>’” prints both.</li>
 <div class="section" id="block-ilu">
 <h3><a class="toc-backref" href="#id102">Block ILU</a><a class="headerlink" href="#block-ilu" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div>PreconditionerBlockILU:   Incomplete LU preconditioner.</div></blockquote>
+<div><p>PreconditionerBlockILU:   Incomplete LU preconditioner.</p>
+</div></blockquote>
 <p>The internal parameters for block ILU are as follows:</p>
 <p>Example:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;block ilu parameters&quot;</span><span class="nt">&gt;</span>
@@ -2143,10 +2501,11 @@ smoothing info, and <cite>“3</cite>’” prints both.</li>
 <div class="section" id="ioevent">
 <h2><a class="toc-backref" href="#id106">IOEvent</a><a class="headerlink" href="#ioevent" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>IOEvent: base time/timestep control determing when in time to do something.</div></blockquote>
+<div><p>IOEvent: base time/timestep control determing when in time to do something.</p>
+</div></blockquote>
 <p>The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.</p>
 <ul>
-<li><p class="first"><cite>“cycles start period stop</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> <strong>optional</strong></p>
+<li><p><cite>“cycles start period stop</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> <strong>optional</strong></p>
 <blockquote>
 <div><p>The first entry is the start cycle, the second is the cycle
 period, and the third is the stop cycle or -1, in which case there
@@ -2155,20 +2514,20 @@ cycles that satisfy cycle = start + n*period, for n=0,1,2,… and
 cycle &lt; stop if stop != -1.0.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“cycles start period stop 0</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> <strong>optional</strong></p>
+<li><p><cite>“cycles start period stop 0</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code> <strong>optional</strong></p>
 <blockquote>
 <div><p>If multiple cycles start period stop parameters are needed, then use these
 parameters.  If one with 0 is found, then one with 1 is looked for, etc,
 until the Nth one is not found.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“cycles</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code>  <strong>optional</strong></p>
+<li><p><cite>“cycles</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(int)]</span></code>  <strong>optional</strong></p>
 <blockquote>
 <div><p>An array of discrete cycles that at which a visualization dump is
 written.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times start period stop</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
+<li><p><cite>“times start period stop</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
 <blockquote>
 <div><p>The first entry is the start time, the second is the time period,
 and the third is the stop time or -1, in which case there is no
@@ -2177,31 +2536,31 @@ satisfy time = start + n*period, for n=0,1,2,… and time &lt; stop
 if stop != -1.0.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times start period stop units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
+<li><p><cite>“times start period stop units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
 <blockquote>
 <div><p>Units corresponding to this spec.  One of <cite>“s</cite>”, <cite>“d</cite>”, <cite>“yr</cite>”, or <cite>“yr 365</cite>”</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times start period stop 0</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
+<li><p><cite>“times start period stop 0</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
 <blockquote>
 <div><p>If multiple start period stop parameters are needed, then use this these
 parameters with N=0,1,2.  If one with 0 is found, then one with 1 is
 looked for, etc, until the Nth one is not found.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times start period stop 0 units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
+<li><p><cite>“times start period stop 0 units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
 <blockquote>
 <div><p>Units corresponding to this spec.  One of <cite>“s</cite>”, <cite>“d</cite>”, <cite>“yr</cite>”, or <cite>“yr 365</cite>”
 See above for continued integer listings.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
+<li><p><cite>“times</cite>” <code class="docutils literal notranslate"><span class="pre">[Array(double)]</span></code> <strong>optional</strong></p>
 <blockquote>
 <div><p>An array of discrete times that at which a visualization dump
 shall be written.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><cite>“times units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
+<li><p><cite>“times units</cite>” <code class="docutils literal notranslate"><span class="pre">string</span></code> <strong>s</strong></p>
 <blockquote>
 <div><p>Units corresponding to this spec.  One of <cite>“s</cite>”, <cite>“d</cite>”, <cite>“yr</cite>”, or <cite>“yr 365</cite>”</p>
 </div></blockquote>
@@ -2211,11 +2570,12 @@ shall be written.</p>
 <div class="section" id="verboseobject">
 <h2><a class="toc-backref" href="#id107">VerboseObject</a><a class="headerlink" href="#verboseobject" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>VerboseObject: a controller for writing log files on multiple cores with varying verbosity.</div></blockquote>
+<div><p>VerboseObject: a controller for writing log files on multiple cores with varying verbosity.</p>
+</div></blockquote>
 <p>This allows control of log-file verbosity for a wide variety of objects
 and physics.</p>
 <ul>
-<li><p class="first"><cite>“verbosity level</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>GLOBAL_VERBOSITY</strong>, <cite>“low</cite>”, <cite>“medium</cite>”, <cite>“high</cite>”, <cite>“extreme</cite>”</p>
+<li><p><cite>“verbosity level</cite>” <code class="docutils literal notranslate"><span class="pre">[string]</span></code> <strong>GLOBAL_VERBOSITY</strong>, <cite>“low</cite>”, <cite>“medium</cite>”, <cite>“high</cite>”, <cite>“extreme</cite>”</p>
 <blockquote>
 <div><p>The default is set by the global verbosity spec, (fix me!)  Typically,
 <cite>“low</cite>” prints out minimal information, <cite>“medium</cite>” prints out errors and
@@ -2239,7 +2599,8 @@ Instead, developers can use them to control output.</p>
 <div class="section" id="function">
 <h2><a class="toc-backref" href="#id108">Function</a><a class="headerlink" href="#function" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>Function: base class for all functions of space and time.</div></blockquote>
+<div><p>Function: base class for all functions of space and time.</p>
+</div></blockquote>
 <p>Analytic, algabraic functions of space and time are used for a variety of
 purposes, including boundary conditions, initial conditions, and independent
 variables.</p>
@@ -2337,7 +2698,8 @@ END</p>
 <div class="section" id="operator">
 <h2><a class="toc-backref" href="#id122">Operator</a><a class="headerlink" href="#operator" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div>Operator represents a linear map, and typically encapsulates a discretization.</div></blockquote>
+<div><p>Operator represents a linear map, and typically encapsulates a discretization.</p>
+</div></blockquote>
 <p><code class="docutils literal notranslate"><span class="pre">Operator</span></code> represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
 in moving from continuous to discrete equations. The spaces X and Y are described
@@ -2352,9 +2714,9 @@ case of Jacobian Operators for a PDE).</p>
 <p>However, one option may be provided by the user, which is related to dealing
 with nearly singular operators:</p>
 <ul class="simple">
-<li><cite>“diagonal shift</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.0</strong> Adds a scalar shift to the diagonal
+<li><p><cite>“diagonal shift</cite>” <code class="docutils literal notranslate"><span class="pre">[double]</span></code> <strong>0.0</strong> Adds a scalar shift to the diagonal
 of the <code class="docutils literal notranslate"><span class="pre">Operator</span></code>, which can be useful if the <code class="docutils literal notranslate"><span class="pre">Operator</span></code> is singular or
-near-singular.</li>
+near-singular.</p></li>
 </ul>
 <div class="section" id="operatoraccumulation">
 <h3><a class="toc-backref" href="#id123">OperatorAccumulation</a><a class="headerlink" href="#operatoraccumulation" title="Permalink to this headline">¶</a></h3>
@@ -2375,68 +2737,43 @@ near-singular.</li>
 </div>
 
 
+           </div>
+           
           </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">ATS</a></h1>
+          <footer>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Jointly shared by contributor institutions, see COPYRIGHT file.
 
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2020, Jointly shared by contributor institutions, see COPYRIGHT file..
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/input_spec/ATSNativeSpec_dev.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>
