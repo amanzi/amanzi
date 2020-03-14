@@ -4,14 +4,14 @@ Chemistry in Amanzi with Alquimia
 Amanzi makes available through the Alquimia interface geochemical
 capabilities available in widely used geochemical codes. 
 
-Currently, the geochemical capabilities of the reactive transport code PFLOTRAN
+The geochemical capabilities of the reactive transport code PFLOTRAN
 (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) 
 are available within Amanzi through the Alquimia interface. The specifications required 
 for a PFLOTRAN input file are available in the PFLOTRAN User Manual 
 (http://www.pflotran.org/docs/user_manual.pdf).
 
-In the near future, the geochemical capabilities of the reactive transport code CRUNCHFLOW 
-(http://www.csteefel.com/CrunchFlowIntroduction.html) are also going to available through the 
+The geochemical capabilities of the reactive transport code CRUNCHFLOW 
+(http://www.csteefel.com/CrunchFlowIntroduction.html) are available through the 
 Alquimia interface. The User Manual for CrunchFlow can be found here: 
 http://www.csteefel.com/CrunchFlowManual.pdf.
 

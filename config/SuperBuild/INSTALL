@@ -13,9 +13,9 @@ requirements documented here https://software.lanl.gov/ascem/trac/wiki/Amanzi/Bu
 Users are required to provide the following to build:
 
     * A recent and stable GCC or Intel compiler. We have successfully built with
-      GNU versions 4.7, 4.8, 4.9 and Intel versions 11 through 14. 
+      GNU versions 4.x to 9.x and Intel versions 11 through 17. 
     * Mercurial version 1.8 or higher.
-    * CMake version 2.8.8 or higher (including CMake 3.0.x).
+    * CMake version 3.11.4 or higher.
     * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
     * BLAS/LAPACK built and tuned to the target architecture. See the 
       Trilinos Configuration section for more information.
@@ -30,7 +30,7 @@ On most UNIX-like OS (including Mac OSX) systems, the entire TPL software stack 
 
 The ``bootstrap.sh`` script will create two build directories, one for the TPLs, TPL_BUILD, and one for amanzi, amanzi-build, in the directory the script is called from. Users can control the install location of the TPLs and Amanzi through command line arguments.  The command ::
 
-  <amanzi source root>/config/bootstrap.sh --help
+  <amanzi source root>/bootstrap.sh --help
 
 will print all the available options and default values.
 
@@ -47,8 +47,8 @@ in separate files. Any bug report related to the TPLs should include these log f
 Obtaining A Supported Compiler
 ++++++++++++++++++++++++++++++
 
-At this time, Amanzi can be built with recent versions of GCC, 4.4 through 4.6, and
-Intel versions 11.* and 12.*. Since GCC is widely used by the development team
+At this time, Amanzi can be built with recent versions of GCC, 4.x through 9.x, and
+Intel versions 11.* and 17.*. Since GCC is widely used by the development team
 and it is free, we recommend using one of the supported GCC compilers. 
 
 GCC On Mac OSX
@@ -58,10 +58,10 @@ The default GCC install on Mac OSX does not include a Fortran compiler. Mac user
 should use the MacPorts software http://www.macports.org/ to install GCC. Once 
 MacPorts is installed, ::
 
-  port install gcc4x
+  port install gcc
 
-will install GCC 4.x in the /opt/local directory. Be aware that Apple requires these
-compiler names to be gcc-mp-4.x, g++-mp-4.x and gfortran-mp-4.x, not the standard names
+will install GCC in the /opt/local directory. Be aware that Apple requires these
+compiler names to be gcc-mp-x.x, g++-mp-x.x and gfortran-mp-x.x, not the standard names
 gcc, g++ and gfortran.
 
 GCC On Ubuntu
@@ -229,7 +229,7 @@ Read the ``ATLAS`` documentation on how to build ``ATLAS`` with a full ``LAPACK`
 ``ATLAS`` downloads are available at http://math-atlas.sourceforge.net.
 
 
-Building TPLs and Amanzi Using ``Boostrap.sh``
+Building TPLs and Amanzi Using ``Bootstrap.sh``
 ----------------------------------------------
 
 The script ``bootstrap.sh`` is located in the ``config`` directory.  See ``bootstrap.sh --help`` for a full list of options and default settings.  The script will create two subdirectories in the currect directory.  The first is TPL_BUILD used for downloading and builing the TPLs.  The second is amanzi-build used for building Amanzi.  The TPLs and Amanzi will be installed in the directory specified by the option ``--prefix``.
@@ -289,11 +289,6 @@ does not allow the user to control the HDF5 prefix installation. Users can eithe
 install OpenMPI in another directory and use the wrappers in that directory (RECOMMENDED)
 or set ENABLE_NetCDF4:BOOL=FALSE while configuring SuperBuild from the command line. 
 
-TPL build fails with any PGI compiler
-+++++++++++++++++++++++++++++++++++++
-We have not found a PGI C++ compiler that builds our Boost configuration
-successfully. TPL build system has successfully built with GCC 4.7, 4.8, 4.9 and
-and Intel 11.* through Intel 14.*.
 
 Library parallelio (ASCEM-IO) missing archive index (MacOSX)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
