@@ -110,7 +110,7 @@ To generate numerical results, the following specifications are considered:
 
   * no-flow prescribed at the :math:`y_{min}, \: y_{max}, \: z_{min}, \: z_{max}` boundaries
   * prescribed hydraulic head at the x-coordinate boundaries: 
-          :math:`h(0) = 20 \: \text{[m]}, \: h(L) = 19 \: \text{[m]}`
+    :math:`h(0) = 20 \: \text{[m]}, \: h(L) = 19 \: \text{[m]}`
 
 * Material properties:
 
@@ -118,7 +118,7 @@ To generate numerical results, the following specifications are considered:
   * :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
   * :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
   * :math:`K = 1.0 \: \text{[m/d]}` 
-          (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
+    (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
@@ -160,7 +160,7 @@ References
 
 About
 -----
-* Directory:  testing/verification/flow/saturated/steady-state/linear_head_head_1d
+* Directory:  test_suites/verification/flow/saturated/steady-state/linear_head_head_1d
 
 * Authors:  Greg Flach, Konstantin Lipnikov
 
