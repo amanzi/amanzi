@@ -32,6 +32,8 @@
 #include "PK_MPC.hh"
 #include "State.hh"
 #include "PK_Factory.hh"
+#include "TreeOperator.hh"
+
 
 namespace Amanzi {
 
@@ -94,6 +96,9 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
+  Teuchos::RCP<Operators::TreeOperator> op_tree(){return op_tree_;}
+  Teuchos::RCP<TreeVector> op_tree_rhs(){return op_tree_rhs_;}
+  
  protected:
   using PK_MPC<PK_Base>::sub_pks_;
   using PK_MPC<PK_Base>::S_;
@@ -108,6 +113,10 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   double dt_;
   Teuchos::RCP<Amanzi::BDF1_TI<TreeVector, TreeVectorSpace> > time_stepper_;
 
+  Teuchos::RCP<Operators::TreeOperator> op_tree_;
+  Teuchos::RCP<TreeVector> op_tree_rhs_;
+
+  
  private:
   // factory registration
   static RegisteredPKFactory<PK_MPCStrong> reg_;

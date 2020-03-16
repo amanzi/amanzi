@@ -146,88 +146,88 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
-  op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
-  op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
+  op_tree_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree());
+  op_tree_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
   auto mesh_matrix = S_->GetMesh("domain");
   auto mesh_fracture = S_->GetMesh("fracture");
 
-  auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
-  auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
-  int npoints_owned = mmap.NumMyPoints();
+  // auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
+  // auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
+  // int npoints_owned = mmap.NumMyPoints();
 
-  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
-  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
+  // auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
+  // auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
 
-  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
-            ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
+  // cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
+  //           ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
 
-  cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
-              ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
+  //             ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
-  double rho = *S->GetScalarData("fluid_density");
-  double gravity;
-  S->GetConstantVectorData("gravity")->Norm2(&gravity);
+  // // -- indices transmissibimility coefficients for matrix-fracture flux
+  // const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
+  // double rho = *S->GetScalarData("fluid_density");
+  // double gravity;
+  // S->GetConstantVectorData("gravity")->Norm2(&gravity);
 
-  int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto values = std::make_shared<std::vector<double> >(npoints_owned);
+  // int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  // auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  // auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  // auto values = std::make_shared<std::vector<double> >(npoints_owned);
 
-  int np(0);
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
-    double area = mesh_fracture->cell_volume(c);
-    int first = mmap.FirstPointInElement(f);
-    int ndofs = mmap.ElementSize(f);
+  // int np(0);
+  // for (int c = 0; c < ncells_owned_f; ++c) {
+  //   int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
+  //   double area = mesh_fracture->cell_volume(c);
+  //   int first = mmap.FirstPointInElement(f);
+  //   int ndofs = mmap.ElementSize(f);
 
-    for (int k = 0; k < ndofs; ++k) {
-      (*inds_matrix)[np].resize(1);
-      (*inds_fracture)[np].resize(1);
-      (*inds_matrix)[np][0] = first + k;
-      (*inds_fracture)[np][0] = c;
+  //   for (int k = 0; k < ndofs; ++k) {
+  //     (*inds_matrix)[np].resize(1);
+  //     (*inds_fracture)[np].resize(1);
+  //     (*inds_matrix)[np][0] = first + k;
+  //     (*inds_fracture)[np][0] = c;
 
-      (*values)[np] = kn[0][c] * area / gravity;
-      np++;
-    }
-  }
+  //     (*values)[np] = kn[0][c] * area / gravity;
+  //     np++;
+  //   }
+  // }
 
-  inds_matrix->resize(np);
-  inds_fracture->resize(np);
-  values->resize(np);
+  // inds_matrix->resize(np);
+  // inds_fracture->resize(np);
+  // values->resize(np);
 
-  // -- operators
-  Teuchos::ParameterList oplist;
+  // // -- operators
+  // Teuchos::ParameterList oplist;
 
-  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, pk_matrix->op()));
-  op_coupling00->Setup(values, 1.0);
-  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+  //     oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, pk_matrix->op()));
+  // op_coupling00->Setup(values, 1.0);
+  // op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
-  op_coupling01->Setup(values, -1.0);
-  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+  //     oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
+  // op_coupling01->Setup(values, -1.0);
+  // op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
-  op_coupling10->Setup(values, -1.0);
-  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+  //     oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
+  // op_coupling10->Setup(values, -1.0);
+  // op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
-  op_coupling11->Setup(values, 1.0);
-  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
+  // auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+  //     oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
+  // op_coupling11->Setup(values, 1.0);
+  // op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
-  op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
-  op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
+  // op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
+  // op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
-  // create a global problem
-  pk_matrix->op_diff()->ApplyBCs(true, true, true);
+  // // create a global problem
+  // pk_matrix->op_diff()->ApplyBCs(true, true, true);
 
   op_tree_->SymbolicAssembleMatrix();
   op_tree_->AssembleMatrix();
@@ -280,12 +280,12 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
-  // diagonal blocks in tree operator and the Darcy PKs
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
+  // // diagonal blocks in tree operator and the Darcy PKs
+  // auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
+  // auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
 
-  f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
-  f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
+  // f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
+  // f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
 }
 
 
