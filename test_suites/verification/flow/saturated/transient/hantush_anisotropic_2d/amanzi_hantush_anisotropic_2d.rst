@@ -155,6 +155,8 @@ Variables
 Results and Comparison
 ----------------------
 
+Results are in good agreement with the analytic solution.
+
 .. plot:: verification/confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.py
           :align: center
 
