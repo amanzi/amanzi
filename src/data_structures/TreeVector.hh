@@ -140,7 +140,7 @@ class TreeVector {
                          const TreeVector& B, double scalarThis);
 
   // non-inherited extras
-  void Print(std::ostream &os) const;
+  void Print(std::ostream &os, bool data_io = true) const;
 
   int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
 

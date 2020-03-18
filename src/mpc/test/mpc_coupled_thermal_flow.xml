@@ -649,7 +649,7 @@
       <ParameterList name="boundary conditions">
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+	    <Parameter name="regions" type="Array(string)" value="{SurfaceBottom}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
 	      <ParameterList name="function-constant">

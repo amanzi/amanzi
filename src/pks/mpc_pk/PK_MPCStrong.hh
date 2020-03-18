@@ -96,8 +96,8 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-  Teuchos::RCP<Operators::TreeOperator> op_tree(){return op_tree_;}
-  Teuchos::RCP<TreeVector> op_tree_rhs(){return op_tree_rhs_;}
+  Teuchos::RCP<Operators::TreeOperator> op_tree() { return op_tree_; }
+  Teuchos::RCP<TreeVector> op_tree_rhs() { return op_tree_rhs_; }
   
  protected:
   using PK_MPC<PK_Base>::sub_pks_;

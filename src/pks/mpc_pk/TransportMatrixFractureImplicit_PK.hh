@@ -62,7 +62,6 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;
-  
 
   Teuchos::RCP<TimestepController> ts_control_;
 
