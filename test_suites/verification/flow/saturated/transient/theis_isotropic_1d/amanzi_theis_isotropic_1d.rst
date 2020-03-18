@@ -6,12 +6,10 @@ Capabilities Tested
 
 This transient one-dimensional (radial) flow problem tests the Amanzi saturated flow process kernel. Capabilities tested include:
 
-  * single-phase, one-dimensional flow 
-  * transient flow
-  * saturated flow
-  * constant-rate pumping well
-  * constant-head (Dirichlet) boundary conditions
-  * specified volumetric flux (Neumann) boundary conditions
+  * single-phase, radial flow 
+  * transient, saturated flow
+  * constant-rate pumping well (constant source term)
+  * constant-head (Dirichlet) and no-flow boundary conditions
   * homogeneous porous medium
   * isotropic porous medium
   * uniform mesh
@@ -170,15 +168,11 @@ Variables
 
 * Material properties:
 
-  * storativity:    :math:`S=7.5 \times 10^{-4} \: \text{[-]}`
-
-    * derived from:    :math:`S=S_s b`, where :math:`S_s=7.5 \times 10^{-5} \: \text{[m}^{-1} \text{]}` and :math:`b=10 \: \text{[m]}`
+  * storativity:  :math:`S=7.5 \times 10^{-4} \: \text{[-]}`,
+    derived from :math:`S=S_s b`, where :math:`S_s=7.5 \times 10^{-5} \: \text{[m}^{-1} \text{]}` and :math:`b=10 \: \text{[m]}`
   * porosity:    :math:`\phi = 0.2`
-  * transmissivity:    :math:`T=4.7 \times 10^{-4} \: \text{[m}^2\text{/s]}`
-
-    * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
-    * intrinsic permeability:    :math:`k = 2.35 \times 10^{-11} \: \text{[m}^2\text{]}` 
-
+  * transmissivity:    :math:`T=4.7 \times 10^{-4} \: \text{[m}^2\text{/s]}`,
+    derived from  :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}` and :math:`k = 2.35 \times 10^{-11} \: \text{[m}^2\text{]}` 
   * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
   * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
   * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`

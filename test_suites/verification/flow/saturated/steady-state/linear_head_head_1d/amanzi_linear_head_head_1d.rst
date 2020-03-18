@@ -15,6 +15,7 @@ Capabilties tested include:
   * saturated flow conditions
   * constant-head (Dirichlet) boundary conditions
   * mass conservation
+  * exactness of numerical scheme for linear head
   * homogeneous porous medium
 
 For details on this test, see :ref:`about_linear_head_head_1d`.
@@ -137,6 +138,8 @@ Results and Comparison
 ----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
 Amanzi has reproduced the exact solution. 
+On the boundary *Amanzi* takes the head value from a nearby cell. 
+This could be fixed in the future.
 
 .. plot:: amanzi_linear_head_head_1d.py
    :align: center
@@ -194,8 +197,5 @@ Status
 ~~~~~~
 .. todo:: 
 
-  * Documentation:
-
-    * Probably do not want the points on the boundary. keb: I think this is fine.
-    * We may want to plot flux. keb: I think this is uncessary but we can add a second plot if necessary.
-    * Values in the table need to be sorted. keb: These are sorted already.
+  * Implement new point observation, e.g. using linear reconstruction.
+  * We may want to plot flux. keb: I think this is uncessary but we can add a second plot if necessary.

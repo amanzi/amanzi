@@ -15,6 +15,7 @@ Capabilities tested include:
   * steady-state flow 
   * saturated flow
   * constant-head (Dirichlet) boundary conditions
+  * exactness of numerical scheme for linear head
   * specified volumetric flux (Neumann) boundary conditions
   * homogeneous porous medium
   * uniform mesh 
@@ -31,7 +32,8 @@ the general governing differential equation expressing mass conservation and Dar
 	.. math:: \frac{d^2h}{dx^2} = 0
 		:label: ode_linear_flux_head
 
-where the total head (:math:`h`, [L]) is the sum of pressure head (:math:`P/\rho g`, [L]) 
+where the total head (:math:`h`, [L]) is the sum oh5ohli&
+of pressure head (:math:`P/\rho g`, [L]) 
 and elevation (:math:`z`, [L]):
 
 	.. math:: h = \frac{P}{\rho g}+z
@@ -141,7 +143,9 @@ following Equations :eq:`specificSoln_linear_flux_head` and :eq:`DarcyVel_linear
 Results and Comparison
 ----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
-Amanzi has reproduced the exact solution.
+*Amanzi* has reproduced the exact solution inside the computationla domain.
+On the boundary the observation is taken form nearby cell.
+This will be fixed in the future.
 
 .. plot:: amanzi_linear_flux_head_1d.py
    :align: center
@@ -201,8 +205,6 @@ Status
 
 .. todo:: 
 
-  * Documentation:
-
-    * keb: find a schematic for this test
-    * keb: amanzi_linear_flux_head_1d-s.xlm seems like an older format
-    * keb: there is an extra xml in folder, is that used? amanzi_linear_flux_head_1d-s-isv2.xml
+  * keb: find a schematic for this test
+  * keb: amanzi_linear_flux_head_1d-s.xlm seems like an older format
+  * keb: fix observations on the boundary
