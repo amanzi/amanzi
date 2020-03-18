@@ -280,7 +280,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
         *vo_->os() << "water retention curve file: wrm_" << name << std::endl;
       }
-    } else if (strcmp(model.c_str(), "brooks_corey")) {
+    } else if (strcmp(model.c_str(), "brooks_corey") == 0) {
       double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
