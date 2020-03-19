@@ -175,10 +175,12 @@ register_evaluator_with_factory(
   LISTNAME ATS_SURFACE_BALANCE_REG
 )
 
-register_evaluator_with_factory(
-  HEADERFILE CLM/surface_balance_CLM_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
+if (ENABLE_CLM)
+  register_evaluator_with_factory(
+    HEADERFILE CLM/surface_balance_CLM_reg.hh
+    LISTNAME ATS_SURFACE_BALANCE_REG
+    )
+endif()
 
 register_evaluator_with_factory(
   HEADERFILE surface_balance_base_reg.hh
