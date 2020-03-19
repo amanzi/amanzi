@@ -118,6 +118,11 @@ register_evaluator_with_factory(
   LISTNAME   ATS_FLOW_PKS_REG
   )
 
+register_evaluator_with_factory(
+  HEADERFILE snow_distribution_reg.hh
+  LISTNAME   ATS_FLOW_PKS_REG
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE ats_flow_pks_registration.hh
   LISTNAME   ATS_FLOW_PKS_REG

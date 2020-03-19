@@ -343,9 +343,6 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc, int i){
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
     mass_solute += (*ws_end)[0][c] * (*phi_)[0][c] * tcc[i][c] * vol * (*mol_dens_end)[0][c] + (*solid_qty_)[i][c];
-    // if (tcc_next[i][c] > 1e-16)
-    //   std::cout<<std::setprecision(12)<<"masscompute "<<MyPID<<" cell "<<c<<": "<<(*phi_)[0][c]<<" "
-    //            <<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<tcc_next[i][c]<<"--"<<mesh_->cell_centroid(c)<<"\n";
   }
   //mass_solute /= units_.concentration_factor();
 

@@ -19,7 +19,7 @@
 #  ATS
 #    Executable
 #
-
+include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
@@ -120,7 +120,7 @@ set(ats_link_libs
   ats_surface_balance
   ats_mpc
   ats_mpc_relations
-  )  
+  )
 
 # note, we can be inclusive here, because if they aren't enabled,
 # these won't be defined and will result in empty strings.
@@ -135,6 +135,7 @@ set(tpl_link_libs
   ${SILO_LIBRARIES}
   ${HYPRE_LIBRARIES}
   ${HDF5_LIBRARIES}
+  ${CLM_LIBRARIES}
   )
 
 if (ENABLE_FATES)
@@ -148,24 +149,4 @@ add_amanzi_executable(ats
   LINK_LIBS  ${ats_link_libs} ${fates_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
-
-
-
-#target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS} hdf5::hdf5_hl-static)
-target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS})
-install(TARGETS ats DESTINATION bin)
-
-
-message("build tests = ${BUILD_TESTS}")
-#if ( BUILD_TESTS )
-if ( 0 )  
-    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
-    include_directories(".")
-
-    # Test:
-    # add_amanzi_test(plant_mesh plant_mesh
-    #                 KIND unit
-    #                 SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
-    #                 LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
-endif()   
 

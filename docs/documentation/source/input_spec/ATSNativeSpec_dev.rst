@@ -122,7 +122,8 @@ Mesh
  Simple wrapper that takes a ParameterList and generates all needed meshes.
 All processes are simulated on a domain, which is discretized through a mesh.
 
-Multiple domains and therefore meshes can be used in a single simulation, and multiple meshes can be constructed on the fly.
+Multiple domains and therefore meshes can be used in a single simulation, and
+multiple meshes can be constructed on the fly.
 
 The base mesh represents the primary domain of simulation.  Simple, structured
 meshes may be generated on the fly, or complex unstructured meshes are
@@ -136,10 +137,18 @@ may also be generated automatically.
 
 Finally, mesh generation is hard and error-prone.  A mesh audit is provided,
 which checks for many common geometric and topologic errors in mesh
-generation.  This is reasonably fast, even for big meshes, and can be done through providing a "verify mesh" option.
+generation.  This is reasonably fast, even for big meshes, and can be done
+through providing a "verify mesh" option.
 
+``[mesh-typed-spec]``
+
+* `"mesh type`" ``[string]`` One of `"generate mesh`", `"read mesh file`",
+   `"logical`", `"surface`", `"subgrid`", or `"column`".
+* `"_mesh_type_ parameters`" ``[_mesh_type_-spec]`` List of parameters
+  associated with the type.
 * `"verify mesh`" ``[bool]`` **false** Perform a mesh audit.
 * `"deformable mesh`" ``[bool]`` **false** Will this mesh be deformed?
+
 
 GeneratedMesh
 ==============
@@ -148,22 +157,27 @@ Generated mesh are by definition structured, with uniform dx, dy, and dz.
 Such a mesh is specified by a bounding box high and low coordinate, and a list
 of number of cells in each direction.
 
-* `"generate mesh`" ``[list]``
+Specified by `"mesh type`" of `"generate mesh`".
 
-  * `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
-  * `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
-  * `"number of cells`" ``[Array(int)]`` the number of uniform cells in each coordinate direction
+``[mesh-type-generate-mesh-spec]``
+
+* `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
+* `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
+* `"number of cells`" ``[Array(int)]`` the number of uniform cells in each coordinate direction
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="mesh">
-     <ParameterList name="generate mesh"/>
-       <Parameter name="number of cells" type="Array(int)" value="{{100, 1, 100}}"/>
-       <Parameter name="domain low coordinate" type="Array(double)" value="{{0.0, 0.0, 0.0}}" />
-       <Parameter name="domain high coordinate" type="Array(double)" value="{{100.0, 1.0, 10.0}}" />
-     </ParameterList>
+     <ParameterList name="domain">
+       <Parameter name="mesh type" type="string" value="generate mesh"/>
+       <ParameterList name="generate mesh parameters"/>
+         <Parameter name="number of cells" type="Array(int)" value="{{100, 1, 100}}"/>
+         <Parameter name="domain low coordinate" type="Array(double)" value="{{0.0, 0.0, 0.0}}" />
+         <Parameter name="domain high coordinate" type="Array(double)" value="{{100.0, 1.0, 10.0}}" />
+       </ParameterList>
+     </ParameterList>   
    </ParameterList>   
 
 
@@ -173,37 +187,45 @@ MeshFromFile
 Meshes can be pre-generated in a multitude of ways, then written to "Exodus
 II" file format, and loaded in ATS.
 
-* `"read mesh file`" ``[list]`` accepts name, format of pre-generated mesh file
+Specified by `"mesh type`" of `"read mesh file`".
 
-  * `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
-        Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
-        the suffix of the parallel mesh file must be .par.
-        When running in serial the code will read this the indicated file directly.
-        When running in parallel and the suffix is .par, the code will instead read
-        the partitioned files, that have been generated with a Nemesis tool and
-        named as filename.par.N.r where N is the number of processors and r is the rank.
-        When running in parallel and the suffix is .exo, the code will partition automatically
-        the serial file.
+``[mesh-type-read-mesh-file-spec]``
+
+* `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
+   Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+   the suffix of the parallel mesh file must be .par.
+   When running in serial the code will read this the indicated file directly.
+   When running in parallel and the suffix is .par, the code will instead read
+   the partitioned files, that have been generated with a Nemesis tool and
+   named as filename.par.N.r where N is the number of processors and r is the rank.
+   When running in parallel and the suffix is .exo, the code will partition automatically
+   the serial file.
      
-  * `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`" or `"Exodus II`")
+* `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`" or `"Exodus II`")
 
 Example:
 
 .. code-block:: xml
 
-    <ParameterList name="mesh">
-      <ParameterList name="read mesh file">
-        <Parameter name="file" type="string" value="mesh_filename.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-      </ParameterList>   
-      <Parameter name="verify mesh" type="bool" value="true" />
-    </ParameterList>
+   <ParameterList name="mesh">
+     <ParameterList name="domain">
+       <Parameter name="mesh type" type="string" value="read mesh file"/>
+       <ParameterList name="read mesh file parameters">
+         <Parameter name="file" type="string" value="mesh_filename.exo"/>
+         <Parameter name="format" type="string" value="Exodus II"/>
+       </ParameterList>   
+       <Parameter name="verify mesh" type="bool" value="true" />
+     </ParameterList>
+   </ParameterList>
 
 
 LogicalMesh
 ==============
 
 ** Document me! **
+
+Specified by `"mesh type`" of `"logical`".
+
 
 
 SurfaceMesh
@@ -218,7 +240,12 @@ projected in the z-direction.  No checks for holes are performed.  Surface
 meshes may similarly be audited to make sure they are reasonable for
 computation.
 
+Specified by `"mesh type`" of `"surface`".
+
+``[mesh-type-surface-spec]``
+
 * `"surface sideset name`" ``[string]`` The Region_ name containing all surface faces.
+* `"surface sideset names`" ``[Array(string)]`` A list of Region_ names containing the surface faces.  Either this or the singular version must be specified.
 * `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
 * `"export mesh to file`" ``[string]`` Export the lifted surface mesh to this filename.
 
@@ -226,38 +253,101 @@ Example:
 
 .. code-block:: xml
 
-    <ParameterList name="mesh">
-      <ParameterList name="read mesh file">
-        <Parameter name="file" type="string" value="mesh_filename.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-      </ParameterList>   
-      <Parameter name="verify mesh" type="bool" value="true" />
-      <ParameterList name="surface mesh">
-        <Parameter  name="surface sideset name" type="string" value="surface_region"/>
-        <Parameter name="verify mesh" type="bool" value="true" />
-        <Parameter name="export mesh to file" type="string" value="surface_mesh.exo" />
-      </ParameterList>   
+    <ParameterList name="mesh" type="ParameterList">
+      <ParameterList name="surface" type="ParameterList">
+        <Parameter name="mesh type" type="string" value="surface" />
+        <ParameterList name="surface parameters" type="ParameterList">
+          <Parameter name="surface sideset name" type="string" value="{surface_region}" />
+          <Parameter name="verify mesh" type="bool" value="true" />
+          <Parameter name="export mesh to file" type="string" value="surface_mesh.exo" />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="domain" type="ParameterList">
+        <Parameter name="mesh type" type="string" value="read mesh file" />
+        <ParameterList name="read mesh file parameters" type="ParameterList">
+          <Parameter name="file" type="string" value="../data/open-book-2D.exo" />
+          <Parameter name="format" type="string" value="Exodus II" />
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
 
+SubgridMeshes
+==============
+
+A collection of meshes formed by associating a new mesh with each entity of a
+region.  Used for a few cases, including generating a 1D column for each
+surface face of a semi-structured subsurface mesh, or for hanging logical
+meshes off of each surface cell as a subgrid model, etc.
+
+The subgrid meshes are then named `"MESH_NAME_X"` for each X, which is an
+entity local ID, in a provided region of the provided entity type.
+
+**DOCUMENT ME How is the subgrid mesh type specified?  Add examples for Columns and Transport Subgrid model!**
+
+Specified by `"mesh type`" of `"subgrid`".
+
+``[mesh-type-subgrid-spec]``
+
+* `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
+* `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the region (usually
+   `"cell`") on which each subgrid mesh will be associated.
+* `"parent domain`" ``[string]`` **domain** Mesh which includes the above region.
+* `"flyweight mesh`" ``[bool]`` **False** NOT SUPPORTED?  Allows a single mesh instead of one per entity.
+
+    
 ColumnMeshes
 ==============
 
-** Document me! **
+Note these are never? created manually by a user.  Instead use SubgridMeshes,
+which generate a ColumnMesh_ spec for every face of the surface mesh.
+
+Specified by `"mesh type`" of `"column`".
+
+``[mesh-type-column-spec]``
+
+* `"parent domain`" ``[string]`` The Mesh_ name of the 3D mesh from which columns are generated.
+   Note that the `"build columns from set`" parameter must be set in that mesh.
+* `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
+* `"deformable mesh`" ``[bool]`` **false**  Used for deformation PKs to allow non-const access.
+* `"entity LID`" ``[int]`` Local ID of the surface cell that is the top of the column.
 
 Example:
 
 .. code-block:: xml
 
-    <ParameterList name="mesh">
-      <ParameterList name="read mesh file">
-        <Parameter name="file" type="string" value="mesh_filename.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-      </ParameterList>   
-      <ParameterList name="column meshes">
-      </ParameterList>   
+    <ParameterList name="mesh" type="ParameterList">
+      <ParameterList name="column" type="ParameterList">
+        <ParameterList name="column parameters" type="ParameterList">
+          <Parameter name="parent domain" type="string" value="domain" />
+          <Parameter name="entity LID" type="int" value="0" />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="domain" type="ParameterList">
+        <Parameter name="mesh type" type="string" value="read mesh file" />
+        <ParameterList name="read mesh file parameters" type="ParameterList">
+          <Parameter name="file" type="string" value="../data/open-book-2D.exo" />
+          <Parameter name="format" type="string" value="Exodus II" />
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
+SperryMesh
+==============
+
+A mesh based on the Sperry et al 98 and Christoffersen et al 16 papers.  Hard
+coded currently for simplicity, this is ongoing work and will change a lot.
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="mesh" type="ParameterList">
+      <ParameterList name="domain" type="ParameterList">
+        <Parameter name="mesh type" type="string" value="Sperry 1D column" />
+      </ParameterList>
+    </ParameterList>
+    
 
 
 
@@ -281,17 +371,40 @@ entire simulation domain. Currently, the unstructured framework does
 not support the *All* region, but it is expected to do so in the
 near future.
 
- * `"regions`" ``[list]`` can accept a number of uniquely named lists for regions
-
-   * ``[region-spec]`` Geometric model primitive, as described below.
-
 Amanzi supports parameterized forms for a number of analytic shapes, as well
 as more complex definitions based on triangulated surface files.
 
 
-**Notes:**
+ONE OF:
+* `"region: box`" ``[region-box-spec]``
+OR:
+* `"region: plane`" ``[region-plane-spec]``
+OR:
+* `"region: labeled set`" ``[region-labeled-set-spec]``
+OR:
+* `"region: color function`" ``[region-color-function-spec]``
+OR:
+* `"region: point`" ``[region-point-spec]``
+OR:
+* `"region: logical`" ``[region-logical-spec]``
+OR:
+* `"region: polygon`" ``[region-polygon-spec]``
+OR:
+* `"region: enumerated`" ``[region-enumerated-spec]``
+OR:
+* `"region: all`" ``[list]``
+OR:
+* `"region: boundary`" ``[region-boundary-spec]``
+OR:
+* `"region: box volume fractions`" ``[region-box-volume-fractions-spec]``
+OR:
+* `"region: line segment`" ``[region-line-segment-spec]``
+END
 
-* Surface files contain labeled triangulated face sets.  The user is
+
+Notes:
+
+- Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
   in the problem, including the boundaries, are *exact* (*i.e.* that
   surface intersections are *watertight* where applicable), and that
@@ -302,7 +415,7 @@ as more complex definitions based on triangulated surface files.
   Examples of surface files are given in the *Exodus II* file 
   format here.
 
-* Region names must NOT be repeated.
+- Region names must NOT be repeated.
 
 Example:
 
@@ -394,7 +507,7 @@ Example:
 
 Box
 ======
- RegionBox: a rectangular region in space, defined by two points
+ RegionBox: a rectangular region in space, defined by two corners
 
 List *region: box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
@@ -489,40 +602,7 @@ Example:
 
 Color Function
 ===============
- RegionColorFunction: A region defined by the value of an indicator function in a file.
-
-The list *region: color function* defines a region based a specified
-integer color, *value*, in a structured color function file,
-*file*. The format of the color function file is given below in
-the "Tabulated function file format" section. As
-shown in the file, the color values may be specified at the nodes or
-cells of the color function grid. A computational cell is assigned
-the 'color' of the data grid cell containing its cell centroid
-(cell-based colors) or the data grid nearest its cell-centroid
-(node-based colors). Computational cells sets are then built from
-all cells with the specified color *Value*.
-
-In order to avoid, gaps and overlaps in specifying materials, it is
-strongly recommended that regions be defined using a single color
-function file. 
-
-* `"file`" ``[string]`` File name.
-
-* `"value`" ``[int]`` Color that defines the set in a tabulated function file.
-
-Example:
-
-.. code-block:: xml
-
-   <ParameterList name="SOIL_TOP">
-     <ParameterList name="region: color function">
-       <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
-       <Parameter name="value" type="int" value="1"/>
-     </ParameterList>
-   </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' RegionColorFunction ' **
 
 
 Coordinator
@@ -530,31 +610,42 @@ Coordinator
 
  Coordinator: Simulation controller and top-level driver
 
-In the `"coordinator`" sublist, the user specifies global control of
-the simulation, including starting and ending times and restart options.  
+In the `"cycle driver`" sublist, the user specifies global control of the
+simulation, including starting and ending times and restart options.
  
-* `"start time`" ``[double]``, **0.** Specifies the start of time in model time.
+* `"start time`" ``[double]`` **0.** Specifies the start of time in model time.
  
-* `"start time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+* `"start time units`" ``[string]`` **"s"** One of `"s`", `"d`", or `"yr`"
 
 * `"end time`" ``[double]`` Specifies the end of the simulation in model time.
  
-* `"end time units`" ``[string]``, **"s"**, `"d`", `"yr`" 
+* `"end time units`" ``[string]`` **"s"** One of `"s`", `"d`", or `"yr`"
 
-* `"end cycle`" ``[int]`` If provided, specifies the end of the simulation in timestep cycles.
+* `"end cycle`" ``[int]`` **optional** If provided, specifies the end of the
+   simulation in timestep cycles.
 
-* `"restart from checkpoint file`" ``[string]`` If provided, specifies a path to the checkpoint file to continue a stopped simulation.
+* `"restart from checkpoint file`" ``[string]`` **optional** If provided,
+   specifies a path to the checkpoint file to continue a stopped simulation.
 
-* `"wallclock duration [hrs]`" ``[double]`` After this time, the simulation will checkpoint and end.  Not required.
+* `"wallclock duration [hrs]`" ``[double]`` **optional** After this time, the
+   simulation will checkpoint and end.
 
-* `"required times`" ``[time-control-spec]``
+* `"required times`" ``[io-event-spec]`` **optional** An IOEvent_ spec that
+   sets a collection of times/cycles at which the simulation is guaranteed to
+   hit exactly.  This is useful for situations such as where data is provided
+   at a regular interval, and interpolation error related to that data is to
+   be minimized.
 
-  A TimeControl_ spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.
+* `"PK tree`" ``[pk-type-spec-list]`` List of length one, the top level PK spec.
    
 Note: Either `"end cycle`" or `"end time`" are required, and if
 both are present, the simulation will stop with whichever arrives
 first.  An `"end cycle`" is commonly used to ensure that, in the case
 of a time step crash, we do not continue on forever spewing output.
+
+``[pk-type-spec]`` is a pk type and a list of subpks.
+* `"PK type`" ``[string]`` One of the registered PK types
+* `"sub PKs`" ``[pk-type-spec-list]`` **optional** If there are sub pks, list them.
 
 Example:
 
@@ -591,11 +682,16 @@ the form: `"visualization DOMAIN-NAME`".
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
-* `"file name base`" ``[string]`` **"visdump_data"**, **"visdump_surface_data"**
-  
-* `"dynamic mesh`" ``[bool]`` **false**
+* `"file name base`" ``[string]`` **visdump_DOMAIN_data**
 
-  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
+* `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+  visualization dump; this facilitates visualizing deforming meshes.
+
+* `"time units`" ``[string]`` **s** A valid time unit to convert time
+  into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
+  
+INCLUDES:
+* ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:
@@ -632,34 +728,7 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
- Visualization: a class for controlling simulation output.
-
-Each list contains all parameters as in a IOEvent_ spec, and also:
-
-* `"file name base`" ``[string]`` **"checkpoint"**
-
-* `"file name digits`" ``[int]`` **5**
-
-  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="checkpoint">
-    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
-    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
-  </ParameterList>
-
-In this example, checkpoint files are written when the cycle number is
-a multiple of 100, every 10 seconds for the first 100 seconds, and
-every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be written in the form: `"checkpoint00000.h5`".
-
-
-  
+** DOC GENERATION ERROR: file not found ' checkpoint ' **  
 
 
  
@@ -682,31 +751,36 @@ operator, a region from which it will extract its source data, and a
 list of discrete times for its evaluation.  The observations are
 evaluated during the simulation and written to disk.
 
-* `"observations`" [list] can accept multiple ``[observation-spec]`` entries.
+``[observation-spec]`` consists of the following quantities:
 
-An ``[observation-spec]`` consists of the following quantities:
+* `"observation output filename`" ``[string]`` user-defined name for the file that the observations are written to.
 
-* `"observation output filename`" [string] user-defined name for the file that the observations are written to.
+* `"variable`" ``[string]`` any ATS variable used by any PK, e.g. `"pressure`" or `"surface-water_content`"
 
-* `"variable`" [string] any ATS variable used by any PK, e.g. `"pressure`" or `"surface-water_content`"
+* `"region`" ``[string]`` the label of a user-defined region
 
-* `"region`" [string] the label of a user-defined region
+* `"location name`" ``[string]`` the mesh location of the thing to be measured, i.e. `"cell`", `"face`", or `"node`"
 
-* `"location name`" [string] the mesh location of the thing to be measured, i.e. `"cell`", `"face`", or `"node`"
-
-* `"functional`" [string] the label of a function to apply to the variable across the region.  Valid functionals include:
- * `"observation data: point`" returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.
- * `"observation data: extensive integral`" returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as `"water_content`" or `"energy`".
- * `"observation data: intensive integral`" returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as `"temperature`" or `"saturation_liquid`".
-
-* Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
+* `"functional`" ``[string]`` the label of a function to apply to the variable across the region.  Valid functionals include:
+ - `"observation data: point`" returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.
+ - `"observation data: extensive integral`" returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as `"water_content`" or `"energy`".
+ - `"observation data: intensive integral`" returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as `"temperature`" or `"saturation_liquid`".
 
 For flux observations, additional options are available:
 
-* `"direction normalized flux`" [bool] *false* Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.
+* `"direction normalized flux`" ``[bool]`` **optional** Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.
 
-* `"direction normalized flux direction`" [Array(double)] Provides the vector to dot the face normal with.  If this is not provided, then it is assumed that the faces integrated over are all boundary faces and that the default vector is the outward normal direction for each face.
+* `"direction normalized flux direction`" ``[Array(double)]`` **optional**
+  Provides the vector to dot the face normal with.  If this is not provided,
+  then it is assumed that the faces integrated over are all boundary faces and
+  that the default vector is the outward normal direction for each face.
 
+Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
+
+INCLUDES:
+* ``[io-event-spec]`` An IOEvent_ spec
+
+  
 
 
 Example:
@@ -755,7 +829,6 @@ PK
 #####
 
  The interface for a Process Kernel, an equation or system of equations.
-
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -770,10 +843,6 @@ All PKs have the following parameters in their spec:
 * `"PK type`" ``[string]``
 
   The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
-
-* `"PK name`" ``[string]`` **LIST-NAME**
-
-  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
 
 Example:
 
@@ -795,7 +864,6 @@ Example:
     </ParameterList>
   </ParameterList>
 
- 
 
 
 Base PKs
@@ -812,19 +880,16 @@ PKPhysicalBase
 are defined on a single mesh, and represent a single process model.  Typically
 all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
-* `"domain`" ``[string]`` **""**, e.g. `"surface`".
+* `"domain name`" ``[string]`` e.g. `"surface`".
 
   Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
 
-* `"primary variable`" ``[string]``
+* `"primary variable key`" ``[string]`` Sets the primary variable.
 
   The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
+* `"initial condition`" ``[initial-conditions-spec]``  See InitialConditions_.
 
-  Additionally, the following parameters are supported:
-
- - `"initialize faces from cell`" ``[bool]`` **false**
 
    Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
 
@@ -860,12 +925,12 @@ several additional specs are included.  For instance, in a strongly coupled
 flow and energy problem, these specs are included in the ``StrongMPC`` that
 couples the flow and energy PKs, not to the flow or energy PK itself.
   
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+* `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional**
+  A TimeIntegrator_.  Note that this is only provided if this PK is not
+  strongly coupled to other PKs.
 
-  Note that this is only provided in the top-most ``PKBDFBase`` in the tree --
-  this is often a StrongMPC_ or a class deriving from StrongMPC_.
-
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
 
   This spec describes how to form the (approximate) inverse of the preconditioner.
   
@@ -885,13 +950,19 @@ implement an equation and are not couplers, and support the implicit
 integration interface.  This largely just supplies a default error norm based
 on error in conservation relative to the extent of the conserved quantity.
 
-* `"absolute error tolerance`" [double] **1.0**
+* `"absolute error tolerance`" ``[double]`` **1.0** Absolute tolerance,
+  :math:`a_tol` in the equation below.  Note that this default is often
+  overridden by PKs with more physical values, and very rarely are these set
+  by the user.
 
-  Absolute tolerance, :math:`a_tol` in the equation below.
+* `"relative error tolerance`" ``[double]`` **1.0** Relative tolerance,
+  :math:`r_tol` in the equation below.  Note that this default is often
+  overridden by PKs with more physical values, and very rarely are these set
+  by the user.
 
-* `"relative error tolerance`" [double] **1.0**
-
-  Relative tolerance, :math:`r_tol` in the equation below.
+* `"flux error tolerance`" ``[double]`` **1.0** Relative tolerance on the
+  flux.  Note that this default is often overridden by PKs with more physical
+  values, and very rarely are these set by the user.
 
 By default, the error norm used by solvers is given by:
 
@@ -927,92 +998,66 @@ Solves Richards equation:
   \frac{\partial \Theta}{\partial t} - \nabla \frac{k_r n_l}{\mu} K ( \nabla p + \rho g \cdot \hat{z} ) = Q_w
 
 
-Options:
+Includes options from:
 
-Variable naming:
-
-* `"domain`" ``[string]`` **""**  Defaults to the base subsurface domain.
-
-* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"pressure`"
-
+* ``[pk-physical-default-spec]`` PKPhysicalDefault_
+# ``[pk-bdf-default-spec]`` PKBDFDefault_
+* ``[pk-physical-bdf-default-spec]`` PKPhysicalBDFDefault_
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+* `"conserved quantity key`" ``[string]`` **DOMAIN-water_content** Typically not set, default is good. ``[mol]``
 
-* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+* `"mass density key`" ``[string]`` **DOMAIN-mass_density_liquid** liquid water density ``[kg m^-3]``
 
-* `"mass density key`" ``[string]`` **"DOMAIN-mass_density_liquid"** liquid water density ``[kg m^-3]``
+* `"molar density key`" ``[string]`` **DOMAIN-molar_density_liquid** liquid water density ``[mol m^-3]``
 
-* `"molar density key`" ``[string]`` **"DOMAIN-molar_density_liquid"** liquid water density ``[mol m^-3]``
+* `"permeability key`" ``[string]`` **DOMAIN-permeability** permeability of the soil medium ``[m^2]``
 
-* `"permeability key`" ``[string]`` **"DOMAIN-permeability"** permeability of the soil medium ``[m^2]``
+* `"conductivity key`" ``[string]`` **DOMAIN-relative_permeability** scalar coefficient of the permeability ``[-]``
 
-* `"conductivity key`" ``[string]`` **"DOMAIN-relative_permeability"** scalar coefficient of the permeability ``[-]``
+* `"upwind conductivity key`" ``[string]`` **DOMAIN-upwind_relative_permeability** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
 
-* `"upwind conductivity key`" ``[string]`` **"DOMAIN-upwind_relative_permeability"** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
+* `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
 
-* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+* `"darcy flux direction key`" ``[string]`` **DOMAIN-mass_flux_direction** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
 
-* `"darcy flux direction key`" ``[string]`` **"DOMAIN-mass_flux_direction"** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
+* `"darcy velocity key`" ``[string]`` **DOMAIN-darcy_velocity** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
 
-* `"darcy velocity key`" ``[string]`` **"DOMAIN-darcy_velocity"** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
+* `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
 
-* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
-
-* `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
+* `"saturation key`" ``[string]`` **DOMAIN-saturation_liquid** volume fraction of the liquid phase ``[-]``
 
 Discretization control:
 
-* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+* `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
-
-Time integration and timestep control:
-
-* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
-
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
-  that this is only provided if this Richards PK is not strongly coupled to
-  other PKs.
-
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
-
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
-  Note that this is only used if this PK is not strongly coupled to other PKs.
-
-* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
-  Additionally, the following parameter is supported:
-
-  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-    primary variable field has both CELL and FACE objects, and the FACE values
-    are calculated as the average of the neighboring cells.
-
-Error control:
-
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
-
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
-
-* `"flux tolerance`" [double] **1**
-
-  Multiplies the error in flux (on a face) relative to the min of water in the
-  neighboring cells.  Typically only changed if infiltration is very small and
-  the boundary condition is not converging, at which point it can be decreased
-  by an order of magnitude at a time until the boundary condition is
-  satisfied.
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
+//* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
 
-May inherit options from PKPhysicalBDFBase_
+* `"permeability type`" ``[string]`` **'scalar'** The permeability type can be 'scalar', 'horizontal and vertical', 'diagonal tensor', or 'full tensor'. This key is placed in state->field evaluators->permeability. The 'scalar' option requires 1 permeability value, 'horizontal and vertical' requires 2 values, 'diagonal tensor' requires 2 (2D) or 3 (3D) values, and 'full tensor' requires 3 (2D) or 6 (3D) values. The ordering of the permeability values in the input script is important: 'horizontal and vertical'={xx/yy,zz}, 'diagonal tensor'={xx,yy} or {xx,yy,zz}, 'full tensor'={xx,yy,xy/yx} or {xx,yy,zz,xy/yx,xz/zx,yz/zy}.
+
+* `"water retention evaluator`" ``[wrm-evaluator-spec]`` The WRM.  This needs to go away!
+
+This PK additionally requires the following:
+
+EVALUATORS:
+- `"conserved quantity`"
+- `"mass density`"
+- `"molar density`"
+- `"permeability`"
+- `"conductivity`"
+- `"saturation`"
 
 
 
@@ -1045,43 +1090,36 @@ Variable naming:
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
-
-* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-water_content"** The conserved quantity name.
 
 Discretization control:
 
-* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+* `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
 Time integration and timestep control:
 
 * `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+* `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional** is a TimeIntegrator_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
-  Additionally, the following parameter is supported:
-
-  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-    primary variable field has both CELL and FACE objects, and the FACE values
-    are calculated as the average of the neighboring cells.
+* `"initial condition`" ``[initial-conditions-spec]`` See InitialConditions_.
 
 Error control:
 
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+* `"absolute error tolerance`" ``[double]`` **550.** Defaults to 1 cm of water.  A small, but significant, amount of water.
 
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+* `"relative error tolerance`" ``[double]`` **1** Take the error relative to the amount of water present in that cell.
 
-* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+* `"flux tolerance`" ``[double]`` **1** Multiplies the error in flux (on a face)
   relative to the min of water in the neighboring cells.  Typically only
   changed if infiltration is very small and the boundary condition is not
   converging, at which point it can be decreased by an order of magnitude at a
@@ -1089,7 +1127,7 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+xx* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
 
 
 May inherit options from PKPhysicalBDFBase_.
@@ -1186,11 +1224,11 @@ directly added into the subsurface discrete equations.
 * `"PKs order`" ``[Array(string)]`` Supplies the names of the coupled PKs.
   The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).
 
-* `"linear solver`" ``[linear-solver-spec]`` A LinearSolver_ spec.  Only used
-  if this PK is not itself coupled by other strong couplers.
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"preconditioner`" ``[preconditioner-spec]`` A Preconditioner_ spec.  Only used
-  if this PK is not itself coupled by other strong couplers.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
 
 * `"water delegate`" ``[list]`` 
 
@@ -1309,6 +1347,27 @@ for inclusion of multiple phases.
 
 RichardsWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ The Richards water content evaluator is an algebraic evaluator for liquid only water content
+  Generated via evaluator_generator with:
+Richards water content evaluator: the standard form as a function of liquid saturation.
+
+.. math::
+  Theta = n * s * phi * cell volume
+
+``[field-evaluator-type-richards-water-content-spec]``
+
+* `"porosity key`" ``[string]`` **DOMAIN-porosity** 
+* `"molar density liquid key`" ``[string]`` **DOMAIN-molar_density_liquid** 
+* `"saturation liquid key`" ``[string]`` **DOMAIN-saturation_liquid** 
+* `"cell volume key`" ``[string]`` **DOMAIN-cell_volume**
+
+EVALUATORS:
+- `"porosity`"
+- `"molar density liquid`"
+- `"saturation liquid`"
+- `"cell volume`"
+
+
 
 RichardsWaterContentWithVaporEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1333,6 +1392,7 @@ Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|`
 * `"elevation key`" ``[string]`` **elevation** Name the elevation variable. [m]
 * `"slope magnitude key`" ``[string]`` **slope_magnitude** Name the elevation variable. [-]
 * `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" dependency.
+* `"parent domain name`" ``[string]`` **DOMAIN** Domain name of the parent mesh, which is the 3D version of this domain.  Attempts to generate an intelligent default by stripping "surface" from this domain.
 
 Example:
 
@@ -1678,8 +1738,8 @@ Seepage face boundary conditions
 A variety of seepage face boundary conditions are permitted for both surface
 and subsurface flow PKs.  Typically seepage conditions are of the form:
 
-  * if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
-  * if :math:`p > p0`, then :math:`p = p0`
+  - if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
+  - if :math:`p > p0`, then :math:`p = p0`
 
 This ensures that flow is only out of the domain, but that the max pressure on
 the boundary is specified by :math:`p0`.
@@ -1726,8 +1786,8 @@ be prescribed, to be enforced until the water table rises to the surface, at
 which point the precip is turned off and water seeps into runoff.  This
 capability is experimental and has not been well tested.
 
-  * if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
-  * if :math:`p > p_atm`, then :math:`p = p_atm`
+  - if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
+  - if :math:`p > p_atm`, then :math:`p = p_atm`
 
 Example: seepage with infiltration
 
@@ -1851,6 +1911,58 @@ Example:
    </ParameterList>
  </ParameterList>
 
+
+Dynamic boundary condutions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The type of boundary conditions maybe changed in time depending on the switch function of TIME.
+<ParameterList name="dynamic">
+          
+     <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+     <ParameterList name="switch function">
+       <ParameterList name="function-tabular">
+         <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+         <Parameter name="x header" type="string" value="Time" />
+         <Parameter name="y header" type="string" value="Switch" />
+         <Parameter name="form" type="Array(string)" value="{constant}"/>
+       </ParameterList>
+     </ParameterList>
+          
+     <ParameterList name="bcs">
+       <Parameter name="bc types" type="Array(string)" value="{head, mass flux}"/>
+       <Parameter name="bc functions" type="Array(string)" value="{boundary head, outward mass flux}"/>
+
+       <ParameterList name="mass flux">
+         <ParameterList name="BC west">
+           <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-tabular">
+               <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+               <Parameter name="x header" type="string" value="Time" />
+               <Parameter name="y header" type="string" value="Flux" />
+               <Parameter name="form" type="Array(string)" value="{linear}"/>
+             </ParameterList>
+            </ParameterList>
+          </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="head">  
+          <ParameterList name="BC west">
+            <Parameter name="regions" type="Array(string)" value="{surface west}"/>
+            <ParameterList name="boundary head">
+              <ParameterList name="function-tabular">
+                 <Parameter name="file" type="string" value="../data/floodplain2.h5" />
+                 <Parameter name="x header" type="string" value="Time" />
+                 <Parameter name="y header" type="string" value="Head" />
+                 <Parameter name="form" type="Array(string)" value="{linear}"/>
+               </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+     </ParameterList>
+                 
+ </ParameterList> 
+<!-- dynamic -->
+
  
 
 
@@ -1880,11 +1992,11 @@ control, to adapter based upon simple nonlinear iteration counts.
 
 Available types include:
 
-* TimestepControllerFixed_  (type `"fixed`"), a constant timestep
-* TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
-* TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
-* TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
-* TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+- TimestepControllerFixed_  (type `"fixed`"), a constant timestep
+- TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
+- TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
+- TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
+- TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
 
 
 
@@ -1911,13 +2023,13 @@ nonlinear iterations the previous timestep took to converge.
 
 The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 
-* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} * \Delta t_{k}`
-* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
-* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+- if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} * \Delta t_{k}`
+- if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
+- otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear iterations required to solve step :math:`k`:.
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of 
+nonlinear iterations required to solve step :math:`k`:.
 
-                   
 * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
 * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
 * `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
@@ -2047,13 +2159,17 @@ Internal parameters for Boomer AMG include
 
 * `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
 
-* `"number of functions`" ``[int]`` **1**  Any value > 1 tells Boomer AMG to use the `"systems 
-  of PDEs`" code.  Note that, to use this approach, unknowns must be ordered with 
-  DoF fastest varying (i.e. not the native Epetra_MultiVector order).  By default, it
-  uses the `"unknown`" approach in which each equation is coarsened and
-  interpolated independently.  **Getting this correct is very helpful!**
+* `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
+    PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
+    type.
+
+* `"number of functions`" ``[int]`` **1** Any value > 1 tells Boomer AMG to
+  use the `"systems of PDEs`" code with strided block type.  Note that, to use
+  this approach, unknowns must be ordered with DoF fastest varying (i.e. not
+  the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
+  approach in which each equation is coarsened and interpolated independently.
   
-  * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
+* `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
     that each variable has the same coarse grid - sometimes this is more
     "physical" for a particular problem. The value chosen here for nodal
     determines how strength of connection is determined between the
@@ -2160,7 +2276,7 @@ IOEvent
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
 
-* `"cycles start period stop`" ``[Array(int)]`` 
+* `"cycles start period stop`" ``[Array(int)]`` **optional**
 
     The first entry is the start cycle, the second is the cycle
     period, and the third is the stop cycle or -1, in which case there
@@ -2168,35 +2284,49 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
     cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
     cycle < stop if stop != -1.0.
 
-* `"cycles start period stop N`" ``[Array(int)]`` 
+* `"cycles start period stop 0`" ``[Array(int)]`` **optional** 
 
-    If multiple cycles start period stop parameters are needed, then
-    use these parameters with N=0,1,2,...
+    If multiple cycles start period stop parameters are needed, then use these
+    parameters.  If one with 0 is found, then one with 1 is looked for, etc,
+    until the Nth one is not found.
 
-* `"cycles`" ``[Array(int)]`` 
+* `"cycles`" ``[Array(int)]``  **optional**
   
     An array of discrete cycles that at which a visualization dump is
     written.
 
-* `"times start period stop`" ``[Array(double)]`` 
+* `"times start period stop`" ``[Array(double)]`` **optional** 
 
     The first entry is the start time, the second is the time period,
     and the third is the stop time or -1, in which case there is no
     stop time. A visualization dump is written at such times that
     satisfy time = start + n*period, for n=0,1,2,... and time < stop
-    if stop != -1.0.  Note that all times units are in seconds.
+    if stop != -1.0.
 
-* `"times start period stop n`" ``[Array(double)]``
+* `"times start period stop units`" ``string`` **s** 
 
-    If multiple start period stop parameters are needed, then use this
-    these parameters with n=0,1,2,..., and not the single `"times
-    start period stop`" parameter.  Note that all times units are in
-    seconds.
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    
+* `"times start period stop 0`" ``[Array(double)]`` **optional**
 
-* `"times`" ``[Array(double)]`` 
+    If multiple start period stop parameters are needed, then use this these
+    parameters with N=0,1,2.  If one with 0 is found, then one with 1 is
+    looked for, etc, until the Nth one is not found.
+
+* `"times start period stop 0 units`" ``string`` **s** 
+
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    See above for continued integer listings.
+
+* `"times`" ``[Array(double)]`` **optional** 
 
     An array of discrete times that at which a visualization dump
-    shall be written.  Note that all times units are in seconds.
+    shall be written.
+
+* `"times units`" ``string`` **s** 
+
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    
  
 
 
@@ -2250,8 +2380,39 @@ function of time:
 
 :math:`u = f(t,x,y,z)`
 
-A ``[function-spec]`` is used to prescribe these functions.
+``[function-spec]``
 
+ONE OF:
+* `"function: constant`" ``[constant-function-spec]``
+OR:
+* `"function: tabular`" ``[tabular-function-spec]``
+OR:
+* `"function: smooth step`" ``[smooth-step-function-spec]``
+OR:
+* `"function: polynomial`" ``[polynomial-function-spec]``
+OR:
+* `"function: monomial`" ``[monomial-function-spec]``
+OR:
+* `"function: linear`" ``[linear-function-spec]``
+OR:
+* `"function: separable`" ``[separable-function-spec]``
+OR:
+* `"function: additive`" ``[additive-function-spec]``
+OR:
+* `"function: multiplicative`" ``[multiplicative-function-spec]``
+OR:
+* `"function: composition`" ``[composition-function-spec]``
+OR:
+* `"function: static head`" ``[static-head-function-spec]``
+OR:
+* `"function: standard math`" ``[standard-math-function-spec]``
+OR:
+* `"function: bilinear`" ``[bilinear-function-spec]``
+OR:
+* `"function: distance`" ``[distance-function-spec]``
+#OR:
+#* `"function: squared distance`" ``[squared-distance-function-spec]``
+END
 
 
 
@@ -2259,416 +2420,55 @@ It is straightforward to add new functions as needed.
 
 Constant Function
 -------------------------
- ConstantFunction: Implements the Function interface using a constant value.
-
-Constant function is defined as :math:`f(x) = a`, for all :math:`x`. 
-
-* `"value`" ``[double]`` The constant to be applied.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-constant">
-    <Parameter name="value" type="double" value="1.0"/>
-  </ParameterList>
-
-
-  
+** DOC GENERATION ERROR: file not found ' ConstantFunction ' **  
 
 Tabular Function
 -------------------------
- TabularFunction: Piecewise-defined function.
-
-A piecewise function of one variable.
-
-A tabular function is tabulated on a series of intervals; given values
-:math:`{{x_i}}, {{y_i}},, i=0, ... n-1` and functional forms :math:`{{f_j}},,
-j=0, ... n-2` a tabular function :math:`f(x)` is defined as:
-
-.. math::
-  \begin{matrix}
-  f(x) &=& y_0, & x \le x_0,\\
-  f(x) &=& f_{{i-1}}(x)  & x \in (x_{{i-1}}, x_i],\\
-  f(x) &=& y_{{n-1}}, & x > x_{{n-1}}.
-  \end{matrix}
-
-The functional forms :math:`{f_j}` may be constant, which uses the left endpoint, i.e.
-
-:math:`f_i(x) = y_i`,
-
-linear, i.e.
-
-:math:`f_i(x) = ( y_i * (x - x_i) + y_{{i+1}} * (x_{{i+1}} - x) ) / (x_{{i+1}} - x_i)`
-
-or arbitrary, in which the :math:`f_j` must be provided.
-
-The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly in the input spec or from an HDF5 file.  The length of these must be equal, and the :math:`x_i` must be monotonically increasing.  Forms, as defined on intervals, must be of length equal to the length of the :math:`x_i` less one.
-
-Explicitly specifying the data:
-
-* `"x values`" ``[Array(double)]`` the :math:`x_i`
-* `"y values`" ``[Array(double)]`` the :math:`y_i`
-* `"forms`" ``[Array(string)]`` **linear**, `"constant`", `"USER_DEFINED`"
-* `"USER_DEFINED`" ``[function-spec]`` user-provided functional forms on the interval
-* `"x coordinate`" ``[string]`` **t**, `"x`", `"y`", `"z`" defines which coordinate direction the :math:`x_i` are formed, defaulting to time.
-
-The below example defines a function that is zero on interval :math:`(-\infty,\,0]`,
-linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`, 
-square root of `t` on interval :math:`(2,\,3]`,
-and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
-
-Example:
-
-.. code-block:: xml
-  
-  <ParameterList name="function-tabular">
-    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
-    <Parameter name="x coordinate" type="string" value="t"/>
-    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0, 2.0}"/>
-    <Parameter name="forms" type="Array(string)" value="{linear, constant, USER_FUNC}"/>
-
-    <ParameterList name="USER_FUNC">
-      <ParameterList name="function-standard-math">
-        <Parameter name="operator" type="string" value="sqrt"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  
-
-Loading table from file (note that `"USER_DEFINED`" is not an option here, but could be made so if requested):
-
-
-* `"file`" ``[string]`` filename of the HDF5 data
-* `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
-* `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
-* `"forms`" ``[Array(string)]`` **linear**, `"constant`"
-
-The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
-
-Example:
-
-.. code-block:: xml
-  
-  <ParameterList name="function-tabular">
-    <Parameter name="file" type="string" value="my_data.h5"/>
-    <Parameter name="x coordinate" type="string" value="t"/>
-    <Parameter name="x header" type="string" value="/time"/>
-    <Parameter name="y header" type="string" value="/data"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' TabularFunction ' **
 
 Smooth step Function
 -------------------------
- SmoothStepFunction: a smoothed discontinuity.
-
-A smooth :math:`C^2` function `f(x)` on interval :math:`[x_0,\,x_1]` is
-defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
-monotonically increasing for :math:`x \in [x_0, x_1]` through cubic
-interpolation.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-smooth-step">
-    <Parameter name="x0" type="double" value="0.0"/>
-    <Parameter name="y0" type="double" value="0.0"/>
-    <Parameter name="x1" type="double" value="1.0"/>
-    <Parameter name="y1" type="double" value="2.0"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' SmoothStepFunction ' **
 
 Polynomial Function
 -------------------------
- PolynomialFunction: a polynomial
-
-A generic polynomial function is given by the following expression:
-
-.. math::
-  f(x) = \sum_{{j=0}}^n c_j (x - x_0)^{{p_j}}
-
-where :math:`c_j` are coefficients of monomials,
-:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-polynomial">
-    <Parameter name="coefficients" type="Array(double)" value="{{1.0, 1.0}}"/>
-    <Parameter name="exponents" type="Array(int)" value="{{2, 4}}"/>
-    <Parameter name="reference point" type="double" value="0.0"/>
-  </ParameterList>
-
-
-  
+** DOC GENERATION ERROR: file not found ' PolynomialFunction ' **  
 
 Multi-variable linear Function
 ------------------------------
- LinearFunction: a multivariate linear function.
-
-A multi-variable linear function is formally defined by
- 
-.. math::
-  f(x) = y_0 + \sum_{{j=0}}^{{n-1}} g_j (x_j - x_{{0,j}}) 
-
-with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{{n-1}}`.
-If the reference point :math:`x_0` is specified, it must have the same
-number of values as the gradient.  Otherwise, it defaults to zero.
-Note that one of the parameters in a multi-valued linear function can be time.
-Here is an example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-linear">
-    <Parameter name="y0" type="double" value="1.0"/>
-    <Parameter name="gradient" type="Array(double)" value="{{1.0, 2.0, 3.0}}"/>
-    <Parameter name="x0" type="Array(double)" value="{{2.0, 3.0, 1.0}}"/>
-  </ParameterList>
-
-
-  
+** DOC GENERATION ERROR: file not found ' LinearFunction ' **  
 
 Separable Function
 ------------------
- SeparableFunction: f(x,y) = f1(x)*f2(y)
-
-A separable function is defined as the product of other functions such as
-
-.. math::
-  f(x_0, x_1,...,x_{{n-1}}) = f_1(x_0)\, f_2(x_1,...,x_{{n-1}})
-
-where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
-
-.. code-block:: xml
-
-  <ParameterList name="function-separable">
-    <ParameterList name="function1">
-      function-specification
-    </ParameterList>
-    <ParameterList name="function2">
-      function-specification
-    </ParameterList>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' SeparableFunction ' **
 
 Additive Function
 ------------------
- AdditiveFunction: f(x,y) = f1(x,y) + f2(x,y)
-
-An additive function simply adds two other function results together.
-
-.. math::
-  f(x) = f_1(x) + f_2(x)
-
-where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
-
-.. code-block:: xml
-
-  <ParameterList name="function-additive">
-    <ParameterList name="function1">
-      function-specification
-    </ParameterList>
-    <ParameterList name="function2">
-      function-specification
-    </ParameterList>
-  </ParameterList>
-
-
+** DOC GENERATION ERROR: file not found ' AdditiveFunction ' **
 
 Multiplicative Function
 --------------------------
- MultiplicativeFunction: f(x,y) = f1(x,y) * f2(x,y)
-
-A multiplicative function simply multiplies two other function results together.
-
-.. math::
-  f(x) = f_1(x) * f_2(x)
-
-where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
-
-.. code-block:: xml
-
-  <ParameterList name="function-multiplicative">
-    <ParameterList name="function1">
-      function-specification
-    </ParameterList>
-    <ParameterList name="function2">
-      function-specification
-    </ParameterList>
-  </ParameterList>
-
-
+** DOC GENERATION ERROR: file not found ' MultiplicativeFunction ' **
 
 Composition Function
 --------------------------
- CompositionFunction: f(x,y) = f1(x,y) * f2(x,y)
-
-Function composition simply applies one function to the result of another.
-
-.. math::
-  f(x) = f_1( f_2(x) )
-
-where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
-
-.. code-block:: xml
-
-  <ParameterList name="function-composition">
-    <ParameterList name="function1">
-      function-specification
-    </ParameterList>
-    <ParameterList name="function2">
-      function-specification
-    </ParameterList>
-  </ParameterList>
-
-
+** DOC GENERATION ERROR: file not found ' CompositionFunction ' **
 
 Piecewise Bilinear Function
 ---------------------------
- BilinearFunction: a piecewise bilinear function.
-
-A piecewise bilinear function extends the linear form of the tabular function to two variables.
-
-Define :math:`i(x) = i : x_i < x <= x_{{i+1}}` and similarly :math:`j(y) = j : y_j < y <= y_{{j+1}}` for monotonically increasing :math:`x_i` and :math:`y_j`.
-
-Given a two-dimensional array :math:`u_{{i,j}}`, :math:`f` is then defined by
-bilinear interpolation on :math:`u_{{i(x),j(y)}}, u_{{i(x)+1,j(y)}},
-u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
-:math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
-are out of those bounds, and constant at the corner value if both are out of
-bounds.
- 
-* `"file`" ``[string]`` HDF5 filename of the data
-* `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
-* `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
-* `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
-* `"column coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
-* `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-bilinear">
-    <Parameter name="file" type="string" value="pressure.h5"/>
-    <Parameter name="row header" type="string" value="/time"/>
-    <Parameter name="row coordinate" type="string" value="t"/>
-    <Parameter name="column header" type="string" value="/x"/>
-    <Parameter name="column coordinate" type="string" value="x"/>
-    <Parameter name="value header" type="string" value="/pressure"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' BilinearFunction ' **
 
 Distance Function
 -------------------
- DistanceFunction: distance from a reference point.
-
-A distance function calculates distance from reference point :math:`x_0`
-using by the following expression:
-
-.. math::
-  f(x) = \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2
-
-Note that the first parameter in :math:`x` can be time.
-Here is an example of a distance function using isotropic metric:
-
-Example:
-.. code-block:: xml
-
-  <ParameterList name="function-distance">
-    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
-    <Parameter name="metric" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' DistanceFunction ' **
 
 Monomial Function
 -------------------
- MonomialFunction: a multivariate monomial function.
-
-A multi-variable monomial function is given by the following expression:
-
-.. math::
-  f(x) = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
-
-with the constant factor :math:`c`, the reference point :math:`x_0`, and
-integer exponents :math:`p_j`. 
-Note that the first parameter in :math:`x` can be time.
-Here is an example of monomial of degree 6 in three variables:
-
-.. code-block:: xml
-
-  <ParameterList name="function-monomial">
-    <Parameter name="c" type="double" value="1.0"/>
-    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
-    <Parameter name="exponents" type="Array(int)" value="{2, 3, 1}"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' MonomialFunction ' **
 
 Standard Math Function
 -------------------------
- StandardMathFunction: provides access to many common mathematical functions.
-These functions allow to set up non-trivial time-dependent boundary conditions 
-which increases a set of analytic solutions that can be used in convergence 
-analysis tests.
-
-.. math::
-  f(x) = A * operator( p * (x - s) )
-
-or
-
-.. math::
-  f(x) = A * operator(x-s, p)
-
-Note that these operate only on the first coordinate, which is often time.
-Function composition can be used to apply these to other coordinates (or
-better yet a dimension could/should be added upon request).
-
-* `"operator`" ``[string]`` specifies the name of a standard mathematical function.
-  Available options are `"cos`", `"sin`", `"tan`", `"acos`", `"asin`", `"atan`", 
-  `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`", `"log10`", `"sqrt`", `"ceil`",
-  `"fabs`", `"floor`", `"mod`", and `"pow`".
-
-* `"amplitude`" ``[double]`` specifies a multiplication factor `a` in formula `a f(x)`. 
-  The multiplication factor is ignored by function `mod`. Default value is 1.
-
-* `"parameter`" ``[double]`` **1.0** specifies additional parameter `p` for
-  math functions with two arguments. These functions are `"a pow(x[0], p)`"
-  and `"a mod(x[0], p)`".  Alternative, scales the argument before
-  application, for use in changing the period of trig functions.
-
-* `"shift`" ``[double]`` specifies a shift of the function argument. Default is 0.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="function-standard-math">
-    <Parameter name="operator" type="string" value="sqrt"/>
-    <Parameter name="amplitude" type="double" value="1e-7"/>
-    <Parameter name="shift" type="double" value="0.1"/>
-  </ParameterList>
-
-This example defines function `1e-7 sqrt(t-0.1)`.
- 
-
+** DOC GENERATION ERROR: file not found ' StandardMathFunction ' **
 
 
 
@@ -2676,11 +2476,10 @@ Operator
 ===================
 
  Operator represents a linear map, and typically encapsulates a discretization.
-
 ``Operator`` represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
-in moving from continuous to discrete equations.  At the moment, it is assumed
-that X = Y, but this could be changed if future needs require it.
+in moving from continuous to discrete equations. The spaces X and Y are described 
+by CompositeVectors (CV). A few maps X->Y are supported. 
 
 An ``Operator`` provides an interface for applying both the forward and inverse
 linear map (assuming the map is invertible).
@@ -2688,7 +2487,7 @@ linear map (assuming the map is invertible).
 Typically the ``Operator`` is never seen by the user; instead the user provides
 input information for helper classes based on the continuous mathematical
 operator and the desired discretization.  These helpers build the needed
-``Operator``, which may incldude information from multiple helpers (i.e. in the
+``Operator``, which may include information from multiple helpers (i.e. in the
 case of Jacobian Operators for a PDE).
 
 However, one option may be provided by the user, which is related to dealing
@@ -2700,181 +2499,26 @@ with nearly singular operators:
 
 
 
-
 OperatorAccumulation
 -------------------------
 
- ``OperatorAccumulation`` generates a diagonal matrix representing accumulation
-
-``OperatorAccumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
-
-This class is usually used as part of a preconditioner, providing the linearization:
-
-.. math::
-  \frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}
-
-for a grid element :math:`\Omega_E`.
-
-No options are available here.
-
-
-
+** DOC GENERATION ERROR: file not found ' OperatorAccumulation ' **
 
 OperatorDiffusion
 ------------------
+** DOC GENERATION ERROR: file not found ' OperatorDiffusionFactory ' **
 
+** DOC GENERATION ERROR: file not found ' OperatorDiffusionMFD ' **
 
-``OperatorDiffusion`` form local ``Op`` s and global ``Operator`` s for elliptic equations:
+** DOC GENERATION ERROR: file not found ' OperatorDiffusionMFDwithGravity ' **
 
-.. math::
-  \nabla \cdot k \nabla u
-
-with a variety of discretizations.  Note also, for reasons that are one part historical and potentially not that valid, this also supports and implementation with an advective source, i.e.:
-
-.. math::
-  \nabla \cdot k (\nabla u + \hat{z})
-
-for gravitational terms in Richards equations.
-
-The input spec for a diffusion operator consists of:
-
-* `"discretization primary`" ``[string]`` Currently supported options include:
-
- - `"fv: default`" the standard two-point flux finite volume discretization
- - `"nlfv: default`" the nonlinear finite volume method of ???
- - MFD methods, including:
-
-  * `"mfd: default`"
-  * `"mfd: monotone for hex`"
-  * `"mfd: optimized for monotonicity`"
-  * `"mfd: two-point flux approximation`"
-  * `"mfd: optimized for sparsity`"
-  * `"mfd: support operator`"
-
- Note that the most commonly used are `"fv: default`" for simple test
- problems (this method is not particularly accurate for distorted
- meshes), `"mfd: optimized for sparsity`" for most real problems on
- unstructured meshes, and `"mfd: optimized for monotonicity`" for
- orthogonal meshes with diagonal tensor/scalar coefficients.
-
-* `"gravity`" [bool] **false** specifies if the gravitational flow term is included
-
-* `"Newton correction`" [string] specifies a model for non-physical terms 
-  that must be added to the matrix. These terms represent Jacobian and are needed 
-  for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
-  The FV scheme accepts only the first options. The other schemes accept only the second option.
-
-* `"scaled constraint equation`" [bool] **false** rescales flux continuity equations
-  on mesh faces.  These equations are formed without the nonlinear
-  coefficient. This option allows us to treat the case of zero nonlinear
-  coefficient, which otherwise generates zero rows in the operator, which is
-  then singular.  At moment this feature does not work with non-zero gravity
-  term.
-
-* `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
-  applying rescaling strategy described above.
-
-
-
-
-
-Additional options available only for the MFD family of discretizations include:
-  
-* `"nonlinear coefficient`" [string] specifies a method for treating nonlinear
-  diffusion coefficient, if any. Available options are `"none`", `"upwind:
-  face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
-  `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
-  preserving methods are the divk-family of methods and the classical
-  cell-centered method (`"standard: cell`"). The first part of the name
-  indicates the base scheme.  The second part (after the semi-column)
-  indicates required components of the composite vector that must be provided
-  by a physical PK.
-
-* `"discretization secondary`" [string] specifies the most robust
-  discretization method that is used when the primary selection fails to
-  satisfy all a priori conditions.  This is typically `"mfd: default`".
-  **Used only when an MFD `"primary discretization`" is used**
-
-* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-  geometric objects.  Typically this is set by the implementation and is not provided.
-
-* `"preconditioner schema`" [Array(string)] **{face,cell}** Defines the
-  preconditioner stencil.  It is needed only when the default assembling
-  procedure is not desirable. If skipped, the `"schema`" is used instead.
-  In addition to the default, **{face}** may be used, which forms the Schur
-  complement.
-   
-* `"consistent faces`" [list] may contain a `"preconditioner`" and
-  `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
-  respectively).  If these lists are provided, and the `"discretization
-  primary`" is of type `"mfd: *`", then the diffusion method
-  UpdateConsistentFaces() can be used.  This method, given a set of cell
-  values, determines the faces constraints that satisfy the constraint
-  equation in MFD by assembling and inverting the face-only system.  This is
-  not currently used by any Amanzi PKs.
-
-* `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-  (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
-
-
-
-
-
-Additional options for MFD with the gravity term include:
-  
-* `"gravity term discretization`" [string] selects a model for discretizing the 
-   gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
-   The first option starts with equation for the shifted solution, i.e. the hydraulic head,
-   and derives gravity discretization by the reserve shifting.
-   The second option is based on the divergence formula.
-
-
-
-
-
-Example:
-
-.. code-block:: xml
-
-    <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
-      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="gravity" type="bool" value="true"/>
-      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
-
-      <ParameterList name="consistent faces">
-        <ParameterList name="linear solver">
-          ...
-        </ParameterList>
-        <ParameterList name="preconditioner">
-          ...
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-
+** DOC GENERATION ERROR: file not found ' OperatorDiffusion ' **
 
 
 OperatorAdvection
 -------------------------
 
-
-``OperatorAdvection`` assembles the discrete form of:
-
-.. math::
-  \nabla \cdot Aq
-
-which advects quantity :math:`A` with fluxes :math:`q`.
-
-This is a simple, first-order donor-upwind scheme, and is mostly intended for
-use in diffusion-dominated advection-diffusion equations.  No options are
-available here.
- 
-
+** DOC GENERATION ERROR: file not found ' OperatorAdvection ' **
 
 
 

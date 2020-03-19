@@ -234,8 +234,11 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
   // options for mesh_functions.
   Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
+  
+
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
+  bc->Finalize();
 }
 
 
@@ -339,6 +342,7 @@ void BCFactory::ProcessSpecWithoutFunction_(const Teuchos::ParameterList& list,
 
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
+  bc->Finalize();
 }
 
 }  // namespace Amanzi

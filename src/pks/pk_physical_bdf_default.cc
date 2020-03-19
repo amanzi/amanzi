@@ -59,8 +59,11 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
   // Just calls both subclass's initialize.  NOTE - order is important here --
   // PhysicalBase grabs the primary variable and stuffs it into the solution,
   // which must be done prior to BDFBase initializing the timestepper.
+
+
   PK_Physical_Default::Initialize(S);
   PK_BDF_Default::Initialize(S);
+
 }
 
 
@@ -132,9 +135,11 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
-      double norm;
-      dvec_v.Norm2(&norm);
-      AMANZI_ASSERT(norm < 1.e-15);
+      // double norm;
+      // dvec_v.Norm2(&norm);
+
+      //      AMANZI_ASSERT(norm < 1.e-15);
+
     }
 
     // Write out Inf norms too.
