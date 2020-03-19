@@ -93,7 +93,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
                           const Teuchos::RCP<State>& S_next);
 
   virtual std::string name() { return "transport_ats"; }
-  Key get_domain_name() {return domain_name_;}
+  Key get_domain_name() {return domain_;}
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
@@ -232,7 +232,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
  protected:
     Teuchos::RCP<TreeVector> soln_;
 
-    Key domain_name_;
     Key saturation_key_;
     Key prev_saturation_key_;
     Key flux_key_;
@@ -250,6 +249,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
+  Key tcc_passwd_;  
+    
 
   bool subcycling_;
   int dim;

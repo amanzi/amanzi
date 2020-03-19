@@ -138,7 +138,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
     ComputeAddSourceTerms(t, 1., f_component, current_component_, current_component_);
   }
 
-  // if (domain_name_ == "surface"){
+  // if (domain_ == "surface"){
   //   double mass = 0., mass_mov_loc = 0;
   //   for (int c = 0; c < ncells_owned; c++)  mass_mov_loc += f_component[c];
   //   mesh_->get_comm()->SumAll(&mass_mov_loc, &mass, 1);
