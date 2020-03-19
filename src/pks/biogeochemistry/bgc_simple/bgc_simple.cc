@@ -523,6 +523,16 @@ void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& v
   }
 }
 
+// helper function for pushing field to column
+void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
+                               double* col_vec, int ncol) {
+  ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncol);
+  for (std::size_t i=0; i!=col_iter.size(); ++i) {
+    col_vec[i] = vec[col_iter[i]];
+  }
+}
+
+  
 // helper function for collecting column dz and depth
 void BGCSimple::ColDepthDz_(AmanziMesh::Entity_ID col,
                             Teuchos::Ptr<Epetra_SerialDenseVector> depth,
