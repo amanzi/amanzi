@@ -54,6 +54,8 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override;
+
  protected:
 
   Key layer_;
@@ -63,6 +65,8 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   double theta_;
   double eps_;
+
+  bool modify_predictor_positivity_preserving_;
 
   bool precon_used_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;

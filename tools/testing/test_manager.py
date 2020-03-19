@@ -7,15 +7,14 @@ PFloTran regression test suite.
 
 Author: Ethan Coon (ecoon@lanl.gov)
 """
-
 from __future__ import print_function
 from __future__ import division
-
 import sys
 
 if sys.hexversion < 0x02070000:
     print(70*"*")
-    print("ERROR: The regression test manager requires python >= 2.7.x. ")
+    print("ERROR: The regression test manager requires python >= 2.7.x")
+    print("or python 3.")
     print("It appears that you are running python {0}.{1}.{2}".format(
         sys.version_info[0], sys.version_info[1], sys.version_info[2]))
     print(70*"*")
@@ -209,7 +208,7 @@ class RegressionTest(object):
             self._default_tolerance[self._DISCRETE] = tol
             
         # requested criteria, skipping time and timesteps
-        for key in set(cfg_criteria.keys() + test_data.keys()):
+        for key in set(list(cfg_criteria.keys()) + list(test_data.keys())):
             if key != self._TIME and key != self._TIMESTEPS:
                 self._set_criteria(key, cfg_criteria, test_data)
 
@@ -411,23 +410,17 @@ class RegressionTest(object):
 
         print("done", file=testlog)
 
-    def new_test(self, status, testlog):
+    def new_test(self, save_dt_history, status, testlog):
         """
         A new test does not have a gold standard regression test. We
         will check to see if a gold standard file exists (an error),
         then create the gold file by copying the current regression
         file to gold.
         """
-        # this needs some extra things...
-        import parse_logfile
-        import amanzi_xml.utils.io as aio
-        import amanzi_xml.utils.search as asearch
-        import amanzi_xml.utils.errors as aerrors
-        
         gold_dir = self.dirname(True)
         run_dir = self.dirname(False)
 
-        # verify that the gold file does not exisit
+        # verify that the gold file does not exist
         if os.path.isdir(gold_dir) or os.path.isfile(gold_dir):
             print("ERROR: test '{0}' was classified as new, "
                                "but a gold file already "
@@ -466,62 +459,69 @@ class RegressionTest(object):
                 print(message, file=testlog)
                 status.fail = 1
 
-            # build the dt history
-            with open(os.path.join(gold_dir, self.name()+'.stdout'),'r') as fid:
-                good, bad = parse_logfile.parse_logfile(fid)
+            if save_dt_history:
+                # this needs some extra things...
+                import plot_timestep_history
+                import amanzi_xml.utils.io as aio
+                import amanzi_xml.utils.search as asearch
+                import amanzi_xml.utils.errors as aerrors
+                        
+                # build the dt history
+                with open(os.path.join(gold_dir, self.name()+'.stdout'),'r') as fid:
+                    good, bad = plot_timestep_history.parse_logfile(fid)
 
-            if not os.path.isdir('data'):
-                os.mkdir('data')
+                if not os.path.isdir('data'):
+                    os.mkdir('data')
 
-            with h5py.File(os.path.join('data', "{0}_dts.h5".format(self.name())), 'w') as fid:
-                fid.create_dataset("timesteps", data=86400.*good[:,2]) # note conversion from days back to seconds
-            print("Wrote file: data/{0}_dts.h5".format(self.name()), file=testlog)
+                with h5py.File(os.path.join('data', "{0}_dts.h5".format(self.name())), 'w') as fid:
+                    fid.create_dataset("timesteps", data=86400.*good[:,2]) # note conversion from days back to seconds
+                print("Wrote file: data/{0}_dts.h5".format(self.name()), file=testlog)
 
-            # build a new xml file with these specific timestep history
-            print("Renaming: {0}.xml to {0}_orig.xml".format(self.name()), file=testlog)
-            os.rename(self.name()+".xml", self.name()+"_orig.xml")
+                # build a new xml file with these specific timestep history
+                print("Renaming: {0}.xml to {0}_orig.xml".format(self.name()), file=testlog)
+                os.rename(self.name()+".xml", self.name()+"_orig.xml")
 
-            xml = aio.fromFile(self.name()+"_orig.xml", True)
+                xml = aio.fromFile(self.name()+"_orig.xml", True)
 
-            # -- checkpoint by list of cycles
-            filenames = self.filenames(gold_dir)
-            chp_cycles = [int(os.path.split(f)[-1][10:-3]) for f in filenames]
-            try:
-                chp = asearch.getElementByNamePath(xml, "checkpoint")
-            except aerrors.MissingXMLError:
-                pass
-            else:
-                # empty the checkpoint list
-                for i in range(len(chp)):
-                    chp.pop(chp[0].get('name'))
+                # -- checkpoint by list of cycles
+                filenames = self.filenames(gold_dir)
+                chp_cycles = [int(os.path.split(f)[-1][10:-3]) for f in filenames]
+                try:
+                    chp = asearch.getElementByNamePath(xml, "checkpoint")
+                except aerrors.MissingXMLError:
+                    pass
+                else:
+                    # empty the checkpoint list
+                    for i in range(len(chp)):
+                        chp.pop(chp[0].get('name'))
 
-                chp.setParameter('cycles', 'Array(int)', chp_cycles)
+                    chp.setParameter('cycles', 'Array(int)', chp_cycles)
 
-            # -- update timestep controller, nonlinear solvers
-            for ti in asearch.generateElementByNamePath(xml, "time integrator"):
-                asearch.generateElementByNamePath(ti, "limit iterations").next().setValue(100)
-                asearch.generateElementByNamePath(ti, "diverged tolerance").next().setValue(1.e10)
+                # -- update timestep controller, nonlinear solvers
+                for ti in asearch.generateElementByNamePath(xml, "time integrator"):
+                    asearch.generateElementByNamePath(ti, "limit iterations").next().setValue(100)
+                    asearch.generateElementByNamePath(ti, "diverged tolerance").next().setValue(1.e10)
 
-                asearch.getElementByNamePath(ti, "timestep controller type").setValue("from file")
-                ts_hist = ti.sublist("timestep controller from file parameters")
-                ts_hist.setParameter("file name", "string", "../data/{0}_dts.h5".format(self.name()))
+                    asearch.getElementByNamePath(ti, "timestep controller type").setValue("from file")
+                    ts_hist = ti.sublist("timestep controller from file parameters")
+                    ts_hist.setParameter("file name", "string", "../data/{0}_dts.h5".format(self.name()))
 
-            # -- write the new xml
-            print("Writing: {0}.xml".format(self.name()), file=testlog)
-            aio.toFile(xml, '{0}.xml'.format(self.name()))
+                # -- write the new xml
+                print("Writing: {0}.xml".format(self.name()), file=testlog)
+                aio.toFile(xml, '{0}.xml'.format(self.name()))
 
-            # clean the gold directory
-            filenames.append(os.path.join(gold_dir, 'ats_version.txt'))
-            # for f in os.listdir(gold_dir):
-            #     if not os.path.join(gold_dir, f) in filenames:
-            #         os.remove(os.path.join(gold_dir, f))
+                # clean the gold directory
+                filenames.append(os.path.join(gold_dir, 'ats_version.txt'))
+                # for f in os.listdir(gold_dir):
+                #     if not os.path.join(gold_dir, f) in filenames:
+                #         os.remove(os.path.join(gold_dir, f))
 
-            # git add stuff
-            filenames.append('{}_orig.xml'.format(self.name()))
-            filenames.append('{}.xml'.format(self.name()))
-            filenames.append(os.path.join('data','{}_dts.h5'.format(self.name())))
-            msg = subprocess.check_output(['git', 'add', '-f',]+filenames)
-            print(msg, file=testlog)
+                # git add stuff
+                filenames.append('{}_orig.xml'.format(self.name()))
+                filenames.append('{}.xml'.format(self.name()))
+                filenames.append(os.path.join('data','{}_dts.h5'.format(self.name())))
+                msg = subprocess.check_output(['git', 'add', '-f',]+filenames)
+                print(msg, file=testlog)
 
         print("done", file=testlog)
 
@@ -592,7 +592,7 @@ class RegressionTest(object):
     def _compare(self, h5_current, h5_gold, status, testlog):
         """Check that output hdf5 file has not changed from the baseline.
         """
-        for key, tolerance in self._criteria.iteritems():
+        for key, tolerance in self._criteria.items():
             if key == self._TIME:
                 self._check_tolerance(h5_current.attrs['time'], h5_gold.attrs['time'],
                                       self._TIME, tolerance, status, testlog)
@@ -856,7 +856,7 @@ class RegressionTestManager(object):
                                                             user_tests, testlog)
         self._create_tests(user_suites, user_tests, timeout, check_performance, testlog)
 
-    def run_tests(self, dry_run, update, new_test, check_only, run_only, testlog):
+    def run_tests(self, dry_run, update, new_test, check_only, run_only, testlog, save_dt_history=False):
         """
         Run the tests specified in the config file.
 
@@ -878,7 +878,7 @@ class RegressionTestManager(object):
         """
         if self.num_tests() > 0:
             if new_test:
-                self._run_new(dry_run, testlog)
+                self._run_new(save_dt_history, dry_run, testlog)
             elif update:
                 self._run_update(dry_run, testlog)
             elif check_only:
@@ -961,7 +961,7 @@ class RegressionTestManager(object):
 
         self._print_file_summary(dry_run, "passed", "failed", testlog)
 
-    def _run_new(self, dry_run, testlog):
+    def _run_new(self, save_dt_history, dry_run, testlog):
         """
         Run the tests and create new gold files.
         """
@@ -978,7 +978,7 @@ class RegressionTestManager(object):
             test.run(dry_run, status, testlog)
 
             if not dry_run and status.skipped == 0:
-                test.new_test(status, testlog)
+                test.new_test(save_dt_history, status, testlog)
             self._add_to_file_status(status)
             self._test_summary(test.name(), status, dry_run,
                                "created", "error creating new test files.", testlog)
@@ -1510,7 +1510,7 @@ def setup_testlog(txtwrap):
     print("Test directory : ", file=testlog)
     print("    {0}".format(test_dir), file=testlog)
 
-    if os.environ.has_key("ATS_SRC_DIR"):
+    if 'ATS_SRC_DIR' in os.environ:
         tempfile = "{0}/tmp-ats-regression-test-hg-info.txt".format(test_dir)
 
         print("\nATS repository status :", file=testlog)

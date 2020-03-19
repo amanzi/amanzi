@@ -62,8 +62,11 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
     }
   }
 
+
   limiter_->Init(plist, flux_);
-  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value); 
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
+  
 
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
@@ -117,9 +120,6 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-      //if (abs(tcc_flux) > 1e-9)
-      // if ((mesh_->face_centroid(f)[0]>9.5)&&(mesh_->face_centroid(f)[0]<10.5)&& (abs(mesh_->face_centroid(f)[1]-0.5)<1e-6))
-      //   std::cout<<mesh_->get_comm()->MyPID()<<" c "<<c1<<" mass "<<tcc_flux<<" "<<mesh_->face_centroid(f)<<"\n";
       
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = limiter_->getValue(c1, xf);
@@ -138,7 +138,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
     ComputeAddSourceTerms(t, 1., f_component, current_component_, current_component_);
   }
 
-  // if (domain_name_ == "surface"){
+  // if (domain_ == "surface"){
   //   double mass = 0., mass_mov_loc = 0;
   //   for (int c = 0; c < ncells_owned; c++)  mass_mov_loc += f_component[c];
   //   mesh_->get_comm()->SumAll(&mass_mov_loc, &mass, 1);

@@ -39,6 +39,8 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
   is_source_differentiable_ = plist_->get<bool>("source term is differentiable", true);
   source_finite_difference_ = plist_->get<bool>("source term finite difference", false);
   eps_ = plist_->get<double>("source term finite difference epsilon", 1.e-8);
+
+  modify_predictor_positivity_preserving_ = plist_->get<bool>("modify predictor positivity preserving", false);
   
   theta_ = plist_->get<double>("time discretization theta", 1.0);
   AMANZI_ASSERT(theta_ <= 1.);
@@ -243,6 +245,28 @@ int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   return 0;
 }
 
+bool
+SurfaceBalanceBase::ModifyPredictor(double h,
+        Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u)
+{
+  if (modify_predictor_positivity_preserving_) {
+    int n_modified = 0;
+    for (auto compname : *u->Data()) {
+      auto& u_c = *u->Data()->ViewComponent(compname,false);
+      for (int i=0; i!=u_c.MyLength(); ++i) {
+        if (u_c[0][i] < 0.) {
+          n_modified++;
+          u_c[0][i] = 0.;
+        }
+      }
+    }
+    int n_modified_global = 0;
+    u->Data()->Comm()->SumAll(&n_modified, &n_modified_global, 1);
+    return n_modified_global > 0;
+  }
+  return false;
+}
 
 } // namespace
 } // namespace

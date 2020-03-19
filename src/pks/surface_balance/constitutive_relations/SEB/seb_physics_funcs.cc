@@ -122,20 +122,28 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
   // calculate evaporation prefactors
   if (vapor_pressure_air > vapor_pressure_ground) { // condensation
     return 0.;
-  } else if (surf.saturation_gas == 0.) { // ponded water present
-    return 0.;
-  } else { // evaporating from soil
+  } else {
+    return EvaporativeResistanceCoef(surf.saturation_gas,
+            surf.porosity, surf.dz, params.Clapp_Horn_b);
+  }
+}
+
+double EvaporativeResistanceCoef(double saturation_gas,
+        double porosity, double dessicated_zone_thickness, double Clapp_Horn_b) {
+  double Rsoil;
+  if (saturation_gas == 0.) {
+    Rsoil = 0.; // ponded water
+  } else {
     // Equation for reduced vapor diffusivity
     // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
-    double vp_diffusion = 0.000022 * (std::pow(surf.porosity,2))
-                          * std::pow((1-(0.0556/surf.porosity)),(2+3*params.Clapp_Horn_b));
-
+    double vp_diffusion = 0.000022 * (std::pow(porosity,2))
+                          * std::pow((1-(0.0556/porosity)),(2+3*Clapp_Horn_b));
     // Sakagucki and Zeng 2009 eqaution (10)
-    double L_Rsoil = std::exp(std::pow(surf.saturation_gas, 5));
-    L_Rsoil = surf.dz * (L_Rsoil -1) * (1/(std::exp(1.)-1));
-    double Rsoil = L_Rsoil/vp_diffusion;
-    return Rsoil;
+    double L_Rsoil = std::exp(std::pow(saturation_gas, 5));
+    L_Rsoil = dessicated_zone_thickness * (L_Rsoil -1) * (1/(std::exp(1.)-1));
+    Rsoil = L_Rsoil/vp_diffusion;
   }
+  return Rsoil;
 }
 
 
@@ -154,6 +162,7 @@ double LatentHeat(double resistance_coef,
                   double vapor_pressure_air,
                   double vapor_pressure_skin,
                   double Apa) {
+  AMANZI_ASSERT(resistance_coef <= 1.);
   return resistance_coef * density_air * latent_heat_fusion * 0.622
       * (vapor_pressure_air - vapor_pressure_skin) / Apa;
 }
@@ -260,6 +269,7 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 
   double Rsoil = EvaporativeResistanceGround(surf, met, params, vapor_pressure_air, vapor_pressure_skin);
   double coef = 1.0 / (Rsoil + 1.0/(Dhe*Sqig));
+
 
   // NUMERICAL DOWNREGULATION due to difficulty evaporating ice...
   //  coef *= surf.unfrozen_fraction;

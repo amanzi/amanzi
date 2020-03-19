@@ -23,7 +23,6 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziComm.hh"
 #include "AmanziTypes.hh"
 
-
 #include "InputAnalysis.hh"
 #include "Units.hh"
 #include "TimeStepManager.hh"
@@ -128,20 +127,17 @@ void Coordinator::coordinator_init() {
   // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
-      //analysis.Init(parameter_list_->sublist(mesh->first));
-      // std::cout<<mesh->first<<"\n";
-      // std::cout<<parameter_list_->sublist("analysis").sublist(mesh->first)<<"\n";
       analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
       analysis.RegionAnalysis();
       analysis.OutputBCs();
     }
-
   }
 
   
   // create the time step manager
   tsm_ = Teuchos::rcp(new Amanzi::TimeStepManager());
   
+
 }
 
 void Coordinator::setup() {

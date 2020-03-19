@@ -70,7 +70,7 @@ def parseTemplate(filename):
     """Parses a template, replacing with filename docs as provided."""
     fname_in = filename+".in"
     fname_out = filename
-    print "Reading template: '{}'".format(fname_in)
+    print("Reading template: '{}'".format(fname_in))
 
     with open(fname_in,'r') as fid:
         template = fid.read()
@@ -87,11 +87,11 @@ def parseTemplate(filename):
             missed_keys.append(key)
             template_dict[key] = "** DOC GENERATION ERROR: file not found '{}' **".format(key)
                 
-    print "  Unable to find:", missed_keys
+    print("  Unable to find:", missed_keys)
     with open(fname_out,'w') as fid:
         fid.write(template.format(**template_dict))
 
-    print "Wrote: '{}'".format(fname_out)
+    print("Wrote: '{}'".format(fname_out))
         
 
 if __name__ == "__main__":
