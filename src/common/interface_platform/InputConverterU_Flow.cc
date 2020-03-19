@@ -924,13 +924,17 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
                               fracture_regions_.end());
     }
 
-    // get optional complessibility
+    // get permeability
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      double aperture(0.0);
+      std::string type, model;
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+      if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "FPM for " << *it;
  
