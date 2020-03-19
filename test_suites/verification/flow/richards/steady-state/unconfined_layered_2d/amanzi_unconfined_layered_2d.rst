@@ -92,16 +92,16 @@ are selected. Input parameters for the numerical simulation are summarized as:
 
 * Material properties
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
+	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002 \cdot 10^{-3} \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* Hydraulic conductivities
 
-		* confined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \cdot K_{xx}` 
+		* confined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \, K_{xx}` 
 		* confining unit: :math:`K_{zz} = 0.001142 ft/d`, :math:`K_{xx} = K_{zz}/10` 
-		* unconfined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \cdot K_{xx}` 
+		* unconfined aquifer: :math:`K_{xx} = 1 ft/d`, :math:`K_{zz} = 10 \, K_{xx}` 
 
 	* van Genuchten (1980) - Mualem (1976) parameters for a gravel based on Phifer et al. (2006):
 
-		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
+		* :math:`\alpha = 0.143 cm^{-1} (1.46\cdot 10^{-3} Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
 
@@ -113,12 +113,11 @@ are selected. Input parameters for the numerical simulation are summarized as:
 Results and Comparisons
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+Results show good match with the semi-analytic solution.
+
 .. plot:: verification/unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.py
    :align: center
 
-(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
-
-.... include:: table_values.txt
 
 
 References
@@ -134,3 +133,6 @@ Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. P
 van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
 
 
+.. todo:: 
+
+  * insert table comparing analytic and Amanzi hydraulic heads

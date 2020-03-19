@@ -42,13 +42,13 @@ The analytical solution addresses the advection-dispersion equation in the fract
   \frac{\partial (\phi_f\, C_f)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q} C_f) 
-  + \boldsymbol{\nabla} \cdot (\phi_f\, (\boldsymbol{D} + \tau_f M_f) \boldsymbol{\nabla} C_f) 
-  - \frac{\phi_m\,\tau_m}{L_m}\, M_m \nabla C_m,
+  + \boldsymbol{\nabla} \cdot (\phi_f\, (\boldsymbol{D} + \tau_f M) \boldsymbol{\nabla} C_f) 
+  - \frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m,
 
 and the linear ODE in the matrix:
 
 .. math::
-  \frac{\partial (\phi_m\, C_m)}{\partial t} = -\nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_m).
+  \frac{\partial (\phi_m\, C_m)}{\partial t} = -\nabla\cdot (\phi_m\, \tau_m\, M \nabla C_m).
 
 Here
 :math:`\phi` is porosity,
@@ -101,8 +101,9 @@ Variables
 * :math:`\phi_m=0.25` constant matrix porosity
 * :math:`\alpha_L=1.0` longitudinal dispersivity [m]
 * :math:`\alpha_T=0.0` transverse dispersivity [m]
-* :math:`M_m=2.65 \cdot 10^{-9}` molecular diffusion coefficient [m^2/s]
+* :math:`M=2.65 \cdot 10^{-9}` molecular diffusion coefficient [m^2/s]
 * :math:`\tau_m = 1.0` matrix tortuosity [-]
+* :math:`\tau_f = 1.0` fracture tortuosity [-]
 * :math:`L_m = 0.8` characteristic matrix depth [m]
 * :math:`T=200` simulation time [y]
 
@@ -114,7 +115,8 @@ Boundary conditions: :math:`C_f(x,t)=1` [kg/m^3] at :math:`x=0.0` of fracture.
 Results and Comparison
 ----------------------
 
-The concentrantaion at the fracture end point as the function of time.
+The concentrantaion at the fracture end point as the function of time
+(results are in a good agreement with the analytic solution):
 
 .. plot:: amanzi_dual_porosity_1d.py
    :align: center
@@ -159,20 +161,9 @@ About
     * tracer_conc.txt
 
 
-Status
-~~~~~~
-
-  * Input Files:
-
-    * Version 2.3 - unstructured: runs 1D problem, results are in excellent agreement
-
-  * Documentation:
-
-    * Complete for unstructured mesh framework, including line plots. Tables will be added.
-
 .. todo:: 
 
-  * Documentation:
-
-    * Decide whether to add simple dual porosity model with Warren-Root parameter.
-    * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?
+  * Add references
+  * Complete for unstructured mesh framework, including line plots. Tables will be added.
+  * Decide whether to add simple dual porosity model with Warren-Root parameter.
+  * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?

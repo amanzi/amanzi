@@ -7,7 +7,7 @@ Capabilities Tested
  * partially saturated one-dimensional flow
  * steady-state flow
  * pressure and flux boundary conditions
- * porous medium with discontinuous properties (absolute permeability, van Genuchten models)
+ * porous medium with discontinuous properties (permeability, van Genuchten parameters)
 
 
 Background
@@ -100,7 +100,7 @@ residual saturation is :math:`s_r=0.104651`.
 The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11 [m^2]`.
 
 The loam region corresponds to the right part of the pressure profile.
-The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-4}`, :math:`m=0.375`, and 
 residual saturation is :math:`s_r=0.186047`.
 The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13} [m^2]`.
 
@@ -119,14 +119,14 @@ Case #3: Sand Loam Layers
 
 The steady-state solution is shown below.
 Now, we swap the sand is loam regions.
-The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-}4`, :math:`m=0.375`, and 
+The van Genuchten parameters are :math:`\alpha=4.08622\cdot 10^{-4}`, :math:`m=0.375`, and 
 residual saturation is :math:`s_r=0.186047`.
 The absolute permeability is given by the isotropic tensor :math:`K=5.9236 \cdot 10^{-13} [m^2]`.
 
 The sand region corresponds to the right part of the pressure profile.
 The van Genuchten parameters are :math:`\alpha=1.532333\cdot 10^{-3}`, :math:`m=0.6666667`, and 
 residual saturation is :math:`s_r=0.104651`.
-The absolute permeability is given by the isotropic tensor :math:`K=1.18472E-11 [m^2]`.
+The absolute permeability is given by the isotropic tensor :math:`K=1.18472 \cdot 10^{-11} [m^2]`.
 
 
 Results and Comparison
@@ -164,7 +164,7 @@ About
   * amanzi_infiltration_loam_sand_1d-u.xml
   * amanzi_infiltration_sand_loam_1d-u.xml
 
-    * Spec Version 2.3, unstructured mesh framework
-    * mesh:  generated internally 
+    * Spec 2.3, unstructured mesh framework
+    * mesh is generated internally 
 
 
