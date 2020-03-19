@@ -171,6 +171,21 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
     S->RequireFieldEvaluator(co2a_key_);
   }
 
+  longwave_key_ = Keys::getKey(domain_surf_,"longwave_radiation");
+  if (!S->HasField(longwave_key_)){    
+    S->RequireField(longwave_key_, "state")->SetMesh(mesh_surf_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(longwave_key_);
+  }
+
+  incident_rad_key_ = Keys::getKey(domain_surf_,"incident_radiation");
+  if (!S->HasField(incident_rad_key_)){    
+    S->RequireField(incident_rad_key_, "state")->SetMesh(mesh_surf_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(incident_rad_key_);
+  }
+
+  
   if (!surface_only_){
     poro_key_ = Keys::readKey(*plist_, "domain", "porosity", "base_porosity");
     if (!S->HasField(poro_key_)){    
@@ -350,10 +365,16 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
   S_next_->GetFieldEvaluator(co2a_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& co2a = *S_next_->GetFieldData(co2a_key_)->ViewComponent("cell", false);
 
+  S_next_->GetFieldEvaluator(longwave_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& longwave_rad = *S_next_->GetFieldData(longwave_key_)->ViewComponent("cell", false);
 
-  if (S_next_->cycle() == 1102){
-    std::cout<<"Reached cycle 1102\n";
-  }
+  S_next_->GetFieldEvaluator(incident_rad_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& incident_rad = *S_next_->GetFieldData(incident_rad_key_)->ViewComponent("cell", false);
+
+
+  // if (S_next_->cycle() == 1102){
+  //   std::cout<<"Reached cycle 1102\n";
+  // }
   
   bool run_photo = false;
   bool run_veg_dym = false;
@@ -471,7 +492,7 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
     photo_input.cair = co2a[0][0] * patm * 1.e-6;             // CO2 partial pressure
     //photo_input.cair = 5985;
     
-    photo_input.rb = 1./wind[0][0];                       // Boundary layer resistance (s/m)
+    photo_input.rb = std::min(10., 1./wind[0][0]);             // Boundary layer resistance (s/m)
     //photo_input.rb = 3.;
 
     
@@ -481,10 +502,10 @@ bool FATES_PK::AdvanceStep(double t_old, double t_new, bool reinit){
     photo_input.albgrd[1] = 0.15;
     photo_input.albgri[0] = 0.1;
     photo_input.albgri[1] = 0.1;
-    photo_input.solad[0] = 200.0;
-    photo_input.solad[1] = 40.0;
-    photo_input.solai[0] = 50.0;
-    photo_input.solai[1] = 10.0;    
+    photo_input.solad[0] = 0.8*incident_rad[0][0];
+    photo_input.solad[1] = 0.2*longwave_rad[0][0];
+    photo_input.solai[0] = 0.8*incident_rad[0][0];
+    photo_input.solai[1] = 0.2*longwave_rad[0][0];    
     jday = 1.0 + (t_new - t_site_dym_)/dt_site_dym_;
 
     wrap_sunfrac(&radnum, photo_input.solad, photo_input.solai);

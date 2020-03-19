@@ -134,6 +134,7 @@ namespace BGC {
     Key precip_key_, air_temp_key_, humidity_key_, wind_key_, co2a_key_;
     Key poro_key_, sat_key_, suc_key_, soil_temp_key_;
     Key met_decomp_key_, cel_decomp_key_, lig_decomp_key_;
+    Key longwave_key_, incident_rad_key_;
     std::vector<double> t_soil_;  // soil temperature
     std::vector<double> vsm_; // volumetric soil moisture vsm_ = S * poro;
     std::vector<double> poro_; // porosity
