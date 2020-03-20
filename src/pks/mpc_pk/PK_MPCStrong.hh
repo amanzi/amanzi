@@ -115,7 +115,6 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
 
   Teuchos::RCP<Operators::TreeOperator> op_tree_;
   Teuchos::RCP<TreeVector> op_tree_rhs_;
-
   
  private:
   // factory registration

@@ -51,11 +51,23 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 
 
 /* ******************************************************************
+* Constructor from a tree vector and number of blocks
+****************************************************************** */
+TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks) :
+    tvs_(tvs),
+    block_diagonal_(false)
+{
+  blocks_.resize(nblocks, Teuchos::Array<Teuchos::RCP<const Operator> >(nblocks, Teuchos::null));
+}
+
+
+/* ******************************************************************
 * Populate block matrix with pointers to operators.
 ****************************************************************** */
 void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
   blocks_[i][j] = op;
 }
+
 
 /* ******************************************************************
 * Populate block matrix with pointers to operators.

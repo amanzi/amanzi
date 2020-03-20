@@ -19,7 +19,6 @@
 
 // Amanzi
 #include "FnBaseDefs.hh"
-#include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
 #include "PK_Factory.hh"
@@ -98,7 +97,7 @@ class Darcy_PK : public Flow_PK {
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
   // access methods
-  Teuchos::RCP<Operators::Operator> op() { return op_; }
+  virtual Teuchos::RCP<Operators::Operator> op() override { return op_; }
   Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
 
  private:

@@ -94,7 +94,9 @@ class Energy_PK : public PK_PhysicalBDF {
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
   void ComputeBCs(const CompositeVector& u);
 
-  // access for unit tests
+  // access 
+  Teuchos::RCP<Operators::Operator> op() { return op_preconditioner_; }
+  // -- for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
   Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
 

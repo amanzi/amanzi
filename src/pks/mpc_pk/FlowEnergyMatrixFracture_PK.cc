@@ -144,7 +144,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto pk_fracture = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[1]);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
 
   op_tree_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree());
   op_tree_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree());
@@ -154,7 +154,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto mesh_matrix = S_->GetMesh("domain");
   auto mesh_fracture = S_->GetMesh("fracture");
 
-  // auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
+  auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   // auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
   // int npoints_owned = mmap.NumMyPoints();
 

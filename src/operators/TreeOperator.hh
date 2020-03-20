@@ -49,6 +49,7 @@ class TreeOperator {
  public:
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
+  TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
   virtual ~TreeOperator() = default;
 
   // main members
