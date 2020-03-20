@@ -132,8 +132,6 @@ class Richards_PK : public Flow_PK {
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
 
   // -- access methods
-  Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
-  const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // -- verbose output and visualization methods
