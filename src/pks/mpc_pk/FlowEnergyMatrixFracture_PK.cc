@@ -155,8 +155,8 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto mesh_fracture = S_->GetMesh("fracture");
 
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
-  // auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
-  // int npoints_owned = mmap.NumMyPoints();
+  auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
+  int npoints_owned = mmap.NumMyPoints();
 
   // auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
   // auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
@@ -167,7 +167,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
   //             ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  // // -- indices transmissibimility coefficients for matrix-fracture flux
+  // -- indices transmissibimility coefficients for matrix-fracture flux
   // const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
   // double rho = *S->GetScalarData("fluid_density");
   // double gravity;
@@ -200,7 +200,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // inds_fracture->resize(np);
   // values->resize(np);
 
-  // // -- operators
+  // -- operators
   // Teuchos::ParameterList oplist;
 
   // auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
@@ -226,11 +226,10 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   // op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
-  // // create a global problem
+  // create a global problem
   // pk_matrix->op_diff()->ApplyBCs(true, true, true);
 
   op_tree_->SymbolicAssembleMatrix();
-  op_tree_->AssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -276,6 +275,8 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   // blocks, we use global matrix-vector multiplication instead.
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   op_tree_->AssembleMatrix();
+  // std::cout << *op_tree_->A() << std::endl; exit(0);
+  exit(0);
 
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
