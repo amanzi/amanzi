@@ -280,7 +280,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
         *vo_->os() << "water retention curve file: wrm_" << name << std::endl;
       }
-    } else if (strcmp(model.c_str(), "brooks_corey")) {
+    } else if (strcmp(model.c_str(), "brooks_corey") == 0) {
       double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
@@ -924,13 +924,17 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
                               fracture_regions_.end());
     }
 
-    // get optional complessibility
+    // get permeability
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      double aperture(0.0);
+      std::string type, model;
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+      if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "FPM for " << *it;
  

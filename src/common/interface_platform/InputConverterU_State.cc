@@ -138,7 +138,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- permeability. We parse matrix and fractures together.
       double perm_x, perm_y, perm_z;
       bool perm_err(false), perm_init_from_file(false), conductivity(false);
-      std::string perm_file, perm_attribute, perm_format, unit("m^2");
+      std::string perm_file, perm_format, unit("m^2");
 
       node = GetUniqueElementByTagsString_(inode, "permeability", flag);
       if (!flag) {
@@ -208,16 +208,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
       }
 
-      // -- fracture permeability and aperture
-      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
-      if (flag) {
-        fractures_ = true;
-        TranslateFieldEvaluator_(node, "aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
-      } else if (fractures_) {
-        msg << "fracture_permeability element must be specified for all materials or none.";
-        Exceptions::amanzi_throw(msg);
-      }
-
       // -- specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
@@ -282,7 +272,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
+        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture", "fracture");
         TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, out_ev, "normal");
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
@@ -591,19 +581,29 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 * Select proper evaluator based on the list of input parameters.
 ****************************************************************** */
 void InputConverterU::TranslateFieldEvaluator_(
-    DOMNode* node, std::string field, std::string unit,
+    DOMNode* node, const std::string& field, const std::string& unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
     Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-    std::string data_key)
+    std::string data_key, std::string domain)
 {
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-  if (type == "file") {
+  if (type == "file") {  // Amanzi restart file
     std::string filename = GetAttributeValueS_(node, "filename");
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("field evaluator type", "constant variable");
+  } else if (type == "h5file") {  // regular h5 file
+    std::string filename = GetAttributeValueS_(node, "filename");
+    Teuchos::ParameterList& field_ev = out_ev.sublist(field);
+    field_ev.set<std::string>("field evaluator type", "independent variable from file")
+        .set<std::string>("filename", filename)
+        .set<std::string>("domain name", domain)
+        .set<std::string>("component name", "cell")
+        .set<std::string>("mesh entity", "cell")
+        .set<int>("number of DoFs", 1)
+        .set<bool>("constant in time", true);
   } else {
     double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 

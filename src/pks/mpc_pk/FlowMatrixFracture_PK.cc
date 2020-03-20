@@ -265,7 +265,10 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
-  // diagonal blocks in tree operator are the Darcy PKs
+  // diagonal blocks in tree operator must be Darcy PKs
+  for (int i = 0; i < 2; ++i) {
+    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy");
+  }
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
 
