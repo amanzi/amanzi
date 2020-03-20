@@ -457,7 +457,7 @@ void Mesh_simple::BuildMaps_()
 
   if (edges_requested_) {
     std::vector<int> edges(num_edges_);
-    for (int i=0; i< num_edges_; i++) edges[i] = i;
+    for (int n = 0; n < num_edges_; ++n) edges[n] = n;
 
     edge_map_ = Teuchos::rcp(new Epetra_Map(-1, num_edges_, &edges[0], 0, *get_comm()));
   }
@@ -889,10 +889,12 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
   AMANZI_ASSERT(setents != NULL);
   
   std::string setname_internal = setname + std::to_string(kind);
-  auto it = sets_.find(setname_internal);
-  if (it != sets_.end()) {
-    *setents = it->second;
-    return;
+  {
+    auto it = sets_.find(setname_internal);
+    if (it != sets_.end()) {
+      *setents = it->second;
+      return;
+    }
   }
 
   // create the side set from the region definition
