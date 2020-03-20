@@ -257,15 +257,18 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
                                                Teuchos::RCP<TreeVector> f)
 {
   // generate local matrices and apply sources and boundary conditions
+  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
-  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   op_tree_->AssembleMatrix();
-
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
-  // diagonal blocks in tree operator and the Darcy PKs
+  // diagonal blocks in tree operator must be Darcy PKs
+  for (int i = 0; i < 2; ++i) {
+    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy");
+  }
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
 
