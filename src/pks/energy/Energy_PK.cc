@@ -35,7 +35,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<TreeVector>& soln) :
     PK_PhysicalBDF(pk_tree, glist, S, soln),
     glist_(glist),
-    vo_(Teuchos::null),
     passwd_("thermal")
 {
   std::string pk_name = pk_tree.name();

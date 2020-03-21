@@ -18,9 +18,11 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "VerboseObject.hh"
+
+#include "Debugger.hh"
+#include "Key.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
-#include "Debugger.hh"
 
 namespace Amanzi {
 
@@ -78,7 +80,7 @@ class PK_Physical : virtual public PK {
  protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string domain_;
+  Key domain_;
 
   // solution and evaluator
   std::string key_;

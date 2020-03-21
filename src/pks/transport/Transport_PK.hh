@@ -172,7 +172,6 @@ class Transport_PK : public PK_Physical {
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // names of state fields 
   Key tcc_key_;
@@ -199,7 +198,6 @@ class Transport_PK : public PK_Physical {
 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
-  Key domain_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
 

@@ -125,8 +125,6 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
-  Key domain_;  // computational domain
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
   Teuchos::RCP<State> S_;

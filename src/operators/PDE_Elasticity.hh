@@ -79,8 +79,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
-
-  OperatorType operator_type_;
 };
 
 }  // namespace Operators

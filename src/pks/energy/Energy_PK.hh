@@ -108,8 +108,6 @@ class Energy_PK : public PK_PhysicalBDF {
   int nfaces_owned, nfaces_wghost;
 
  protected:
-  Key domain_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -145,9 +143,6 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   bool prec_include_enthalpy_;
-
- protected:
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Energy

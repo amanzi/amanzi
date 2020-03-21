@@ -73,7 +73,7 @@ class PK_MPC : virtual public PK {
                                  TreeVector& soln) {};
 
   // -- identifier accessor
-  std::string name() const { return name_; }
+  virtual std::string name() const { return name_; }
 
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator begin() { return sub_pks_.begin(); }
@@ -86,9 +86,6 @@ class PK_MPC : virtual public PK {
   // list of the PKs coupled by this MPC
   typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
   SubPKList sub_pks_;
-
-  // single solution vector for the global problem
-  Teuchos::RCP<TreeVector> solution_;
 
   // single solution vector for this pk only
   Teuchos::RCP<TreeVector> my_solution_;
@@ -111,11 +108,13 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
-  pk_tree_(pk_tree),
   global_list_(global_list),
-  S_(S),
-  solution_(soln)
+  pk_tree_(pk_tree),
+  S_(S)
 {
+  // instead of calling the base class contructor, we initialize here
+  solution_ = soln;
+
   // name the PK
   name_ = pk_tree.name();
   auto found = name_.rfind("->");
