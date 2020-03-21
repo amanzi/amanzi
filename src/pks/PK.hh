@@ -133,7 +133,7 @@ class PK {
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
-  Teuchos::RCP<TreeVector> solution_;
+  Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
 
   // states
   Teuchos::RCP<const State> S_;

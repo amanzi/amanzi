@@ -63,7 +63,6 @@ class RankEvaluator : public FieldEvaluator {
  protected:
   std::string my_key_;
   std::string my_mesh_;
-  Teuchos::ParameterList plist_;
   bool computed_once_;
 
  private:

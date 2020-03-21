@@ -47,15 +47,12 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
-  Teuchos::RCP<Teuchos::ParameterList> my_list_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> particle_density_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
-
-  Teuchos::RCP<VerboseObject> vo_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
