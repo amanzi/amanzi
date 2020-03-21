@@ -314,9 +314,9 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    double u = uc[0][c];
-    kc[0][c] = Conduction(c, u);
-    dkdT_c[0][c] = ConductionDerivative(c, u);
+    double temp = uc[0][c];
+    kc[0][c] = Conduction(c, temp);
+    dkdT_c[0][c] = ConductionDerivative(c, temp);
   }
 
   std::vector<int>& bc_model = bc_->bc_model();

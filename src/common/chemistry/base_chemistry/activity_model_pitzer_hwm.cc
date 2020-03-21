@@ -835,7 +835,6 @@ void ActivityModelPitzerHWM::ParseBeta0VirialCoefficient(const std::string& data
   @details Parse Beta1 virial coefficients
 */
 void ActivityModelPitzerHWM::ParseBeta1VirialCoefficient(const std::string& data) {
-  bool isdebug(false);
   std::string semicolon(";");
   std::string space(" ");
   StringTokenizer b1(data, space);

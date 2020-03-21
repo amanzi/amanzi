@@ -61,8 +61,8 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-      v1 = fm - cm;
+      const AmanziGeometry::Point& fm2 = mesh_->face_centroid(f);
+      v1 = fm2 - cm;
       Mc(i, j) = (v1 * v2) / volume;
     }
   }
@@ -412,8 +412,8 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 
     for (int j = i; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
+      const AmanziGeometry::Point& v3 = mesh_->face_normal(f);
+      Wc(i, j) = (v1 * v3) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
     }
   }
 
@@ -591,8 +591,8 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   int i1, i2, k, l;
   double s1, s2, area1, area2;
   for (int i = 0; i < d_ - 1; i++) {
-    int i1 = 2 * i;
-    int i2 = i1 + 1;
+    i1 = 2 * i;
+    i2 = i1 + 1;
 
     int f = faces[i1];
     const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
@@ -600,7 +600,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
 
     s1 = 1.0;
     for (int j = i2; j < nrows; j++) {
-      int f = faces[j];
+      f = faces[j];
       const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
       area2 = mesh_->face_area(f);
 

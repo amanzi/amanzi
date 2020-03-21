@@ -392,7 +392,7 @@ void LimiterCell::LimiterScalar_(
       int f = faces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-      for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
+      for (int k = 0; k < dim; ++k) gradient_c[k] = grad[k][c];
       double u1_add = gradient_c * (xf - xc);
       u1f = u1 + u1_add;
 
@@ -989,7 +989,7 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
         mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
 
         for (int k = 0; k < cells.size(); ++k) {
-          double value = field[component_][cells[k]];
+          value = field[component_][cells[k]];
           bounds_c[0][c] = std::min(bounds_c[0][c], value);
           bounds_c[1][c] = std::max(bounds_c[1][c], value);
         }

@@ -292,8 +292,7 @@ void MeshExtractedManifold::face_get_cells_internal_(
 
   cells->clear();
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
-    auto it = parent_to_entid_[CELL].find(f);
+    auto it = parent_to_entid_[CELL].find(faces[i]);
     if (it != parent_to_entid_[CELL].end()) cells->push_back(it->second);
   }
 }

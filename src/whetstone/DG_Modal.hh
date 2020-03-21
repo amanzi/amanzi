@@ -151,7 +151,6 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
 
   // integrate traces of polynomials on face f
   double coef00, coef01, coef10, coef11;
-  Polynomial p0, p1, q0, q1;
   VectorPolynomial pgrad;
   std::vector<const PolynomialBase*> polys(2);
 

@@ -896,7 +896,7 @@ void State::Setup() {
       Exceptions::amanzi_throw(message);
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
@@ -957,7 +957,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
 
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "processing field \"" << f_it->first << "\"\n";
     }
     

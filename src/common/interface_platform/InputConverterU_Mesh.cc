@@ -99,7 +99,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   children = inode->getChildNodes();
 
   for (int i = 0; i < children->getLength(); i++) {
-    DOMNode* inode = children->item(i);
+    inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       char* tagname = mm.transcode(inode->getNodeName());   
 

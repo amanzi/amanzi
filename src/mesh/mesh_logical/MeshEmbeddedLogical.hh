@@ -60,16 +60,16 @@ class MeshEmbeddedLogical : public Mesh {
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
-          const Entity_ID entid) const;
+                                 const Entity_ID entid) const override;
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
-  Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
+  Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const override;
 
   // Get cell type - UNKNOWN, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX, POLYHED
   // See MeshDefs.hh
   virtual
-  Cell_type cell_get_type(const Entity_ID cellid) const;
+  Cell_type cell_get_type(const Entity_ID cellid) const override;
 
   //
   // General mesh information
@@ -79,12 +79,12 @@ class MeshEmbeddedLogical : public Mesh {
   // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
-                            const Parallel_type ptype) const;
+                            const Parallel_type ptype) const override;
 
 
   // Global ID of any entity
   virtual
-  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override;
 
 
 
@@ -98,14 +98,14 @@ class MeshEmbeddedLogical : public Mesh {
   // Get nodes of a cell
   virtual
   void cell_get_nodes(const Entity_ID cellid,
-                      Entity_ID_List *nodeids) const;
+                      Entity_ID_List *nodeids) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
   void cell_get_faces_and_bisectors(const Entity_ID cellid,
           Entity_ID_List *faceids,
           std::vector<AmanziGeometry::Point> *bisectors,
-          const bool ordered=false) const;
+          const bool ordered=false) const override;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -115,13 +115,13 @@ class MeshEmbeddedLogical : public Mesh {
   // In 2D, nfnodes is 2
   virtual
   void face_get_nodes(const Entity_ID faceid,
-                      Entity_ID_List *nodeids) const;
+                      Entity_ID_List *nodeids) const override;
 
 
   // Get nodes of edge
   virtual
   void edge_get_nodes(const Entity_ID edgeid,
-                      Entity_ID *nodeid0, Entity_ID *nodeid1) const;
+                      Entity_ID *nodeid0, Entity_ID *nodeid1) const override;
 
   // Upward adjacencies
   //-------------------
@@ -132,7 +132,7 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void node_get_cells(const Entity_ID nodeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const;
+                      Entity_ID_List *cellids) const override;
 
 
   // Faces of type 'ptype' connected to a node - The order of faces is
@@ -141,7 +141,7 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void node_get_faces(const Entity_ID nodeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *faceids) const;
+                      Entity_ID_List *faceids) const override;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node - The order of faces is not guarnateed to be the same
@@ -150,13 +150,13 @@ class MeshEmbeddedLogical : public Mesh {
   void node_get_cell_faces(const Entity_ID nodeid,
                            const Entity_ID cellid,
                            const Parallel_type ptype,
-                           Entity_ID_List *faceids) const;
+                           Entity_ID_List *faceids) const override;
 
   // Cells of type 'ptype' connected to an edge
   virtual
   void edge_get_cells(const Entity_ID edgeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const {
+                      Entity_ID_List *cellids) const override {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -193,14 +193,14 @@ class MeshEmbeddedLogical : public Mesh {
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual
   void node_get_coordinates(const Entity_ID nodeid,
-                            AmanziGeometry::Point *ncoord) const;
+                            AmanziGeometry::Point *ncoord) const override;
 
 
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
   virtual
   void face_get_coordinates(const Entity_ID faceid,
-                            std::vector<AmanziGeometry::Point> *fcoords) const;
+                            std::vector<AmanziGeometry::Point> *fcoords) const override;
 
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -209,7 +209,7 @@ class MeshEmbeddedLogical : public Mesh {
   // Number of nodes is vector size divided by number of spatial dimensions
   virtual
   void cell_get_coordinates(const Entity_ID cellid,
-                            std::vector<AmanziGeometry::Point> *ccoords) const;
+                            std::vector<AmanziGeometry::Point> *ccoords) const override;
 
   //
   // Mesh modification
@@ -223,7 +223,7 @@ class MeshEmbeddedLogical : public Mesh {
 
   virtual
   void node_set_coordinates(const Entity_ID nodeid,
-                            const double *ncoord);
+                            const double *ncoord) override;
 
 
   // deformation not supported
@@ -231,7 +231,7 @@ class MeshEmbeddedLogical : public Mesh {
   int deform(const std::vector<double>& target_cell_volumes_in,
              const std::vector<double>& min_cell_volumes_in,
              const Entity_ID_List& fixed_nodes,
-             const bool move_vertical);
+             const bool move_vertical) override;
 
   //
   // Epetra maps
@@ -256,7 +256,7 @@ class MeshEmbeddedLogical : public Mesh {
   // defined only on exterior faces
 
   virtual
-  const Epetra_Import& exterior_face_importer(void) const;
+  const Epetra_Import& exterior_face_importer(void) const override;
 
 
   //
@@ -268,7 +268,7 @@ class MeshEmbeddedLogical : public Mesh {
   void get_set_entities(const Set_ID setid,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
+                        Entity_ID_List *entids) const override;
 
   virtual
   void get_set_entities_and_vofs(const std::string setname,
@@ -279,7 +279,7 @@ class MeshEmbeddedLogical : public Mesh {
 
   // Miscellaneous functions
   virtual
-  void write_to_exodus_file(const std::string filename) const;
+  void write_to_exodus_file(const std::string filename) const override;
 
  protected:
   // individual versions, if recompute is used

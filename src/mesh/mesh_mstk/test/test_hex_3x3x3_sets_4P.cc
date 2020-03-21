@@ -51,9 +51,8 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
   // Load a mesh consisting of 3x3x3 elements
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm,gm));
 
-  Teuchos::ParameterList::ConstIterator i;
-  for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
-        const std::string reg_name = reg_spec.name(i);     
+  for (auto it = reg_spec.begin(); it != reg_spec.end(); ++it) {
+    const std::string reg_name = reg_spec.name(it);
 
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
@@ -69,9 +68,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
     // Get the region info directly from the XML and compare
   
-    Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
-
-    std::string shape = reg_params.name(j);
+    std::string shape = reg_params.name(reg_params.begin());
 
     if (shape == "region: all") {
       // CELLs

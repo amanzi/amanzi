@@ -88,9 +88,9 @@ int AdvanceToSteadyState(
 
     // update and swap matrix water content
     if (S->HasField("water_content_matrix")) {
-      const CompositeVector& wc = *S->GetFieldData("water_content_matrix");
-      CompositeVector& wc_prev = *S->GetFieldData("prev_water_content_matrix", "flow");
-      wc_prev = wc;
+      const CompositeVector& wcm = *S->GetFieldData("water_content_matrix");
+      CompositeVector& wcm_prev = *S->GetFieldData("prev_water_content_matrix", "flow");
+      wcm_prev = wcm;
     }
 
     // commit step

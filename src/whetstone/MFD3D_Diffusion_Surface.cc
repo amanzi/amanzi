@@ -78,8 +78,8 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 
     for (int j = i; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_face_normal(f, c);
-      Wc(i, j) = (v1 * v2) / volume;
+      const AmanziGeometry::Point& v4 = mesh_face_normal(f, c);
+      Wc(i, j) = (v1 * v4) / volume;
     }
   }
 

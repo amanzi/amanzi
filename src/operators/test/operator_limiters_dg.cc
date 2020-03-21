@@ -85,18 +85,18 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
 
-  for (int i = 0; i < 3; i++) {
+  for (int tst = 0; tst < 3; ++tst) {
     Teuchos::ParameterList plist;
     plist.set<int>("polynomial_order", 2);
     plist.set<bool>("limiter extension for transport", false);
 
-    if (i == 0) {
+    if (tst == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "face to cells");
-    } else if (i == 1) {
+    } else if (tst == 1) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to closest cells");
-    } else if (i == 2) {
+    } else if (tst == 2) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to all cells");
     }
@@ -159,7 +159,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     double fraction = 100.0 * nids / grad_c.GlobalLength();
     if (MyPID == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
-          LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
+          LIMITERS[tst].c_str(), err_int, err_glb, gnorm, fraction);
     CHECK(fraction < 15.0);
 
     // calculate true L2 error of limited gradient

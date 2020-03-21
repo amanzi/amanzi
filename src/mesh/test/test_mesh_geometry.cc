@@ -40,9 +40,9 @@ TEST(MESH_GEOMETRY_PLANAR)
     framework_names.push_back("MSTK");
   }
 
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -53,7 +53,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
       meshfactory.set_preference(prefs);
 
       mesh = meshfactory.create(0.0,0.0,1.0,1.0,2,2);
@@ -226,9 +226,9 @@ TEST(MESH_GEOMETRY_SURFACE)
   framework_names.push_back("MSTK");
 #endif
 
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -239,7 +239,7 @@ TEST(MESH_GEOMETRY_SURFACE)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
 
       meshfactory.set_preference(prefs);
 
@@ -409,9 +409,9 @@ TEST(MESH_GEOMETRY_SOLID)
   framework_names.push_back("MSTK");
 #endif
   
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -422,7 +422,7 @@ TEST(MESH_GEOMETRY_SOLID)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
 
       meshfactory.set_preference(prefs);
 

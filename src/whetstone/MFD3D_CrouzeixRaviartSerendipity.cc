@@ -165,9 +165,6 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     const ProjectorType type,
     const Polynomial* moments, Polynomial& uc)
 {
-  // create integration object 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-
   // selecting regularized basis
   Polynomial ptmp;
   Basis_Regularized<AmanziMesh::Mesh> basis;

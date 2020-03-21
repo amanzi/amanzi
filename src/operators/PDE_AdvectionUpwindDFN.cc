@@ -110,7 +110,7 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
 *     H(u): advected quantity (i.e. enthalpy)
 ****************************************************************** */
 void PDE_AdvectionUpwindDFN::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& q,
     const Teuchos::Ptr<const CompositeVector>& dHdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;

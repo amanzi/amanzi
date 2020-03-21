@@ -84,7 +84,7 @@ TEST(MOAB_HEX_3x3x3_4P)
     CHECK_EQUAL(cell_map.GID(c), mesh.GID(c, AmanziMesh::CELL));
     mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
 
-    for (int j = 0; j < 6; j++) {
+    for (j = 0; j < 6; j++) {
       int f = face_map.LID(mesh.GID(c2f[j], AmanziMesh::FACE));
       CHECK_EQUAL(f, c2f[j]);
       CHECK_EQUAL(1, abs(c2fdirs[j]));
