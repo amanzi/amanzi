@@ -57,12 +57,12 @@ using namespace Amanzi::AmanziGeometry;
 
   Teuchos::ParameterList state_plist = glist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-  S -> RegisterMesh("domain", mesh);
+  S->RegisterMesh("domain", mesh);
   
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
     } catch (...) {
       CHECK(false);
@@ -80,7 +80,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
     } catch (...) {
       CHECK(false);
