@@ -59,20 +59,10 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // upwind options (not used yet)
-  Errors::Message msg;
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
-  // } else {
-  //   msg << "PDE_DiffusionNLFVwithBndFaces: unknown or not supported upwind scheme specified.";
-  //   Exceptions::amanzi_throw(msg);
-  }
-
-  // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
-    msg << "PDE_DiffusionNLFVwithBndFaces: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
-    Exceptions::amanzi_throw(msg);
   }
 
   // Newton correction terms
@@ -88,9 +78,11 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+    Errors::Message msg;
     msg << "PDE_DiffusionNLFVwithBndFaces: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?";
     Exceptions::amanzi_throw(msg);
   } else {
+    Errors::Message msg;
     msg << "PDE_DiffusionNLFVwithBndFaces: invalid parameter \"" << jacobian 
         << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);

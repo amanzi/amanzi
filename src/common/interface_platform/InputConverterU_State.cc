@@ -400,9 +400,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
-        DOMNodeList* children = node->getChildNodes();
-        for (int j = 0; j < children->getLength(); ++j) {
-          DOMNode* jnode = children->item(j);
+        DOMNodeList* children2 = node->getChildNodes();
+        for (int j = 0; j < children2->getLength(); ++j) {
+          DOMNode* jnode = children2->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
@@ -435,9 +435,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         std::vector<double> vals(ncomp_g, 0.0);
 
-        DOMNodeList* children = node->getChildNodes();
-        for (int j = 0; j < children->getLength(); ++j) {
-          DOMNode* jnode = children->item(j);
+        DOMNodeList* children2 = node->getChildNodes();
+        for (int j = 0; j < children2->getLength(); ++j) {
+          DOMNode* jnode = children2->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
@@ -516,9 +516,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag && ncomp_l > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
-        DOMNodeList* children = node->getChildNodes();
-        for (int j = 0; j < children->getLength(); ++j) {
-          DOMNode* jnode = children->item(j);
+        DOMNodeList* children2 = node->getChildNodes();
+        for (int j = 0; j < children2->getLength(); ++j) {
+          DOMNode* jnode = children2->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
@@ -670,8 +670,8 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
         char* text_content = mm.transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);
 
-        for (int i = 0; i < names.size(); i++) {
-          regions.push_back(names[i]);
+        for (int n = 0; n < names.size(); ++n) {
+          regions.push_back(names[n]);
         } 
       }
     }
