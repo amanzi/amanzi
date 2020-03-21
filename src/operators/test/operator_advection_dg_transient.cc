@@ -260,7 +260,7 @@ AdvectionFn<Analytic>::AdvectionFn(
 ***************************************************************** */
 template <class Analytic>
 void AdvectionFn<Analytic>::FunctionalTimeDerivative(
-    double t, const CompositeVector& u, CompositeVector& f)
+    double t, const CompositeVector& u, CompositeVector& func)
 {
   int d = mesh_->space_dimension();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -382,7 +382,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
   global_op_->ComputeResidual(u, u1);
 
   // invert vector
-  op_mass->global_operator()->Apply(u1, f);
+  op_mass->global_operator()->Apply(u1, func);
 
   // statistics: l2 norm of solution
   u.Dot(u, &l2norm);

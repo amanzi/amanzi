@@ -294,7 +294,7 @@ template<class Vector, class VectorSpace>
 void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         const Teuchos::Ptr<const Vector>& u_old)
 {
-  int i, j, k, nvec, new_f;
+  int k, nvec, new_f;
   double s, hkk, hkj, cj;
   double  *hk, *hj, *c;
 

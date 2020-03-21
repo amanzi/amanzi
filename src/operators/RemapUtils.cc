@@ -72,7 +72,7 @@ int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
 
   // hack
   if (f2->HasComponent("grav")) {
-    Epetra_MultiVector& f2f = *f2->ViewComponent("grav", true);
+    Epetra_MultiVector& f2f_g = *f2->ViewComponent("grav", true);
 
     for (int f = 0; f < nfaces_wghost; ++f) {
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -80,7 +80,7 @@ int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
 
       double tmp(0.0);
       for (int n = 0; n < ncells; ++n) tmp += f1c[0][cells[n]];
-      f2f[0][f] /= (tmp / ncells); 
+      f2f_g[0][f] /= (tmp / ncells); 
     }
   }
 

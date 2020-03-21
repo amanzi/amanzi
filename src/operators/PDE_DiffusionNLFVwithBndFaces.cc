@@ -82,13 +82,13 @@ void PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
-    std::string name = "Diffusion: FACE_CELLBNDFACE Jacobian terms";
+    name = "Diffusion: FACE_CELLBNDFACE Jacobian terms";
     jac_op_ = Teuchos::rcp(new Op_Face_CellBndFace(name, mesh_));
 
     global_op_->OpPushBack(jac_op_);
   } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("PDE_DiffusionNLFVwithBndFaces: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
+    msg << "PDE_DiffusionNLFVwithBndFaces: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?";
     Exceptions::amanzi_throw(msg);
   } else {
     msg << "PDE_DiffusionNLFVwithBndFaces: invalid parameter \"" << jacobian 
@@ -497,8 +497,8 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(
     WhetStone::DenseMatrix Aface(2, 2);
 
     if (ncells == 2) {
-      int k1 = OrderCellsByGlobalId_(cells, c3, c4);
-      int k2 = 1 - k1;
+      k1 = OrderCellsByGlobalId_(cells, c3, c4);
+      k2 = 1 - k1;
       Aface(0, 0) = matrix[k1][f];
       Aface(0, 1) = -matrix[k1][f];
 
@@ -1016,7 +1016,7 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
    
   for (int i = 1; i < dim_; i++) {
     c3 = (*stencil_cells_[i])[f];       
-    int f1 = (*stencil_faces_[i])[f];
+    f1 = (*stencil_faces_[i])[f];
     if (c3 >= 0) {
       mesh_->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells_tmp);
       OrderCellsByGlobalId_(cells_tmp, c1, c2);
@@ -1034,7 +1034,7 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
 
   for (int i = 1; i < dim_; i++) {
     c3 = (*stencil_cells_[dim_ + i])[f];       
-    int f1 = (*stencil_faces_[dim_ + i])[f];
+    f1 = (*stencil_faces_[dim_ + i])[f];
     if (c3 >= 0) {
       mesh_->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells_tmp);
       OrderCellsByGlobalId_(cells_tmp, c1, c2);

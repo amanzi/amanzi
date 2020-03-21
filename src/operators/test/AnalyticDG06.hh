@@ -81,9 +81,9 @@ class AnalyticDG06 : public AnalyticDGBase {
 
   // -- accumulation
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& a) override {
-    a.Reshape(d_, 0, true); 
-    a.set_origin(p);
+                                  Amanzi::WhetStone::Polynomial& acc) override {
+    acc.Reshape(d_, 0, true); 
+    acc.set_origin(p);
   }
 
   // -- velocity
