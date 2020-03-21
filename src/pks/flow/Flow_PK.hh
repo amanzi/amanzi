@@ -125,7 +125,6 @@ class Flow_PK : public PK_PhysicalBDF {
  protected:
   int dim;
 
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   bool peaceman_model_;
 

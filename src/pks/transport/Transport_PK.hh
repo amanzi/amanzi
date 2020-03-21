@@ -198,7 +198,6 @@ class Transport_PK : public PK_Physical {
 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
-  Teuchos::RCP<State> S_;
   std::string passwd_;
 
   bool subcycling_, use_transport_porosity_;

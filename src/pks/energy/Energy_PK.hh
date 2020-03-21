@@ -109,8 +109,7 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
-  // state and primary field
-  Teuchos::RCP<State> S_;
+  // primary field
   std::string passwd_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 

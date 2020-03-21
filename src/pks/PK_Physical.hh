@@ -65,8 +65,8 @@ class PK_Physical : virtual public PK {
   virtual void Solution_to_State(const TreeVector& soln,
                                   const Teuchos::RCP<State>& S);
 
-  // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  // overloaded function also gets the primary field evaulator.
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
