@@ -121,8 +121,8 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
           bc_value[f] = influx;
         } else if (pc < pcmax) {
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          double f = 2 * (pcreg - pc) / pcreg;
-          double q = (7 - 2 * f - f * f) / 8;
+          double a = 2 * (pcreg - pc) / pcreg;
+          double q = (7 - 2 * a - a * a) / 8;
           bc_value[f] = q * influx; 
         } else {
           double I = influx / pcreg;

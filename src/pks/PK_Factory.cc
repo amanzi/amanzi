@@ -147,9 +147,8 @@ PKFactory::CreatePK(std::string pk_name,
     message << "PK Factory: PK \"" << pk_name << "\" requested type \""
             << pk_type << "\" which is not a registered PK type.\n";
     
-    for (map_type::iterator iter=GetMap()->begin();
-         iter!=GetMap()->end(); ++iter) {
-      message  << std::endl << "  option: " << iter->first;
+    for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
+      message  << std::endl << "  option: " << it->first;
     }
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);
