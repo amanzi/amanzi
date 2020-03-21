@@ -66,7 +66,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
-  int f, c1, c2;
+  int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
@@ -205,7 +205,7 @@ void TransportExplicit_PK::DudtOld(double t,
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
-  int f, c1, c2;
+  int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);

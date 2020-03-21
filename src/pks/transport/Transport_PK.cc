@@ -790,9 +790,9 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  Teuchos::RCP<CompositeVector> tcc;
-  tcc = S->GetFieldData(tcc_key_, passwd_);
-  *tcc = *tcc_tmp;
+  Teuchos::RCP<CompositeVector> tcc_aux;
+  tcc_aux = S->GetFieldData(tcc_key_, passwd_);
+  *tcc_aux = *tcc_tmp;
 }
 
 
