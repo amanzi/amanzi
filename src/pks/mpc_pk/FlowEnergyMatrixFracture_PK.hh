@@ -67,8 +67,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Teuchos::RCP<VerboseObject> vo_;
-
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
 };

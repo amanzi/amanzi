@@ -62,8 +62,6 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_fracture_ = S->GetMesh("fracture");
   int dim = mesh_domain_->space_dimension();
 
-  Teuchos::ParameterList& elist = S->FEList();
-
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs, so we need to define it here
   // -- pressure
@@ -271,22 +269,20 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
     Teuchos::RCP<TreeVector> f)
 {
   // generate local matrices and apply sources and boundary conditions
+  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
-  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   op_tree_->AssembleMatrix();
-  // std::cout << *op_tree_->A() << std::endl; exit(0);
-  exit(0);
-
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
+// std::cout << *op_tree_->A() << std::endl; exit(0);
   AMANZI_ASSERT(!ierr);
   
   // // diagonal blocks in tree operator and the Darcy PKs
-  // auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
-  // auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
-
-  // f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
-  // f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
+  for (int i = 0; i < 2; ++i) {
+    auto pk = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i]);
+    f->SubVector(i)->Update(-1.0, *pk->op_tree_rhs(), 1.0);
+  }
 }
 
 

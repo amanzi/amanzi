@@ -272,8 +272,8 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
 
-  f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
-  f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
+  f->SubVector(0)->Data()->Update(-1.0, *pk_matrix->op()->rhs(), 1.0);
+  f->SubVector(1)->Data()->Update(-1.0, *pk_fracture->op()->rhs(), 1.0);
 }
 
 

@@ -62,8 +62,6 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key sat_liquid_key_, prev_sat_liquid_key_;
   Key wc_key_, prev_wc_key_;
 
-  Teuchos::RCP<VerboseObject> vo_;
-
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
 };

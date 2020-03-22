@@ -213,30 +213,20 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // MPC_PKs that build on top of this may need a tree operator. Since
   // we cannot use solution_, we create a TVS from scratch
-  int i0, i1;
-  Teuchos::RCP<Flow::Flow_PK> pk_flow;
-  Teuchos::RCP<Energy::Energy_PK> pk_energy;
+  Teuchos::RCP<Flow::Flow_PK> pk_flow = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[0]);
+  Teuchos::RCP<Energy::Energy_PK> pk_energy = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[1]);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  for (int i = 0; i < 2; ++i) {
-    if (sub_pks_[i]->name() == "flow") {
-      pk_flow = Teuchos::rcp_dynamic_cast<Flow::Flow_PK>(sub_pks_[i]);
-      auto tvs0 = Teuchos::rcp(new TreeVectorSpace());
-      tvs0->SetData(Teuchos::rcpFromRef(pk_flow->op()->DomainMap()));
-      tvs->PushBack(tvs0);
-      i0 = i;
-    } else {
-      pk_energy = Teuchos::rcp_dynamic_cast<Energy::Energy_PK>(sub_pks_[i]);
-      auto tvs0 = Teuchos::rcp(new TreeVectorSpace());
-      tvs0->SetData(Teuchos::rcpFromRef(pk_energy->op()->DomainMap()));
-      tvs->PushBack(tvs0);
-      i1 = i;
-    }
-  }
+  tvs->PushBack(CreateTVSwithOneLeaf(pk_flow->op()->DomainMap()));
+  tvs->PushBack(CreateTVSwithOneLeaf(pk_energy->op()->DomainMap()));
 
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_->SetOperatorBlock(i0, i0, pk_flow->op());
-  op_tree_->SetOperatorBlock(i1, i1, pk_energy->op());
+  op_tree_->SetOperatorBlock(0, 0, pk_flow->op());
+  op_tree_->SetOperatorBlock(1, 1, pk_energy->op());
+
+  op_tree_rhs_ = Teuchos::rcp(new TreeVector(tvs));
+  op_tree_rhs_->PushBack(CreateTVwithOneLeaf(pk_flow->op()->rhs()));
+  op_tree_rhs_->PushBack(CreateTVwithOneLeaf(pk_energy->op()->rhs()));
 }
   
 

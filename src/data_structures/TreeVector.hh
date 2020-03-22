@@ -156,6 +156,16 @@ class TreeVector {
   std::vector<Teuchos::RCP<TreeVector> > subvecs_;
 };
 
+
+// non-member functions 
+inline
+Teuchos::RCP<TreeVector> CreateTVwithOneLeaf(Teuchos::RCP<CompositeVector> cv) {
+  auto tvs = CreateTVSwithOneLeaf(cv->Map());
+  auto tv = Teuchos::rcp(new TreeVector(tvs));
+  tv->SetData(cv);
+  return tv;
+}
+
 } // namespace
 
 
