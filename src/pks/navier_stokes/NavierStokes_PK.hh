@@ -152,7 +152,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   std::string solver_name_;
  
  private:
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   int dim;
 

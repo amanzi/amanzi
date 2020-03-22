@@ -60,7 +60,7 @@ class PK_MPC : virtual public PK {
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
@@ -94,9 +94,6 @@ class PK_MPC : virtual public PK {
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
   Teuchos::RCP<Teuchos::ParameterList> my_list_;
   Teuchos::ParameterList pk_tree_;
-
-  // states
-  Teuchos::RCP<State> S_;
 };
 
 
@@ -109,9 +106,10 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
   global_list_(global_list),
-  pk_tree_(pk_tree),
-  S_(S)
+  pk_tree_(pk_tree)
 {
+  S_ = S;
+
   // instead of calling the base class contructor, we initialize here
   solution_ = soln;
 
@@ -202,7 +200,7 @@ void PK_MPC<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 }
 
 template <class PK_Base>
-void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<const State>& S,
+void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<State>& S_inter,
                                    const Teuchos::RCP<State>& S_next) {
   for (typename SubPKList::iterator pk = sub_pks_.begin();

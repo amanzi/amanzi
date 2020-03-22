@@ -16,9 +16,9 @@ Dummy_PK::Dummy_PK(Teuchos::ParameterList& pk_tree,
         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
         const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) :
-    S_(S),
     soln_(soln)
 {
+  S_ = S;
   glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
   ti_list_ = glist_->sublist("cycle driver").sublist("time intervals").sublist("TI 0");
 }
