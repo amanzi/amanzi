@@ -43,7 +43,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
       K_default_(1.0)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_ELASTICITY;
+    pde_type_ = PDE_ELASTICITY;
     Init_(plist);
   }
 

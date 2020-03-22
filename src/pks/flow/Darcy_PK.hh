@@ -98,7 +98,12 @@ class Darcy_PK : public Flow_PK {
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
   // access methods
-  Teuchos::RCP<Operators::Operator> op() { return op_; }
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override { return op_; } 
+
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+      my_pde(const Operators::PDEType& type) override { return op_diff_; } 
+
   Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
 
  private:

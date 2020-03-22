@@ -58,12 +58,9 @@ class PK_Physical : virtual public PK {
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                  TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln,
-                                  const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln,
-                                  const Teuchos::RCP<State>& S);
+  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln);
+  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S);
+  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S);
 
   // overloaded function also gets the primary field evaulator.
   virtual void set_states(const Teuchos::RCP<State>& S,

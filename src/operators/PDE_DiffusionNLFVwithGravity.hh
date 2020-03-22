@@ -43,7 +43,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }
@@ -54,7 +54,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_GRAVITY;
   }
 
   PDE_DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
@@ -63,7 +63,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_GRAVITY;
   }
 
   PDE_DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
@@ -73,7 +73,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }
@@ -86,7 +86,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
     PDE_DiffusionWithGravity(mesh),
     PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }

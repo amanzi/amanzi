@@ -63,7 +63,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       PDE_Diffusion(global_op),
       transmissibility_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    pde_type_ = PDE_DIFFUSION_FV;
     Init_(plist);
   }
 
@@ -72,7 +72,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       PDE_Diffusion(mesh),
       transmissibility_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    pde_type_ = PDE_DIFFUSION_FV;
     Init_(plist);
   }
 
@@ -81,7 +81,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       PDE_Diffusion(mesh),
       transmissibility_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FV;
+    pde_type_ = PDE_DIFFUSION_FV;
     Init_(plist);
   }
 
