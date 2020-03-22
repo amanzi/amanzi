@@ -38,7 +38,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
       K_(Teuchos::null)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_ELECTROMAGNETICS;
+    pde_type_ = PDE_ELECTROMAGNETICS;
     Init_(plist);
   }
 
