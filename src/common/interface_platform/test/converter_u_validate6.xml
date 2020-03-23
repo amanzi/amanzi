@@ -121,18 +121,13 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <ParameterList name="function">
-          <ParameterList name="fracture">
-            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="filename" type="string" value="aperture.h5"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="mesh entity" type="string" value="cell"/>
+        <Parameter name="number of DoFs" type="int" value="1"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 
@@ -494,7 +489,7 @@
 	<ParameterList name="FPM for fracture">
 	  <Parameter name="region" type="string" value="fracture"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
-	  <Parameter name="aperture" type="double" value="1.00000000000000005e-04"/>
+	  <Parameter name="aperture" type="double" value="0.0"/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">

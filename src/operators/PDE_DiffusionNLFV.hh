@@ -43,7 +43,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       PDE_Diffusion(global_op),
       stencil_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
+    pde_type_ = PDE_DIFFUSION_NLFV;
     Init_(plist);
   }
 
@@ -52,7 +52,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
+    pde_type_ = PDE_DIFFUSION_NLFV;
     Init_(plist);
   }
 
@@ -61,7 +61,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
-    operator_type_ = OPERATOR_DIFFUSION_NLFV;
+    pde_type_ = PDE_DIFFUSION_NLFV;
     Init_(plist);
   }
 

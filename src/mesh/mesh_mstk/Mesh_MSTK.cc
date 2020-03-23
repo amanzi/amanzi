@@ -4839,7 +4839,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
   // Go through all mesh sets and replace any merged entities
 
-  MEntity_ptr delent, keepent;
+  MEntity_ptr delent;
   int nsets = MESH_Num_MSets(mesh_);
   idx = 0;
   while ((delent = List_Next_Entry(merged_entity_pairs_all, &idx))) {
@@ -5575,7 +5575,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
 
       if (diffdim > 0) {
         int found = 0;
-        int idx = 0;
+        idx = 0;
         MEntity_ptr ent;
         while ((ent = List_Next_Entry(src_entities, &idx))) {
           if (MSet_Contains(mset_parent, ent)) {
@@ -5595,7 +5595,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
       else
         subentdim = (MType) (entdim-diffdim);
       
-      MSet_ptr mset = MSet_New(mesh_,internal_name.c_str(),subentdim);
+      mset = MSet_New(mesh_,internal_name.c_str(),subentdim);
 
 
       // Populate the set

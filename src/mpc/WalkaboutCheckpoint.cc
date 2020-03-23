@@ -61,7 +61,8 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
   // optional flux constraint at nodes
   // -- flag
   bool projection(false);
-  if (pk_ != Teuchos::null && pk_->name() == "flow") projection = true;
+  if (pk_ != Teuchos::null && 
+     (pk_->name() == "darcy" || pk_->name() == "richards")) projection = true;
 
   // least-square recovery at mesh nodes 
   AmanziMesh::Entity_ID_List faces;

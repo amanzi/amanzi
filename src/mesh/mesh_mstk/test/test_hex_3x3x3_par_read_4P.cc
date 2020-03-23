@@ -47,7 +47,7 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
 
-      for (int j=0; j<6; j++)
+      for (j=0; j<6; j++)
 	{
 	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );

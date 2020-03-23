@@ -28,7 +28,7 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
       g_(g),
       rho_(rho)
   {
-    operator_type_ = OPERATOR_DIFFUSION_FRACTURED_MATRIX;
+    pde_type_ = PDE_DIFFUSION_FRACTURED_MATRIX;
   }
 
   // main interface members

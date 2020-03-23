@@ -236,11 +236,11 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto schema = op_preconditioner_elas_->global_schema_col();
-        for (auto it = schema.begin(); it != schema.end(); ++it) {
+        auto schema_pc = op_preconditioner_elas_->global_schema_col();
+        for (auto jt = schema_pc.begin(); jt != schema_pc.end(); ++jt) {
           AmanziMesh::Entity_kind kind;
           WhetStone::DOF_Type type;
-          std::tie(kind, type, std::ignore) = *it;
+          std::tie(kind, type, std::ignore) = *jt;
 
           bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null);
           bc->set_bc_name("no slip");

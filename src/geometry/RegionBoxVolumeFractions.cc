@@ -521,8 +521,8 @@ std::cout << "updating map" << std::endl;
     // -- update face-to-nodes maps
     for (int i = 0; i < result.size(); ++i) {
       int nnodes = faces3[i].size();
-      for (int k = 0; k < nnodes; ++k) {
-        faces3[i][k] = map[faces3[i][k]];
+      for (int n = 0; n < nnodes; ++n) {
+        faces3[i][n] = map[faces3[i][n]];
       }
     }
   }

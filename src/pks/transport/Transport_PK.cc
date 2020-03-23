@@ -52,9 +52,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-  S_(S),
   soln_(soln)
 {
+  S_ = S;
+
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
   if (found != std::string::npos) pk_name.erase(0, found + 2);
@@ -101,9 +102,10 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            Teuchos::RCP<State> S, 
                            const std::string& pk_list_name,
                            std::vector<std::string>& component_names) :
-    S_(S),
     component_names_(component_names)
 {
+  S_ = S;
+
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
@@ -790,9 +792,9 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  Teuchos::RCP<CompositeVector> tcc;
-  tcc = S->GetFieldData(tcc_key_, passwd_);
-  *tcc = *tcc_tmp;
+  Teuchos::RCP<CompositeVector> tcc_aux;
+  tcc_aux = S->GetFieldData(tcc_key_, passwd_);
+  *tcc_aux = *tcc_tmp;
 }
 
 

@@ -144,10 +144,10 @@ void Basis_Regularized<MyMesh>::BilinearFormNaturalToMy(
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetOrder();
 
-    a1[n] = (bll->monomial_scales())[m];
-    a2[n] = (brr->monomial_scales())[m];
+    a1[n] = (bll->monomial_scales())[k];
+    a2[n] = (brr->monomial_scales())[k];
   }
 
   // calculate R^T * A * R

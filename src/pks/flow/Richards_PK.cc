@@ -283,8 +283,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::RCP<Teuchos::ParameterList> physical_models = 
-        Teuchos::sublist(fp_list_, "physical models and assumptions");
     std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
 
     if (pom_name == "compressible: pressure function") {
@@ -613,7 +611,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
  
     std::string ini_method_name = ini_list.get<std::string>("method", "none");
     if (ini_method_name == "saturated solver") {
-      std::string name = ini_list.get<std::string>("linear solver");
+      name = ini_list.get<std::string>("linear solver");
       SolveFullySaturatedProblem(t_ini, *solution, name);
 
       bool clip(false);

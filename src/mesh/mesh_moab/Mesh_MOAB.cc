@@ -793,7 +793,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
     if (face_dirs) {
       for (int i = 0; i < nf; i++) {
-        moab::EntityHandle face = ordfaces[i];
+        face = ordfaces[i];
         int sidenum, offset;
         
         result = mbcore_->side_number(cell, face, sidenum, cell_facedirs[i], offset);
@@ -1061,7 +1061,7 @@ moab::Tag Mesh_MOAB::build_set(
     const Teuchos::RCP<const AmanziGeometry::Region>& region,
     const Entity_kind kind) const
 {
-  int celldim = Mesh::manifold_dimension();
+  int celldim_ = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
   int one = 1;
@@ -1134,7 +1134,7 @@ moab::Tag Mesh_MOAB::build_set(
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
       
-      if (celldim == 2) {
+      if (celldim_ == 2) {
         int ncells = num_entities(CELL, Parallel_type::ALL);              
 
         for (int ic = 0; ic < ncells; ic++) {
@@ -1352,7 +1352,7 @@ moab::Tag Mesh_MOAB::build_set(
     }
 
     else if (boolregion->operation() == AmanziGeometry::UNION) {
-      moab::Range entset, entset1;
+      moab::Range entset1;
       switch (kind) {
       case CELL:
         for (int i = 0; i < tags.size(); i++) {
@@ -1388,7 +1388,6 @@ moab::Tag Mesh_MOAB::build_set(
         break;
       }
       
-      std::string new_internal_name;
       for (int r = 0; r < nreg; r++)
         new_internal_name = new_internal_name + "+" + region_names[r];
     }
@@ -1435,7 +1434,7 @@ moab::Tag Mesh_MOAB::build_set(
         break;
       }
       
-      std::string new_internal_name = region_names[0];
+      new_internal_name = region_names[0];
       for (int r = 0; r < nreg; r++)
         new_internal_name = new_internal_name + "-" + region_names[r];
     }
@@ -1468,7 +1467,6 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 {
   int idx, i, lid, one=1;
   bool found(false);
-  int celldim = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
 
   AMANZI_ASSERT(setents != NULL);

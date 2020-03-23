@@ -139,7 +139,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // Get and write node coordinate info
   // -- get coords
-  double *nodes = new double[nnodes_local*3];
+  double *xyz = new double[nnodes_local*3];
   globaldims[0] = nnodes_global;
   globaldims[1] = 3;
   localdims[0] = nnodes_local;
@@ -149,12 +149,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   for (int i = 0; i < nnodes_local; i++) {
     mesh_maps_->vis_mesh().node_get_coordinates(i, &xc);
     // VisIt and ParaView require all mesh entities to be in 3D space
-    nodes[i*3+0] = xc[0];
-    nodes[i*3+1] = xc[1];
+    xyz[i*3+0] = xc[0];
+    xyz[i*3+1] = xc[1];
     if (space_dim == 3) {
-      nodes[i*3+2] = xc[2];
+      xyz[i*3+2] = xc[2];
     } else {
-      nodes[i*3+2] = 0.0;
+      xyz[i*3+2] = 0.0;
     }
   }
 
@@ -162,12 +162,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(xyz, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
   // -- clean up
-  delete [] nodes;
+  delete [] xyz;
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];

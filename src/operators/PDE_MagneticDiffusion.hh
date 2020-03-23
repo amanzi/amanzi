@@ -43,7 +43,7 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Electromagnetics(plist, mesh)
   {
-    operator_type_ = OPERATOR_MAGNETIC_DIFFUSION;
+    pde_type_ = PDE_MAGNETIC_DIFFUSION;
     InitMagneticDiffusion_(plist);
   }
 
