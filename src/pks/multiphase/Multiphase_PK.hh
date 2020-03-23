@@ -107,13 +107,10 @@ class Multiphase_PK: public PK_PhysicalBDF {
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
 
  protected:
-  Key domain_;  // computational domain
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_; 
   int ncells_owned_, ncells_wghost_;
   int nfaces_owned_, nfaces_wghost_;
   int dim_;
 
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   double dt_, dt_next_;
 

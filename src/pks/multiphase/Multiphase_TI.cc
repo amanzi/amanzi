@@ -81,8 +81,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto& kr_f = *kr->ViewComponent("face");
 
   // primary variables
-  auto tmp = up[0];
-  CompositeVector fone(*tmp), fadd(*tmp), comp(*tmp);
+  auto aux = up[0];
+  CompositeVector fone(*aux), fadd(*aux), comp(*aux);
   auto& fone_c = *fone.ViewComponent("cell");
   auto& comp_c = *comp.ViewComponent("cell");
 
@@ -321,7 +321,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         // -- advection operator div[ (K f grad dg/dv) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key fname = eqns_[row].advection[phase].second;
-          Key der_key = "d" + fname + "_d" + keyc;
+          der_key = "d" + fname + "_d" + keyc;
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -346,7 +346,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
         // -- advection operator div [ (K df/dv grad g) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
-          Key der_key = "d" + key + "_d" + keyc;
+          der_key = "d" + key + "_d" + keyc;
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -411,7 +411,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         // -- advection operator div[ (f grad dg/dv) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "") {
           Key fname = eqns_[row].diffusion[phase].second;
-          Key der_key = "d" + fname + "_d" + keyc;
+          der_key = "d" + fname + "_d" + keyc;
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -436,7 +436,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
         // -- advection operator div [ (df/dv grad g) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
-          Key der_key = "d" + key + "_d" + keyc;
+          der_key = "d" + key + "_d" + keyc;
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -470,7 +470,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
       // storage term
       if ((key = eqns_[row].storage) != "") {
-        Key der_key = "d" + key + "_d" + keyc;
+        der_key = "d" + key + "_d" + keyc;
         S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
         if (S_->HasField(der_key)) {
@@ -493,7 +493,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     // -- derivatives
     Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
 
-    Key key = eqns_[n].constraint.first;
+    key = eqns_[n].constraint.first;
     S_->GetFieldEvaluator(key)->HasFieldChanged(S_.ptr(), passwd_);
     const auto& ncp_fc = *S_->GetFieldData(key)->ViewComponent("cell");
 

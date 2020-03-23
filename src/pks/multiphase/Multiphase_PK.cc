@@ -47,13 +47,14 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
   glist_(glist),
-  S_(S),
   soln_(soln),
   passwd_("multiphase"),
   num_phases_(2),
   num_itrs_(0),
   op_pc_assembled_(false)
 {
+  S_ = S;
+
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
   if (found != std::string::npos) pk_name.erase(0, found + 2);
@@ -277,11 +278,11 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // some defaults
   flux_names_ = {darcy_flux_liquid_key_, darcy_flux_gas_key_};
 
-  auto tmp_list = mp_list_->sublist("molecular diffusion");
-  mol_diff_l_ = tmp_list.get<Teuchos::Array<double> >("aqueous values").toVector();
-  mol_diff_g_ = tmp_list.get<Teuchos::Array<double> >("gaseous values").toVector();
-  mol_mass_ = tmp_list.get<Teuchos::Array<double> >("molar masses").toVector();
-  kH_ = tmp_list.get<Teuchos::Array<double> >("Henry dimensionless constants").toVector();
+  auto aux_list = mp_list_->sublist("molecular diffusion");
+  mol_diff_l_ = aux_list.get<Teuchos::Array<double> >("aqueous values").toVector();
+  mol_diff_g_ = aux_list.get<Teuchos::Array<double> >("gaseous values").toVector();
+  mol_mass_ = aux_list.get<Teuchos::Array<double> >("molar masses").toVector();
+  kH_ = aux_list.get<Teuchos::Array<double> >("Henry dimensionless constants").toVector();
 
   mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
 
