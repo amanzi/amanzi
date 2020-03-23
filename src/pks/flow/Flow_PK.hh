@@ -99,7 +99,6 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
   // access
-  virtual Teuchos::RCP<Operators::Operator> op() = 0;
   Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
 

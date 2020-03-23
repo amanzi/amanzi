@@ -46,19 +46,20 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK() {};
 
   // methods required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
-  virtual std::string name() { return passwd_; }
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual std::string name() override { return passwd_; }
 
   // methods required for time integration
   // -- management of the preconditioner
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) {
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> hu) override {
     return op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override {
     return true;
   }
 
@@ -68,7 +69,8 @@ class Energy_PK : public PK_PhysicalBDF {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u) override {
     return false;
   }
 
@@ -79,13 +81,13 @@ class Energy_PK : public PK_PhysicalBDF {
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) {
+                       Teuchos::RCP<TreeVector> du) override {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  void ChangedSolution() {
+  void ChangedSolution() override {
     temperature_eval_->SetFieldAsChanged(S_.ptr());
   }
 
@@ -95,7 +97,12 @@ class Energy_PK : public PK_PhysicalBDF {
   void ComputeBCs(const CompositeVector& u);
 
   // access 
-  Teuchos::RCP<Operators::Operator> op() { return op_preconditioner_; }
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override { return op_preconditioner_; } 
+
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+      my_pde(const Operators::PDEType& type) override { return op_matrix_diff_; } 
+
   // -- for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
   Teuchos::RCP<PrimaryVariableFieldEvaluator>& temperature_eval() { return temperature_eval_; }
