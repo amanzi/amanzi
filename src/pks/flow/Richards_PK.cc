@@ -1070,7 +1070,7 @@ void Richards_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 
 
 /* ******************************************************************
-* This is strange.
+* Return a pointer to a local operator
 ****************************************************************** */
 Teuchos::RCP<Operators::Operator> Richards_PK::my_operator(
     const Operators::OperatorType& type)

@@ -232,15 +232,6 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
-
-  // stationary solve is modelled with large dt. To pick the correct
-  // boundary conditions, dt is negative. This assumes that we are at
-  // the beginning of simulation.
-  bool fail;
-  double dt(-1e+98), dt_solver;
-  fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
-
-  if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
 }
 
 
@@ -275,7 +266,6 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   // blocks, we use global matrix-vector multiplication instead.
   op_tree_->AssembleMatrix();
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
-// std::cout << *op_tree_->A() << std::endl; exit(0);
   AMANZI_ASSERT(!ierr);
   
   // // diagonal blocks in tree operator and the Darcy PKs
@@ -295,7 +285,7 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-  op_tree_->InitPreconditioner(pc_list);
+  // op_tree_->InitPreconditioner(pc_list);
 }
 
 

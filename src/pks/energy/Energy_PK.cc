@@ -293,6 +293,18 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   }
 }
 
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Energy_PK::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
+  return Teuchos::null;
+}
+
 }  // namespace Energy
 }  // namespace Amanzi
 

@@ -39,7 +39,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
   domain_ = my_list_->template get<std::string>("domain name", "domain");
   
   Teuchos::ParameterList vlist;
-  vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, vlist)); 
 }
 
 
@@ -227,6 +227,14 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_rhs_ = Teuchos::rcp(new TreeVector(tvs));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op1->rhs()));
+
+  // output of initialization statistics
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << std::endl << vo_->color("green")
+               << "Initialization of TP is complete: dT=" << get_dt() 
+               << vo_->reset() << std::endl << std::endl;
+  }
 }
   
 

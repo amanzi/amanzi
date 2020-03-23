@@ -491,7 +491,7 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
+               << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
 }
 

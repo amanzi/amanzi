@@ -164,7 +164,8 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl << vo_->color("green")
-               << "Initialization of TI period is complete." << vo_->reset() << std::endl;
+               << "Initialization of PK period is complete: dT=" << get_dt()
+               << vo_->reset() << std::endl;
   }
 }
 
