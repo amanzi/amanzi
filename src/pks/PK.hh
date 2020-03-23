@@ -121,7 +121,7 @@ class PK {
   /////////////////////////////////////////////////////////////////////
 
   // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next) = 0;
 
@@ -133,12 +133,11 @@ class PK {
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
-  Teuchos::RCP<TreeVector> solution_;
+  Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
 
   // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_inter_, S_next_;
 
   // fancy IO
   Teuchos::RCP<VerboseObject> vo_;

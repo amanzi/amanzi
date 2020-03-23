@@ -205,13 +205,13 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
     // -- shift mean values
     auto& climiter = *limiter_->limiter();
     auto& u_c = *u.SubVector(0)->Data()->ViewComponent("cell");
-    int nk = u_c.NumVectors();
+    int mk = u_c.NumVectors();
 
     for (int c = 0; c < ncells_owned_; ++c) {
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < nk; ++i) {
+        for (int i = 0; i < mk; ++i) {
           mass += matrices[c](i, 0) * orig_c[i][c];
         }
 

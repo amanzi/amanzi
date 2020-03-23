@@ -75,9 +75,9 @@ TEST(SETS) {
 
     // Get the region info directly from the XML and compare
   
-    Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
+    Teuchos::ParameterList::ConstIterator it = reg_params.begin(); 
 
-    std::string shape = reg_params.name(j);
+    std::string shape = reg_params.name(it);
 
     if (shape == "region: plane") {
 

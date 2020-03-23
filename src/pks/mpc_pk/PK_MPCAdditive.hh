@@ -65,26 +65,11 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // -- identifier accessor
-  std::string name() const { return name_; }
+  virtual std::string name() const { return name_; }
 
  protected:
   // identifier
   std::string name_;
-
-  // list of the PKs coupled by this MPC
-  typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
-  SubPKList sub_pks_;
-
-  // single solution vector for the coupled problem
-  Teuchos::RCP<TreeVector> solution_;
-
-  // plists
-  Teuchos::RCP<Teuchos::ParameterList> global_list_;
-  Teuchos::RCP<Teuchos::ParameterList> my_list_;
-  Teuchos::ParameterList pk_tree_;
-
-  // states
-  Teuchos::RCP<State> S_;
 };
 
 
@@ -96,10 +81,7 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
-    pk_tree_(pk_tree),
-    global_list_(global_list),
-    S_(S),
-    solution_(soln)
+    PK_MPC<PK_Base>(pk_tree, global_list, S, soln)
 {
   // name the PK
   name_ = pk_tree.name();

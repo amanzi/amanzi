@@ -124,7 +124,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
   N.Reshape(nedges, d_);
   Mc.Reshape(nedges, nedges);
 
-  AmanziGeometry::Point v1(d_), v2(d_), v3(d_), tau(d_);
+  AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
   AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
@@ -311,7 +311,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
   R.Reshape(nedges, d_);
   Wc.Reshape(nedges, nedges);
 
-  AmanziGeometry::Point v1(d_), v2(d_), v3(d_), tau(d_), p1(d_), p2(d_);
+  AmanziGeometry::Point v3(d_), v4(d_), tau(d_), p1(d_), p2(d_);
   AmanziGeometry::Point vv[3];
 
   // Since the matrix N is the matrix of scaled tangent vextors,
@@ -342,20 +342,20 @@ int DeRham_Edge::L2consistencyInverse3D_(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
 
-    v1 = xc - xf; 
+    v4 = xc - xf; 
  
-    double a1 = normal * v1;
+    double a1 = normal * v4;
     for (int k = 0; k < d_; ++k) {
-      vv[k].set(normal[k] * v1);
+      vv[k].set(normal[k] * v4);
       vv[k][k] -= a1;
     }
 
     mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
-    int nedges = edges.size();
+    int nfedges = edges.size();
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
-    for (int m = 0; m < nedges; ++m) {
+    for (int m = 0; m < nfedges; ++m) {
       int e = edges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  

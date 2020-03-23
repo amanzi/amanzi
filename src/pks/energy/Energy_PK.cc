@@ -32,7 +32,6 @@ namespace Energy {
 Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      Teuchos::RCP<State> S) :
     glist_(glist),
-    vo_(Teuchos::null),
     passwd_("thermal")
 {
   S_ = S;

@@ -126,12 +126,12 @@ void RunTest(int icase, double gravity) {
 
   // create diffusion operator
   double rho(1.0);
-  AmanziGeometry::Point g(0.0, 0.0, -gravity);
+  AmanziGeometry::Point gvec(0.0, 0.0, -gravity);
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", (gravity > 0.0));
 
   Operators::PDE_DiffusionFactory opfactory;
-  Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, g);
+  Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, gvec);
   op->SetBCs(bc, bc);
 
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -209,7 +209,7 @@ void RunTest(int icase, double gravity) {
   if (gravity > 0.0) { 
     for (int c = 0; c < ncells_owned; c++) {
       const Point& xc = surfmesh->cell_centroid(c);
-      p[0][c] -= rho * g[2] * xc[2];
+      p[0][c] -= rho * gvec[2] * xc[2];
     }
   }
 

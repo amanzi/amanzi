@@ -166,17 +166,17 @@ void Basis_Orthonormalized<MyMesh>::BilinearFormNaturalToMy(
 
   for (auto it = bll->monomial_scales().begin(); it < bll->monomial_scales().end(); ++it) {
     int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
+    int s = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 
-    double ak = (bll->monomial_scales())(m, k);
-    double bk = (bll->monomial_ortho())(m, k);
+    double ak = (bll->monomial_scales())(s, k);
+    double bk = (bll->monomial_ortho())(s, k);
 
     a1[n] = ak;
     b1[n] = -ak * bk;
 
-    ak = (brr->monomial_scales())(m, k);
-    bk = (brr->monomial_ortho())(m, k);
+    ak = (brr->monomial_scales())(s, k);
+    bk = (brr->monomial_ortho())(s, k);
     a2[n] = ak;
     b2[n] = -ak * bk;
   }

@@ -123,8 +123,6 @@ void MagneticDiffusion2D(double dt, double tend,
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
 
   AmanziGeometry::Point xv(2);
-  std::vector<int> edirs;
-  AmanziMesh::Entity_ID_List cells, faces;
 
   Ee.PutScalar(0.0);
   Bf.PutScalar(0.0);

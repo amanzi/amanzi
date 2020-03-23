@@ -186,7 +186,7 @@ int MFD3D::StabilityMMatrix_(
         M(i, j) += D(i, k) * D(j, k) * u[nx];
         nx++;
         for (int l = k + 1; l < mcols; l++) {
-          double tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
+          tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
           M(i, j) += tmp * (u[nx] - u[nx + 1]);
           nx += 2;
         }

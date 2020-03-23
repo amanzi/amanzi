@@ -151,7 +151,6 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
   // calculate DOFs for boundary polynomial
   DenseVector vdof(ndof);
-  NumericalIntegration<MyMesh> numi(mymesh);
 
   // selecting regularized basis
   Polynomial ptmp;

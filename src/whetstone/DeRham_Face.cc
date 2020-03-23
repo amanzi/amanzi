@@ -52,9 +52,9 @@ int DeRham_Face::L2consistency(
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& fm2 = mesh_->face_centroid(f);
       double a2 = mesh_->face_area(f);
-      v1 = fm - cm;
+      v1 = fm2 - cm;
       Mc(i, j) = (v1 * v2) * (a1 * a2) / volume;
     }
   }

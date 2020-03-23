@@ -308,7 +308,7 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
     std::cout << "Total number of faces: " << nfaces3 << std::endl;
     for (int i = 0; i < nfaces3; ++i) {
       int nnodes(faces3[i].size());
-      for (int n = 0; n < nnodes; ++n) std::cout << faces3[i][n] << " ";
+      for (int m = 0; m < nnodes; ++m) std::cout << faces3[i][m] << " ";
       std::cout << std::endl;
     }
     std::cout << "Total number of vertices: " << xyz3.size() << std::endl;
@@ -332,8 +332,7 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   // create a rectangular region
-  Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  std::string reg_name = reg_spec.name(i);     
+  std::string reg_name = reg_spec.name(reg_spec.begin());
   unsigned int reg_id = 9959;  // something arbitrary
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     

@@ -124,9 +124,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver = &test;
     solver->set<double>("typical solution value", 1.0);
 
-    Teuchos::ParameterList& tmp = solver->sublist("nonlinear solver");     
-    tmp.set<std::string>("solver type", "Newton");
-    Teuchos::ParameterList& newton = tmp.sublist("Newton parameters");     
+    Teuchos::ParameterList& list_tmp = solver->sublist("nonlinear solver");     
+    list_tmp.set<std::string>("solver type", "Newton");
+    Teuchos::ParameterList& newton = list_tmp.sublist("Newton parameters");     
     newton.set<double>("diverged tolerance", NKA_DIVERG_TOL);
     newton.set<double>("max du growth factor", INC_DIVERG_FACTOR);
     newton.set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);

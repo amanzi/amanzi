@@ -754,13 +754,13 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
       // grab the next progeny group
       begin = progeny_string.find_first_not_of(progeny_seperator);
       end = progeny_string.find(progeny_seperator, begin);
-      std::string data = progeny_string.substr(begin, end);
+      std::string data_tmp = progeny_string.substr(begin, end);
       // remove the data we just grabbed
       progeny_string.erase(begin, end);
 
       // process the progeny group
-      utilities::RemoveLeadingAndTrailingWhitespace(&data);
-      StringTokenizer progeny_group(data, " ");
+      utilities::RemoveLeadingAndTrailingWhitespace(&data_tmp);
+      StringTokenizer progeny_group(data_tmp, " ");
       std::string name;
       double coeff;
       if (progeny_group.size() == 1) {

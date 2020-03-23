@@ -29,9 +29,7 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_AdvectionUpwindFracturedMatrix.hh"
-#include "PDE_AdvectionUpwindDFN.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
@@ -112,12 +110,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
                                             .sublist("advection operator")
                                             .sublist("matrix");
 
-  if (oplist.isParameter("fracture"))
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindFracturedMatrix(oplist, mesh_));
-  else if (oplist.isParameter("single domain"))
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
-  else
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindDFN(oplist, mesh_));
+  Operators::PDE_AdvectionUpwindFactory adv_factory;
+  op_adv_ = adv_factory.Create(oplist, mesh_);
 
   op_ = op_adv_->global_operator();
   op_adv_->SetBCs(op_bc_, op_bc_);

@@ -120,7 +120,7 @@ template <class FunctionBase>
 void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
   int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
@@ -154,7 +154,6 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
     }  
 
   } else if (submodel_ == "bhp") {
-    double dim = mesh_->space_dimension();
     double g = fabs(gravity_[dim - 1]);
     const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
     

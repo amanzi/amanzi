@@ -49,8 +49,7 @@ TEST(POLYGON_REGION2)
   Teuchos::Array<double> in_xyz;
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
 
-  Teuchos::ParameterList::ConstIterator j = reg_params.begin();
-  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
+  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(reg_params.begin()));
   numpoints = poly_params.get<int>("number of points");
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
 
@@ -142,8 +141,7 @@ TEST(POLYGON_REGION3)
   int numpoints;
   Teuchos::Array<double> in_xyz;
 
-  Teuchos::ParameterList::ConstIterator j = reg_params.begin();
-  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
+  Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(reg_params.begin()));
   numpoints = poly_params.get<int>("number of points");
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
  

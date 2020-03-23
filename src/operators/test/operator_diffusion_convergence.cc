@@ -128,7 +128,6 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   }
 
   if (u.HasComponent("face")) {
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("face",false);
     
     for (int f = 0; f != nfaces; ++f) {
@@ -256,7 +255,6 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   }
 
   if (u.HasComponent("face")) {
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
     
     for (int f = 0; f != nfaces; ++f) {

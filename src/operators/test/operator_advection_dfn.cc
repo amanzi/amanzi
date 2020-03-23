@@ -148,7 +148,6 @@ void RunTest(double gravity) {
   OutputXDMF io(iolist, mesh, true, false);
 
   // time stepping
-  int nstep(1);
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
     // -- solve the problem

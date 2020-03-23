@@ -62,7 +62,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
     } catch (...) {
       CHECK(false);
@@ -80,7 +80,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
     } catch (...) {
       CHECK(false);

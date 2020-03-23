@@ -716,7 +716,7 @@ void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
 
       if (downwind_cells_[f].size() > 0) {
         int c = downwind_cells_[f][0];
-        double u = downwind_flux_[f][0];
+        u = downwind_flux_[f][0];
 
         for (int i = 0; i < ncomp; i++) {
           int k = tcc_index[i];

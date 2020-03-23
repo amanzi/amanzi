@@ -164,11 +164,11 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
     AMANZI_ASSERT(moments != NULL);
-    const DenseVector& v3 = moments->coefs();
-    AMANZI_ASSERT(ndof_cs == v3.NumRows());
+    const DenseVector& v4 = moments->coefs();
+    AMANZI_ASSERT(ndof_cs == v4.NumRows());
 
     for (int n = 0; n < ndof_cs; ++n) {
-      vdof(ndof_f + n) = v3(n);
+      vdof(ndof_f + n) = v4(n);
     }
   }
 

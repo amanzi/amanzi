@@ -15,23 +15,32 @@
 namespace Amanzi {
 namespace Operators {
 
-typedef enum { OPERATOR_DIFFUSION_MFD,
-               OPERATOR_DIFFUSION_FV,
-               OPERATOR_DIFFUSION_NLFV,
-               OPERATOR_DIFFUSION_NLFVFACES,
-               OPERATOR_DIFFUSION_MFD_GRAVITY,
-               OPERATOR_DIFFUSION_FV_GRAVITY,
-               OPERATOR_DIFFUSION_NLFV_GRAVITY,
-               OPERATOR_DIFFUSION_NLFVFACES_GRAVITY,
-               OPERATOR_DIFFUSION_MFD_XMOF,
-               OPERATOR_DIFFUSION_MFD_TRACER,
-               OPERATOR_DIFFUSION_DG,
-               OPERATOR_DIFFUSION_FRACTURED_MATRIX,
-               OPERATOR_ADVECTION,
-               OPERATOR_ACCUMULATION,
-               OPERATOR_ELASTICITY,
-               OPERATOR_ELECTROMAGNETICS,
-               OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
+// general information about an operator, e.g. a preconditioner may 
+// be wrapped up in an iterative solver or be of a "raw" matrix type 
+typedef enum { OPERATOR_MATRIX,
+               OPERATOR_PRECONDITIONER,
+               OPERATOR_PRECONDITIONER_RAW,
+               OPERATOR_TERM_DIFFUSION } OperatorType;
+
+// this is not used currently and my go away
+typedef enum { PDE_DIFFUSION,
+               PDE_DIFFUSION_MFD,
+               PDE_DIFFUSION_FV,
+               PDE_DIFFUSION_NLFV,
+               PDE_DIFFUSION_NLFVFACES,
+               PDE_DIFFUSION_MFD_GRAVITY,
+               PDE_DIFFUSION_FV_GRAVITY,
+               PDE_DIFFUSION_NLFV_GRAVITY,
+               PDE_DIFFUSION_NLFVFACES_GRAVITY,
+               PDE_DIFFUSION_MFD_XMOF,
+               PDE_DIFFUSION_MFD_TRACER,
+               PDE_DIFFUSION_DG,
+               PDE_DIFFUSION_FRACTURED_MATRIX,
+               PDE_ADVECTION,
+               PDE_ACCUMULATION,
+               PDE_ELASTICITY,
+               PDE_ELECTROMAGNETICS,
+               PDE_MAGNETIC_DIFFUSION} PDEType;
 
 // coefficient type
 typedef enum { CONSTANT = 0,  // includes tensorial coefficients

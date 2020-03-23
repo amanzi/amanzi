@@ -51,6 +51,11 @@ struct HDF5Reader {
     //    strcpy(h5path,varname.c_str());
 
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    if (dataset < 0) {
+      std::string message("HDF5Reader: requested variable is not found");
+      Exceptions::amanzi_throw(message);
+    }
+
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
     vec.resize(size);
@@ -60,6 +65,8 @@ struct HDF5Reader {
       std::string message("HDF5Reader: read error");
       Exceptions::amanzi_throw(message);
     }
+
+    H5Dclose(dataset);
   }
 
   void
@@ -81,6 +88,8 @@ struct HDF5Reader {
       std::string message("HDF5Reader: read error");
       Exceptions::amanzi_throw(message);
     }
+
+    H5Dclose(dataset);
   }
 
  protected:
