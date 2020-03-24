@@ -50,7 +50,7 @@ public:
     MPC<PK_t>::CommitStep(t_old, t_new, S);
   }
 
-  void set_states(const Teuchos::RCP<const State>& S,
+  void set_states(const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<State>& S_inter,
                   const Teuchos::RCP<State>& S_next);
   
@@ -169,7 +169,7 @@ void StrongMPC<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
 };
 
 template<class PK_t>
-void StrongMPC<PK_t>::set_states(const Teuchos::RCP<const State>& S,
+void StrongMPC<PK_t>::set_states(const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<State>& S_inter,
                                  const Teuchos::RCP<State>& S_next){
   MPC<PK_t>::set_states(S,S_inter,S_next);

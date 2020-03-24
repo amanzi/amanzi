@@ -73,7 +73,7 @@ class PK_Physical_Default : public PK_Physical {
 
 
   // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<State>& S_inter,
           const Teuchos::RCP<State>& S_next);
 

@@ -120,7 +120,7 @@ void Transport_PK_ATS::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> 
 }
 #endif
 
-void Transport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
+void Transport_PK_ATS::set_states(const Teuchos::RCP<State>& S,
                                   const Teuchos::RCP<State>& S_inter,
                                   const Teuchos::RCP<State>& S_next) {
 

@@ -222,7 +222,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S) {
 
 
 void
-MPCPermafrost::set_states(const Teuchos::RCP<const State>& S,
+MPCPermafrost::set_states(const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<State>& S_inter,
                            const Teuchos::RCP<State>& S_next) {
   MPCSubsurface::set_states(S,S_inter,S_next);
