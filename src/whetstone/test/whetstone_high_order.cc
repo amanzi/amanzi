@@ -91,14 +91,14 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
     const DenseMatrix& G = mfd_ho.G();
     
     PolynomialOnMesh integrals;
+    integrals.set_id(cell);
     NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
-    numi.UpdateMonomialIntegralsCell(cell, 2 * k, integrals);
 
-    Polynomial ptmp, poly(dim, k);
+    Polynomial ptmp;
     Basis_Regularized<AmanziMesh::Mesh> basis;
     basis.Init(mesh, cell, k, ptmp);
 
-    GrammMatrixGradients(T, poly, integrals, basis, G1);
+    GrammMatrixGradients(T, numi, k, integrals, basis, G1);
 
     G1(0, 0) = 1.0;
     G1.Inverse();
@@ -163,14 +163,14 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
       const DenseMatrix& G = mfd.G();
 
       PolynomialOnMesh integrals;
+      integrals.set_id(c);
       NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
-      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
-      Polynomial ptmp, poly(dim, k);
+      Polynomial ptmp;
       Basis_Regularized<AmanziMesh::Mesh> basis;
       basis.Init(mesh, c, k, ptmp);
 
-      GrammMatrixGradients(T, poly, integrals, basis, G1);
+      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -251,14 +251,14 @@ void HighOrderLagrange2D(std::string file_name) {
       const DenseMatrix& G = mfd_ho.G();
 
       PolynomialOnMesh integrals;
+      integrals.set_id(c);
       NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
-      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
       Polynomial ptmp, poly(mesh->space_dimension(), k);
       Basis_Regularized<AmanziMesh::Mesh> basis;
       basis.Init(mesh, c, k, ptmp);
 
-      GrammMatrixGradients(T, poly, integrals, basis, G1);
+      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -344,14 +344,14 @@ void HighOrderLagrange3D(const std::string& filename1,
     const DenseMatrix& G = mfd2.G();
 
     PolynomialOnMesh integrals;
+    integrals.set_id(0);
     NumericalIntegration<AmanziMesh::Mesh> numi(mesh2);
-    numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
 
-    Polynomial ptmp, poly(3, k);
+    Polynomial ptmp;
     Basis_Regularized<AmanziMesh::Mesh> basis;
     basis.Init(mesh2, 0, k, ptmp);
 
-    GrammMatrixGradients(T, poly, integrals, basis, G1);
+    GrammMatrixGradients(T, numi, k, integrals, basis, G1);
 
     G1(0, 0) = 1.0;
     G1.Inverse();
@@ -434,14 +434,14 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
       const DenseMatrix& G = mfd_ho.G();
 
       PolynomialOnMesh integrals;
+      integrals.set_id(c);
       NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
-      numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
 
-      Polynomial ptmp, poly(d, k);
+      Polynomial ptmp;
       Basis_Regularized<AmanziMesh::Mesh> basis;
       basis.Init(mesh, 0, k, ptmp);
 
-      GrammMatrixGradients(T, poly, integrals, basis, G1);
+      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -520,7 +520,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
   int d = mesh->space_dimension();
 
   Teuchos::ParameterList plist; 
-  plist.set<int>("method order", 1);
+  plist.set<int>("method order", 0);  // order of the polynomial space
   VEM_RaviartThomasSerendipity vem_ho(plist, mesh);
 
   int c(0);
@@ -528,7 +528,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
   T(0, 0) = 1.0;
 
   // high-order schemes
-  for (int k = 2; k < 3; ++k) {
+  for (int k = 1; k < 2; ++k) {
     DenseMatrix Ak, G1, G2;
     vem_ho.set_order(k);
     vem_ho.MassMatrix(c, T, Ak);
@@ -545,18 +545,17 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
     G.InverseSPD();
 
     PolynomialOnMesh integrals;
+    integrals.set_id(c);
     NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
-    numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
 
-    Polynomial ptmp, poly(d, k);
+    Polynomial ptmp;
     Basis_Regularized<AmanziMesh::Mesh> basis;
     basis.Init(mesh, 0, k, ptmp);
 
-    GrammMatrixGradients(T, poly, integrals, basis, G1);
-    G2 = G1.SubMatrix(1, G1.NumRows(), 1, G1.NumCols());
+    GrammMatrix(numi, k, integrals, basis, G1);
 
-    G2 -= G;
-    std::cout << "Norm of dG=" << G2.NormInf() << " " << G.NormInf() << std::endl;      
+    G1 -= G;
+    std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
     CHECK(G2.NormInf() <= 1e-12 * G.NormInf());
   }
 }
@@ -565,7 +564,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
 TEST(HIGH_ORDER_RAVIART_THOMAS_SERENDIPITY) {
   HighOrderRaviartThomasSerendipity("test/cube_unit.exo");
   HighOrderRaviartThomasSerendipity("test/cube_unit_rotated.exo");
-  // HighOrderRaviartThomasSerendipity("test/cube_half.exo");
+  HighOrderRaviartThomasSerendipity("test/cube_half.exo");
 } 
 
 

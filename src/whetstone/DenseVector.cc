@@ -25,6 +25,15 @@ DenseVector::DenseVector(int mrow) : m_(mrow), mem_(mrow) {
 }
 
 
+DenseVector::DenseVector(int mrow, double val)
+{
+  m_ = mrow;
+  mem_ = mrow;
+  data_ = new double[mem_]; 
+  for (int i = 0; i < m_; i++) data_[i] = val;
+}
+
+
 DenseVector::DenseVector(int mrow, double* data)
 {
   m_ = mrow;
@@ -69,24 +78,26 @@ DenseVector::DenseVector(const std::vector<double>& B)
 
 
 /* ******************************************************************
-* Smart memory management preserving data 
+* Smart memory management preserving data
 ****************************************************************** */
 void DenseVector::Reshape(int mrow)
 {
+  int m0(m_);
   m_ = mrow;
 
   if (mem_ < m_) {
     int mem_next_ = 2 * m_;
     double* data_tmp = new double[mem_next_];
     if (data_ != NULL) {
-      // it is dangerous to not initialize reshaped data to zero
       for (int i = 0; i < mem_; ++i) data_tmp[i] = data_[i];
-      for (int i = mem_; i < m_; ++i) data_tmp[i] = 0.0;
       delete [] data_;
     }
     mem_ = mem_next_;
     data_ = data_tmp;
   }
+
+  // it is counter-intuitive and dangerous to not initialize reshaped data
+  for (int i = m0; i < m_; ++i) data_[i] = 0.0;
 }
 
 

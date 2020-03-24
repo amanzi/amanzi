@@ -44,7 +44,8 @@ void GrammMatrix(
 template<class MyMesh>
 void GrammMatrixGradients(
     const Tensor& K, 
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    NumericalIntegration<MyMesh>& numi,
+    int order, PolynomialOnMesh& integrals,
     const Basis_Regularized<MyMesh>& basis, DenseMatrix& G);
 
 
@@ -98,12 +99,22 @@ void GrammMatrix(
 template<class MyMesh>
 void GrammMatrixGradients(
     const Tensor& K, 
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    NumericalIntegration<MyMesh>& numi,
+    int order, PolynomialOnMesh& integrals,
     const Basis_Regularized<MyMesh>& basis, DenseMatrix& G)
 {
-  int nd = poly.size();
-  int d = poly.dimension();
+  int d = numi.dimension();
+
+  PolynomialIterator it0(d), it1(d);
+  it0.begin(0);
+  it1.begin(order + 1);
+
+  int nd = it1.PolynomialPosition();
   G.Reshape(nd, nd);
+
+  // extended database of integrals of monomials
+  int c = integrals.id();
+  numi.UpdateMonomialIntegralsCell(c, std::max(0, 2 * (order - 1)), integrals);
 
   Tensor Ktmp(d, 2);
   if (K.rank() == 2)
@@ -112,12 +123,12 @@ void GrammMatrixGradients(
     Ktmp.MakeDiagonal(K(0, 0));
 
   int multi_index[3];
-  for (auto it = poly.begin(); it < poly.end(); ++it) {
+  for (auto it = it0; it < it1; ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
     double scalek = basis.monomial_scales()[it.MonomialSetOrder()];
 
-    for (auto jt = it; jt < poly.end(); ++jt) {
+    for (auto jt = it; jt < it1; ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];

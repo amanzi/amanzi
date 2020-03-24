@@ -162,6 +162,12 @@ if (BUILD_TESTS)
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
                                         test/whetstone_maps.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: matrices for high-order methods
+    add_amanzi_test(whetstone_high_order whetstone_high_order
+                    KIND unit
+                    SOURCE test/Main.cc 
                                         test/whetstone_high_order.cc
                                         test/whetstone_projectors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

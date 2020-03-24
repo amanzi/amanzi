@@ -302,7 +302,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
       sMGc.BlockMultiply(v, w, false);
       L2c.Multiply(w, p2v, true);
 
-      double factor = basis.monomial_scales()[1];
+      factor = basis.monomial_scales()[1];
       for (int i = 0; i < ncols; ++i) {
         R(i, col) += p2v(i) / factor;
       }
@@ -323,7 +323,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
       rMGc.Multiply(v, p1v, true);
 
-      double factor = basis.monomial_scales()[1];
+      factor = basis.monomial_scales()[1];
       for (int i = 0; i < ncols; ++i) {
         R(i, col) += p1v(i) / factor;
       }

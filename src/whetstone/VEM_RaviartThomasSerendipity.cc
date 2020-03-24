@@ -69,6 +69,9 @@ std::vector<SchemaItem> VEM_RaviartThomasSerendipity::schema() const
 int VEM_RaviartThomasSerendipity::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
+  // div v is no longer a constant for order > 1
+  AMANZI_ASSERT(order_ < 2);
+
   Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -83,19 +86,18 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-  numi.UpdateMonomialIntegralsCell(c, order_, integrals_);
+  numi.UpdateMonomialIntegralsCell(c, order_ + 1, integrals_);
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
-  Polynomial pc(d_, order_), pf(d_ - 1, order_ - 1);
+  Polynomial pc(d_, order_), pf(d_ - 1, order_);
 
   int ndc, ndf;
   ndc = pc.size();
-  ndf = PolynomialSpaceDimension(d_ - 1, order_ - 1);
+  ndf = PolynomialSpaceDimension(d_ - 1, order_);
   int ndof_S = nfaces * ndf;
 
   // pre-compute Gramm matrices
   DenseMatrix MG;
-  Polynomial qf(d_ - 1, order_);
   std::vector<WhetStone::DenseMatrix> vMGf, vMGs;
   std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
@@ -113,13 +115,13 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     integrals_f.set_id(f);
 
     Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
+    basis_f.Init(surf_mesh, f, order_ + 1, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
     NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
-    GrammMatrix(numi_f, order_, integrals_f, basis_f, MG);
+    GrammMatrix(numi_f, order_ + 1, integrals_f, basis_f, MG);
     vMGf.push_back(MG);
- 
+
     auto S = MG.SubMatrix(0, ndf, 0, ndf);
     S.InverseSPD();
     vMGs.push_back(S);
@@ -127,25 +129,24 @@ int VEM_RaviartThomasSerendipity::L2consistency(
 
   // rows of matrix N are mean moments of gradients times normal
   // shift of a basis polynomial by a constant is not needed here 
-  N.Reshape(ndof_S, ndc - 1);
+  N.Reshape(ndof_S, d_ * ndc);
 
   // allocate sufficient memory to reduce memory copy inside vector reshape 
   int nrows = vMGf[0].NumRows();
-  DenseVector v(nrows), w(nrows), u(ndf);
+  DenseVector v(nrows, 0.0), w(nrows, 0.0), u(ndf, 0.0);
 
-  PolynomialIterator it0 = pc.begin();
-  ++it0;
+  // iterators
+  VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
+  it0.begin();
+  it1.end();
 
-  for (auto it = it0; it < pc.end(); ++it) { 
+  for (auto it = it0; it < it1; ++it) { 
+    int k = it.VectorComponent();
     int m = it.MonomialSetOrder();
-    int col = it.PolynomialPosition();
+    int col = it.VectorPolynomialPosition();
 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[m];
-    Monomial cmono(d_, index, factor);
-    cmono.set_origin(xc);  
-
-    auto grad = Gradient(cmono);
 
     int row(0);
     for (int i = 0; i < nfaces; i++) {
@@ -155,7 +156,9 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       double area = mesh_->face_area(f);
 
       AmanziGeometry::Point knormal = K * normal;
-      auto poly = grad * knormal;
+      Polynomial poly(d_, index, factor * knormal[k]);
+      poly.set_origin(xc);  
+
       poly.ChangeCoordinates(xf, *vcoordsys[i]->tau());  
       v = poly.coefs();
       vbasisf[i].ChangeBasisNaturalToMy(v);
@@ -165,34 +168,58 @@ int VEM_RaviartThomasSerendipity::L2consistency(
 
       // one scale area factor for normal, one for mean integral value
       double tmp = dirs[i] / area / area;
-      for (auto k = 0; k < ndf; ++k) {
-        N(row++, col - 1) = tmp * w(k);
+      for (auto l = 0; l < ndf; ++l) {
+        N(row++, col) = tmp * w(l);
       }
     }
   }
 
-  // assemble matrix R
-  // for 2nd-order scheme, basis polynomial is shifted by an orthogonalization
-  // constant to annihilate the volume integral
-  DenseMatrix R(ndof_S, ndc - 1);
+  // L2 (serendipity-type)  projector 
+  DenseMatrix NT;
+  NT.Transpose(N);
+  auto NN = NT * N;
+  NN.InverseSPD();
+  auto L2c = N * NN;
 
-  for (auto it = it0; it < pc.end(); ++it) {
+  // fixed vector
+  DenseMatrix MGc;
+  VectorPolynomial xyz(d_, d_, 1);
+  if (order_ > 0) {
+    for (int i = 0; i < d_; ++i) xyz[i](i + 1) = 1.0;
+    xyz.set_origin(xc);
+
+    integrals_.set_id(c);
+    GrammMatrix(numi, order_, integrals_, basis, MGc);
+  }
+
+  // assemble matrix R
+  Polynomial p1;
+  VectorPolynomial p2;
+
+  DenseMatrix R(ndof_S, d_ * ndc);
+
+  for (auto it = it0; it < it1; ++it) {
+    int k = it.VectorComponent();
     int m = it.MonomialSetOrder();
-    int col = it.PolynomialPosition();
+    int col = it.VectorPolynomialPosition();
 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[m];
     Monomial cmono(d_, index, factor);
     cmono.set_origin(xc);
 
+    // decompose vector monomial and othogonalize p1 (a monomial)
+    int pos = VectorDecomposition3DGrad(cmono, k, p1, p2);
+    p1(0) -= p1(pos) * (integrals_.poly())(pos) / volume;
+
     int row(0);
+    // contribution from faces: int_f {p2 (Pi_f(v) . n)}
     for (int i = 0; i < nfaces; ++i) {
       int f = faces[i];
       double area = mesh_->face_area(f);
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-      Polynomial poly(cmono);
-      poly(0) -= (integrals_.poly())(col) / volume;
+      Polynomial poly(p1);
       poly.ChangeCoordinates(xf, *vcoordsys[i]->tau());  
       v = poly.coefs();
       vbasisf[i].ChangeBasisNaturalToMy(v);
@@ -204,12 +231,31 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       w.Reshape(ndf);
       vMGs[i].Multiply(w, u, false);
 
-      for (int k = 0; k < ndf; ++k) {
-        R(row++, col - 1) = u(k) * dirs[i] * area; 
+      for (int l = 0; l < ndf; ++l) {
+        R(row++, col) = u(l) * dirs[i] * area; 
+      }
+    }
+
+    // contribution from cell: int_c {(x ^ p2) . Pi_c(v)}
+    if (m > 0) {
+      WhetStone::DenseVector w3(d_ * ndc), v3(ndof_S);
+
+      VectorPolynomial p3D = xyz ^ p2;
+      auto u3 = ExpandCoefficients(p3D);
+
+      int stride1 = u3.NumRows() / d_;
+      int stride2 = ndc;
+      basis.ChangeBasisNaturalToMy(u3, stride1);
+      u3.Regroup(stride1, stride2);
+
+      MGc.BlockMultiply(u3, w3, false);
+      L2c.Multiply(w3, v3, false);
+
+      for (int i = 0; i < ndof_S; ++i) {
+        R(i, col) += v3(i);
       }
     }
   }
-std::cout << R << " " << vMGf[0] << std::endl;
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;

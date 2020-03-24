@@ -248,7 +248,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
   // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
   // for consistency with other code, we use v5 for polynomial coefficients
   const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
-  DenseVector v1(ncols), v3(std::max(1, ndof_cs)), v5(ncols);
+  DenseVector v1(ncols), v5(ncols);
 
   DenseVector vdof(ndof_s + ndof_cs);
   CalculateDOFsOnBoundary<MyMesh>(mymesh, c, ve, vf, vdof);

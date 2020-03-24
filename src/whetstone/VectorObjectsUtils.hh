@@ -44,9 +44,11 @@ void VectorDecomposition3DCurl(const Monomial& q, int component,
 void VectorDecomposition2DRot(const VectorPolynomial& q,
                               Polynomial& p1, Polynomial& p2);
 
-//  3D: q_k = grad(p_{k+1}) + x ^ p_{k-1}
+// -- q_k = grad(p_{k+1}) + x ^ p_{k-1}
+//    returns position of nonzero in monomial (!) p1
+int VectorDecomposition3DGrad(const Monomial& q, int component,
+                              Polynomial& p1, VectorPolynomial& p2);
 //  2D: q_k = grad(p_{k+1}) + x*. p_{k-1}, x* = (-y, x)
-// void VectorDecomposition3DGrad(T& p1, VectorObjects<T>& p2) {};
 // void VectorDecomposition2DGrad(T& p1, T& p2) {};
 
 // projector

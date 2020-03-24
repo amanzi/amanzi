@@ -30,6 +30,7 @@ class DenseVector {
  public:
   DenseVector() : m_(0), mem_(0), data_(NULL) {};
   explicit DenseVector(int mrow);
+  DenseVector(int mrow, double val);
   DenseVector(int mrow, double* data);
   DenseVector(const DenseVector& other);
   DenseVector(DenseVector&& other);

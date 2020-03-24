@@ -180,7 +180,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
         Polynomial p1(d_, idx0, 1.0);
         p1.set_origin(mesh_->cell_centroid(c2));
 
-        auto pgrad = Gradient(p1);
+        pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
         Polynomial q1(d_, idx1, 1.0);

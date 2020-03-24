@@ -273,14 +273,14 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_2D) {
 
 
 /* ****************************************************************
-* Test of vector decomposition in 3D
+* Test of vector curl decomposition in 3D
 **************************************************************** */
-TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
+TEST(VECTOR_CURL_DECOMPOSITON_3D) {
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
   // polynomials in two dimentions
-  std::cout << "\nVector polynomial decomposition (3D)..." << std::endl; 
+  std::cout << "\nVector polynomial decomposition (3D, curl)..." << std::endl; 
 
   VectorPolynomial q(3, 3, 3), p1;
   Polynomial p2;
@@ -305,6 +305,42 @@ TEST(VECTOR_POLYNOMIAL_DECOMPOSITON_3D) {
     auto p5 = p1 ^ x;
     auto p6 = Curl3D(p5);
     auto p3 = p6 + p4;
+    p3[k] -= Polynomial(mono);
+    CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
+  }
+}
+
+
+/* ****************************************************************
+* Test of vector curl decomposition in 3D
+**************************************************************** */
+TEST(VECTOR_GRAD_DECOMPOSITON_3D) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "\nVector polynomial decomposition (3D, grad)..." << std::endl; 
+
+  VectorPolynomial q(3, 3, 3), p2;
+  Polynomial p1;
+
+  for (auto it = q.begin(); it < q.end(); ++it) {
+    int k = it.VectorComponent();
+    int n = it.PolynomialPosition();
+    Monomial mono(3, it.multi_index(), n + 1);
+    mono.set_origin(AmanziGeometry::Point(3));
+
+    VectorDecomposition3DGrad(mono, k, p1, p2);
+
+    // verify vector decomposition
+    VectorPolynomial x(3, 3, 1);
+    x[0](1) = 1.0;
+    x[1](2) = 1.0;
+    x[2](3) = 1.0;
+
+    auto p5 = Gradient(p1);
+    auto p6 = x ^ p2;
+    auto p3 = p5 + p6;
     p3[k] -= Polynomial(mono);
     CHECK_CLOSE(0.0, p3.NormInf(), 1e-12);
   }

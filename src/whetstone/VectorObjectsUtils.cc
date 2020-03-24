@@ -80,8 +80,7 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 VectorPolynomial Curl3D(const VectorPolynomial& vp)
 {
   int d = vp[0].dimension();
-  int m = vp.NumRows();
-  AMANZI_ASSERT(d == m && d == 3);
+  AMANZI_ASSERT(d == vp.NumRows() && d == 3);
 
   VectorPolynomial curl(d, d, 0);
   curl.set_origin(vp[0].origin());
@@ -349,11 +348,57 @@ void VectorDecomposition2DRot(
         idx[1 - k]--;
         idx[k]--;
         
-        int l = PolynomialPosition(d, idx);
+        l = PolynomialPosition(d, idx);
         p2(l) += coef * index[k] / a;
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* 3D vector decomposition: q_k = grad(p_{k+1}) + x ^ p_{k-1}.
+* Returns position of nonzero in monomial (!) p1.
+****************************************************************** */
+int VectorDecomposition3DGrad(const Monomial& q, int component,
+                              Polynomial& p1, VectorPolynomial& p2)
+{
+  int d = q.dimension();
+  const int* index = q.multi_index();
+  double coef = q.coefs()(0);
+
+  int idx[3], a(1);
+  for (int i = 0; i < d; ++i) {
+    idx[i] = index[i];
+    a += idx[i];
+  }
+
+  idx[component]++;
+  p1 = Polynomial(d, idx, coef / a);
+  p1.set_origin(q.origin());
+  int pos = PolynomialPosition(d, idx);
+
+  p2.Reshape(d, d, 0, true);
+  idx[component]--;
+  
+  int k1 = (component + 1) % d;
+  int k2 = (component + 2) % d;
+
+  if (idx[k2] > 0) {
+    double tmp = (idx[k2] * coef) / a;
+    idx[k2]--;
+    p2[k1] = Polynomial(d, idx, -tmp);
+    idx[k2]++;
+  }
+
+  if (idx[k1] > 0) {
+    double tmp = (idx[k1] * coef) / a;
+    idx[k1]--;
+    p2[k2] = Polynomial(d, idx, tmp);
+  }
+  p2.set_origin(q.origin());
+
+  return pos;
 }
 
 
