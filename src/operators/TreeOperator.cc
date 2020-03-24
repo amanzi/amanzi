@@ -57,6 +57,14 @@ void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Opera
   blocks_[i][j] = op;
 }
 
+void TreeOperator::getLocalDiagCopy(TreeVector& tv) const {
+  int i=0;
+  for (const auto& tv_b : tv) {
+    AMANZI_ASSERT(blocks_[i][i] != Teuchos::null);
+    blocks_[i][i]->getLocalDiagCopy(*tv_b->Data());
+  }    
+}
+
 
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.

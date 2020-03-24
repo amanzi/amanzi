@@ -211,6 +211,7 @@ AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const
   } else if (name == "cell") {
     return AmanziMesh::CELL;
   }
+  return AmanziMesh::UNKNOWN;
 }
 
 

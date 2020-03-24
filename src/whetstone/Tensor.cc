@@ -311,5 +311,13 @@ VectorToTensor(const DenseVector& v, Tensor& T)
   for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
 }
 
+Tensor Tensor_ONE()
+{
+  Kokkos::View<double*> t_identity("identity", 1);
+  t_identity(0) = 1.0;
+  return Tensor(t_identity, 1,1,1);
+}
+
+
 } // namespace WhetStone
 } // namespace Amanzi

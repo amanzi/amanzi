@@ -78,6 +78,13 @@ namespace Amanzi {
 
 #ifdef TRILINOS_TPETRA_STACK
 
+// -- default specializations -- NOTE: this is the ony place here and in data
+//    structures where these types are defined!
+using double_type = double;
+using int_type = int;
+using LO = int;
+using GO = int;
+
 // Tpetra uses Teuchos Comm
 typedef Teuchos::Comm<int> Comm_type;
 #  ifdef HAVE_MPI
@@ -85,17 +92,17 @@ typedef Teuchos::MpiComm<int> MpiComm_type;
 #  endif
 
 // Tpetra maps and importers
-typedef Tpetra::Map<> Map_type;
-typedef Tpetra::Map<> BlockMap_type; // is there a Tpetra block map?
-typedef Tpetra::Import<> Import_type;
+typedef Tpetra::Map<LO,GO> Map_type;
+typedef Tpetra::Map<LO,GO> BlockMap_type; // is there a Tpetra block map?
+typedef Tpetra::Import<LO,GO> Import_type;
 
 // Tpetra vectors
 // -- alias
 template <typename Scalar>
-using Vector_type_ = Tpetra::Vector<Scalar>;
+using Vector_type_ = Tpetra::Vector<Scalar,LO,GO>;
 
 template <typename Scalar>
-using MultiVector_type_ = Tpetra::MultiVector<Scalar>;
+using MultiVector_type_ = Tpetra::MultiVector<Scalar,LO,GO>;
 
 template <typename Scalar>
 using Vector_ptr_type_ = Teuchos::RCP<Vector_type_<Scalar>>;
@@ -106,19 +113,12 @@ using MultiVector_ptr_type_ = Teuchos::RCP<MultiVector_type_<Scalar>>;
 template <typename Scalar>
 using cMultiVector_ptr_type_ = Teuchos::RCP<const MultiVector_type_<Scalar>>;
 
-// -- default specializations -- NOTE: this is the ony place here and in data
-//    structures where these types are defined!
-using double_type = double;
-using int_type = int;
-using LO = int;
-using GO = int;
-
 using Vector_type = Vector_type_<double_type>;
 using MultiVector_type = MultiVector_type_<double_type>;
 using IntVector_type = Vector_type_<int_type>;
 using IntMultiVector_type = MultiVector_type_<int_type>;
 
-using Matrix_type = Tpetra::RowMatrix<double_type, LO, GO>;
+using Matrix_type = Tpetra::RowMatrix<double_type,LO,GO>;
 using Matrix_ptr_type = Teuchos::RCP<Matrix_type>;
 using cMatrix_ptr_type = Teuchos::RCP<const Matrix_type>;
 

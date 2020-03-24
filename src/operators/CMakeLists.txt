@@ -54,13 +54,13 @@ set(operators_inc_files
   Op.hh
   Op_Cell_Cell.hh
   Op_Face_Cell.hh
-  Op_Face_CellBndFace.hh
-  Op_SurfaceCell_SurfaceCell.hh  
-  Op_SurfaceFace_SurfaceCell.hh
+#  Op_Face_CellBndFace.hh
+#  Op_SurfaceCell_SurfaceCell.hh  
+#  Op_SurfaceFace_SurfaceCell.hh
   OperatorUtils.hh
   Operator.hh
   Operator_Cell.hh
-  Operator_CellBndFace.hh
+#  Operator_CellBndFace.hh
   Operator_Factory.hh
   TreeOperator.hh
   BCs.hh
@@ -78,7 +78,7 @@ set(operators_src_files
   OperatorUtils.cc
   Operator.cc
   Operator_Cell.cc
-  Operator_CellBndFace.cc
+#  Operator_CellBndFace.cc
   Operator_Factory.cc
   TreeOperator.cc
   PDE_HelperDiscretization.cc

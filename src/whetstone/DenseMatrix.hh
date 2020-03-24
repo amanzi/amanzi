@@ -80,10 +80,8 @@ class DenseMatrix {
   void assign(const DenseMatrix& other) {
     if (this != &other) {
       assert(n_ == other.n_ && m_ == other.m_);
-      for(int i = 0 ; i < n_; ++i){
-        for(int j = 0 ; j < m_; ++j){
-          data_(i,j) = other.data_(i,j); 
-        }
+      for(int i = 0 ; i < n_*m_; ++i){
+        data_(i) = other.data_(i); 
       }
     }
   }

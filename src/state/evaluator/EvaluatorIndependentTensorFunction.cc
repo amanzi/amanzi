@@ -120,13 +120,7 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
   int j = 0;
   for (auto name : tv.map) {
     auto vec = cv.ViewComponent(name, tv.ghosted);
-    Kokkos::parallel_for(
-        "TensorFunctionUpdate",
-        vec.extent(0),
-        KOKKOS_LAMBDA(const int& i) {
-          auto Ti = tv.at(j+i);
-          Ti(0,0) = vec(i,0);
-        });
+    Impl::assignViewToTensorVectorDiag(vec, j, tv);
     j += vec.extent(0);
   }
 }

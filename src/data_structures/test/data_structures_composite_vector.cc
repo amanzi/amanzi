@@ -149,7 +149,7 @@ SUITE(COMPOSITE_VECTOR)
     {
       // set the value, then destroy the view
       auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
-      v1(0, 0) = 16.0;
+      v1(0) = 16.0;
     }
     {
       // check set by view on owned

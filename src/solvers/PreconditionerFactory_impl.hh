@@ -82,7 +82,7 @@ PreconditionerFactory<Matrix, Vector>::Create(Teuchos::ParameterList& slist)
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-Teuchos::RCP<Preconditioner<Matrix_type, Vector_type>>
+inline Teuchos::RCP<Preconditioner<Matrix_type, Vector_type>>
 PreconditionerFactory<Matrix_type, Vector_type>::Create(
   const std::string& name, const Teuchos::ParameterList& prec_list)
 {
@@ -100,7 +100,7 @@ PreconditionerFactory<Matrix_type, Vector_type>::Create(
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-Teuchos::RCP<Preconditioner<Matrix_type, Vector_type>>
+inline Teuchos::RCP<Preconditioner<Matrix_type, Vector_type>>
 PreconditionerFactory<Matrix_type, Vector_type>::Create(Teuchos::ParameterList& slist)
 {
   if (slist.isParameter("preconditioner type")) {

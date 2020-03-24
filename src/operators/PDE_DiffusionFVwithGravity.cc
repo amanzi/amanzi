@@ -207,7 +207,19 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
   auto h = cvs.Create();
 
   {
-    WhetStone::Tensor Kc_ONE = WhetStone::Tensor_ONE();
+
+    if (!K_.get()) {
+      CompositeVectorSpace cvs;
+      cvs.SetMesh(mesh_)
+          ->SetGhosted(false)
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+      auto K = Teuchos::rcp(new TensorVector(cvs,false));
+      for (int c=0; c!=ncells_owned; ++c) {
+        K->set_shape(c, mesh_->space_dimension(), 1);
+        K->Init();
+      }
+      K_ = K;
+    }
     const TensorVector& K = *K_.get();    
   
     auto beta_f = transmissibility_->ViewComponent("face", true);
@@ -222,7 +234,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc = K.size() == 0 ? Kc_ONE : K_->at(c);
+          WhetStone::Tensor Kc = K.at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

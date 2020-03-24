@@ -108,8 +108,6 @@ public:
    */
   KOKKOS_INLINE_FUNCTION 
   int size(int idx, int d) const {
-    assert(idx <= sizes_.extent(0)); 
-    assert(d <= sizes_.extent(1));
     return sizes_(idx,d);  
   }
 

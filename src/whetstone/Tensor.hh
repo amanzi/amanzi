@@ -40,6 +40,13 @@ class Tensor {
 
   KOKKOS_INLINE_FUNCTION Tensor(): d_(0), rank_(0), size_(0) {}
 
+  KOKKOS_INLINE_FUNCTION Tensor(Tensor&& other){
+    d_ = other.d_; 
+    rank_ = other.rank_; 
+    data_ = other.data_; 
+    size_ = other.size_;
+  }
+
   Tensor(const int& d, const int& rank) {
     Init(d, rank);
   }
@@ -48,29 +55,31 @@ class Tensor {
     Kokkos::deep_copy(data_, other.data_);
   }
 
-  // Tensor(Tensor&& other) :
-  //     d_(other.d_),
-  //     rank_(other.rank_),
-  //     size_(other.size_),
-  //     data_(other.data_) {}
-  
-  // deep copy
-  //KOKKOS_INLINE_FUNCTION
-  //void assign(const Tensor& other) {
-  // if (this != &other) {
-  //    assert(size_ == other.size_);
-  //    for(int i = 0 ; i < size_; ++i){
-  //      data_[i] = other.data_[i]; 
-  //    }
-  //  }
-  //}
-
   KOKKOS_INLINE_FUNCTION Tensor(Kokkos::View<double*> data, int d, int rank, int size){
     d_ = d; 
     rank_ = rank; 
     data_ = data; 
     size_ = size;
   }
+
+    // Default assigment implies view semantics
+  KOKKOS_INLINE_FUNCTION Tensor& operator=(const Tensor&& other){
+    d_ = other.d_; 
+    rank_ = other.rank_; 
+    data_ = other.data_; 
+    size_ = other.size_;
+    return *this; 
+  } 
+
+  // Default assigment implies view semantics
+  Tensor& operator=(const Tensor& other){
+    d_ = other.d_; 
+    rank_ = other.rank_; 
+    Init(d_,rank_);
+    Kokkos::deep_copy(data_, other.data_);
+    return *this; 
+  } 
+
 
   /*******************************************************************
   * Initialization of a tensor of rank 1 (scalar), 2 (matrix) or 4.
@@ -283,8 +292,6 @@ class Tensor {
   friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
 
 
-  // Default assigment implies view semantics
-  Tensor& operator=(const Tensor& other) = default;
 
   void assign(const Tensor& other) {
     if (other.d_ != d_ || other.rank_ != rank_) Init(other.d_, other.rank_);
@@ -353,15 +360,8 @@ TensorToVector(const Tensor& T, DenseVector& v);
 void
 VectorToTensor(const DenseVector& v, Tensor& T);
 
-
 // identity is used frequently
-KOKKOS_INLINE_FUNCTION Tensor Tensor_ONE()
-{
-  Kokkos::View<double*> t_identity("identity", 1);
-  t_identity(0) = 1.0;
-  return Tensor(t_identity, 1,1,1);
-}
-
+Tensor Tensor_ONE(); 
 
 } // namespace WhetStone
 } // namespace Amanzi

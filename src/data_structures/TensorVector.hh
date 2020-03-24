@@ -47,7 +47,8 @@ struct TensorVector {
     Init();
   }
 
-  std::size_t size() const { return data.size(); }
+  KOKKOS_INLINE_FUNCTION size_t size() const { return data.size(); }
+
   void set_shape(const int& i, const int& d, const int& rank) {
     int tsize = WhetStone::WHETSTONE_TENSOR_SIZE[d-1][rank-1];
     data.set_shape(i, {d, rank, tsize}, tsize*tsize);
@@ -58,18 +59,17 @@ struct TensorVector {
     data.prefix_sum();
   }
   
-
   KOKKOS_INLINE_FUNCTION
   WhetStone::Tensor operator[](const int& i) {
     assert(inited);
-    return WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2));
+    return std::move(WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
 
   KOKKOS_INLINE_FUNCTION
   WhetStone::Tensor at(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
-    return WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2));
+    return std::move(WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
   
   CSR_Tensor data;

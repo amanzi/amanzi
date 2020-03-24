@@ -257,7 +257,6 @@ patchToCompositeVector(const Patch& p,
         KOKKOS_LAMBDA(const int& i) {
           cv_c(ids(i),0) = p.data(i,0);
           flag_c(ids(i),0) = flag_type;
-          std::cout << "Setting BC (" << ids(i) << ") with type " << flag_type << " and value " << p.data(i,0) << std::endl;
         });
   } else {
     AMANZI_ASSERT(false && "Not yet implemented: patchToCompositeVector with boundary_face");

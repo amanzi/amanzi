@@ -16,7 +16,7 @@ Lots of options here, document me!
 
 */
 
-#include "CSR_Factory.hh"
+#include "CSR.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Op_Factory.hh"
