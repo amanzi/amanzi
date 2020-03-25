@@ -107,7 +107,7 @@ MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
 }
 
 void
-MPCCoupledWater::set_states(const Teuchos::RCP<const State>& S,
+MPCCoupledWater::set_states(const Teuchos::RCP<State>& S,
                             const Teuchos::RCP<State>& S_inter,
                             const Teuchos::RCP<State>& S_next) {
   StrongMPC<PK_PhysicalBDF_Default>::set_states(S,S_inter,S_next);

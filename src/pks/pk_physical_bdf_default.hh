@@ -73,7 +73,7 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
   {}
 
 
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next) override;
     

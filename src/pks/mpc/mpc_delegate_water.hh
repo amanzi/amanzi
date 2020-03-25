@@ -84,7 +84,7 @@ class MPCDelegateWater {
   void set_db(const Teuchos::RCP<Debugger>& db) { db_ = db; }
   
   void
-  set_states(const Teuchos::RCP<const State>& S,
+  set_states(const Teuchos::RCP<State>& S,
              const Teuchos::RCP<State>& S_inter,
              const Teuchos::RCP<State>& S_next) {
     S_= S;

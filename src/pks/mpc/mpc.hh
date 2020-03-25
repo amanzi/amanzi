@@ -95,7 +95,7 @@ public:
   virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S);
   
   // set States
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
@@ -251,7 +251,7 @@ void MPC<PK_t>::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their set_states() methods
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPC<PK_t>::set_states(const Teuchos::RCP<const State>& S,
+void MPC<PK_t>::set_states(const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<State>& S_inter,
                      const Teuchos::RCP<State>& S_next) {
   //  PKDefaultBase::set_states(S, S_inter, S_next);
