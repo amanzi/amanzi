@@ -33,21 +33,10 @@ EvaluatorCellVolume::Update_(State& S)
   for (const auto& comp : vec) {
     if (comp == "cell") {
       auto vec_c = vec.ViewComponent("cell", false);
-      Kokkos::parallel_for(
-          "EvaluatorCellVolume copy",
-          vec_c.extent(0),
-          KOKKOS_LAMBDA(const int& c) {
-            vec_c(c,0) = mesh->cell_volume(c);
-          });
+      Impl::copyCellVolume(mesh, vec_c);
     } else if (comp == "face") {
       auto vec_c = vec.ViewComponent("face", false);
-      Kokkos::parallel_for(
-          "EvaluatorCellVolume copy",
-          vec_c.extent(0),
-          KOKKOS_LAMBDA(const int& c) {
-            vec_c(c,0) = mesh->face_area(c);
-          });
-
+      Impl::copyFaceArea(mesh, vec_c);
     } else {
       Errors::Message message;
       message << "EvaluatorCellVolume for \"" << my_key_
