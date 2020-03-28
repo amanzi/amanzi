@@ -256,6 +256,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       }
     }
   }
+std::cout << N << std::endl;
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;

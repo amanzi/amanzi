@@ -514,9 +514,16 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+
+  Teuchos::RCP<Mesh> mesh;
+  if (filename == "")
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  else
+    mesh = meshfactory.create(filename, true, true); 
+
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int d = mesh->space_dimension();
 
   Teuchos::ParameterList plist; 
@@ -565,6 +572,8 @@ TEST(HIGH_ORDER_RAVIART_THOMAS_SERENDIPITY) {
   HighOrderRaviartThomasSerendipity("test/cube_unit.exo");
   HighOrderRaviartThomasSerendipity("test/cube_unit_rotated.exo");
   HighOrderRaviartThomasSerendipity("test/cube_half.exo");
+  HighOrderRaviartThomasSerendipity("");
+exit(0);
 } 
 
 
