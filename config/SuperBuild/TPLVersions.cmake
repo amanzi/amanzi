@@ -136,6 +136,7 @@
 #                - update NetCDF-C to 4.7.3
 #                - update NetCDF-Fortran to 4.5.2
 #   0.97.1       - update MSTK to 3.3.1
+#   0.97.2       - update MSTK to 3.3.5
 
 include(CMakeParseArguments)
 
@@ -188,7 +189,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 1)
+set(AMANZI_TPLS_VERSION_PATCH 2)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -293,7 +294,7 @@ set(Boost_VERSION_MINOR 67)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
+set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
 set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
@@ -352,12 +353,13 @@ set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 3)
-set(MSTK_VERSION_PATCH 1)
+set(MSTK_VERSION_PATCH 5)
+
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
 set(MSTK_ARCHIVE_FILE   ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        5441d46ac1e2127eb5dd9a40a37da415)
+set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
 
 #
 # TPL: MOAB

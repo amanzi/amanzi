@@ -232,7 +232,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       vMGs[i].Multiply(w, u, false);
 
       for (int l = 0; l < ndf; ++l) {
-        R(row++, col) = u(l) * dirs[i] * area; 
+        R(row++, col) = u(l) * area;
       }
     }
 
@@ -256,7 +256,6 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       }
     }
   }
-std::cout << N << std::endl;
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;

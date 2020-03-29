@@ -560,10 +560,12 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
     basis.Init(mesh, 0, k, ptmp);
 
     GrammMatrix(numi, k, integrals, basis, G1);
+    int nd = G1.NumRows() / 3;
+    G2 = G.SubMatrix(0, nd, 0, nd);
 
-    G1 -= G;
-    std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
-    CHECK(G2.NormInf() <= 1e-12 * G.NormInf());
+    G2 -= G1;
+    std::cout << "Norm of dG=" << G2.NormInf() << " " << G1.NormInf() << std::endl;      
+    CHECK(G2.NormInf() <= 1e-12 * G1.NormInf());
   }
 }
 
@@ -573,7 +575,6 @@ TEST(HIGH_ORDER_RAVIART_THOMAS_SERENDIPITY) {
   HighOrderRaviartThomasSerendipity("test/cube_unit_rotated.exo");
   HighOrderRaviartThomasSerendipity("test/cube_half.exo");
   HighOrderRaviartThomasSerendipity("");
-exit(0);
 } 
 
 
