@@ -1,5 +1,5 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! Coordinator: Simulation controller and top-level driver
+//! Simulation controller and top-level driver
 
 /*
   ATS is released under the three-clause BSD License. 

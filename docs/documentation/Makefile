@@ -25,7 +25,7 @@ pdf:
 	@$(SPHINXBUILD) -M pdf "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 input_spec:
-	$(MAKE) -C source/input_spec
+	$(MAKE) -C source/input_spec clean rst
 
 deploy: all
 	cd build/html && \
