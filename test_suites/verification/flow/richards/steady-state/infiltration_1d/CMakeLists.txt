@@ -3,7 +3,7 @@
 project (INFILTRATION_1D)
 
 add_amanzi_comparison_test(infiltration_clay_sand_1d_u
-                           INPUT amanzi_infiltration_1d-u.xml
+                           INPUT amanzi_infiltration_clay_sand_1d-u.xml
 			   ABSOLUTE_TOLERANCE 1e-8
 			   RELATIVE_TOLERANCE 1e-8
 			   OBSERVATION "aqueous pressure"
