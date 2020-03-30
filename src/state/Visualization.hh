@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Visualization: a class for controlling simulation output.
+//! Manages simulation output to disk.
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,6 +11,16 @@
 */
 
 /*!
+
+A user may request periodic writes of field data for the purposes of
+visualization in the `"visualization`" sublists.
+
+ATS accepts a visualization list for each domain/mesh, including surface and
+column meshes.  These are in separate ParameterLists, entitled
+`"visualization`" for the main mesh, and `"visualization surface`" on the
+surface mesh.  It is expected that, for any addition meshes, each will have a
+domain name and therefore admit a spec of the form: `"visualization
+DOMAIN-NAME`".
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 

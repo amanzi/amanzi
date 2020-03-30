@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,10 +6,40 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+//! Uses NKA method as a linear solver.
 
-  Uses NKA as a linear solver. This is effectively equivalent 
-  to GMRES with a rolling restart, i.e. vectors fall off the 
-  end of the space.
+/*!
+
+This is effectively equivalent to GMRES with a rolling restart, where vectors
+fall off the end of the space.
+
+Parameters:
+
+* `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+
+* `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+
+* `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+
+* `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+  criteria, any of which can be applied.  Valid include:
+
+  - `"relative rhs`" : measure error relative to the norm of the RHS vector
+  - `"relative residual`" : measure error relative to the norm of the residual
+  - `"absolute residual`" : measure error directly, norm of error
+  - `"make one iteration`" : require at least one iteration to be performed before declaring success
+
+* `"max nka vectors`" ``[int]`` **10** Size of the NKA space used to span the residual, conceptually equivalent to the size of the Krylov space.
+
+* `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product are within this tolerance are considered parallel, and therefore the old vector is thrown out.
+
+
+
+
+Calef et al. "Nonlinear Krylov acceleration applied to a discrete ordinates formulation of the k-eigenvalue problem." JCP 238 (2013): 188-209.
+
+
 */
 
 #ifndef AMANZI_NKA_OPERATOR_HH_
