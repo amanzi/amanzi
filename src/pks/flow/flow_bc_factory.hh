@@ -121,8 +121,8 @@ be prescribed, to be enforced until the water table rises to the surface, at
 which point the precip is turned off and water seeps into runoff.  This
 capability is experimental and has not been well tested.
 
-  - if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
-  - if :math:`p > p_atm`, then :math:`p = p_atm`
+  - if :math:`q \cdot \hat{n} < q_0`, then :math:`q = q_0`
+  - if :math:`p > p_{atm}`, then :math:`p = p_{atm}`
 
 Example: seepage with infiltration
 
@@ -248,10 +248,12 @@ Example:
 
 
 Dynamic boundary condutions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The type of boundary conditions maybe changed in time depending on the switch function of TIME.
-<ParameterList name="dynamic">
-          
+
+.. code-block:: xml
+
+   <ParameterList name="dynamic">
      <Parameter name="regions" type="Array(string)" value="{surface west}"/>
      <ParameterList name="switch function">
        <ParameterList name="function-tabular">
@@ -294,9 +296,8 @@ The type of boundary conditions maybe changed in time depending on the switch fu
           </ParameterList>
         </ParameterList>
      </ParameterList>
-                 
- </ParameterList> 
-<!-- dynamic -->
+
+   </ParameterList>
 
  */
 

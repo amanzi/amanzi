@@ -88,14 +88,8 @@ void Coordinator::coordinator_init() {
     check << "checkpoint";
   
   // create the checkpointing
-
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  //if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-  //   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  // }
-  // else
   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -124,7 +118,7 @@ void Coordinator::coordinator_init() {
       }
     }
 
-  // -------------- ANALYSIS --------------------------------------------
+    // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
       analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
