@@ -42,9 +42,9 @@ include_directories(${ATS_SOURCE_DIR}/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/operators/deformation)
 
 if (ENABLE_FATES)
-  link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
-  link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
-  link_directories(/nh/u/dasvyat/Coastal/pnetcdf-1.11.2/install/lib)
+  # link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
+  # link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
+  link_directories(${CMAKE_PREFIX_PATH}/lib/)
   set (VEG_LIB pk_veg)
 endif()
 
@@ -139,7 +139,8 @@ set(tpl_link_libs
   )
 
 if (ENABLE_FATES)
-  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
+  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf)
+#  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
 #  link_directories(ats /nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
 endif()
 
