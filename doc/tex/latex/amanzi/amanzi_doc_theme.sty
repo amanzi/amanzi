@@ -57,13 +57,14 @@
 % ---------------------------------------------------------------------------
 
 \def\DocRev#1{\gdef\@DocRev{#1}}
+\def\DocLAUR#1{\gdef\@DocLAUR{#1}}
 \def\DocTitle#1{\gdef\@DocTitle{#1}}
 \def\DocDate#1{\gdef\@DocDate{#1}}
 \def\DocAuthors#1{\gdef\@DocAuthors{#1}}
 \def\LogoPath#1{\gdef\@LogoPath{#1}}
 \def\DocPrevVersions#1{\gdef\@DocPrevVersions{#1}}
 
-\newcommand{\ASCEMcover}{
+\newcommand{\AMANZIcover}{
 \thispagestyle{empty}
 
 \TPGrid[0.5in,1in]{15}{20}
@@ -171,6 +172,14 @@
   {\fontsize{10}{12.5}\selectfont  \@DocAuthors  }
 \end{textblock}  
 
+% LAB release numbers: LA-UR Number
+%
+\begin{textblock}{15}(6.50,19.50)
+  {\normalsize  \@DocLAUR}
+\end{textblock}
+
+
+
 %
 % Force the page break
 %
@@ -182,7 +191,7 @@
 
 
 
-\newcommand{\ASCEMdisclaimer}{%
+\newcommand{\AMANZIdisclaimer}{%
 %
 %  Disclaimer
 % 
@@ -219,16 +228,16 @@ its contractors, or subcontractors.
 %
 %  Printed in ...
 % 
-\vspace*{0.50in}
-\fbox{\parbox[t]{6in}{%
+%%\vspace*{0.50in}
+%%\fbox{\parbox[t]{6in}{%
 %
-\begin{center}
-\textbf{Printed in the United States of America}  \\[12pt]
+%%\begin{center}
+%%\textbf{Printed in the United States of America}  \\[12pt]
 %
-\textbf{Prepared for} \\
-\textbf{U.S. Department of Energy}
-\end{center}
-}}
+%%\textbf{Prepared for} \\
+%%\textbf{U.S. Department of Energy}
+%%\end{center}
+%%}}
 
 \clearpage
 }
