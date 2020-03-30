@@ -12,8 +12,7 @@ Capabilities tested include:
   * saturated flow
   * constant-rate pumping well
   * constant-head (Dirichlet) boundary conditions
-  * heterogeneous porous medium
-  * isotropic porous medium
+  * heterogeneous isotropic porous medium
   * uniform mesh
 
 For details on this test, see :ref:`about_butler_strip_2d`.

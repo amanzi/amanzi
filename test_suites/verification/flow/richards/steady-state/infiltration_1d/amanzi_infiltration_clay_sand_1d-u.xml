@@ -1,8 +1,8 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <model_description name="Richards-1D-infiltration_sand_loam" />
+    <model_description name="Richards-1D-infiltration_clay_sand" />
     <definitions>
       <macros>
-	<time_macro name="Observation Times">
+        <time_macro name="Observation Times">
           <start>0</start>
           <timestep_interval>10000 y</timestep_interval>
           <stop>-1</stop>
@@ -45,7 +45,6 @@
           <method>gmres</method>
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-16</tolerance>
-          <clf>1.0e-16</clf>
           <preconditioner>hypre_amg</preconditioner>
         </unstr_linear_solver>
         <unstr_preconditioners>
@@ -60,11 +59,6 @@
         <unstr_transport_controls>
           <algorithm>explicit first-order</algorithm>
         </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />
@@ -99,17 +93,17 @@
       <point coordinate="0.5,0.5,2.0" name="Obs_200" />
     </regions>
     <materials>
-      <material name="loam">
+      <material name="clay">
         <mechanical_properties>
           <porosity value="0.43" />
           <particle_density value="2720.0" />
         </mechanical_properties>
-        <permeability x="5.92360e-13" y="5.92360e-13" z="5.92360e-13" />
+        <permeability x="1.18E-13" y="1.18E-13" z="1.18E-13" />
         <cap_pressure model="van_genuchten">
-          <parameters alpha="4.08622e-4" m="0.375" sr="0.186047" />
+          <parameters alpha="1.02E-04" m="0.0909" sr="0.25" />
         </cap_pressure>
         <rel_perm model="mualem" />
-        <assigned_regions>Bottom Region</assigned_regions>
+        <assigned_regions>Top Region</assigned_regions>
       </material>
       <material name="sand">
         <mechanical_properties>
@@ -121,7 +115,7 @@
           <parameters alpha="1.532333E-03" m="0.6666667" sr="0.104651" />
         </cap_pressure>
         <rel_perm model="mualem" />
-        <assigned_regions>Top Region</assigned_regions>
+        <assigned_regions>Bottom Region</assigned_regions>
       </material>
     </materials>
     <phases>
@@ -162,7 +156,7 @@
     </boundary_conditions>
     <output>
       <observations>
-        <filename>observations.out</filename>
+        <filename>observations_2c.out</filename>
         <liquid_phase name="water">
           <aqueous_pressure>
             <assigned_regions>Obs_0</assigned_regions>
@@ -227,12 +221,12 @@
         </liquid_phase>
       </observations>
       <vis>
-        <base_filename>case_2b_plot</base_filename>
+        <base_filename>case_2c_plot</base_filename>
         <num_digits>5</num_digits>
         <cycle_macros>Every_100</cycle_macros>
       </vis>
       <checkpoint>
-        <base_filename>case_2b_checkpoint</base_filename>
+        <base_filename>chkpoint</base_filename>
         <num_digits>5</num_digits>
         <cycle_macros>Every_1000</cycle_macros>
       </checkpoint>

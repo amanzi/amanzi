@@ -39,7 +39,7 @@ utils_dispersion_45_point_2d.PlotAnalyticSoln(analytic_soln,analytic,slice,obs_s
 axes1.legend(loc='lower left',fontsize=14)
 axes1.set_xlabel('Transverse Distance from Plume Centerline, y[m]',fontsize=14)
 axes1.set_ylabel('Concentration [$kg/m^3$]',fontsize=14)
-axes1.set_title('Concentration at $x=0$ and $t=1440$ days',fontsize=14)
+axes1.set_title('Concentration at $y=-x$ and $t=1440$ days',fontsize=14)
 plt.tick_params(axis='both', which='major', labelsize=14)
 
 #plt.show()

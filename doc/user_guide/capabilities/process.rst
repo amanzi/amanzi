@@ -17,6 +17,7 @@ and Specifications for the Process Models* referred to on the
    flow.rst
    transport.rst
    chemistry.rst
+   mpc.rst
 
 
 .. _Mathematical Formulation Requirements and Specifications for the Process Models: http://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf

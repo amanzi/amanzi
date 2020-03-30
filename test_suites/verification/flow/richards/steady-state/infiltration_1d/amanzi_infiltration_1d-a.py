@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # Amanzi: unstructured
     try:
         input_file = "amanzi_infiltration_loam_sand_1d-u.xml"
-        path_to_amanzi = "output-u"
+        path_to_amanzi = "output_2a-u"
         root_amanzi = 'case_2a_plot'
     
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # Amanzi: structured
     try:
         input_file = "amanzi_infiltration_loam_sand_1d-s.xml"
-        path_to_amanzi = "output-s"
+        path_to_amanzi = "output_2a-s"
         root_amanzi = "plot"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)

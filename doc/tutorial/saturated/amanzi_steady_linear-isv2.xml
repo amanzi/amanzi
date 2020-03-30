@@ -1,4 +1,4 @@
-<amanzi_input version="2.0.0" type="unstructured">
+<amanzi_input version="2.3.0" type="unstructured">
 
   <model_description name="SR Test Problem">
     <comments>Steady-State Saturated: linear pressure profile</comments>
@@ -30,7 +30,7 @@
   <execution_controls>
     <verbosity level="high"/>
     <execution_control_defaults mode="steady" method="bdf1" />
-    <execution_control  start="0.0" end="0.0" init_dt="1000" mode = "steady" method="bdf1" />
+    <execution_control  start="0.0" end="1000 y" init_dt="1000 y" mode = "steady" method="bdf1" />
   </execution_controls>
   
   <numerical_controls>
@@ -63,11 +63,11 @@
       <comments>Downstream boundary</comments>
       <box low_coordinates= "100.0,0.0,0.0"     high_coordinates="100.0,50.0,50.0"/>
     </region>
-    <point name="Well 1"  coordinate="( 0.5, 25.0, 25.5)"/>
-    <point name="Well 2"  coordinate="(50.5, 25.0, 25.5)"/>
-    <point name="Well 2t" coordinate="(50.5, 25.0, 49.5)"/>
-    <point name="Well 2b" coordinate="(50.5, 25.0,  0.5)"/>
-    <point name="Well 3"  coordinate="(99.5, 25.0, 25.5)"/>
+    <point name="Well 1"  coordinate=" 0.5, 25.0, 25.5"/>
+    <point name="Well 2"  coordinate="50.5, 25.0, 25.5"/>
+    <point name="Well 2t" coordinate="50.5, 25.0, 49.5"/>
+    <point name="Well 2b" coordinate="50.5, 25.0,  0.5"/>
+    <point name="Well 3"  coordinate="99.5, 25.0, 25.5"/>
   </regions>
 
   <initial_conditions>
@@ -83,13 +83,12 @@
   </initial_conditions>
   
   <boundary_conditions>
-    <comments></comments>
     <boundary_condition name = "Upstream BC">
       <comments>Upstream boundary condition</comments>
       <assigned_regions>Upstream</assigned_regions>
       <liquid_phase name = "water">
 	<liquid_component name = "water">
-	  <inward_mass_flux start="0.0" function= "constant" value="1.95e-2"/>
+	  <inward_mass_flux start="0.0" function= "constant" value="1.950187e-2"/>
 	</liquid_component>
       </liquid_phase>
     </boundary_condition>
@@ -110,7 +109,7 @@
       <mechanical_properties>
         <porosity value="0.25"/>
       </mechanical_properties>
-      <permeability x="1.0E-12" y="1.0E-12" z="1.0E-12"/>
+      <permeability x="9.998680356931206e-13" y="9.998680356931206e-13" z="9.998680356931206e-13"/>
       <assigned_regions>Entire Domain</assigned_regions>
     </material>
   </materials>
@@ -118,7 +117,7 @@
   <definitions>
     <macros>
       <time_macro name="Steady State">
-	<time>0.0</time>
+	<time>1000 y</time>
       </time_macro>
     </macros>	
   </definitions>
@@ -188,3 +187,4 @@
   </output>
   
 </amanzi_input>
+

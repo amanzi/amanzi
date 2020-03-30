@@ -4,11 +4,11 @@ Steady-State One-Dimensional Flow: Materials in Parallel
 Capabilities Tested
 -------------------
 
-This one-dimensional steady-state flow problem tests the Amanzi
+This two-dimensional steady-state flow problem tests the Amanzi
 saturated flow process kernel.
 Capabilities tested include:
  
-  * single-phase, one-dimensional flow
+  * single-phase, one-dimensional head, two-dimentional flux
   * steady-state flow
   * saturated flow
   * constant-head (Dirichlet) boundary conditions
@@ -21,7 +21,7 @@ For details on this test, see :ref:`about_linear_materials_parallel_1d`.
 
 Background
 ----------
-For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
+For steady-state flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law :cite:`matp-Darcy_1856` becomes simply
 
 	.. math:: \frac{d^2h}{dx^2} = 0
@@ -148,10 +148,14 @@ Results and Comparison
 ----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
 Amanzi has reproduced the exact solution.
+At a boundary point, the observation is taken from a nearby cell. 
+This will be fixed in the future.
 
 .. plot:: amanzi_linear_materials_parallel_1d.py
 
-This is also visible in the following table.
+This is also visible in the following table. 
+The top and bottom parts of this table corerspond to 
+the front and back materials, respectively.
 
 .. include:: table_values.txt
 
@@ -206,6 +210,5 @@ Status
 ~~~~~~
 .. todo:: 
 
-  * Documentation:
-  * keb: Is this really 1D flow or is it horizontal flow with 2 dimensions?
   * keb: List what is expected out of Amanzi simulation output.
+  * fix observation at boundary points
