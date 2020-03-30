@@ -17,7 +17,11 @@ def file_id(lat, lon):
 
 def daymet_rest_url(lat, lon, start, end, vars=None):
     """Generates the DayMet Rest API URL."""
-
+    #
+    # NOTE: it is unclear why this was implemented this way -- shouldn't it use
+    # the standard requests dictionary-style syntax?  But if it ain't broke
+    # don't fix it. --etc
+    #    
     daymet_vars = ['dayl', 'prcp', 'srad', 'swe', 'tmax', 'tmin', 'vp']    
 
     # check variable names are valid
