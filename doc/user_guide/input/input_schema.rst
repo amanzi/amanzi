@@ -93,8 +93,8 @@ Here is an overall example for the model description element.
 
   <model_description name="BC Cribs">
     <comments>Some comment here</comments>
-    <model_id>What should be in this field; originally TBD</model_id>
-    <author>d3k870</author>
+    <model_id>DVZ-212a-3217</model_id>
+    <author>David Moulton</author>
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>

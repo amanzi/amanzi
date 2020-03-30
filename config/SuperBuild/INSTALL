@@ -109,7 +109,7 @@ We recommend that users install a stable version of MPICH2. MPICH even minor ver
 
 Steps to build and install MPICH2 are
 
-    1. Download MPICH2 http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads 
+    1. Download `MPICH2 <http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads>`_
 
     2. Unpack the tar file and create a separate build directory. In this build directory,
        configure MPICH2 with::
