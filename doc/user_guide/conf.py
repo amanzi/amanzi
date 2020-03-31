@@ -83,7 +83,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2016, Amanzi Development Team'
+copyright = u'2020, Amanzi Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -249,7 +249,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'AmanziUserGuide.tex', u'Amanzi User Guide',
-   u'Amanzi Development Team (LANL, LBNL, PNNL)', 'manual'),
+   u'Amanzi Development Team (LANL, LBNL, ORNL, PNNL)', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -279,7 +279,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'amanzi', u'Amanzi Documentation',
-     [u'Amanzi Development Team (LANL, LBNL, PNNL)'], 1)
+     [u'Amanzi Development Team (LANL, LBNL, ORNL, PNNL)'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -293,7 +293,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Amanzi', u'Amanzi Documentation',
-   u'Amanzi Development Team (LANL, LBNL, PNNL)', 'Amanzi', 'One line description of project.',
+   u'Amanzi Development Team (LANL, LBNL, ORNL, PNNL)', 'Amanzi', 'One line description of project.',
    'Miscellaneous'),
 ]
 
