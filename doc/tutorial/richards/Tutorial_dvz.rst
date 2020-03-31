@@ -1,6 +1,3 @@
-Tutorials
-=========
-
 Transient vadose zone flow and Tc-99 transport
 ----------------------------------------------
 
