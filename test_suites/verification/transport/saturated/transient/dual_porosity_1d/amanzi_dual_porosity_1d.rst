@@ -79,7 +79,7 @@ Schematic
 The domain, flow direction, and source location are shown in the schematic below.
 Note that :math:`B = L_m` here.
 
-.. figure:: schematic/schematic.pdf
+.. figure:: schematic/schematic.png
     :figclass: align-center
     :width: 400 px
 
