@@ -28,6 +28,8 @@ requires *cell*, *face* or *node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
+``[region-labeled-set-spec]``
+
 * `"label`" ``[string]`` Set per label defined in the mesh file.
 
 * `"file`" ``[string]`` File name.

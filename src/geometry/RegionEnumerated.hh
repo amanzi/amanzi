@@ -14,7 +14,9 @@
 
 List *region: enumerated set* defines a set of mesh entities via the list 
 of input global ids. Note that global ids are not defined correctly when
-parallle mesh is created on a fly.
+parallel mesh is created on a fly.
+
+``[region-enumerated-spec]``
 
 * `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
 

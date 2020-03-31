@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! The interface for a Process Kernel, an equation or system of equations.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,6 +6,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+//! The interface for a Process Kernel, an equation or system of equations.
 
 /*!  
 A process kernel represents a single or system of partial/ordinary
@@ -21,9 +20,10 @@ which represents a single equation.
 
 All PKs have the following parameters in their spec:
 
-* `"PK type`" ``[string]``
+``[pk-spec]``
 
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
+* `"PK type`" ``[string]`` The PK type is a special key-word which corresponds
+  to a given class in the PK factory.  See available PK types listed below.
 
 Example:
 

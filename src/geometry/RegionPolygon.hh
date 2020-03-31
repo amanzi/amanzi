@@ -26,6 +26,8 @@ defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
 In 3D, the normal of the polygon is defined by the order in which points 
 are specified.
 
+``[region-polygon-spec]``
+
 * `"number of points`" ``[int]`` Number of polygon points.
 
 * `"points`" ``[Array(double)]`` Point coordinates in a linear array. 
