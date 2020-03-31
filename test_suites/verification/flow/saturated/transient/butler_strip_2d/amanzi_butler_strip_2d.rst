@@ -222,11 +222,10 @@ About
     * drdn.dat,  drawdown as a function of time for all observation wells.
 
 
-Status
-~~~~~~
+.. todo::
 
-The analytical solution was solved using a FORTRAN code modified from the original code from Greg Ruskauf.
-We may need to implement the algorithm by ourselves or get permission from Greg Ruskauf for using the code.
-As the flow problem was solved analytically in the Laplace-Fourier transformed space, one needs to implement
-numerical inversion from the Laplace-Fourier transformed space back to the real space.
+  * The analytical solution was solved using a FORTRAN code modified from the original code from Greg Ruskauf.
+    We may need to implement the algorithm by ourselves or get permission from Greg Ruskauf for using the code.
+    As the flow problem was solved analytically in the Laplace-Fourier transformed space, one needs to implement
+    numerical inversion from the Laplace-Fourier transformed space back to the real space.
 

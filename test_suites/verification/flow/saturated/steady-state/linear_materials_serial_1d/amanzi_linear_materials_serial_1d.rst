@@ -220,8 +220,6 @@ About
     * steady-flow_data.h5
 
 
-Status
-~~~~~~
 .. todo:: 
 
   * keb: List what is expected out of Amanzi simulation output.

@@ -200,9 +200,6 @@ About
     * steady-flow_data.h5
 
 
-Status
-~~~~~~
-
 .. todo:: 
 
   * keb: find a schematic for this test

@@ -193,8 +193,7 @@ About
   
     * steady-flow_data.h5
 
-Status
-~~~~~~
+
 .. todo:: 
 
   * Implement new point observation, e.g. using linear reconstruction.

@@ -205,5 +205,3 @@ About
   * mesh:  porflow4_4.exo (two-dimensional mesh with conformal (non-orthogonal) grid)
 
 
-.. Status
-.. ------
