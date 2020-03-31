@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! Two-phase, variable density Richards equation.
-
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,7 +6,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
+//! Two-phase, variable density Richards equation.
 
 /*!
 
@@ -26,52 +24,66 @@ Includes options from:
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity key`" ``[string]`` **DOMAIN-water_content** Typically not set, default is good. ``[mol]``
-
-* `"mass density key`" ``[string]`` **DOMAIN-mass_density_liquid** liquid water density ``[kg m^-3]``
-
-* `"molar density key`" ``[string]`` **DOMAIN-molar_density_liquid** liquid water density ``[mol m^-3]``
-
-* `"permeability key`" ``[string]`` **DOMAIN-permeability** permeability of the soil medium ``[m^2]``
-
-* `"conductivity key`" ``[string]`` **DOMAIN-relative_permeability** scalar coefficient of the permeability ``[-]``
-
-* `"upwind conductivity key`" ``[string]`` **DOMAIN-upwind_relative_permeability** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
-
+* `"conserved quantity key`" ``[string]`` **DOMAIN-water_content** Typically
+  not set, as the default is good. ``[mol]``
+* `"mass density key`" ``[string]`` **DOMAIN-mass_density_liquid** liquid water
+  density ``[kg m^-3]``
+* `"molar density key`" ``[string]`` **DOMAIN-molar_density_liquid** liquid
+  water density ``[mol m^-3]``
+* `"permeability key`" ``[string]`` **DOMAIN-permeability** permeability of the
+  soil medium ``[m^2]``
+* `"conductivity key`" ``[string]`` **DOMAIN-relative_permeability** scalar
+  coefficient of the permeability ``[-]``
+* `"upwind conductivity key`" ``[string]``
+  **DOMAIN-upwind_relative_permeability** upwinded (face-based) scalar
+  coefficient of the permeability.  Note the units of this are strange, but
+  this represents :math:`\frac{n_l k_r}{\mu}` ``[mol kg^-1 s^1 m^-2]``
 * `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
-
-* `"darcy flux direction key`" ``[string]`` **DOMAIN-mass_flux_direction** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
-
-* `"darcy velocity key`" ``[string]`` **DOMAIN-darcy_velocity** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
-
+* `"darcy flux direction key`" ``[string]`` **DOMAIN-mass_flux_direction**
+  direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
+* `"darcy velocity key`" ``[string]`` **DOMAIN-darcy_velocity** darcy velocity
+  vector, interpolated from faces to cells ``[m s^-1]``
 * `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
-
 * `"saturation key`" ``[string]`` **DOMAIN-saturation_liquid** volume fraction of the liquid phase ``[-]``
 
 Discretization control:
 
 * `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the
+  diffusive parts of the preconditioner.
 
 * `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
 
 Boundary conditions:
 
-//* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.  See `Flow-specific Boundary Conditions`_
+..
+    * `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
-* `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
+* `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order
+  :math:`sqrt(K)` is about right.  This rescales things to stop from
+  multiplying by small numbers (permeability) and then by large number
+  (:math:`\rho / \mu`).
 
-* `"permeability type`" ``[string]`` **'scalar'** The permeability type can be 'scalar', 'horizontal and vertical', 'diagonal tensor', or 'full tensor'. This key is placed in state->field evaluators->permeability. The 'scalar' option requires 1 permeability value, 'horizontal and vertical' requires 2 values, 'diagonal tensor' requires 2 (2D) or 3 (3D) values, and 'full tensor' requires 3 (2D) or 6 (3D) values. The ordering of the permeability values in the input script is important: 'horizontal and vertical'={xx/yy,zz}, 'diagonal tensor'={xx,yy} or {xx,yy,zz}, 'full tensor'={xx,yy,xy/yx} or {xx,yy,zz,xy/yx,xz/zx,yz/zy}.
+* `"permeability type`" ``[string]`` **scalar** This key is placed in
+  state->field evaluators->permeability, and controls the number of values
+  needed to specify the absolute permeability.  One of:
 
-* `"water retention evaluator`" ``[wrm-evaluator-spec]`` The WRM.  This needs to go away!
+  - `"scalar`" Requires one scalar value.
+  - `"horizontal and vertical`" Requires two values, horizontal then vertical.
+  - `"diagonal tensor`" Requires dim values: {xx, yy} or {xx, yy, zz}
+  - `"full tensor`". (Note symmetry is required.)  Either {xx, yy, xy} or {xx,yy,zz,xy,xz,yz}.
+
+* `"water retention evaluator`" ``[wrm-evaluator-spec]`` The water retention
+  curve.  This needs to go away, and should get moved to State.
 
 This PK additionally requires the following:
 
 EVALUATORS:
+
 - `"conserved quantity`"
 - `"mass density`"
 - `"molar density`"

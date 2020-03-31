@@ -61,175 +61,166 @@ Conventions:
 
 
 Symbol Index
-#############
+############
 
 .. include:: symbol_table.rst
-   
-
   
 Main
-#######################################
-
-The `"main`" ParameterList frames the entire input spec, and must contain
-one sublist for each of the following sections.
-
-* `"mesh`" ``[mesh-spec]``  See the Mesh_ spec.
-
-* `"regions`" ``[list]``
-
-  List of multiple Region_ specs, each in its own sublist named uniquely by the user.
-
-* `"coordinator`" ``[coordinator-spec]``  See the Coordinator_ spec.
-
-* `"visualization`" ``[visualization-spec]`` A Visualization_ spec for the main mesh/domain.
-
-* `"visualization XX`" ``[visualization-spec]``
-
-  Potentially more than one other Visualization_ specs, one for each domain `"XX`".  e.g. `"surface`"
-
-* `"checkpoint`" ``[checkpoint-spec]`` A Checkpoint_ spec.
-
-* `"observations`" ``[observation-spec]`` An Observation_ spec.
-
-* `"PKs`" ``[list]``
-
-  A list containing exactly one sublist, a PK_ spec with the top level PK.
-
-* `"state`" ``[list]`` A State_ spec.
-
+####
+{ simulation_driver }
   
-Mesh
-#####
 
+Mesh
+####
 { ats_mesh_factory }
 
 
 Region
-##########
-
-
+######
 { Region }
 
-
-Point
-======
-{ RegionPoint }
+All
+===
+{ RegionAll }
 
 Box
-======
+===
 { RegionBox }
 
 Plane
-======
+=====
 { RegionPlane }
 
 Labeled Set
-============
+===========
 { RegionLabeledSet }
 
+Function Color
+==============
+{ RegionFunctionColor }
+
+Point
+=====
+{ RegionPoint }
+
+Logical
+=======
+{ RegionLogical }
+
+Polygon
+=======
+{ RegionPolygon}
+
+Enumerated
+==========
+{ RegionEnumerated }
+
+Boundary
+========
+{ RegionBoundary }
+
+Box Volume Fraction
+===================
+{ RegionBoxVolumeFractions }
+
+Line Segment
+============
+{ RegionLineSegment }
 
 
 Coordinator
 ############
-
 { coordinator }
    
 
 Visualization
 ##############
-
 { Visualization }
 
-  
+
 Checkpoint
 ##############
-
 { Checkpoint }  
 
 
  
 Observation
 ##############
-
 { Observable }
 
 
 PK
 #####
-
 { PK }
 
 Base PKs
-===============
-
-There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
+========
+There are several types of PKs, and each PK has its own valid input
+spec.  However, there are three main types of PKs, from which nearly
+all PKs derive.  Note that none of these are true PKs and cannot stand
+alone.
 
 PKPhysicalBase
-----------------
-
+--------------
 { pk_physical_default }
 
 
 PKBDFBase
-----------------
-
+---------
 { pk_bdf_default }
 
-
 PKPhysicalBDFBase
--------------------
-
+-----------------
 { pk_physical_bdf_default }
 
 Physical PKs
-===============
-
+============
 Physical PKs are the physical capability implemented within ATS.
 
 Flow PKs
------------
+--------
+Flow PKs include the flow of water both above and below-ground.
 
 Richards PK
-^^^^^^^^^^^^^^^
-
+^^^^^^^^^^^
 { richards }
 
 Permafrost Flow PK
-^^^^^^^^^^^^^^^^^^^^
-
-Overland Flow, head primary variable PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
+{ permafrost }
 
 Overland Flow, pressure primary variable, PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 { overland_pressure }
 
+Overland Flow with Ice
+^^^^^^^^^^^^^^^^^^^^^^
+{ icy_overland }
 
 Snow Distribution PK
 ^^^^^^^^^^^^^^^^^^^^
+{ snow_distribution }
 
 
 Energy PKs
 -----------
-
-Advection Diffusion PK
-^^^^^^^^^^^^^^^^^^^^^^^
+Advection and diffusion of energy, including phase change.
 
 Energy Base PK
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+{ energy_base }
 
 Two-Phase subsurface Energy PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+{ energy_two_phase }
 
 Three-Phase subsurface Energy PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+{ energy_three_phase }
 
-Three-Phase subsurface Energy PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Surface Ice Energy PK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overland energy with Ice
+^^^^^^^^^^^^^^^^^^^^^^^^
+{ energy_surface_ice }
 
 
 

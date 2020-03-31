@@ -1,6 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! The effective main of ATS
-
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,9 +5,15 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+// Runs the top-level simulation.
+
+
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+
 
 /*!
-ATS input accepts an XML list including a few required elements.
+
+ATS's top-level main accepts an XML list including a few required elements.
 
 * `"mesh`" ``[mesh-typed-spec-list]`` A list of Mesh_ spec objects, with
   domain names given by the name of the sublist.

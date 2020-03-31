@@ -1,6 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! Simple wrapper that takes a ParameterList and generates all needed meshes.
-
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,21 +5,26 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
+//! A list of mesh objects and their domain names.
 
 /*!
+
 All processes are simulated on a domain, which is discretized through a mesh.
 
 Multiple domains and therefore meshes can be used in a single simulation, and
-multiple meshes can be constructed on the fly.
+multiple meshes can be constructed on the fly.  The top level `"mesh`" is a
+list of ``[mesh-typed-spec]`` sublists whose name indicate the mesh or domain
+name.
 
-The base mesh represents the primary domain of simulation.  Simple, structured
-meshes may be generated on the fly, or complex unstructured meshes are
-provided as ``Exodus II`` files.  The base *mesh* list includes either a
-GeneratedMesh_,  MeshFromFile_, or LogicalMesh_ spec, as described below.
+Included in that list is at least one mesh: the `"domain`" mesh.  The
+`"domain`" mesh represents the primary domain of simulation -- usually the
+subsurface.  Simple, structured meshes may be generated on the fly, or complex
+unstructured meshes are provided as Exodus II files.  The `"domain`" mesh list
+includes either a `Generated Mesh`_, `Mesh From File`_, or `Logical Mesh`_ spec, as
+described below.
 
-Additionally, a SurfaceMesh_ may be formed by lifting the surface of a
-provided mesh and then flattening that mesh to a 2D surface.  ColumnMeshes_
+Additionally, a `Surface Mesh`_ may be formed by lifting the surface of a
+provided mesh and then flattening that mesh to a 2D surface.  `Column Meshes`_
 which split a base mesh into vertical columns of cells for use in 1D models
 may also be generated automatically.
 
@@ -33,15 +35,20 @@ through providing a "verify mesh" option.
 
 ``[mesh-typed-spec]``
 
-* `"mesh type`" ``[string]`` One of `"generate mesh`", `"read mesh file`",
-   `"logical`", `"surface`", `"subgrid`", or `"column`".
+* `"mesh type`" ``[string]`` One of `"generate mesh`", `"read mesh file`", `"logical`", `"surface`", `"subgrid`", or `"column`".
 * `"_mesh_type_ parameters`" ``[_mesh_type_-spec]`` List of parameters
   associated with the type.
 * `"verify mesh`" ``[bool]`` **false** Perform a mesh audit.
 * `"deformable mesh`" ``[bool]`` **false** Will this mesh be deformed?
+* `"partitioner`" ``[string]`` **zoltan_rcb** Method to partition the
+  mesh.  Note this only makes sense on the domain mesh.  One of:
+
+  * `"zoltan_rcb`" a "map view" partitioning that keeps columns of cells together
+  * `"metis`" uses the METIS graph partitioner
+  * `"zoltan`" uses the default Zoltan graph-based partitioner.
 
 
-GeneratedMesh
+Generated Mesh
 ==============
 
 Generated mesh are by definition structured, with uniform dx, dy, and dz.
@@ -72,25 +79,26 @@ Example:
    </ParameterList>   
 
 
-MeshFromFile
+Mesh From File
 ==============
 
-Meshes can be pre-generated in a multitude of ways, then written to "Exodus
-II" file format, and loaded in ATS.
+Meshes can be pre-generated in a multitude of ways, then written to
+Exodus II file format, and loaded in ATS.
 
 Specified by `"mesh type`" of `"read mesh file`".
 
 ``[mesh-type-read-mesh-file-spec]``
 
-* `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
-   Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
-   the suffix of the parallel mesh file must be .par.
-   When running in serial the code will read this the indicated file directly.
-   When running in parallel and the suffix is .par, the code will instead read
-   the partitioned files, that have been generated with a Nemesis tool and
-   named as filename.par.N.r where N is the number of processors and r is the rank.
-   When running in parallel and the suffix is .exo, the code will partition automatically
-   the serial file.
+* `"file`" ``[string]`` name of pre-generated mesh file. Note that in
+  the case of an Exodus II mesh file, the suffix of the serial mesh
+  file must be .exo and the suffix of the parallel mesh file must be
+  .par.  When running in serial the code will read this the indicated
+  file directly.  When running in parallel with a prepartitioned mesh,
+  the suffix is .par and the code will instead read the partitioned
+  files that have been generated with a Nemesis tool and named as
+  filename.par.N.r where N is the number of processors and r is the
+  rank.  When running in parallel and the suffix is .exo, the code
+  will partition automatically the serial file.
      
 * `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`" or `"Exodus II`")
 
@@ -110,17 +118,26 @@ Example:
    </ParameterList>
 
 
-LogicalMesh
-==============
+Logical Mesh
+============
 
-** Document me! **
+Logical meshes are meshes for whom nodal coordinates may not be
+specified, but sufficient information about the geometry of the
+conceptual domain can be specified to allow solving problems.  This
+allows for the conceptual generation of domains that "act" like a mesh
+and can be used like a mesh, but don't fit MSTK's view of an
+unstructured mesh.
+
+This is an active research and development area, and is used most
+frequently for river networks, root networks, and crack networks.
 
 Specified by `"mesh type`" of `"logical`".
 
+.. note::
+   WIP: add spec!
 
-
-SurfaceMesh
-==============
+Surface Mesh
+============
 
 To lift a surface off of the mesh, a side-set specifying all surface faces
 must be given.  These faces are lifted locally, so the partitioning of the
@@ -135,8 +152,16 @@ Specified by `"mesh type`" of `"surface`".
 
 ``[mesh-type-surface-spec]``
 
+ONE OF
+
 * `"surface sideset name`" ``[string]`` The Region_ name containing all surface faces.
-* `"surface sideset names`" ``[Array(string)]`` A list of Region_ names containing the surface faces.  Either this or the singular version must be specified.
+
+OR
+
+* `"surface sideset names`" ``[Array(string)]`` A list of Region_ names containing the surface faces.
+
+END
+
 * `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
 * `"export mesh to file`" ``[string]`` Export the lifted surface mesh to this filename.
 
@@ -163,7 +188,7 @@ Example:
     </ParameterList>
 
 
-SubgridMeshes
+Subgrid Meshes
 ==============
 
 A collection of meshes formed by associating a new mesh with each entity of a
@@ -174,31 +199,36 @@ meshes off of each surface cell as a subgrid model, etc.
 The subgrid meshes are then named `"MESH_NAME_X"` for each X, which is an
 entity local ID, in a provided region of the provided entity type.
 
-**DOCUMENT ME How is the subgrid mesh type specified?  Add examples for Columns and Transport Subgrid model!**
-
 Specified by `"mesh type`" of `"subgrid`".
 
 ``[mesh-type-subgrid-spec]``
 
 * `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
-* `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the region (usually
-   `"cell`") on which each subgrid mesh will be associated.
+* `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the
+  region (usually `"cell`") on which each subgrid mesh will be associated.
 * `"parent domain`" ``[string]`` **domain** Mesh which includes the above region.
-* `"flyweight mesh`" ``[bool]`` **False** NOT SUPPORTED?  Allows a single mesh instead of one per entity.
+* `"flyweight mesh`" ``[bool]`` **False** NOT YET SUPPORTED.  Allows a single
+  mesh instead of one per entity.
 
-    
-ColumnMeshes
-==============
+.. note::
+   WIP: Add examples (intermediate scale model, transport subgrid model)
 
-Note these are never? created manually by a user.  Instead use SubgridMeshes,
-which generate a ColumnMesh_ spec for every face of the surface mesh.
+
+  
+Column Meshes
+=============
+
+.. note::
+   Note these are rarely if ever created manually by a user.  Instead use
+   `Subgrid Meshes`_, which generate a column mesh spec for every face
+   of a set.
 
 Specified by `"mesh type`" of `"column`".
 
 ``[mesh-type-column-spec]``
 
 * `"parent domain`" ``[string]`` The Mesh_ name of the 3D mesh from which columns are generated.
-   Note that the `"build columns from set`" parameter must be set in that mesh.
+  Note that the `"build columns from set`" parameter must be set in that mesh.
 * `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
 * `"deformable mesh`" ``[bool]`` **false**  Used for deformation PKs to allow non-const access.
 * `"entity LID`" ``[int]`` Local ID of the surface cell that is the top of the column.
@@ -223,22 +253,6 @@ Example:
       </ParameterList>
     </ParameterList>
 
-SperryMesh
-==============
-
-A mesh based on the Sperry et al 98 and Christoffersen et al 16 papers.  Hard
-coded currently for simplicity, this is ongoing work and will change a lot.
-
-Example:
-
-.. code-block:: xml
-
-    <ParameterList name="mesh" type="ParameterList">
-      <ParameterList name="domain" type="ParameterList">
-        <Parameter name="mesh type" type="string" value="Sperry 1D column" />
-      </ParameterList>
-    </ParameterList>
-    
 */
 
 #ifndef ATS_MESH_FACTORY_HH_
