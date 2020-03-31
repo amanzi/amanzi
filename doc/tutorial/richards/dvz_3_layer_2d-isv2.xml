@@ -97,9 +97,10 @@
   </phases>
 
   <execution_controls>
-    <execution_control_defaults init_dt="10"  max_dt="0.01" reduction_factor="0.8" 
+    <verbosity level="high" />
+    <execution_control_defaults init_dt="10"  max_dt="20 y" reduction_factor="0.8" 
                                 increase_factor="1.25" mode="transient" method="bdf1"/>
-    <execution_control start="0.0;y"  end="1956.0,y" init_dt= "1000" max_dt="500.0" reduction_factor="0.8" mode="steady"/>
+    <execution_control start="0.0;y"  end="1956.0,y" init_dt= "1000" max_dt="500.0 y" reduction_factor="0.8" mode="steady"/>
     <execution_control start="B-17_release_begin" />
     <execution_control start="B-17_release_end" />
     <execution_control start="B-18_release_begin" />

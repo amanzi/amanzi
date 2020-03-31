@@ -126,7 +126,14 @@ is marked by ``SIMULATION_SUCCESSFUL`` followed by a timing summary ::
 *Amanzi* results
 ~~~~~~~~~~~~~~~~
 
-**vis results to be added**
+The figure shows saturation dynamics. Saturation grows underneath the 
+left and right cribs during their operational cycles. Note it takes time 
+for two moving plumes to penetrate into the middle soil which leads to saturation 
+increase on the interface between soils. 
+
+  .. image:: saturation.png
+	:scale: 50 %
+	:align: center
 
 
 *Amanzi* XML input file
