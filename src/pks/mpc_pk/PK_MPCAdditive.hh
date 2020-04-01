@@ -121,6 +121,7 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
   solution_->PushBack(pk_soln);
 
+  sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);

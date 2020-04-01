@@ -142,6 +142,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   }
 
   my_solution_ = Teuchos::rcp(new TreeVector());
+  sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
