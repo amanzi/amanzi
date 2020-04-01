@@ -92,6 +92,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  std::cout << "nfaces_owned = " << nfaces_owned << std::endl;
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     flux[0][f] = velocity * normal;

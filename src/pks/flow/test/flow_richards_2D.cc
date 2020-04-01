@@ -40,6 +40,7 @@ TEST(FLOW_2D_RICHARDS) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
+  std::cout << "MyPID = " << MyPID << std::endl;
   if (MyPID == 0) std::cout << "Test: 2D Richards, 2-layer model" << std::endl;
 
   // read parameter list

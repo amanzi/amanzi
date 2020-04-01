@@ -25,10 +25,6 @@
 #include "OutputXDMF.hh"
 
 
-double BottomTopography(double x, double y) {
-    return 0.;
-}
-
 /* **************************************************************** */
 TEST(SHALLOW_WATER_1D) {
     using namespace Teuchos;
@@ -57,9 +53,9 @@ TEST(SHALLOW_WATER_1D) {
     if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
     RCP<const Mesh> mesh;
-//    mesh = meshfactory.create(0.0, 0.0, 10.0, 4.0, 100, 4, request_faces,
-//			   request_edges);
-    mesh = meshfactory.create("median63x64.exo",request_faces,request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1, request_faces,
+			   request_edges);
+//    mesh = meshfactory.create("median63x64.exo",request_faces,request_edges);
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
     // create a state
@@ -103,27 +99,27 @@ TEST(SHALLOW_WATER_1D) {
     
     while (t_new < 0.5) {
 
-//        // initialize io
-//        Teuchos::ParameterList iolist;
-//        std::string fname;
-//        fname = "SW_sol_"+std::to_string(iter);
-//        iolist.get<std::string>("file name base", fname);
-//        OutputXDMF io(iolist, mesh, true, false);
+        // initialize io
+        Teuchos::ParameterList iolist;
+        std::string fname;
+        fname = "SW_sol_"+std::to_string(iter);
+        iolist.get<std::string>("file name base", fname);
+        OutputXDMF io(iolist, mesh, true, false);
 
-//        // cycle 1, time t
-//        double t_out = t_new;
+        // cycle 1, time t
+        double t_out = t_new;
 
-//        const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-//        const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-//        const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-//        const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
-//
-//        io.InitializeCycle(t_out, 1);
-//        io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-//        io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-//        io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-//        io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-//        io.FinalizeCycle();
+        const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
+
+        io.InitializeCycle(t_out, 1);
+        io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+        io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
+        io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+        io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+        io.FinalizeCycle();
 
         dt = SWPK.get_dt();
         t_new = t_old + dt;
@@ -142,6 +138,8 @@ TEST(SHALLOW_WATER_1D) {
     }
     if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
     
+    std::cout << "MyPID = " << MyPID << ", iter = " << iter << std::endl;
+
 
 //    if (MyPID == 0) {
 //        GMV::open_data_file(*mesh, (std::string)"transport.gmv");

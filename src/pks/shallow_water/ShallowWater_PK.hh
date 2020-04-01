@@ -83,9 +83,11 @@ class ShallowWater_PK : public PK_Physical,
                             
     std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
 
-    std::vector<double> NumFlux_xn(std::vector<double> UL,std::vector<double> UR, Amanzi::AmanziGeometry::Point normal);
+//    std::vector<double> NumFlux_y(std::vector<double>,std::vector<double>);
 
-    std::vector<double> NumFlux_y(std::vector<double>,std::vector<double>);
+    std::vector<double> NumFlux_x_Rus(std::vector<double>,std::vector<double>);
+
+    std::vector<double> NumFlux_x_central_upwind(std::vector<double>,std::vector<double>);
 
     std::vector<double> PhysSrc(std::vector<double>);
 
