@@ -8,7 +8,7 @@ modification, as well as the disclaimer are given in the BSD license
 at the end of this document.
 
 ----------------------------------------------
-Los Alamos National Laboratory:
+Los Alamos National Laboratory
 ----------------------------------------------
  
   Copyright (c) 2010-2020, Triad National Security, LLC.
