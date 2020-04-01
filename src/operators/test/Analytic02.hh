@@ -30,7 +30,7 @@ class Analytic02 : public AnalyticBase {
   Analytic02(int dim, double g) :
       AnalyticBase(dim),
       g_(g), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
-  Analytic02(const Amanzi::AmanziGeometry::Point& v, double g, const Amanzi::WhetStone::Tensor& K) :
+  Analytic02(const Amanzi::AmanziGeometry::Point& v, double g, const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& K) :
       AnalyticBase(v.dim()),
       g_(g),
       v_(v),
@@ -39,9 +39,9 @@ class Analytic02 : public AnalyticBase {
 
   virtual std::string name() const override { return "Analytic02"; }
   
-  Amanzi::WhetStone::Tensor
+  Amanzi::WhetStone::Tensor<Kokkos::HostSpace>
   TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override{
-    Amanzi::WhetStone::Tensor K(d_, 2);
+    Amanzi::WhetStone::Tensor<Kokkos::HostSpace> K(d_, 2);
     if (K_.size() == 0) {
       K(0, 0) = 1.0;
       K(1, 1) = 3.0;
@@ -76,7 +76,7 @@ class Analytic02 : public AnalyticBase {
 
  private:
   double g_;
-  Amanzi::WhetStone::Tensor K_;
+  Amanzi::WhetStone::Tensor<Kokkos::HostSpace> K_;
   Amanzi::AmanziGeometry::Point v_;
 };
 

@@ -54,22 +54,47 @@ struct TensorVector {
     data.set_shape(i, {d, rank, tsize}, tsize*tsize);
   }
 
+  /**
+    * Init the CSR based on a Host vector 
+  */
+  void Init(const std::vector<WhetStone::Tensor<Kokkos::HostSpace>>& ht){
+    // Extract max size 
+    const int row_map_size = ht.size(); 
+    // Set CSR 
+    data.set_size(row_map_size); 
+    // Fill row map  and size
+    for(int i = 0 ; i < ht.size(); ++i){
+      data.set_row_map(i,ht[i].mem());
+      data.set_sizes(i,0,ht[i].dimension());
+      data.set_sizes(i,1,ht[i].rank()); 
+      data.set_sizes(i,2,ht[i].size());
+    }
+    data.prefix_sum(); 
+    // Fill entries 
+    for(int i = 0 ; i < ht.size(); ++i){
+      int idx = data.row_map(i);
+      for(int j = 0 ; j < ht[i].data().extent(0); ++j){
+        data.set_entries(idx+j,ht[i].data()(j)); 
+      }
+    }
+  }
+
   void Init() {
     inited = true;
     data.prefix_sum();
   }
   
   KOKKOS_INLINE_FUNCTION
-  WhetStone::Tensor operator[](const int& i) {
+  WhetStone::Tensor<Kokkos::CudaUVMSpace> operator[](const int& i) {
     assert(inited);
-    return std::move(WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+    return std::move(WhetStone::Tensor<Kokkos::CudaUVMSpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
 
   KOKKOS_INLINE_FUNCTION
-  WhetStone::Tensor at(const int& i) const {
+  WhetStone::Tensor<Kokkos::CudaUVMSpace> at(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
-    return std::move(WhetStone::Tensor(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+    return std::move(WhetStone::Tensor<Kokkos::CudaUVMSpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
   
   CSR_Tensor data;

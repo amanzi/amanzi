@@ -60,49 +60,49 @@ class MFD3D_Diffusion : public MFD3D,
   using DeRham_Face::MassMatrix;
 
   // -- inverse mass matrix is modified to reflect scaling of fluxes by area
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override; 
+  virtual int MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix& W) override; 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override;
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
+  virtual int H1consistency(int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix& A) override;
 
   // -- divergence matrix
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
-  int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverseScaledArea(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  int MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M);
+  int L2consistencyScaledArea(int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int L2consistencyInverseScaledArea(int c, const Tensor<>& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  int MassMatrixScaledArea(int c, const Tensor<>& K, DenseMatrix& M);
 
   // -- optimized stability
-  int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseMMatrixHex(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseMMatrix(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseOptimized(int c, const Tensor<>& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int c, const Tensor<>& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrix(int c, const Tensor<>& K, DenseMatrix& W);
 
-  int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
-  int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixOptimized(int c, const Tensor<>& K, DenseMatrix& A);
+  int StiffnessMatrixMMatrix(int c, const Tensor<>& K, DenseMatrix& A);
 
   // -- tensor is product k K
-  int L2consistencyInverseDivKScaled(int c, const Tensor& K,
+  int L2consistencyInverseDivKScaled(int c, const Tensor<>& K,
                                      double kmean, const AmanziGeometry::Point& kgrad,
                                      DenseMatrix& R, DenseMatrix& Wc);
-  int MassMatrixInverseDivKScaled(int c, const Tensor& K,
+  int MassMatrixInverseDivKScaled(int c, const Tensor<>& K,
                                   double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W);
 
   // -- non-symmetric tensor K (consistency is not changed)
-  int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
-  int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixNonSymmetric(int c, const Tensor<>& K, DenseMatrix& M);
+  int MassMatrixInverseNonSymmetric(int c, const Tensor<>& K, DenseMatrix& W);
 
   // surface methods
   // -- mass matrix
-  int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
-  int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
+  int L2consistencyInverseSurface(int c, const Tensor<>& K, DenseMatrix& R, DenseMatrix& Wc);
+  int MassMatrixInverseSurface(int c, const Tensor<>& K, DenseMatrix& W);
 
   // -- other related discetization methods
-  int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseSO(int c, const Tensor<>& K, DenseMatrix& W);
+  int MassMatrixInverseTPFA(int c, const Tensor<>& K, DenseMatrix& W);
+  int MassMatrixInverseDiagonal(int c, const Tensor<>& K, DenseMatrix& W);
 
   // -- projectors
   //    we return linear polynomial instead of constant vector polynomial (FIXME)
@@ -111,11 +111,11 @@ class MFD3D_Diffusion : public MFD3D,
                       const Polynomial* moments, Polynomial& vc) override;
 
   // utils
-  double Transmissibility(int f, int c, const Tensor& K);
+  double Transmissibility(int f, int c, const Tensor<>& K);
 
  private:  
   // stability methods (add stability matrix, M += Mstab)
-  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
+  int StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
 
   // mesh extension methods 

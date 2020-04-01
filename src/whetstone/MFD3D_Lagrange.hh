@@ -45,20 +45,20 @@ class MFD3D_Lagrange : public MFD3D {
   }
 
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
+  virtual int L2consistency(int c, const Tensor<>& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
     Errors::Message msg("L2 consistency is not implemented for Lagrange element.");
     Exceptions::amanzi_throw(msg);
     return 0;
   }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix& M) override {
     Errors::Message msg("Mass matrix is not implemented for Lagrange element.");
     Exceptions::amanzi_throw(msg);
     return 0;
   }
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  virtual int H1consistency(int c, const Tensor<>& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix& A) override;
 
   // -- projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,

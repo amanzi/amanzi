@@ -179,7 +179,6 @@ SUITE(DIFFUSION) {
     if (norminf > 1.e-10) res.Print(std::cout);
 
   }
-
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
   // polynomial with coefficient=1
@@ -198,7 +197,6 @@ SUITE(DIFFUSION) {
         ana, 1.1, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
   // polynomial with coefficient=1

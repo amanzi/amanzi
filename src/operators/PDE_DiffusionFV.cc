@@ -497,8 +497,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->space_dimension(); 
 
-    WhetStone::Tensor Kc_ONE = WhetStone::Tensor_ONE();
-    const TensorVector& K = *K_.get();    
+    const TensorVector* K = K_.get();    
 
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ComputeTransmissibility",
@@ -509,7 +508,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc = K.at(c);
+          WhetStone::Tensor<> Kc = K->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

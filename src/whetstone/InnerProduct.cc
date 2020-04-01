@@ -51,7 +51,7 @@ void InnerProduct::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 ****************************************************************** */
-int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
+int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMatrix& M)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();

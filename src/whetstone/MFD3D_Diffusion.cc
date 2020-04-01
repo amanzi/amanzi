@@ -33,7 +33,7 @@ namespace WhetStone {
 * Fluxes include face areas!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyScaledArea(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -49,7 +49,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
   Kinv.Transpose();
 
@@ -84,7 +84,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
 * Flux is scaled by face area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverseScaledArea(
-    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+    int c, const Tensor<>& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -98,7 +98,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
 
-  Tensor Kt(K);
+  Tensor<> Kt(K);
   Kt.Transpose();
 
   // Since N is scaled by K, N = N0 * K, we us tensor K in the
@@ -135,7 +135,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
 * The degrees of freedom are at nodes.
 ****************************************************************** */
 int MFD3D_Diffusion::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -219,11 +219,11 @@ int MFD3D_Diffusion::H1consistency(
 /* ******************************************************************
 * Mass matrix in space of fluxes.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
+int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor<>& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, true);
@@ -237,11 +237,11 @@ int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M
 /* ******************************************************************
 * Mass matrix in space of fluxes for non-symmetric tensor
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
+int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor<>& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, false);
@@ -255,7 +255,7 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
 /* ******************************************************************
 * Inverse mass matrix for non-symmetric PD tensor.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -270,7 +270,7 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -285,7 +285,7 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 /* ******************************************************************
 * Stiffness matrix: the optimized algorithm.
 ****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A)
+int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -300,7 +300,7 @@ int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatri
 /* ******************************************************************
 * Stiffness matrix: the M-matrix approach
 ****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
+int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -381,7 +381,7 @@ int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 * fluxes. Only the upper triangular part of Wc is calculated.
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
-    int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad,
+    int c, const Tensor<>& K, double kmean, const AmanziGeometry::Point& kgrad,
     DenseMatrix& R, DenseMatrix& Wc)
 {
   Entity_ID_List faces, nodes;
@@ -451,7 +451,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 /* ******************************************************************
 * Inverse mass matrix in flux space via optimization, experimental.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -469,7 +469,7 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 * Mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
-    int c, const Tensor& K, DenseMatrix& W)
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -487,7 +487,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 * Mass matrix for a polyhedral element via simplex method.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseMMatrix(
-    int c, const Tensor& K, DenseMatrix& W)
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -512,7 +512,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 * Inverse mass matrix via optimization, experimental.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseOptimized(
-    int c, const Tensor& K, DenseMatrix& W)
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -530,7 +530,7 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
 * Inverse mass matrix via optimization, experimental.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
-    int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W)
+    int c, const Tensor<>& K, double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -571,7 +571,7 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 /* ******************************************************************
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
-int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
+int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix& M)
 {
   int nrows = 2 * d_;
 
@@ -616,7 +616,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   }
 
   // define transformed tensor
-  Tensor T1(d_, 2);
+  Tensor<> T1(d_, 2);
   AmanziGeometry::Point areas(d_);
   for (int i = 0; i < d_; i++) {
     k = map[2*i];

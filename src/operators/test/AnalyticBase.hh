@@ -62,9 +62,9 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual WhetStone::Tensor
+  virtual WhetStone::Tensor<Kokkos::HostSpace>
   TensorDiffusivity(const AmanziGeometry::Point& p, double t) const {
-    WhetStone::Tensor K(d_, 1);
+    WhetStone::Tensor<Kokkos::HostSpace> K(d_, 1);
     K(0,0) = 1.0;
     return K;
   }

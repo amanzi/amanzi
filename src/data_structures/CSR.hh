@@ -91,6 +91,35 @@ public:
     row_map_(i) = size < 0 ? total : size;
   }
 
+
+  /**
+    * @brief Set the size of the whole csr
+  */
+  void set_size(const int& row_map_size, const int& entries_size = 0){
+    if(row_map_.size() != row_map_size+1)
+      Kokkos::resize(row_map_,row_map_size+1);
+    if(entries_size != entries_.size())
+      Kokkos::resize(entries_,entries_size);
+    if(sizes_.extent(0) != row_map_size)
+      Kokkos::resize(sizes_,row_map_size,D);   
+  }
+
+  void set_row_map(const int& i, const int& v){
+    row_map_[i] = v; 
+  }
+
+  void set_entries(const int& i, const double& v){
+    entries_[i] = v; 
+  }
+
+  void set_sizes(const int& i, const int& j, const int& v){
+    sizes_(i,j) = v; 
+  }
+
+  int row_map(const int& i ){
+    return row_map_[i]; 
+  }
+
   /** 
    * @brief Return subview corresponding to element i
    * @param i index of the element in row_map_

@@ -44,7 +44,7 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
 int MFD3D_Lagrange::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -129,7 +129,7 @@ int MFD3D_Lagrange::H1consistency(
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int MFD3D_Lagrange::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+    int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 

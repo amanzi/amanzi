@@ -220,7 +220,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
       }
       K_ = K;
     }
-    const TensorVector& K = *K_.get();    
+    const TensorVector* K = K_.get();    
   
     auto beta_f = transmissibility_->ViewComponent("face", true);
     auto h_f = h->ViewComponent("face", true);
@@ -234,7 +234,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor Kc = K.at(c);
+          WhetStone::Tensor<> Kc = K->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

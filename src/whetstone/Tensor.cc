@@ -26,186 +26,22 @@ namespace WhetStone {
 
 
 /* ******************************************************************
- * Inverse operation with tensors of rank 1 and 2
- ****************************************************************** */
-void
-Tensor::Inverse()
-{
-  if (size_ == 1) {
-    data_[0] = 1.0 / data_[0];
-
-  } else if (size_ == 2) { // We use inverse formula based on minors
-    double det = data_[0] * data_[3] - data_[1] * data_[2];
-
-    double a = data_[0];
-    data_[0] = data_[3] / det;
-    data_[3] = a / det;
-
-    data_[1] /= -det;
-    data_[2] /= -det;
-
-  } else {
-    int info, ipiv[size_];
-    double work[size_];
-    DGETRF_F77(&size_, &size_, data_ptr(), &size_, ipiv, &info);
-    DGETRI_F77(&size_, data_ptr(), &size_, ipiv, work, &size_, &info);
-  }
-}
-
-
-/* ******************************************************************
- * Pseudo-inverse operation with tensors of rank 1 and 2
- * The algorithm is based on eigenvector decomposition. All eigenvalues
- * below the tolerance times the largest eigenvale value are neglected.
- ****************************************************************** */
-void
-Tensor::PseudoInverse()
-{
-  if (size_ == 1) {
-    if (data_[0] != 0.0) data_[0] = 1.0 / data_[0];
-
-  } else {
-    int n = size_;
-    int ipiv[n], lwork(3 * n), info;
-    double S[n], work[lwork];
-
-    Tensor T(*this);
-    DSYEV_F77("V", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);
-
-    // pseudo-invert diagonal matrix S
-    double norm_inf(fabs(S[0]));
-    for (int i = 1; i < n; i++) { norm_inf = std::max(norm_inf, fabs(S[i])); }
-
-    double eps = norm_inf * 1e-15;
-    for (int i = 0; i < n; i++) {
-      double tmp(fabs(S[i]));
-      if (tmp > eps) {
-        S[i] = 1.0 / S[i];
-      } else {
-        S[i] = 0.0;
-      }
-    }
-
-    // calculate pseudo inverse pinv(A) = V * pinv(S) * V^t
-    for (int i = 0; i < n; i++) {
-      for (int j = i; j < n; j++) {
-        double tmp(0.0);
-        for (int k = 0; k < n; k++) { tmp += T(i, k) * S[k] * T(j, k); }
-        (*this)(i, j) = tmp;
-        (*this)(j, i) = tmp;
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
- * Matrix of co-factors
- ****************************************************************** */
-Tensor
-Tensor::Cofactors() const
-{
-  Tensor C(d_, rank_);
-  Kokkos::View<double*> dataC = C.data();
-
-  if (size_ == 1) {
-    dataC[0] = 1.0;
-
-  } else if (size_ == 2) {
-    dataC[0] = data_[3];
-    dataC[3] = data_[0];
-
-    dataC[1] = -data_[2];
-    dataC[2] = -data_[1];
-
-  } else if (size_ == 3) {
-    dataC[0] = data_[4] * data_[8] - data_[5] * data_[7];
-    dataC[1] = data_[5] * data_[6] - data_[3] * data_[8];
-    dataC[2] = data_[3] * data_[7] - data_[4] * data_[6];
-
-    dataC[3] = data_[2] * data_[7] - data_[1] * data_[8];
-    dataC[4] = data_[0] * data_[8] - data_[2] * data_[6];
-    dataC[5] = data_[1] * data_[6] - data_[0] * data_[7];
-
-    dataC[6] = data_[1] * data_[5] - data_[2] * data_[4];
-    dataC[7] = data_[2] * data_[3] - data_[0] * data_[5];
-    dataC[8] = data_[0] * data_[4] - data_[1] * data_[3];
-  }
-
-  return C;
-}
-
-/* ******************************************************************
- * Symmetrizing the tensors of rank 2.
- ****************************************************************** */
-void
-Tensor::SymmetricPart()
-{
-  if (rank_ == 2 && d_ == 2) {
-    double tmp = (data_[1] + data_[2]) / 2;
-    data_[1] = tmp;
-    data_[2] = tmp;
-  } else if (rank_ == 2 && d_ == 3) {
-    double tmp = (data_[1] + data_[3]) / 2;
-    data_[1] = tmp;
-    data_[3] = tmp;
-    tmp = (data_[2] + data_[6]) / 2;
-    data_[2] = tmp;
-    data_[6] = tmp;
-    tmp = (data_[5] + data_[7]) / 2;
-    data_[5] = tmp;
-    data_[7] = tmp;
-  }
-}
-
-/* ******************************************************************
- * Spectral bounds of symmetric tensors of rank 1 and 2
- ****************************************************************** */
-void
-Tensor::SpectralBounds(double* lower, double* upper) const
-{
-  if (size_ == 1) {
-    *lower = data_[0];
-    *upper = data_[0];
-
-  } else if (size_ == 2) {
-    double a = data_[0] - data_[3];
-    double c = data_[1];
-    double D = sqrt(a * a + 4 * c * c);
-    double trace = data_[0] + data_[3];
-
-    *lower = (trace - D) / 2;
-    *upper = (trace + D) / 2;
-  } else if (rank_ <= 2) {
-    int n = size_;
-    int ipiv[n], lwork(3 * n), info;
-    double S[n], work[lwork];
-
-    Tensor T(*this);
-    DSYEV_F77("N", "U", &n, T.data_ptr(), &n, S, work, &lwork, &info);
-    *lower = S[0];
-    *upper = S[n - 1];
-  }
-}
-
-
-
-/* ******************************************************************
  * Second convolution operation for tensors of rank 1, 2, and 4
  ****************************************************************** */
-Tensor operator*(const Tensor& T1, const Tensor& T2)
+template<class MEMSPACE>
+Tensor<MEMSPACE> operator*(const Tensor<MEMSPACE>& T1, const Tensor<MEMSPACE>& T2)
 {
   int d = T1.dimension(); // the dimensions should be equals
   int rank1 = T1.rank(), rank2 = T2.rank();
-  Kokkos::View<double*> data1 = T1.data();
-  Kokkos::View<double*> data2 = T2.data();
+  Kokkos::View<double*,MEMSPACE> data1 = T1.data();
+  Kokkos::View<double*,MEMSPACE> data2 = T2.data();
 
-  Tensor T3;
+  Tensor<MEMSPACE> T3;
 
   if (rank1 == 4 && rank2 == 2) {
     int n = d * (d + 1) / 2;
-    Kokkos::View<double*> tmp1("tmp1",n);
-    Kokkos::View<double*> tmp2("tmp2",n);
+    Kokkos::View<double*,MEMSPACE> tmp1("tmp1",n);
+    Kokkos::View<double*,MEMSPACE> tmp2("tmp2",n);
 
     tmp1[0] = data2[0];
     tmp1[1] = data2[d + 1];
@@ -239,12 +75,12 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 
   } else if (rank1 == 1) {
     int mem = T3.Init(d, rank2);
-    Kokkos::View<double*> data3 = T3.data();
+    Kokkos::View<double*,MEMSPACE> data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data2[i] * data1[0];
 
   } else if (rank2 == 1) {
     int mem = T3.Init(d, rank1);
-    Kokkos::View<double*> data3 = T3.data();
+    Kokkos::View<double*,MEMSPACE> data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data1[i] * data2[0];
 
   } else if (rank2 == 2) {
@@ -263,8 +99,9 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 /* ******************************************************************
  * Miscaleneous routines: print
  ****************************************************************** */
+template<class MEMSPACE>
 std::ostream&
-operator<<(std::ostream& os, const Tensor& T)
+operator<<(std::ostream& os, const Tensor<MEMSPACE>& T)
 {
   int d = T.dimension();
   int rank = T.rank();
@@ -284,11 +121,12 @@ operator<<(std::ostream& os, const Tensor& T)
  * distribution of tensors. We assume that size of v sufficient to
  * contain tensor of rank 2.
  ****************************************************************** */
+template<class MEMSPACE>
 void
-TensorToVector(const Tensor& T, DenseVector& v)
+TensorToVector(const Tensor<MEMSPACE>& T, DenseVector& v)
 {
-  const Kokkos::View<double*> data1 = T.data();
-  Kokkos::View<double*> data2 = v.Values();
+  const Kokkos::View<double*,MEMSPACE> data1 = T.data();
+  Kokkos::View<double*,MEMSPACE> data2 = v.Values();
 
   if (T.rank() == 2) {
     int mem = T.size() * T.size();
@@ -301,21 +139,23 @@ TensorToVector(const Tensor& T, DenseVector& v)
   }
 }
 
+template<class MEMSPACE>
 void
-VectorToTensor(const DenseVector& v, Tensor& T)
+VectorToTensor(const DenseVector& v, Tensor<MEMSPACE>& T)
 {
   AMANZI_ASSERT(v.NumRows() == T.size() * T.size());
 
-  const Kokkos::View<double*> data1 = v.Values();
-  Kokkos::View<double*> data2 = T.data();
+  const Kokkos::View<double*,MEMSPACE> data1 = v.Values();
+  Kokkos::View<double*,MEMSPACE> data2 = T.data();
   for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
 }
 
-Tensor Tensor_ONE()
+template<class MEMSPACE>
+Tensor<MEMSPACE> Tensor_ONE()
 {
-  Kokkos::View<double*> t_identity("identity", 1);
+  Kokkos::View<double*,MEMSPACE> t_identity("identity", 1);
   t_identity(0) = 1.0;
-  return Tensor(t_identity, 1,1,1);
+  return Tensor<MEMSPACE>(t_identity, 1,1,1);
 }
 
 

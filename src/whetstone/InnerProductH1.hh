@@ -28,8 +28,8 @@ class InnerProductH1 : public virtual InnerProduct {
   ~InnerProductH1() {};
 
   // stiffness matrices
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) = 0;
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) = 0; 
+  virtual int H1consistency(int c, const Tensor<>& T, DenseMatrix& N, DenseMatrix& Mc) = 0;
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix& A) = 0; 
 };
 
 }  // namespace WhetStone

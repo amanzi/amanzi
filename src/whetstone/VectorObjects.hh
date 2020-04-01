@@ -135,7 +135,8 @@ class VectorObjects {
   }
 
   // dot product T * v1 
-  friend VectorObjects<T> operator*(const Tensor& K, const VectorObjects<T>& poly) {
+  template<class MEMSPACE>
+  friend VectorObjects<T> operator*(const Tensor<MEMSPACE>& K, const VectorObjects<T>& poly) {
     int d(K.dimension());
     VectorObjects<T> tmp(d, d, 0);
 

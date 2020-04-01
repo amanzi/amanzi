@@ -28,16 +28,16 @@ class InnerProductL2 : public virtual InnerProduct {
   ~InnerProductL2() {};
 
   // mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) = 0;
+  virtual int L2consistency(int c, const Tensor<>& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix& M) = 0;
 
   // optional inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
+  virtual int L2consistencyInverse(int c, const Tensor<>& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
     Errors::Message msg("L2 inverse consistency is not supported for this space.");
     Exceptions::amanzi_throw(msg);
     return WHETSTONE_ELEMENTAL_MATRIX_OK;
   }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
+  virtual int MassMatrixInverse(int c, const Tensor<>& T, DenseMatrix& W) {
     MassMatrix(c, T, W);
     W.Inverse();
     return WHETSTONE_ELEMENTAL_MATRIX_OK;

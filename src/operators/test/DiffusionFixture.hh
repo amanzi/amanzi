@@ -55,7 +55,7 @@ struct DiffusionFixture {
     if (mesh_file == "Generate1D") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
     } else if (mesh_file == "Generate2D") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
+      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 1000, 1000);
     } else if (mesh_file == "Generate3D") {
       mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
     } else {
@@ -75,17 +75,13 @@ struct DiffusionFixture {
     K_map.SetMesh(mesh);
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
-    for (int c = 0; c < K->size(); c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->set_shape(c, Kc.dimension(), Kc.rank());
-    }
-    K->Init();
 
+    std::vector<WhetStone::Tensor<Kokkos::HostSpace>> host_tensors(K->size()); 
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      K->at(c).assign(ana->TensorDiffusivity(xc, 0.0));
+      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
     }
+    K->Init(host_tensors); 
     
     op->SetTensorCoefficient(K);
     // boundary condition
@@ -109,17 +105,13 @@ struct DiffusionFixture {
     K_map.SetMesh(mesh);
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
-    for (int c = 0; c < K->size(); c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const WhetStone::Tensor Kc = ana->TensorDiffusivity(xc, 0.0);
-      K->set_shape(c, Kc.dimension(), Kc.rank());
-    }
-    K->Init();
 
+    std::vector<WhetStone::Tensor<Kokkos::HostSpace>> host_tensors(K->size()); 
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      K->at(c).assign(ana->TensorDiffusivity(xc, 0.0));
+      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
     }
+    K->Init(host_tensors); 
     
     op->SetTensorCoefficient(K);
 

@@ -57,7 +57,7 @@ class MFD3D : public BilinearForm {
  protected:
   // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
-  int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityMonotoneHex(int c, const Tensor<>& T, DenseMatrix& Mc, DenseMatrix& M);
 
   int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, 
                         int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
