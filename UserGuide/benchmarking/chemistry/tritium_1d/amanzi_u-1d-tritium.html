@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1D Tritium first-order decay &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="1D Calcite dissolution" href="../calcite_1d/amanzi_u-1d-calcite.html" />
+    <link rel="prev" title="1D Conservative tracer transport" href="../tracer_1d/amanzi_u-1d-tracer.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Benchmark Testing</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Chemistry</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html">1D Conservative tracer transport</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">1D Tritium first-order decay</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview-and-capabilities-tested">Overview and Capabilities tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../calcite_1d/amanzi_u-1d-calcite.html">1D Calcite dissolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../isotherms_1d/amanzi_u-1d-isotherms.html">1D Sorption Isotherms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ion_exchange_1d/amanzi_u-1d-ion-exchange.html">1D Ion exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../surface_complexation_1d/amanzi_u-1d-surface-complexation.html">1D Surface complexation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../farea_1d/amanzi_u-1d-farea.html">1D F-Area Full Geochemistry</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/index.html">Transport</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Benchmark Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Chemistry</a> &raquo;</li>
+        
+      <li>1D Tritium first-order decay</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/benchmarking/chemistry/tritium_1d/amanzi_u-1d-tritium.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="d-tritium-first-order-decay">
+<h1>1D Tritium first-order decay<a class="headerlink" href="#d-tritium-first-order-decay" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-and-capabilities-tested">
+<h2>Overview and Capabilities tested<a class="headerlink" href="#overview-and-capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<p>This test example performs the simulation of decay of tritium, a radioactive isotope of hydrogen, in a 1D flow domain, testing the following capabilities:</p>
+<ul class="simple">
+<li><p>1D flow</p></li>
+<li><p>1D advective transport</p></li>
+<li><p>geochemical reactions</p>
+<ul>
+<li><p>First order decay (aqueous kinetics)</p></li>
+</ul>
+</li>
+</ul>
+<p>For details on this test, see <a class="reference internal" href="#about-tritium"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Tritium is a radioactive isotope of hydrogen that was added to the atmosphere during the nuclear bomb testing during the 1950’s and 1960’s at well above background concentrations. After the end of widespread nuclear bomb testing, tritium concentrations dropped. Concentrations of tritium in groundwater reflect when the water was in contact with the atmosphere, and they are used as an estimate of the rate of groundwater recharge. Tritium concentrations decay with time according to a first order expression. This first order decay is typically characterized by the half life (
+<span class="math notranslate nohighlight">\(t_{1/2}\)</span>
+).</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="flow-and-transport">
+<h3>Flow and transport<a class="headerlink" href="#flow-and-transport" title="Permalink to this headline">¶</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example.</p>
+</div>
+<div class="section" id="first-order-kinetic-decay">
+<h3>First order (kinetic) decay<a class="headerlink" href="#first-order-kinetic-decay" title="Permalink to this headline">¶</a></h3>
+<p>One single reaction is considered: tritium decay. This reaction is homogeneous and is modeled with a first order kinetic rate expression:</p>
+<p><span class="math notranslate nohighlight">\(r = - \lambda c\)</span></p>
+<p>where
+<span class="math notranslate nohighlight">\(c\)</span>
+is the concentration of tritium, and
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+is the first order constant. This is related to the half life of tritium according to:</p>
+<p><span class="math notranslate nohighlight">\(\lambda = \displaystyle\frac{ln(2)}{t_{1/2}}\)</span></p>
+</div>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Flow and transport<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example.  In this example, tritium injected at constant concentration at the left boundary decays as it travels down gradient a 1D flow domain. The simulation is run to 50 years.</p>
+</div>
+<div class="section" id="geochemistry">
+<h3>Geochemistry<a class="headerlink" href="#geochemistry" title="Permalink to this headline">¶</a></h3>
+<p>In this example, the half life of tririum is taken as
+<span class="math notranslate nohighlight">\(t_{1/2} = 13.31 \text{ years}\)</span>.
+Thus, <span class="math notranslate nohighlight">\(\lambda = 1.78577 \cdot 10^{-9} \text{ s}^{-1}\)</span></p>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expected-results">
+<h3>Expected results<a class="headerlink" href="#expected-results" title="Permalink to this headline">¶</a></h3>
+<p>Tritium enters the 1D column from the left and as it flows left to right it decays exponentially.</p>
+</div>
+<div class="section" id="simulation-results">
+<h3>Simulation results<a class="headerlink" href="#simulation-results" title="Permalink to this headline">¶</a></h3>
+<p>In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran along the length of the colum. Agreement is very good overall. Minor differences in the leading edge are attributed to the numerical dispersion added by the different numerical schemes.</p>
+<p>(<a class="reference external" href="../../../benchmarking/chemistry/tritium_1d/tritium_1d.py">Source code</a>, <a class="reference external" href="../../../benchmarking/chemistry/tritium_1d/tritium_1d.png">png</a>, <a class="reference external" href="../../../benchmarking/chemistry/tritium_1d/tritium_1d.hires.png">hires.png</a>, <a class="reference external" href="../../../benchmarking/chemistry/tritium_1d/tritium_1d.pdf">pdf</a>)</p>
+<div class="figure align-default">
+<img alt="../../../_images/tritium_1d.png" src="../../../_images/tritium_1d.png" />
+</div>
+</div>
+</div>
+<div class="section" id="about">
+<span id="about-tritium"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Benchmark simulator: PFlotran</p></li>
+<li><p>Files</p>
+<ul>
+<li><p>Amanzi input file/s (native chemistry): amanzi-1d-tritium.xml, tritium.bgd</p></li>
+<li><p>Amanzi input file/s (Alquimia chemistry): amanzi-1d-tritium-alq.xml, 1d-tritium.in, tritium.dat</p></li>
+<li><p>Benchmark simulator input file: 1d-tritium.in, tritium.dat, output file = pflotran/1d-tritium.h5</p></li>
+</ul>
+</li>
+<li><p>Location: amanzi/testing/benchmarking/chemistry/tritium_1d</p></li>
+<li><p>Author: B. Andre, G. Hammond</p></li>
+<li><p>Testing and Documentation: S. Molins</p></li>
+<li><p>Last tested on Oct 3, 2013</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../calcite_1d/amanzi_u-1d-calcite.html" class="btn btn-neutral float-right" title="1D Calcite dissolution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../tracer_1d/amanzi_u-1d-tracer.html" class="btn btn-neutral float-left" title="1D Conservative tracer transport" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

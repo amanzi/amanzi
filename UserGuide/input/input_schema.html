@@ -1,0 +1,1811 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Input File XML Schema &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulation Mesh" href="mesh.html" />
+    <link rel="prev" title="Units in Amanzi" href="units.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Amanzi Input Description</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units in Amanzi</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Input File XML Schema</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#xml-schema-2-3-0">XML Schema 2.3.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#amanzi-input">Amanzi Input</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-description">Model Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#definitions">Definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#execution-control">Execution Control</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#numerical-controls">Numerical Controls</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mesh">Mesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#regions">Regions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#geochemistry">Geochemistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#materials">Materials</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#process-kernels">Process Kernels</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phases">Phases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#initial-conditions">Initial Conditions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#boundary-conditions">Boundary Conditions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sources">Sources</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#outputs">Outputs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mesh.html">Simulation Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chemistry.html">Chemistry in Amanzi with Alquimia</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Amanzi Input Description</a> &raquo;</li>
+        
+      <li>Input File XML Schema</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/input/input_schema.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="input-file-xml-schema">
+<span id="amanzi-xml-schema"></span><h1>Input File XML Schema<a class="headerlink" href="#input-file-xml-schema" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The present document describes how to specify the data required to execute Amanzi and perform a simulation.  This specification should be regarded as a companion to the mathematical requirements document entitled <em>Mathematical Formulation Requirements and Specifications for the Process Models</em> (see <a class="reference internal" href="../background/overview.html#ascem-overview"><span class="std std-ref">ASCEM Overview</span></a>), and parameterizations of the individual submodels are consistent between Amanzi, the mathematical requirements document and this document.</p>
+<p>The open-source, platform independent <a class="reference external" href="http://esd.lbl.gov/research/projects/ascem/thrusts/platform/">Akuna</a> user environment can generate <em>Amanzi</em> models and generate corresponding valid, human-readable XML input files that can then be executed by <em>Amanzi</em>.  Example input files are available in the Amanzi source repository.</p>
+</div>
+<div class="section" id="xml-schema-2-3-0">
+<h2>XML Schema 2.3.0<a class="headerlink" href="#xml-schema-2-3-0" title="Permalink to this headline">¶</a></h2>
+<p>Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:</p>
+<ul class="simple">
+<li><p>values for a parameterized PDE-based transport model, including boundary and initial conditions, constitutive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,</p></li>
+<li><p>parameters controlling the selection of key algorithmic options and output,</p></li>
+<li><p>a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.</p></li>
+</ul>
+<p>The primary input to <em>Amanzi</em> is through an XML file. The Amanzi input XML format is defined in terms of the XML schema that can be found in the Amanzi source code repository.  Users can construct models and generate compliant XML input files using the <a class="reference external" href="http://esd.lbl.gov/research/projects/ascem/thrusts/platform/">Akuna</a> tool suite.  Users can also choose to generate compliant file using a text editor or other method.</p>
+<p>The following is a description of each of the sections with the XML input schema.  Each section includes a short description of what is defined within the section followed by the XML elements available for the section.  Not all elements described are required to generated a valid input file.  The limited set of required elements is noted in each section.  Note that tags for all sections must be present for an input file to be valid even if no elements within that section are required.</p>
+<p>Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, <cite>“Exodus II</cite>” will be evaluated as <cite>“exodus ii</cite>”.</p>
+<div class="section" id="amanzi-input">
+<h3>Amanzi Input<a class="headerlink" href="#amanzi-input" title="Permalink to this headline">¶</a></h3>
+<p>The entire input file is encapsulated under the root tag <code class="docutils literal notranslate"><span class="pre">amanzi_input</span></code>.  At this level the version of the input schema and the type of simulation to be conducted are specified through required attributes.  The version is specified with the attribute <code class="docutils literal notranslate"><span class="pre">version</span></code>.  The current schema can be found in the repository and install location amanzi.xsd.  The simulation type is specified using the attribute <code class="docutils literal notranslate"><span class="pre">type</span></code> as either <em>structured</em> or <em>unstructured</em>.</p>
+<p>For an unstructured simulations the root tag would looks as the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;amanzi_input</span> <span class="na">version=</span><span class="s">&quot;2.3.0&quot;</span> <span class="na">type=</span><span class="s">&quot;unstructured&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/amanzi_input&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="model-description">
+<h3>Model Description<a class="headerlink" href="#model-description" title="Permalink to this headline">¶</a></h3>
+<p>This section allows the user to provide information about the model being developed and how and when it was developed.  Default units for the model are also stored in this section.  This entire section is optional but encouraged for documentation purposes.</p>
+<p>The opening tag <code class="docutils literal notranslate"><span class="pre">model_description</span></code> accepts an attribute <code class="docutils literal notranslate"><span class="pre">name</span></code> in which the user may give the current model a name.  The available elements within <code class="docutils literal notranslate"><span class="pre">model_description</span></code> include: <code class="docutils literal notranslate"><span class="pre">comments</span></code>, <code class="docutils literal notranslate"><span class="pre">author</span></code>, <code class="docutils literal notranslate"><span class="pre">created</span></code>, <code class="docutils literal notranslate"><span class="pre">modified</span></code>, <code class="docutils literal notranslate"><span class="pre">model_name</span></code>, <code class="docutils literal notranslate"><span class="pre">description</span></code>, <code class="docutils literal notranslate"><span class="pre">purpose</span></code>, and <code class="docutils literal notranslate"><span class="pre">units</span></code>.  Under the <code class="docutils literal notranslate"><span class="pre">units</span></code> element, the user may define the default units to used throughout the rest of the input file.  The options available for the units element are as follows:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 65%" />
+<col style="width: 35%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Model_Description Elements</p></th>
+<th class="head"><p>Value Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>comments</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-odd"><td><p>author</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-even"><td><p>created</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-odd"><td><p>modified</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-even"><td><p>model_id</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-odd"><td><p>description</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-even"><td><p>purpose</p></td>
+<td><p>string</p></td>
+</tr>
+<tr class="row-odd"><td><p>units</p></td>
+<td><p>element block</p></td>
+</tr>
+</tbody>
+</table>
+<p>The units block specifies the default units to be used through out the input file unless otherwise specified.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 25%" />
+<col style="width: 42%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Units Elements</p></th>
+<th class="head"><p>Value Type</p></th>
+<th class="head"><p>Value Options</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>length_unit</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">m,</span> <span class="pre">cm</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>time_unit</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">y,</span> <span class="pre">d,</span> <span class="pre">h,</span> <span class="pre">s</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>mass_unit</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">kg</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>conc_unit</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">molar,</span> <span class="pre">mol/m^3</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Here is an overall example for the model description element.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;model_description</span> <span class="na">name=</span><span class="s">&quot;BC Cribs&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>Some comment here<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;model_id&gt;</span>DVZ-212a-3217<span class="nt">&lt;/model_id&gt;</span>
+  <span class="nt">&lt;author&gt;</span>David Moulton<span class="nt">&lt;/author&gt;</span>
+  <span class="nt">&lt;units&gt;</span>
+    <span class="nt">&lt;length_unit&gt;</span>m<span class="nt">&lt;/length_unit&gt;</span>
+    <span class="nt">&lt;time_unit&gt;</span>s<span class="nt">&lt;/time_unit&gt;</span>
+    <span class="nt">&lt;mass_unit&gt;</span>kg<span class="nt">&lt;/mass_unit&gt;</span>
+    <span class="nt">&lt;conc_unit&gt;</span>molar<span class="nt">&lt;/conc_unit&gt;</span>
+  <span class="nt">&lt;/units&gt;</span>
+<span class="nt">&lt;/model_description&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="definitions">
+<h3>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h3>
+<p>This section allows the user to provide useful definitions to be used throughout the other sections.  Definitions are grouped as element blocks: <a class="reference internal" href="#constants">constants</a> and <a class="reference internal" href="#macros">macros</a>.</p>
+<div class="section" id="constants">
+<h4>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h4>
+<p>The user may specify as many constants as desired.  The available constants fall into the following types and descriptions:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Constants Elements</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>constant</p></td>
+<td><p>general constant definition, can be of any of the following types</p></td>
+</tr>
+<tr class="row-odd"><td><p>time_constant</p></td>
+<td><p>define a constant with a time value</p></td>
+</tr>
+<tr class="row-even"><td><p>numerical_constant</p></td>
+<td><p>define a constant with a numerical value (no units specified)</p></td>
+</tr>
+<tr class="row-odd"><td><p>area_mass_flux_constant</p></td>
+<td><p>define a constant with an area mass flux value</p></td>
+</tr>
+</tbody>
+</table>
+<p>Each element has the following format:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 18%" />
+<col style="width: 17%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Constants Elements</p></th>
+<th class="head"><p>Attribute Names</p></th>
+<th class="head"><p>Attribute Type</p></th>
+<th class="head"><p>Attribute Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>constant</p></td>
+<td><p>name
+value
+type</p></td>
+<td><p>string
+string
+string</p></td>
+<td><p>(user specified name)
+(value of constant)
+<code class="docutils literal notranslate"><span class="pre">none,</span> <span class="pre">time,</span> <span class="pre">area_mass_flux</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>time_constant</p></td>
+<td><p>name
+value</p></td>
+<td><p>string
+time(,char)</p></td>
+<td><p>(user specified name)
+(time value with optional units)</p></td>
+</tr>
+<tr class="row-even"><td><p>numerical_constant</p></td>
+<td><p>name
+value</p></td>
+<td><p>string
+exponential</p></td>
+<td><p>(user specified name)
+(numerical constant value)</p></td>
+</tr>
+<tr class="row-odd"><td><p>area_mass_flux_constant</p></td>
+<td><p>name
+value</p></td>
+<td><p>string
+exponential</p></td>
+<td><p>(user specified name)
+(flux value)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Here is an overall structure for the constants element.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;constants&gt;</span>
+  <span class="nt">&lt;constant</span> <span class="na">name=</span><span class="s">&quot;Name of Constant&quot;</span> <span class="na">type=</span><span class="s">&quot;none | time | area_mass_flux&quot;</span> <span class="na">value=</span><span class="s">&quot;constant_value&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;time_constant</span>  <span class="na">name=</span><span class="s">&quot;Name of Time&quot;</span>  <span class="na">value=</span><span class="s">&quot;value,y|d|h|s&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;numerical_constant</span> <span class="na">name=</span><span class="s">&quot;Name of Numerical Constant&quot;</span> <span class="na">value=</span><span class="s">&quot;value_constant&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;area_mass_flux_constant</span> <span class="na">name=</span><span class="s">&quot;Name of Flux Constant&quot;</span> <span class="na">value=</span><span class="s">&quot;value_of_flux&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/constants&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="macros">
+<h4>Macros<a class="headerlink" href="#macros" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">macros</span></code> section defines time and cycle macros.  These specify a series of times or cycles for writing out visualization, checkpoint, walkabout, or observation files.  Each macro type is described in the following table.  The macro can contain a list of specific time values at which to perform an action or a time/cycle interval at which to perform an action.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 15%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Macros Elements</p></th>
+<th class="head"><p>Attribute Names</p></th>
+<th class="head"><p>Attribute Type</p></th>
+<th class="head"><p>Sub-Elements</p></th>
+<th class="head"><p>Sub-Element Type/Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>time_macro (time series)</p></td>
+<td><p>name</p></td>
+<td><p>string</p></td>
+<td><p>time</p></td>
+<td><p>time(,unit) / value of time with optional unit</p></td>
+</tr>
+<tr class="row-odd"><td><p>time_macro (interval)</p></td>
+<td><p>name</p></td>
+<td><p>string</p></td>
+<td><p>start
+timestep_interval
+stop</p></td>
+<td><p>time(,unit) / value of start time
+time(,unit) / time interval between actions
+time(,unit) / final time value
+( -1 specifies final time )</p></td>
+</tr>
+<tr class="row-even"><td><p>cycle_macro (interval)</p></td>
+<td><p>name</p></td>
+<td><p>string</p></td>
+<td><p>start
+timestep_interval
+stop</p></td>
+<td><p>integer / cycle number to start action
+integer / number of cycles between actions
+integer / cycle number to stop action
+( -1 specifies final step )</p></td>
+</tr>
+</tbody>
+</table>
+<p>Here are examples of the macros:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;time_macro</span> <span class="na">name=</span><span class="s">&quot;Name of Macro&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;time&gt;</span>Value<span class="nt">&lt;/time&gt;</span>
+<span class="nt">&lt;/time_macro&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;cycle_macro</span> <span class="na">name=</span><span class="s">&quot;Name of Macro&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;start&gt;</span>Value<span class="nt">&lt;/start&gt;</span>
+  <span class="nt">&lt;timestep_interval&gt;</span>Value<span class="nt">&lt;/timestep_interval&gt;</span>
+  <span class="nt">&lt;stop&gt;</span>Value|-1<span class="nt">&lt;/stop&gt;</span>
+<span class="nt">&lt;/cycle_macro&gt;</span>
+</pre></div>
+</div>
+<p>Here is an overall example for the <code class="docutils literal notranslate"><span class="pre">definition</span></code> element.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;definitions&gt;</span>
+  <span class="nt">&lt;constants&gt;</span>
+    <span class="nt">&lt;constant</span> <span class="na">name=</span><span class="s">&quot;zero&quot;</span> <span class="na">type=</span><span class="s">&quot;none&quot;</span> <span class="na">value=</span><span class="s">&quot;0.000&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;constant</span> <span class="na">name=</span><span class="s">&quot;start&quot;</span> <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value=</span><span class="s">&quot;1956.0,y&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;constant</span> <span class="na">name=</span><span class="s">&quot;future_recharge&quot;</span> <span class="na">type=</span><span class="s">&quot;area_mass_flux&quot;</span> <span class="na">value=</span><span class="s">&quot;1.48666E-6&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;time_constant</span> <span class="na">name=</span><span class="s">&quot;start_time&quot;</span> <span class="na">value=</span><span class="s">&quot;1956.0,y&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;numerical_constant</span> <span class="na">name=</span><span class="s">&quot;zero&quot;</span> <span class="na">value=</span><span class="s">&quot;0.000&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/constants&gt;</span>
+  <span class="nt">&lt;macros&gt;</span>
+    <span class="nt">&lt;time_macro</span> <span class="na">name=</span><span class="s">&quot;Macro 1&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;time&gt;</span>6.17266656E10<span class="nt">&lt;/time&gt;</span>
+      <span class="nt">&lt;time&gt;</span>6.3372710016E10<span class="nt">&lt;/time&gt;</span>
+      <span class="nt">&lt;time&gt;</span>6.33834396E10<span class="nt">&lt;/time&gt;</span>
+    <span class="nt">&lt;/time_macro&gt;</span>
+    <span class="nt">&lt;cycle_macro</span> <span class="na">name =</span> <span class="s">&quot;Every_1000_timesteps&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;start&gt;</span>0<span class="nt">&lt;/start&gt;</span>
+      <span class="nt">&lt;timestep_interval&gt;</span>1000<span class="nt">&lt;/timestep_interval&gt;</span>
+      <span class="nt">&lt;stop&gt;</span>-1 <span class="nt">&lt;/stop&gt;</span>
+    <span class="nt">&lt;/cycle_macro&gt;</span>
+  <span class="nt">&lt;/macros&gt;</span>
+<span class="nt">&lt;/definitions&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="execution-control">
+<h3>Execution Control<a class="headerlink" href="#execution-control" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">execution_controls</span></code> section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue to transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the “Single Phase” flow model.</p>
+<p>Default values for execution are defined in the <code class="docutils literal notranslate"><span class="pre">execution_control_defaults</span></code> element.  These values are used for any time period during the simulation for which the controls were not specified.  Individual time periods of the simulation are defined using <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> elements.  For a steady state simulation, only one <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> element will be defined.  However, for a transient simulation a series of controls may be defined during which different control values will be used.  For a valid <code class="docutils literal notranslate"><span class="pre">execution_controls</span></code> section the <code class="docutils literal notranslate"><span class="pre">execution_control_defaults</span></code> element and at least one <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> element must appear.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">execution_controls</span></code> element has the following subelements:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 12%" />
+<col style="width: 63%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Execution_controls Elements</p></th>
+<th class="head"><p>Element Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>comments</p></td>
+<td><p>string</p></td>
+<td><p>user specified comments</p></td>
+</tr>
+<tr class="row-odd"><td><p>verbosity</p></td>
+<td><p>string</p></td>
+<td><p>verbosity level <code class="docutils literal notranslate"><span class="pre">extreme,</span> <span class="pre">high,</span> <span class="pre">medium,</span> <span class="pre">low,</span> <span class="pre">none</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>restart</p></td>
+<td><p>string</p></td>
+<td><p>name of Amanzi checkpoint file to be used for restart</p></td>
+</tr>
+<tr class="row-odd"><td><p>execution_control_defaults</p></td>
+<td><p>see below</p></td>
+<td><p>default values to be used if not specified in execution_control elements</p></td>
+</tr>
+<tr class="row-even"><td><p>execution_control</p></td>
+<td><p>see below</p></td>
+<td><p>execution control values for a given time period</p></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="execution-control-defaults">
+<h4>Execution_control_defaults<a class="headerlink" href="#execution-control-defaults" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">execution_control_defaults</span></code> element has the following attributes.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 24%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute Names</p></th>
+<th class="head"><p>Attribute Type</p></th>
+<th class="head"><p>Attribute Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>init_dt</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit)</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_dt</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit)</p></td>
+</tr>
+<tr class="row-even"><td><p>reduction_factor</p></td>
+<td><p>exponential</p></td>
+<td><p>factor for reducing time step</p></td>
+</tr>
+<tr class="row-odd"><td><p>increase_factor</p></td>
+<td><p>exponential</p></td>
+<td><p>factor for increasing time step</p></td>
+</tr>
+<tr class="row-even"><td><p>mode</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">steady,</span> <span class="pre">transient</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>method</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bdf1,</span> <span class="pre">picard</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id1">
+<h4>Execution_control<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> element has the following attributes.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 18%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute Names</p></th>
+<th class="head"><p>Attribute Type</p></th>
+<th class="head"><p>Attribute Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>start</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit) (start time for this time period)</p></td>
+</tr>
+<tr class="row-odd"><td><p>end</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit) (stop time for this time period)</p></td>
+</tr>
+<tr class="row-even"><td><p>max_cycles</p></td>
+<td><p>integer</p></td>
+<td><p>max cycles to use for structured</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_dt</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit)</p></td>
+</tr>
+<tr class="row-even"><td><p>max_dt</p></td>
+<td><p>time</p></td>
+<td><p>time value(,unit)</p></td>
+</tr>
+<tr class="row-odd"><td><p>reduction_factor</p></td>
+<td><p>exponential</p></td>
+<td><p>factor for reducing time step</p></td>
+</tr>
+<tr class="row-even"><td><p>increase_factor</p></td>
+<td><p>exponential</p></td>
+<td><p>factor for increasing time step</p></td>
+</tr>
+<tr class="row-odd"><td><p>mode</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">steady,</span> <span class="pre">transient</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>method</p></td>
+<td><p>string</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bdf1,</span> <span class="pre">picard</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Each <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> is required to define a <code class="docutils literal notranslate"><span class="pre">start</span></code> time.  The final control period must define an <code class="docutils literal notranslate"><span class="pre">end</span></code> time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> element have an <code class="docutils literal notranslate"><span class="pre">end</span></code> time defined.</p>
+<p>The attribute <code class="docutils literal notranslate"><span class="pre">max_cycles</span></code> is only valid for transient and transient with static flow execution modes.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> section also provides the elements <code class="docutils literal notranslate"><span class="pre">comments</span></code> and <code class="docutils literal notranslate"><span class="pre">verbosity</span></code>.  Users may provide any text within the <code class="docutils literal notranslate"><span class="pre">comment</span></code> element to annotate this section.  <code class="docutils literal notranslate"><span class="pre">verbosity</span></code> takes the attribute level=`` extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  For debugging purposes use the level extreme.</p>
+<p>Restarting a simulation is available using the <code class="docutils literal notranslate"><span class="pre">restart</span></code> element.  The text given for the <code class="docutils literal notranslate"><span class="pre">restart</span></code> element is the name of the Amanzi checkpoint file to be read in and initialized from.</p>
+<p>Here is an overall example for the <code class="docutils literal notranslate"><span class="pre">execution_control</span></code> element.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;execution_controls&gt;</span>
+  <span class="nt">&lt;execution_control_defaults</span> <span class="na">init_dt=</span><span class="s">&quot;3.168E-08&quot;</span> <span class="na">max_dt=</span><span class="s">&quot;0.01&quot;</span> <span class="na">reduction_factor=</span><span class="s">&quot;0.8&quot;</span>
+                              <span class="na">increase_factor=</span><span class="s">&quot;1.25&quot;</span> <span class="na">mode=</span><span class="s">&quot;transient&quot;</span> <span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;0.0 y&quot;</span> <span class="na">end=</span><span class="s">&quot;1956.0 y&quot;</span> <span class="na">init_dt=</span><span class="s">&quot;1 d&quot;</span> <span class="na">max_dt=</span><span class="s">&quot;500.0 y&quot;</span>
+                     <span class="na">reduction_factor=</span><span class="s">&quot;0.8&quot;</span> <span class="na">mode=</span><span class="s">&quot;steady&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;1956.0 y&quot;</span> <span class="na">end=</span><span class="s">&quot;3000.0 y&quot;</span> <span class="na">init_dt=</span><span class="s">&quot;1 s&quot;</span> <span class="na">max_dt=</span><span class="s">&quot;10.0 y&quot;</span>
+                     <span class="na">reduction_factor=</span><span class="s">&quot;0.8&quot;</span> <span class="na">mode=</span><span class="s">&quot;transient&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/execution_controls&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="numerical-controls">
+<h3>Numerical Controls<a class="headerlink" href="#numerical-controls" title="Permalink to this headline">¶</a></h3>
+<p>This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The <code class="docutils literal notranslate"><span class="pre">numerical_controls</span></code> section is divided up into the subsections: <a class="reference internal" href="#common-controls">common_controls</a>, <a class="reference internal" href="#unstructured-controls">unstructured_controls</a>, and <a class="reference internal" href="#structured-controls">structured_controls</a>.</p>
+<div class="section" id="common-controls">
+<h4>Common_controls<a class="headerlink" href="#common-controls" title="Permalink to this headline">¶</a></h4>
+<p>The section is currently empty.  However, in future versions controls that are common between the unstructured and structured executions will be moved to this section and given common terminology.</p>
+</div>
+<div class="section" id="unstructured-controls">
+<h4>Unstructured_controls<a class="headerlink" href="#unstructured-controls" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">unstructured_controls</span></code> sections is divided in the subsections: <code class="docutils literal notranslate"><span class="pre">unstr_steady-state_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">unstr_transient_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">unstr_linear_solver</span></code>, <code class="docutils literal notranslate"><span class="pre">unstr_nonlinear_solver</span></code>, <code class="docutils literal notranslate"><span class="pre">unstr_flow_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">unstr_transport_controls</span></code>, and <code class="docutils literal notranslate"><span class="pre">unstr_chemistry_controls</span></code>.  The list of available options is as follows:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;unstructured_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_flow_controls&gt;</span>
+    <span class="nt">&lt;discretization_method&gt;</span> fv-default | fv-monotone | fv-multi_point_flux_approximation |
+                            fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity |
+                            mfd-support_operator | mfd-optimized_for_monotonicity |
+                            mfd-two_point_flux_approximation <span class="nt">&lt;/discretization_method&gt;</span>
+    <span class="nt">&lt;rel_perm_method&gt;</span> upwind-darcy_velocity (default) | upwind-gravity | upwind-amanzi |
+                      other-arithmetic_average | other-harmonic_average <span class="nt">&lt;/rel_perm_method&gt;</span>
+    <span class="nt">&lt;preconditioning_strategy&gt;</span> diffusion_operator | linearized_operator (default) <span class="nt">&lt;/preconditioning_strategy&gt;</span>
+    <span class="nt">&lt;atmospheric_pressure&gt;</span> exp <span class="nt">&lt;/atmospheric_pressure&gt;</span>
+  <span class="nt">&lt;/unstr_flow_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_transport_controls&gt;</span>
+    <span class="nt">&lt;algorithm&gt;</span> explicit first-order (default) | explicit second-order | implicit upwind <span class="nt">&lt;/algorithm&gt;</span>
+    <span class="nt">&lt;sub_cycling&gt;</span> on (defulat) | off <span class="nt">&lt;/sub_cycling&gt;</span>
+    <span class="nt">&lt;cfl&gt;</span> exp <span class="nt">&lt;/cfl&gt;</span>
+  <span class="nt">&lt;/unstr_transport_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_chemistry_controls&gt;</span>
+    <span class="nt">&lt;process_model&gt;</span> implicit operator split | none <span class="nt">&lt;/process_model&gt;</span>
+
+    <span class="c">&lt;!-- Amanzi native chemistry --&gt;</span>
+    <span class="nt">&lt;activity_model&gt;</span> unit (default) | debye-huckel <span class="nt">&lt;/activity_model&gt;</span>
+    <span class="nt">&lt;tolerance&gt;</span> exp <span class="nt">&lt;/tolerance&gt;</span> <span class="c">&lt;!-- default: 100 --&gt;</span>
+    <span class="nt">&lt;maximum_newton_iterations&gt;</span> int <span class="nt">&lt;/maximum_newton_iterations&gt;</span> <span class="c">&lt;!-- default: 1e-12 --&gt;</span>
+    <span class="nt">&lt;auxiliary_data&gt;</span> pH <span class="nt">&lt;/auxiliary_data&gt;</span>
+
+    <span class="c">&lt;!-- Pflotran chemistry --&gt;</span>
+    <span class="nt">&lt;activity_coefficients&gt;</span> timestep (default) | off <span class="nt">&lt;/activity_coefficients&gt;</span>
+    <span class="nt">&lt;max_relative_change_tolerance&gt;</span> exp <span class="nt">&lt;/max_relative_change_tolerance&gt;</span> <span class="c">&lt;!-- suggested 1.0e-16 --&gt;</span>
+    <span class="nt">&lt;max_residual_tolerance&gt;</span> exp <span class="nt">&lt;/max_residual_tolerance&gt;</span> <span class="c">&lt;!-- suggested 1.0e-16 --&gt;</span>
+    <span class="nt">&lt;log_formulation&gt;</span> on (default) | off <span class="nt">&lt;/log_formulation&gt;</span>
+  <span class="nt">&lt;/unstr_chemistry_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_steady-state_controls&gt;</span>
+    <span class="nt">&lt;min_iterations&gt;</span> int <span class="nt">&lt;/min_iterations&gt;</span>
+    <span class="nt">&lt;max_iterations&gt;</span> int <span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;limit_iterations&gt;</span> int <span class="nt">&lt;/limit_iterations&gt;</span>
+    <span class="nt">&lt;nonlinear_tolerance&gt;</span> exp <span class="nt">&lt;/nonlinear_tolerance&gt;</span>
+    <span class="nt">&lt;error_control_options&gt;</span> pressure (default) | residual <span class="nt">&lt;/error_control_options&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_damping_factor&gt;</span> exp <span class="nt">&lt;/nonlinear_iteration_damping_factor&gt;</span>
+    <span class="nt">&lt;max_preconditioner_lag_iterations&gt;</span> int <span class="nt">&lt;/max_preconditioner_lag_iterations&gt;</span>
+    <span class="nt">&lt;max_divergent_iterations&gt;</span> int <span class="nt">&lt;/max_divergent_iterations&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_divergence_factor&gt;</span> exp <span class="nt">&lt;/nonlinear_iteration_divergence_factor&gt;</span>
+    <span class="nt">&lt;restart_tolerance_relaxation_factor&gt;</span> exp <span class="nt">&lt;/restart_tolerance_relaxation_factor&gt;</span>
+    <span class="nt">&lt;restart_tolerance_relaxation_factor_damping&gt;</span> exp <span class="nt">&lt;/restart_tolerance_relaxation_factor_damping&gt;</span>
+    <span class="nt">&lt;preconditioner&gt;</span> hypre_amg (default) | trilinos_ml | block_ilu <span class="nt">&lt;/preconditioner&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_initial_guess_extrapolation_order&gt;</span> int <span class="nt">&lt;/nonlinear_iteration_initial_guess_extrapolation_order&gt;</span>
+    <span class="nt">&lt;unstr_initialization&gt;</span>
+      <span class="c">&lt;!-- NOTE: including an empty section here turns intialization on with default values</span>
+<span class="c">           To deactive intialization, remove section completely --&gt;</span>
+      <span class="nt">&lt;clipping_saturation&gt;</span> exp <span class="nt">&lt;/clipping_saturation&gt;</span>
+      <span class="nt">&lt;clipping_pressure&gt;</span> exp <span class="nt">&lt;/clipping_pressure&gt;</span>
+      <span class="nt">&lt;method&gt;</span> picard (default) | darcy_solver <span class="nt">&lt;/method&gt;</span>
+      <span class="nt">&lt;preconditioner&gt;</span> hypre_amg (default) | trilinos_ml | block_ilu <span class="nt">&lt;/preconditioner&gt;</span>
+      <span class="nt">&lt;linear_solver&gt;</span>aztec00 | aztecoo | AztecOO<span class="nt">&lt;/linear_solver&gt;</span>
+      <span class="nt">&lt;error_control_options&gt;</span> pressure (default) | residual <span class="nt">&lt;/error_control_options&gt;</span>
+      <span class="nt">&lt;convergence_tolerance&gt;</span> exp <span class="nt">&lt;/convergence_tolerance&gt;</span>
+      <span class="nt">&lt;max_iterations&gt;</span> int <span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;/unstr_initialization&gt;</span>
+  <span class="nt">&lt;/unstr_steady-state_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_transient_controls&gt;</span>
+    <span class="nt">&lt;min_iterations&gt;</span> int <span class="nt">&lt;/min_iterations&gt;</span>
+    <span class="nt">&lt;max_iterations&gt;</span> int <span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;limit_iterations&gt;</span> int <span class="nt">&lt;/limit_iterations&gt;</span>
+    <span class="nt">&lt;nonlinear_tolerance&gt;</span> exp <span class="nt">&lt;/nonlinear_tolerance&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_damping_factor&gt;</span> exp <span class="nt">&lt;/nonlinear_iteration_damping_factor&gt;</span>
+    <span class="nt">&lt;max_preconditioner_lag_iterations&gt;</span> int <span class="nt">&lt;/max_preconditioner_lag_iterations&gt;</span>
+    <span class="nt">&lt;max_divergent_iterations&gt;</span> int <span class="nt">&lt;/max_divergent_iterations&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_divergence_factor&gt;</span> exp <span class="nt">&lt;/nonlinear_iteration_divergence_factor&gt;</span>
+    <span class="nt">&lt;restart_tolerance_relaxation_factor&gt;</span> exp <span class="nt">&lt;/restart_tolerance_relaxation_factor&gt;</span>
+    <span class="nt">&lt;restart_tolerance_relaxation_factor_damping&gt;</span> exp <span class="nt">&lt;/restart_tolerance_relaxation_factor_damping&gt;</span>
+    <span class="nt">&lt;error_control_options&gt;</span> pressure,residual (default) <span class="nt">&lt;/error_control_options&gt;</span>
+    <span class="nt">&lt;preconditioner&gt;</span> hypre_amg (default) | trilinos_ml | block_ilu <span class="nt">&lt;/preconditioner&gt;</span>
+    <span class="nt">&lt;initialize_with_darcy&gt;</span> true | false (default) <span class="nt">&lt;/initialize_with_darcy&gt;</span>
+    <span class="nt">&lt;nonlinear_iteration_initial_guess_extrapolation_order&gt;</span>int<span class="nt">&lt;/nonlinear_iteration_initial_guess_extrapolation_order&gt;</span>
+  <span class="nt">&lt;/unstr_transient_controls&gt;</span>
+
+  <span class="nt">&lt;unstr_linear_solver&gt;</span>
+    <span class="nt">&lt;method&gt;</span> gmres (default) | pcg <span class="nt">&lt;/method&gt;</span>
+    <span class="nt">&lt;max_iterations&gt;</span>int <span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;tolerance&gt;</span> exp <span class="nt">&lt;/tolerance&gt;</span>
+    <span class="nt">&lt;preconditioner&gt;</span> hypre_amg (default) | trilinos_ml | block_ilu <span class="nt">&lt;/preconditioner&gt;</span>
+  <span class="nt">&lt;/unstr_linear_solver&gt;</span>
+
+  <span class="nt">&lt;unstr_nonlinear_solver</span> <span class="na">name=</span><span class="s">&quot;nka | newton | jfnk | newton_picard&quot;</span> <span class="nt">&gt;</span>
+    <span class="nt">&lt;modify_correction&gt;</span> true | false (default) <span class="nt">&lt;/modify_correction&gt;</span>
+    <span class="nt">&lt;update_upwind_frequency&gt;</span> every_timestep (default) | every_nonlinear_iteration <span class="nt">&lt;/update_upwind_frequency&gt;</span>
+  <span class="nt">&lt;/unstr_nonlinear_solver&gt;</span>
+
+  <span class="nt">&lt;unstr_preconditioners&gt;</span>
+    <span class="nt">&lt;hypre_amg&gt;</span>
+      <span class="nt">&lt;hypre_cycle_applications&gt;</span> int <span class="nt">&lt;/hypre_cycle_applications&gt;</span> <span class="c">&lt;!-- default: 5 suggested range: 1-5 --&gt;</span>
+      <span class="nt">&lt;hypre_smoother_sweeps&gt;</span> int <span class="nt">&lt;/hypre_smoother_sweeps&gt;</span> <span class="c">&lt;!-- default: 3 suggested range: 1-5 --&gt;</span>
+      <span class="nt">&lt;hypre_tolerance&gt;</span> exp <span class="nt">&lt;/hypre_tolerance&gt;</span> <span class="c">&lt;!-- default: 0.0 suggested range: 0.0-0.1 --&gt;</span>
+      <span class="nt">&lt;hypre_strong_threshold&gt;</span> exp <span class="nt">&lt;/hypre_strong_threshold&gt;</span> <span class="c">&lt;!-- default: 0.5 suggested range: 0.2-0.8 --&gt;</span>
+    <span class="nt">&lt;/hypre_amg&gt;</span>
+    <span class="nt">&lt;trilinos_ml&gt;</span>
+      <span class="nt">&lt;trilinos_cycle_applications&gt;</span> int <span class="nt">&lt;/trilinos_cycle_applications&gt;</span>
+      <span class="nt">&lt;trilinos_smoother_sweeps&gt;</span> int <span class="nt">&lt;/trilinos_smoother_sweeps&gt;</span>
+      <span class="nt">&lt;trilinos_threshold&gt;</span> exp <span class="nt">&lt;/trilinos_threshold&gt;</span>
+      <span class="nt">&lt;trilinos_smoother_type&gt;</span> jacobi (default) | gauss_seidel | ilu <span class="nt">&lt;/trilinos_smoother_type&gt;</span>
+    <span class="nt">&lt;/trilinos_ml&gt;</span>
+    <span class="nt">&lt;block_ilu&gt;</span>
+      <span class="nt">&lt;ilu_overlap&gt;</span> int <span class="nt">&lt;/ilu_overlap&gt;</span>
+      <span class="nt">&lt;ilu_relax&gt;</span> exp <span class="nt">&lt;/ilu_relax&gt;</span>
+      <span class="nt">&lt;ilu_rel_threshold&gt;</span> exp <span class="nt">&lt;/ilu_rel_threshold&gt;</span>
+      <span class="nt">&lt;ilu_abs_threshold&gt;</span> exp <span class="nt">&lt;/ilu_abs_threshold&gt;</span>
+      <span class="nt">&lt;ilu_level_of_fill&gt;</span> int <span class="nt">&lt;/ilu_level_of_fill&gt;</span>
+    <span class="nt">&lt;/block_ilu&gt;</span>
+  <span class="nt">&lt;/unstr_preconditioners&gt;</span>
+<span class="nt">&lt;/unstructured_controls&gt;</span>
+</pre></div>
+</div>
+<p>Here is an overall example for the <code class="docutils literal notranslate"><span class="pre">unstructured_controls</span></code> element.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;unstructured_controls&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>Numerical controls comments here<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;unstr_steady-state_controls&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Note that this section contained data on timesteps, which was moved into the execution control section.<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;min_iterations&gt;</span>10<span class="nt">&lt;/min_iterations&gt;</span>
+    <span class="nt">&lt;max_iterations&gt;</span>15<span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;max_preconditioner_lag_iterations&gt;</span>30<span class="nt">&lt;/max_preconditioner_lag_iterations&gt;</span>
+    <span class="nt">&lt;nonlinear_tolerance&gt;</span>1.0e-5<span class="nt">&lt;/nonlinear_tolerance&gt;</span>
+  <span class="nt">&lt;/unstr_steady-state_controls&gt;</span>
+  <span class="nt">&lt;unstr_transient_controls&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Proposed comments section.<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;bdf1_integration_method</span> <span class="na">min_iterations=</span><span class="s">&quot;10&quot;</span> <span class="na">max_iterations=</span><span class="s">&quot;15&quot;</span> <span class="na">max_preconditioner_lag_iterations=</span><span class="s">&quot;5&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/unstr_transient_controls&gt;</span>
+  <span class="nt">&lt;unstr_linear_solver&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Proposed comment section.<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;method&gt;</span>gmres<span class="nt">&lt;/method&gt;</span>
+    <span class="nt">&lt;max_iterations&gt;</span>20<span class="nt">&lt;/max_iterations&gt;</span>
+    <span class="nt">&lt;tolerance&gt;</span>1.0e-18<span class="nt">&lt;/tolerance&gt;</span>
+    <span class="nt">&lt;preconditioner&gt;</span> trilinos_ml | hypre_amg | block_ilu <span class="nt">&lt;/preconditioner&gt;</span>
+  <span class="nt">&lt;/unstr_linear_solver&gt;</span>
+<span class="nt">&lt;/unstructured_controls&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="structured-controls">
+<h4>Structured_controls<a class="headerlink" href="#structured-controls" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">structured_controls</span></code> sections is divided in the subsections: <code class="docutils literal notranslate"><span class="pre">str_steady-state_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">str_transient_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">str_amr_controls</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;petsc_options_file&gt;</span></code>, and <code class="docutils literal notranslate"><span class="pre">max_n_subcycle_transport</span></code>.  The list of available options is as follows:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;structured_controls&gt;</span>
+
+  <span class="nt">&lt;comments&gt;</span>Numerical controls comments here<span class="nt">&lt;/comments&gt;</span>
+
+  <span class="nt">&lt;petsc_options_file&gt;</span> String <span class="nt">&lt;/petsc_options_file&gt;</span>
+  <span class="nt">&lt;str_steady-state_controls&gt;</span>
+    <span class="nt">&lt;max_pseudo_time&gt;</span> Exponential <span class="nt">&lt;/max_pseudo_time&gt;</span>
+    <span class="nt">&lt;limit_iterations&gt;</span> Integer <span class="nt">&lt;/limit_iterations&gt;</span>
+    <span class="nt">&lt;min_iterations&gt;</span> Integer <span class="nt">&lt;/min_iterations&gt;</span>
+    <span class="nt">&lt;min_iterations_2&gt;</span> Integer <span class="nt">&lt;/min_iterations_2&gt;</span>
+    <span class="nt">&lt;time_step_increase_factor&gt;</span> Exponential <span class="nt">&lt;/time_step_increase_factor&gt;</span>
+    <span class="nt">&lt;time_step_increase_factor_2&gt;</span> Exponential <span class="nt">&lt;/time_step_increase_factor_2&gt;</span>
+    <span class="nt">&lt;max_consecutive_failures_1&gt;</span> Integer <span class="nt">&lt;/max_consecutive_failures_1&gt;</span>
+    <span class="nt">&lt;time_step_retry_factor_1&gt;</span> Exponential <span class="nt">&lt;/time_step_retry_factor_1&gt;</span>
+    <span class="nt">&lt;max_consecutive_failures_2&gt;</span> Integer <span class="nt">&lt;/max_consecutive_failures_2&gt;</span>
+    <span class="nt">&lt;time_step_retry_factor_2&gt;</span> Exponential <span class="nt">&lt;/time_step_retry_factor_2&gt;</span>
+    <span class="nt">&lt;time_step_retry_factor_f&gt;</span> Exponential <span class="nt">&lt;/time_step_retry_factor_f&gt;</span>
+    <span class="nt">&lt;max_num_consecutive_success&gt;</span> Integer <span class="nt">&lt;/max_num_consecutive_success&gt;</span>
+    <span class="nt">&lt;extra_time_step_increase_factor&gt;</span> Exponential <span class="nt">&lt;/extra_time_step_increase_factor&gt;</span>
+    <span class="nt">&lt;abort_on_psuedo_timestep_failure&gt;</span> true | false <span class="nt">&lt;/abort_on_psuedo_timestep_failure&gt;</span>
+    <span class="nt">&lt;limit_function_evals&gt;</span> Integer <span class="nt">&lt;/limit_function_evals&gt;</span>
+    <span class="nt">&lt;do_grid_sequence&gt;</span> true | false <span class="nt">&lt;/do_grid_sequence&gt;</span>
+    <span class="nt">&lt;grid_sequence_new_level_dt_factor&gt;</span>
+      <span class="nt">&lt;dt_factor&gt;</span> Exponential <span class="nt">&lt;/dt_factor&gt;</span> <span class="c">&lt;!-- one element for each AMR level --&gt;</span>
+    <span class="nt">&lt;/grid_sequence_new_level_dt_factor&gt;</span>
+  <span class="nt">&lt;/str_steady-state_controls&gt;</span>
+
+
+  <span class="nt">&lt;str_transient_controls&gt;</span>
+    <span class="nt">&lt;max_ls_iterations&gt;</span> Integer <span class="nt">&lt;/max_ls_iterations&gt;</span>
+    <span class="nt">&lt;ls_reduction_factor&gt;</span> Exponential <span class="nt">&lt;/ls_reduction_factor&gt;</span>
+    <span class="nt">&lt;min_ls_factor&gt;</span> Exponential <span class="nt">&lt;/min_ls_factor&gt;</span>
+    <span class="nt">&lt;ls_acceptance_factor&gt;</span> Exponential <span class="nt">&lt;/ls_acceptance_factor&gt;</span>
+    <span class="nt">&lt;monitor_line_search&gt;</span> Integer <span class="nt">&lt;/monitor_line_search&gt;</span>
+    <span class="nt">&lt;monitor_linear_solve&gt;</span> Integer <span class="nt">&lt;/monitor_linear_solve&gt;</span>
+    <span class="nt">&lt;perturbation_scale_for_J&gt;</span> Exponential <span class="nt">&lt;/perturbation_scale_for_J&gt;</span>
+    <span class="nt">&lt;use_dense_Jacobian&gt;</span> true | false <span class="nt">&lt;/use_dense_Jacobian&gt;</span>
+    <span class="nt">&lt;upwind_krel&gt;</span> true | false <span class="nt">&lt;/upwind_krel&gt;</span>
+    <span class="nt">&lt;pressure_maxorder&gt;</span> Integer <span class="nt">&lt;/pressure_maxorder&gt;</span>
+    <span class="nt">&lt;scale_solution_before_solve&gt;</span> true | false <span class="nt">&lt;/scale_solution_before_solve&gt;</span>
+    <span class="nt">&lt;semi_analytic_J&gt;</span> true | false <span class="nt">&lt;/semi_analytic_J&gt;</span>
+    <span class="nt">&lt;cfl&gt;</span> Exponential <span class="nt">&lt;/cfl&gt;</span>
+  <span class="nt">&lt;/str_transient_controls&gt;</span>
+
+  <span class="nt">&lt;str_transient_controls&gt;</span>
+    <span class="nt">&lt;amr_levels&gt;</span> Integer <span class="nt">&lt;/amr_levels&gt;</span>
+    <span class="nt">&lt;refinement_ratio&gt;</span>Integer Integer<span class="nt">&lt;/refinement_ratio&gt;</span> <span class="c">&lt;!-- amr_levels-1 number of integers should be listed--&gt;</span>
+    <span class="nt">&lt;do_amr_cubcycling&gt;</span> true | false <span class="nt">&lt;/do_amr_cubcycling&gt;</span>
+    <span class="nt">&lt;regrid_interval&gt;</span>Integer Integer<span class="nt">&lt;/regrid_interval&gt;</span> <span class="c">&lt;!-- amr_levels number of integers should be listed--&gt;</span>
+    <span class="nt">&lt;blocking_factor&gt;</span>Integer Integer<span class="nt">&lt;/blocking_factor&gt;</span> <span class="c">&lt;!-- amr_levels number of integers should be listed--&gt;</span>
+    <span class="nt">&lt;number_error_buffer_cells&gt;</span>Integer Integer<span class="nt">&lt;/number_error_buffer_cells&gt;</span> <span class="c">&lt;!-- amr_levels-1 number of integers should be listed--&gt;</span>
+    <span class="nt">&lt;max_grid_size&gt;</span>Integer Integer<span class="nt">&lt;/max_grid_size&gt;</span> <span class="c">&lt;!-- amr_levels number of integers should be listed--&gt;</span>
+    <span class="nt">&lt;refinement_indicators&gt;</span>
+      <span class="nt">&lt;field_name&gt;</span> String <span class="nt">&lt;/field_name&gt;</span>
+      <span class="nt">&lt;regions&gt;</span> String <span class="nt">&lt;/regions&gt;</span>
+      <span class="nt">&lt;max_refinement_level&gt;</span> Integer <span class="nt">&lt;/max_refinement_level&gt;</span>
+      <span class="nt">&lt;start_time&gt;</span> Exponential <span class="nt">&lt;/start_time&gt;</span>
+      <span class="nt">&lt;end_time&gt;</span> Exponential <span class="nt">&lt;/end_time&gt;</span>
+      <span class="c">&lt;!-- user may specify exactly 1 of the following --&gt;</span>
+      <span class="nt">&lt;value_greater&gt;</span> Exponential <span class="nt">&lt;/value_greater&gt;</span>
+      <span class="nt">&lt;inside_region&gt;</span> true | false <span class="nt">&lt;/inside_region&gt;</span>
+      <span class="nt">&lt;value_less&gt;</span> Exponential <span class="nt">&lt;/value_less&gt;</span>
+      <span class="nt">&lt;adjacent_difference_greater&gt;</span> Exponential <span class="nt">&lt;/adjacent_difference_greater&gt;</span>
+      <span class="nt">&lt;inside_region&gt;</span> true | false <span class="nt">&lt;/inside_region&gt;</span>
+    <span class="nt">&lt;/refinement_indicators&gt;</span>
+  <span class="nt">&lt;/str_transient_controls&gt;</span>
+
+  <span class="nt">&lt;max_n_subcycle_transport&gt;</span> Integer <span class="nt">&lt;/max_n_subcycle_transport&gt;</span>
+<span class="nt">&lt;/structured_controls&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h3>
+<p>A mesh must be defined for the simulation to be conducted on.  The mesh can be structured or unstructured.  Structured meshes are always internally generated while unstructured meshes may be generated internally or imported from an existing <a class="reference external" href="http://sourceforge.net/projects/exodusii/">Exodus II</a> file. Generated meshes in both frameworks are always regular uniformly spaced meshes.</p>
+<div class="section" id="mesh-generate-structured">
+<h4>Mesh - Generate (Structured)<a class="headerlink" href="#mesh-generate-structured" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">mesh</span></code> section takes a <code class="docutils literal notranslate"><span class="pre">dimension</span></code> element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.</p>
+<p>This section also takes an element indicating how the mesh is to be internally generated. The <code class="docutils literal notranslate"><span class="pre">generate</span></code> element specifies the details about the number of cells in each direction and the low and high coordinates of the bounding box.  It should be noted that in order to accommodate mesh refinement, the number of cells in each direction must be even.</p>
+<p>Finally, as in other sections, a <code class="docutils literal notranslate"><span class="pre">comments</span></code> element is provide to include any comments or documentation the user wishes.</p>
+<p>Here is an example specification for internally generated <code class="docutils literal notranslate"><span class="pre">mesh</span></code> element for structured.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;mesh&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>3D block<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+  <span class="nt">&lt;generate&gt;</span>
+    <span class="nt">&lt;number_of_cells</span> <span class="na">nx=</span><span class="s">&quot;400&quot;</span>  <span class="na">ny=</span><span class="s">&quot;200&quot;</span>  <span class="na">nz=</span><span class="s">&quot;10&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span>  <span class="na">low_coordinates=</span><span class="s">&quot;0.0,0.0,0.0&quot;</span> <span class="na">high_coordinates=</span><span class="s">&quot;200.0,200.0,1.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/generate&gt;</span>
+<span class="nt">&lt;/mesh&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mesh-generate-unstructured">
+<h4>Mesh - Generate (Unstructured)<a class="headerlink" href="#mesh-generate-unstructured" title="Permalink to this headline">¶</a></h4>
+<p>The unstructured portion of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the <code class="docutils literal notranslate"><span class="pre">mesh</span></code> element.
+The available options are: <code class="docutils literal notranslate"><span class="pre">mstk</span></code>, <code class="docutils literal notranslate"><span class="pre">moab</span></code>, and <code class="docutils literal notranslate"><span class="pre">simple</span></code>.
+If no framework is specified, the default <code class="docutils literal notranslate"><span class="pre">mstk</span></code> is used.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">mesh</span></code> section takes a <code class="docutils literal notranslate"><span class="pre">dimension</span></code> element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.</p>
+<p>This section also takes an element indicating how the mesh is to be internally generated. The <code class="docutils literal notranslate"><span class="pre">generate</span></code> element specifies the details about the number of cells in each direction and the low and high coordinates of the bounding box.</p>
+<p>Finally, as in other sections, a <code class="docutils literal notranslate"><span class="pre">comments</span></code> element is provide to include any comments or documentation the user wishes.</p>
+<p>The following is an example specification for a generated unstructured mesh.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;mesh</span> <span class="na">framework=</span><span class="s">&quot;mstk&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>Pseudo 2D<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+  <span class="nt">&lt;generate&gt;</span>
+    <span class="nt">&lt;number_of_cells</span> <span class="na">nx=</span><span class="s">&quot;432&quot;</span>  <span class="na">ny=</span><span class="s">&quot;1&quot;</span>  <span class="na">nz=</span><span class="s">&quot;256&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">low_coordinates=</span><span class="s">&quot;0.0,0.0,0.0&quot;</span> <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/generate&gt;</span>
+<span class="nt">&lt;/mesh&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mesh-read-unstructured">
+<h4>Mesh - Read (Unstructured)<a class="headerlink" href="#mesh-read-unstructured" title="Permalink to this headline">¶</a></h4>
+<p>The unstructured mode of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the <code class="docutils literal notranslate"><span class="pre">mesh</span></code> element.
+The available options are: <code class="docutils literal notranslate"><span class="pre">mstk</span></code>, <code class="docutils literal notranslate"><span class="pre">moab</span></code>, and <code class="docutils literal notranslate"><span class="pre">simple</span></code>.
+If no framework is specified, the default <code class="docutils literal notranslate"><span class="pre">mstk</span></code> is used.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">mesh</span></code> section takes a <code class="docutils literal notranslate"><span class="pre">dimension</span></code> element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.</p>
+<p>The unstructured mode of Amanzi can read meshes in the Exodus II format.  The <code class="docutils literal notranslate"><span class="pre">read</span></code> element contains the subelements <code class="docutils literal notranslate"><span class="pre">file</span></code>, <code class="docutils literal notranslate"><span class="pre">format</span></code>, and <code class="docutils literal notranslate"><span class="pre">verify</span></code> for specifying the mesh file format (currently only Exodus II) and the mesh file name (relative path allowed).  Any regions or attributes specified in the mesh file will also be read.  These names of the regions and attributes can be utilized in appropriate sections of the input file.  The subelement <code class="docutils literal notranslate"><span class="pre">verify</span></code> turns on or off checks performed on the mesh when it is read it.  The mesh verification takes time and is only recommended for debugging meshes on first use.</p>
+<p>Finally, as in other sections, a <code class="docutils literal notranslate"><span class="pre">comments</span></code> element is provide to include any comments or documentation the user wishes.</p>
+<p>Finally, an example of reading an unstructured mesh from a file is given below.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;mesh</span> <span class="na">framework=</span><span class="s">&quot;mstk&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>Read from Exodus II<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+  <span class="nt">&lt;read&gt;</span>
+    <span class="nt">&lt;file&gt;</span>dvz.exo<span class="nt">&lt;/file&gt;</span>
+    <span class="nt">&lt;format&gt;</span>exodus ii<span class="nt">&lt;/format&gt;</span>
+    <span class="nt">&lt;verify&gt;</span>true<span class="nt">&lt;/verify&gt;</span>
+  <span class="nt">&lt;/read&gt;</span>
+<span class="nt">&lt;/mesh&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="regions">
+<h3>Regions<a class="headerlink" href="#regions" title="Permalink to this headline">¶</a></h3>
+<p>Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.</p>
+<p>Amanzi automatically defines the special region labeled “All”, which is the entire simulation domain. Under the “Structured” option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: “XLOBC”, “XHIBC”, “YLOBC”, “YHIBC”, “ZLOBC”, “ZHIBC”</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">regions</span></code> block is required.  Within the region block no regions are required to be defined.  The optional elements valid for both structured and unstructured include <code class="docutils literal notranslate"><span class="pre">region</span></code>, <code class="docutils literal notranslate"><span class="pre">box</span></code>, <code class="docutils literal notranslate"><span class="pre">point</span></code>, <code class="docutils literal notranslate"><span class="pre">plane</span></code>, and <code class="docutils literal notranslate"><span class="pre">logical</span></code>.  As in other sections there is also an options <code class="docutils literal notranslate"><span class="pre">comments</span></code> element.</p>
+<p>The elements <code class="docutils literal notranslate"><span class="pre">box</span></code>, <code class="docutils literal notranslate"><span class="pre">point</span></code>, and <code class="docutils literal notranslate"><span class="pre">plane</span></code> allow for in-line description of regions.  The <code class="docutils literal notranslate"><span class="pre">region</span></code> element uses a subelement to either define a <code class="docutils literal notranslate"><span class="pre">box</span></code> or <code class="docutils literal notranslate"><span class="pre">plane</span></code> region or specify a region file.  Below are further descriptions of these elements.</p>
+<p>Additional regions valid only for unstructured are <code class="docutils literal notranslate"><span class="pre">polygonal_surface</span></code>.  Additional regions valid only for structured include <code class="docutils literal notranslate"><span class="pre">polygon</span></code> and <code class="docutils literal notranslate"><span class="pre">ellipse</span></code> in 2D and <code class="docutils literal notranslate"><span class="pre">rotated_polygon</span></code> and <code class="docutils literal notranslate"><span class="pre">swept_polygon</span></code> in 3D.</p>
+<p>Each region definition requires a <code class="docutils literal notranslate"><span class="pre">name</span></code> attribute.
+These names must be unique to avoid confusion when other sections refer to the regions.</p>
+<div class="section" id="box">
+<h4>Box<a class="headerlink" href="#box" title="Permalink to this headline">¶</a></h4>
+<p>A box region region is defined by a low corner coordinates and high corner coordinates. Box regions can be degenerate in one or more directions.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;MyBox&quot;</span> <span class="na">low_coordinates=</span><span class="s">&quot;x_low,y_low,z_low&quot;</span>
+                  <span class="na">high_coordinates=</span><span class="s">&quot;x_high,y_high,z_high&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="point">
+<h4>Point<a class="headerlink" href="#point" title="Permalink to this headline">¶</a></h4>
+<p>A point region is defined by a point coordinates.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;point</span> <span class="na">name=</span><span class="s">&quot;Well&quot;</span> <span class="na">coordinate=</span><span class="s">&quot;x,y,z&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="plane">
+<h4>Plane<a class="headerlink" href="#plane" title="Permalink to this headline">¶</a></h4>
+<p>A plane region is defined by a point on the plane and the normal direction of the plane.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;plane</span> <span class="na">name=</span><span class="s">&quot;plane name&quot;</span> <span class="na">location=</span><span class="s">&quot;x,y,z&quot;</span> <span class="na">normal=</span><span class="s">&quot;nx,ny,nz&quot;</span> <span class="na">tolerance=</span><span class="s">&quot;optional exp&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+<p>The attribute <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> is optional.
+This value prescribes an absolute tolerance for determining the cell face centroids that lie on the defined plane.</p>
+</div>
+<div class="section" id="labeled-set">
+<h4>Labeled Set<a class="headerlink" href="#labeled-set" title="Permalink to this headline">¶</a></h4>
+<p>A labeled set region is a predefined set of mesh entities defined in the Exodus II mesh file. This type of region is useful when applying boundary conditions on an irregular surface that has been tagged in the external mesh generator.  Please note that both the format and entity attribute values are case sensitive. Also not that the attribute <code class="docutils literal notranslate"><span class="pre">label</span></code> refers to the name of the region used in the mesh file.  Currently the label/name needs to be an integer value.  Also the region names in the mesh file should be unique to avoid errors and confusion as to which region is being referred to.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;region</span> <span class="na">name=</span><span class="s">&quot;region name&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;region_file</span> <span class="na">label=</span><span class="s">&quot;integer label&quot;</span> <span class="na">name=</span><span class="s">&quot;filename&quot;</span> <span class="na">type=</span><span class="s">&quot;labeled set&quot;</span>
+               <span class="na">format=</span><span class="s">&quot;exodus ii&quot;</span> <span class="na">entity=</span><span class="s">[&quot;cell&quot;|&quot;face&quot;]</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/region&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="color-function">
+<h4>Color function<a class="headerlink" href="#color-function" title="Permalink to this headline">¶</a></h4>
+<p>A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.  At this time, Exodus II is the only file format available.   Please note that both the format and entity attribute values are case sensitive.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;region</span> <span class="na">name=</span><span class="s">&quot;region name&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;region_file</span> <span class="na">label=</span><span class="s">&quot;integer label&quot;</span> <span class="na">name=</span><span class="s">&quot;filename&quot;</span> <span class="na">type=</span><span class="s">&quot;color&quot;</span>
+               <span class="na">format=</span><span class="s">&quot;exodus ii&quot;</span>  <span class="na">entity=</span><span class="s">[&quot;cell&quot;|&quot;face&quot;]/</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/region&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="logical">
+<h4>Logical<a class="headerlink" href="#logical" title="Permalink to this headline">¶</a></h4>
+<p>Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;logical</span> <span class="na">name=</span><span class="s">&quot;logical name&quot;</span> <span class="na">operation=</span><span class="s">&quot;union | intersection | subtraction | complement&quot;</span>
+         <span class="na">region_list=</span><span class="s">&quot;region1, region2, region3&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="polygonal-surface-unstructured-only">
+<h4>Polygonal_Surface (unstructured only)<a class="headerlink" href="#polygonal-surface-unstructured-only" title="Permalink to this headline">¶</a></h4>
+<p>A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;polygonal_surface</span> <span class="na">name=</span><span class="s">&quot;polygon name&quot;</span> <span class="na">num_points=</span><span class="s">&quot;3&quot;</span> <span class="na">tolerance=</span><span class="s">&quot;optional exp&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;point&gt;</span>X1, Y1, Z1<span class="nt">&lt;/point&gt;</span>
+  <span class="nt">&lt;point&gt;</span>X2, Y2, Z2<span class="nt">&lt;/point&gt;</span>
+  <span class="nt">&lt;point&gt;</span>X3, Y3, Z3<span class="nt">&lt;/point&gt;</span>
+  <span class="nt">&lt;point&gt;</span>X4, Y4, Z4<span class="nt">&lt;/point&gt;</span>
+<span class="nt">&lt;/polygonal_surface&gt;</span>
+</pre></div>
+</div>
+<p>The attribute <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> is optional.
+This value prescribes an absolute tolerance for determining the cell face centroids that lie on the defined plane.</p>
+</div>
+<div class="section" id="polygon-structured-2d-only">
+<h4>Polygon (structured 2D only)<a class="headerlink" href="#polygon-structured-2d-only" title="Permalink to this headline">¶</a></h4>
+<p>A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;polygon</span> <span class="na">name=</span><span class="s">&quot;polygon name&quot;</span> <span class="na">num_points=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;point&gt;</span> (X1, Y1) <span class="nt">&lt;/point&gt;</span>
+  <span class="nt">&lt;point&gt;</span> (X2, Y2) <span class="nt">&lt;/point&gt;</span>
+  <span class="nt">&lt;point&gt;</span> (X3, Y3) <span class="nt">&lt;/point&gt;</span>
+<span class="nt">&lt;/polygon&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ellipse-structured-2d-only">
+<h4>Ellipse (structured 2D only)<a class="headerlink" href="#ellipse-structured-2d-only" title="Permalink to this headline">¶</a></h4>
+<p>An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ellipse</span> <span class="na">name=</span><span class="s">&quot;polygon name&quot;</span> <span class="na">num_points=</span><span class="s">&quot;3&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;center&gt;</span> (X, Y) <span class="nt">&lt;/center&gt;</span>
+  <span class="nt">&lt;radius&gt;</span> (radiusX, radiusY) <span class="nt">&lt;/radius&gt;</span>
+<span class="nt">&lt;/ellipse&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rotated-polygon-structured-3d-only">
+<h4>Rotated Polygon (structured 3D only)<a class="headerlink" href="#rotated-polygon-structured-3d-only" title="Permalink to this headline">¶</a></h4>
+<p>A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;rotated_polygon</span> <span class="na">name=</span><span class="s">&quot;rotated_polygon name&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;xyz_plane&gt;</span> (XY | YZ | XZ) <span class="nt">&lt;/xyz_plane&gt;</span>
+  <span class="nt">&lt;axis&gt;</span> (X | Y | Z) <span class="nt">&lt;/axis&gt;</span>
+  <span class="nt">&lt;reference_point&gt;</span> (X, Y) <span class="nt">&lt;/reference_point&gt;</span>
+<span class="nt">&lt;/rotated_polygon&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="swept-polygon-structured-3d-only">
+<h4>Swept Polygon (structured 3D only)<a class="headerlink" href="#swept-polygon-structured-3d-only" title="Permalink to this headline">¶</a></h4>
+<p>A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;swept_polygon</span> <span class="na">name=</span><span class="s">&quot;swept_polygon name&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;vertex&gt;</span> (X, Y, Z) <span class="nt">&lt;/vertex&gt;</span>
+  <span class="nt">&lt;xyz_plane&gt;</span> (XY | YZ | XZ) <span class="nt">&lt;/xyz_plane&gt;</span>
+  <span class="nt">&lt;extent_min&gt;</span> exponential <span class="nt">&lt;/extent_min&gt;</span>
+  <span class="nt">&lt;extent_max&gt;</span> exponential <span class="nt">&lt;/extent_max&gt;</span>
+<span class="nt">&lt;/swept_polygon&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="geochemistry">
+<h3>Geochemistry<a class="headerlink" href="#geochemistry" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">geochemistry</span></code> section allows for geochemical constraints to be named and defined.  These named constraints are referred to in the <code class="docutils literal notranslate"><span class="pre">initial_conditions</span></code>, <code class="docutils literal notranslate"><span class="pre">boundary_conditions</span></code>, and <code class="docutils literal notranslate"><span class="pre">sources</span></code> sections.</p>
+<p>Note, at this time the geochemistry constraints must be named and defined in the external chemistry engine input file.  This chemistry input file must be provided by the user.  The capability to create the chemistry input file based on information provided within the XML input file is currently under development.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">geochemistry</span></code> section has the subelements <code class="docutils literal notranslate"><span class="pre">comments</span></code>, <code class="docutils literal notranslate"><span class="pre">verbosity</span></code>, and an unbounded number of <code class="docutils literal notranslate"><span class="pre">constraint</span></code> elements.  The <code class="docutils literal notranslate"><span class="pre">verbosity</span></code> element specifies the verbosity level to be used by the chemistry engine.  The current options are: silent, terse, verbose, warnings, and errors.</p>
+<p>Currently, each named constraint must correspond to a constraint with matching name in the external chemistry engine input file.  With the XML input file, the <code class="docutils literal notranslate"><span class="pre">constraint</span></code> element takes an attribute <code class="docutils literal notranslate"><span class="pre">name</span></code>.  This name must match the name of a constraint within the chemistry input file.  In addition, the use may include the constraint information as subelements to the <code class="docutils literal notranslate"><span class="pre">constraint</span></code> element for information purposes.  The <code class="docutils literal notranslate"><span class="pre">constraint</span></code> element accepts three version of a <code class="docutils literal notranslate"><span class="pre">primary</span></code> subelement.  The <code class="docutils literal notranslate"><span class="pre">primary</span></code> element describes the constraint on a primary specie, mineral, or gas.</p>
+<p>For each type of primary, the <code class="docutils literal notranslate"><span class="pre">primary</span></code> element takes the attributes <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, and <code class="docutils literal notranslate"><span class="pre">value</span></code>.  The <code class="docutils literal notranslate"><span class="pre">name</span></code> should match a primary listed in the <code class="docutils literal notranslate"><span class="pre">phases</span></code> section.  The  <code class="docutils literal notranslate"><span class="pre">type</span></code> can be: free_ion, pH, total, mineral, gas, total+sorbed, or charge.  Note, for a non-reacting primary (i.e. tracer or solute), only the type total is valid.  If the type selected is mineral, an additional attribute <code class="docutils literal notranslate"><span class="pre">mineral</span></code> giving the mineral name is expected.   If the type selected is gas, an additional attribute <code class="docutils literal notranslate"><span class="pre">gas</span></code> giving the gas name is expected.  Again, the names given should match names specified in the <code class="docutils literal notranslate"><span class="pre">phases</span></code> section.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;geochemistry&gt;</span>
+  <span class="nt">&lt;verbosity&gt;</span>silent | terse | verbose | warnings | errors<span class="nt">&lt;/verbosity&gt;</span>
+  <span class="nt">&lt;constraints&gt;</span> <span class="c">&lt;!-- REQUIRED --&gt;</span>
+    <span class="nt">&lt;constraint</span> <span class="na">name=</span><span class="s">&quot;string&quot;</span><span class="nt">&gt;</span> <span class="c">&lt;!-- REQUIRED --&gt;</span>
+      <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;primary_name_string&quot;</span>  <span class="na">initial_guess=</span><span class="s">&quot;exp&quot;</span>   <span class="na">type=</span><span class="s">&quot;free_ion | pH | total | total+sorbed | charge&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;nonreactive_primary&quot;</span>  <span class="na">initial_guess=</span><span class="s">&quot;exp&quot;</span>   <span class="na">type=</span><span class="s">&quot;total&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;primary_name_string&quot;</span>  <span class="na">initial_guess=</span><span class="s">&quot;exp&quot;</span>   <span class="na">type=</span><span class="s">&quot;mineral&quot;</span> <span class="na">mineral=</span><span class="s">&quot;mineral_name&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;primary_name_string&quot;</span>  <span class="na">initial_guess=</span><span class="s">&quot;exp&quot;</span>   <span class="na">type=</span><span class="s">&quot;gas&quot;</span> <span class="na">gas =</span> <span class="s">&quot;gas_name&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;mineral</span> <span class="na">name=</span><span class="s">&quot;mineral_name_string&quot;</span>  <span class="na">volume_fraction=</span><span class="s">&quot;exp&quot;</span> <span class="na">surface_area =</span><span class="s">&quot;exp&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/constraint&gt;</span>
+  <span class="nt">&lt;/constraints&gt;</span>
+<span class="nt">&lt;/geochemistry&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="materials">
+<h3>Materials<a class="headerlink" href="#materials" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">materials</span></code> section allows for 1 or more material to be defined.  Each material element requires an attribute <code class="docutils literal notranslate"><span class="pre">name</span></code> to distinguish the material definitions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">material</span></code> in this context is meant to represent the media through which fluid phases are transported. In the literature, this is also referred to as the “soil”, “rock”, “matrix”, etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the “All” region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. Each material requires a label and the following set of physical properties using the supported models described below.</p>
+<p>While many material properties are available for the user to define, the minimum requirements for a valid material definition are specifying the <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code>, either <code class="docutils literal notranslate"><span class="pre">permeability</span></code> or <code class="docutils literal notranslate"><span class="pre">hydraulic_conductivity</span></code>, and the <code class="docutils literal notranslate"><span class="pre">porosity</span></code>.  However, if a capillary pressure model or relative permeability model is chosen (other than <code class="docutils literal notranslate"><span class="pre">none</span></code>), the associated parameters must also be provided.  Likewise, all model specific parameters must be provided for the chosen dispersion tensor model.</p>
+<div class="section" id="assigned-regions">
+<h4>Assigned_regions<a class="headerlink" href="#assigned-regions" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code> element list the regions to which the following material properties are to be assigned.  If only 1 material exists, the <code class="docutils literal notranslate"><span class="pre">All</span></code> region should be used.  If the material properties are to be assigned to multiple regions, provide a comma separated list of the region names. Leading and trailing white space will be trimmed.  Also, spaces within the region names will be preserved.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;assigned_regions&gt;</span>Comma seperated list of Regions<span class="nt">&lt;/assigned_regions&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mechanical-properties">
+<h4>Mechanical_properties<a class="headerlink" href="#mechanical-properties" title="Permalink to this headline">¶</a></h4>
+<p>This element collects a series of mechanical properties as subelements.  As mentioned above, the only required subelement is <code class="docutils literal notranslate"><span class="pre">porosity</span></code>.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">dispersion_tensor</span></code> several models are available.  The model is specified using the <code class="docutils literal notranslate"><span class="pre">type</span></code> attribute and additional attributes are used to specify the properties of the given model.  The available dispersion models are described in the following table.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 27%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Dispersion Model</p></th>
+<th class="head"><p>Attribute Names</p></th>
+<th class="head"><p>Attribute Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>uniform_isotropic</p></td>
+<td><p>alpha_l
+alpha_t</p></td>
+<td><p>Exponential value
+Exponential value</p></td>
+</tr>
+<tr class="row-odd"><td><p>burnett_frind</p></td>
+<td><p>alpha_l
+alpha_th
+alpha_tv</p></td>
+<td><p>Exponential value
+Exponential value
+Exponential value</p></td>
+</tr>
+<tr class="row-even"><td><p>lichtner_kelkar_robinson</p></td>
+<td><p>alpha_lh
+alpha_tv
+alpha_th
+alpha_tv</p></td>
+<td><p>Exponential value
+Exponential value
+Exponential value
+Exponential value</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;mechanical_properties&gt;</span>
+  <span class="nt">&lt;porosity</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;particle_density</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;specific_storage</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;specific_yield</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;dispersion_tensor</span> <span class="na">type=</span><span class="s">&quot;uniform_isotropic&quot;</span> <span class="na">alpha_l=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">alpha_t=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;tortuosity</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/mechanical_properties&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="permeability">
+<h4>Permeability<a class="headerlink" href="#permeability" title="Permalink to this headline">¶</a></h4>
+<p>For each material either the <code class="docutils literal notranslate"><span class="pre">permeability</span></code> or the <code class="docutils literal notranslate"><span class="pre">hydraulic_conductivity</span></code> must be specified, but not both.  If specifying the <code class="docutils literal notranslate"><span class="pre">permeability</span></code> either a single value for each direction can be given for the entire material or the <code class="docutils literal notranslate"><span class="pre">permeability</span></code> values can be read from a file by specifying the attribute <code class="docutils literal notranslate"><span class="pre">type</span></code> as “file”.  The attribute <code class="docutils literal notranslate"><span class="pre">attribute</span></code> gives the name of the attribute with an Exodus II mesh file to be read.  Finally the file name is specified using the attribute <code class="docutils literal notranslate"><span class="pre">filename</span></code>.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;permeability</span> <span class="na">x=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">y=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">z=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;permeability</span> <span class="na">filename=</span><span class="s">&quot;file name&quot;</span> <span class="na">type=</span><span class="s">&quot;file&quot;</span> <span class="na">attribute=</span><span class="s">&quot;attribute name&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="hydraulic-conductivity">
+<h4>Hydraulic_conductivity<a class="headerlink" href="#hydraulic-conductivity" title="Permalink to this headline">¶</a></h4>
+<p>As noted above, either the <code class="docutils literal notranslate"><span class="pre">permeability</span></code> or <code class="docutils literal notranslate"><span class="pre">hydraulic_conductivity</span></code> must be specified for each material, but not both.  The values for each direction are listed as attributes.  Currently file read has not yet been implemented.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;hydraulic_conductivity</span> <span class="na">x=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">y=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">z=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cap-pressure">
+<h4>Cap_pressure<a class="headerlink" href="#cap-pressure" title="Permalink to this headline">¶</a></h4>
+<p>Capillary pressure can be specified using the element <code class="docutils literal notranslate"><span class="pre">cap_pressure</span></code>.  The attribute <code class="docutils literal notranslate"><span class="pre">model</span></code> specifies whether the van Genuchten or Brooks-Corey model is to be used.  The subelement <code class="docutils literal notranslate"><span class="pre">parameters</span></code> lists the model specific parameters.  Note, for both models a smoothing interval can be specified but is optional.  Also, if not specifying capillary pressure this element can be skipped or the value of <code class="docutils literal notranslate"><span class="pre">model</span></code> set to “none”.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;cap_pressure</span> <span class="na">model=</span><span class="s">&quot;van_genuchten | brooks_corey | none&quot;</span><span class="nt">&gt;</span>
+  <span class="c">&lt;!-- for van_Genuchten --&gt;</span>
+  <span class="nt">&lt;parameters</span> <span class="na">m=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">alpha=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">sr=</span><span class="s">&quot;Exponential&quot;</span>
+              <span class="na">optional_krel_smoothing_interval=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="c">&lt;!-- for Brooks_Corey --&gt;</span>
+  <span class="nt">&lt;parameters</span> <span class="na">lambda=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">alpha=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">sr=</span><span class="s">&quot;Exponential&quot;</span>
+              <span class="na">optional_krel_smoothing_interval=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/cap_pressure&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rel-perm">
+<h4>Rel_perm<a class="headerlink" href="#rel-perm" title="Permalink to this headline">¶</a></h4>
+<p>Relative permeability can be specified using the element <code class="docutils literal notranslate"><span class="pre">rel_perm</span></code>.  The attribute <code class="docutils literal notranslate"><span class="pre">model</span></code> specifies whether the Mualam or Burdine model is to be used.  The subelement <code class="docutils literal notranslate"><span class="pre">exp</span></code> lists the model specific parameters for Burdine.  Also, if not specifying capillary pressure this element can be skipped or the value of <code class="docutils literal notranslate"><span class="pre">model</span></code> set to “none”.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;rel_perm</span> <span class="na">model=</span><span class="s">&quot;mualem | burdine | none&quot;</span><span class="nt">&gt;</span>
+  <span class="c">&lt;!-- Burdine only --&gt;</span>
+  <span class="nt">&lt;exp</span> <span class="na">value=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/rel_perm&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sorption-isotherms">
+<h4>Sorption_isotherms<a class="headerlink" href="#sorption-isotherms" title="Permalink to this headline">¶</a></h4>
+<p>Kd models can be specified for 1 or more primaries using the <code class="docutils literal notranslate"><span class="pre">sorption_isotherms</span></code> element. Note for the Kd model to be active the chemistry state under <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> must be “on” and an engine must be specified.  Also, all primaries must be listed for each material.  Three Kd models are available.  All model parameters for the given model must be present.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;sorption_isotherms&gt;</span>
+  <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;Name of Primary&quot;</span> <span class="nt">&gt;</span>
+    <span class="nt">&lt;kd_model</span> <span class="na">model=</span><span class="s">&quot;linear&quot;</span> <span class="na">kd =</span> <span class="s">&quot;Exponential&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/primary&gt;</span>
+  <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;Name of Primary&quot;</span> <span class="nt">&gt;</span>
+    <span class="nt">&lt;kd_model</span> <span class="na">model=</span><span class="s">&quot;langmuir&quot;</span> <span class="na">kd=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">b=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/primary&gt;</span>
+  <span class="nt">&lt;primary</span> <span class="na">name=</span><span class="s">&quot;Name of Primary&quot;</span> <span class="nt">&gt;</span>
+    <span class="nt">&lt;kd_model</span> <span class="na">model=</span><span class="s">&quot;freundlich&quot;</span> <span class="na">kd=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">n=</span><span class="s">&quot;Exponential&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/primary&gt;</span>
+<span class="nt">&lt;/sorption_isotherms&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="minerals">
+<h4>Minerals<a class="headerlink" href="#minerals" title="Permalink to this headline">¶</a></h4>
+<p>Mineral concentrations are specified using the volume fraction and specific surface area attributes <code class="docutils literal notranslate"><span class="pre">volume_fraction</span></code> and <code class="docutils literal notranslate"><span class="pre">specific_surface_area</span></code> respectively in the <code class="docutils literal notranslate"><span class="pre">minerals</span></code> block</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span>&lt;minerals&gt;
+  &lt;mineral name=&quot;Calcite&quot; volume_fraction=&quot;0.1&quot; specific_surface_area&quot;1.0&quot;/&gt;
+&lt;/minerals&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="ion-exchange">
+<h4>Ion_exchange<a class="headerlink" href="#ion-exchange" title="Permalink to this headline">¶</a></h4>
+<p>Ion exchange reactions are specified in the <code class="docutils literal notranslate"><span class="pre">ion_exchange</span></code> block.  Cations active in the reaction are grouped under the subelement <code class="docutils literal notranslate"><span class="pre">cations</span></code>.  The attribute <code class="docutils literal notranslate"><span class="pre">cec</span></code> specifies the cation exchange capacity for the reaction.  Each cation is listed in a <code class="docutils literal notranslate"><span class="pre">cation</span></code> subelement with the attributes <code class="docutils literal notranslate"><span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">value</span></code> to specify the cation name and the associated selectivity coefficient.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ion_exchange&gt;</span>
+  <span class="nt">&lt;cations</span> <span class="na">cec=</span><span class="s">&quot;750.0&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;cation</span> <span class="na">name=</span><span class="s">&quot;Ca++&quot;</span> <span class="na">value=</span><span class="s">&quot;0.2953&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;cation</span> <span class="na">name=</span><span class="s">&quot;Mg++&quot;</span> <span class="na">value=</span><span class="s">&quot;0.1666&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;cation</span> <span class="na">name=</span><span class="s">&quot;Na+&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/cations&gt;</span>
+<span class="nt">&lt;/ion_exchange&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="surface-complexation">
+<h4>Surface_complexation<a class="headerlink" href="#surface-complexation" title="Permalink to this headline">¶</a></h4>
+<p>Surface complexation reactions are specified in the <code class="docutils literal notranslate"><span class="pre">surface_complexation</span></code> block.  Individual reactions are specified using the <code class="docutils literal notranslate"><span class="pre">site</span></code> block.  It has the attributes <code class="docutils literal notranslate"><span class="pre">density</span></code> and <code class="docutils literal notranslate"><span class="pre">name</span></code> to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as <cite>&gt;</cite>.  The subelement <code class="docutils literal notranslate"><span class="pre">complexes</span></code> provides a comma separated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;surface_complexation&gt;</span>
+  <span class="nt">&lt;site</span> <span class="na">density=</span><span class="s">&quot;1.908e-3&quot;</span> <span class="na">name=</span><span class="s">&quot;FeOH_s&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;complexes&gt;</span>FeOHZn+_s, FeOH2+_s, FeO-_s<span class="nt">&lt;/complexes&gt;</span>
+  <span class="nt">&lt;/site&gt;</span>
+  <span class="nt">&lt;site</span> <span class="na">density=</span><span class="s">&quot;7.6355e-2&quot;</span> <span class="na">name=</span><span class="s">&quot;FeOH_w&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;complexes&gt;</span>FeOHZn+_w, FeO-_w, FeOH2+_w<span class="nt">&lt;/complexes&gt;</span>
+  <span class="nt">&lt;/site&gt;</span>
+<span class="nt">&lt;/surface_complexation&gt;</span>
+</pre></div>
+</div>
+<p>An example materials element would look like</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;materials&gt;</span>
+  <span class="nt">&lt;material</span> <span class="na">name=</span><span class="s">&quot;Facies_1&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Material corresponds to region facies1<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;assigned_regions&gt;</span>Between_Planes_1_and_2<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;mechanical_properties&gt;</span>
+      <span class="nt">&lt;porosity</span> <span class="na">value=</span><span class="s">&quot;0.4082&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;particle_density</span> <span class="na">value=</span><span class="s">&quot;2720.0&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/mechanical_properties&gt;</span>
+    <span class="nt">&lt;permeability</span> <span class="na">x=</span><span class="s">&quot;1.9976E-12&quot;</span> <span class="na">y=</span><span class="s">&quot;1.9976E-12&quot;</span> <span class="na">z=</span><span class="s">&quot;1.9976E-13&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;cap_pressure</span> <span class="na">model=</span><span class="s">&quot;van_genuchten&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;parameters</span> <span class="na">m=</span><span class="s">&quot;0.2294&quot;</span> <span class="na">alpha=</span><span class="s">&quot;1.9467E-04&quot;</span> <span class="na">sr=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/cap_pressure&gt;</span>
+    <span class="nt">&lt;rel_perm</span> <span class="na">model=</span><span class="s">&quot;mualem&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/material&gt;</span>
+<span class="nt">&lt;/materials&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="process-kernels">
+<h3>Process Kernels<a class="headerlink" href="#process-kernels" title="Permalink to this headline">¶</a></h3>
+<p>Amanzi current employees three process kernels that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry.  The <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> section allows the user to define which kernels are to be used during the section and select high level features of those kernels.</p>
+<div class="section" id="flow">
+<h4>Flow<a class="headerlink" href="#flow" title="Permalink to this headline">¶</a></h4>
+<p>Currently three scenarios are available for calculated the flow field.  <cite>“richards</cite>” is a single phase, variably saturated flow assuming constant gas pressure.  <cite>“saturated</cite>” is a single phase, fully saturated flow.  <cite>“constant</cite>” is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;flow</span> <span class="na">state =</span> <span class="s">&quot;on | off&quot;</span>
+      <span class="na">model =</span> <span class="s">&quot;richards | saturated | constant&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="transport">
+<h4>Transport<a class="headerlink" href="#transport" title="Permalink to this headline">¶</a></h4>
+<p>For <cite>“transport</cite>” a <cite>“state</cite>” must be specified.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;transport</span> <span class="na">state =</span> <span class="s">&quot;on | off&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="chemistry">
+<h4>Chemistry<a class="headerlink" href="#chemistry" title="Permalink to this headline">¶</a></h4>
+<p>For <cite>“chemistry</cite>” a combination of <cite>“state</cite>”, <cite>“engine</cite>”, <cite>“input_filename</cite>”, and <cite>“database</cite>” must be specified.  If <cite>“state</cite>” is <cite>“off</cite>” then <cite>“engine</cite>” is set to <cite>“none</cite>”.  Otherwise the <cite>“engine</cite>” model must be specified.  If PFloTran is specified as the chemistry engine, the user must specify a PFloTran database filename in the <cite>“database</cite>” attribute.  Also, if PFloTran is the chemistry engine, the user may provide a PFloTran input file using the attribute <code class="docutils literal notranslate"><span class="pre">input_filename</span></code> or omit the attribute.  If the attribute is omitted, Amanzi will automatically generate the PFloTran input file using information in the XML input file.  It should be noted the automatically generated file is written to a file using the same name as the XML input file, but with the extension .in.  If such a file exists in the run directory, Amanzi will not overwrite the file and just use the existing file.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;chemistry</span> <span class="na">state =</span> <span class="s">&quot;on | off&quot;</span>
+           <span class="na">engine =</span> <span class="s">&quot;amanzi | pflotran | none&quot;</span>
+           <span class="na">input_filename =</span> <span class="s">&quot;string&quot;</span>
+           <span class="na">database =</span> <span class="s">&quot;string&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+<p>An example <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> is as follows:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;process_kernels&gt;</span>
+  <span class="nt">&lt;comments&gt;</span>This is a proposed comment field for process_kernels<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;flow</span> <span class="na">state =</span> <span class="s">&quot;on&quot;</span> <span class="na">model =</span> <span class="s">&quot;richards&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;transport</span> <span class="na">state =</span> <span class="s">&quot;on&quot;</span> <span class="na">algorithm =</span> <span class="s">&quot;explicit first-order&quot;</span> <span class="na">sub_cycling =</span> <span class="s">&quot;on&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;chemistry</span> <span class="na">state =</span> <span class="s">&quot;off&quot;</span> <span class="na">engine=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/process_kernels&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="phases">
+<h3>Phases<a class="headerlink" href="#phases" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">phases</span></code> section is used to specify components of each of the phases that are mobile, and species that are contained within them. For each phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.</p>
+<p>The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particularly in regards to “components”, “solutes”, “primaries/secondaries”, and “chemicals”. Since Amanzi is designed to handle a wide variety of problems, we must settle on a nomenclature for our use here. In the general problem, multiple “phases” may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is comprised of a number of “components” (section 2.2). In turn, each component may carry a number of “primaries” and “secondaries” and some of these may participate in chemical reactions. As a result of reactions, a chemical source or sink term may appear for the primaries involved in the reaction, including primaries in other mobile phases or in the material matrix. Additionally, certain reactions such as precipitation may affect the flow properties of the material itself during the simulation, and some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of the necessary data structures and input data framework. Note that if primary concentrations are significant, the system may be better modeled with that primary treated as a separate component. Clearly, these definitions are highly problem-dependent, so Amanzi provide a generalized interface to accommodate a variety of scenarios.</p>
+<p>Currently in Amanzi, primaries are transported in the various phase components, and are treated in “complexes”. Each complex is typically in chemical equilibrium with itself and does not undergo phase change. Under these conditions, knowledge of the local concentration of the “basis” or “primary” species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phase components, and a total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning between phase components (if mass transfer is allowed - not in current Amanzi), we can reconstruct the concentration of the primary and secondary species in each phase. As a result only the basis species are maintained in the state data structures for each phases component.</p>
+<p>In addition to primaries in the transported phases, there may be various immobile chemical constituents within the porous media (material) matrix, such as “minerals” and “surface complexes”. Bookkeeping for these constituents is managed in Amanzi data structures by generalizing the “primary” concept - a slot in the state is allocated for each of these immobile species, but their concentrations are not included in the transport/flow components of the numerical integration. To allow selective transport of the various primaries, Amanzi uses the concept of primary groups. The aqueous primary concentrations are typically treated together as a group, for example, and often represent the only chemical constituents that are mobile. Thus, the current Amanzi will assume that any other groups specified in an Aqueous phase are immobile.</p>
+<p>This section specifies the phases present and specific properties about those phases.  The first grouping is by <a class="reference internal" href="#liquid-phase">liquid_phase</a>, <a class="reference internal" href="#solid-phase">solid_phase</a>, and <a class="reference internal" href="#gas-phase">gas_phase</a>.</p>
+<div class="section" id="liquid-phase">
+<h4>Liquid_phase<a class="headerlink" href="#liquid-phase" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> element is required to produce a valid input file.  If primaries are being transported properties of the primaries in the current phase can be specified.  If primaries are being reacted a list of secondary chemical is also specified.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;viscosity&gt;</span> Exponential <span class="nt">&lt;/viscosity&gt;</span>
+  <span class="nt">&lt;density&gt;</span> Exponential <span class="nt">&lt;/density&gt;</span>
+  <span class="nt">&lt;dissolved_components&gt;</span>
+    <span class="nt">&lt;primaries&gt;</span>
+      <span class="nt">&lt;primary</span> <span class="na">coefficient_of_diffusion=</span><span class="s">&quot;Exponential&quot;</span> <span class="na">first_order_decay_constant=</span><span class="s">&quot;Exponential&quot;</span><span class="nt">&gt;</span> PrimaryName <span class="nt">&lt;/primary&gt;</span>
+    <span class="nt">&lt;/primaries&gt;</span>
+    <span class="nt">&lt;secondaries&gt;</span>
+      <span class="nt">&lt;secondary&gt;</span>SecondaryName<span class="nt">&lt;/secondary&gt;</span>
+    <span class="nt">&lt;/secondaries&gt;</span>
+  <span class="nt">&lt;/dissolved_components&gt;</span>
+<span class="nt">&lt;/liquid_phase&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="solid-phase">
+<h4>Solid_phase<a class="headerlink" href="#solid-phase" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">solid_phase</span></code> element allows the user to define a <code class="docutils literal notranslate"><span class="pre">minerals</span></code> element under which a series of <code class="docutils literal notranslate"><span class="pre">mineral</span></code> elements can be listed to specify any minerals present in the solid phase.  The <code class="docutils literal notranslate"><span class="pre">mineral</span></code> elements contain the name of the mineral.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;solid_phase&gt;</span>
+  <span class="nt">&lt;minerals&gt;</span>
+    <span class="nt">&lt;mineral&gt;</span> MineralName <span class="nt">&lt;/mineral&gt;</span>
+  <span class="nt">&lt;/minerals&gt;</span>
+<span class="nt">&lt;/solid_phase&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="gas-phase">
+<h4>Gas_phase<a class="headerlink" href="#gas-phase" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">gas_phase</span></code> element allows the user to define a <code class="docutils literal notranslate"><span class="pre">gases</span></code> element under which a series of <code class="docutils literal notranslate"><span class="pre">gas</span></code> elements can be listed to specify any gases present in the gas phase.  The <code class="docutils literal notranslate"><span class="pre">gas</span></code> elements contain the name of the gas.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;gas_phase&gt;</span>
+  <span class="nt">&lt;gases&gt;</span>
+    <span class="nt">&lt;gas&gt;</span> GasName <span class="nt">&lt;/gas&gt;</span>
+  <span class="nt">&lt;/gases&gt;</span>
+<span class="nt">&lt;/gas_phase&gt;</span>
+</pre></div>
+</div>
+<p>An example <code class="docutils literal notranslate"><span class="pre">phases</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;phases&gt;</span>
+  <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;viscosity&gt;</span>1.002E-03<span class="nt">&lt;/viscosity&gt;</span>
+    <span class="nt">&lt;density&gt;</span>998.2<span class="nt">&lt;/density&gt;</span>
+    <span class="nt">&lt;dissolved_components&gt;</span>
+      <span class="nt">&lt;primaries&gt;</span>
+        <span class="nt">&lt;primary</span> <span class="na">coefficient_of_diffusion=</span><span class="s">&quot;1.0e-9&quot;</span> <span class="na">first_order_decay_constant=</span><span class="s">&quot;1.0e-9&quot;</span><span class="nt">&gt;</span>Tc-99<span class="nt">&lt;/primary&gt;</span>
+      <span class="nt">&lt;/primaries&gt;</span>
+    <span class="nt">&lt;/dissolved_components&gt;</span>
+  <span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="nt">&lt;/phases&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="initial-conditions">
+<h3>Initial Conditions<a class="headerlink" href="#initial-conditions" title="Permalink to this headline">¶</a></h3>
+<p>The <cite>“initial_conditions</cite>” section contains at least 1 and up to an unbounded number of <cite>“initial_condition</cite>” elements.  Each <cite>“initial_condition</cite>” element defines a single initial condition that is applied to one or more region specified in the <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code> element.  The initial condition can be applied to a liquid phase or solid phase using the appropriate subelement.</p>
+<p>To specify a liquid phase the <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> element is used.  At least one <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> must be specified.  In addition a <code class="docutils literal notranslate"><span class="pre">geochemistry_component</span></code> element can be specified.  Under the <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> element an initial condition can be defined.  Under the <code class="docutils literal notranslate"><span class="pre">geochemistry_component</span></code> element a geochemistry constraint is listed.</p>
+<p>The initial conditions are defined using a specific elements.  The element name indicates the type of condition and the attributes define the necessary information.  Below is a table of the conditions available for the liquid phase and the attributes required to define them.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 25%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Initial Condition Type</p></th>
+<th class="head"><p>Attributes</p></th>
+<th class="head"><p>Value Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>uniform_pressure</p></td>
+<td><p>name
+value</p></td>
+<td><p>string
+double/time_constant/constant</p></td>
+</tr>
+<tr class="row-odd"><td><p>linear_pressure</p></td>
+<td><p>name
+value
+reference_coord
+gradient</p></td>
+<td><p>string
+double/time_constant/constant
+coordinate
+coordinate</p></td>
+</tr>
+<tr class="row-even"><td><p>velocity</p></td>
+<td><p>name
+x
+y
+(z)</p></td>
+<td><p>string
+double/constant
+double/constant
+double/constant</p></td>
+</tr>
+<tr class="row-odd"><td><p>uniform_saturation</p></td>
+<td><p>name
+value</p></td>
+<td><p>string
+double/time_constant/constant</p></td>
+</tr>
+<tr class="row-even"><td><p>linear_saturation</p></td>
+<td><p>name
+value
+reference_coord
+gradient</p></td>
+<td><p>string
+double/time_constant/constant
+coordinate
+coordinate</p></td>
+</tr>
+</tbody>
+</table>
+<p>For the geochemistry_component, an unbounded number of <code class="docutils literal notranslate"><span class="pre">constraint</span></code> elements can be listed.  Each <code class="docutils literal notranslate"><span class="pre">constraint</span></code> element has the attribute <em>name</em>.  The <em>name</em>  attribute refers to a geochemical constraint defined in the <cite>“geochemisty</cite>” section.</p>
+<p>If in the <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> section the flow model is set to <em>constant</em> then the flow field is set in one of the following ways: (1) A constant Darcy velocity is specified in the initial condition (as above); (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.</p>
+<p>An example <code class="docutils literal notranslate"><span class="pre">initial_conditions</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;initial_conditions&gt;</span>
+  <span class="nt">&lt;initial_condition</span> <span class="na">name=</span><span class="s">&quot;Pressure and concentration for entire domain&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Initial Conditions Comments<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;assigned_regions&gt;</span>All<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;linear_pressure</span> <span class="na">value =</span> <span class="s">&quot;101325&quot;</span> <span class="na">reference_coord =</span><span class="s">&quot;(0.0,0.0,0.5)&quot;</span> <span class="na">gradient=</span><span class="s">&quot;(0.0,0.0,-9793.5192)&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/liquid_component&gt;</span>
+      <span class="nt">&lt;geochemistry_component&gt;</span>
+        <span class="nt">&lt;constraint</span> <span class="na">name =</span> <span class="s">&quot;initial&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/geochemistry_component&gt;</span>
+    <span class="nt">&lt;/liquid_phase&gt;</span>
+  <span class="nt">&lt;/initial_condition&gt;</span>
+<span class="nt">&lt;/initial_conditions&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="boundary-conditions">
+<h3>Boundary Conditions<a class="headerlink" href="#boundary-conditions" title="Permalink to this headline">¶</a></h3>
+<p>Boundary conditions are defined in a similar manor to the initial conditions.  Under the tag <code class="docutils literal notranslate"><span class="pre">boundary_conditions</span></code> and series of individual <code class="docutils literal notranslate"><span class="pre">boundary_condition</span></code> elements can be defined.  Within each <code class="docutils literal notranslate"><span class="pre">boundary_condition</span></code> element the <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code> and <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> elements must appear.  The boundary condition can be applied to one or more region using a comma separated list of region names.  Under the <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> element the <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> element must be define.  A <code class="docutils literal notranslate"><span class="pre">geochemistry_component</span></code> element may optionally be defined.</p>
+<p>Under the <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> and <code class="docutils literal notranslate"><span class="pre">geochemistry_component</span></code> elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a <em>name</em> attribute to indicate the phase associated with the boundary condition.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 32%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Boundary Condition Type</p></th>
+<th class="head"><p>Attributes</p></th>
+<th class="head"><p>Value Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="line-block">
+<div class="line">inward_mass_flux</div>
+<div class="line">inward_volumetric_flux</div>
+<div class="line">outward_mass_flux</div>
+<div class="line">outward_volumetric_flux</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">start</div>
+<div class="line">value</div>
+<div class="line">function</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line">double</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">|</span> <span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>uniform_pressure</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">start</div>
+<div class="line">value</div>
+<div class="line">function</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line">double</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><p>linear_pressure</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">gradient_value</div>
+<div class="line">reference_point</div>
+<div class="line">reference_value</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">coordinate</div>
+<div class="line">coordinate</div>
+<div class="line">double</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>hydrostatic</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">start</div>
+<div class="line">value</div>
+<div class="line">function</div>
+<div class="line">coordinate_system</div>
+<div class="line">submodel</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line">double</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">absolute</span> <span class="pre">|</span> <span class="pre">relative</span> <span class="pre">to</span> <span class="pre">mesh</span> <span class="pre">top</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">no_flow_above_water_table</span> <span class="pre">|</span> <span class="pre">none</span></code></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><p>linear_hydrostatic</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">gradient_value</div>
+<div class="line">reference_point</div>
+<div class="line">reference_water_table_height</div>
+<div class="line">submodel</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">coordinate</div>
+<div class="line">coordinate</div>
+<div class="line">double</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">no_flow_above_water_table</span> <span class="pre">|</span> <span class="pre">none</span></code></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>seepage_face
+(unstructured only)</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">start</div>
+<div class="line">inward_mass_flux</div>
+<div class="line">function</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">|</span> <span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><p>no_flow</p></td>
+<td><div class="line-block">
+<div class="line">name</div>
+<div class="line">start</div>
+<div class="line">function</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">string</div>
+<div class="line">double/time_constant/constant</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">|</span> <span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For the geochemistry_component, an unbounded number of <code class="docutils literal notranslate"><span class="pre">constraint</span></code> elements may be listed.  Each constraint has the attributes <em>name</em>, <em>function</em>, and <em>start</em>.  The function option available is <em>constant</em>.  The name should match a constraint defined in the <cite>“phases</cite>” section</p>
+<p>An example <code class="docutils literal notranslate"><span class="pre">boundary_conditions</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;boundary_conditions&gt;</span>
+  <span class="nt">&lt;boundary_condition</span> <span class="na">name =</span> <span class="s">&quot;Recharge at top of the domain&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;assigned_regions&gt;</span>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>    <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;pre_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;post_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/liquid_component&gt;</span>
+      <span class="nt">&lt;geochemistry_component&gt;</span>
+        <span class="nt">&lt;constraint</span> <span class="na">name =</span> <span class="s">&quot;west&quot;</span>  <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>      <span class="na">function=</span> <span class="s">&quot;constant&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;constraint</span> <span class="na">name =</span> <span class="s">&quot;west2&quot;</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/geochemistry_component&gt;</span>
+    <span class="nt">&lt;/liquid_phase&gt;</span>
+  <span class="nt">&lt;/boundary_condition&gt;</span>
+<span class="nt">&lt;/boundary_conditions&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sources">
+<h3>Sources<a class="headerlink" href="#sources" title="Permalink to this headline">¶</a></h3>
+<p>Sources are defined in a similar manner to the boundary conditions.  Under the tag <code class="docutils literal notranslate"><span class="pre">sources</span></code> and series of individual <code class="docutils literal notranslate"><span class="pre">source</span></code> elements can be defined.  Within each <code class="docutils literal notranslate"><span class="pre">source</span></code> element the <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code> and <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> element the <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> element must be define.  An unbounded number of <code class="docutils literal notranslate"><span class="pre">solute_component</span></code> elements and one <code class="docutils literal notranslate"><span class="pre">geochemistry_component</span></code> element may optionally be defined.</p>
+<p>Under the <code class="docutils literal notranslate"><span class="pre">liquid_component</span></code> and <code class="docutils literal notranslate"><span class="pre">solute_component</span></code> elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a <em>name</em> attribute to indicate the phase associated with the source.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 25%" />
+<col style="width: 44%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Liquid Phase Source Type</p></th>
+<th class="head"><p>Attributes</p></th>
+<th class="head"><p>Value Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>volume_weighted
+perm_weighted</p></td>
+<td><div class="line-block">
+<div class="line">start</div>
+<div class="line">value</div>
+<div class="line">function</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">double/time_constant/constant</div>
+<div class="line">double</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">|</span> <span class="pre">uniform</span> <span class="pre">|</span> <span class="pre">constant</span></code></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For the solute component, the source available is <code class="docutils literal notranslate"><span class="pre">aqueous_conc</span></code> which has the attributes <em>name</em>, <em>value</em>, <em>function</em>, and <em>start</em>.  The function options available are <em>uniform</em>, <em>linear</em>, and <em>constant</em>.</p>
+<p>An example <code class="docutils literal notranslate"><span class="pre">sources</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;sources&gt;</span>
+  <span class="nt">&lt;source</span> <span class="na">name =</span> <span class="s">&quot;Pumping Well&quot;</span> <span class="nt">&gt;</span>
+    <span class="nt">&lt;assigned_regions&gt;</span>Well<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;liquid_component</span> <span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;volume_weighted</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span> <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;-4.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/liquid_component&gt;</span>
+    <span class="nt">&lt;/liquid_phase&gt;</span>
+  <span class="nt">&lt;/source&gt;</span>
+<span class="nt">&lt;/sources&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="outputs">
+<h3>Outputs<a class="headerlink" href="#outputs" title="Permalink to this headline">¶</a></h3>
+<p>Output data from Amanzi is currently organized into four specific elements: <cite>“Vis</cite>”, <cite>“Checkpoint</cite>”, <cite>“Observations</cite>”, and <cite>“Walkabout Data</cite>”.  Each of these is controlled in different ways, reflecting their intended use.</p>
+<ul class="simple">
+<li><p><cite>“Visualization</cite>” is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The <code class="docutils literal notranslate"><span class="pre">vis</span></code> element defines the naming and frequency of saving the visualization files.  The visualization files may include only a fraction of the state data, and may contain auxiliary “derived” information.</p></li>
+<li><p><cite>“Checkpoint</cite>” is intended to represent all that is necessary to repeat or continue an Amanzi run.  The specific data contained in a checkpoint dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is performed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write checkpoint at the discrete intervals of the simulation. The <code class="docutils literal notranslate"><span class="pre">checkpoint</span></code> element defines the naming and frequency of saving the checkpoint files.</p></li>
+<li><p><cite>“Observations</cite>” is intended to represent diagnostic values to be returned to the calling routine from Amanzi’s simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities or state fields.  The <code class="docutils literal notranslate"><span class="pre">observations</span></code> element may define one or more specific observation.</p></li>
+<li><p><cite>“Walkabout Data</cite>” is intended to be used as input to the particle tracking software Walkabout.</p></li>
+</ul>
+<p>NOTE: Each output type allows the user to specify the base_filename or filename for the output to be written to.  The string format of the element allows the user to specify the relative path of the file.  It should be noted that the Amanzi I/O library does not create any new directories.  Therefore, if a relative path to a location other than the current directory is specified Amanzi assumes the user (or the Agni controller) has already created any new directories.  If the relative path does not exist the user will see error meesages from the HDF5 library indicating failure to create and open the output file.</p>
+<div class="section" id="vis">
+<h4>Vis<a class="headerlink" href="#vis" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">vis</span></code> element defines the visualization file naming scheme and how often to write out the files.  The <code class="docutils literal notranslate"><span class="pre">base_filename</span></code> element contain the text component of the how the visualization files will be named.  The <code class="docutils literal notranslate"><span class="pre">base_filename</span></code> is appended with an index number to indicate the sequential order of the visualization files.  The <code class="docutils literal notranslate"><span class="pre">num_digits</span></code> elements indicates how many digits to use for the index.  See the about NOTE about specifying a file location other than the current working directory. Finally, the <code class="docutils literal notranslate"><span class="pre">time_macros</span></code> or <code class="docutils literal notranslate"><span class="pre">cycle_macros</span></code> element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">vis</span></code> element also includes an optional subelement <code class="docutils literal notranslate"><span class="pre">write_regions</span></code>.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named <code class="docutils literal notranslate"><span class="pre">field</span></code>, with attibutes <code class="docutils literal notranslate"><span class="pre">name</span></code> (a string) and <code class="docutils literal notranslate"><span class="pre">regions</span></code> (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3…, cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.</p>
+<p>An example <code class="docutils literal notranslate"><span class="pre">vis</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;vis&gt;</span>
+  <span class="nt">&lt;base_filename&gt;</span>plot<span class="nt">&lt;/base_filename&gt;</span>
+  <span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+  <span class="nt">&lt;time_macros&gt;</span>Macro 1<span class="nt">&lt;/time_macros&gt;</span>
+  <span class="nt">&lt;write_regions&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;fieldname&quot;</span> <span class="na">regions=</span><span class="s">&quot;region1, region2, region3&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/write_regions&gt;</span>
+<span class="nt">&lt;/vis&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="checkpoint">
+<h4>Checkpoint<a class="headerlink" href="#checkpoint" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">checkpoint</span></code> element defines the file naming scheme and frequency for writing out the checkpoint files.  The <code class="docutils literal notranslate"><span class="pre">base_filename</span></code> element contains the text component of the how the checkpoint files will be named.  The <code class="docutils literal notranslate"><span class="pre">base_filename</span></code> is appended with an index number to indicate the sequential order of the checkpoint files.  The <code class="docutils literal notranslate"><span class="pre">num_digits</span></code> elements indicates how many digits to use for the index.  See the about NOTE about specifying a file location other than the current working directory.  Finally, the <code class="docutils literal notranslate"><span class="pre">cycle_macro</span></code> element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.</p>
+<p>An example <code class="docutils literal notranslate"><span class="pre">checkpoint</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;checkpoint&gt;</span>
+  <span class="nt">&lt;base_filename&gt;</span>chk<span class="nt">&lt;/base_filename&gt;</span>
+  <span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+  <span class="nt">&lt;cycle_macro&gt;</span>Every_1000_steps<span class="nt">&lt;/cycle_macro&gt;</span>
+<span class="nt">&lt;/checkpoint&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="observations">
+<h4>Observations<a class="headerlink" href="#observations" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">observations</span></code> element defines the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the <code class="docutils literal notranslate"><span class="pre">filename</span></code> element.  See the about NOTE about specifying a file location other than the current working directory. Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> tag.  The <code class="docutils literal notranslate"><span class="pre">liquid_phase</span></code> tag takes an attribute <code class="docutils literal notranslate"><span class="pre">name</span></code> to identify which phase the observations are associated with.</p>
+<p>The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements <code class="docutils literal notranslate"><span class="pre">assigned_regions</span></code>, <code class="docutils literal notranslate"><span class="pre">functional</span></code>, and <code class="docutils literal notranslate"><span class="pre">time_macros</span></code>.  <code class="docutils literal notranslate"><span class="pre">aqueous_conc</span></code> and <code class="docutils literal notranslate"><span class="pre">primary_volumetric_flow_rate</span></code> observations also require the name of the primary.  This is specified with an extra subelement <code class="docutils literal notranslate"><span class="pre">primary</span></code>.</p>
+<p>Available Observations:</p>
+<ul class="simple">
+<li><p>integrated_mass</p></li>
+<li><p>volumetric_water_content</p></li>
+<li><p>gravimetric_water_content</p></li>
+<li><p>aqueous_pressure</p></li>
+<li><p>x_aqueous_volumetric_flux</p></li>
+<li><p>y_aqueous_volumetric_flux</p></li>
+<li><p>z_aqueous_volumetric_flux</p></li>
+<li><p>material_id</p></li>
+<li><p>hydraulic_head</p></li>
+<li><p>aqueous_mass_flow_rate</p></li>
+<li><p>aqueous_volumetric_flow_rate</p></li>
+<li><p>aqueous_conc</p></li>
+<li><p>drawdown</p></li>
+<li><p>primary_volumetric_flow_rate</p></li>
+</ul>
+<p>An example <code class="docutils literal notranslate"><span class="pre">observations</span></code> element looks like the following.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;observations&gt;</span>
+  <span class="nt">&lt;filename&gt;</span>observation.out<span class="nt">&lt;/filename&gt;</span>
+  <span class="nt">&lt;liquid_phase</span> <span class="na">name=</span><span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;aqueous_pressure&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Obs_r1<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+      <span class="nt">&lt;time_macros&gt;</span>Observation Times<span class="nt">&lt;/time_macros&gt;</span>
+    <span class="nt">&lt;/aqueous_pressure&gt;</span>
+    <span class="nt">&lt;aqueous_pressure&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Obs_r2<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+      <span class="nt">&lt;time_macros&gt;</span>Observation Times<span class="nt">&lt;/time_macros&gt;</span>
+    <span class="nt">&lt;/aqueous_pressure&gt;</span>
+    <span class="nt">&lt;aqueous_pressure&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Obs_r2<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;functional&gt;</span>point<span class="nt">&lt;/functional&gt;</span>
+      <span class="nt">&lt;time_macros&gt;</span>Observation Times<span class="nt">&lt;/time_macros&gt;</span>
+    <span class="nt">&lt;/aqueous_pressure&gt;</span>
+  <span class="nt">&lt;/liquid_phase&gt;</span>
+<span class="nt">&lt;/observations&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="walkabout">
+<h4>Walkabout<a class="headerlink" href="#walkabout" title="Permalink to this headline">¶</a></h4>
+<p>The ‘’walkabout’’ element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ‘’walkabout’’ element requires the subelements <code class="docutils literal notranslate"><span class="pre">base_filename</span></code>, <code class="docutils literal notranslate"><span class="pre">num_digits</span></code>, and <code class="docutils literal notranslate"><span class="pre">cycle_macro</span></code>.</p>
+<p>The <em>base_filename</em> element contain the text component of the how the walkabout files will be named.  The <em>base_filename</em> is appended with an index number to indicate the seqential order of the walkabout files.  The <em>num_digits</em> elements indicates how many digits to use for the index.  Final the <em>cycle_macro</em> element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.</p>
+<p>Example:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;walkabout&gt;</span>
+  <span class="nt">&lt;base_filename&gt;</span>chk<span class="nt">&lt;/base_filename&gt;</span>
+  <span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+  <span class="nt">&lt;cycle_macro&gt;</span>Every_100_steps<span class="nt">&lt;/cycle_macro&gt;</span>
+<span class="nt">&lt;/walkabout&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mesh.html" class="btn btn-neutral float-right" title="Simulation Mesh" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="units.html" class="btn btn-neutral float-left" title="Units in Amanzi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
