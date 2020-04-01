@@ -60,7 +60,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2016, Amanzi Development Team'
+copyright = u'2020, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -74,7 +74,8 @@ amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shel
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
-version = amanzi_latest_tag_ver
+# version = amanzi_latest_tag_ver
+version='1.0'
 # The full version, including alpha/beta/rc tags.
 #release = '0.80-dev'
 #release = amanzi_latest_tag_ver+"\_"+amanzi_global_id
@@ -119,7 +120,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinxdoc'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -138,7 +139,7 @@ html_theme = 'sphinxdoc'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'Amanzi-draft-logo-5-trans.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
