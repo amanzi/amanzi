@@ -22,17 +22,14 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
-Parameters:
+.. _checkpoint-spec:
+.. admonition:: checkpoint-spec
 
-* `"file name base`" ``[string]`` **"checkpoint"**
+    * `"file name base`" ``[string]`` **"checkpoint"**
+    * `"file name digits`" ``[int]`` **5**
+    INCLUDES:
 
-* `"file name digits`" ``[int]`` **5**
-
-INCLUDES:
-
-* ``[io-event-spec]`` An IOEvent_ spec
-
-  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
+    * ``[io-event-spec]`` An IOEvent_ spec
 
 Example:
 

@@ -22,19 +22,18 @@ surface mesh.  It is expected that, for any addition meshes, each will have a
 domain name and therefore admit a spec of the form: `"visualization
 DOMAIN-NAME`".
 
-Each list contains all parameters as in a IOEvent_ spec, and also:
+.. _visualization-spec:
+.. admonition:: visualization-spec
 
-* `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+    * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+    * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+      visualization dump; this facilitates visualizing deforming meshes.
+    * `"time units`" ``[string]`` **s** A valid time unit to convert time
+      into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
-* `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
-  visualization dump; this facilitates visualizing deforming meshes.
+    INCLUDES:
 
-* `"time units`" ``[string]`` **s** A valid time unit to convert time
-  into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
-  
-INCLUDES:
-
-* ``[io-event-spec]`` An IOEvent_ spec
+    * ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:

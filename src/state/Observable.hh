@@ -24,45 +24,46 @@ it will extract its source data, and a list of discrete times for its
 evaluation.  The observations are evaluated during the simulation and written
 to disk.
 
-``[observation-spec]``
+.. _observation-spec:
+.. admonition:: observation-spec
 
-* `"observation output filename`" ``[string]`` user-defined name for the file
-  that the observations are written to.
+    * `"observation output filename`" ``[string]`` user-defined name for the file
+      that the observations are written to.
 
-* `"variable`" ``[string]`` any ATS variable used by any PK, e.g. `"pressure`"
-  or `"surface-water_content`"
+    * `"variable`" ``[string]`` any ATS variable used by any PK, e.g. `"pressure`"
+      or `"surface-water_content`"
 
-* `"region`" ``[string]`` the label of a user-defined region
+    * `"region`" ``[string]`` the label of a user-defined region
 
-* `"location name`" ``[string]`` the mesh location of the thing to be measured,
-  i.e. `"cell`", `"face`", or `"node`"
+    * `"location name`" ``[string]`` the mesh location of the thing to be measured,
+      i.e. `"cell`", `"face`", or `"node`"
 
-* `"functional`" ``[string]`` the label of a function to apply to the variable
-  across the region.  Valid functionals include:
+    * `"functional`" ``[string]`` the label of a function to apply to the variable
+      across the region.  One of:
 
-  - `"observation data: point`" returns the value of the field quantity at a
-    point.  The region and location name must result in a single entity being
-    selected.
-  - `"observation data: extensive integral`" returns the sum of an (extensive)
-    variable over the region.  This should be used for extensive quantities
-    such as `"water_content`" or `"energy`".
-  - `"observation data: intensive integral`" returns the volume-weighted
-    average of an (intensive) variable over the region.  This should be used
-    for intensive quantities such as `"temperature`" or `"saturation_liquid`".
+      - `"observation data: point`" returns the value of the field quantity at a
+        point.  The region and location name must result in a single entity being
+        selected.
+      - `"observation data: extensive integral`" returns the sum of an (extensive)
+        variable over the region.  This should be used for extensive quantities
+        such as `"water_content`" or `"energy`".
+      - `"observation data: intensive integral`" returns the volume-weighted
+        average of an (intensive) variable over the region.  This should be used
+        for intensive quantities such as `"temperature`" or `"saturation_liquid`".
 
-* `"direction normalized flux`" ``[bool]`` **optional** For flux observations,
-  dots the face-normal flux with a vector to ensure fluxes are integrated
-  pointing the same direction.
+    * `"direction normalized flux`" ``[bool]`` **optional** For flux observations,
+      dots the face-normal flux with a vector to ensure fluxes are integrated
+      pointing the same direction.
 
-* `"direction normalized flux direction`" ``[Array(double)]`` **optional** For
-  flux observations, provides the vector to dot the face normal with.  If this
-  is not provided, then it is assumed that the faces integrated over are all
-  boundary faces and that the default vector is the outward normal direction
-  for each face.
+    * `"direction normalized flux direction`" ``[Array(double)]`` **optional** For
+      flux observations, provides the vector to dot the face normal with.  If this
+      is not provided, then it is assumed that the faces integrated over are all
+      boundary faces and that the default vector is the outward normal direction
+      for each face.
 
-INCLUDES:
+    INCLUDES:
 
-* ``[io-event-spec]`` An IOEvent_ spec
+    * ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:
