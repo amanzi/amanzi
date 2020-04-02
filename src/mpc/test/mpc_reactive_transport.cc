@@ -88,6 +88,10 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
+
+  // checking that we created only two PKs and one MPC PK two times
+  CHECK(PKFactory::num_pks == 6);
+  std::cout << PKFactory::list_pks << std::endl;
 }
 
 
