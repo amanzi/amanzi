@@ -365,6 +365,13 @@ namespace ShallowWater {
     }
 
     //--------------------------------------------------------------
+	// piecewise-linear reconstruction of the function
+	//--------------------------------------------------------------
+    double Reconstruction(double x) {
+
+    }
+
+    //--------------------------------------------------------------
     // physical flux in x-direction
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U) {
@@ -540,12 +547,12 @@ namespace ShallowWater {
 		uR = UR[1]/UR[0];
 		vR = UR[2]/UR[0];
 
-        apx = std::max(std::max(uL+g*hL,uR+g*hR),0.);
-        apy = std::max(std::max(uL+g*hL,uR+g*hR),0.);
+        apx = std::max(std::max(std::fabs(uL)+std::sqrt(g*hL),std::fabs(uR)+std::sqrt(g*hR)),0.);
+        apy = std::max(std::max(std::fabs(vL)+std::sqrt(g*hL),std::fabs(vR)+std::sqrt(g*hR)),0.);
         ap  = std::max(apx,apy);
 
-        amx = std::min(std::min(uL-g*hL,uR-g*hR),0.);
-        amy = std::min(std::min(uL-g*hL,uR-g*hR),0.);
+        amx = std::min(std::min(std::fabs(uL)-std::sqrt(g*hL),std::fabs(uR)-std::sqrt(g*hR)),0.);
+        amy = std::min(std::min(std::fabs(vL)-std::sqrt(g*hL),std::fabs(vR)-std::sqrt(g*hR)),0.);
         am  = std::min(amx,amy);
 
         F.resize(3);
@@ -595,7 +602,7 @@ namespace ShallowWater {
 		double S, Smax;
 		double vol, dx, dx_min;
 		double dt;
-		double CFL = 0.9;
+		double CFL = 0.45;
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
 		Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
@@ -608,7 +615,7 @@ namespace ShallowWater {
 			h = h_vec_c[0][c];
 			u = vx_vec_c[0][c];
 			v = vy_vec_c[0][c];
-			S = std::max(u + std::sqrt(g*h),v + std::sqrt(g*h));
+			S = std::max(std::fabs(u) + std::sqrt(g*h),std::fabs(v) + std::sqrt(g*h));
 			vol = mesh_->cell_volume(c);
 			dx = std::sqrt(vol);
 			dt = std::min(dt,dx/S);
@@ -620,6 +627,10 @@ namespace ShallowWater {
 		double dt_min;
 
 		mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
+
+		dt_min = 0.0005;
+
+//		std::cout << "dt = " << dt << ", dt_min = " << dt_min << std::endl;
 
     	return CFL*dt_min;
     }
