@@ -80,9 +80,13 @@ template <class PK_Base>
 PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln) :
-    PK_MPC<PK_Base>(pk_tree, global_list, S, soln)
+                        const Teuchos::RCP<TreeVector>& soln)
 {
+  pk_tree_ = pk_tree;
+  global_list_ = global_list;
+  S_ = S;
+  solution_ = soln;
+
   // name the PK
   name_ = pk_tree.name();
   auto found = name_.rfind("->");
@@ -121,6 +125,7 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
   solution_->PushBack(pk_soln);
 
+  sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);

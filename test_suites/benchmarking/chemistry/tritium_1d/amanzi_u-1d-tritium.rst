@@ -12,9 +12,9 @@ This test example performs the simulation of decay of tritium, a radioactive iso
 
 * 1D flow
 * 1D advective transport 
-* Geochemical reactions
+* geochemical reactions
 
-	* First order decay (aqueous kinetics)
+  * First order decay (aqueous kinetics)
 
 For details on this test, see :ref:`about_tritium`.
 
@@ -46,7 +46,7 @@ is the concentration of tritium, and
 :math:`\lambda`
 is the first order constant. This is related to the half life of tritium according to:
 
-:math:`\lambda = \frac{ln(2)}{t_{1/2}}`
+:math:`\lambda = \displaystyle\frac{ln(2)}{t_{1/2}}`
 
 Problem Specification
 ---------------------
@@ -60,9 +60,8 @@ Geochemistry
 ~~~~~~~~~~~~
 
 In this example, the half life of tririum is taken as 
-:math:`t_{1/2} = 13.31 \text{ years}`
-. Thus, 
-:math:`\lambda = 1.78577 \cdot 10^{-9} \text{ s}^{-1}`
+:math:`t_{1/2} = 13.31 \text{ years}`. 
+Thus, :math:`\lambda = 1.78577 \cdot 10^{-9} \text{ s}^{-1}`
 
 Results and Comparison
 ----------------------

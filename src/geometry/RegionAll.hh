@@ -9,6 +9,21 @@
 */
 //!  A region consisting of all entities on a mesh.
 
+/*!
+
+No parameters required.
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList name="domain">  <!-- parent list -->
+     <ParameterList name="region: all">
+     </ParameterList>
+   </ParameterList>
+  
+*/
+
 
 #ifndef AMANZI_REGION_ALL_HH_
 #define AMANZI_REGION_ALL_HH_

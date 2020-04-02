@@ -1,5 +1,4 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//!  Region: a geometric or discrete subdomain (abstract)
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,68 +8,73 @@
   Authors: William Perkins
            Ethan Coon (ecoon@lanl.gov)
 */
-
+//!  A geometric or discrete subdomain of the full domain.
 
 /*!
 
-Regions are geometrical constructs used in Amanzi to define subsets of
+Regions are geometrical constructs used to define subsets of
 the computational domain in order to specify the problem to be solved, and the
 output desired. Regions may represents zero-, one-, two- or three-dimensional
-subsets of physical space.  for a three-dimensional problem, the simulation
+subsets of physical space.  For a three-dimensional problem, the simulation
 domain will be a three-dimensional region bounded by a set of two-dimensional
 regions.  If the simulation domain is N-dimensional, the boundary conditions
 must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled *All*, which is the 
-entire simulation domain. Currently, the unstructured framework does
-not support the *All* region, but it is expected to do so in the
-near future.
+Region specs are **not** denoted by a "type" parameter for legacy reasons.
+Instead, they take a single sublist whose name defines the type.
 
-Amanzi supports parameterized forms for a number of analytic shapes, as well
-as more complex definitions based on triangulated surface files.
+.. _region-spec:
+.. admonition:: region-spec
+
+    ONE OF:
+
+    * `"region: all`" ``[list]`` See All_.
+    OR:
+
+    * `"region: box`" ``[region-box-spec]`` See Box_.
+    OR:
+
+    * `"region: plane`" ``[region-plane-spec]`` See Plane_.
+    OR:
+
+    * `"region: labeled set`" ``[region-labeled-set-spec]`` See `Labeled Set`_.
+    OR:
+
+    * `"region: color function`" ``[region-color-function-spec]`` See `Color Function`_.
+    OR:
+
+    * `"region: point`" ``[region-point-spec]`` See Point_.
+    OR:
+
+    * `"region: logical`" ``[region-logical-spec]`` See Logical_.
+    OR:
+
+    * `"region: polygon`" ``[region-polygon-spec]`` See Polygon_.
+    OR:
+
+    * `"region: enumerated`" ``[region-enumerated-spec]`` See Enumerated_.
+    OR:
+
+    * `"region: boundary`" ``[region-boundary-spec]`` See Boundary_.
+    OR:
+
+    * `"region: box volume fractions`" ``[region-box-volume-fractions-spec]`` See `Box Volume Fractions`_.
+    OR:
+
+    * `"region: line segment`" ``[region-line-segment-spec]`` See `Line Segment`_.
+    END
 
 
-ONE OF:
-* `"region: box`" ``[region-box-spec]``
-OR:
-* `"region: plane`" ``[region-plane-spec]``
-OR:
-* `"region: labeled set`" ``[region-labeled-set-spec]``
-OR:
-* `"region: color function`" ``[region-color-function-spec]``
-OR:
-* `"region: point`" ``[region-point-spec]``
-OR:
-* `"region: logical`" ``[region-logical-spec]``
-OR:
-* `"region: polygon`" ``[region-polygon-spec]``
-OR:
-* `"region: enumerated`" ``[region-enumerated-spec]``
-OR:
-* `"region: all`" ``[list]``
-OR:
-* `"region: boundary`" ``[region-boundary-spec]``
-OR:
-* `"region: box volume fractions`" ``[region-box-volume-fractions-spec]``
-OR:
-* `"region: line segment`" ``[region-line-segment-spec]``
-END
+.. warning:: Surface files contain labeled triangulated face sets.  The user is
+    responsible for ensuring that the intersections with other surfaces in the
+    problem, including the boundaries, are *exact* (*i.e.* that surface
+    intersections are *watertight* where applicable), and that the surfaces are
+    contained within the computational domain.  If nodes in the surface fall
+    outside the domain, the elements they define are ignored.
 
+    Examples of surface files are given in the *Exodus II* file format here.
 
-Notes:
-
-- Surface files contain labeled triangulated face sets.  The user is
-  responsible for ensuring that the intersections with other surfaces
-  in the problem, including the boundaries, are *exact* (*i.e.* that
-  surface intersections are *watertight* where applicable), and that
-  the surfaces are contained within the computational domain.  If
-  nodes in the surface fall outside the domain, the elements they
-  define are ignored.
-
-  Examples of surface files are given in the *Exodus II* file 
-  format here.
-
-- Region names must NOT be repeated.
+.. warning:: Region names must NOT be repeated.
 
 Example:
 
@@ -129,7 +133,7 @@ Example:
      </ParameterList>
    </ParameterList>
 
-In this example, *TOP SESCTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
+In this example, *TOP SECTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
 are three box-shaped volumetric regions. *INFLOW SURFACE* is a
 surface region defined in an Exodus II-formatted labeled set
 file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric

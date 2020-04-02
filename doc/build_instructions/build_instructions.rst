@@ -79,70 +79,62 @@ are documented here.
 
 ENABLE_Structured:
 
-        :Default: OFF
-        :Description: Build structured mesh capability. 
-        :Dependencies: CCSE
+      - Default: OFF
+      - Description: Build structured mesh capability. 
+      - Dependencies: CCSE
 
 
 ENABLE_Unstructured:
 
-        :Default: OFF
-        :Description: Build unstructured mesh capability.
-        :Dependencies: At leat one of the mesh frame works, STK, MSTK or MOAB.
+      - Default: OFF
+      - Description: Build unstructured mesh capability.
+      - Dependencies: At leat one of the mesh frame works, STK, MSTK or MOAB.
 
 
 ENABLE_DBC:
 
-        :Default: ON
-        :Description: Enable design by contract build.
-        :Dependencies:
+      - Default: ON
+      - Description: Enable design by contract build.
+      - Dependencies:
 
 
 ENABLE_Config_Report:
 
-        :Default: ON
-        :Description: Print out configuration report to the terminal.
-        :Dependencies:
-
-ENABLE_STK_Mesh:
-
-        :Default: OFF
-        :Description: Build the Sierra ToolKit mesh frame work.
-        :Dependencies: Trilinos with STK enabled.
-
+      - Default: ON
+      - Description: Print out configuration report to the terminal.
+      - Dependencies:
 
 ENABLE_MSTK_Mesh:
 
-        :Default: OFF
-        :Description: Build the MSTK mesh frame work.
-        :Dependencies: MSTK
+      - Default: OFF
+      - Description: Build the MSTK mesh frame work.
+      - Dependencies: MSTK
 
 
 ENABLE_MOAB_Mesh:
 
-        :Default: OFF
-        :Description: Build the MOAB mesh frame work.
-        :Dependencies: MOAB, requires a specific version. See
-                       Software Requires for more information.
+       - Default: OFF
+       - Description: Build the MOAB mesh frame work.
+       - Dependencies: MOAB, requires a specific version. See Software Requires for more information.
 
 ENABLE_CCSE_TOOLS:
 
-        :Default: OFF
-        :Description: Build structured AMR post processing tools 
-        :Dependencies: python, f2py, gfortran compatible with mpif90
+       - Default: OFF
+       - Description: Build structured AMR post processing tools 
+       - Dependencies: python, f2py, gfortran compatible with mpif90
 
 ENABLE_UnitTest:
 
-        :Default: ON
-        :Description: Build the unit test test suite.
-        :Dependencies: UnitTest++
+       - Default: ON
+       - Description: Build the unit test test suite.
+       - Dependencies: UnitTest++
 
 
 ENABLE_OpenMP:
 
-        :Default: OFF
-        :Description: Build Amanzi executables with OpenMP support.
-        :Dependencies: OpenMP
+       - Default: OFF
+       - Description: Build Amanzi executables with OpenMP support.
+       - Dependencies: OpenMP
 
 
 Installing Amanzi

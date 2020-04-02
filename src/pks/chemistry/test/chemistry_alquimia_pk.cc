@@ -10,15 +10,17 @@
 #include <cmath>
 #include <vector>
 
-#include <UnitTest++.h>
-
+// TPLs
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include <UnitTest++.h>
 #include "XMLParameterListWriter.hh"
 
 // Amanzi
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "MeshFactory.hh"
 #include "State.hh"
 
 // Amanzi::Chemistry
@@ -38,7 +40,7 @@ TEST(INTERFACE_LIBRARY_INIT) {
   CHECK(engine->NumSurfaceSites() == 1);
   CHECK(engine->NumIonExchangeSites() == 1);
   CHECK(engine->NumIsothermSpecies() == 0);
-  CHECK(engine->NumAqueousKinetics() == 0);
+  CHECK(engine->NumAqueousKinetics() == 1);
 
   std::vector<std::string> species;
   engine->GetPrimarySpeciesNames(species);
@@ -70,7 +72,7 @@ TEST(INTERFACE_LIBRARY_INIT) {
 
   std::vector<std::string> names;
   engine->GetAqueousKineticNames(names);
-  CHECK(names.size() == 0);
+  CHECK(names.size() == 1);
 }  
 
 
@@ -139,3 +141,38 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
   } 
 }
 
+
+TEST(INITIALIZE_CRUNCH) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziChemistry;
+  using namespace Amanzi::AmanziMesh;
+
+  // read parameter list
+  std::string xmlFileName = "test/chemistry_alquimia_pk.xml";
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  // create a mesh framework
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 100.0, 1.0, 1.0, 100, 1, 1);
+
+  Teuchos::ParameterList state_list = plist->sublist("state");
+  auto S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+  S->set_time(0.0);
+
+  auto pks_list = plist->sublist("PK tree").sublist("chemistry");
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  auto CPK = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+  CPK->Setup(S.ptr());
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
+
+  // Now create second chemistry PK
+  // auto CPK2 = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+}

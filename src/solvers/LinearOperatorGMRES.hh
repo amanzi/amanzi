@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,13 +6,44 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+//! Generalized minimum residual method for a linear solver.
 
-  Generalized minimum residual method is due to 
-    Yu.Kuznetsov, 1968;
-    Y.Saad, 1986.
-  Deflated version of GMRES is due to 
-    R.Morgan, GMRES with deflated restarting, 2002 SISC;
-    S.Rollin, W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
+/*!
+
+Based on the methods of Yu. Kuznetsov, 1968; Y.Saad, 1986.  Deflated version of
+GMRES is due to R.Morgan, GMRES with deflated restarting, 2002 SISC; S.Rollin,
+W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
+
+Parameters:
+
+* `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+
+* `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+
+* `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+
+* `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+  criteria, any of which can be applied.  Valid include:
+
+  - `"relative rhs`" : measure error relative to the norm of the RHS vector
+  - `"relative residual`" : measure error relative to the norm of the residual
+  - `"absolute residual`" : measure error directly, norm of error
+  - `"make one iteration`" : require at least one iteration to be performed before declaring success
+
+* `"size of Krylov space`" ``[int]`` **10** Size of the Krylov space used to span the residual.
+
+* `"controller training start`" ``[int]`` **0** Start iteration for determining
+  convergence rates. (Add more please!)
+
+* `"controller training end`" ``[int]`` **3** Start iteration for determining
+  convergence rates. (Add more please!)
+
+* `"preconditioning strategy`" ``[string]`` **left** Valid are "left" and
+  "right"-type preconditioning (see Saad 1986)
+
+* `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation space, see Rollin et al.
+
 */
 
 #ifndef AMANZI_GMRES_OPERATOR_HH_

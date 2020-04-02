@@ -13,7 +13,7 @@ Downloading
 
 *Amanzi* is an open-source project that is distributed under a BSD license.  
 To download a tarball of the source, go to the *Amanzi* 
-`downloads <https://https://github.com/amanzi/amanzi>`_  page
+`downloads <https://github.com/amanzi/amanzi>`_  page
 and follow the instructions. 
 
 Installing

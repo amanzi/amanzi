@@ -93,8 +93,8 @@ Here is an overall example for the model description element.
 
   <model_description name="BC Cribs">
     <comments>Some comment here</comments>
-    <model_id>What should be in this field; originally TBD</model_id>
-    <author>d3k870</author>
+    <model_id>DVZ-212a-3217</model_id>
+    <author>David Moulton</author>
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>
@@ -200,25 +200,25 @@ Here is an overall example for the ``definition`` element.
 .. code-block:: xml
 
    <definitions>
-	<constants>
-		<constant name="zero" type="none" value="0.000"/>
-		<constant name="start" type="time" value="1956.0,y"/>
-		<constant name="future_recharge" type="area_mass_flux" value="1.48666E-6"/>
-		<time_constant name="start_time" value="1956.0,y"/>
-		<numerical_constant name="zero" value="0.000"/>
-	</constants>
-	<macros>
-		<time_macro name="Macro 1">
-			<time>6.17266656E10</time>
-			<time>6.3372710016E10</time>
-			<time>6.33834396E10</time>
-		</time_macro>
-	  	<cycle_macro name = "Every_1000_timesteps">
-			<start>0</start>
-			<timestep_interval>1000</timestep_interval>
-			<stop>-1 </stop>
-		</cycle_macro>
-	</macros>
+     <constants>
+       <constant name="zero" type="none" value="0.000"/>
+       <constant name="start" type="time" value="1956.0,y"/>
+       <constant name="future_recharge" type="area_mass_flux" value="1.48666E-6"/>
+       <time_constant name="start_time" value="1956.0,y"/>
+       <numerical_constant name="zero" value="0.000"/>
+     </constants>
+     <macros>
+       <time_macro name="Macro 1">
+         <time>6.17266656E10</time>
+         <time>6.3372710016E10</time>
+         <time>6.33834396E10</time>
+       </time_macro>
+       <cycle_macro name = "Every_1000_timesteps">
+         <start>0</start>
+         <timestep_interval>1000</timestep_interval>
+         <stop>-1 </stop>
+       </cycle_macro>
+     </macros>
    </definitions>
 
 
@@ -269,26 +269,6 @@ The ``execution_control_defaults`` element has the following attributes.
 Execution_control
 _________________
 
-The ``execution_control`` element has the following attributes.
-
-+------------------+----------------+----------------------------------+
-| Attribute Names  | Attribute Type | Attribute Values                 |
-+==================+================+==================================+
-| init_dt          | time           | time value(,unit)                |
-+------------------+----------------+----------------------------------+
-| max_dt           | time           | time value(,unit)                |
-+------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing time step    |
-+------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing time step  |
-+------------------+----------------+----------------------------------+
-| mode             | string         | ``steady, transient``            |
-+------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1, picard``                 |
-+------------------+----------------+----------------------------------+
-
-The ``execution_control`` element has the following attributes. 
-
 The ``execution_control`` element has the following attributes. 
 
 +------------------+----------------+-----------------------------------------------------+
@@ -326,13 +306,14 @@ Here is an overall example for the ``execution_control`` element.
 .. code-block:: xml
 
   <execution_controls>
-    <execution_control_defaults init_dt= "3.168E-08"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-    <execution_control  start="0.0;y"   end="1956.0,y"  init_dt= "0.01" max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
-    <execution_control start="B-17_release_begin" />
-    <execution_control start="B-17_release_end" />
-    <execution_control start="B-18_release_begin" />
-    <execution_control start="B-18_release_end"  end="3000.0,y" />
+    <execution_control_defaults init_dt="3.168E-08" max_dt="0.01" reduction_factor="0.8" 
+                                increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control start="0.0 y" end="1956.0 y" init_dt="1 d" max_dt="500.0 y" 
+                       reduction_factor="0.8" mode="steady" />
+    <execution_control start="1956.0 y" end="3000.0 y" init_dt="1 s" max_dt="10.0 y" 
+                       reduction_factor="0.8" mode="transient" />
   </execution_controls>
+
 
 Numerical Controls
 ------------------
@@ -355,8 +336,12 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
   <unstructured_controls>
 
     <unstr_flow_controls>
-      <discretization_method> fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation </discretization_method>
-      <rel_perm_method> upwind-darcy_velocity (default) | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average </rel_perm_method>
+      <discretization_method> fv-default | fv-monotone | fv-multi_point_flux_approximation |
+                              fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity |
+                              mfd-support_operator | mfd-optimized_for_monotonicity | 
+                              mfd-two_point_flux_approximation </discretization_method>
+      <rel_perm_method> upwind-darcy_velocity (default) | upwind-gravity | upwind-amanzi | 
+                        other-arithmetic_average | other-harmonic_average </rel_perm_method>
       <preconditioning_strategy> diffusion_operator | linearized_operator (default) </preconditioning_strategy>
       <atmospheric_pressure> exp </atmospheric_pressure>
     </unstr_flow_controls>
@@ -467,30 +452,27 @@ Here is an overall example for the ``unstructured_controls`` element.
 
 .. code-block:: xml
 
-	<unstructured_controls>
-
-		<comments>Numerical controls comments here</comments>
-
-		<unstr_steady-state_controls>
-		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
-          		<min_iterations>10</min_iterations>
-		      	<max_iterations>15</max_iterations>
-          		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
-          		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-		</unstr_steady-state_controls>
-		<unstr_transient_controls>
-			<comments>Proposed comments section.</comments>
-			<bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" />
-		</unstr_transient_controls>
-		<unstr_linear_solver>
-			<comments>Proposed comment section.</comments>
-			<method>gmres</method>
-			<max_iterations>20</max_iterations>
-			<tolerance>1.0e-18</tolerance>
-                        <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
- 		</unstr_linear_solver>
-
-	</unstructured_controls>
+   <unstructured_controls>
+     <comments>Numerical controls comments here</comments>
+     <unstr_steady-state_controls>
+       <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
+       <min_iterations>10</min_iterations>
+       <max_iterations>15</max_iterations>
+       <max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
+       <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+     </unstr_steady-state_controls>
+     <unstr_transient_controls>
+       <comments>Proposed comments section.</comments>
+       <bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" />
+     </unstr_transient_controls>
+     <unstr_linear_solver>
+       <comments>Proposed comment section.</comments>
+       <method>gmres</method>
+       <max_iterations>20</max_iterations>
+       <tolerance>1.0e-18</tolerance>
+       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+     </unstr_linear_solver>
+   </unstructured_controls>
 
 
 Structured_controls
@@ -593,15 +575,17 @@ Here is an example specification for internally generated ``mesh`` element for s
     <comments>3D block</comments>
     <dimension>3</dimension>
     <generate>
-      <number_of_cells nx = "400"  ny = "200"  nz = "10"/>
-      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "200.0,200.0,1.0"/>
+      <number_of_cells nx="400"  ny="200"  nz="10"/>
+      <box  low_coordinates="0.0,0.0,0.0" high_coordinates="200.0,200.0,1.0"/>
     </generate>
   </mesh>
 
 Mesh - Generate (Unstructured)
 ______________________________
 
-The unstructured portion of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the ``mesh`` element.  The available options are: ``mstk``, ``stk::mesh``, and ``simple``.  If no framework is specified, the default ``mstk`` is used.
+The unstructured portion of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the ``mesh`` element.  
+The available options are: ``mstk``, ``moab``, and ``simple``.  
+If no framework is specified, the default ``mstk`` is used.
 
 The ``mesh`` section takes a ``dimension`` element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.
 
@@ -617,15 +601,17 @@ The following is an example specification for a generated unstructured mesh.
     <comments>Pseudo 2D</comments>
     <dimension>3</dimension>
     <generate>
-      <number_of_cells nx = "432"  ny = "1"  nz = "256"/>
-      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "216.0,1.0,107.52"/>
+      <number_of_cells nx="432"  ny="1"  nz="256"/>
+      <box low_coordinates="0.0,0.0,0.0" high_coordinates="216.0,1.0,107.52"/>
     </generate>
   </mesh>
 
 Mesh - Read (Unstructured)
 __________________________
 
-The unstructured mode of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the ``mesh`` element.  The available options are: ``mstk``, ``stk::mesh``, and ``simple``.  If no framework is specified, the default ``mstk`` is used.
+The unstructured mode of Amanzi can utilize different mesh frameworks.  Therefore the framework is specified as an attribute to the ``mesh`` element.
+The available options are: ``mstk``, ``moab``, and ``simple``.  
+If no framework is specified, the default ``mstk`` is used.
 
 The ``mesh`` section takes a ``dimension`` element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.
 
@@ -645,7 +631,6 @@ Finally, an example of reading an unstructured mesh from a file is given below.
       <format>exodus ii</format>
       <verify>true</verify>
     </read>
-
   </mesh>
 
 Regions
@@ -659,9 +644,10 @@ The ``regions`` block is required.  Within the region block no regions are requi
 
 The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
 
-Additional regions valid only for unstructured are ``polygonal_surface``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_``polygon`` and ``swept_polygon`` in 3D.
+Additional regions valid only for unstructured are ``polygonal_surface``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
 
-Each region definition requires a ``name`` attribute.  These names must be unique to avoid confusion when other sections refer to the regions.
+Each region definition requires a ``name`` attribute.  
+These names must be unique to avoid confusion when other sections refer to the regions.
 
 Box
 ___
@@ -670,8 +656,8 @@ A box region region is defined by a low corner coordinates and high corner coord
 
 .. code-block:: xml
 
-  <box  name="box name" low_coordinates = "x_low,y_low,z_low"
-  high_coordinates = "x_high,y_high,z_high"/>
+  <box name="MyBox" low_coordinates="x_low,y_low,z_low"
+                    high_coordinates="x_high,y_high,z_high"/>
 
 
 Point
@@ -681,7 +667,7 @@ A point region is defined by a point coordinates.
 
 .. code-block:: xml
 
-  <point name="point name" coordinate = "x,y,z" />
+  <point name="Well" coordinate="x,y,z" />
 
 Plane
 _____
@@ -690,9 +676,10 @@ A plane region is defined by a point on the plane and the normal direction of th
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/>
+  <plane name="plane name" location="x,y,z" normal="nx,ny,nz" tolerance="optional exp"/>
 
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+The attribute ``tolerance`` is optional.
+This value prescribes an absolute tolerance for determining the cell face centroids that lie on the defined plane.
 
 Labeled Set
 ___________
@@ -702,7 +689,8 @@ A labeled set region is a predefined set of mesh entities defined in the Exodus 
 .. code-block:: xml
 
   <region name="region name">
-      <region_file label="integer label" name="filename" type="labeled set" format="exodus ii" entity=["cell"|"face"] />
+    <region_file label="integer label" name="filename" type="labeled set"
+                 format="exodus ii" entity=["cell"|"face"] />
   </region>
 
 Color function
@@ -710,11 +698,11 @@ ______________
 
 A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.  At this time, Exodus II is the only file format available.   Please note that both the format and entity attribute values are case sensitive.
 
-
 .. code-block:: xml
 
   <region name="region name">
-      <region_file label="integer label" name="filename" type="color" format="exodus ii"  entity=["cell"|"face"]/>
+    <region_file label="integer label" name="filename" type="color" 
+                 format="exodus ii"  entity=["cell"|"face"]/>
   </region>
 
 Logical
@@ -722,10 +710,11 @@ _______
 
 Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
 
-
 .. code-block:: xml
 
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
+    <logical name="logical name" operation="union | intersection | subtraction | complement"
+             region_list="region1, region2, region3"/>
+
 
 Polygonal_Surface (unstructured only)
 _____________________________________
@@ -735,12 +724,14 @@ A polygonal_surface region is used to define a bounded planar region and is spec
 .. code-block:: xml
 
     <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
-      <point> (X, Y, Z) </point>
+      <point>X1, Y1, Z1</point>
+      <point>X2, Y2, Z2</point>
+      <point>X3, Y3, Z3</point>
+      <point>X4, Y4, Z4</point>
     </polygonal_surface>
 
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+The attribute ``tolerance`` is optional.  
+This value prescribes an absolute tolerance for determining the cell face centroids that lie on the defined plane.
 
 Polygon (structured 2D only)
 ____________________________
@@ -750,9 +741,9 @@ A polygon region is used to define a bounded planar region and is specified by t
 .. code-block:: xml
 
     <polygon name="polygon name" num_points="3">
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
-      <point> (X, Y) </point>
+      <point> (X1, Y1) </point>
+      <point> (X2, Y2) </point>
+      <point> (X3, Y3) </point>
     </polygon>
 
 Ellipse (structured 2D only)
@@ -816,14 +807,13 @@ For each type of primary, the ``primary`` element takes the attributes ``name``,
 
     <geochemistry>
       <verbosity>silent | terse | verbose | warnings | errors</verbosity>
-
       <constraints> <!-- REQUIRED -->
         <constraint name="string"> <!-- REQUIRED -->
-          <primary name="primary_name_string"     initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
-          <primary name="nonreactive_primary"     initial_guess="exp"   type="total"/>
-          <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="mineral_name"/>
-          <primary name="primary_name_string"     initial_guess="exp"   type="gas" gas = "gas_name"/>
-          <mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
+          <primary name="primary_name_string"  initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
+          <primary name="nonreactive_primary"  initial_guess="exp"   type="total"/>
+          <primary name="primary_name_string"  initial_guess="exp"   type="mineral" mineral="mineral_name"/>
+          <primary name="primary_name_string"  initial_guess="exp"   type="gas" gas = "gas_name"/>
+          <mineral name="mineral_name_string"  volume_fraction="exp" surface_area ="exp"/>
         </constraint>
       </constraints>
     </geochemistry>
@@ -844,7 +834,7 @@ The ``assigned_regions`` element list the regions to which the following materia
 
 .. code-block:: xml
 
-    <assigned_regions>Comma seperated list of Regions</assigned_regions>
+   <assigned_regions>Comma seperated list of Regions</assigned_regions>
 
 Mechanical_properties
 _____________________
@@ -872,14 +862,14 @@ For ``dispersion_tensor`` several models are available.  The model is specified 
 
 .. code-block:: xml
 
-    <mechanical_properties>
-        <porosity value="Exponential"/>
-        <particle_density value="Exponential"/>
-        <specific_storage value="Exponential"/>
-        <specific_yield value="Exponential"/>
-        <dispersion_tensor type="uniform_isotropic" alpha_l="Exponential" alpha_t="Exponential"/>
-        <tortuosity value="Exponential"/>
-    </mechanical_properties>
+   <mechanical_properties>
+     <porosity value="Exponential"/>
+     <particle_density value="Exponential"/>
+     <specific_storage value="Exponential"/>
+     <specific_yield value="Exponential"/>
+     <dispersion_tensor type="uniform_isotropic" alpha_l="Exponential" alpha_t="Exponential"/>
+     <tortuosity value="Exponential"/>
+   </mechanical_properties>
 
 Permeability
 ____________
@@ -903,16 +893,18 @@ As noted above, either the ``permeability`` or ``hydraulic_conductivity`` must b
 Cap_pressure
 ____________
 
-Capillary pressure can be specified using the element ``cap_pressure``.  The attribute ``model`` specifies whether the van Genuchten or Brooks-Corey model is to be used.  The subelement ``parameters`` lists the model specific parameters.  Note, for both models a Krel smoothing interval can be specified but is optional.  Also, if not specifying capillary pressure this element can be skipped or the value of ``model`` set to "none".
+Capillary pressure can be specified using the element ``cap_pressure``.  The attribute ``model`` specifies whether the van Genuchten or Brooks-Corey model is to be used.  The subelement ``parameters`` lists the model specific parameters.  Note, for both models a smoothing interval can be specified but is optional.  Also, if not specifying capillary pressure this element can be skipped or the value of ``model`` set to "none".
 
 .. code-block:: xml
 
    <cap_pressure model="van_genuchten | brooks_corey | none">
-        <!-- for van_genuchten -->
- 	<parameters m="Exponential" alpha="Exponential" sr="Exponential" optional_krel_smoothing_interval="Exponential"/>
-        <!-- for brooks_corey -->
- 	<parameters lambda="Exponential" alpha="Exponential" sr="Exponential" optional_krel_smoothing_interval="Exponential"/>
-    </cap_pressure>
+     <!-- for van_Genuchten -->
+     <parameters m="Exponential" alpha="Exponential" sr="Exponential" 
+                 optional_krel_smoothing_interval="Exponential"/>
+     <!-- for Brooks_Corey -->
+     <parameters lambda="Exponential" alpha="Exponential" sr="Exponential" 
+                 optional_krel_smoothing_interval="Exponential"/>
+   </cap_pressure>
 
 Rel_perm
 ________
@@ -921,10 +913,10 @@ Relative permeability can be specified using the element ``rel_perm``.  The attr
 
 .. code-block:: xml
 
-    <rel_perm model="mualem | burdine | none">
-        <!-- burdine only -->
-        <exp value="Exponential"/>
-    </rel_perm>
+   <rel_perm model="mualem | burdine | none">
+     <!-- Burdine only -->
+     <exp value="Exponential"/>
+   </rel_perm>
 
 Sorption_isotherms
 __________________
@@ -933,17 +925,17 @@ Kd models can be specified for 1 or more primaries using the ``sorption_isotherm
 
 .. code-block:: xml
 
-    <sorption_isotherms>
-	<primary name="Name of Primary" >
-            <kd_model model="linear" kd = "Exponential" />
-        </primary>
-	<primary name="Name of Primary" >
-            <kd_model model="langmuir" kd="Exponential" b="Exponential"/>
-        </primary>
-	<primary name="Name of Primary" >
-            <kd_model model="freundlich" kd="Exponential" n="Exponential" />
-        </primary>
-    </sorption_isotherms>
+   <sorption_isotherms>
+     <primary name="Name of Primary" >
+       <kd_model model="linear" kd = "Exponential" />
+     </primary>
+     <primary name="Name of Primary" >
+       <kd_model model="langmuir" kd="Exponential" b="Exponential"/>
+     </primary>
+     <primary name="Name of Primary" >
+       <kd_model model="freundlich" kd="Exponential" n="Exponential" />
+     </primary>
+   </sorption_isotherms>
 
 Minerals
 ________
@@ -952,9 +944,9 @@ Mineral concentrations are specified using the volume fraction and specific surf
 
 .. code-block:: xml
 
-       <minerals>
-           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
-       </minerals>
+   <minerals>
+     <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+   </minerals>
 
 Ion_exchange
 ____________
@@ -963,13 +955,13 @@ Ion exchange reactions are specified in the ``ion_exchange`` block.  Cations act
 
 .. code-block:: xml
 
-        <ion_exchange>
-            <cations cec="750.0">
-                <cation name="Ca++" value="0.2953"/>
-                <cation name="Mg++" value="0.1666"/>
-                <cation name="Na+" value="1.0"/>
-            </cations>
-        </ion_exchange>
+   <ion_exchange>
+     <cations cec="750.0">
+       <cation name="Ca++" value="0.2953"/>
+       <cation name="Mg++" value="0.1666"/>
+       <cation name="Na+" value="1.0"/>
+     </cations>
+   </ion_exchange>
 
 Surface_complexation
 ____________________
@@ -978,15 +970,14 @@ Surface complexation reactions are specified in the ``surface_complexation`` blo
 
 .. code-block:: xml
 
-        <surface_complexation>
-            <site density="1.908e-3" name="FeOH_s">
-                <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
-            </site>
-            <site density="7.6355e-2" name="FeOH_w">
-                <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
-            </site>
-        </surface_complexation>
-
+   <surface_complexation>
+     <site density="1.908e-3" name="FeOH_s">
+       <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
+     </site>
+     <site density="7.6355e-2" name="FeOH_w">
+       <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
+     </site>
+   </surface_complexation>
 
 An example materials element would look like
 
@@ -1075,18 +1066,18 @@ The ``liquid_phase`` element is required to produce a valid input file.  If prim
 
 .. code-block:: xml
 
-    <liquid_phase name = "water">
-	<viscosity> Exponential </viscosity>
-	<density> Exponential </density>
-	<dissolved_components> 
-	    <primaries>
-	       <primary coefficient_of_diffusion="Exponential" first_order_decay_constant="Exponential"> PrimaryName </primary>
-	    </primaries> 
-            <secondaries>
-               <secondary>SecondaryName</secondary>
-            </secondaries>
-	</dissolved_components>
-    </liquid_phase>
+   <liquid_phase name = "water">
+     <viscosity> Exponential </viscosity>
+     <density> Exponential </density>
+     <dissolved_components> 
+       <primaries>
+         <primary coefficient_of_diffusion="Exponential" first_order_decay_constant="Exponential"> PrimaryName </primary>
+       </primaries> 
+       <secondaries>
+         <secondary>SecondaryName</secondary>
+       </secondaries>
+     </dissolved_components>
+   </liquid_phase>
 
 Solid_phase
 ___________
@@ -1095,11 +1086,11 @@ The ``solid_phase`` element allows the user to define a ``minerals`` element und
 
 .. code-block:: xml
 
-    <solid_phase>
-	<minerals>
-	    <mineral> MineralName </mineral>
-	</minerals> 
-    </solid_phase>
+   <solid_phase>
+     <minerals>
+       <mineral> MineralName </mineral>
+     </minerals> 
+   </solid_phase>
 
 Gas_phase
 _________
@@ -1108,11 +1099,11 @@ The ``gas_phase`` element allows the user to define a ``gases`` element under wh
 
 .. code-block:: xml
 
-    <gas_phase>
-	<gases>
-	    <gas> GasName </gas>
-	</gases> 
-    </gas_phase>
+   <gas_phase>
+     <gases>
+       <gas> GasName </gas>
+     </gases> 
+   </gas_phase>
 
 An example ``phases`` element looks like the following.
 
@@ -1120,13 +1111,13 @@ An example ``phases`` element looks like the following.
 
   <phases>
     <liquid_phase name = "water">
-	<viscosity>1.002E-03</viscosity>
-	<density>998.2</density>
-	<dissolved_components> 
-	    <primaries>
-	       <primary coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</primary>
-	    </primaries>
-	</dissolved_components>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components> 
+        <primaries>
+          <primary coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</primary>
+        </primaries>
+      </dissolved_components>
     </liquid_phase>
   </phases>
 
@@ -1174,20 +1165,20 @@ An example ``initial_conditions`` element looks like the following.
 
 .. code-block:: xml
 
-	<initial_conditions>
-	  <initial_condition name="Pressure and concentration for entire domain">
-	    <comments>Initial Conditions Comments</comments>
-	    <assigned_regions>All</assigned_regions>
-	    <liquid_phase name = "water">
-		<liquid_component name = "water">
-		    <linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
-		</liquid_component>
-		<geochemistry_component>
-                    <constraint name = "initial"/>
-		</geochemistry_component>
-	    </liquid_phase>
-          </initial_condition>
-	</initial_conditions>
+   <initial_conditions>
+     <initial_condition name="Pressure and concentration for entire domain">
+       <comments>Initial Conditions Comments</comments>
+       <assigned_regions>All</assigned_regions>
+       <liquid_phase name = "water">
+         <liquid_component name = "water">
+           <linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+         </liquid_component>
+         <geochemistry_component>
+           <constraint name = "initial"/>
+         </geochemistry_component>
+       </liquid_phase>
+     </initial_condition>
+   </initial_conditions>
 
 Boundary Conditions
 -------------------
@@ -1196,46 +1187,46 @@ Boundary conditions are defined in a similar manor to the initial conditions.  U
 
 Under the ``liquid_component`` and ``geochemistry_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a *name* attribute to indicate the phase associated with the boundary condition.
 
-+-------------------------+--------------------------------+----------------------------------------+
-|Boundary Condition Type  | Attributes                     | Value Type                             |
-+=========================+================================+========================================+
-|inward_mass_flux         | | name                         | | string                               | 
-|inward_volumetric_flux   | | start                        | | double/time_constant/constant        |
-|outward_mass_flux        | | value                        | | double                               |
-|outward_volumetric_flux  | | function                     | | ``linear | uniform | constant``      |
-+-------------------------+--------------------------------+----------------------------------------+
-|uniform_pressure         | | name                         | | string                               |
-|                         | | start                        | | double/time_constant/constant        |
-|                         | | value                        | | double                               |
-|                         | | function                     | | ``uniform | constant``               |
-+-------------------------+--------------------------------+----------------------------------------+
-|linear_pressure          | | name                         | | string                               |
-|                         | | gradient_value               | | coordinate                           |
-|                         | | reference_point              | | coordinate                           |
-|                         | | reference_value              | | double                               |
-+-------------------------+--------------------------------+----------------------------------------+ 
-|hydrostatic              | | name                         | | string                               |
-|                         | | start                        | | double/time_constant/constant        |
-|                         | | value                        | | double                               |
-|                         | | function                     | | ``uniform | constant``               |
-|                         | | coordinate_system            | | ``absolute | relative to mesh top``  |
-|                         | | submodel                     | | ``no_flow_above_water_table | none`` |
-+-------------------------+--------------------------------+----------------------------------------+ 
-|linear_hydrostatic       | | name                         | | string                               |
-|                         | | gradient_value               | | coordinate                           |
-|                         | | reference_point              | | coordinate                           |
-|                         | | reference_water_table_height | | double                               |
-|                         | | submodel                     | | ``no_flow_above_water_table | none`` |
-+-------------------------+--------------------------------+----------------------------------------+ 
-|seepage_face             | | name                         | | string                               |
-|(unstructured only)      | | start                        | | double/time_constant/constant        |
-|                         | | inward_mass_flux             | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | uniform | constant``      |
-+-------------------------+--------------------------------+----------------------------------------+
-|no_flow                  | | name                         | | string                               |
-|                         | | start                        | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | uniform | constant``      |
-+-------------------------+--------------------------------+----------------------------------------+
++---------------------------+--------------------------------+----------------------------------------+
+|Boundary Condition Type    | Attributes                     | Value Type                             |
++===========================+================================+========================================+
+| | inward_mass_flux        | | name                         | | string                               | 
+| | inward_volumetric_flux  | | start                        | | double/time_constant/constant        |
+| | outward_mass_flux       | | value                        | | double                               |
+| | outward_volumetric_flux | | function                     | | ``linear | uniform | constant``      |
++---------------------------+--------------------------------+----------------------------------------+
+|uniform_pressure           | | name                         | | string                               |
+|                           | | start                        | | double/time_constant/constant        |
+|                           | | value                        | | double                               |
+|                           | | function                     | | ``uniform | constant``               |
++---------------------------+--------------------------------+----------------------------------------+
+|linear_pressure            | | name                         | | string                               |
+|                           | | gradient_value               | | coordinate                           |
+|                           | | reference_point              | | coordinate                           |
+|                           | | reference_value              | | double                               |
++---------------------------+--------------------------------+----------------------------------------+ 
+|hydrostatic                | | name                         | | string                               |
+|                           | | start                        | | double/time_constant/constant        |
+|                           | | value                        | | double                               |
+|                           | | function                     | | ``uniform | constant``               |
+|                           | | coordinate_system            | | ``absolute | relative to mesh top``  |
+|                           | | submodel                     | | ``no_flow_above_water_table | none`` |
++---------------------------+--------------------------------+----------------------------------------+ 
+|linear_hydrostatic         | | name                         | | string                               |
+|                           | | gradient_value               | | coordinate                           |
+|                           | | reference_point              | | coordinate                           |
+|                           | | reference_water_table_height | | double                               |
+|                           | | submodel                     | | ``no_flow_above_water_table | none`` |
++---------------------------+--------------------------------+----------------------------------------+ 
+|seepage_face               | | name                         | | string                               |
+|(unstructured only)        | | start                        | | double/time_constant/constant        |
+|                           | | inward_mass_flux             | | double/time_constant/constant        |
+|                           | | function                     | | ``linear | uniform | constant``      |
++---------------------------+--------------------------------+----------------------------------------+
+|no_flow                    | | name                         | | string                               |
+|                           | | start                        | | double/time_constant/constant        |
+|                           | | function                     | | ``linear | uniform | constant``      |
++---------------------------+--------------------------------+----------------------------------------+
 
 For the geochemistry_component, an unbounded number of ``constraint`` elements may be listed.  Each constraint has the attributes *name*, *function*, and *start*.  The function option available is *constant*.  The name should match a constraint defined in the `"phases`" section
 
@@ -1245,19 +1236,19 @@ An example ``boundary_conditions`` element looks like the following.
 
   <boundary_conditions>
     <boundary_condition name = "Recharge at top of the domain">
-	<assigned_regions>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs</assigned_regions>
-	<liquid_phase name = "water">
-	    <liquid_component name = "water">
-		<inward_mass_flux start="0.0"    function= "constant"  value="pre_1956_recharge"/>
-		<inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
-		<inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
-		<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
-	    </liquid_component>
-	    <geochemistry_component>
-		<constraint name = "west"  start="0.0"      function= "constant"/>
-		<constraint name = "west2" start="1956.0,y" function= "constant"/>
-	    </geochemistry_component>
-	</liquid_phase>
+      <assigned_regions>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs</assigned_regions>
+      <liquid_phase name = "water">
+        <liquid_component name = "water">
+          <inward_mass_flux start="0.0"    function= "constant"  value="pre_1956_recharge"/>
+          <inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
+          <inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
+          <inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name = "west"  start="0.0"      function= "constant"/>
+          <constraint name = "west2" start="1956.0,y" function= "constant"/>
+        </geochemistry_component>
+      </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
 
@@ -1288,9 +1279,9 @@ An example ``sources`` element looks like the following.
     <source name = "Pumping Well" >
       <assigned_regions>Well</assigned_regions>
       <liquid_phase name = "water">
-	<liquid_component name="water">
-	  <volume_weighted start="0.0" function="constant" value="-4.0"/>
-	</liquid_component>
+        <liquid_component name="water">
+          <volume_weighted start="0.0" function="constant" value="-4.0"/>
+        </liquid_component>
       </liquid_phase>
     </source>
   </sources>
@@ -1323,12 +1314,12 @@ An example ``vis`` element looks like the following.
 .. code-block:: xml
 
    <vis>
-        <base_filename>plot</base_filename>
-	<num_digits>5</num_digits>
-	<time_macros>Macro 1</time_macros>
-        <write_regions>
-            <field name="fieldname" regions="region1, region2, region3" />
-        </write_regions>
+     <base_filename>plot</base_filename>
+     <num_digits>5</num_digits>
+     <time_macros>Macro 1</time_macros>
+     <write_regions>
+       <field name="fieldname" regions="region1, region2, region3" />
+     </write_regions>
    </vis>
 
 Checkpoint
@@ -1340,11 +1331,11 @@ An example ``checkpoint`` element looks like the following.
 
 .. code-block:: xml
 
-    <checkpoint>
-	<base_filename>chk</base_filename>
-	<num_digits>5</num_digits>
-	<cycle_macro>Every_1000_steps</cycle_macro>
-    </checkpoint>
+   <checkpoint>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_1000_steps</cycle_macro>
+   </checkpoint>
 
 Observations
 ____________
@@ -1375,27 +1366,24 @@ An example ``observations`` element looks like the following.
 .. code-block:: xml
 
     <observations>
-
       <filename>observation.out</filename>
-
       <liquid_phase name="water">
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r1</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
+        <aqueous_pressure>
+          <assigned_regions>Obs_r1</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_pressure>
+        <aqueous_pressure>
+          <assigned_regions>Obs_r2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_pressure>
+        <aqueous_pressure>
+          <assigned_regions>Obs_r2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_pressure>
       </liquid_phase>
-
     </observations>
 
 .. _Akuna : http://esd.lbl.gov/research/projects/ascem/thrusts/platform/
@@ -1413,7 +1401,8 @@ Example:
 .. code-block:: xml
 
   <walkabout>
-     <base_filename>chk</base_filename>
-     <num_digits>5</num_digits>
-     <cycle_macro>Every_100_steps</cycle_macro>
+    <base_filename>chk</base_filename>
+    <num_digits>5</num_digits>
+    <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>
+
