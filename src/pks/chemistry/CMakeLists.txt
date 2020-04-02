@@ -84,6 +84,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     if (NOT (${CMAKE_SOURCE_DIR} EQUAL ${CMAKE_BINARY_DIR}))
         file(GLOB DataFiles "${CHEMPK_SOURCE_DIR}/test/*.xml"
                             "${CHEMPK_SOURCE_DIR}/test/*.bgd"
+                            "${CHEMPK_SOURCE_DIR}/test/*.bds"
                             "${CHEMPK_SOURCE_DIR}/test/*.in"
                             "${CHEMPK_SOURCE_DIR}/test/*.dat")
         file(COPY ${DataFiles} DESTINATION ${CHEMPK_BINARY_DIR}/test/)
