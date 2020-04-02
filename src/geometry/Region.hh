@@ -23,60 +23,49 @@ must be specified over a set of regions are (N-1)-dimensional.
 Region specs are **not** denoted by a "type" parameter for legacy reasons.
 Instead, they take a single sublist whose name defines the type.
 
-``[region-spec]``
+.. _region-spec:
+.. admonition:: region-spec
 
-ONE OF:
+    ONE OF:
 
-* `"region: all`" ``[list]``
+    * `"region: all`" ``[list]`` See All_.
+    OR:
 
-OR:
+    * `"region: box`" ``[region-box-spec]`` See Box_.
+    OR:
 
-* `"region: box`" ``[region-box-spec]``
+    * `"region: plane`" ``[region-plane-spec]`` See Plane_.
+    OR:
 
-OR:
+    * `"region: labeled set`" ``[region-labeled-set-spec]`` See `Labeled Set`_.
+    OR:
 
-* `"region: plane`" ``[region-plane-spec]``
+    * `"region: color function`" ``[region-color-function-spec]`` See `Color Function`_.
+    OR:
 
-OR:
+    * `"region: point`" ``[region-point-spec]`` See Point_.
+    OR:
 
-* `"region: labeled set`" ``[region-labeled-set-spec]``
+    * `"region: logical`" ``[region-logical-spec]`` See Logical_.
+    OR:
 
-OR:
+    * `"region: polygon`" ``[region-polygon-spec]`` See Polygon_.
+    OR:
 
-* `"region: color function`" ``[region-color-function-spec]``
+    * `"region: enumerated`" ``[region-enumerated-spec]`` See Enumerated_.
+    OR:
 
-OR:
+    * `"region: boundary`" ``[region-boundary-spec]`` See Boundary_.
+    OR:
 
-* `"region: point`" ``[region-point-spec]``
+    * `"region: box volume fractions`" ``[region-box-volume-fractions-spec]`` See `Box Volume Fractions`_.
+    OR:
 
-OR:
-
-* `"region: logical`" ``[region-logical-spec]``
-
-OR:
-
-* `"region: polygon`" ``[region-polygon-spec]``
-
-OR:
-
-* `"region: enumerated`" ``[region-enumerated-spec]``
-
-OR:
-
-* `"region: boundary`" ``[region-boundary-spec]``
-
-OR:
-
-* `"region: box volume fractions`" ``[region-box-volume-fractions-spec]``
-
-OR:
-
-* `"region: line segment`" ``[region-line-segment-spec]``
-
-END
+    * `"region: line segment`" ``[region-line-segment-spec]`` See `Line Segment`_.
+    END
 
 
-.. note:: Surface files contain labeled triangulated face sets.  The user is
+.. warning:: Surface files contain labeled triangulated face sets.  The user is
     responsible for ensuring that the intersections with other surfaces in the
     problem, including the boundaries, are *exact* (*i.e.* that surface
     intersections are *watertight* where applicable), and that the surfaces are
@@ -85,7 +74,7 @@ END
 
     Examples of surface files are given in the *Exodus II* file format here.
 
-.. note:: Region names must NOT be repeated.
+.. warning:: Region names must NOT be repeated.
 
 Example:
 

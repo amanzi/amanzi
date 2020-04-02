@@ -28,15 +28,13 @@ requires *cell*, *face* or *node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
-``[region-labeled-set-spec]``
+.. _region-labeled-set-spec:
+.. admonition:: region-labeled-set-spec
 
-* `"label`" ``[string]`` Set per label defined in the mesh file.
-
-* `"file`" ``[string]`` File name.
-
-* `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
-
-* `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
+    * `"label`" ``[string]`` Set per label defined in the mesh file.
+    * `"file`" ``[string]`` File name.
+    * `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
+    * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
 
 Example:
 

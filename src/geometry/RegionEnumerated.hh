@@ -16,11 +16,11 @@ List *region: enumerated set* defines a set of mesh entities via the list
 of input global ids. Note that global ids are not defined correctly when
 parallel mesh is created on a fly.
 
-``[region-enumerated-spec]``
+.. _region-enumerated-spec:
+.. admonition:: region-enumerated-spec
 
-* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
-
-* `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+    * `"entity`" ``[string]`` Type of the mesh object.  One of: `"cell`", `"face`", `"edge`", `"node`"
+    * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
   
 
 Example:

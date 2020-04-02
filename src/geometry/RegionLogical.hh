@@ -21,12 +21,12 @@ the only case that operates on single region, and returns the complement to it
 within the domain ENTIRE_DOMAIN.  Currently, multi-region booleans are not
 supported in the same expression.
 
-``[region-logical-spec]``
+.. _region-logical-spec:
+.. admonition:: region-logical-spec
 
-* `"operation`" ``[string]`` defines operation on the list of regions.
-  Available options are *union*, *intersect*, *subtract*, *complement*
-
-* `"regions`" ``[Array(string)]`` specifies the list of involved regions.
+    * `"operation`" ``[string]`` defines operation on the list of regions.
+      One of: `"union`", `"intersect`", `"subtract`", `"complement`"
+    * `"regions`" ``[Array(string)]`` specifies the list of involved regions.
 
 Example:
 
