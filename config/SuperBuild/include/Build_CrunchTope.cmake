@@ -22,18 +22,18 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   
 
 # --- Patch the original code
-set(CRUNCHTOPE_patch_file crunchtope-cmake.patch)
-set(CRUNCHTOPE_sh_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.sh.in
-               ${CRUNCHTOPE_sh_patch}
-               @ONLY)
+# set(CRUNCHTOPE_patch_file crunchtope-cmake.patch)
+# set(CRUNCHTOPE_sh_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.sh)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.sh.in
+#               ${CRUNCHTOPE_sh_patch}
+#               @ONLY)
 # configure the CMake patch step
-set(CRUNCHTOPE_cmake_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
-               ${CRUNCHTOPE_cmake_patch}
-               @ONLY)
+#set(CRUNCHTOPE_cmake_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
+#               ${CRUNCHTOPE_cmake_patch}
+#               @ONLY)
 # set the patch command
-set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
+#set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 
 # --- Define the arguments passed to CMake.
 set(CRUNCHTOPE_CMAKE_ARGS 
@@ -55,7 +55,7 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
                     URL          ${CRUNCHTOPE_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CRUNCHTOPE_MD5_SUM}                # md5sum of the archive file
                     # -- Patch 
-                    PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}         # Mods to source
+                    # PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CRUNCHTOPE_source_dir}            # Source directory
                     CMAKE_ARGS    ${CRUNCHTOPE_CMAKE_ARGS}            # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
