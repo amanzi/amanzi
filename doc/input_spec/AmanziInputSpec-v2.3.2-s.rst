@@ -1,6 +1,6 @@
-====================================================
-Amanzi XML Input Specification (Version 2.3-draft)
-====================================================
+=========================================================
+Structured Amanzi XML Input Specification (Version 2.3.2)
+=========================================================
 
 .. contents:: **Table of Contents**
 
@@ -8,11 +8,19 @@ Amanzi XML Input Specification (Version 2.3-draft)
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled `"Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM 
+report entitled `"Amanzi Theory Guide, Mathematical Modeling Requirement`" (hereafter referred to as the 'Amanzi Theory Guide (ATG)'). 
+The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the ATG, and parameterizations of the individual submodels are consistent between Amanzi, the ATG and this document. Where applicable, the relevant sections of the ATG are indicated.
 
-All data required to execute Amanzi is specified within an XML formated file laid out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
+All data required to execute Amanzi is specified within an XML formated file laid out according to the Amanzi input schema.
+The current version of the Amanzi schema is located with the Amanzi source code repository.
+The following discusses each section of the schema, its purpose and provides examples.
+Further details can be found in the schema document doc/input_spec/schema/amanzi.xsd.
 
 Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
+
+All user-defined names are capitalized to highlight that they are not a part of the input spec.
+
 
 Amanzi Input
 ============
@@ -37,12 +45,11 @@ This allows the users to provide a name and general description of model being d
 
 .. code-block:: xml
 
-  <model_description name="Name of Model" >
+  <model_description name="NAME of MODEL" >
       Required Elements: NONE
       Optional Elements: comment, author, created, modified, model_id, description, purpose, units
   </model_description>
 
-All elements expect string content, except ``units`` which is described below.
 
 Units
 -----
@@ -1863,307 +1870,4 @@ This section includes a collection of miscellaneous global options, specified as
   translated file is written.
 
 
-Full Example
-============
-
-.. code-block:: xml
-
-  <amanzi_input type="unstructured" version="2.2.1">
-    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
-
-    <model_description name="example of full unstructured schema">
-      <comments>Example input file </comments>
-      <units>
-        <length_unit>m</length_unit>
-        <time_unit>s</time_unit>
-        <mass_unit>kg</mass_unit>
-        <conc_unit>molar</conc_unit>
-      </units>
-    </model_description>
-
-    <definitions>
-      <macros>
-        <time_macro name="Observation Times">
-          <time>1.2096E+10</time>
-        </time_macro>
-        <time_macro name="EveryMonth">
-          <start>1956,y</start>
-          <timestep_interval>1,m</timestep_interval>
-          <stop>1988,y</stop>
-        </time_macro>
-        <cycle_macro name="Every100Cycles">
-          <start>0</start>
-          <timestep_interval>100</timestep_interval>
-        </cycle_macro>
-      </macros>
-    </definitions>
-
-    <process_kernels>
-      <comments>Variably saturated flow</comments>
-      <flow model="richards" state="on"/>
-      <transport state="on"/>
-      <chemistry engine="none" state="off"/>
-    </process_kernels>
-
-    <phases>
-      <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
-        <dissolved_components>
-            <primaries>
-                <primary coefficient_of_diffusion="1e-9">Tc-99</primary>
-            </primaries>
-        </dissolved_components>
-      </liquid_phase>
-    </phases>
-
-    <execution_controls>
-      <verbosity level="high"/>
-      <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-      <execution_control end="1956,y" mode="steady" start="0.0" init_dt="1000.0"/>
-      <execution_control end="3000,y" mode="transient" start="1956,y" />
-    </execution_controls>
-
-    <numerical_controls>
-      <unstructured_controls>
-
-        <unstr_flow_controls>
-          <preconditioning_strategy>linearized_operator</preconditioning_strategy>
-        </unstr_flow_controls>
-
-        <unstr_transport_controls>
-          <algorithm>explicit first-order</algorithm>
-          <sub_cycling>on</sub_cycling>
-          <cfl>1</cfl>
-        </unstr_transport_controls>
-
-        <unstr_steady-state_controls>
-          <min_iterations>10</min_iterations>
-          <max_iterations>15</max_iterations>
-          <limit_iterations>20</limit_iterations>
-          <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-          <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
-          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-          <max_divergent_iterations>3</max_divergent_iterations>
-  
-          <unstr_initialization>
-            <method>darcy_solver</method>
-            <linear_solver>aztecoo</linear_solver>
-          </unstr_initialization>
-        </unstr_steady-state_controls>
-  
-        <unstr_transient_controls>
-          <min_iterations>10</min_iterations>
-          <max_iterations>15</max_iterations>
-          <limit_iterations>20</limit_iterations>
-          <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-          <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
-          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-          <max_divergent_iterations>3</max_divergent_iterations>
-        </unstr_transient_controls>
-
-        <unstr_linear_solver>
-          <max_iterations>100</max_iterations>
-          <tolerance>1e-20</tolerance>
-        </unstr_linear_solver>
-
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
-
-      </unstructured_controls>
-    </numerical_controls>
-
-    <mesh framework="mstk">
-      <dimension>2</dimension>
-      <generate>
-        <number_of_cells nx="54" nz="60"/>
-        <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0"/>
-      </generate>
-    </mesh>
-
-    <regions>
-      <region name="All">
-        <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 0.0" />
-      </region>
-      <region name="Bottom Surface">
-        <box high_coordinates="216.0, 0.0" low_coordinates="0.0, 0.0" />
-      </region>
-      <region name="RegionBottom">
-        <box high_coordinates="216.0, 40.0" low_coordinates="0.0, 0.0" />
-      </region>
-      <region name="RegionMiddle">
-        <box high_coordinates="216.0, 80.0" low_coordinates="0.0, 40.0" />
-      </region>
-      <region name="RegionTop">
-        <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 80.0" />
-      </region>
-      <region name="Recharge_Boundary_WestOfCribs">
-        <box high_coordinates="72.0, 120.0" low_coordinates="0.0, 120.0" />
-      </region>
-      <region name="Crib_216-B-17">
-        <box high_coordinates="80.0, 120.0" low_coordinates="72.0, 120.0" />
-      </region>
-      <region name="Recharge_Boundary_btwnCribs">
-        <box high_coordinates="136.0, 120.0" low_coordinates="80.0, 120.0" />
-      </region>
-      <region name="Crib_216-B-18">
-        <box high_coordinates="148.0, 120.0" low_coordinates="136.0, 120.0" />
-      </region>
-      <region name="Recharge_Boundary_EastOfCribs">
-        <box high_coordinates="216.0, 120.0" low_coordinates="148.0, 120.0" />
-      </region>
-      <region name="Well">
-        <box high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />
-      </region>
-    </regions>
-
-    <materials>
-      <material name="Facies_1">
-        <mechanical_properties>
-          <porosity value="0.4082"/>
-        </mechanical_properties>
-        <permeability x="1.9976E-12" z="1.9976E-13" />
-        <cap_pressure model="van_genuchten">
-          <parameters alpha="1.9467E-04" m="0.2294" sr="0.0"/>
-        </cap_pressure>
-        <rel_perm model="mualem"/>
-        <assigned_regions>RegionMiddle</assigned_regions>
-      </material>
-  
-      <material name="Facies_2">
-        <mechanical_properties>
-          <porosity value="0.2206"/>
-        </mechanical_properties>
-        <permeability x="6.9365E-11" z="6.9365E-12" />
-        <cap_pressure model="van_genuchten">
-          <parameters alpha="2.0260E-03" m="0.2136" sr="0.0"/>
-        </cap_pressure>
-        <rel_perm model="mualem"/>
-        <assigned_regions>RegionBottom</assigned_regions>
-      </material>
-  
-      <material name="Facies_3">
-        <mechanical_properties>
-          <porosity value="0.2340"/>
-        </mechanical_properties>
-        <permeability x="2.0706E-09" z="2.0706E-10" />
-        <cap_pressure model="van_genuchten">
-          <parameters alpha="2.0674E-03" m="0.3006" sr="0.0"/>
-        </cap_pressure>
-        <rel_perm model="mualem"/>
-        <assigned_regions>RegionTop</assigned_regions>
-      </material>
-    </materials>
-
-     <geochemistry>
-        <verbosity>silent</verbosity>
-        <constraints>
-            <constraint name="initial">
-                <primary name="Tc-99" type="total" value="0.0"/>
-            </constraint>
-            <constraint name="Crib_216-B-17">
-                <primary name="Tc-99" type="total" value="1.881389E-06"/>
-            </constraint>
-            <constraint name="Crib_216-B-18">
-                <primary name="Tc-99" type="total" value="2.266885E-06"/>
-            </constraint>
-        </constraints>
-    </geochemistry>
-    <initial_conditions>
-      <initial_condition name="All">
-        <assigned_regions>All</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <linear_pressure name="IC1" value="101325.0" reference_coord="0.0, 0.0" gradient="0,-9793.5192" />
-          </liquid_component>
-          <geochemistry_component>
-            <constraint name="initial"/>
-          </geochemistry_component>
-        </liquid_phase>
-      </initial_condition>
-    </initial_conditions>
-
-    <boundary_conditions>
-      <boundary_condition name="BC For Bottom Surface">
-        <assigned_regions>Bottom Surface</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <hydrostatic function="uniform" start="0.0" value="0.0"/>
-          </liquid_component>
-          <geochemistry_component>
-            <constraint function="constant" name="initial" start="0.0 y"/>
-          </geochemistry_component>
-        </liquid_phase>
-      </boundary_condition>
-  
-      <boundary_condition name="BC For Crib_216-B-17">
-        <assigned_regions>Crib_216-B-17</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
-            <inward_volumetric_flux value="0.00254022e-3" function="constant" start="6.17266656e+10" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
-          </liquid_component>
-          <geochemistry_component>
-            <constraint function="constant" name="initial" start="0.0"/>
-            <constraint function="constant" name="Crib_216-B-17" start="6.17266656e+10"/>
-            <constraint function="constant" name="initial" start="6.1729344E10"/>
-          </geochemistry_component>
-        </liquid_phase>
-      </boundary_condition>
-  
-      <boundary_condition name="BC For Crib_216-B-18">
-        <assigned_regions>Crib_216-B-18</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
-            <inward_volumetric_flux value="0.00330423e-3" function="constant" start="6.173178481E10" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.173705521E10" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
-          </liquid_component>
-          <geochemistry_component>
-            <constraint function="constant" name="initial" start="0.0"/>
-            <constraint function="constant" name="Crib_216-B-17" start="6.173178481E10"/>
-            <constraint function="constant" name="initial" start="6.173705521E10"/>
-          </geochemistry_component>
-        </liquid_phase>
-      </boundary_condition>
-  
-      <boundary_condition name="BC Rest">
-        <assigned_regions>Recharge_Boundary_WestOfCribs,
-                          Recharge_Boundary_btwnCribs,
-                          Recharge_Boundary_EastOfCribs</assigned_regions>
-        <liquid_phase name="water">
-          <liquid_component name="water">
-            <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
-            <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
-          </liquid_component>
-          <geochemistry_component>
-            <constraint function="constant" name="initial" start="0.0 y"/>
-          </geochemistry_component>
-        </liquid_phase>
-      </boundary_condition>
-    </boundary_conditions>
-
-    <output>
-       <vis>
-        <base_filename>plot</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every100Cycles</cycle_macros>
-      </vis>
-      <checkpoint>
-        <base_filename>chk</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every100Cycles</cycle_macros>
-      </checkpoint>
-    </output>
-  </amanzi_input>
 
