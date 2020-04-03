@@ -20,10 +20,12 @@ which represents a single equation.
 
 All PKs have the following parameters in their spec:
 
-``[pk-spec]``
+.. _pk-typed-spec:
+.. admonition:: pk-typed-spec
 
-* `"PK type`" ``[string]`` The PK type is a special key-word which corresponds
-  to a given class in the PK factory.  See available PK types listed below.
+    * `"PK type`" ``[string]`` One of the registered PK types
+    * `"sub PKs`" ``[pk-typed-spec-list]`` **optional** If there are sub pks, list them.
+    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
 
 Example:
 
@@ -41,9 +43,12 @@ Example:
   <ParameterList name="PKs">
     <ParameterList name="Top level MPC">
       <Parameter name="PK type" type="string" value="strong MPC"/>
-       ...
+      <ParameterList name="sub PKs">
+        ...   
+      </ParameterList>
     </ParameterList>
   </ParameterList>
+
 */
 
 

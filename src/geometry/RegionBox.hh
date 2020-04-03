@@ -19,11 +19,11 @@ List *region: box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.
 
-``[region-box-spec]``
+.. _region-box-spec:
+.. admonition:: region-box-spec
 
-* `"low coordinate`" ``[Array(double)]`` Location of the boundary point with the lowest coordinates.
-
-* `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
+    * `"low coordinate`" ``[Array(double)]`` Location of the boundary point with the lowest coordinates.
+    * `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
 
 Example:
 
