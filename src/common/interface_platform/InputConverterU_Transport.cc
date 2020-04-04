@@ -47,7 +47,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode* node;
-  DOMElement* element;
 
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -359,7 +358,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
-  DOMNode *node, *knode;
+  DOMNode *node;
   DOMElement* element;
 
   bool flag;
@@ -450,8 +449,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string
 
   MemoryManager mm;
 
-  char *text, *tagname;
-  DOMNodeList *node_list, *children;
+  char *text;
+  DOMNodeList *children;
   DOMNode *node, *phase;
   DOMElement* element;
 
@@ -469,7 +468,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string
   for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string bcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
@@ -521,7 +519,6 @@ void InputConverterU::TranslateTransportBCsGroup_(
   if (solutes->getLength() == 0) return;
  
   DOMNode* node = solutes->item(0);
-  DOMElement* element;
 
   // get child nodes with the same tagname
   bool flag;
@@ -725,7 +722,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
   MemoryManager mm;
 
-  char *text, *tagname;
+  char *text;
   DOMNodeList *node_list, *children;
   DOMNode *node;
   DOMElement* element;
@@ -738,7 +735,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string srcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions

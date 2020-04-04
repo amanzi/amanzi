@@ -19,7 +19,7 @@ TEST(SETS) {
                                  "Vertical Box",
                                  "Bottom ColFunc", "Middle ColFunc",
                                  "Top ColFunc"};
-  unsigned int csetsize, expcsetsizes[6] = {9,18,9,9,9,9};
+  unsigned int expcsetsizes[6] = {9,18,9,9,9,9};
   
   unsigned int expcsetcells[6][18] = {{0,3,6,1,4,7,2,5,8,0,0,0,0,0,0,0,0,0},
 				      {0,9,3,12,6,15,1,10,4,13,7,16,2,11,5,14,8,17},

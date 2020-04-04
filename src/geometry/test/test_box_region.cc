@@ -342,7 +342,6 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   std::vector<Point> xyz;
   std::vector<std::vector<int> > faces(4);
 
-  int n(0);
   double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     Point vv(d, d, d);

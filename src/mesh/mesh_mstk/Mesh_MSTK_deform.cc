@@ -176,8 +176,6 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     idx = 0;
     while ((mv = List_Next_Entry(driven_verts,&idx))) {
-      int gtype = MV_GEntDim(mv);
-      
       id = MV_ID(mv);
 
       // Get an estimate of the mesh size around this vertex to 
@@ -554,9 +552,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
   double evec0[3], evec1[3], evec2[3], a, b, cpvec[3], vol6;
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
-  int i, j, k, m, id, jr, jf, nf0, found;
-  int vind=-1, ind[4], nbrs[4][3];
+  int i, j, k, m, id, jr, jf, found;
   MVertex_ptr fv, rv;
+  int vind=-1, ind[4];
   List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
   static MVertex_ptr (*fverts)[MAXPV2], (*rverts)[MAXPV3];

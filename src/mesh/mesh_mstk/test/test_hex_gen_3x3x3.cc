@@ -14,8 +14,7 @@
 
 TEST(MSTK_HEX_GEN_3x3x3)
 {
-
-  int i, j, k, err, nc, nf, nv;
+  int j, nc, nf, nv;
   Amanzi::AmanziMesh::Set_ID faces[6], nodes[8];
 
   int NV = 64;

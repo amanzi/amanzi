@@ -484,7 +484,6 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 
     // Process the condition on the given array at the given time.
     // FIXME: Time is ignored for the moment.
-    int ierr = 0;
     chem_.ProcessCondition(&engine_state_, condition, &iter->second->mat_props,
                            &iter->second->chem_state, &iter->second->aux_data, &chem_status_);
     iter->second->processed = true;

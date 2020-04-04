@@ -84,9 +84,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
   }
   else {
     // Load serial mesh
-    int block_id_list(1);
     result = mbcore_->load_file(filename.c_str(), 0, 0, NULL, NULL, 0);
-
     rank = 0;
   }
 
@@ -415,11 +413,10 @@ void Mesh_MOAB::init_pface_lists() {
 //--------------------------------------------------------------------
 void Mesh_MOAB::init_pface_dirs()
 {
-  int result, zero(0), minus1(-1);
+  int result, zero(0);
   int face_lid, face_gid, cell_gid;
   int sidenum, offset, facedir;
   moab::EntityHandle cell, face;
-  int DebugWait(1);
 
   // Do some additional processing to see if ghost faces and their masters
   // are oriented the same way; if not, turn on flag to flip them
@@ -568,8 +565,7 @@ void Mesh_MOAB::init_pcell_lists() {
 //--------------------------------------------------------------------
 void Mesh_MOAB::init_set_info()
 {
-  int maxnsets, result;
-  char setname[256];
+  int result;
   moab::Tag tag;
 
   // Get element block, sideset and nodeset tags
@@ -641,9 +637,6 @@ void Mesh_MOAB::init_set_info()
 unsigned int Mesh_MOAB::num_entities(Entity_kind kind, 
                                      Parallel_type ptype) const
 {
-  const int rank = (int) kind;
-  const int index = ((int) ptype) - 1;
-
   switch (kind) {
   case NODE:
     switch (ptype) {
@@ -1062,7 +1055,7 @@ moab::Tag Mesh_MOAB::build_set(
     const Entity_kind kind) const
 {
   int celldim_ = Mesh::manifold_dimension();
-  int space_dim_ = Mesh::space_dimension();
+  int space_dim = Mesh::space_dimension();
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
   int one = 1;
   moab::Tag tag(0);
@@ -1088,8 +1081,8 @@ moab::Tag Mesh_MOAB::build_set(
       }
     }
     else if (region->type() == AmanziGeometry::POINT) {
-      AmanziGeometry::Point vpnt(space_dim_);
-      AmanziGeometry::Point rgnpnt(space_dim_);
+      AmanziGeometry::Point vpnt(space_dim);
+      AmanziGeometry::Point rgnpnt(space_dim);
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1138,7 +1131,7 @@ moab::Tag Mesh_MOAB::build_set(
         int ncells = num_entities(CELL, Parallel_type::ALL);              
 
         for (int ic = 0; ic < ncells; ic++) {
-          std::vector<AmanziGeometry::Point> ccoords(space_dim_);
+          std::vector<AmanziGeometry::Point> ccoords(space_dim);
 
           cell_get_coordinates(ic, &ccoords);
 
@@ -1193,7 +1186,7 @@ moab::Tag Mesh_MOAB::build_set(
       int nface = num_entities(FACE, Parallel_type::ALL);
               
       for (int iface = 0; iface < nface; iface++) {
-        std::vector<AmanziGeometry::Point> fcoords(space_dim_);
+        std::vector<AmanziGeometry::Point> fcoords(space_dim);
             
         face_get_coordinates(iface, &fcoords);
             
@@ -1235,7 +1228,7 @@ moab::Tag Mesh_MOAB::build_set(
 
       for (int inode = 0; inode < nnode; inode++) {
 
-        AmanziGeometry::Point vpnt(space_dim_);
+        AmanziGeometry::Point vpnt(space_dim);
         node_get_coordinates(inode, &vpnt);
                   
         if (region->inside(vpnt)) {
@@ -1465,9 +1458,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
                                           Entity_ID_List *setents,
                                           std::vector<double> *vofs) const
 {
-  int idx, i, lid, one=1;
-  bool found(false);
-  int space_dim_ = Mesh::space_dimension();
+  int lid, one=1;
+  int space_dim = Mesh::space_dimension();
 
   AMANZI_ASSERT(setents != NULL);
   
@@ -1537,14 +1529,14 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
     if (kind == NODE) {
       mbcore_->get_entities_by_type_and_tag(0, MBVERTEX, &tag, (void **)values, 1, mset1);
     }
-    else if (space_dim_ == 3 && kind == CELL) {
+    else if (space_dim == 3 && kind == CELL) {
       mbcore_->get_entities_by_type_and_tag(0, MBHEX, &tag, (void **)values, 1, mset1);
-    } else if (space_dim_ == 3 && kind == FACE) {
+    } else if (space_dim == 3 && kind == FACE) {
       mbcore_->get_entities_by_type_and_tag(0, MBQUAD, &tag, (void **)values, 1, mset1);
     }
-    else if (space_dim_ == 2 && kind == CELL) {
+    else if (space_dim == 2 && kind == CELL) {
       mbcore_->get_entities_by_type_and_tag(0, MBQUAD, &tag, (void **)values, 1, mset1);
-    } else if (space_dim_ == 2 && kind == FACE) {
+    } else if (space_dim == 2 && kind == FACE) {
       mbcore_->get_entities_by_type_and_tag(0, MBEDGE, &tag, (void **)values, 1, mset1);
     }
   }
