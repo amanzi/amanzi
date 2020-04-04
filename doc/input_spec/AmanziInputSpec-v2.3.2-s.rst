@@ -51,55 +51,6 @@ This allows the users to provide a name and general description of model being d
   </model_description>
 
 
-Units
------
-
-The ``units`` element defines the default units to be assumed for the entire input file.  Amanzi's internal default units are SI units.  Conversion from the listed units to Amanzi's internal default units is not yet implemented.  Akuna does allow users to specify units when entering individual values during model setup and tool set definition.  Akuna then translates all user specified units to the Amanzi default units before writing out the Amanzi input file.
-
-``units`` has the optional elements of length, time, mass, and concentration.  Each of those in turn have their own structure.  The structures are as follows.
-
-REMINDER - UNITS ARE NOT IMPLEMENTED YET
-
-.. code-block:: xml
-
-  <units>
-      Required Elements: NONE
-      Optional Elements: length_unit, time_unit, mass_unit, conc_unit
-  </units>
-
-Acceptable values for each unit are as follows:
-
-+----------------+----------------+
-| Units Elements | Value Options  |
-+================+================+
-| length_unit    | m or cm        |
-+----------------+----------------+
-| time_unit      | y, d, h, or s  |
-+----------------+----------------+
-| mass_unit      | kg             |
-+----------------+----------------+
-| conc_unit      | molar, SI      |
-+----------------+----------------+
-
-Note, currently mol/m^3 concentration unit is only available for unstructured.  The input converter for unstructured will convert the concentration internally as needed.
-
-Here is an overall example for the model description element.
-
-.. code-block:: xml
-
-  <model_description name="DVZ 3layer 2D">
-    <comments>This is a simplified 3-layer DVZ problem in 2D with two cribs (Flow+Transport)</comments>
-    <model_name>DVZ 3layer</model_name>
-    <author>d3k870</author>
-    <units>
-      <length_unit>m</length_unit>
-      <time_unit>s</time_unit>
-      <mass_unit>kg</mass_unit>
-      <conc_unit>molar</conc_unit>
-    </units>
-  </model_description>
-
-
 Definitions
 ===========
 
@@ -128,25 +79,25 @@ A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user
 
 .. code-block:: xml
 
-    <constant name="String" type="none | time | numerical | area_mass_flux" value="constant_value"/>
+    <constant name="STRING" type="none | time | numerical | area_mass_flux" value="constant_value"/>
 
 A ``time_constant`` is a specific form of a constant assuming the constant type is a time.  It takes the attributes ``name`` and ``value`` where the value is a time (time unit optional).
 
 .. code-block:: xml
 
-    <time_constant  name="Name of Time"  value="time,y|d|h|s"/>
+    <time_constant name="NAME of TIME" value="time,y|d|h|s"/>
 
 A ``numerical_constant`` is a specific form of a constant.  It takes the attributes ``name`` and ``value``. 
 
 .. code-block:: xml
 
-    <numerical_constant name="Name of Numerical Constant" value="value_constant"/>
+    <numerical_constant name="NAME of NUMERICAL CONSTANT" value="value_constant"/>
 
 A ``area_mass_flux_constant`` is a specific form of a constant.  It takes the attributes ``name`` and ``value`` where the value is an area mass flux. 
 
 .. code-block:: xml
 
-    <area_mass_flux_constant name="Name of Flux Constant" value="value_of_flux"/>
+    <area_mass_flux_constant name="NAME of FLUX CONSTANT" value="value_of_flux"/>
 
 Macros
 ------
@@ -157,9 +108,8 @@ The ``macros`` section defines time, cycle, and variable macros.  These specify 
 
   <constants>
       Required Elements: NONE
-      Optional Elements: time_macro, cycle_macro, variable_macro [S]
+      Optional Elements: time_macro, cycle_macro, variable_macro
   </constants>
-
 
 Time_macro
 __________
@@ -168,18 +118,18 @@ The ``time_macro`` requires an attribute ``name``.  The macro can then either ta
 
 .. code-block:: xml
 
-  <time_macro name="Name of Macro">
-    <time>Value</time>
+  <time_macro name="NAME of MACRO">
+    <time>value</time>
   </time_macro>
 
 or 
 
 .. code-block:: xml
 
-  <time_macro name="Name of Macro">
-    <start> TimeValue </start>
-    <timestep_interval> TimeIntervalValue </timestep_interval>
-    <stop> TimeValue | -1 </stop>
+  <time_macro name="NAME of MACRO">
+    <start> time_value </start>
+    <timestep_interval> time_interval_value </timestep_interval>
+    <stop> time_value | -1 </stop>
   </time_macro>
 
 
@@ -191,10 +141,10 @@ The ``cycle_macro`` requires an attribute ``name`` and the subelements ``start``
 
 .. code-block:: xml
 
-  <cycle_macro name="Name of Macro">
-    <start>Value</start>
-    <timestep_interval>Value</timestep_interval>
-    <stop>Value|-1</stop>
+  <cycle_macro name="NAME of MACRO">
+    <start>value</start>
+    <timestep_interval>value</timestep_interval>
+    <stop>value|-1</stop>
   </cycle_macro>
 
 Variable_macro
@@ -204,8 +154,8 @@ The ``variable_macro`` requires an attribute ``name``  and one or more subelemen
 
 .. code-block:: xml
 
-  <variable_macro name="Name of Macro">
-    <variable> VariableString </variable>
+  <variable_macro name="NAME of MACRO">
+    <variable> variable_string </variable>
   </variable_macro>
 
 
@@ -215,21 +165,21 @@ An example ``definition`` section would look as the following:
 
   <definitions>
     <constants>
-      <constant name="zero"              type="none"           value="0.000"/>
-      <constant name ="start"            type="time"           value="1956.0,y"/>
-      <constant name ="B-18_release_end" type="time"           value ="1956.3288,y"/>
-      <constant name="future_recharge"   type="area_mass_flux" value="1.48666e-6"/>
-      <numerical_constant name="zero" value="0.000"/>
+      <constant name="BEGIN"            type="none"           value="0.000"/>
+      <constant name="START"            type="time"           value="1956.0,y"/>
+      <constant name="B-18_RELEASE_END" type="time"           value ="1956.3288,y"/>
+      <constant name="future_recharge"  type="area_mass_flux" value="1.48666e-6"/>
+      <numerical_constant name="ZERO" value="0.000"/>
     </constants>
     <macros>
-      <time_macro name="Macro 1">
+      <time_macro name="MACRO 1">
         <time>6.17266656E10</time>
         <time>6.172982136E10</time>
         <time>6.173297712E10</time>
         <time>6.3372710016E10</time>
         <time>6.33834396E10</time>
       </time_macro>
-      <cycle_macro name = "Every_1000_timesteps">
+      <cycle_macro name="EVERY_1000_TIMESTEPS">
         <start>0</start>
         <timestep_interval>1000</timestep_interval>
         <stop>-1 </stop>
