@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
   int rank = mpiSession.getRank();
-  int num_proc = mpiSession.getNProc();
+  // int num_proc = mpiSession.getNProc();
 
   try {
     Teuchos::CommandLineProcessor CLP;

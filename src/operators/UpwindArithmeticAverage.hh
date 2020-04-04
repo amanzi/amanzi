@@ -89,7 +89,7 @@ void UpwindArithmeticAverage<Model>::Compute(
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
-  int c1, c2, dir;
+  int c1, c2;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);

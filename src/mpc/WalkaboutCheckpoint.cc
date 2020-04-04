@@ -48,8 +48,6 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   double rho = *S->GetScalarData("fluid_density");
   S->GetFieldData("darcy_flux")->ScatterMasterToGhosted();
@@ -80,7 +78,6 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
     for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      double area = mesh->face_area(f);
 
       for (int i = 0; i < d; i++) {
         rhs(i) += normal[i] * flux[0][f];
@@ -186,13 +183,11 @@ void WalkaboutCheckpoint::CalculateData(
   S->GetFieldData("saturation_liquid")->ScatterMasterToGhosted();
   S->GetFieldData("pressure")->ScatterMasterToGhosted();
 
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", true);
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
   auto p = S->GetFieldData("pressure")->ViewComponent("cell", true);
 
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // process non-flow state variables
   bool flag(false);

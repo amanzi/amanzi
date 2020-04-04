@@ -299,7 +299,6 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
 
   lifting.Init(pressure, plist);
   lifting.ComputeGradient(ids);
-  const auto& gradient = *lifting.gradient(); 
 
   // set up extreme values for water table
   int dim = mesh_->space_dimension();

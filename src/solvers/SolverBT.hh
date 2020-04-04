@@ -180,7 +180,6 @@ template<class Vector, class VectorSpace>
 int
 SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
-  
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(*u));
@@ -190,8 +189,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), du_norm_initial(0.), previous_du_norm(0.0), r_norm_initial;
-  int divergence_count(0);
+  double du_norm(0.0), previous_du_norm(0.0), r_norm_initial;
   int db_write_iter = 0;
 
   num_itrs_ = 0;

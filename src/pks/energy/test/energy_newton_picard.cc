@@ -297,7 +297,7 @@ int HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector
 double HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
                                  const Teuchos::RCP<const CompositeVector>& du)
 {
-  double norm_du, norm_u;
+  double norm_du;
   du->NormInf(&norm_du);
   return norm_du;
 }

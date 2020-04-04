@@ -46,7 +46,6 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_ = S->GetMesh();
-  int dim = mesh_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
 

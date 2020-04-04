@@ -159,7 +159,6 @@ main(int argc, char **argv)
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
   const int me(comm->MyPID());
 
   unsigned int xcells(4), ycells(4), zcells(4);

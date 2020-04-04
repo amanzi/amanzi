@@ -39,7 +39,6 @@ bool Dummy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     std::cout<<"Step succeed. New time "<<t_new<<"\n";
   }
   
-  double dt = t_new - t_old;
   step_count++;
 
   return failed;
