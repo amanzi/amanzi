@@ -596,7 +596,6 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
              && plist.isParameter("last tip")) {
     auto begin = GetPoint_(plist, "first tip");
     auto end = GetPoint_(plist, "last tip");
-    double provided_len = AmanziGeometry::norm(end - begin);
     auto ds = (end - begin) / seg_length;
 
     cell_centroids.resize(n_cells);

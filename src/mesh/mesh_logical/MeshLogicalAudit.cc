@@ -469,7 +469,6 @@ bool MeshLogicalAudit::check_face_geometry() const
 bool MeshLogicalAudit::check_cell_face_bisector_geometry() const
 {
   os << "Checking cell-to-face bisector geometry ..." << std::endl;
-  double hvol;
   AmanziMesh::Entity_ID_List bad_cells;
 
   AmanziMesh::Entity_ID_List cface;
