@@ -166,7 +166,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 15);

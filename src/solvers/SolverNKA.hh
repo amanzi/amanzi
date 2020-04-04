@@ -195,7 +195,6 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
   int divergence_count(0);
-  int prec_error;
   int db_write_iter = 0;
 
   do {
@@ -263,7 +262,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+    fn_->ApplyPreconditioner(r, du_tmp);
 
     // Make sure that preconditioner does not cause numerical overflow.
     double du_tmp_norm;

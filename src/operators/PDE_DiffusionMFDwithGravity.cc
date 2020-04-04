@@ -113,7 +113,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-          double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
+          double tmp;
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
@@ -299,7 +299,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   grav_data.PutScalar(0.0);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
-  int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
   const auto& fmap = *flux->Map().Map("face", true);
@@ -310,7 +309,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    double zc = mesh_->cell_centroid(c)[dim - 1];
 
     // Update terms due to nonlinear coefficient
     double kc(1.0);

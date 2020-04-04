@@ -107,7 +107,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -190,7 +189,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
 
     v.ChangeOrigin(xc);
     divv.ChangeOrigin(xc);
@@ -202,7 +200,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
     for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialSetOrder();
 
       WhetStone::Polynomial cmono(dim, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
@@ -284,7 +281,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "dG solver (gmres): ||r||=" << solver.residual() 

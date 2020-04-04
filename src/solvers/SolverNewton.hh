@@ -226,7 +226,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     if (modify_correction_) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "Modifying correction" << std::endl;
-      bool hacked = fn_->ModifyCorrection(r, u, du);
+      fn_->ModifyCorrection(r, u, du);
     }
 
     // Make sure that we do not diverge and cause numerical overflow.

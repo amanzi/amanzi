@@ -66,7 +66,6 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // -- general information about mesh
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
@@ -166,7 +165,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   pcg.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = pcg.ApplyInverse(rhs, solution);
+  pcg.ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-14);
 

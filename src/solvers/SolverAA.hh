@@ -179,7 +179,6 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
-  int prec_error;
 
   do {
     // Check for too many nonlinear iterations.
@@ -226,9 +225,8 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    prec_error = fn_->ApplyPreconditioner(r, du_tmp);
-    //std::cout << "prec_error "<<prec_error<<"\n";
-    //*du_tmp = *r;
+    fn_->ApplyPreconditioner(r, du_tmp);
+    // *du_tmp = *r;
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= aa_lag_space_) {

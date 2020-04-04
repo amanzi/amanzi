@@ -158,7 +158,7 @@ void RunTest(int icase, double gravity) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  solver.ApplyInverse(rhs, *solution);
 
   // post-processing
   auto cvs2 = Operators::CreateNonManifoldCVS(surfmesh);

@@ -84,7 +84,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -158,9 +157,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
     PDE_DiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
-    int schema_dofs = op.schema_dofs();
-    int schema_prec_dofs = op.schema_prec_dofs();
-
     op.Setup(K, knc->values(), knc->derivatives());
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
@@ -193,7 +189,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     CompositeVector rhs = *global_op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    solver->ApplyInverse(rhs, solution);
 
     step++;
     T += dT;

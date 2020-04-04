@@ -53,7 +53,7 @@ class Analytic01 : public AnalyticBase {
     double x = p[0];
     double y = p[1];
 
-    double t01, t02, t03, t12, t13, t04, t05, t06; 
+    double t01, t02, t03, t12, t13; 
     double px, py;
 
     t01 = x*x*y;
@@ -79,7 +79,7 @@ class Analytic01 : public AnalyticBase {
 
     double t01, t02, t03, t12, t13;
     double px, py, pxx, pxy, pyy;
-    double t04, t05, t06, tx4, ty4, tx5, ty5, tx6;
+    double t04, t05, t06, tx4, tx5, tx6, ty4, ty5;
 
     t01 = x*x*y;
     t02 = sin(2*M_PI*x*y);
@@ -117,7 +117,6 @@ class Analytic01 : public AnalyticBase {
   }
   double Kyy_(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
-    double y = p[1];
     return (x + 1) * (x + 1);
   }
   double Kxy_(const Amanzi::AmanziGeometry::Point& p, double t) { 

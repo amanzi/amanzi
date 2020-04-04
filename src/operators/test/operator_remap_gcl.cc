@@ -114,7 +114,7 @@ void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
+    double xmax[nk], xmin[nk];
     xc.MaxValue(xmax);
     xc.MinValue(xmin);
 
@@ -251,8 +251,6 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.StaticCellCoVelocity();
 
   // initial mass
-  auto& sv1 = *p1->SubVector(0)->Data();
-  auto& sv2 = *p2->SubVector(0)->Data();
   double mass0 = remap.InitialMass(*p1, order);
 
   // explicit time integration
