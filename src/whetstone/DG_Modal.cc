@@ -299,7 +299,7 @@ int DG_Modal::StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A)
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       
-      double sum(0.0), tmp;
+      double sum(0.0);
       for (int i = 0; i < d_; ++i) {
         for (int j = 0; j < d_; ++j) {
           if (index[i] > 0 && jndex[j] > 0) {

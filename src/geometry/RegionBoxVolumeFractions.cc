@@ -124,10 +124,7 @@ double RegionBoxVolumeFractions::intersect(
     const std::vector<std::vector<int> >& faces) const
 {
   double volume(0.0);
-  int mdim, sdim;
-
-  mdim = manifold_dimension();
-  sdim = polytope[0].dim();
+  int sdim = polytope[0].dim();
 
   if ((sdim == 2 && degeneracy_ < 0) || (sdim == 3 && degeneracy_ >= 0)) {
     std::vector<Point> box, result_xy;
@@ -231,7 +228,6 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
   std::list<std::pair<double, Point> >::iterator it, it_next, it2;
 
   // populate list with the second polygon
-  int n2 = xy2.size();
   for (int i = 0; i < xy2.size(); ++i) {
     result.push_back(std::make_pair(0.0, xy2[i]));
   }

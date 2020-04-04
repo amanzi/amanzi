@@ -63,7 +63,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   AmanziMesh::Entity_ID_List nodes;
   mesh->cell_get_nodes(cell, &nodes);
     
-  double xi, yi, xj, yj;
+  double xi, yi, xj;
   double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
   AmanziGeometry::Point p1(2), p2(2);
 
@@ -71,8 +71,6 @@ TEST(DERHAM_COMPLEX_NODE) {
     int v1 = nodes[i];
     mesh->node_get_coordinates(v1, &p1);
     for (int j = 0; j < nnodes; j++) {
-      int v2 = nodes[j];
-
       xi = 1.0; // p1[0];
       yi = 1.0; // p1[1];
       xj = 1.0; // p2[0];

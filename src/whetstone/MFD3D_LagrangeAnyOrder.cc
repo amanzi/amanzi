@@ -132,7 +132,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     AmanziGeometry::Point normal = mesh_->face_normal(f);
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-    const auto& tau = *coordsys->tau();
     vsysf.push_back(coordsys);
 
     Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));

@@ -98,7 +98,6 @@ TEST(ELASTICITY_STIFFNESS_2D) {
       yy[2 * i + 1] = p[1];
     }
 
-    double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++) {

@@ -250,7 +250,6 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
   // number of degrees of freedom
   Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
-  int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
 
