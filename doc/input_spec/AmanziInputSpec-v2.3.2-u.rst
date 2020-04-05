@@ -367,7 +367,8 @@ However, no options within the sections are required.  The list of available opt
       Required Elements: none
       Optional Elements: unstr_flow_controls, unstr_transport_controls, unstr_chemistry_controls,
                          unstr_steady-state_controls, unstr_transient_controls, 
-                         unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners
+                         unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners,
+                         saturated_linear_solver, constraints_linear_solver, dispersion_linear_solver
   </unstructured_controls>
 
 Unstr_flow_controls
@@ -390,10 +391,14 @@ ___________________
 |                          |              | | ``other-arithmetic_average, other-harmonic_average``      |
 |                          |              | | *default = upwind-darcy_velocity*                         |
 +--------------------------+--------------+-------------------------------------------------------------+
+| update_upwind_frequency  | string       | | ``every_timestep`` and ``every_nonlinear_iteration``      | 
+|                          |              | | *default = every_timestep*                                |
++--------------------------+--------------+-------------------------------------------------------------+
 | preconditioning_strategy | string       | | ``diffusion_operator, linearized_operator``               |
 |                          |              | | *default = linearized_operator*                           |
 +--------------------------+--------------+-------------------------------------------------------------+
-| atmospheric_pressure     |  double      | value of atmospheric pressure, default is 101325 Pa         |
+| atmospheric_pressure     |  double      | | value of atmospheric pressure                             |
+|                          |              | | *default = 101325 Pa*                                     |
 +--------------------------+--------------+-------------------------------------------------------------+
 
 Unstr_transport_controls
@@ -401,18 +406,35 @@ ________________________
 
 ``unstr_transport_controls`` specifies numerical controls for the transport process kernel available under the unstructured algorithm.  It has the following subelements:
 
-+---------------+--------------+----------------------------------------------------+
-| Element Names | Content Type | Content Value                                      |
-+===============+==============+====================================================+
-| algorithm     | string       | | ``explicit first-order, explicit second-order,`` |
-|               |              | | ``implicit upwind, none``                        |
-|               |              | | *default = explicit first-order*                 |
-+---------------+--------------+----------------------------------------------------+
-| sub_cycling   | string       | | ``on, off``                                      | 
-|               |              | | *default = on*                                   |
-+---------------+--------------+----------------------------------------------------+
-| cfl           | double       | cfl condition number                               |
-+---------------+--------------+----------------------------------------------------+
++----------------------------------+--------------+--------------------------------------------------------+
+| Element Names                    | Content Type | Content Value                                          |
++==================================+==============+========================================================+
+| algorithm                        | string       | | ``explicit first-order``, ``explicit second-order``, |
+|                                  |              | | ``explicit``, ``implicit``                           |
+|                                  |              | | *default = explicit first-order*                     |
++----------------------------------+--------------+--------------------------------------------------------+
+| spatial_order                    | double       | 1 or 2. Required only for algorith=``explicit``        |
++----------------------------------+--------------+--------------------------------------------------------+
+| temporal_order                   | double       | 1, 2, 3 or 4. Required only for alfortihm=``explicit`` |
++----------------------------------+--------------+--------------------------------------------------------+
+| sub_cycling                      | string       | | ``on, off``                                          | 
+|                                  |              | | *default = on*                                       |
++----------------------------------+--------------+--------------------------------------------------------+
+| cfl                              | double       | CFL condition number                                   |
++----------------------------------+--------------+--------------------------------------------------------+
+| limiter                          | string       | | ``tensorial``, ``Kuzmin``, ``Barth-Jespersen``       |
+|                                  |              | | *default = tensorial*                                |
++----------------------------------+--------------+--------------------------------------------------------+
+| limiter_stencil                  | string       | | ``node-to-cells``, ``face-to-cells``,                |
+|                                  |              | | ``cell-to-closests-cells``                           |
+|                                  |              | | *default = face-to-cells*                            |
++----------------------------------+--------------+--------------------------------------------------------+
+| dispersion_discretization_method | string       | | ``mfd-monotone_for_hex``, ``mfd-monotone_for_hex``,  |
+|                                  |              | | ``mfd-two_point_flux_approximation``,                |
+|                                  |              | | ``mfd-optimized_for_monotonicity``,                  |
+|                                  |              | | ``mfd-two_point_flux_approximation``                 |
+|                                  |              | | *defaults = are the last two options*                |
++----------------------------------+--------------+--------------------------------------------------------+
 
 
 Unstr_chemistry_controls
@@ -581,6 +603,18 @@ ___________________
 +----------------+--------------+---------------------------------------+
 | preconditioner | string       | ``trilinos_ml, hypre_amg, block_ilu`` |
 +----------------+--------------+---------------------------------------+
+
+
+Saturated_linear_solver
+_______________________
+
+
+Constraints_linear_solver
+_________________________
+
+
+Dispersion_linear_solver
+________________________
 
 
 Unstr_nonlinear_solver
