@@ -599,20 +599,6 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Polygonal_Surface [U]
----------------------
-
-A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
-
-.. code-block:: xml
-
-    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-    </polygonal_surface>
-
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
 Logical
 -------
@@ -1013,7 +999,6 @@ Some general discussion of the ``Phases`` section goes here.
   <Phases>
       Required Elements: liquid_phase 
       Optional Elements: solid_phase
-      Optional Elements: gas_phase [U]
   </Phases>
 
 Liquid_phase
@@ -1425,32 +1410,6 @@ Example:
       </liquid_phase>
 
     </observations>
-
-Walkabout [U]
--------------
-
-The ''walkabout'' element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requirements
-
-.. code-block:: xml
-
-  <walkabout>
-      Required Elements: base_filename, num_digits, cycle_macros
-      Optional Elements: NONE
-  </walkabout>
-
-The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files. See the about NOTE about specifying a file location other than the current working directory.
-
-NOTE: Previously the ''walkabout'' element had the subelement ''cycle_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros''.
-
-Example:
-
-.. code-block:: xml
-
-  <walkabout>
-     <base_filename>chk</base_filename>
-     <num_digits>5</num_digits>
-     <cycle_macros>Every_100_steps</cycle_macros>
-  </walkabout>
 
 Misc
 ====

@@ -873,8 +873,8 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Polygonal_Surface [U]
----------------------
+Polygonal_Surface
+-----------------
 
 A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
@@ -898,63 +898,6 @@ Logical regions are compound regions formed from other primitive type regions us
 
     <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
 
-
-Polygon [S]
------------
-
-A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
-
-.. code-block:: xml
-
-    <polygon name="polygon name" num_points="3">
-      <point> X, Y </point>
-      <point> X, Y </point>
-      <point> X, Y </point>
-    </polygon>
-
-Ellipse [S]
------------
-
-An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
-
-.. code-block:: xml
-
-    <ellipse name="polygon name" num_points="3">
-      <center> X, Y </center>
-      <radius> radiusX, radiusY </radius>
-    </ellipse>
-
-Rotated Polygon [S]
--------------------
-
-A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
-
-.. code-block:: xml
-
-    <rotated_polygon name="rotated_polygon name">
-        <vertex> X, Y, Z </vertex>
-        <vertex> X, Y, Z </vertex>
-        <vertex> X, Y, Z </vertex>
-        <xyz_plane> XY | YZ | XZ </xyz_plane>
-        <axis> X | Y | Z </axis>
-        <reference_point> X, Y </reference_point>
-    </rotated_polygon>
-
-Swept Polygon [S]
------------------
-
-A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
-
-.. code-block:: xml
-
-    <swept_polygon name="swept_polygon name">
-        <vertex> X, Y, Z </vertex>
-        <vertex> X, Y, Z </vertex>
-        <vertex> X, Y, Z </vertex>
-        <xyz_plane> XY | YZ | XZ </xyz_plane>
-        <extent_min> double </extent_min>
-        <extent_max> double </extent_max>
-    </swept_polygon>
 
 Geochemistry
 ============
@@ -1287,7 +1230,7 @@ Some general discussion of the ``Phases`` section goes here.
   <Phases>
       Required Elements: liquid_phase 
       Optional Elements: solid_phase
-      Optional Elements: gas_phase [U]
+      Optional Elements: gas_phase
   </Phases>
 
 Liquid_phase
@@ -1700,8 +1643,8 @@ Example:
 
     </observations>
 
-Walkabout [U]
--------------
+Walkabout
+---------
 
 The ''walkabout'' element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requirements
 
