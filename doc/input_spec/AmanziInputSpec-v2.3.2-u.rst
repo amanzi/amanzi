@@ -277,9 +277,9 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing time step    |
+| reduction_factor | double         | factor for reducing time step    |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing time step  |
+| increase_factor  | double         | factor for increasing time step  |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -306,9 +306,9 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                        |
 +------------------+----------------+----------------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing time step                            |
+| reduction_factor | double         | factor for reducing time step                            |
 +------------------+----------------+----------------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing time step                          |
+| increase_factor  | double         | factor for increasing time step                          |
 +------------------+----------------+----------------------------------------------------------+
 | mode             | string         | ``steady, transient``                                    |
 +------------------+----------------+----------------------------------------------------------+
@@ -326,24 +326,27 @@ Here is an overall example for the ``execution_control`` element.
 .. code-block:: xml
 
   <execution_controls>
-    <execution_control_defaults init_dt="3.168E-08" max_dt="0.01" reduction_factor="0.8" increase_factor="1.25" mode="transient" method="bdf1"/>
-    <execution_control start="0.0;y" end="1956.0,y" init_dt="0.01" max_dt="500.0" reduction_factor="0.8" mode="steady"   />
-    <execution_control start="B-17_release_begin" />
-    <execution_control start="B-17_release_end" />
-    <execution_control start="B-18_release_begin" />
-    <execution_control start="B-18_release_end" end="3000.0,y" />
+    <verbosity level="high"/>
+    <execution_control_defaults init_dt="0.01 s" max_dt="30 y" reduction_factor="0.8" increase_factor="1.25"
+                                mode="transient" method="bdf1"/>
+    <execution_control start="0 y" end="1956 y" init_dt="0.01 s" max_dt="10.0 y" reduction_factor="0.8"
+                       mode="steady" />
+    <execution_control start="B-17_RELEASE_BEGIN" />
+    <execution_control start="B-17_RELEASE_END" />
+    <execution_control start="B-18_RELEASE_BEGIN" />
+    <execution_control start="B-18_RELEASE_END" end="3000 y" />
   </execution_controls>
 
 Numerical Controls
 ==================
 
-This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: `common_controls`_, `unstructured_controls`_, and `structured_controls`_.  The ``common_controls`` section is currently empty.  However, in future versions controls that are common between the unstructured and structured executions will be moved to this section and given common terminology.
+This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: `common_controls`_, and `unstructured_controls`_.  The ``common_controls`` section is currently empty.  However, in future versions controls that are common between the unstructured and structured executions will be moved to this section and given common terminology.
 
 .. code-block:: xml
 
   <numerical_controls>
-      Required Elements: unstructured_controls [U] *OR* structured_controls [S]
-      Optional Elements: comments, common_controls [U/S], unstructured_controls [U], structured_controls [S]
+      Required Elements: unstructured_controls
+      Optional Elements: comments, common_controls
   </numerical_controls>
 
 Common_controls
@@ -354,13 +357,17 @@ The section is currently empty.  However, in future versions controls that are c
 Unstructured_controls
 ---------------------
 
-The ``unstructured_controls`` sections is divided in the subsections specific to the process kernels and the numerical solver mode.  Either the ``unstructured_controls`` or the ``structured_controls`` section headings are required.  However, no options within the sections are required.  The list of available options is as follows:
+The ``unstructured_controls`` sections is divided in the subsections specific to the process kernels and the numerical solver mode. 
+The section header, ``unstructured_controls`` is required. 
+However, no options within the sections are required.  The list of available options is as follows:
 
 .. code-block:: xml
 
   <unstructured_controls>
-      Required Elements: NONE
-      Optional Elements: unstr_flow_controls, unstr_transport_controls, unstr_chemistry_controls, unstr_steady-state_controls, unstr_transient_controls, unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners
+      Required Elements: none
+      Optional Elements: unstr_flow_controls, unstr_transport_controls, unstr_chemistry_controls,
+                         unstr_steady-state_controls, unstr_transient_controls, 
+                         unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners
   </unstructured_controls>
 
 Unstr_flow_controls
@@ -377,6 +384,7 @@ ___________________
 |                          |              | | ``mfd-default, mfd-optimized_for_sparsity,``              | 
 |                          |              | | ``mfd-support_operator, mfd-optimized_for_monotonicity,`` | 
 |                          |              | | ``mfd-two_point_flux_approximation``                      |
+|                          |              | | *default = mfd-optimized_for_sparsity*                    |
 +--------------------------+--------------+-------------------------------------------------------------+
 | rel_perm_method          | string       | | ``upwind-darcy_velocity, upwind-gravity, upwind-amanzi,`` | 
 |                          |              | | ``other-arithmetic_average, other-harmonic_average``      |
@@ -385,7 +393,7 @@ ___________________
 | preconditioning_strategy | string       | | ``diffusion_operator, linearized_operator``               |
 |                          |              | | *default = linearized_operator*                           |
 +--------------------------+--------------+-------------------------------------------------------------+
-| atmospheric_pressure     | exponential  | value of atmospheric pressure                               |
+| atmospheric_pressure     |  double      | value of atmospheric pressure, default is 101325 Pa         |
 +--------------------------+--------------+-------------------------------------------------------------+
 
 Unstr_transport_controls
@@ -403,7 +411,7 @@ ________________________
 | sub_cycling   | string       | | ``on, off``                                      | 
 |               |              | | *default = on*                                   |
 +---------------+--------------+----------------------------------------------------+
-| cfl           | exponential  | cfl condition number                               |
+| cfl           | double       | cfl condition number                               |
 +---------------+--------------+----------------------------------------------------+
 
 
@@ -423,7 +431,7 @@ The subelements pertaining to the Amanzi native chemistry engine are:
 +----------------------------------------+--------------+-----------------------------------+
 | maximum_newton_iterations              | integer      |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| tolerance                              | exponential  |                                   |
+| tolerance                              | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
 +----------------------------------------+--------------+-----------------------------------+
 | auxiliary_data                         | string       | ``pH``                            |
@@ -436,25 +444,25 @@ The subelements pertaining to the pflotran chemistry engine are:
 +========================================+==============+===================================+
 | activity_coefficients                  | string       | ``timestep, off``                 |
 +----------------------------------------+--------------+-----------------------------------+
-| max_relative_change_tolerance          | exponential  |                                   |
+| max_relative_change_tolerance          | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| max_residual_tolerance                 | exponential  |                                   |
+| max_residual_tolerance                 | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| min_time_step                          | exponential  |                                   |
+| min_time_step                          | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| max_time_step                          | exponential  |                                   |
+| max_time_step                          | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-| initial_time_step                      | exponential  |                                   |
+| initial_time_step                      | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
 | time_step_control_method               | string       | ``fixed, simple``                 |
 +----------------------------------------+--------------+-----------------------------------+
 | time_step_cut_threshold                | integer      | (use only if method = simple)     |
 +----------------------------------------+--------------+-----------------------------------+
-| time_step_cut_factor                   | exponential  | (use only if method = simple)     |
+| time_step_cut_factor                   | double       | (use only if method = simple)     |
 +----------------------------------------+--------------+-----------------------------------+
 | time_step_increase_threshold           | integer      | (use only if method = simple)     |
 +----------------------------------------+--------------+-----------------------------------+
-| time_step_increase_factor              | exponential  | (use only if method = simple)     |
+| time_step_increase_factor              | double       | (use only if method = simple)     |
 +----------------------------------------+--------------+-----------------------------------+
 | log_formulation                        | string       | ``on, off``                       |
 +----------------------------------------+--------------+-----------------------------------+
@@ -475,23 +483,23 @@ ___________________________
 +---------------------------------------------+---------------+---------------------------------------+
 | max_preconditioner_lag_iterations           | integer       |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_tolerance                         | exponential   |                                       |
+| nonlinear_tolerance                         | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
 | limit_iterations                            | integer       |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_damping_factor          | exponential   |                                       |
+| nonlinear_iteration_damping_factor          | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_divergence_factor       | exponential   |                                       |
+| nonlinear_iteration_divergence_factor       | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
 | max_divergent_iterations                    | integer       |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
 | initialize_with_darcy                       | boolean       | ``true, false``                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_factor                    | exponential   |                                       |
+| restart_tolerance_factor                    | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor         | exponential   |                                       |
+| restart_tolerance_relaxation_factor         | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor_damping | exponential   |                                       |
+| restart_tolerance_relaxation_factor_damping | double        |                                       |
 +---------------------------------------------+---------------+---------------------------------------+
 | preconditioner                              | string        | ``trilinos_ml, hypre_amg, block_ilu`` |
 +---------------------------------------------+---------------+---------------------------------------+
@@ -505,9 +513,9 @@ The ``unstr_initialization`` IS USED FOR SOMETHING.  If the ``unstr_initializati
 +-----------------------+---------------+---------------------------------------+
 | Element Names         | Content Type  | Content Value                         |
 +=======================+===============+=======================================+
-| clipping_saturation   | exponential   |                                       |
+| clipping_saturation   | double        |                                       |
 +-----------------------+---------------+---------------------------------------+
-| clipping_pressure     | exponential   |                                       |
+| clipping_pressure     | double        |                                       |
 +-----------------------+---------------+---------------------------------------+
 | method                | string        | ``picard, darcy_solver``              |
 +-----------------------+---------------+---------------------------------------+
@@ -517,7 +525,7 @@ The ``unstr_initialization`` IS USED FOR SOMETHING.  If the ``unstr_initializati
 +-----------------------+---------------+---------------------------------------+
 | error_control_options | string        | ``pressure``                          |
 +-----------------------+---------------+---------------------------------------+
-| convergence_tolerance | exponential   |                                       |
+| convergence_tolerance | double        |                                       |
 +-----------------------+---------------+---------------------------------------+
 | max_iterations        | integer       |                                       |
 +-----------------------+---------------+---------------------------------------+
@@ -534,19 +542,19 @@ ________________________
 +-------------------------------------------------------+---------------+---------------------------------------+
 | limit_iterations                                      | integer       | *default = 20*                        |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_tolerance                                   | exponential   | *default = 1.0e-5*                    |
+| nonlinear_tolerance                                   | double        | *default = 1.0e-5*                    |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_damping_factor                    | exponential   | *default = 1.0*                       |
+| nonlinear_iteration_damping_factor                    | double        | *default = 1.0*                       |
 +-------------------------------------------------------+---------------+---------------------------------------+
 | max_preconditioner_lag_iterations                     | integer       | *default = 5*                         |
 +-------------------------------------------------------+---------------+---------------------------------------+
 | max_divergent_iterations                              | integer       | *default = 3*                         |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_divergence_factor                 | exponential   | *default = 1000.0*                    |
+| nonlinear_iteration_divergence_factor                 | double        | *default = 1000.0*                    |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor                   | exponential   |                                       |
+| restart_tolerance_relaxation_factor                   | double        |                                       |
 +-------------------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor_damping           | exponential   |                                       |
+| restart_tolerance_relaxation_factor_damping           | double        |                                       |
 +-------------------------------------------------------+---------------+---------------------------------------+
 | error_control_options                                 | string        | ``pressure, residual``                |
 +-------------------------------------------------------+---------------+---------------------------------------+
@@ -569,7 +577,7 @@ ___________________
 +----------------+--------------+---------------------------------------+
 | max_iterations | integer      |                                       |
 +----------------+--------------+---------------------------------------+
-| tolerance      | exponential  |                                       |
+| tolerance      | double       |                                       |
 +----------------+--------------+---------------------------------------+
 | preconditioner | string       | ``trilinos_ml, hypre_amg, block_ilu`` |
 +----------------+--------------+---------------------------------------+
@@ -611,9 +619,9 @@ The subelements for the Hyper AMG preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | hypre_smoother_sweeps       | integer      |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_tolerance             | exponential  |                                          |
+| hypre_tolerance             | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_strong_threshold      | exponential  |                                          |
+| hypre_strong_threshold      | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
 
 The subelements for the Trilinos ML preconditioner are as follows:
@@ -623,7 +631,7 @@ The subelements for the Trilinos ML preconditioner are as follows:
 +=============================+==============+==========================================+
 | trilinos_smoother_type      | string       | ``jacobi, gauss_seidel, ilu``            |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_threshold          | exponential  |                                          |
+| trilinos_threshold          | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
 | trilinos_smoother_sweeps    | integer      |                                          |
 +-----------------------------+--------------+------------------------------------------+
@@ -637,11 +645,11 @@ The subelements for the Block ILU preconditioner are as follows:
 +=============================+==============+==========================================+
 | ilu_overlap                 | integer      |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_relax                   | exponential  |                                          |
+| ilu_relax                   | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_rel_threshold           | exponential  |                                          |
+| ilu_rel_threshold           | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_abs_threshold           | exponential  |                                          |
+| ilu_abs_threshold           | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
 | ilu_level_of_fill           | integer      |                                          |
 +-----------------------------+--------------+------------------------------------------+
@@ -709,172 +717,6 @@ An example ``unstructured_controls`` section would look as the following:
             </unstr_nonlinear_solver>
         </unstructured_controls>
 
-Structured_controls
--------------------
-
-The ``structured_controls`` sections specifies numerical control options for the structured solver.  Either the ``unstructured_controls`` or the ``structured_controls`` section headings are required.  However, no options within the sections are required.  The list of available options is as follows:
-
-.. code-block:: xml
-
-  <structured_controls>
-      Required Elements: NONE
-      Optional Elements: comments, str_time_step_controls, str_flow_controls, str_transport_controls, str_amr_controls
-  </structured_controls>
-
-The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the time step based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
-
-Str_time_step_controls
-______________________
-
-``str_time_step_controls`` has the following elements
-
-+-----------------------------------+---------------+------------------------------------------+
-| Element Names                     | Content Type  | Content Value                            |
-+===================================+===============+==========================================+
-| comments                          | string        |                                          |
-+-----------------------------------+---------------+------------------------------------------+
-| min_iterations                    | integer       |  *default = 10*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| max_iterations                    | integer       |  *default = 15*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| limit_iterations                  | integer       |  *default = 20*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| min_iterations_2                  | integer       |  *default = 2*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| time_step_increase_factor         | exponential   |  *default = 1.6*                         |
-+-----------------------------------+---------------+------------------------------------------+
-| time_step_increase_factor_2       | exponential   |  *default = 10*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| max_consecutive_failures_1        | integer       |  *default = 3*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_1          | exponential   |  *default = 0.2*                         |
-+-----------------------------------+---------------+------------------------------------------+
-| max_consecutive_failures_2        | integer       |  *default = 4*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_2          | exponential   |  *default = 0.01*                        |
-+-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_f          | exponential   |  *default = 0.001*                       |
-+-----------------------------------+---------------+------------------------------------------+
-| max_num_consecutive_success       | integer       |  *default = 0*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| extra_time_step_increase_factor   | exponential   |  *default = 10*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| limit_function_evals              | integer       |  *default = 1000000*                     |
-+-----------------------------------+---------------+------------------------------------------+
-| do_grid_sequence                  | boolean       | ``true, false`` (*default = true*)       |
-+-----------------------------------+---------------+------------------------------------------+
-| grid_sequence_new_level_dt_factor | element block |  *see below*                             |
-+-----------------------------------+---------------+------------------------------------------+
-
-The element ``grid_sequence_new_level_dt_factor`` is an element block listing a series of dt_factors, one for each level.
-
-Str_flow_controls
-_________________
-
-``str_flow_controls`` has the following elements
-
-+-----------------------------------+---------------+------------------------------------------+
-| Element Names                     | Content Type  | Content Value                            |
-+===================================+===============+==========================================+
-| comments                          | string        |                                          |
-+-----------------------------------+---------------+------------------------------------------+
-| petsc_options_file                | string        | *default = .petsc*                       |
-+-----------------------------------+---------------+------------------------------------------+
-| max_ls_iterations                 | integer       | *default = 10*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| ls_reduction_factor               | exponential   | *default = 0.1*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| min_ls_factor                     | exponential   | *default = 1.e-8*                        |
-+-----------------------------------+---------------+------------------------------------------+
-| ls_acceptance_factor              | exponential   | *default = 1.4*                          |
-+-----------------------------------+---------------+------------------------------------------+
-| monitor_line_search               | integer       | *default = 0*                            |
-+-----------------------------------+---------------+------------------------------------------+
-| monitor_linear_solve              | integer       | *default = 0*                            |
-+-----------------------------------+---------------+------------------------------------------+
-| use_fd_jac                        | boolean       | ``true, false`` (*default = true*)       |
-+-----------------------------------+---------------+------------------------------------------+
-| perturbation_scale_for_J          | exponential   | *default = 1.e-8*                        |
-+-----------------------------------+---------------+------------------------------------------+
-| use_dense_Jacobian                | boolean       | ``true, false`` (*default = false*)      |
-+-----------------------------------+---------------+------------------------------------------+
-| upwind_krel                       | string        | | ``upwind-darcy_velocity``,             |
-|                                   |               | | ``other-arithmetic_average``,          |
-|                                   |               | | ``other-harmonic_average``             |
-+-----------------------------------+---------------+------------------------------------------+
-| pressure_maxorder                 | integer       | *default = 3*                            |
-+-----------------------------------+---------------+------------------------------------------+
-| scale_solution_before_solve       | boolean       | ``true, false`` (*default = true*)       |
-+-----------------------------------+---------------+------------------------------------------+
-| semi_analytic_J                   | boolean       | ``true, false`` (*default = false*)      |
-+-----------------------------------+---------------+------------------------------------------+
-| atmospheric_pressure              | exponential   | *default = 1011325 (Pa)*                 |
-+-----------------------------------+---------------+------------------------------------------+
-
-Str_transport_controls
-______________________
-
-``str_transport_controls`` has the following elements
-
-+-----------------------------------+---------------+------------------------------------------+
-| Element Names                     | Content Type  | Content Value                            |
-+===================================+===============+==========================================+
-| comments                          | string        |                                          |
-+-----------------------------------+---------------+------------------------------------------+
-| max_n_subcycle_transport          | integer       | *default = 20*                           |
-+-----------------------------------+---------------+------------------------------------------+
-| cfl                               | exponential   | *default = 1*                            |
-+-----------------------------------+---------------+------------------------------------------+
-
-Str_amr_controls
-________________
-
-``str_amr_controls`` has the following elements
-
-+-----------------------------------+------------------+-----------------------------------------------+
-| Element Names                     | Content Type     | Content Value                                 |
-+===================================+==================+===============================================+
-| comments                          | string           |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| amr_levels                        | integer          | *default = 1*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-| refinement_ratio                  | list of integers | *default = 2*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-| do_amr_subcycling                 | boolean          | ``true, false`` *(default = true)*            |
-+-----------------------------------+------------------+-----------------------------------------------+
-| regrid_interval                   | list of integers | *default = 2*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-| blocking_factor                   | list of integers | *default = 2*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-| number_error_buffer_cells         | list of integers | *default = 1*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-| max_grid_size                     | list of integers | *default = 64*                                |
-+-----------------------------------+------------------+-----------------------------------------------+
-| refinement_indicator              | element block    | *(see below)*                                 |
-+-----------------------------------+------------------+-----------------------------------------------+
-
-
-The user may define 1 or more refinement indicators.  Each refinement indicator is specified using the element block ``refinement_indicator`` with an attribute ``name`` to name the indicator.  The ``refinement_indicator`` has the following elements
-
-+-----------------------------------+------------------+-----------------------------------------------+
-| Element Names                     | Content Type     | Content Value                                 |
-+===================================+==================+===============================================+
-| field_name                        | string           |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| regions                           | string           |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| max_refinement_level              | integer          |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| start_time                        | exponential      |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| end_time                          | exponential      |                                               |
-+-----------------------------------+------------------+-----------------------------------------------+
-| | choose 1 of the following       | |                | |                                             |
-| | value_greater                   | | exponential    | |                                             |
-| | value_less                      | | exponential    | |                                             |
-| | adjacent_difference_greater     | | exponential    | |                                             |
-| | inside_region                   | | boolean        | | ``true, false``                             |
-+-----------------------------------+------------------+-----------------------------------------------+
 
 Mesh
 ====
@@ -1076,8 +918,8 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
         <vertex> X, Y, Z </vertex>
         <vertex> X, Y, Z </vertex>
         <xyz_plane> XY | YZ | XZ </xyz_plane>
-        <extent_min> exponential </extent_min>
-        <extent_max> exponential </extent_max>
+        <extent_min> double </extent_min>
+        <extent_max> double </extent_max>
     </swept_polygon>
 
 Geochemistry
@@ -1213,12 +1055,12 @@ Mechanical_properties
 .. code-block:: xml
 
   <mechanical_properties>
-      <porosity value="exponential"/>
-      <particle_density value="exponential"/>
-      <specific_storage value="exponential"/>
-      <specific_yield value="exponential"/>
-      <dispersion_tensor type="uniform_isotropic" "alpha_l="exponential" alpha_t="exponential"/>
-      <tortuosity value="exponential"/>
+      <porosity value="double"/>
+      <particle_density value="double"/>
+      <specific_storage value="double"/>
+      <specific_yield value="double"/>
+      <dispersion_tensor type="uniform_isotropic" "alpha_l="double" alpha_t="double"/>
+      <tortuosity value="double"/>
   </mechanical_properties>
 
 Assigned_regions
@@ -1237,11 +1079,11 @@ Permeability or hydraulic_conductivity must be specified but not both. If specif
 
 .. code-block:: xml
 
-  <permeability x="exponential" y="exponential" z="exponential" />
+  <permeability x="double" y="double" z="double" />
   or
   <permeability type="file" filename="file name" attribute="attribute name"/>
   or
-  <permeability type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
+  <permeability type="gslib" parameter_file="file name" value="double" data_file="file name"/>
 
 Hydraulic_conductivity
 ----------------------
@@ -1250,9 +1092,9 @@ Hydraulic_conductivity
 
 .. code-block:: xml
 
-  <hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
+  <hydraulic_conductivity x="double" y="double" z="double" />
   or
-  <hydraulic_conductivity type="gslib" parameter_file="file name" value="exponential" data_file="file name"/>
+  <hydraulic_conductivity type="gslib" parameter_file="file name" value="double" data_file="file name"/>
 
 Cap_pressure
 ------------
@@ -1430,9 +1272,9 @@ Here is more info on the ``liquid_phase`` elements:
 
     * ``eos`` = "string" 
 
-    * ``viscosity`` = "exponential"
+    * ``viscosity`` = "double"
 
-    * ``density`` = "exponential"
+    * ``density`` = "double"
 
     * ``dissolved_components`` has the elements
 
@@ -1442,13 +1284,13 @@ Here is more info on the ``liquid_phase`` elements:
 
 The subelement ``primaries`` is used for specifying reactive and non-reactive primary species.  An unbounded number of subelements ``primary`` can be specified.  The text body of the element lists the name of the primary.  Note, the name of the primary must match a species in the database file.  The ``primary`` element has the following attributes:
 
-    * ``coefficient_of_diffusion`` = "exponential", this is an optional attribute
+    * ``coefficient_of_diffusion`` = "double", this is an optional attribute
 
-    * ``first_order_decay_constant`` = "exponential", this is an optional attribute
+    * ``first_order_decay_constant`` = "double", this is an optional attribute
 
-    * ``forward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
+    * ``forward_rate`` = "double", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
-    * ``backward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
+    * ``backward_rate`` = "double", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
 The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
 
@@ -1516,11 +1358,11 @@ Liquid_phase
 
 .. code-block:: xml
 
-    <uniform_pressure name="some name" value="exponential" />
-    <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-    <uniform_saturation name="some name" value="exponential" />
-    <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-    <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
+    <uniform_pressure name="some name" value="double" />
+    <linear_pressure name="some name" value="double" reference_coord="coordinate" gradient="coordinate"/>
+    <uniform_saturation name="some name" value="double" />
+    <linear_saturation name="some name" value="double" reference_coord="coordinate" gradient="coordinate"/>
+    <velocity name="some name" x="double" y="double" z="double"/>
 
 *  Here is more info on the ``geochemistry_component`` block:
 
@@ -1610,15 +1452,15 @@ Liquid_phase
 
 .. code-block:: xml
 
-     <inward_mass_flux value="exponential" function="linear | constant" start="time" />
-     <outward_mass_flux value="exponential" function="linear | constant" start="time" />
-     <inward_volumetric_flux value="exponential" function="linear | constant" start="time" />
-     <outward_volumetric_flux value="exponential" function="linear | constant" start="time" />
-     <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
-     <linear_pressure name="some name" gradient_value="coordinate" reference_point="coordinate" reference_value="exponential" />
-     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | constant" start="time" />
-     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
-     <linear_hydrostatic name="some name" gradient_value="exponential" reference_point="coordinate" reference_water_table_height="exponential" submodel="no_flow_above_water_table | none"/>
+     <inward_mass_flux value="double" function="linear | constant" start="time" />
+     <outward_mass_flux value="double" function="linear | constant" start="time" />
+     <inward_volumetric_flux value="double" function="linear | constant" start="time" />
+     <outward_volumetric_flux value="double" function="linear | constant" start="time" />
+     <uniform_pressure name="some name" value="double" function="uniform | constant" start="time" />
+     <linear_pressure name="some name" gradient_value="coordinate" reference_point="coordinate" reference_value="double" />
+     <seepage_face name="some name" inward_mass_flux="double" function="linear | constant" start="time" />
+     <hydrostatic name="some name" value="double" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
+     <linear_hydrostatic name="some name" gradient_value="double" reference_point="coordinate" reference_water_table_height="double" submodel="no_flow_above_water_table | none"/>
      <no_flow function="linear | constant" start="time" />
 
 *  Here is more info on the ``geochemistry_component`` elements:
