@@ -455,7 +455,6 @@ The subelements pertaining to the Amanzi native chemistry engine are:
 +----------------------------------------+--------------+-----------------------------------+
 | tolerance                              | double       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
-+----------------------------------------+--------------+-----------------------------------+
 | auxiliary_data                         | string       | ``pH``                            |
 +----------------------------------------+--------------+-----------------------------------+
 
@@ -486,6 +485,8 @@ The subelements pertaining to the pflotran chemistry engine are:
 +----------------------------------------+--------------+-----------------------------------+
 | time_step_increase_factor              | double       | (use only if method = simple)     |
 +----------------------------------------+--------------+-----------------------------------+
+| free_ion_guess                         | bool         | constant initial guess            |
++----------------------------------------+--------------+-----------------------------------+
 | log_formulation                        | string       | ``on, off``                       |
 +----------------------------------------+--------------+-----------------------------------+
 | generate_chemistry_engine_inputfile    | string       |                                   |
@@ -496,41 +497,49 @@ The subelements pertaining to the pflotran chemistry engine are:
 Unstr_steady-state_controls
 ___________________________
 
-+---------------------------------------------+---------------+---------------------------------------+
-| Element Names                               | Content Type  | Content Value                         |
-+=============================================+===============+=======================================+
-| min_iterations                              | integer       |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| max_iterations                              | integer       |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| max_preconditioner_lag_iterations           | integer       |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_tolerance                         | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| limit_iterations                            | integer       |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_damping_factor          | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_divergence_factor       | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| max_divergent_iterations                    | integer       |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| initialize_with_darcy                       | boolean       | ``true, false``                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_factor                    | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor         | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor_damping | double        |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
-| preconditioner                              | string        | ``trilinos_ml, hypre_amg, block_ilu`` |
-+---------------------------------------------+---------------+---------------------------------------+
-| unstr_initialization                        | element block |                                       |
-+---------------------------------------------+---------------+---------------------------------------+
++---------------------------------------------+---------------+------------------------------------------+
+| Element Names                               | Content Type  | Content Value                            |
++=============================================+===============+==========================================+
+| min_iterations                              | integer       |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| max_iterations                              | integer       |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| max_preconditioner_lag_iterations           | integer       |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| nonlinear_tolerance                         | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| limit_iterations                            | integer       |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| nonlinear_iteration_damping_factor          | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| nonlinear_iteration_divergence_factor       | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| max_divergent_iterations                    | integer       |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| initialize_with_darcy                       | boolean       | ``true, false``                          |
++---------------------------------------------+---------------+------------------------------------------+
+| restart_tolerance_factor                    | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| restart_tolerance_relaxation_factor         | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| restart_tolerance_relaxation_factor_damping | double        |                                          |
++---------------------------------------------+---------------+------------------------------------------+
+| preconditioner                              | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
++---------------------------------------------+---------------+------------------------------------------+
+| timestep_controller                         | name          | | ``standard``, ``fixed``, ``adaptive``, |
+|                                             |               | | ``smarter``, ``from_file``             |
+|                                             |               | | *defaults = standard*                  |
++---------------------------------------------+---------------+------------------------------------------+
+| unstr_initialization                        | element block |                                          |
++---------------------------------------------+---------------+------------------------------------------+
 
 Specifics about each ``preconditioner`` is defined in the `Unstr_preconditioners`_ section.
 
-The ``unstr_initialization`` IS USED FOR SOMETHING.  If the ``unstr_initialization`` element is present, even without any subelements, initialization is turned on and default values are used.  Users should take care to only include the ``unstr_initialization`` element when its use is intended.  The ``unstr_initialization`` has the following subelements:
+The ``unstr_initialization`` is used to calculate an initial pressure or a good guess for the initial pressure.
+If the ``unstr_initialization`` element is present, even without any subelements, initialization is turned on and default values are used.
+The ``unstr_initialization`` is incompatible with the simulation restart.
+An error will be thrown if both are used.
+Users should take care to only include the ``unstr_initialization`` element when its use is intended.  The ``unstr_initialization`` has the following subelements:
 
 +-----------------------+---------------+---------------------------------------+
 | Element Names         | Content Type  | Content Value                         |
@@ -551,6 +560,9 @@ The ``unstr_initialization`` IS USED FOR SOMETHING.  If the ``unstr_initializati
 +-----------------------+---------------+---------------------------------------+
 | max_iterations        | integer       |                                       |
 +-----------------------+---------------+---------------------------------------+
+| wells_status          | bool          | ``on``, ``off``                       |
++-----------------------+---------------+---------------------------------------+
+
 
 Unstr_transient_controls
 ________________________
