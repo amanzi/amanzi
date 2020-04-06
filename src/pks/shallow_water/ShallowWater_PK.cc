@@ -137,9 +137,20 @@ namespace ShallowWater {
 				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
 				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
 
-				 UL[0] = h_vec_c[0][c];
-				 UL[1] = h_vec_c[0][c]*vn;
-				 UL[2] = h_vec_c[0][c]*vt;
+				 Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+
+				 double h_rec = Reconstruction(xc[0],xc[1],c);
+//				 double h_rec = h_vec_c[0][c];
+
+				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
+
+//				 UL[0] = h_vec_c[0][c];
+//				 UL[1] = h_vec_c[0][c]*vn;
+//				 UL[2] = h_vec_c[0][c]*vt;
+
+				 UL[0] = h_rec;
+				 UL[1] = h_rec*vn;
+				 UL[2] = h_rec*vt;
 
 				 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
@@ -365,9 +376,152 @@ namespace ShallowWater {
     }
 
     //--------------------------------------------------------------
+    // Barth-Jespersen limiter of the gradient
+    //--------------------------------------------------------------
+    void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix grad_lim, int c) {
+
+    	std::vector<double> Phi_k;
+    	std::vector<double> u_av;
+    	double u_av0;
+    	double Phi;
+    	double umin, umax, uk;
+    	double tol = 1.e-6;
+
+    	Amanzi::AmanziGeometry::Point xc(2), xv(2);
+
+    	Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, cnodes, fedges, edcells, fcells;
+
+		mesh_->cell_get_edges(c,&cedges);
+		mesh_->cell_get_faces(c,&cfaces,true);
+		mesh_->cell_get_nodes(c,&cnodes);
+
+		Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+
+		u_av0 = h_vec_c[0][c];
+
+		u_av.resize(cfaces.size());
+
+		for (int f = 0; f < cfaces.size(); f++) {
+
+			int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+
+			if (cn == -1) cn = c;
+
+			u_av[f] = h_vec_c[0][cn];
+
+		} // f
+
+		umin = *min_element(u_av.begin(),u_av.end());
+		umax = *max_element(u_av.begin(),u_av.end());
+
+		xc = mesh_->cell_centroid(c);
+
+		Phi_k.resize(cnodes.size());
+
+		for (int k = 0; k < cnodes.size(); k++) {
+
+			mesh_->node_get_coordinates(cnodes[k],&xv);
+
+		    uk = u_av0 + grad(0,0)*(xv[0]-xc[0]) + grad(1,0)*(xv[1]-xc[1]);
+
+            if (uk - u_av0 > 0.) {
+                Phi_k[k] = std::min(1.,(umax-u_av0)/(uk-u_av0+tol));
+            }
+            else {
+                if (uk - u_av0 < 0.) {
+                    Phi_k[k] = std::min(1.,(umin-u_av0)/(uk-u_av0+tol));
+                }
+                else {
+                    Phi_k[k] = 1.;
+                }
+            }
+
+        } // k
+
+        Phi = *min_element(Phi_k.begin(),Phi_k.end());
+
+        grad_lim = Phi*grad;
+
+    }
+
+    //--------------------------------------------------------------
 	// piecewise-linear reconstruction of the function
 	//--------------------------------------------------------------
-    double Reconstruction(double x) {
+    double ShallowWater_PK::Reconstruction(double x, double y, int c) {
+
+    	// for Cartesian grids
+
+    	// mesh sizes
+		 double dx, dy;
+
+		 Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
+
+		 mesh_->cell_get_edges(c,&cedges);
+		 mesh_->cell_get_faces(c,&cfaces,true);
+
+		 Amanzi::AmanziMesh::Entity_ID_List adjcells;
+		 mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
+		 unsigned int nadj = adjcells.size();
+
+		 Amanzi::AmanziGeometry::Point evec(2), normal(2);
+		 double farea;
+
+		 dx = mesh_->edge_length(0);
+		 dy = mesh_->edge_length(1);
+
+		 // cell volume
+		 double vol = mesh_->cell_volume(c);
+
+		 std::vector<double> U, Un;
+
+		 U.resize(3);
+		 Un.resize(3);
+
+		 WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size()), AtA(2,2), InvAtA(2,2);
+		 WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+		 WhetStone::DenseMatrix b(cfaces.size(),1);
+
+		 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+
+		 Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+
+		 for (int f = 0; f < cfaces.size(); f++) {
+
+//			 int orientation;
+//			 normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+//			 mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+//			 farea = mesh_->face_area(cfaces[f]);
+
+			 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+
+			 if (cn == -1) cn = c;
+
+			 AmanziGeometry::Point xcn = mesh_->cell_centroid(cn);
+
+			 std::cout << "c = " << c << ", cn = " << cn << ", xcn = " << xcn << std::endl;
+
+			 A(f,0) = xcn[0] - xc[0];
+			 A(f,1) = xcn[1] - xc[1];
+
+			 b(f,0) = h_vec_c[0][cn] -  h_vec_c[0][c];
+
+		 }
+
+		 At = A.Transpose();
+
+		 AtA.Multiply(At,A,false);
+
+		 InvAtA = AtA.Inverse();
+
+		 dudx.Multiply(InvAtA,b,false);
+
+		 BJ_lim(dudx,dudx_lim,c);
+
+		 double h_rec = h_vec_c[0][c] + dudx_lim(0,0)*(x-xc[0]) + dudx_lim(1,0)*(y-xc[1]);
+
+		 std::cout << "Reconstruction: h_rec = " << h_rec << std::endl;
+
+         return h_rec;
 
     }
 
@@ -451,8 +605,8 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR) {
 
-        return NumFlux_x_Rus(UL,UR);
-//    	return NumFlux_x_central_upwind(UL,UR);
+//        return NumFlux_x_Rus(UL,UR);
+    	return NumFlux_x_central_upwind(UL,UR);
 
     }
 
@@ -585,13 +739,38 @@ namespace ShallowWater {
     std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U) {
         std::vector<double> S;
 
+        double g = 9.81;
+
+        Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+
+        double BRx, BLx, BRy, BLy;
+
         S.resize(3);
 
         S = PhysSrc(U);
 
+        BRx = 0.;
+        BLx = 0.;
+        BRy = 0.;
+        BLy = 0.;
+
+        int c = 1; // for now
+
+        double h = h_vec_c[0][c];
+
+        Amanzi::AmanziMesh::Entity_ID_List cedges;
+
+        mesh_->cell_get_edges(c,&cedges);
+        double dx = mesh_->edge_length(0);
+        double dy = mesh_->edge_length(1);
+
+        S[0] = 0.;
+        S[1] = -g*h*(BRx - BLx)/dx;
+        S[2] = -g*h*(BRy - BLy)/dy;
+
         return S;
 
-        }
+    }
 
     //--------------------------------------------------------------
     // calculation of time step from CFL condition
