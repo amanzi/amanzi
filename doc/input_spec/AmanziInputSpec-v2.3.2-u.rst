@@ -494,48 +494,57 @@ The subelements pertaining to the pflotran chemistry engine are:
 | read_chemistry_engine_inputfile        | string       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
 
-Unstr_steady-state_controls
-___________________________
+Unstr_steady-state_controls and unstr_transient_controls
+________________________________________________________
 
-+---------------------------------------------+---------------+------------------------------------------+
-| Element Names                               | Content Type  | Content Value                            |
-+=============================================+===============+==========================================+
-| min_iterations                              | integer       |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| max_iterations                              | integer       |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| max_preconditioner_lag_iterations           | integer       |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| nonlinear_tolerance                         | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| limit_iterations                            | integer       |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| nonlinear_iteration_damping_factor          | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| nonlinear_iteration_divergence_factor       | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| max_divergent_iterations                    | integer       |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| initialize_with_darcy                       | boolean       | ``true, false``                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| restart_tolerance_factor                    | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| restart_tolerance_relaxation_factor         | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| restart_tolerance_relaxation_factor_damping | double        |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
-| preconditioner                              | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
-+---------------------------------------------+---------------+------------------------------------------+
-| timestep_controller                         | name          | | ``standard``, ``fixed``, ``adaptive``, |
-|                                             |               | | ``smarter``, ``from_file``             |
-|                                             |               | | *defaults = standard*                  |
-+---------------------------------------------+---------------+------------------------------------------+
-| unstr_initialization                        | element block |                                          |
-+---------------------------------------------+---------------+------------------------------------------+
+The ``unstr_steady-state_controls`` and ``unstr_transient_controls`` have the same set of elements.
+The difference lies in the values of parameters.
+The state state controls are typically more relaxed, since we are intereted only in the quality
+of the converged solution.
+
++-------------------------------------------------------+---------------+------------------------------------------+
+| Element Names                                         | Content Type  | Content Value                            |
++=======================================================+===============+==========================================+
+| min_iterations                                        | integer       | *default = 10*                           |
++-------------------------------------------------------+---------------+------------------------------------------+
+| max_iterations                                        | integer       | *default = 15*                           |
++-------------------------------------------------------+---------------+------------------------------------------+
+| limit_iterations                                      | integer       | *default = 20*                           |
++-------------------------------------------------------+---------------+------------------------------------------+
+| nonlinear_tolerance                                   | double        | *default = 1.0e-5*                       |
++-------------------------------------------------------+---------------+------------------------------------------+
+| nonlinear_iteration_damping_factor                    | double        | *default = 1.0*                          |
++-------------------------------------------------------+---------------+------------------------------------------+
+| max_preconditioner_lag_iterations                     | integer       | *default = 5*                            |
++-------------------------------------------------------+---------------+------------------------------------------+
+| max_divergent_iterations                              | integer       | *default = 3*                            |
++-------------------------------------------------------+---------------+------------------------------------------+
+| nonlinear_iteration_divergence_factor                 | double        | *default = 1000.0*                       |
++-------------------------------------------------------+---------------+------------------------------------------+
+| restart_tolerance_relaxation_factor                   | double        | *default = 1.0*                          |
++-------------------------------------------------------+---------------+------------------------------------------+
+| restart_tolerance_relaxation_factor_damping           | double        | *default = 1.0*                          |
++-------------------------------------------------------+---------------+------------------------------------------+
+| error_control_options                                 | string        | ``pressure, residual``                   |
++-------------------------------------------------------+---------------+------------------------------------------+
+| nonlinear_iteration_initial_guess_extrapolation_order | integer       | *default = 1*                            |
++-------------------------------------------------------+---------------+------------------------------------------+
+| preconditioner                                        | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
++-------------------------------------------------------+---------------+------------------------------------------+
+| initialize_with_darcy                                 | boolean       | | ``true, false``                        |
+|                                                       |               | | *default = false*                      |
++-------------------------------------------------------+---------------+------------------------------------------+
+| timestep_controller                                   | name          | | ``standard``, ``fixed``, ``adaptive``, |
+|                                                       |               | | ``smarter``, ``from_file``             |
+|                                                       |               | | *defaults = standard*                  |
++-------------------------------------------------------+---------------+------------------------------------------+
+| unstr_initialization                                  | element block |                                          |
++-------------------------------------------------------+---------------+------------------------------------------+
 
 Specifics about each ``preconditioner`` is defined in the `Unstr_preconditioners`_ section.
 
-The ``unstr_initialization`` is used to calculate an initial pressure or a good guess for the initial pressure.
+The ``unstr_initialization`` is used to calculate an initial pressure or a good guess for the initial pressure (for
+the steady state execution period).
 If the ``unstr_initialization`` element is present, even without any subelements, initialization is turned on and default values are used.
 The ``unstr_initialization`` is incompatible with the simulation restart.
 An error will be thrown if both are used.
@@ -544,9 +553,9 @@ Users should take care to only include the ``unstr_initialization`` element when
 +-----------------------+---------------+---------------------------------------+
 | Element Names         | Content Type  | Content Value                         |
 +=======================+===============+=======================================+
-| clipping_saturation   | double        |                                       |
+| clipping_saturation   | double        | *any, but only positive makes impact* |
 +-----------------------+---------------+---------------------------------------+
-| clipping_pressure     | double        |                                       |
+| clipping_pressure     | double        | *any value bigger than -5 atm*        |
 +-----------------------+---------------+---------------------------------------+
 | method                | string        | ``picard, darcy_solver``              |
 +-----------------------+---------------+---------------------------------------+
@@ -563,42 +572,6 @@ Users should take care to only include the ``unstr_initialization`` element when
 | wells_status          | bool          | ``on``, ``off``                       |
 +-----------------------+---------------+---------------------------------------+
 
-
-Unstr_transient_controls
-________________________
-
-+-------------------------------------------------------+---------------+---------------------------------------+
-| Element Names                                         | Content Type  | Content Value                         |
-+=======================================================+===============+=======================================+
-| min_iterations                                        | integer       | *default = 10*                        |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| max_iterations                                        | integer       | *default = 15*                        |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| limit_iterations                                      | integer       | *default = 20*                        |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_tolerance                                   | double        | *default = 1.0e-5*                    |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_damping_factor                    | double        | *default = 1.0*                       |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| max_preconditioner_lag_iterations                     | integer       | *default = 5*                         |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| max_divergent_iterations                              | integer       | *default = 3*                         |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_divergence_factor                 | double        | *default = 1000.0*                    |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor                   | double        |                                       |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| restart_tolerance_relaxation_factor_damping           | double        |                                       |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| error_control_options                                 | string        | ``pressure, residual``                |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| nonlinear_iteration_initial_guess_extrapolation_order | integer       |                                       |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| preconditioner                                        | string        | ``trilinos_ml, hypre_amg, block_ilu`` |
-+-------------------------------------------------------+---------------+---------------------------------------+
-| initialize_with_darcy                                 | boolean       | | ``true, false``                     |
-|                                                       |               | | *default = false*                   |
-+-------------------------------------------------------+---------------+---------------------------------------+
 
 
 Unstr_linear_solver
