@@ -12,6 +12,7 @@
 */
 
 /*!
+
 List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
 
 .. _region-plane-spec:

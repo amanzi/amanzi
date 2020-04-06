@@ -14,28 +14,27 @@
 This is effectively equivalent to GMRES with a rolling restart, where vectors
 fall off the end of the space.
 
-Parameters:
+.. _linear-solver-typed-nka-spec:
+.. admonition:: linear-solver-typed-nka-spec
 
-* `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
-* `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
 
-* `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-* `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
-  criteria, any of which can be applied.  Valid include:
+    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+      criteria, any of which can be applied.  Valid include:
 
-  - `"relative rhs`" : measure error relative to the norm of the RHS vector
-  - `"relative residual`" : measure error relative to the norm of the residual
-  - `"absolute residual`" : measure error directly, norm of error
-  - `"make one iteration`" : require at least one iteration to be performed before declaring success
+      - `"relative rhs`" : measure error relative to the norm of the RHS vector
+      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"absolute residual`" : measure error directly, norm of error
+      - `"make one iteration`" : require at least one iteration to be performed before declaring success
 
-* `"max nka vectors`" ``[int]`` **10** Size of the NKA space used to span the residual, conceptually equivalent to the size of the Krylov space.
+    * `"max nka vectors`" ``[int]`` **10** Size of the NKA space used to span the residual, conceptually equivalent to the size of the Krylov space.
 
-* `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product are within this tolerance are considered parallel, and therefore the old vector is thrown out.
+    * `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product are within this tolerance are considered parallel, and therefore the old vector is thrown out.
 
-
-Calef et al. "Nonlinear Krylov acceleration applied to a discrete ordinates formulation of the k-eigenvalue problem." JCP 238 (2013): 188-209.
 
 */
 
@@ -267,7 +266,7 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
 	Errors::Message msg;
-	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	msg << "LinearOperatorNKA: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
 	Exceptions::amanzi_throw(msg);
       }
     }

@@ -11,21 +11,22 @@
 
 /*!
 
-Parameters:
+.. _linear-solver-typed-pcg-spec:
+.. admonition:: linear-solver-typed-pcg-spec
 
-* `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
-* `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
 
-* `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-* `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
-  criteria, any of which can be applied.  Valid include:
+    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+      criteria, any of which can be applied.  Valid include:
 
-  - `"relative rhs`" : measure error relative to the norm of the RHS vector
-  - `"relative residual`" : measure error relative to the norm of the residual
-  - `"absolute residual`" : measure error directly, norm of error
-  - `"make one iteration`" : require at least one iteration to be performed before declaring success
+      - `"relative rhs`" : measure error relative to the norm of the RHS vector
+      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"absolute residual`" : measure error directly, norm of error
+      - `"make one iteration`" : require at least one iteration to be performed before declaring success
 
 */
 
@@ -288,7 +289,7 @@ void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
 	Errors::Message msg;
-	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	msg << "LinearOperatorPCG: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
 	Exceptions::amanzi_throw(msg);
       }
     }

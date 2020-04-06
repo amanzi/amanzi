@@ -11,11 +11,25 @@
 
 /*!
 
-``[linear-solver-typed-spec]``
+Linear solvers are iterative methods which wrap Operators/Matrices and provide
+a solution for the true inverse.  The provided Operator must implement a
+forward application (which may be an assembled Matrix-Vector product, or may be
+a matrix-free forward application) and an approximate inverse (the
+preconditioner).
 
-* `"iterative method type`" ``[string]`` Iterative method to be used.
-* `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
-  Parameters associated with the requested iterative method.
+Note that linear operators here differ from preconditioners not in their
+exactness of the solution, but in their interface.  A Preconditioner_ works with
+raw vectors and matrices, and may need assembled matrices.  LinearOperators
+work with the action of matrices only, and never need assembled matrices.  As
+such they are templated with an arbitrary Matrix and Vector type, whereas
+Preconditioners are not.
+
+.. _linear-solver-typed-spec:
+.. admonition:: linear-solver-typed-spec
+
+    * `"iterative method type`" ``[string]`` Iterative method to be used.
+    * `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
+      Parameters associated with the requested iterative method.
 
 Example:
 

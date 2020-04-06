@@ -1,14 +1,55 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Interface for using NKA with backtracking line search as a solver.
+//! NKA nonlinear solver with a line-search based on a Brendt minimization algorithm.
+
+/*!
+
+Does NKA, then checks if that correction has reduced the residual by at least a
+tolerance.  If not, this uses a Brendt minimization algorithm to try and find
+an :math:`\alpha` that minimizes the reduction in the residual.
+
+Note, this always monitors the residual.
+
+.. _solver-typed-nka-ls-spec:
+.. admonition solver-typed-nka-ls-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
+      tolerance. The error is calculated by a PK.
+
+    * `"limit iterations`" ``[int]`` **20** Defines the maximum allowed number
+      of iterations.
+
+    * `"backtrack monitor`" ``[string]`` **monitor either** What norm is
+      checked to determine whether backtracking has improved the residual or
+      not?  One of `"monitor enorm`", `"monitor L2 residual`", or `'monitor
+      either`"
+
+    * `"backtrack tolerance`" ``[double]`` **0.** If the default update reduces
+      the residual by at least this much, line search is not performed.
+
+    * `"accuracy of line search minimum [bits]`" ``[int]`` **10** Convergence criteria on Brendt algorithm.
+
+    * `"min valid alpha`" ``[double]`` **0** Lower bound on Brendt algorithm.
+
+    * `"max valid alpha`" ``[double]`` **10.** Upper bound on Brendt algorithm.
+
+    * `"max line search iterations`" ``[int]`` **10** Max iterations for the Brendt algorithm.
+
+    * `"max nka vectors`" ``[int]`` **10** Defines the maximum number of
+      consecutive vectors used for a local space.
+
+    * `"nka vector tolerance`" ``[double]`` **0.05** Defines the minimum
+      allowed orthogonality between vectors in the local space. If a new vector
+      does not satisfy this requirement, the space is modified.
+
+  
 */
 
 #ifndef AMANZI_NKA_LINESEARCH_SOLVER_

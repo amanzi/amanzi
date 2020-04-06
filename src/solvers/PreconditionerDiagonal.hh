@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,6 +6,20 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+//! Diagonal preconditioner.
+
+/*!
+
+Simply applys the pointwise inverse of the diagonal of the matrix as an
+extremely cheap matrix.
+
+This is provided when using the `"preconditioner type`"=`"diagonal`" in the
+`Preconditioner`_ spec.
+
+No parameters are required.
+
+*/
+
 
 #ifndef AMANZI_PRECONDITIONER_DIAGONAL_HH_
 #define AMANZI_PRECONDITIONER_DIAGONAL_HH_

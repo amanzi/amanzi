@@ -1,6 +1,4 @@
 /*
-  Time Integration 
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,19 +7,68 @@
   Author: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! Solves globally implicit systems using Backwards Euler
+//! Solves globally implicit systems using backward Euler
 /*!
 
-``[implicit-time-integrator-typed-spec]``
+Backward Euler is the simplest of the implicit methods.  It solves time
+integration schemes by evaluating all time derivatives at the new time.  This
+makes it unconditionally stable, though potentially not very accurate.  This
+unconditional stability tends to make it the workhorse of the types of stiff,
+nonlinear parabolic equations such as Richards equation and the diffusion wave
+approximation.
 
-* `"extrapolate initial guess`" ``[bool]`` **true** Extrapolate successive solutions to guess the next.
+In this method, we look to solve:
 
-* `"solver type`" ``[string]`` One of the available solver types.
-* `"_solver_type_ parameters`" ``[_solver_type_-spec]`` One of the available solver types.
+.. math::
+    \frac{\partial \mathbf{u}}{\partial t} = f(\mathbf{u},\mathbf{x},t)
 
-* `"timestep controller type`" ``[string]`` One of the available solver types.
-* `"_timestep_controller_type_ parameters`" ``[_timestep_controller_type_-spec]`` One of the available solver types.
+via the time discretization scheme:
 
+.. math::
+    \frac{\mathbf{u}^{t + \Delta t} - \mathbf{u}^{t}}{\Delta t} = f(\mathbf{u}^{t + \Delta t}, \mathbf{x}, t + \Delta t)
+
+.. _bdf1-ti-spec:
+.. admonition:: bdf1-ti-spec
+
+    * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
+
+    * `"residual debugger`" ``[residual-debugger-spec]`` A `Residual Debugger`_ object.
+
+    * `"max preconditioner lag iterations`" ``[int]`` **0** specifies frequency
+      of preconditioner recalculation.
+
+    * `"freeze preconditioner`" ``[bool]`` **false** enforces preconditioner to
+      be updated only once per non-linear solver. When set to true, the above
+      parameter is ignored.
+
+    * `"extrapolate initial guess`" ``[bool]`` **true** identifies forward time
+      extrapolation of the initial guess.
+
+    * `"nonlinear iteration initial guess extrapolation order`" ``[int]`` **1**
+      defines extrapolation algorithm. Zero value implies no extrapolation.
+
+    * `"restart tolerance relaxation factor`" ``[double]`` **1** Changes the
+      nonlinear tolerance on restart. The time integrator is usually restarted
+      when a boundary condition changes drastically. It may be beneficial to
+      loosen the nonlinear tolerance on the first several time steps after the
+      time integrator restart. The default value is 1, while a reasonable value
+      may be as large as 1000.
+
+    * `"restart tolerance relaxation factor damping`" ``[double]`` **1**
+      Controls how fast the loosened nonlinear tolerance will revert back to
+      the one specified in `"nonlinear tolerance`". If the nonlinear tolerance
+      is "tol", the relaxation factor is "factor", and the damping is "d", and
+      the time step count is "n" then the actual nonlinear tolerance is "tol *
+      max(1.0, factor * d ** n)". Reasonable values are between 0 and 1.
+
+    INCLUDES
+
+    - ``[bdf1-solver-fnbase-spec]`` *Uses a* `BDF1 Solver Interface`_.
+
+    - ``[solver-typed-spec]`` *Uses a* Solver_.
+
+    - ``[timestep-controller-typed-spec]`` *Uses a* `Timestep Controller`_
+    
  */
 
 

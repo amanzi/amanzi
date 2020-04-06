@@ -15,34 +15,35 @@ Based on the methods of Yu. Kuznetsov, 1968; Y.Saad, 1986.  Deflated version of
 GMRES is due to R.Morgan, GMRES with deflated restarting, 2002 SISC; S.Rollin,
 W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 
-Parameters:
+.. _linear-solver-typed-gmres-spec:
+.. admonition:: linear-solver-typed-gmres-spec
 
-* `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
-* `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
 
-* `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-* `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
-  criteria, any of which can be applied.  Valid include:
+    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+      criteria, any of which can be applied.  Valid include:
 
-  - `"relative rhs`" : measure error relative to the norm of the RHS vector
-  - `"relative residual`" : measure error relative to the norm of the residual
-  - `"absolute residual`" : measure error directly, norm of error
-  - `"make one iteration`" : require at least one iteration to be performed before declaring success
+      - `"relative rhs`" : measure error relative to the norm of the RHS vector
+      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"absolute residual`" : measure error directly, norm of error
+      - `"make one iteration`" : require at least one iteration to be performed before declaring success
 
-* `"size of Krylov space`" ``[int]`` **10** Size of the Krylov space used to span the residual.
+    * `"size of Krylov space`" ``[int]`` **10** Size of the Krylov space used to span the residual.
 
-* `"controller training start`" ``[int]`` **0** Start iteration for determining
-  convergence rates. (Add more please!)
+    * `"controller training start`" ``[int]`` **0** Start iteration for determining
+      convergence rates. (Add more please!)
 
-* `"controller training end`" ``[int]`` **3** Start iteration for determining
-  convergence rates. (Add more please!)
+    * `"controller training end`" ``[int]`` **3** Start iteration for determining
+      convergence rates. (Add more please!)
 
-* `"preconditioning strategy`" ``[string]`` **left** Valid are "left" and
-  "right"-type preconditioning (see Saad 1986)
+    * `"preconditioning strategy`" ``[string]`` **left** Valid are "left" and
+      "right"-type preconditioning (see Saad 1986)
 
-* `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation space, see Rollin et al.
+    * `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation space, see Rollin et al.
 
 */
 
