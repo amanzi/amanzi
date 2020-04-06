@@ -42,12 +42,9 @@ include_directories(${ATS_SOURCE_DIR}/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/operators/deformation)
 
 if (ENABLE_FATES)
-  # link_directories(/users/dasvyat/Coastal/ats-fates-new-copy/install/lib/)
-  # link_directories(/users/dasvyat/Coastal/ParallelIO-master/install/lib/)
-  # link_directories(/users/dasvyat/PnetCDF/lib)
-  link_directories(/users/dasvyat/Coastal/ats-fates-new-copy/install_mpiintel/lib/)
-  link_directories(/users/dasvyat/PnetCDF/mpiintel/lib/)
-  link_directories(/users/dasvyat/Coastal/ParallelIO-master/install_mpiintel/lib)
+  # link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
+  # link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
+  link_directories(${CMAKE_PREFIX_PATH}/lib/)
   set (VEG_LIB pk_veg)
 endif()
 
@@ -142,8 +139,8 @@ set(tpl_link_libs
   )
 
 if (ENABLE_FATES)
-#  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
   set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf)
+#  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
 #  link_directories(ats /nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
 endif()
 
@@ -153,24 +150,4 @@ add_amanzi_executable(ats
   LINK_LIBS  ${ats_link_libs} ${fates_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
-
-
-
-#target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS} hdf5::hdf5_hl-static)
-target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS})
-install(TARGETS ats DESTINATION bin)
-
-
-message("build tests = ${BUILD_TESTS}")
-#if ( BUILD_TESTS )
-if ( 0 )  
-    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
-    include_directories(".")
-
-    # Test:
-    # add_amanzi_test(plant_mesh plant_mesh
-    #                 KIND unit
-    #                 SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
-    #                 LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
-endif()   
 
