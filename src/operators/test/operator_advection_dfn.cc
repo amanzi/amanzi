@@ -148,7 +148,6 @@ void RunTest(double gravity) {
   OutputXDMF io(iolist, mesh, true, false);
 
   // time stepping
-  int nstep(1);
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
     // -- solve the problem
@@ -158,7 +157,7 @@ void RunTest(double gravity) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, solution_new);
+    solver.ApplyInverse(rhs, solution_new);
 
     // -- modify right-hand side and solution
     const auto& old_c = *solution.ViewComponent("cell");

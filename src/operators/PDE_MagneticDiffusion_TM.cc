@@ -165,7 +165,6 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
     }
   }
 
-  int nn(0), nm(0);
   for (int c = 0; c != ncells_owned; ++c) {
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];

@@ -1,15 +1,19 @@
 Introduction
 ============
 
-The Advanced Simulation Capability for Environmental Management
-(ASCEM) program is developing a suite of open-source tools and
-state-of-the-art approach for integrating data and scientific
-understanding to enable prediction of contaminant fate and transport
-in natural and engineered systems.  This multi-lab program is
-supported by the Department of Energy (DOE) Office of Environmental
-Management (EM) to provide scientifically defensible and standardized
-assessments of the uncertainties and risks associated with the
-environmental cleanup and closure of its waste sites.
+Amanzi provides a flexible and extensible parallel flow and reactive
+transport simulation capability for environmental applications. It
+includes general polyhedral mesh infrastructure, which leverages MSTK,
+advanced discretizations of process models, including traditional
+finite volume schemes, mimetic finite differences, and nonlinear
+finite volumes. In addition, it provides advanced nonlinear solvers,
+such as Nonlinear Krylov Acceleration (NKA) and Anderson Acceleration,
+and leverages Trilinos-ML and Hypre Algebraic Multigrid for scalable
+solvers. The reaction of contaminants and minerals carried by the flow
+through the surrounding rock and soil is modeled through a general
+software interface called Alquimia that allows Amanzi to interface
+with a variety of powerful geochemistry engines including PFLOTRAN and
+CrunchFlow. 
 
 .. image:: figures/UO2+Tracer-17_0036.jpeg   
    :width: 32%                               
@@ -18,40 +22,29 @@ environmental cleanup and closure of its waste sites.
 .. image:: figures/WasteTank-AMR.png
    :width: 30%
 
-The ASCEM Platform, Akuna, supports and streamlines the process of
-creating ensembles of conceptual models to quantify the associated
-uncertainty, sensitivity, and risk in these systems. These conceptual
-models will span a range of process complexity, potentially coupling
-hydrological, biogeochemical, and geomechanical processes.  Amanzi, is
-the flexible and extensible computational engine that simulates the
-coupled process and flow scenarios described by these conceptual
-models. Amanzi, is a parallel flow and reactive transport simulator
-that supports transient and steady-state saturated and unsaturated
-flows, and wide variety of geochemical reactions.
+The code is parallel and leverages open-source parallel
+frameworks such as Trilinos, PETSc. Amanzi has been used to model
+contaminant migration at various DOE waste sites (e.g., Nevada
+National Security Site, and Savannah River), and is generally
+applicable to groundwater contaminant migration under partially
+saturated, nonisothermal conditions and its interaction with surface
+water.
 
-
-Quality Assurance: Basic Phase Release
-======================================
-
-The development of Amanzi is following a risk-based graded approach to
-meet its Quality Assurance requirements (NQA-1).  This graded approach
-will use three phases of development in conjunction with an agile
-test-driven approach to maturing capabilities through a series of
-site-based demonstrations and automated hierarchical testing.
-Specifically, the Research and Development branch (R&D) corresponds to
-the NQA-1 “Basic Phase”, while the “Community Code” phase requires
-additional rigor in support of the NQA-1 “Applied Research” and
-broader use in the community. Finally, application of appropriate QA
-rigor will support the “Development Phase” and release of ASCEM as a
-tool for regulatory work, which is targeted for late 2015.
-
-To ensure that new advances in algorithms, geoscience, computer, and
-computational science can advance quickly to future regulatory
-releases, all three phases of development will co-exist in the future.
-However, at this early stage only the R&D code branch (Basic Phase)
-exists.  This release of Amanzi is from the R&D branch and is intended
-to open communication and build collaborations with potential users at
-DOE waste sites, universities and industry.
+The multiphysics framework in Amanzi is called Arcos, and it provides
+modelers with the flexibility they need to creatively decompose
+complex problems and explore a variety of mixed-dimensional model
+configurations to develop understanding and make predictions of
+environmental systems. In particular, Arcos provides flexibility for
+hierarchical weak and strong coupling of processes with subcycling of
+mixed dimensions. This capability in conjuction with Amanzi's powerful
+mesh infrastructure, which supports the splitting and subsetting of
+meshes, enables creative conceptual modeling. Applications in Amanzi
+include, coupling flow and transport on discrete-fracture-networks
+(DFNs) and the background matrix, while applications in the `Advanced
+Terrestrial Simulator (ATS) <https://amanzi.github.io/ats>`_ include,
+integrated hydrology coupling surface and subsurface processes; and an
+intermediate scale thermal hydrology model of polygonal tundra based
+on one-dimensional columns coupled to the two-dimensional surface.
 
 Release Schedule
 ================
@@ -66,31 +59,25 @@ Older Versions
 Future Releases
 ~~~~~~~~~~~~~~~
 
- * Updates to the Basic Phase Amanzi, including bug fixes and 
-   capability enhancements, will be made regularly
- * First Applied Phase release of Amanzi (~version 0.90.0) 
-   is targeted for late 2014.
- * First Development Phase (NQA-1) release of Amanzi (~version 1.0)
-   is targeted for late 2015.
-
+ * Coming soon: Prototype of Non-isothermal Multiphase flow with phase disappearence
+ 
 
 User Guide
-==========
+===========
 
-The User Guide is available 
-`[PDF] <AmanziUserGuide.pdf>`_
-or can be viewed directly on the web 
+The User Guide is best viewed on the web 
 `[html] <UserGuide>`_.
 
 
-Download
-========
+Downloads
+==========
 
-Goto the Amanzi :ref:`downloads` page.
+Source code releases are availble from the Amanzi Github
+`Releases <https://github.com/amanzi/amanzi/releases>`_.
 
 
-System Requirements:
-====================
+System and Software Requirements
+=================================
 
 Amanzi is written in C++,C, and Fortran, and is readily built on
 modern Linux/Unix systems, including Ubuntu, RedHat Enterprise, and
@@ -99,19 +86,19 @@ Libraries that it uses, so to make the build process easier Amanzi's
 build system will download and build all the TPLs for you.  To get
 started you will need a modern Linux/Unix/OSX system with
 
- * CMake (version >= 2.8.8), 
- * GNU compilers (gcc,g++,gfortran) version >= 4.7
+ * CMake (version >= 3.11.4), 
+ * A recent GNU or Intel compiler suporting the C++11 standard
  * MPI (e.g., OpenMPI version > 1.4)
 
 Details are provided in the Installation Instructions in the User Guide.
 
 
-Open Source
-===========
+Open Source / Open Development
+===============================
 
 Amanzi is developed and distributed under the three-clause BSD
 open-source license.  Copyright is held jointly by the contributing
-laboratories (LANL,LBNL,PNNL). Included in the Amanzi source code is
+laboratories (LANL,LBNL,ORNL,PNNL). Included in the Amanzi source code is
 the growing set of unit, integration, regression, and benchmark tests
 that are used by the development and application teams.
 

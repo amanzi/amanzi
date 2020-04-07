@@ -103,7 +103,6 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 {
   WhetStone::DenseMatrix Acell, Aface;
 
-  int d = mesh_->space_dimension();
   double Kf(1.0);
   AmanziMesh::Entity_ID_List cells;
   

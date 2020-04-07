@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,8 +6,28 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+//! Preconditioned conjugate gradient method for a linear solver.
 
-  Preconditioned conjugate gradient method.
+/*!
+
+.. _linear-solver-typed-pcg-spec:
+.. admonition:: linear-solver-typed-pcg-spec
+
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+
+    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+      criteria, any of which can be applied.  Valid include:
+
+      - `"relative rhs`" : measure error relative to the norm of the RHS vector
+      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"absolute residual`" : measure error directly, norm of error
+      - `"make one iteration`" : require at least one iteration to be performed before declaring success
+
 */
 
 #ifndef AMANZI_PCG_OPERATOR_HH_
@@ -271,7 +289,7 @@ void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
 	Errors::Message msg;
-	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	msg << "LinearOperatorPCG: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
 	Exceptions::amanzi_throw(msg);
       }
     }

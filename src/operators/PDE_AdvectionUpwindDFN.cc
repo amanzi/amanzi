@@ -44,7 +44,6 @@ void PDE_AdvectionUpwindDFN::Setup(const CompositeVector& u)
 void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
  
@@ -86,7 +85,6 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
       
-      double tmp = u / flux_in;
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
         for (int j = 0; j < cells.size(); j++) {
@@ -110,11 +108,10 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
 *     H(u): advected quantity (i.e. enthalpy)
 ****************************************************************** */
 void PDE_AdvectionUpwindDFN::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& q,
     const Teuchos::Ptr<const CompositeVector>& dHdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   dHdT->ScatterMasterToGhosted("cell");
   const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
@@ -159,7 +156,6 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
       
-      double tmp = u / flux_in;
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
         for (int j = 0; j < cells.size(); j++) {
@@ -203,8 +199,6 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
 void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
-
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();

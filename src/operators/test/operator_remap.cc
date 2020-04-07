@@ -193,14 +193,14 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   if (MyPID == 0) {
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
-    std::string map_name = map_list.get<std::string>("map name");
+    std::string name = map_list.get<std::string>("map name");
       
     std::cout << "\nTest: " << dim << "D remap:"
               << " mesh=" << ((file_name == "") ? "structured" : file_name)
               << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order 
-              << ", map=" << map_name << std::endl;
+              << ", map=" << name << std::endl;
 
     std::cout << "      map details: order=" << vel_order 
               << ", projector=" << vel_projector 
@@ -381,7 +381,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
 TEST(REMAP_DUAL_2D) {
   std::string maps = "VEM";
   double dT(0.1);
-  int deform = 1;
   RemapTestsDualRK("FEM", "", 10,10,0, dT);
   RemapTestsDualRK(maps, "test/median15x16.exo", 16,1,0, dT/2);
 }

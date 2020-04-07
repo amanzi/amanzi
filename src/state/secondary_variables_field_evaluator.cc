@@ -231,7 +231,6 @@ void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr
   std::vector<Teuchos::Ptr<CompositeVector> > dmys;
   for (std::vector<Key>::const_iterator my_key=my_keys_.begin(); my_key!=my_keys_.end(); ++my_key) {
     Key dmy_key = std::string("d")+*my_key+std::string("_d")+wrt_key;
-    Teuchos::RCP<CompositeVector> dmy;
     if (S->HasField(dmy_key)) {
       // Get the field...
       Teuchos::RCP<CompositeVector> dmy = S->GetFieldData(dmy_key, *my_key);
@@ -244,7 +243,7 @@ void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr
       Teuchos::RCP<CompositeVectorSpace> new_fac =
         S->RequireField(dmy_key, *my_key);
       new_fac->Update(*my_fac);
-      dmy = Teuchos::rcp(new CompositeVector(*new_fac));
+      auto dmy = Teuchos::rcp(new CompositeVector(*new_fac));
       S->SetData(dmy_key, *my_key, dmy);
       S->GetField(dmy_key,*my_key)->set_initialized();
       S->GetField(dmy_key,*my_key)->set_io_vis(plist_.get<bool>("visualize derivative", false));

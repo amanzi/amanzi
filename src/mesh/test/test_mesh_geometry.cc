@@ -26,9 +26,6 @@
 TEST(MESH_GEOMETRY_PLANAR)
 {
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -40,9 +37,9 @@ TEST(MESH_GEOMETRY_PLANAR)
     framework_names.push_back("MSTK");
   }
 
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -53,7 +50,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
       meshfactory.set_preference(prefs);
 
       mesh = meshfactory.create(0.0,0.0,1.0,1.0,2,2);
@@ -206,15 +203,10 @@ TEST(MESH_GEOMETRY_PLANAR)
 
 TEST(MESH_GEOMETRY_SURFACE)
 {
-
-// DISABLED FOR NOW
-
- return;
-
+  // DISABLED FOR NOW
+  return;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -226,9 +218,9 @@ TEST(MESH_GEOMETRY_SURFACE)
   framework_names.push_back("MSTK");
 #endif
 
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -239,7 +231,7 @@ TEST(MESH_GEOMETRY_SURFACE)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
 
       meshfactory.set_preference(prefs);
 
@@ -276,8 +268,6 @@ TEST(MESH_GEOMETRY_SURFACE)
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
-
-    int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
@@ -383,18 +373,12 @@ TEST(MESH_GEOMETRY_SURFACE)
     }
 
   } // for each framework i
-
 }
-
-
 
 
 TEST(MESH_GEOMETRY_SOLID)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -409,9 +393,9 @@ TEST(MESH_GEOMETRY_SOLID)
   framework_names.push_back("MSTK");
 #endif
   
-  for (int i = 0; i < frameworks.size(); i++) {
+  for (int frm = 0; frm < frameworks.size(); ++frm) {
     // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
+    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
 
     // Create the mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -422,7 +406,7 @@ TEST(MESH_GEOMETRY_SOLID)
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(frameworks[i]);
+      prefs.push_back(frameworks[frm]);
 
       meshfactory.set_preference(prefs);
 

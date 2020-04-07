@@ -1,20 +1,20 @@
-Goals and Approach
---------------------------
+.. Goals and Approach
+.. --------------------------
 
-Discuss the following and include references.  Each can be pretty short.
+.. Discuss the following and include references.  Each can be pretty short.
 
-High-level goals and approach
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. High-level goals and approach
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Requirements (mathematical modeling document)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. Requirements (mathematical modeling document)
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-High-level design
-~~~~~~~~~~~~~~~~~
-short discussion reference design document
+.. High-level design
+.. ~~~~~~~~~~~~~~~~~
+.. short discussion reference design document
 
 Quality Assurance
-~~~~~~~~~~~~~~~~~
+-----------------
 
 The development of Amanzi is following a risk-based graded approach to
 meet its Quality Assurance requirements (NQA-1).  This graded approach

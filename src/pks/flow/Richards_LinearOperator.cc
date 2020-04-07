@@ -145,7 +145,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
-    double residual = solver->residual();
     int code = solver->returned_code();
     double pnorm;
     u->Norm2(&pnorm);

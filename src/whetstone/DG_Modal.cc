@@ -299,7 +299,7 @@ int DG_Modal::StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A)
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       
-      double sum(0.0), tmp;
+      double sum(0.0);
       for (int i = 0; i < d_; ++i) {
         for (int j = 0; j < d_; ++j) {
           if (index[i] > 0 && jndex[j] > 0) {
@@ -864,7 +864,6 @@ int DG_Modal::FaceMatrixJump(
 
   // integrate traces of polynomials on face f
   double coef00, coef01, coef10, coef11;
-  Polynomial p0, p1, q0, q1;
   VectorPolynomial pgrad;
   std::vector<const WhetStoneFunction*> funcs(3);
 
@@ -953,7 +952,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 
   // integrate traces of polynomials on face f
   double coef00, coef01, coef11;
-  Polynomial p0, p1, q0, q1;
   std::vector<const PolynomialBase*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {

@@ -16,7 +16,9 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # --- Patch the original code
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
-set(ALQUIMIA_patch_file alquimia-cmake.patch alquimia-FindPETSc.patch)
+set(ALQUIMIA_patch_file alquimia-cmake.patch
+                        alquimia-FindPETSc.patch
+                        alquimia-MPIlocation.patch)
 set(ALQUIMIA_sh_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
                ${ALQUIMIA_sh_patch}
@@ -51,6 +53,7 @@ set(ALQUIMIA_CMAKE_ARGS
       "-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${CRUNCHTOPE_DIR}/lib/libcrunchchem.${suffix}"
       "-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DLAPACK_LIBRARIES=${LAPACK_LIBRARIES}"
+      "-DMPI_PREFIX=${MPI_PREFIX}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Add external project build and tie to the ALQUIMIA build target

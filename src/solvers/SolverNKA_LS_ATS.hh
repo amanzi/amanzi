@@ -254,7 +254,6 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   double l2_error(0.), previous_l2_error(0.);
   bool nka_applied(false), nka_restarted(false);
   int nka_itr = 0;
-  int total_backtrack = 0;
   int prec_error;
   int db_write_iter = 0;
 

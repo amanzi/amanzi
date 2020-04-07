@@ -64,7 +64,7 @@ class Richards_PK : public Flow_PK {
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
 
-  virtual std::string name() override { return passwd_; }
+  virtual std::string name() override { return "richards"; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
@@ -132,8 +132,6 @@ class Richards_PK : public Flow_PK {
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
 
   // -- access methods
-  Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
-  const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
 
   // -- verbose output and visualization methods

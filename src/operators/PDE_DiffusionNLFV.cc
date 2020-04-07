@@ -80,7 +80,7 @@ void PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
-    std::string name = "Diffusion: FACE_CELL Jacobian terms";
+    name = "Diffusion: FACE_CELL Jacobian terms";
     jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
 
     global_op_->OpPushBack(jac_op_);
@@ -292,7 +292,6 @@ void PDE_DiffusionNLFV::UpdateMatrices(
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   u->ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& uc = *u->ViewComponent("cell", true);
 
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
@@ -400,8 +399,8 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     WhetStone::DenseMatrix Aface(ncells, ncells);
 
     if (ncells == 2) {
-      int k1 = OrderCellsByGlobalId_(cells, c3, c4);
-      int k2 = 1 - k1;
+      k1 = OrderCellsByGlobalId_(cells, c3, c4);
+      k2 = 1 - k1;
       Aface(0, 0) = matrix[k1][f];
       Aface(0, 1) = -matrix[k1][f];
 
@@ -626,10 +625,8 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   Epetra_MultiVector& flux_data = *stencil_data_->ViewComponent("flux_data", true);
-  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
-  int c1, c2, c3, k1, k2, dir;
-  double gamma, tmp;
+  int c1, c2, c3, k1, k2;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
@@ -733,9 +730,6 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
   int c1, c2, dir;
   AmanziMesh::Entity_ID_List cells;
-
-  double disc_val = 0;
-  int f_bad=0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {

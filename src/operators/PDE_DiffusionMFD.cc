@@ -1120,9 +1120,6 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
 
   flux_data.PutScalar(0.0);
 
-  int ndofs_owned = flux->ViewComponent("face")->MyLength();
-  int ndofs_wghost = flux_data.MyLength();
-
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   const auto& fmap = *flux->Map().Map("face", true);

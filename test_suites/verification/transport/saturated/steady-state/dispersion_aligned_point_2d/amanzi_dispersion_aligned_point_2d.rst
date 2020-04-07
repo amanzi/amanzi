@@ -11,8 +11,7 @@ Capabilities tested include:
   
   * single-phase, one-dimensional flow
   * two-dimensional transport
-  * steady-state flow
-  * saturated flow
+  * steady-state saturated flow
   * constant-rate solute mass injection well 
   * advective transport
   * dispersive transport
@@ -67,7 +66,7 @@ The analytical solution addresses the advection-dispersion equation
 
 .. math::
   \phi \frac{\partial C}{\partial t} 
-  = Q + {\nabla \cdot }(\boldsymbol{D} \nabla C),
+  = Q + {\nabla \cdot }(\phi \boldsymbol{D} \nabla C),
 
 where :math:`\phi` is porosity, :math:`C` is the solute concentration [kg/m\ :sup:`3`], :math:`t` is time [s], :math:`Q` is solute mass injection rate [kg of tracer/m\ :sup:`3`/s], and :math:`\boldsymbol{D}` is the dispersion tensor:
 
@@ -77,18 +76,15 @@ where :math:`\phi` is porosity, :math:`C` is the solute concentration [kg/m\ :su
   D_{yx} & D_{yy}
   \end{pmatrix}.
 
-Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
-:math:`\tau` the tortuosityi [-], and :math:`D_m` the molecular diffusion [m\ :sup:`2`/s].
-Then the diagonal entries in the dispersion tensor are
+Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity.
+Then, the diagonal entries in the dispersion tensor are
 
 .. math::
   D_{xx} = \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \alpha_T \frac{v_y^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m, 
+  + \alpha_T \frac{v_y^2}{\| \boldsymbol{v}\|},
   \qquad
   D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
-  + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m,
+  + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|},
 
 where :math:`\alpha_L` is longitudinal dispersivity [m] and :math:`\alpha_T` is transverse dispersivity [m]. The off-diagonal entries are:
 
@@ -139,12 +135,11 @@ Variables
 
   * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
 
-    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 10^{-10} \text{ [m}^2\text{]}`
   
   * porosity:    :math:`\phi=0.35` 
   * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
   * transverse dispersivity:    :math:`\alpha_T=4.3 \: \text{[m]}` 
-  * molecular diffusion coefficient:    :math:`D_m=0.0 \: \text{[m}^2\text{/s]}` 
   * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
   * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
   * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
@@ -152,8 +147,6 @@ Variables
 * total simulation time:    :math:`t=1400 \: \text{[d]}`
 
 .. Boundary conditions: :math:`C(x,t)=0 \: \text{[kg/m}^3\text{]}`
-
-
 
 
 
@@ -207,10 +200,8 @@ About
 
 * Input Files:
 
-  * amanzi_dispersion_aligned_point_2d-u.xml 
-
-    * Spec Version 2.2, unstructured mesh framework
-    * mesh:  amanzi_dispersion_aligned_point_2d.exo
+  * amanzi_dispersion_aligned_point_2d-u.xml, Spec Version 2.3
+  * mesh is amanzi_dispersion_aligned_point_2d.exo
  
   .. * amanzi_dispersion_aligned_point_2d-s.xml
 
@@ -239,23 +230,10 @@ About
     * at123d-at_slice_x=420.list, at123d-at_slice_x=420.in
 
 
-Status
-~~~~~~
-
-  * Input Files:
-
-    * Version 2.2 - unstructured: runs 2D problem, results are in excellent agreement
-    * Version 1.2 - structured AMR: runs
-
-  * Documentation:
-
-    * Complete for unstructured mesh framework, including line plots and tables.
-
 .. todo:: 
 
   * Documentation:
 
-    * Decide whether to run this as a 2D or 3D problem
     * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?
     * Store *Gold Standard* simulation results (need name and location)?
     * Add plots for structured AMR results to these plots or make subplots

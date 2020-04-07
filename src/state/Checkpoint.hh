@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Visualization: a class for controlling simulation output.
+//! Manages checkpoint/restart capability.
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -12,16 +12,25 @@
 
 /*!
 
-Each list contains all parameters as in a IOEvent_ spec, and also:
+A user may request periodic dumps of ATS Checkpoint Data in the
+`"checkpoint`" sublist.  The user has no explicit control over the
+content of these files, but has the guarantee that the ATS run will be
+reproducible (with accuracies determined by machine round errors and
+randomness due to execution in a parallel computing environment).
+Therefore, output controls for Checkpoint Data are limited to file
+name generation and writing frequency, by numerical cycle number.
+Unlike `"visualization`", there is only one `"checkpoint`" list for
+all domains/meshes.
 
-* `"file name base`" ``[string]`` **"checkpoint"**
+.. _checkpoint-spec:
+.. admonition:: checkpoint-spec
 
-* `"file name digits`" ``[int]`` **5**
+    * `"file name base`" ``[string]`` **"checkpoint"**
+    * `"file name digits`" ``[int]`` **5**
 
-INCLUDES:
-* ``[io-event-spec]`` An IOEvent_ spec
+    INCLUDES:
 
-  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
+    * ``[io-event-spec]`` An IOEvent_ spec
 
 Example:
 

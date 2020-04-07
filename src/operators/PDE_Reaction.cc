@@ -82,7 +82,6 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
@@ -141,7 +140,6 @@ void PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 ******************************************************************* */
 void PDE_Reaction::CreateStaticMatrices_()
 {
-  int d(mesh_->space_dimension());
   WhetStone::DenseMatrix Mcell;
 
   static_matrices_.resize(ncells_owned);

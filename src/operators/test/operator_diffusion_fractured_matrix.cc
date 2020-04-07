@@ -109,12 +109,12 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   // create diffusion operator
   double rho = 1.0;
-  AmanziGeometry::Point g(3);
-  g[2] = -gravity;
+  AmanziGeometry::Point gvec(3);
+  gvec[2] = -gravity;
 
   if (gravity > 0.0) op_list.set<bool>("gravity", true);
 
-  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
+  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, gvec));
   op->Init(op_list);
   auto global_op = op->global_operator();
 

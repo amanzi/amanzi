@@ -14,15 +14,18 @@
 
 /*!
 
-``TimestepControllerFromFile`` loads a timestep history from a file, then
-advances the step size with those values.  This is mostly used for testing
-purposes, where we need to force the same timestep history as previous runs to
-do regression testing.  Otherwise even machine roundoff can eventually alter
-number of iterations enough to alter the timestep history, resulting in
-solutions which are enough different to cause doubt over their correctness.
+This loads a timestep history from a file, then advances the step size with
+those values.  This is mostly used for testing purposes, where we need to force
+the same timestep history as previous runs to do regression testing.  Otherwise
+even machine roundoff can eventually alter number of iterations enough to alter
+the timestep history, resulting in solutions which are enough different to
+cause doubt over their correctness.
 
-* `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
-* `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
+.. _timestep-controller-typed-from-file-spec:
+.. admonition:: timestep-controller-typed-from-file-spec
+
+    * `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
+    * `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
 
 */
 

@@ -1,8 +1,8 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <model_description name="Richards-1D-infiltration_clay_sand" />
+    <model_description name="Richards-1D-infiltration_loam_sand" />
     <definitions>
       <macros>
-        <time_macro name="Observation Times">
+	<time_macro name="Observation Times">
           <start>0</start>
           <timestep_interval>10000 y</timestep_interval>
           <stop>-1</stop>
@@ -45,6 +45,7 @@
           <method>gmres</method>
           <max_iterations>100</max_iterations>
           <tolerance>1.0e-16</tolerance>
+          <clf>1.0e-16</clf>
           <preconditioner>hypre_amg</preconditioner>
         </unstr_linear_solver>
         <unstr_preconditioners>
@@ -59,6 +60,11 @@
         <unstr_transport_controls>
           <algorithm>explicit first-order</algorithm>
         </unstr_transport_controls>
+        <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+          <block_ilu />
+        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />
@@ -93,14 +99,14 @@
       <point coordinate="0.5,0.5,2.0" name="Obs_200" />
     </regions>
     <materials>
-      <material name="clay">
+      <material name="loam">
         <mechanical_properties>
           <porosity value="0.43" />
           <particle_density value="2720.0" />
         </mechanical_properties>
-        <permeability x="1.18E-13" y="1.18E-13" z="1.18E-13" />
+        <permeability x="5.92360e-13" y="5.92360e-13" z="5.92360e-13" />
         <cap_pressure model="van_genuchten">
-          <parameters alpha="1.02E-04" m="0.0909" sr="0.25" />
+          <parameters alpha="4.08622e-4" m="0.375" sr="0.186047" />
         </cap_pressure>
         <rel_perm model="mualem" />
         <assigned_regions>Top Region</assigned_regions>
@@ -155,8 +161,18 @@
       </boundary_condition>
     </boundary_conditions>
     <output>
+      <vis>
+        <base_filename>case_2a_plot</base_filename>
+        <num_digits>5</num_digits>
+        <cycle_macros>Every_100</cycle_macros>
+      </vis>
+      <checkpoint>
+        <base_filename>case_2a_checkpoint</base_filename>
+        <num_digits>5</num_digits>
+        <cycle_macros>Every_1000</cycle_macros>
+      </checkpoint>
       <observations>
-        <filename>observations.out</filename>
+        <filename>observations_2a.out</filename>
         <liquid_phase name="water">
           <aqueous_pressure>
             <assigned_regions>Obs_0</assigned_regions>
@@ -220,16 +236,6 @@
           </aqueous_pressure>
         </liquid_phase>
       </observations>
-      <vis>
-        <base_filename>case_2c_plot</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every_100</cycle_macros>
-      </vis>
-      <checkpoint>
-        <base_filename>chkpoint</base_filename>
-        <num_digits>5</num_digits>
-        <cycle_macros>Every_1000</cycle_macros>
-      </checkpoint>
     </output>
   </amanzi_input>
   

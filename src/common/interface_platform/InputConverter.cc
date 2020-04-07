@@ -179,12 +179,12 @@ void InputConverter::ParseVersion_()
     if ((major != AMANZI_SPEC_VERSION_MAJOR) ||
         (minor != AMANZI_SPEC_VERSION_MINOR) || 
         (micro != AMANZI_SPEC_VERSION_MICRO)) {
-      std::stringstream ss;
-      ss << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
+      std::stringstream ss1;
+      ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions: "<< ss.str() << ".\n";
+          << "Supported versions: "<< ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -202,8 +202,6 @@ void InputConverter::ParseConstants_()
 {
   MemoryManager mm;
 
-  char *tagname, *text;
-  DOMNode* node;
   DOMNodeList *node_list, *children;
   DOMElement* element;
 
@@ -413,7 +411,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
   flag = false;
 
   MemoryManager mm;
-  int n(0), m(0);
+  int n(0);
   std::vector<DOMNode*> namedChildren;
 
   DOMNodeList* children = node->getChildNodes();
@@ -452,7 +450,6 @@ DOMElement* InputConverter::GetChildByName_(
   flag = false;
 
   MemoryManager mm;
-  int n(0), m(0);
   DOMNode* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
@@ -853,7 +850,7 @@ double InputConverter::GetTextContentD_(
     DOMNode* node, std::string unit, bool exception, double default_val)
 {
   double val;
-  std::string text, parsed_text, unit_in;
+  std::string parsed_text, unit_in;
 
   MemoryManager mm;
 
@@ -1299,18 +1296,18 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 
   node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
-    std::string primary;
+    std::string name, primary;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, primary, flag, false);
     
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
-      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      name = TrimString_(mm.transcode(inode->getTextContent()));
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
 
       if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
         double decay = GetAttributeValueD_(element, "first_order_decay_constant");
-        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+        name = TrimString_(mm.transcode(inode->getTextContent()));
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";
       } else {
@@ -1319,7 +1316,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
         if (ncount == 1 && element->hasAttribute(mm.transcode("forward_rate"))) {
           double frate = GetAttributeValueD_(element, "forward_rate");
           double brate = GetAttributeValueD_(element, "backward_rate");
-          std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+          name = TrimString_(mm.transcode(inode->getTextContent()));
           reactionrates << "    REACTION " << name << " <->\n";
           reactionrates << "    FORWARD_RATE " << frate << "\n";
           reactionrates << "    BACKWARD_RATE " << brate << "\n";
@@ -1458,10 +1455,10 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       child_elem = GetChildByName_(inode, "ion_exchange", flag2, false);
       if (flag2) {
         // loop over sublist of cations to get information
-        std::vector<DOMNode*> mineral_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        std::vector<DOMNode*> mineral_nodes = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
-          for (int j = 0; j < mineral_list.size(); ++j) {
-            DOMNode* jnode = mineral_list[j];
+          for (int j = 0; j < mineral_nodes.size(); ++j) {
+            DOMNode* jnode = mineral_nodes[j];
             Teuchos::ParameterList ion_list;
             double cec = GetAttributeValueD_(jnode, "cec");
             ion_list.set<double>("cec",cec);
@@ -1525,14 +1522,14 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
         if (flag2) {
           for (int j = 0; j < minerals_list.size(); ++j) {
             DOMNode* jnode = minerals_list[j];
-            Teuchos::ParameterList mineral_list;
+            Teuchos::ParameterList mineral_out;
             std::string mineral_name = GetAttributeValueS_(jnode, "name");
             double volume_fraction = GetAttributeValueD_(jnode, "volume_fraction");
             double specific_surface_area = GetAttributeValueD_(jnode, "specific_surface_area");
-            mineral_list.set<double>("volume_fraction",volume_fraction);
-            mineral_list.set<double>("specific_surface_area",specific_surface_area);
+            mineral_out.set<double>("volume_fraction",volume_fraction);
+            mineral_out.set<double>("specific_surface_area",specific_surface_area);
             
-            ChemOptions.sublist("minerals").sublist(mineral_name) = mineral_list;
+            ChemOptions.sublist("minerals").sublist(mineral_name) = mineral_out;
           }
         }
       }
@@ -1709,8 +1706,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 
   // open output in file
   if (rank == 0) {
-    struct stat buffer;
-    int status = stat(infilename.c_str(), &buffer);
+    // struct stat buffer;
+    status = stat(infilename.c_str(), &buffer);
     // TODO EIB - fix this
     /*
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -1829,7 +1826,6 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string name;
-    bool flag2;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
@@ -1841,7 +1837,6 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
 
     if (flag) {
       std::string name;
-      bool flag2;
       std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
       for (int i = 0; i < children.size(); ++i) {
         DOMNode* inode = children[i];

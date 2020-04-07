@@ -190,7 +190,6 @@ void InputConverterU::ParseSolutes_()
 
   DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
-  DOMElement* element;
 
   // liquid phase (try solutes, then primaries)
   std::string species("solute");
@@ -223,8 +222,8 @@ void InputConverterU::ParseSolutes_()
   // gas phase
   node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
   if (flag) {
-    DOMNodeList* children = node->getChildNodes();
-    int nchildren = children->getLength();
+    children = node->getChildNodes();
+    nchildren = children->getLength();
 
     for (int i = 0; i < nchildren; ++i) {
       DOMNode* inode = children->item(i);

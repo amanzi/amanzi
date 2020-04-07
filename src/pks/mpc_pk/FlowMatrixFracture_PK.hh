@@ -71,8 +71,6 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
   // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
 
-  Teuchos::RCP<VerboseObject> vo_;
-
   // factory registration
   static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;
 };

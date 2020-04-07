@@ -57,8 +57,6 @@ PKFactory::CreatePK(std::string pk_name,
   Teuchos::ParameterList pk_subtree;
   bool pk_subtree_found = false;
     
-  //  std::cout << "Constructing PK: " << pk_name << std::endl;
-
   if (pk_tree.isSublist(pk_name)) {
     pk_subtree = pk_tree.sublist(pk_name);
     pk_subtree_found = true;
@@ -147,18 +145,22 @@ PKFactory::CreatePK(std::string pk_name,
     message << "PK Factory: PK \"" << pk_name << "\" requested type \""
             << pk_type << "\" which is not a registered PK type.\n";
     
-    for (map_type::iterator iter=GetMap()->begin();
-         iter!=GetMap()->end(); ++iter) {
-      message  << std::endl << "  option: " << iter->first;
+    for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
+      message  << std::endl << "  option: " << it->first;
     }
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);
   }
 
   // construct the PK
+  num_pks++;
+  if (list_pks.size() < 1024) list_pks += "|" + pk_name;
   return Teuchos::rcp(iter->second(pk_subtree, global_list, state, soln));
 }
 
+
+std::string PKFactory::list_pks;
+int PKFactory::num_pks = 0;
 
 PKFactory::map_type* PKFactory::map_;
 

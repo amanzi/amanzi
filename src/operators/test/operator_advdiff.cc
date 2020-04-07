@@ -203,7 +203,7 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
@@ -226,10 +226,10 @@ void AdvectionDiffusion2D(int nx, double* error)
               << " code=" << solver.returned_code() << std::endl;
 
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    const Epetra_MultiVector& pc = *solution.ViewComponent("cell");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
+    GMV::write_cell_data(pc, 0, "solution");
     GMV::close_data_file();
   }
 }

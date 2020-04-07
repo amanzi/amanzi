@@ -13,7 +13,7 @@ TEST(MOAB_HEX_3x3x3)
 {
   using namespace Amanzi;
 
-  int i, j, k, err, nc, nf, nv;
+  int j, nc, nf;
   AmanziMesh::Entity_ID_List faces, nodes;
   AmanziGeometry::Point ccoords, fcoords;
 
@@ -36,7 +36,7 @@ TEST(MOAB_HEX_3x3x3)
   Epetra_Map face_map(mesh.face_map(false));
   for (int c = cell_map.MinLID(); c <= cell_map.MaxLID(); c++) {
     mesh.cell_get_faces( c, &c2f, true);
-    for (int j = 0; j < 6; j++) {
+    for (j = 0; j < 6; j++) {
        int f = face_map.LID(c2f[j]);
        CHECK(f == c2f[j]);
     }

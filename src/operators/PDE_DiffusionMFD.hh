@@ -79,7 +79,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       plist_(plist),
       factor_(1.0)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
+    pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
@@ -89,7 +89,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       plist_(plist),
       factor_(1.0)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
+    pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
@@ -99,7 +99,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       plist_(plist),
       factor_(1.0)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD;
+    pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 

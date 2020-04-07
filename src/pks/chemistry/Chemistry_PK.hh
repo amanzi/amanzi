@@ -72,10 +72,6 @@ class Chemistry_PK : public PK_Physical {
   void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
  protected:
-  Key domain_;  // name of the computational domain
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
 

@@ -21,10 +21,7 @@
 
 TEST(MESH_COLUMNS)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -73,7 +70,6 @@ TEST(MESH_COLUMNS)
     // Explicitly call build columns method
     mesh->build_columns();
 
-    int status;
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
 

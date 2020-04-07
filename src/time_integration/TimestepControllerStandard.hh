@@ -11,7 +11,7 @@
 
 /*!
 
-``TimestepControllerStandard`` is a simple timestep control mechanism
+This is a simple timestep control mechanism
 which sets the next timestep based upon the previous timestep and how many
 nonlinear iterations the previous timestep took to converge.
 
@@ -24,12 +24,15 @@ The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of 
 nonlinear iterations required to solve step :math:`k`:.
 
-* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
-* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
-* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
-* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the previous timestep by this multiple.
-* `"max time step`" ``[double]`` The max timestep size allowed.
-* `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
+.. _timestep-controller-typed-standard-spec:
+.. admonition:: timestep-controller-typed-standard-spec
+
+    * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
+    * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
+    * `"time step reduction factor`" ``[double]`` :math:`f_{reduction}`, reduce the previous timestep by this multiple.
+    * `"time step increase factor`" ``[double]`` :math:`f_{increase}`, increase the previous timestep by this multiple.
+    * `"max time step`" ``[double]`` The max timestep size allowed.
+    * `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
 
 */
 
