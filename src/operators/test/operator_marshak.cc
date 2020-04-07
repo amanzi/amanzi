@@ -153,9 +153,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     PDE_DiffusionFactory diff_factory;
     Teuchos::RCP<PDE_Diffusion> op = diff_factory.Create(olist, mesh, bc);
 
-    int schema_dofs = op->schema_dofs();
-    int schema_prec_dofs = op->schema_prec_dofs();
-
     op->Setup(K, knc->values(), knc->derivatives());
     op->UpdateMatrices(flux.ptr(), solution.ptr());
 
@@ -188,7 +185,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     CompositeVector rhs = *global_op->rhs();
     solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    solver.ApplyInverse(rhs, *solution);
 
     step++;
     t += dt;
@@ -205,7 +202,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 
-    double ds_max, ds_rel(0.0);
+    double ds_rel(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }

@@ -88,7 +88,6 @@ void OperatorDiffusionDG(std::string solver_name,
   }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -180,7 +179,6 @@ void OperatorDiffusionDG(std::string solver_name,
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
 
     ana.SourceTaylor(xc, 0.0, coefs);
     coefs.set_origin(xc);
@@ -238,7 +236,7 @@ void OperatorDiffusionDG(std::string solver_name,
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  solver->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-11);
 

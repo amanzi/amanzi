@@ -366,7 +366,9 @@ if (BUILD_TESTS)
     # high-order diffusion test
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_high_order.cc
+                    SOURCE test/Main.cc
+                                test/operator_diffusion_high_order_vem.cc test/VEM_Diffusion_HighOrder.cc
+                                test/operator_diffusion_high_order.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # DG advection test

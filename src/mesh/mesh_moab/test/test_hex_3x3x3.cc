@@ -13,7 +13,7 @@ TEST(MOAB_HEX_3x3x3)
 {
   using namespace Amanzi;
 
-  int i, j, k, err, nc, nf, nv;
+  int j, nc, nf;
   AmanziMesh::Entity_ID_List faces, nodes;
   AmanziGeometry::Point ccoords, fcoords;
 

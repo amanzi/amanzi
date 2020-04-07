@@ -56,7 +56,7 @@ VEM_RaviartThomasSerendipity::VEM_RaviartThomasSerendipity(
 std::vector<SchemaItem> VEM_RaviartThomasSerendipity::schema() const
 {
   std::vector<SchemaItem> items;
-  int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
+  int nk = PolynomialSpaceDimension(d_ - 1, order_);
   items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, nk));
 
   return items;

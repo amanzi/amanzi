@@ -202,7 +202,6 @@ void InputConverter::ParseConstants_()
 {
   MemoryManager mm;
 
-  DOMNode* node;
   DOMNodeList *node_list, *children;
   DOMElement* element;
 
@@ -412,7 +411,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
   flag = false;
 
   MemoryManager mm;
-  int n(0), m(0);
+  int n(0);
   std::vector<DOMNode*> namedChildren;
 
   DOMNodeList* children = node->getChildNodes();
@@ -451,7 +450,6 @@ DOMElement* InputConverter::GetChildByName_(
   flag = false;
 
   MemoryManager mm;
-  int n(0), m(0);
   DOMNode* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
@@ -1828,7 +1826,6 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string name;
-    bool flag2;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
@@ -1840,7 +1837,6 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
 
     if (flag) {
       std::string name;
-      bool flag2;
       std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
       for (int i = 0; i < children.size(); ++i) {
         DOMNode* inode = children[i];

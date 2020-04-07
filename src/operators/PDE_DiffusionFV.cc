@@ -402,10 +402,8 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
 
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells, faces;
-
-  double k_rel[2], dkdp[2], pres[2], dist;
+  double dkdp[2], pres[2];
 
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
   Teuchos::RCP<const Epetra_MultiVector> dKdP_face;

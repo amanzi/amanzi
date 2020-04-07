@@ -236,7 +236,6 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), previous_l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0);
 
   // Evaluate the nonlinear function.
   fun_calls_++;
@@ -284,7 +283,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    int  prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+    fn_->ApplyPreconditioner(r, du_tmp);
 
     // Calculate the accelerated correction.
     nka_->Correction(*du_tmp, *du, du.ptr());

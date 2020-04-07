@@ -100,7 +100,6 @@ using namespace Amanzi::AmanziGeometry;
   int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; ++f) {
-    double area = mesh->face_area(f);
     const auto& normal = mesh->face_normal(f);
 
     int g = fmap.FirstPointInElement(f);

@@ -546,7 +546,7 @@ void Polynomial::InverseChangeCoordinates(
     }
   } else if (d_ == 2) {
     // find monor with the largest determinant
-    int i0(0), i1(1), i2;
+    int i0(0), i1(1);
     double det01, det02, det12, tmp01, tmp02, tmp12;
     
     det01 = B[0][0] * B[1][1] - B[0][1] * B[1][0];

@@ -234,7 +234,6 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   bool nka_applied(false), nka_restarted(false);
   int nka_itr = 0;
   int total_backtrack = 0;
-  int prec_error;
   int db_write_iter = 0;
 
 
@@ -287,7 +286,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     du_pic->PutScalar(0.);
-    prec_error = fn_->ApplyPreconditioner(res, du_pic);
+    fn_->ApplyPreconditioner(res, du_pic);
     double du_pic_norm = 0;
     du_pic->NormInf(&du_pic_norm);
 

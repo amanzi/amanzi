@@ -163,7 +163,6 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool fail = false;
   dt_ = t_new - t_old;
-  double dt_MPC(dt_);
   
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");

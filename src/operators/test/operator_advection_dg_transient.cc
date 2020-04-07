@@ -297,13 +297,11 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
 
   for (int c = 0; c < ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double volume = mesh_->cell_volume(c);
 
     ana_.SourceTaylor(xc, t, src);
 
     for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialSetOrder();
 
       WhetStone::Polynomial cmono(d, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
@@ -580,7 +578,6 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);
 
     for (int i = 0; i < 2; ++i) {
       for (int m = 0; m < mk; ++m) {
@@ -788,11 +785,6 @@ void Transient(std::string filename, int nx, int ny, int nz,
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
 
   // DeformMesh(mesh, deform, 0.0);
-
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // initialize I/O
   Teuchos::ParameterList iolist;

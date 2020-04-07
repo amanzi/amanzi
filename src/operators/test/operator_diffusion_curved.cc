@@ -66,7 +66,6 @@ void RunTestDiffusionCurved() {
   // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
@@ -103,7 +102,6 @@ void RunTestDiffusionCurved() {
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator curved");
   Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // -- set up diffusivity coefficient and populate local matrices.
   op->Setup(K, false);
@@ -139,7 +137,7 @@ void RunTestDiffusionCurved() {
   solution.PutScalar(0.0);
 
   // -- run PCG
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -156,7 +154,7 @@ void RunTestDiffusionCurved() {
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // -- coumpute flux error (work in progress)
-  Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+  // Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
   double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
 
   // op->UpdateFlux(solution, flux);

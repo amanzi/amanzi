@@ -181,7 +181,7 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
     if (x_l2 > 0) {
       double alp(0.);
       u.Dot(x, &alp);
-      double sgn = (alp > 0) ? 1 : -1; 
+      // double sgn = (alp > 0) ? 1 : -1; 
       eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
     }
   }              

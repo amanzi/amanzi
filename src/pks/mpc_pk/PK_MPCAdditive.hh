@@ -127,9 +127,6 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
 
   sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
-    // Collect arguments to the constructor
-    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
-
     // create the PK
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
@@ -200,7 +197,7 @@ double PK_MPCAdditive<PK_Base>::get_dt() {
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 void PK_MPCAdditive<PK_Base>::set_dt(double dt_) {
-  double dt = 1.0e99;
+  // double dt = 1.0e99;
   for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->set_dt(dt_);

@@ -75,7 +75,7 @@ void Basis_Regularized<MyMesh>::Init(
     const Teuchos::RCP<const MyMesh>& mesh,
     int c, int order, Polynomial& integrals)
 {
-  int dim, k0 = monomial_scales_.size();
+  int k0 = monomial_scales_.size();
   double volume;
 
   if (k0 < order + 1) {

@@ -172,6 +172,15 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="diffusion operator Raviart-Thomas">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="vem diffusion high order"/>
+        <Parameter name="method order" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
+
     <!-- MIXED MFD schemes -->
     <ParameterList name="diffusion operator mixed">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>

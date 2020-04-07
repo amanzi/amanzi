@@ -122,7 +122,6 @@ FlexibleObservations::FlexibleObservations(
 int FlexibleObservations::MakeObservations(State& S)
 {
   int num_obs(0);
-  int dim = S.GetMesh()->space_dimension();
   std::string unit;
 
   // loop over all observables

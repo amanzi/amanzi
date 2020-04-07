@@ -30,15 +30,10 @@
 
 TEST(SURFACE_COLUMN_MESH_3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
 
   int nx = 4, ny = 4, nz = 4;
   double lx = 4, ly = 4, lz = 4;
-  int dx = 1.0, dy = 1.0, dz = 1.0;
 
   // create a geometric model with surface region
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -113,10 +108,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
 
 TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // create a geometric model with surface region
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =

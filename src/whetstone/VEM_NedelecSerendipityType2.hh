@@ -228,11 +228,10 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
     L2consistency(c, T, N, Mc, true);
 
   // select number of non-aligned faces: we assume cell convexity 
-  int eta(2);
+  // int eta(2);
 
   // degrees of freedom: serendipity space S contains all boundary dofs
   // plus a few internal dofs that depend on the value of eta.
-  int nd = PolynomialSpaceDimension(d, order_);
   int ndof = N.NumRows();
   int ndof_cs = 0;  // required cell moments
   int ndof_s(ndof);  // serendipity dofs
@@ -291,9 +290,6 @@ void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf, DenseVector& vdof)
 {
-  // input mesh may have a different dimension than base mesh
-  int d = mymesh->space_dimension();
-
   Entity_ID_List edges;
   mymesh->cell_get_edges(c, &edges);
   int nedges = edges.size();

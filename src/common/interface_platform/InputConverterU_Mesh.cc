@@ -63,7 +63,6 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
-  DOMElement* element;
 
   bool flag, read(false), generate(false);
   std::string framework, verify;
@@ -234,12 +233,10 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
   MemoryManager mm;
 
   DOMNodeList* node_list;
-  DOMNode *node, *node_attr;
-  DOMElement* element;
-  DOMNamedNodeMap* attr_map;
+  DOMNode *node;
 
   char *tagname, *node_name;
-  char *text_content, *text_content2;
+  char *text_content2;
   std::string reg_name, text;
 
   // get regions node

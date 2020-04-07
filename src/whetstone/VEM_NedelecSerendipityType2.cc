@@ -89,7 +89,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
@@ -102,9 +101,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
   Polynomial pc(d_, order_), pf(d_ - 1, order_), pe(d_ - 2, order_);
 
-  int ndc, ndf, nde;
+  int ndc, nde;
   ndc = pc.size();
-  ndf = PolynomialSpaceDimension(d_ - 1, order_);
   nde = PolynomialSpaceDimension(d_ - 2, order_);
   int ndof_S = nedges * nde;
 
@@ -222,7 +220,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
   for (auto it = it0; it < it1; ++it) {
     int k = it.VectorComponent();
-    int m = it.PolynomialPosition();
     int col = it.VectorPolynomialPosition();
 
     const int* index = it.multi_index();

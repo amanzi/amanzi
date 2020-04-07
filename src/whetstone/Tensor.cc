@@ -145,7 +145,7 @@ void Tensor::PseudoInverse()
 
   } else {
     int n = size_; 
-    int ipiv[n], lwork(3 * n), info;
+    int lwork(3 * n), info;
     double S[n], work[lwork];
 
     Tensor T(*this);
@@ -317,7 +317,7 @@ void Tensor::SpectralBounds(double* lower, double* upper) const
     *upper = (trace + D) / 2;
   } else if (rank_ <= 2) {
     int n = size_; 
-    int ipiv[n], lwork(3 * n), info;
+    int lwork(3 * n), info;
     double S[n], work[lwork];
     
     Tensor T(*this);

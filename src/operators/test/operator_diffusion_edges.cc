@@ -159,7 +159,7 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

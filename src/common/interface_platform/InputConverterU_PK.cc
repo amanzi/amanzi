@@ -45,9 +45,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     *vo_->os() << "Translating time integrator" << std::endl;
 
   MemoryManager mm;
-  DOMNodeList* node_list;
   DOMNode* node;
-  DOMElement* element;
 
   // error control options
   std::vector<std::string> tmp = CharToStrings_(err_options.c_str());

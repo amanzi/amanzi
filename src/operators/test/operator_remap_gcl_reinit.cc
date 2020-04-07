@@ -202,7 +202,6 @@ void MyRemapDGr::StaticCellCoVelocity()
     // space-time cell velocity: v = -j J^{-1} u = -C^t u
     WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
     WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
-    const auto& origin = uc_[c][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
       for (int j = 0; j < dim_; ++j) {
@@ -425,8 +424,6 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.set_dt_output(0.1);
 
   // initial mass
-  auto& sv1 = *p1->SubVector(0)->Data();
-  auto& sv2 = *p2->SubVector(0)->Data();
   double mass0 = remap.InitialMass(*p1, order);
 
   // explicit time integration

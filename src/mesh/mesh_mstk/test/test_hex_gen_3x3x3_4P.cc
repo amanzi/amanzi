@@ -14,8 +14,6 @@
 
 TEST(MSTK_HEX_GEN_3x3x3_4P)
 {
-
-  int i, j, k, err, nc, nf, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
@@ -47,7 +45,7 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
 
-      for (j=0; j<6; j++)
+      for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );

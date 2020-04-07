@@ -14,7 +14,7 @@
 TEST(MSTK_HEX1)
 {
 
-  int i, j, k, err, nc, nv;
+  int i, j, k, nc, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), facenodes(4), cellnodes(8), expfacenodes(4);
   std::vector<int> facedirs(6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);

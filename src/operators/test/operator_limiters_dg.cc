@@ -76,7 +76,6 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   field->ScatterMasterToGhosted("cell");
 
   int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
@@ -170,7 +169,6 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     l2norm = 0.0;
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
-      double volume = mesh->cell_volume(c);
 
       for (int i = 0; i < nk; ++i) data2(i) = (*field_c)[i][c];
 
@@ -202,7 +200,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
 
 TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
-  double l2norm1, l2norm2;
+  double l2norm1;
   RunTest("test/circle_quad10.exo", "orthonormalized", l2norm1);
   // RunTest("test/circle_quad20.exo");
   // RunTest("test/circle_quad40.exo");
@@ -250,14 +248,11 @@ void RunTestGaussPoints(const std::string& limiter_name)
   field->ScatterMasterToGhosted("cell");
 
   int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
-  auto grad = Teuchos::rcp(new CompositeVector(cvs2));
-  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
 
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 2)

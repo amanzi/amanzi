@@ -292,7 +292,6 @@ void PDE_DiffusionNLFV::UpdateMatrices(
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   u->ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& uc = *u->ViewComponent("cell", true);
 
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
@@ -626,10 +625,8 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   Epetra_MultiVector& flux_data = *stencil_data_->ViewComponent("flux_data", true);
-  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
-  int c1, c2, c3, k1, k2, dir;
-  double gamma, tmp;
+  int c1, c2, c3, k1, k2;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
@@ -733,9 +730,6 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
   int c1, c2, dir;
   AmanziMesh::Entity_ID_List cells;
-
-  double disc_val = 0;
-  int f_bad=0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {

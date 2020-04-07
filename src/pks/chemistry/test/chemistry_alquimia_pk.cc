@@ -172,7 +172,10 @@ TEST(INITIALIZE_CRUNCH) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  CPK->Initialize(S.ptr());
 
   // Now create second chemistry PK
-  // auto CPK2 = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+  auto CPK2 = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
+  CPK2->Setup(S.ptr());
+  CPK2->Initialize(S.ptr());
 }
