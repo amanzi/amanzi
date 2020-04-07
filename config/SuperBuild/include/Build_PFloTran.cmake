@@ -86,7 +86,8 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${PFLOTRAN_source_dir}         # Source directory
                     CONFIGURE_COMMAND ""
-                    CMAKE_ARGS    ${PFLOTRAN_CMAKE_CACHE_ARGS}   # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
+                                  ${PFLOTRAN_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}

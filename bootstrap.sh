@@ -1566,7 +1566,6 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 

@@ -59,7 +59,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                     # PATCH_COMMAND ${NetCDF_Fortran_PATCH_COMMAND} 
                     # -- Configure
                     SOURCE_DIR ${NetCDF_Fortran_source_dir}
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                      ${NetCDF_Fortran_CMAKE_CACHE_ARGS}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
@@ -67,7 +67,6 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-                                     -DCMAKE_PREFIX_PATH:FILEPATH=${TPL_INSTALL_PREFIX}
                     # -- Build
                     BINARY_DIR      ${NetCDF_Fortran_build_dir}  
                     BUILD_COMMAND   $(MAKE)                       # enables parallel builds through make
