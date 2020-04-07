@@ -134,15 +134,16 @@ namespace ShallowWater {
 
 				 double vn, vt;
 
-				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
-				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
+				 Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-				 Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-
-				 double h_rec = Reconstruction(xc[0],xc[1],c);
+				 double h_rec = Reconstruction(xcf[0],xcf[1],c);
 //				 double h_rec = h_vec_c[0][c];
 
 				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
+				 std::cout << "xcf = " << xcf << std::endl;
+
+				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
+				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
 
 //				 UL[0] = h_vec_c[0][c];
 //				 UL[1] = h_vec_c[0][c]*vn;
@@ -162,11 +163,21 @@ namespace ShallowWater {
 				 else {
 					 int c_GID = mesh_->GID(c, AmanziMesh::CELL);
  			         int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
+
+ 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn);
+ 	//				 double h_rec = h_vec_c[0][cn];
+
 					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
 					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
- 					 UR[0] = h_vec_c[0][cn];
- 					 UR[1] = h_vec_c[0][cn]*vn;
- 					 UR[2] = h_vec_c[0][cn]*vt;
+
+// 					 UR[0] = h_vec_c[0][cn];
+// 					 UR[1] = h_vec_c[0][cn]*vn;
+// 					 UR[2] = h_vec_c[0][cn]*vt;
+
+ 					 UR[0] = h_rec;
+				     UR[1] = h_rec*vn;
+				     UR[2] = h_rec*vt;
+
 				 }
 
 				 normal[0] /= farea; normal[1] /= farea;
@@ -378,7 +389,7 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     // Barth-Jespersen limiter of the gradient
     //--------------------------------------------------------------
-    void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix grad_lim, int c) {
+    void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix& grad_lim, int c) {
 
     	std::vector<double> Phi_k;
     	std::vector<double> u_av;
@@ -480,6 +491,7 @@ namespace ShallowWater {
 		 WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size()), AtA(2,2), InvAtA(2,2);
 		 WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
 		 WhetStone::DenseMatrix b(cfaces.size(),1);
+		 WhetStone::DenseMatrix Atb(2,1);
 
 		 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
@@ -487,10 +499,7 @@ namespace ShallowWater {
 
 		 for (int f = 0; f < cfaces.size(); f++) {
 
-//			 int orientation;
-//			 normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
-//			 mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
-//			 farea = mesh_->face_area(cfaces[f]);
+			 std::cout << "f = " << f << std::endl;
 
 			 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
@@ -498,28 +507,54 @@ namespace ShallowWater {
 
 			 AmanziGeometry::Point xcn = mesh_->cell_centroid(cn);
 
-			 std::cout << "c = " << c << ", cn = " << cn << ", xcn = " << xcn << std::endl;
+			 std::cout << "xc = " << xc << ", xcn = " << xcn << std::endl;
 
 			 A(f,0) = xcn[0] - xc[0];
 			 A(f,1) = xcn[1] - xc[1];
 
+			 std::cout << "A(f,0) = " << A(f,0) << ",  A(f,1) = " <<  A(f,1) << std::endl;
+
 			 b(f,0) = h_vec_c[0][cn] -  h_vec_c[0][c];
+
+			 std::cout << "b(f,0) = " << b(f,0) << std::endl;
 
 		 }
 
-		 At = A.Transpose();
+		 At.Transpose(A);
+
+		 for (int f = 0; f < cfaces.size(); f++) {
+			 std::cout << "At(0,f) = " << At(0,f) << ",  At(1,f) = " <<  At(1,f) << std::endl;
+		 }
 
 		 AtA.Multiply(At,A,false);
 
-		 InvAtA = AtA.Inverse();
+		 for (int f = 0; f < 2; f++) {
+			 std::cout << "AtA(0,f) = " << AtA(0,f) << ",  AtA(1,f) = " <<  AtA(1,f) << std::endl;
+		 }
 
-		 dudx.Multiply(InvAtA,b,false);
+		 Atb.Multiply(At,b,false);
+
+		 for (int f = 0; f < 2; f++) {
+			 std::cout << "Atb(f,0) = " << Atb(f,0) << std::endl;
+		 }
+
+		 AtA.Inverse();
+
+		 InvAtA = AtA;
+
+		 for (int f = 0; f < 2; f++) {
+			 std::cout << "InvAtA(0,f) = " << InvAtA(0,f) << ",  InvAtA(1,f) = " <<  InvAtA(1,f) << std::endl;
+		 }
+
+		 dudx.Multiply(InvAtA,Atb,false);
+
+		 std::cout << "dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
 
 		 BJ_lim(dudx,dudx_lim,c);
 
-		 double h_rec = h_vec_c[0][c] + dudx_lim(0,0)*(x-xc[0]) + dudx_lim(1,0)*(y-xc[1]);
+		 std::cout << "dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
 
-		 std::cout << "Reconstruction: h_rec = " << h_rec << std::endl;
+		 double h_rec = h_vec_c[0][c] + dudx_lim(0,0)*(x-xc[0]) + dudx_lim(1,0)*(y-xc[1]);
 
          return h_rec;
 
