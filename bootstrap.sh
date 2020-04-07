@@ -1749,7 +1749,7 @@ if [ ${dry_run} == "${FALSE}" ]; then
         status_message "Amanzi build-stage 2: complete"
     fi
   else
-    make -j ${parallel_jobs} VERBOSE=1
+    make -j ${parallel_jobs}
     if [ $? -ne 0 ]; then
         error_message "Failed to build Amanzi"
         exit_now 50

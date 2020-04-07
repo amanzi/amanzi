@@ -14,11 +14,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${CLM_VERSION_MAJOR} ${CLM_VERSION_MINOR} ${CLM_VERSION_PATCH})
 
 # --- Define the arguments passed to CMake.
+# NOTE: hard-coded Debug here is necessary until CLM is safely working...                      
 set(CLM_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DUNSTRUCTURED_HOST:BOOL=ON"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-      "-DCMAKE_BUILD_TYPE:=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_BUILD_TYPE:=Debug"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -fbounds-check -funderscoring")
 
 # --- Add external project build and tie to the CLM build target
