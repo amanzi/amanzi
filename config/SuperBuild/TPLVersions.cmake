@@ -138,6 +138,7 @@
 #   0.97.1       - update MSTK to 3.3.1
 #   0.97.2       - update MSTK to 3.3.5
 #   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
+#   0.97.4       - added CLM
 
 include(CMakeParseArguments)
 
@@ -190,7 +191,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 3)
+set(AMANZI_TPLS_VERSION_PATCH 4)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -534,4 +535,16 @@ set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
+
+#
+# TPL: CLM
+#
+set(CLM_VERSION_MAJOR 0)
+set(CLM_VERSION_MINOR 1)
+set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
+set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
+set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
+set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
+set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
 
