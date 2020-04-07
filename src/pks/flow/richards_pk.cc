@@ -158,7 +158,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   // -- nonlinear coefficients/upwinding
-  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   if (plist_->isParameter("surface rel perm strategy")) {
     clobber_policy_ = plist_->get<std::string>("surface rel perm strategy");
   } else if (plist_->get<bool>("clobber surface rel perm", false)) {
@@ -421,17 +420,32 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(conserved_key_);
 
   // -- Water retention evaluators
-  // -- saturation
-  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  wrm_plist.setName(sat_key_);
-  Teuchos::RCP<Flow::WRMEvaluator> wrm =
-      Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
+  if (plist_->isSublist("water retention evaluator")) {
 
-  if (!S->HasFieldEvaluator(sat_key_)) {
-    S->SetFieldEvaluator(sat_key_, wrm);
-    S->SetFieldEvaluator(sat_gas_key_, wrm);
+    // no list in State, put it there then require.  This can eventually be deprecated!
+    if (!S->HasFieldEvaluator(sat_key_)) {
+      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
+      wrm_plist.setName(sat_key_);
+      wrm_plist.set("field evaluator type", "WRM");
+      S->FEList().set(sat_key_, wrm_plist);
+    }
+
+    if (!S->HasFieldEvaluator(coef_key_)) {
+      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
+      wrm_plist.setName(coef_key_);
+      wrm_plist.set("field evaluator type", "WRM rel perm");
+      S->FEList().set(coef_key_, wrm_plist);
+    }
   }
 
+  // -- saturation
+  S->RequireField(sat_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField(sat_gas_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  auto wrm = S->RequireFieldEvaluator(sat_key_);
+  S->RequireFieldEvaluator(sat_gas_key_);
+        
   // -- rel perm
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -440,16 +454,16 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   locations2[1] = AmanziMesh::BOUNDARY_FACE;
   names2[0] = "cell";
   names2[1] = "boundary_face";
-
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  wrm_plist.setName(coef_key_);
-  wrm_plist.set("evaluator name", coef_key_);
-  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
-  S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
-  wrms_ = wrm->get_WRMs();
+  
+  S->FEList().sublist(coef_key_).set<double>("permeability rescaling", perm_scale_);
+  S->RequireFieldEvaluator(coef_key_);
+
+  // -- get the WRM models
+  auto wrm_eval = Teuchos::rcp_dynamic_cast<Flow::WRMEvaluator>(wrm);
+  AMANZI_ASSERT(wrm_eval != Teuchos::null);
+  wrms_ = wrm_eval->get_WRMs();
 
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField(molar_dens_key_)->SetMesh(mesh_)->SetGhosted()
