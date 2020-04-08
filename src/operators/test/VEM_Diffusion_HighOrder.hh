@@ -42,7 +42,10 @@ class VEM_Diffusion_HighOrder : public MFD3D {
   // main methods 
   // -- symmetric schema
   virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 3));
+    std::vector<SchemaItem> items;
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 3));
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, 1));
+    return items;
   }
 
   // -- mass matrices (not implemented)

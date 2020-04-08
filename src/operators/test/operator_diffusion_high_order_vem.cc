@@ -30,6 +30,7 @@
 #include "SurfaceCoordinateSystem.hh"
 
 // Operators
+#include "Analytic07b.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "VEM_Diffusion_HighOrder.hh"
@@ -59,11 +60,15 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
   Teuchos::RCP<GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, true, true);
 
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  // create boundary data (no mixed bc)
+  // model
+  Analytic07b ana(mesh);
+
+  // create boundary data
   ParameterList op_list = plist.sublist("PK operator")
                                .sublist("diffusion operator Raviart-Thomas");
   int order = op_list.sublist("schema").get<int>("method order");
@@ -84,23 +89,30 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
 
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
-      bc_value_f[f][0] = 0.0;
-      bc_value_f[f][1] = 0.0;
-      bc_value_f[f][2] = 0.0;
+      bc_value_f[f][0] = ana.pressure_exact(xf, 0.0);
+      bc_value_f[f][1] = ana.pressure_exact(xf, 0.0);
+      bc_value_f[f][2] = ana.pressure_exact(xf, 0.0);
     }
   }
 
-  // create diffusion operator 
   Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->AddBCs(bc_f, bc_f);
-  
-  // populate the diffusion operator
+
+  // create source term
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
-std::cout << "HERE" << std::endl;
+
+  auto& rhs = *global_op->rhs();
+  auto& rhs_c = *rhs.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
+    rhs_c[0][c] = ana.source_exact(xc, 0.0) * volume;
+  }
+
+  // populate the diffusion operator
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-std::cout << "HERE" << std::endl;
-global_op->rhs()->Print(std::cout);
   op->ApplyBCs(true, true, true);
 
   global_op->SymbolicAssembleMatrix();
@@ -120,17 +132,20 @@ global_op->rhs()->Print(std::cout);
       solver(global_op, global_op);
   solver.Init(lop_list);
 
-  CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
   solver.ApplyInverse(rhs, solution);
 
+  // compute pressure error
+  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+
+    CHECK(pl2_err < 1e-2);
   }
-exit(0);
 }
 

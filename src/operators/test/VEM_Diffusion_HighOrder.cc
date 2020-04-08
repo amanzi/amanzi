@@ -37,12 +37,56 @@ RegisteredFactory<VEM_Diffusion_HighOrder> VEM_Diffusion_HighOrder::factory_("ve
 int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix M;
+  plist_.set<bool>("save face matrices", true);
   VEM_RaviartThomasSerendipity vem(plist_, mesh_);
 
   int ok = vem.MassMatrix(c, K, M);
   if (ok) return ok;
 
-  A = M;
+  // static condensation
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  const auto& MGf = vem.MGf(); 
+  AMANZI_ASSERT(MGf.size() == nfaces);
+
+  int nrows = M.NumRows();
+  DenseMatrix C(nrows, nrows), B(nrows, 1), BT(1, nrows);
+  C.PutScalar(0.0);
+  B.PutScalar(0.0);
+  BT.PutScalar(0.0);
+
+  // -- populate interface and divergence matrices
+  int pos(0);
+  for (int n = 0; n < nfaces; ++n) {
+    double area = mesh_->face_area(faces[n]);
+
+    int mrows = MGf[n].NumRows(); 
+    C.InsertSubMatrix(MGf[n], 0, mrows, 0, mrows, pos, pos);
+    B(pos, 0) = BT(0, pos) = area;
+
+    pos += mrows;
+  }
+  
+  // -- elliminate lagrange multipliers, leave central pressure
+  M.InverseSPD();
+  auto MC = M * C;
+  auto MB = M * B;
+  
+  auto CMC = C * MC;
+  auto BMC = BT * MC;
+  auto CMB = C * MB;
+  auto BMB = BT * MB;
+
+  A.Reshape(nrows + 1, nrows + 1);
+  A.InsertSubMatrix(CMC, 0, nrows, 0, nrows, 0, 0);
+  A.InsertSubMatrix(CMB, 0, nrows, 0, 1, 0, nrows);
+  A.InsertSubMatrix(BMC, 0, 1, 0, nrows, nrows, 0);
+  A(nrows, nrows) = BMB(0, 0);
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

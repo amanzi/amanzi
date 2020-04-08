@@ -47,6 +47,7 @@ VEM_RaviartThomasSerendipity::VEM_RaviartThomasSerendipity(
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
+  save_face_matrices_ = plist.get<bool>("save face matrices");
 }
 
 
@@ -102,6 +103,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
+  MGf_.clear();
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -123,6 +125,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     vMGf.push_back(MG);
 
     auto S = MG.SubMatrix(0, ndf, 0, ndf);
+    if (save_face_matrices_) MGf_.push_back(S);
     S.InverseSPD();
     vMGs.push_back(S);
   }
@@ -245,7 +248,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
 
       int stride1 = u3.NumRows() / d_;
       int stride2 = ndc;
-      basis.ChangeBasisNaturalToMy(u3, stride1);
+      basis.ChangeBasisNaturalToMy(u3, d_);
       u3.Regroup(stride1, stride2);
 
       MGc.BlockMultiply(u3, w3, false);

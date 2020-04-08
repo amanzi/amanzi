@@ -140,7 +140,6 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   } else if (matrix_ == "stiffness") {
     for (int c = 0; c < ncells_owned; ++c) {
       interface_->StiffnessMatrix(c, Acell);
-std::cout << Acell << std::endl;
       matrix[c] = Acell;
     }
   } else if (matrix_ == "divergence") {

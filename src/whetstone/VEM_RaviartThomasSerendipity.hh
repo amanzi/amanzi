@@ -62,6 +62,7 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
 
   // access
   DenseMatrix& G() { return G_; }
+  const std::vector<DenseMatrix>& MGf() { return MGf_; }
 
  protected:
   using MFD3D::mesh_;
@@ -70,6 +71,9 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
  private:
   PolynomialOnMesh integrals_;
   DenseMatrix G_;
+
+  bool save_face_matrices_;
+  std::vector<DenseMatrix> MGf_;
 
  private:
   static RegisteredFactory<VEM_RaviartThomasSerendipity> factory_;
