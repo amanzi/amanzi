@@ -141,6 +141,7 @@ petsc=${TRUE}
 pflotran=${FALSE}
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
+ats_dev=${FALSE}
 shared=${FALSE}
 silo=${FALSE}
 
@@ -325,6 +326,8 @@ Configuration:
   --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
+
+  --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
 
 Build features:
@@ -471,6 +474,7 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    ats_dev             = '"${ats_dev}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -748,6 +752,13 @@ List of INPUT parameters
     alquimia=${geochemistry}
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
+  fi
+
+  if [ "${ats_physics}" -eq "${FALSE}" ]; then
+    if [ "${clm}" -eq "${TRUE}" ]; then
+      error_message "Option 'clm' requires option 'ats_physics'"
+      exit_now 30
+    fi
   fi
 
   # check compatibility
@@ -1559,6 +1570,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
@@ -1566,7 +1578,6 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1648,10 +1659,13 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
         exit_now 30
     fi
 
-    git_submodule_clone "src/physics/ats"
-
-    if [ ! -z "${ats_branch}" ]; then
-    git_change_branch_ats ${ats_branch}
+    if [ "${ats_dev}" -eq "${TRUE}" ]; then
+        status_message "Build ATS without cloning new repository (ats_dev = ${ats_dev})"
+    else
+        git_submodule_clone "src/physics/ats"
+        if [ ! -z "${ats_branch}" ]; then
+            git_change_branch_ats ${ats_branch}
+        fi
     fi
 fi
 
@@ -1677,6 +1691,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \

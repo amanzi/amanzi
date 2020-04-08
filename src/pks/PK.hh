@@ -8,7 +8,8 @@
 */
 //! The interface for a Process Kernel, an equation or system of equations.
 
-/*!  
+/*!
+  
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -18,7 +19,10 @@ Implementations of this interface typically are either an MPC
 other PKs and represent the system of equations, or a Physical PK,
 which represents a single equation.
 
-All PKs have the following parameters in their spec:
+Note there are two PK specs -- the first is the "typed" spec, which appears in
+the "cycle driver" list in the PK tree.  The second is the spec for the base
+class PK, which is inherited and included by each actual PK, and lives in the
+"PKs" sublist of "main".
 
 .. _pk-typed-spec:
 .. admonition:: pk-typed-spec
@@ -27,6 +31,13 @@ All PKs have the following parameters in their spec:
     * `"sub PKs`" ``[pk-typed-spec-list]`` **optional** If there are sub pks, list them.
     * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
 
+.. _pk-spec:
+.. admonition:: pk-spec
+
+    * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
+      match the corresponding entry in the ``[pk-typed-spec]``
+    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
+    
 Example:
 
 .. code-block:: xml

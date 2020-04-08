@@ -51,7 +51,7 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     PATCH_COMMAND ${XERCES_PATCH_COMMAND} 
                     # -- Configure
                     SOURCE_DIR   ${XERCES_source_dir}          # Source directory
-                    CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # Ensure uniform build
                                  ${XERCES_CMAKE_ARGS}
                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

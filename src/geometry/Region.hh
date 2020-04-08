@@ -26,42 +26,54 @@ Instead, they take a single sublist whose name defines the type.
 .. _region-spec:
 .. admonition:: region-spec
 
-    ONE OF:
+    ONE OF
 
     * `"region: all`" ``[list]`` See All_.
-    OR:
+
+    OR
 
     * `"region: box`" ``[region-box-spec]`` See Box_.
-    OR:
+
+    OR
 
     * `"region: plane`" ``[region-plane-spec]`` See Plane_.
-    OR:
+
+    OR
 
     * `"region: labeled set`" ``[region-labeled-set-spec]`` See `Labeled Set`_.
-    OR:
 
-    * `"region: color function`" ``[region-color-function-spec]`` See `Color Function`_.
-    OR:
+    OR
+
+    * `"region: color function`" ``[region-color-function-spec]`` See `Function Color`_.
+
+    OR
 
     * `"region: point`" ``[region-point-spec]`` See Point_.
-    OR:
+
+    OR
 
     * `"region: logical`" ``[region-logical-spec]`` See Logical_.
-    OR:
+
+    OR
 
     * `"region: polygon`" ``[region-polygon-spec]`` See Polygon_.
-    OR:
+
+    OR
 
     * `"region: enumerated`" ``[region-enumerated-spec]`` See Enumerated_.
-    OR:
+
+    OR
 
     * `"region: boundary`" ``[region-boundary-spec]`` See Boundary_.
-    OR:
+
+    OR
 
     * `"region: box volume fractions`" ``[region-box-volume-fractions-spec]`` See `Box Volume Fractions`_.
-    OR:
+
+    OR
 
     * `"region: line segment`" ``[region-line-segment-spec]`` See `Line Segment`_.
+
     END
 
 

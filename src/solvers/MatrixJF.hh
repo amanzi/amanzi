@@ -1,13 +1,39 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
+/*!
+
+The Jacobian-Free Matrix operator, which is used to estimate the action of the
+Jacobian.
+
+A variety of methods are available for choosing the epsilon used to approximate
+the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
+
+
+..todo:: Document these
+
+.. _jf-matrix-spec:
+.. admonition:: jf-matrix-spec
+
+    * "typical solution value" [double] **100** Used in relative action
+      approximations. **OPTION NOT IMPLEMENTED**
+
+    * "finite difference epsilon" [double] **1.e-8** defines the base finite
+      difference epsilon.
+
+    * "method for epsilon" [string] defines a method for calculating finite
+      difference epsilon. Available option is "Knoll-Keyes", "Knoll-Keyes L2",
+      "Brown-Saad".  See Knoll
+ */
+
+
+/*
   This decorator class wraps a nonlinear SolverFnBase as a Matrix
   class that approximates the linear problem at a point by doing a
   standard finite difference (i.e. Knoll and Keyes '04) to approximate
@@ -22,6 +48,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "errors.hh"
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -184,7 +211,7 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
       // double sgn = (alp > 0) ? 1 : -1; 
       eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
     }
-  }              
+
   // else if (method_name_ == "simple") {
   //   double x_l2(0.0);
   //   x.Norm2(&x_l2);
@@ -198,12 +225,12 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
   //     //std::cout<<u_l1<<" "<<x_l2<<" "<<num<<"\n";    
   //     eps = (b*u_l1)/(num*x_l2) + b;
   //   }
-  // }
 
-  //eps = eps_;
-  //eps = 1e-10;
-  //std::cout<<"eps "<<eps<<"\n";
-    
+  } else {
+    Errors::Message msg("Invalid JFNK \"method for epsilon\".  Valid are \"Knoll-Keyes\", \"Knoll-Keyes L2\", and \"Brown-Saad\".");
+    Exceptions::amanzi_throw(msg);
+  }
+  
   return eps;
 }
 

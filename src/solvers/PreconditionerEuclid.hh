@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,8 +6,25 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+*/
+//! HYPRE's parallel ILU as a preconditioner.
 
-  HYPRE Euclid parallel ILU preconditioner.
+/*!
+
+Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
+through the Ifpack interface.
+
+This is provided when using the `"preconditioner type`"=`"euclid`" in the
+`Preconditioner`_ spec.
+
+.. _preconditioner-typed-euclid-spec:
+.. admonition:: preconditioner-typed-euclid-spec:
+
+    * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
+    * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
+    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
+    * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
+
 */
 
 #ifndef AMANZI_PRECONDITIONER_EUCLID_HH_

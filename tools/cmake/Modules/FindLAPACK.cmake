@@ -172,6 +172,7 @@ if(_libraries_work)
   else(UNIX AND BLA_STATIC)
     set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_blas} ${_threads})
   endif(UNIX AND BLA_STATIC)
+
   if (NOT _LANGUAGES_ MATCHES Fortran)
     check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
   else (NOT _LANGUAGES_ MATCHES Fortran)
