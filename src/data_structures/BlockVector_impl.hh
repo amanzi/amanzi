@@ -24,6 +24,7 @@
 #define AMANZI_BLOCK_VECTOR_IMPL_HH_
 
 #include <numeric>
+#include "Teuchos_FancyOStream.hpp"
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -339,30 +340,23 @@ BlockVector<Scalar>::putScalarMasterAndGhosted(Scalar scalar)
 };
 
 
-// template<typename Scalar>
-// int
-// BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
-//   for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
-//     int size_owned = mastervec_->size(names_[lcv_comp]);
-//     int size_ghosted = ghostvec_->size(names_[lcv_comp]);
+template<typename Scalar>
+void
+BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
+  for (const auto& comp : *this) {
+    auto vv = ViewComponent(comp, true);
 
-//     using Range_type = Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace,
-//     int>;
-//     /*
-//     auto vec = ViewComponent(names_[lcv_comp], true);
-//     Kokkos::parallel_for("putScalarGhosted", Range_type(size_owned,
-//     size_ghosted),
-// 			 [=] (const int& i) { vec(i) = scalar; })
-//     */
-//     auto vec = ViewComponent(names_[lcv_comp], true);
-//     auto vec_ghost_view = Kokkos::subview(vec, std::make_pair(size_owned,
-//     size_ghosted), Kokkos::ALL()); Kokkos::parallel_for("putScalarGhosted",
-//     Range_type(0, size_ghosted - size_owned),
-
-
-//   }
-//   return 0;
-// }
+    int size_owned = GetComponent(comp,false)->getLocalLength();
+    Kokkos::MDRangePolicy<Kokkos::Rank<2>> range_policy(
+        {size_owned,0}, {vv.extent(0),vv.extent(1)});
+    Kokkos::parallel_for(
+        "BlockVector_impl::putScalarGhosted",
+        range_policy,
+        KOKKOS_LAMBDA (const int i, const int j) {
+          vv(i,j) = scalar;
+        });
+  }
+}
 
 
 // this <- abs(this)
@@ -417,7 +411,7 @@ BlockVector<Scalar>::dot(const BlockVector<Scalar>& other) const
     result += std::accumulate(
       intermediate_result.begin(), intermediate_result.end(), (Scalar)0);
   }
-  return 0;
+  return result;
 };
 
 
@@ -459,16 +453,39 @@ BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB,
                                          Scalar scalarThis)
 {
   for (const auto& name : *this) {
-    if (A.GetComponent_(name)->getNumVectors() > 1) {
-      Errors::Message message("Not implemented multiply: Tpetra does not "
-                              "provide elementwise multiply.");
+    // There is a nasty gotcha here -- if this is A, when we call getVector we
+    // clobber data and break things without erroring.  But this being B is ok.
+    //
+    if (B.GetComponent_(name) != this->GetComponent(name) &&
+        A.GetComponent_(name) == this->GetComponent(name)) {
+      if (B.GetComponent_(name)->getNumVectors() > 1) {
+        Errors::Message message("Not implemented multiply: Tpetra does not "
+                "provide multivector elementwise multiply.");
+        Exceptions::amanzi_throw(message);
+      }
+    
+      GetComponent_(name)->elementWiseMultiply(
+          scalarAB,
+          *B.GetComponent_(name)->getVector(0),
+          *A.GetComponent_(name),
+          scalarThis);
+    } else if (B.GetComponent_(name) == this->GetComponent(name) &&
+               A.GetComponent_(name) == this->GetComponent(name)) {
+      Errors::Message message("Unclear whether, in elementWiseMultiply(), A,B,& this can all be the same vector.");
       Exceptions::amanzi_throw(message);
+    } else {
+      if (A.GetComponent_(name)->getNumVectors() > 1) {
+        Errors::Message message("Not implemented multiply: Tpetra does not "
+                "provide multivector elementwise multiply.");
+        Exceptions::amanzi_throw(message);
+      }
+    
+      GetComponent_(name)->elementWiseMultiply(
+          scalarAB,
+          *A.GetComponent_(name)->getVector(0),
+          *B.GetComponent_(name),
+          scalarThis);
     }
-    GetComponent_(name)->elementWiseMultiply(
-      scalarAB,
-      *A.GetComponent_(name)->getVector(0),
-      *B.GetComponent_(name),
-      scalarThis);
   }
 };
 
@@ -612,8 +629,10 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
     os << name << "(" << getNumVectors(name) << ") ";
   }
   os << std::endl;
+
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(os));
   if (data_io) {
-    for (const auto& name : *this) { GetComponent_(name, ghosted)->print(os); }
+    for (const auto& name : *this) { GetComponent_(name, ghosted)->describe(out, Teuchos::VERB_EXTREME); }
   }
 };
 

@@ -123,13 +123,13 @@ int
 PK_MixinMPCImplicit<Base_t, PK_Contained_t>::ApplyPreconditioner(
   Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
 {
-  int ierr;
   int i = 0;
   for (auto& pk : sub_pks_) {
-    ierr += pk->ApplyPreconditioner(u->SubVector(i), Pu->SubVector(i));
+    auto ierr = pk->ApplyPreconditioner(u->SubVector(i), Pu->SubVector(i));
+    if (ierr) return ierr;
     ++i;
   }
-  return ierr;
+  return 0;
 }
 
 // computes a norm on u-du and returns the result

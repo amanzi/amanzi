@@ -72,7 +72,9 @@ class FunctionStaticHead : public Function {
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
   {
     h_->apply(in, out);
-    Kokkos::parallel_for(in.extent(1), KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "FunctionStaticHead::apply",
+      in.extent(1), KOKKOS_LAMBDA(const int& i) {
       out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
     });
   }

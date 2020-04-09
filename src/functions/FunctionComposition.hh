@@ -74,7 +74,9 @@ class FunctionComposition : public Function {
     Kokkos::deep_copy(tmpin, in);
     f2_->apply(tmpin, out_1);
     // Change all first value
-    Kokkos::parallel_for(in.extent(1), KOKKOS_LAMBDA(const int& j) {
+    Kokkos::parallel_for(
+      "FunctionComposition::apply",
+      in.extent(1), KOKKOS_LAMBDA(const int& j) {
       for (int i = 0; i < in.extent(0); ++i) tmpin(i, j) = out_1(i);
     });
     f1_->apply(tmpin, out);

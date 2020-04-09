@@ -115,23 +115,23 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(2, node.dim());
 
   // -- check sets
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf;
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface",
                                      Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      cells_in_surf,
                                      NULL);
-  CHECK_EQUAL(1, cells_in_surf.extent(0));
-  CHECK_EQUAL(0, cells_in_surf(0));
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf_2D;
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain",
                                      Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      cells_in_surf_2D,
                                      NULL);
-  CHECK_EQUAL(1, cells_in_surf_2D.extent(0));
-  CHECK_EQUAL(0, cells_in_surf_2D(0));
+  CHECK_EQUAL(1, cells_in_surf_2D.size());
+  CHECK_EQUAL(0, cells_in_surf_2D[0]);
 
   // -- check volumes
   CHECK_CLOSE(1.0, col_surf.cell_volume(0, false), 1.e-9);
@@ -192,23 +192,23 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
               col_surf.num_entities(Amanzi::AmanziMesh::NODE,
                                     Amanzi::AmanziMesh::Parallel_type::OWNED));
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf;
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface",
                                      Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      cells_in_surf,
                                      NULL);
-  CHECK_EQUAL(1, cells_in_surf.extent(0));
-  CHECK_EQUAL(0, cells_in_surf(0));
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf_2D;
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain",
                                      Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      cells_in_surf_2D,
                                      NULL);
-  CHECK_EQUAL(1, cells_in_surf.extent(0));
-  CHECK_EQUAL(0, cells_in_surf(0));
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
 
   CHECK_CLOSE(6400.0, col_surf.cell_volume(0, false), 1.e-9);
   CHECK_CLOSE(80.0, col_surf.face_area(3), 1.e-9);

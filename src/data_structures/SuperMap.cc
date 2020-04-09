@@ -32,6 +32,7 @@
 #include "BlockVector.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector_Utils.hh"
+#include "TreeVector.hh"
 #include "SuperMap.hh"
 
 namespace Amanzi {
@@ -60,6 +61,134 @@ createSuperMap(const TreeVectorSpace& tvs)
     return Teuchos::rcp(new SuperMap(tvs.Comm(), cvss));
   }
 }
+
+
+// Copy in/out
+int
+copyToSuperVector(const SuperMap& map, const BlockVector<Vector_type::scalar_type>& bv,
+                  Vector_type& sv, int block_num)
+{
+  auto svv = sv.getLocalViewDevice();
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto data = bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::copyToSuperVector",
+          data.extent(0),
+                             KOKKOS_LAMBDA(const int i) {
+                               svv(inds(i),0) = data(i,dofnum);
+                             });
+      }
+    }
+  }
+  return 0;
+}
+
+int
+copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                    BlockVector<Vector_type::scalar_type>& bv, int block_num)
+{
+  auto svv = sv.getLocalViewDevice();
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto data = bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::copyFromSuperVector",
+          data.extent(0),
+                             KOKKOS_LAMBDA(const int i) {
+                               data(i,dofnum) = svv(inds(i),0);
+                             });
+      }
+    }
+  }  
+  return 0;
+}
+
+int
+addFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                   BlockVector<Vector_type::scalar_type>& bv, int block_num)
+{
+  auto svv = sv.getLocalViewDevice();
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto data = bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::addFromSuperVector",
+          data.extent(0),
+                             KOKKOS_LAMBDA(const int i) {
+                               data(i,dofnum) += svv(inds(i),0);
+                             });
+      }
+    }
+  }  
+  return 0;
+}
+
+// Nonmember TreeVector to/from Super-vector
+// -- simple schema version
+int
+copyToSuperVector(const SuperMap& map, const TreeVector& tv,
+                  Vector_type& sv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return copyToSuperVector(map, *tv.Data(), sv, 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves_const(tv);
+    int block_num = 0;
+    for (const auto& sub_tv : sub_tvs) {
+      ierr |= copyToSuperVector(map, *sub_tv->Data(), sv, block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+int
+copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                    TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return copyFromSuperVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (auto& sub_tv : sub_tvs) {
+      ierr |= copyFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+int
+addFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                   TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return addFromSuperVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (auto& sub_tv : sub_tvs) {
+      ierr |= addFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
 
 
 SuperMap::SuperMap(const Comm_ptr_type& comm,

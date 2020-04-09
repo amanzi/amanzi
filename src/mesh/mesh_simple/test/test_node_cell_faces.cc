@@ -32,16 +32,16 @@ TEST(NODE_CELL_FACES)
   for (int i = 0; i < exp_nnode; i++) {
     Amanzi::AmanziMesh::Entity_ID node = i;
 
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    Amanzi::AmanziMesh::Entity_ID_List cells;
 
     Mm.node_get_cells(node, Amanzi::AmanziMesh::Parallel_type::OWNED, cells);
 
-    unsigned int ncells = cells.extent(0);
+    unsigned int ncells = cells.size();
 
     for (int j = 0; j < ncells; j++) {
-      Amanzi::AmanziMesh::Entity_ID cell = cells(j);
+      Amanzi::AmanziMesh::Entity_ID cell = cells[j];
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces;
+      Amanzi::AmanziMesh::Entity_ID_List faces;
 
       Mm.node_get_cell_faces(
         node, cell, Amanzi::AmanziMesh::Parallel_type::OWNED, faces);
@@ -49,21 +49,21 @@ TEST(NODE_CELL_FACES)
       // This is a hex mesh. In any given cell, number of faces
       // connected to a node should be 3
 
-      CHECK_EQUAL(3, faces.extent(0));
+      CHECK_EQUAL(3, faces.size());
 
       for (int k = 0; k < 3; k++) {
-        Amanzi::AmanziMesh::Entity_ID face = faces(k);
+        Amanzi::AmanziMesh::Entity_ID face = faces[k];
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
+        Amanzi::AmanziMesh::Entity_ID_List fnodes;
 
         Mm.face_get_nodes(face, fnodes);
 
-        unsigned int nfnodes = fnodes.extent(0);
+        unsigned int nfnodes = fnodes.size();
 
         unsigned int found = 0;
 
         for (int n = 0; n < nfnodes; n++) {
-          if (fnodes(n) == node) {
+          if (fnodes[n] == node) {
             found = 1;
             break;
           }

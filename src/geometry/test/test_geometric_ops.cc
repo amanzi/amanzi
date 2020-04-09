@@ -33,7 +33,7 @@ TEST(Geometric_Ops)
   //         0-----------1
 
 
-  Kokkos::View<Amanzi::AmanziGeometry::Point*> ccoords3, fcoords3;
+  std::vector<Amanzi::AmanziGeometry::Point> ccoords3, fcoords3;
 
   int nf = 6;
 
@@ -52,25 +52,24 @@ TEST(Geometric_Ops)
                                      { 0.0, 0.0, 1.0 },  { -1.0, 0.0, 0.0 },
                                      { 0.0, -1.0, 0.0 }, { 0.0, 1.0, 0.0 } };
 
-  Kokkos::resize(ccoords3, 8);
+  ccoords3.resize(8); 
   for (int i = 0; i < 8; i++) {
     Amanzi::AmanziGeometry::Point xyz3(3);
     xyz3.set(hex_ccoords1[i][0], hex_ccoords1[i][1], hex_ccoords1[i][2]);
-    ccoords3(i) = xyz3;
+    ccoords3[i] = xyz3;
   }
 
   for (int i = 0; i < nf; i++) {
-    Kokkos::View<Amanzi::AmanziGeometry::Point*> locfcoords3;
-    Kokkos::resize(locfcoords3, nfnodes[i]);
+    std::vector<Amanzi::AmanziGeometry::Point> locfcoords3;
+    locfcoords3.resize(nfnodes[i]); 
 
     for (int j = 0; j < nfnodes[i]; j++) {
       Amanzi::AmanziGeometry::Point xyz3(3);
 
       int k = hex_fnodes[i][j];
       xyz3.set(hex_ccoords1[k][0], hex_ccoords1[k][1], hex_ccoords1[k][2]);
-      locfcoords3(j) = xyz3;
-      Kokkos::resize(fcoords3, fcoords3.extent(0) + 1);
-      fcoords3(fcoords3.extent(0) - 1) = xyz3;
+      locfcoords3[j] = xyz3;
+      fcoords3.push_back(xyz3);
     }
 
     double farea;

@@ -183,8 +183,39 @@ class Mesh {
   entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const = 0;
 
   // Parent entity in the source mesh if mesh was derived from another mesh
+  KOKKOS_INLINE_FUNCTION Entity_ID
+  entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
+  {
+    assert(parents_precomputed_); 
+    switch(kind){
+      case CELL:
+        if(entid > cells_parent_.extent(0))
+          return -1; 
+        return cells_parent_(entid);  
+        break;
+      case FACE: 
+        if(entid > faces_parent_.extent(0))
+          return -1; 
+        return faces_parent_(entid);
+        break; 
+      case EDGE: 
+        assert(edges_requested_); 
+        if(entid > edges_parent_.extent(0))
+          return -1; 
+        return edges_parent_(entid);
+        break; 
+      case NODE: 
+        if(entid > nodes_parent_.extent(0))
+          return -1; 
+        return nodes_parent_(entid);
+      default: {} 
+    }
+    return -1;
+  }
+
+
   virtual Entity_ID
-  entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
+  entity_get_parent_type(const Entity_kind kind, const Entity_ID entid) const;
 
   // Get cell type - UNKNOWN, TRI, QUAD, etc. See MeshDefs.hh
   virtual Cell_type cell_get_type(const Entity_ID cellid) const = 0;
@@ -277,9 +308,21 @@ class Mesh {
   }
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void cell_get_faces_and_bisectors(
-    const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-    Kokkos::View<AmanziGeometry::Point*>* bisectors) const;
+  KOKKOS_INLINE_FUNCTION void 
+  cell_get_faces_and_bisectors(const Entity_ID cellid, 
+                      Kokkos::View<Entity_ID*>& faceids,
+                      Kokkos::View<AmanziGeometry::Point*>& bisectors) const
+  {
+    assert(cell_get_faces_and_bisectors_precomputed_); 
+    faceids =
+      Kokkos::subview(cell_face_ids_.entries,
+                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
+                                        cell_face_ids_.row_map(cellid + 1)));
+    bisectors = 
+      Kokkos::subview(cell_faces_bisectors_.entries,
+                    Kokkos::make_pair(cell_faces_bisectors_.row_map(cellid),
+                                      cell_faces_bisectors_.row_map(cellid + 1)));
+}
 
   // Get edges of a cell
   void cell_get_edges(const Entity_ID cellid,
@@ -297,7 +340,7 @@ class Mesh {
 
   // Get nodes of a cell
   virtual void cell_get_nodes(const Entity_ID cellid,
-                              Kokkos::View<Entity_ID*>& nodeids) const = 0;
+                              Entity_ID_List& nodeids) const = 0;
 
   // Get edges of a face and directions in which the face uses the edges.
   //
@@ -334,7 +377,7 @@ class Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   virtual void face_get_nodes(const Entity_ID faceid,
-                              Kokkos::View<Entity_ID*>& nodeids) const = 0;
+                              Entity_ID_List& nodeids) const = 0;
 
   // Get nodes of edge
   virtual void edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0,
@@ -349,14 +392,14 @@ class Mesh {
   // The order of cells is not guaranteed to be the same for corresponding
   // nodes on different processors
   virtual void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const = 0;
+                              Entity_ID_List& cellids) const = 0;
 
   // Faces of type 'ptype' connected to a node
   //
   // The order of faces is not guarnateed to be the same for corresponding
   // nodes on different processors
   virtual void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& faceids) const = 0;
+                              Entity_ID_List& faceids) const = 0;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node
@@ -366,14 +409,14 @@ class Mesh {
   virtual void
   node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                       const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*>& faceids) const = 0;
+                      Entity_ID_List& faceids) const = 0;
 
   // Cells of type 'ptype' connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
   virtual void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const = 0;
+                              Entity_ID_List& cellids) const = 0;
 
   // Cells connected to a face
   //
@@ -445,14 +488,14 @@ class Mesh {
   // faces given by cell_get_faces
   virtual void
   cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& fadj_cellids) const = 0;
+                          Entity_ID_List& fadj_cellids) const = 0;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   virtual void
   cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& nadj_cellids) const = 0;
+                          Entity_ID_List& nadj_cellids) const = 0;
 
 
   //
@@ -487,11 +530,11 @@ class Mesh {
 
   // Given a column ID, get the cells of the column - must call build_columns
   // before calling
-  Kokkos::View<Entity_ID*> cells_of_column(const int columnID_) const;
+  const Entity_ID_List& cells_of_column(const int columnID_) const;
 
   // Given a column ID, get the cells of the column - must call build_columns
   // before calling
-  Kokkos::View<Entity_ID*> faces_of_column(const int columnID_) const;
+  const Entity_ID_List& faces_of_column(const int columnID_) const;
 
   // Given a cell, get its column ID - must call build_columns before calling
   int column_ID(const Entity_ID cellid) const;
@@ -521,7 +564,7 @@ class Mesh {
   // Number of nodes is the vector size.
   virtual void
   face_get_coordinates(const Entity_ID faceid,
-                       Kokkos::View<AmanziGeometry::Point*>& fcoords) const = 0;
+                       std::vector<AmanziGeometry::Point>& fcoords) const = 0;
 
   // Coordinates of cells in standard order (Exodus II convention)
   //
@@ -530,7 +573,7 @@ class Mesh {
   // order.
   virtual void
   cell_get_coordinates(const Entity_ID cellid,
-                       Kokkos::View<AmanziGeometry::Point*>& ccoords) const = 0;
+                       std::vector<AmanziGeometry::Point>& ccoords) const = 0;
 
   // Volume/Area of cell
   double cell_volume(const Entity_ID cellid, const bool recompute) const;
@@ -695,9 +738,9 @@ class Mesh {
   // communication capabilities, other than Trilinos object
   // communication or raw MPI.
   virtual int
-  deform(const Kokkos::View<Entity_ID*>& nodeids,
+  deform(const Entity_ID_List& nodeids,
          const AmanziGeometry::Point_List& new_positions, const bool keep_valid,
-         Kokkos::View<AmanziGeometry::Point*>& final_positions);
+         std::vector<AmanziGeometry::Point>& final_positions);
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -706,7 +749,7 @@ class Mesh {
   // Nodes in any set in the fixed_sets will not be permitted to move.
   virtual int deform(const std::vector<double>& target_cell_volumes_in,
                      const std::vector<double>& min_cell_volumes_in,
-                     const Kokkos::View<Entity_ID*>& fixed_nodes,
+                     const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) = 0;
 
 
@@ -789,20 +832,32 @@ class Mesh {
   virtual void
   get_set_entities(const std::string setname, const Entity_kind kind,
                    const Parallel_type ptype,
-                   Kokkos::View<Entity_ID*>& entids) const;
+                   Entity_ID_List& entids) const;
 
   // -- deprecated interface
   virtual void get_set_entities(const Set_ID setid, const Entity_kind kind,
                                 const Parallel_type ptype,
-                                Kokkos::View<Entity_ID*>& entids) const;
+                              Entity_ID_List& entids) const;
 
+  void get_set_entities(const Set_ID setid, const Entity_kind kind,
+                        const Parallel_type ptype,
+                        Entity_ID_View& entids) const {
+    Entity_ID_List ids_list;
+    get_set_entities(setid, kind, ptype, ids_list);
+    Kokkos::resize(entids, ids_list.size());
+    {
+      Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
+      Kokkos::deep_copy(entids, ids_host);
+    }
+  }
+  
   // -- new interface. Since not all regions support volume fractions
   // (vofs), this vector is optional and could be empty.
   virtual void
   get_set_entities_and_vofs(const std::string setname, const Entity_kind kind,
                             const Parallel_type ptype,
-                            Kokkos::View<Entity_ID*>& entids,
-                            Kokkos::View<double*>* vofs) const = 0;
+                            Entity_ID_List& entids,
+                            std::vector<double>* vofs) const = 0;
 
   //
   // High-order mesh
@@ -866,32 +921,32 @@ class Mesh {
   // Get faces of a cell and directions in which it is used.
   virtual void
   cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                    Kokkos::View<Entity_ID*>& faceids,
-                                    Kokkos::View<int*>& face_dirs) const = 0;
+                                    Entity_ID_List& faceids,
+                                    std::vector<int>& face_dirs) const = 0;
 
 
   // Cells connected to a face
   virtual void
   face_get_cells_internal_(const Entity_ID faceid, const Parallel_type ptype,
-                           Kokkos::View<Entity_ID*>& cellids) const = 0;
+                           Entity_ID_List& cellids) const = 0;
 
   // edges of a face
   virtual void
   face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-                                    Kokkos::View<Entity_ID*>& edgeids,
-                                    Kokkos::View<int*>* edge_dirs,
+                                    Entity_ID_List& edgeids,
+                                    std::vector<int>* edge_dirs,
                                     const bool ordered = true) const = 0;
 
   // edges of a cell
   virtual void
   cell_get_edges_internal_(const Entity_ID cellid,
-                           Kokkos::View<Entity_ID*>& edgeids) const = 0;
+                           Entity_ID_List& edgeids) const = 0;
 
   // edges and directions of a 2D cell
   virtual void
   cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                       Kokkos::View<Entity_ID*>& edgeids,
-                                       Kokkos::View<int*>* edge_dirs) const = 0;
+                                       Entity_ID_List& edgeids,
+                                       std::vector<int>* edge_dirs) const = 0;
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -904,10 +959,14 @@ class Mesh {
   virtual int
   compute_face_geometry_(const Entity_ID faceid, double* area,
                          AmanziGeometry::Point* centroid,
-                         Kokkos::View<AmanziGeometry::Point*>& normals) const;
+                         std::vector<AmanziGeometry::Point>& normals) const;
 
   virtual int compute_edge_geometry_(const Entity_ID edgeid, double* length,
                                      AmanziGeometry::Point* edge_vector) const;
+
+  virtual void cache_parents_info_() const; 
+
+  virtual void cache_cell_get_faces_and_bisectors_() const; 
 
  public:
   void PrintMeshStatistics() const;
@@ -941,11 +1000,21 @@ class Mesh {
 
   mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
 
+  mutable Kokkos::View<Entity_ID*> cells_parent_; 
+  mutable Kokkos::View<Entity_ID*> faces_parent_; 
+  mutable Kokkos::View<Entity_ID*> edges_parent_; 
+  mutable Kokkos::View<Entity_ID*> nodes_parent_; 
+
+  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace> cell_faces_bisectors_;
+
+
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_,
     node_nodeabove_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_cells_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_faces_;
+  mutable std::vector<Entity_ID_List> column_cells_; 
+  mutable std::vector<Entity_ID_List> column_faces_; 
+  //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_cells_;
+  //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_faces_;
   mutable Kokkos::View<Entity_ID*> columnID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
@@ -972,6 +1041,7 @@ class Mesh {
   mutable bool cell2edge_info_cached_, face2edge_info_cached_;
   mutable bool cell_geometry_precomputed_, face_geometry_precomputed_,
     edge_geometry_precomputed_;
+  mutable bool parents_precomputed_, cell_get_faces_and_bisectors_precomputed_; 
 
   // -- region data
   mutable std::map<std::string, std::vector<int>> region_ids;

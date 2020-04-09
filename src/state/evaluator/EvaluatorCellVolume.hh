@@ -55,6 +55,30 @@ class EvaluatorCellVolume
   static Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> fac_;
 };
 
+//
+// Provide limited scope to private data
+//
+namespace Impl {
+  template<class View_type>
+  void copyCellVolume(const AmanziMesh::Mesh* mesh, View_type& v) {
+    Kokkos::parallel_for("EvaluatorCellVolume copy",
+                         v.extent(0),
+                         KOKKOS_LAMBDA(const int& c) {
+                           v(c,0) = mesh->cell_volume(c);
+                         });
+  }
+
+  template<class View_type>
+  void copyFaceArea(const AmanziMesh::Mesh* mesh, View_type& v) {
+    Kokkos::parallel_for("EvaluatorCellVolume copy",
+                         v.extent(0),
+                         KOKKOS_LAMBDA(const int& c) {
+                           v(c,0) = mesh->face_area(c);
+                         });
+  }
+} // namespace Impl
+  
+  
 } // namespace Amanzi
 
 #endif

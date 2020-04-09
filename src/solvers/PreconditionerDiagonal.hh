@@ -30,9 +30,10 @@ class PreconditionerDiagonal : public Preconditioner<Matrix, Vector> {
 
   void
   Init(const std::string& name, const Teuchos::ParameterList& plist) override{};
-  void Update(const Teuchos::RCP<const Matrix>& A) override
+  void Update(const Teuchos::RCP<Matrix>& A) override
   {
     work_vec_ = Teuchos::rcp(new Vector(A->getRowMap()));
+    work_vec_->putScalar(0.);
     A->getLocalDiagCopy(*work_vec_);
     work_vec_->reciprocal(*work_vec_);
   }

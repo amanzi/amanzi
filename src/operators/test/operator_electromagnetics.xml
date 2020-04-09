@@ -21,6 +21,11 @@
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Boundary">
+      <ParameterList name="region: boundary">
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!--  OPERATORS  -->

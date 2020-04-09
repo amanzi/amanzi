@@ -69,13 +69,13 @@ RegionLineSegment::inside(const Point& p) const
 // We have to analyze
 // -------------------------------------------------------------------
 double
-RegionLineSegment::intersect(const Kokkos::View<Point*>& polytope,
+RegionLineSegment::intersect(const std::vector<Point>& polytope,
                              const std::vector<std::vector<int>>& faces) const
 {
   int mdim, sdim;
 
   mdim = manifold_dimension();
-  sdim = polytope(0).dim();
+  sdim = polytope[0].dim();
 
   if ((mdim == 3) && (sdim == 3)) {
     std::vector<Point> line(2);
@@ -90,28 +90,28 @@ RegionLineSegment::intersect(const Kokkos::View<Point*>& polytope,
     int num_line_int = 0;
     for (int i = 0; i < faces.size(); i++) {
       intersct = false;
-      Kokkos::View<Point*> plane("", faces[i].size());
-      for (int j = 0; j < plane.extent(0); j++)
-        plane(j) = polytope(faces[i][j]);
+      std::vector<Point> plane(faces[i].size());
+      for (int j = 0; j < plane.size(); j++)
+        plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
 
       v1 = p0_ + t * (p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
-      for (int j = 0; j < plane.extent(0); j++) {
-        diff_x += fabs(plane(j).x() - v1.x());
-        diff_y += fabs(plane(j).y() - v1.y());
+      for (int j = 0; j < plane.size(); j++) {
+        diff_x += fabs(plane[j].x() - v1.x());
+        diff_y += fabs(plane[j].y() - v1.y());
       }
       if (diff_x < eps) { // projection to plane y-z
         vp[0] = v1[1];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.extent(0); j++) {
-          plane(j)[0] = plane(j)[1];
-          plane(j)[1] = plane(j)[2];
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][0] = plane[j][1];
+          plane[j][1] = plane[j][2];
         }
       } else if (diff_y < eps) { // projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.extent(0); j++) { plane(j)[1] = plane(j)[2]; }
+        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
       } else {
         vp = v1;
       }
@@ -186,29 +186,29 @@ RegionLineSegment::ComputeInterLinePoints(
 
     for (int i = 0; i < faces.size(); i++) {
       intersct = false;
-      Kokkos::View<Point*> plane("", faces[i].size());
-      for (int j = 0; j < plane.extent(0); j++)
-        plane(j) = polytope[faces[i][j]];
+      std::vector<Point> plane(faces[i].size());
+      for (int j = 0; j < plane.size(); j++)
+        plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
       // if ((t<0)||(t>1)) continue;
 
       v1 = p0_ + t * (p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
-      for (int j = 0; j < plane.extent(0); j++) {
-        diff_x += fabs(plane(j).x() - v1.x());
-        diff_y += fabs(plane(j).y() - v1.y());
+      for (int j = 0; j < plane.size(); j++) {
+        diff_x += fabs(plane[j].x() - v1.x());
+        diff_y += fabs(plane[j].y() - v1.y());
       }
       if (diff_x < eps) { // projection to plane y-z
         vp[0] = v1[1];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.extent(0); j++) {
-          plane(j)[0] = plane(j)[1];
-          plane(j)[1] = plane(j)[2];
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][0] = plane[j][1];
+          plane[j][1] = plane[j][2];
         }
       } else if (diff_y < eps) { // projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.extent(0); j++) { plane(j)[1] = plane(j)[2]; }
+        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
       } else {
         vp = v1;
       }
@@ -255,7 +255,7 @@ RegionLineSegment::ComputeInterLinePoints(
    by 3 points of a face.
 */
 double
-PlaneLineIntersection(const Kokkos::View<Point*>& plane,
+PlaneLineIntersection(const std::vector<Point>& plane,
                       const std::vector<Point>& line)
 {
   std::vector<double> row1(4, 1.), row2(4, 1);
@@ -266,8 +266,8 @@ PlaneLineIntersection(const Kokkos::View<Point*>& plane,
   int k = 0;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      smatr1[k] = plane(i)[j];
-      smatr2[k] = plane(i)[j];
+      smatr1[k] = plane[i][j];
+      smatr2[k] = plane[i][j];
       k++;
     }
   }

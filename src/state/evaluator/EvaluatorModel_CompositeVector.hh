@@ -152,7 +152,8 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
     model_->SetViews(dependency_views, result_views);
     Kokkos::RangePolicy<typename Device_type::execution_space> range(
       0, result_views[0].extent(0));
-    Kokkos::parallel_for(name_, range, *model_);
+    Kokkos::parallel_for(
+      name_, range, *model_);
   }
 }
 

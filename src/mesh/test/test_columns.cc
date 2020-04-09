@@ -95,12 +95,12 @@ TEST(MESH_COLUMNS)
       if (fabs(ccen[2] - (1.0 - dz / 2.0)) < 1.e-10)
         found_above = true; // top layer
 
-      Kokkos::View<int*> adjcells;
+      std::vector<int> adjcells;
       mesh->cell_get_node_adj_cells(
         c, Amanzi::AmanziMesh::Parallel_type::OWNED, adjcells);
-      int nadjcells = adjcells.extent(0);
+      int nadjcells = adjcells.size();
       for (int k = 0; k < nadjcells && (!found_above || !found_below); k++) {
-        int c2 = adjcells(k);
+        int c2 = adjcells[k];
         if (c == c2) continue;
 
         Amanzi::AmanziGeometry::Point ccen2 = mesh->cell_centroid(c2);
@@ -144,19 +144,19 @@ TEST(MESH_COLUMNS)
       // Get connected cells of node, and check if one of their nodes
       // qualifies as the node above or node below
 
-      Kokkos::View<int*> nodecells;
+      std::vector<int> nodecells;
       mesh->node_get_cells(
         n, Amanzi::AmanziMesh::Parallel_type::OWNED, nodecells);
-      int nnodecells = nodecells.extent(0);
+      int nnodecells = nodecells.size();
 
       for (int k = 0; k < nnodecells && !found_above; k++) {
-        int c = nodecells(k);
+        int c = nodecells[k];
 
-        Kokkos::View<int*> cnodes;
+        std::vector<int> cnodes;
         mesh->cell_get_nodes(c, cnodes);
-        int ncnodes = cnodes.extent(0);
+        int ncnodes = cnodes.size();
         for (int l = 0; l < ncnodes && !found_above; l++) {
-          int n2 = cnodes(l);
+          int n2 = cnodes[l];
           if (n == n2) continue;
 
           Amanzi::AmanziGeometry::Point coord2;

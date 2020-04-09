@@ -387,7 +387,7 @@ MeshEmbeddedLogical::entity_get_ptype(const Entity_kind kind,
 
 // Parent entity in the source mesh if mesh was derived from another mesh
 Entity_ID
-MeshEmbeddedLogical::entity_get_parent(const Entity_kind kind,
+MeshEmbeddedLogical::entity_get_parent_type(const Entity_kind kind,
                                        const Entity_ID entid) const
 {
   int nents_log = log_mesh_->num_entities(kind, Parallel_type::OWNED);
@@ -401,8 +401,8 @@ Cell_type
 MeshEmbeddedLogical::cell_get_type(const Entity_ID cellid) const
 {
   return cellid < log_mesh_->num_entities(CELL, Parallel_type::OWNED) ?
-           log_mesh_->cell_get_type(entity_get_parent(CELL, cellid)) :
-           bg_mesh_->cell_get_type(entity_get_parent(CELL, cellid));
+           log_mesh_->cell_get_type(entity_get_parent_type(CELL, cellid)) :
+           bg_mesh_->cell_get_type(entity_get_parent_type(CELL, cellid));
 }
 
 

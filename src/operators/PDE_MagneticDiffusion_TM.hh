@@ -1,14 +1,15 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  TM mode of magnetic diffusion: B field is on faces, E field is at nodes.
+*/
 
 #ifndef AMANZI_OPERATOR_MAGNETIC_DIFFUSION_TM_HH_
 #define AMANZI_OPERATOR_MAGNETIC_DIFFUSION_TM_HH_
@@ -25,16 +26,17 @@ namespace Operators {
 class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
  public:
   PDE_MagneticDiffusion_TM(const Teuchos::RCP<Operator>& global_op)
-    : PDE_MagneticDiffusion(global_op){};
+    : PDE_MagneticDiffusion(global_op)
+  {};
 
   PDE_MagneticDiffusion_TM(Teuchos::ParameterList& plist,
-                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_MagneticDiffusion(plist, mesh){};
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_MagneticDiffusion(plist, mesh)
+  {};
 
   // main virtual members
   // -- before solving the problem
-  virtual void
-  ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // -- after solving the problem
@@ -45,11 +47,13 @@ class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
 
  private:
   void ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
-                      const Teuchos::Ptr<const BCs>& bc_v, bool primary,
-                      bool eliminate, bool essential_eqn);
+                      const Teuchos::Ptr<const BCs>& bc_v,
+                      bool primary, bool eliminate, bool essential_eqn);
 };
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif
+
+

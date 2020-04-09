@@ -39,8 +39,13 @@ class Debugger {
 
   // Write a vector individually.
   void WriteVector(const std::string& name,
-                   const Teuchos::Ptr<const CompositeVector>& vec,
+                   const CompositeVector& vec,
                    bool include_faces = false);
+  void WriteVector(const std::string& name,
+                   const Teuchos::Ptr<const CompositeVector>& vec,
+                   bool include_faces = false) {
+    WriteVector(name, *vec, include_faces);
+  }
 
   // Write boundary condition data.
   // void WriteBoundaryConditions(const std::vector<int> &flag,

@@ -29,6 +29,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     const AmanziMesh::Mesh* mesh = &*cv.Mesh();
 
     Kokkos::parallel_for(
+      "CompositeVector::DeriveFaceValuesFromCellValues loop 1",
       cv_f.extent(0), KOKKOS_LAMBDA(decltype(cv_f)::size_type f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -50,6 +51,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     auto v_f_map = f_map->getMyGlobalIndices(); 
 
     Kokkos::parallel_for(
+      "CompositeVector::DeriveFaceValuesFromCellValues loop 2",
       cv_f.extent(0), KOKKOS_LAMBDA(decltype(cv_f)::size_type fb) {
         AmanziMesh::Entity_ID_View cells;
         int f_gid =  v_fb_map(fb); 

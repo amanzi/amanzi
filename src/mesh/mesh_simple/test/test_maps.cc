@@ -53,8 +53,8 @@ SUITE(MeshSimple)
                 Mm.num_entities(Amanzi::AmanziMesh::NODE,
                                 Amanzi::AmanziMesh::Parallel_type::OWNED));
 
-    Kokkos::View<Amanzi::AmanziGeometry::Point*> x("", 8);
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodes("", 8);
+    std::vector<Amanzi::AmanziGeometry::Point> x(8);
+    Amanzi::AmanziMesh::Entity_ID_List nodes(8);
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("", 6);
 
     for (auto i = 0;
@@ -63,10 +63,10 @@ SUITE(MeshSimple)
          i++) {
       Mm.cell_get_nodes(i, nodes);
 
-      CHECK_EQUAL(8, nodes.extent(0));
+      CHECK_EQUAL(8, nodes.size());
 
       for (int j = 0; j < 8; j++) {
-        CHECK_EQUAL(expcellnodes[j], nodes(j));
+        CHECK_EQUAL(expcellnodes[j], nodes[j]);
         Mm.node_get_coordinates(nodes[j], &(x[j]));
         CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[j]], x[j], 3);
       }
@@ -74,24 +74,24 @@ SUITE(MeshSimple)
       Mm.cell_get_faces(i, faces);
       double xx[4][3];
       for (int j = 0; j < 6; j++) {
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
+        Amanzi::AmanziMesh::Entity_ID_List fnodes;
 
         Mm.face_get_nodes(faces(j), fnodes);
         for (int k = 0; k < 4; ++k) {
-          CHECK_EQUAL(expfacenodes[faces(j)][k], fnodes(k));
+          CHECK_EQUAL(expfacenodes[faces(j)][k], fnodes[k]);
         }
 
-        Mm.face_get_coordinates(faces(j), x);
+        Mm.face_get_coordinates(faces[j], x);
 
         for (int k = 0; k < 4; k++) {
-          CHECK_ARRAY_EQUAL(expnodecoords[expfacenodes[faces(j)][k]], x(k), 3);
+          CHECK_ARRAY_EQUAL(expnodecoords[expfacenodes[faces(j)][k]], x[k], 3);
         }
       }
 
       Mm.cell_get_coordinates(i, x);
-      CHECK_EQUAL(8, x.extent(0));
+      CHECK_EQUAL(8, x.size());
       for (int k = 0; k < 8; k++)
-        CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[k]], x(k), 3);
+        CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[k]], x[k], 3);
     }
   }
 }

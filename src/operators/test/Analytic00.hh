@@ -14,23 +14,27 @@
 #define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 
 #include "AnalyticBase.hh"
 
 class Analytic00 : public AnalyticBase {
  public:
-  Analytic00(
-    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy,
-    int order,
-    const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(2))
-    : AnalyticBase(mesh), poly_(2, order), v_(v)
+  Analytic00(int order, double kr, double K, double gravity,
+             const Amanzi::AmanziGeometry::Point v=Amanzi::AmanziGeometry::Point(2))
+      : AnalyticBase(2),
+        order_(order),
+        poly_(2, order),
+        kr_(kr),
+        K_(2, 1),
+        gravity_(gravity),
+        v_(v)
   {
+    K_(0,0) = K;
     poly_(0, 0) = 1.0;
-
     if (order > 0) {
-      poly_(1, 0) = gx;
-      poly_(1, 1) = gy;
+      poly_(1, 0) = 1.0;
+      poly_(1, 1) = 2.0;
     }
 
     if (order > 1) {
@@ -38,6 +42,11 @@ class Analytic00 : public AnalyticBase {
       poly_(2, 1) = 4.0;
       poly_(2, 2) = -3.0;
     }
+    grav_ = Amanzi::WhetStone::VectorPolynomial(2, 2);
+    grav_[0](0,0) = 0.;
+    grav_[1](0,0) = -gravity;
+ 
+    grad_ = Gradient(poly_) - grav_;
 
     if (order > 2) {
       poly_(3, 0) = 1.0;
@@ -45,58 +54,60 @@ class Analytic00 : public AnalyticBase {
       poly_(3, 2) = -3.0;
       poly_(3, 3) = -2.0;
     }
-
-    grad_ = Gradient(poly_);
-
-    Amanzi::WhetStone::VectorPolynomial tmp(2, 2);
-    for (int i = 0; i < 2; ++i) { tmp[i] = v_[i] * poly_; }
-    rhs_ = Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian();
+    rhs_ = Amanzi::WhetStone::Divergence((K_ * grad_) * -kr_);
   }
   ~Analytic00(){};
 
-  Amanzi::WhetStone::Tensor
-  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
-    Amanzi::WhetStone::Tensor K(2, 1);
-    K(0, 0) = 1.0;
-    return K;
+  std::string name() const override {
+    std::stringstream str;
+    str << "Analytic00";
+    if (gravity_ != 0.0) str << "_Grav";
+    if (K_(0,0) != 1.0) str << "_K";
+    if (kr_ != 1.0) str << "_kr";
+    str << "_PolyOrder" << order_;
+    return str.str();
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  Amanzi::WhetStone::Tensor<Kokkos::HostSpace> TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+    return K_;
+  }
+
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+    return kr_;
+  }
+  
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     return poly_.Value(p);
   }
 
-  Amanzi::AmanziGeometry::Point
-  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -grad_[0].Value(p);
-    v[1] = -grad_[1].Value(p);
-    return v;
+  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
+    return (K_ * gradient_exact(p, t)) * -kr_;
+  }
+ 
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
+    Amanzi::AmanziGeometry::Point grad(2);
+    grad[0] = grad_[0].Value(p);
+    grad[1] = grad_[1].Value(p);
+    return grad;
   }
 
-  Amanzi::AmanziGeometry::Point
-  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
-    return -velocity_exact(p, t);
-  }
-
-  Amanzi::AmanziGeometry::Point
-  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return v_;
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
-  {
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return rhs_.Value(p);
   }
 
  private:
   Amanzi::AmanziGeometry::Point v_;
   Amanzi::WhetStone::Polynomial poly_, rhs_;
-  Amanzi::WhetStone::VectorPolynomial grad_;
+  Amanzi::WhetStone::VectorPolynomial grad_, grav_;
+  double gravity_;
+  int order_;
+  double kr_;
+  WhetStone::Tensor<Kokkos::HostSpace> K_;
 };
 
+  
 #endif

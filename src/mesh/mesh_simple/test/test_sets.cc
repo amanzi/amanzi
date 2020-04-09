@@ -123,7 +123,7 @@ SUITE(MeshSimple)
 
           // Verify that we can get the correct set entities
 
-          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+          Amanzi::AmanziMesh::Entity_ID_List setents;
           mesh.get_set_entities(reg_name,
                                 Amanzi::AmanziMesh::FACE,
                                 Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -156,7 +156,7 @@ SUITE(MeshSimple)
 
           // Verify that we can get the correct set entities
 
-          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+          Amanzi::AmanziMesh::Entity_ID_List setents;
           mesh.get_set_entities(reg_name,
                                 Amanzi::AmanziMesh::NODE,
                                 Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -200,7 +200,7 @@ SUITE(MeshSimple)
 
             // Verify that we can get the correct set entities
 
-            Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+            Amanzi::AmanziMesh::Entity_ID_List setents;
             mesh.get_set_entities(reg_name,
                                   Amanzi::AmanziMesh::FACE,
                                   Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -233,7 +233,7 @@ SUITE(MeshSimple)
 
             // Verify that we can get the correct set entities
 
-            Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+            Amanzi::AmanziMesh::Entity_ID_List setents;
             mesh.get_set_entities(reg_name,
                                   Amanzi::AmanziMesh::NODE,
                                   Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -265,7 +265,7 @@ SUITE(MeshSimple)
 
           // Verify that we can get the correct set entities
 
-          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+          Amanzi::AmanziMesh::Entity_ID_List setents;
           mesh.get_set_entities(reg_name,
                                 Amanzi::AmanziMesh::CELL,
                                 Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -298,7 +298,7 @@ SUITE(MeshSimple)
 
         // Verify that we can get the correct set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh.get_set_entities(reg_name,
                               Amanzi::AmanziMesh::NODE,
                               Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -336,7 +336,7 @@ SUITE(MeshSimple)
 
         // Verify that we can get the correct set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh.get_set_entities(reg_name,
                               Amanzi::AmanziMesh::CELL,
                               Amanzi::AmanziMesh::Parallel_type::ALL,

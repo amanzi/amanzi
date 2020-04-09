@@ -254,7 +254,7 @@ TEST(BOXREGION_VOFS_2D_AREA)
     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
 
   Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
-  Kokkos::View<Amanzi::AmanziGeometry::Point*> polygon;
+  std::vector<Amanzi::AmanziGeometry::Point> polygon;
 
   v1.set(0.0, 0.0);
   v2.set(1.0, 0.0);
@@ -264,10 +264,10 @@ TEST(BOXREGION_VOFS_2D_AREA)
   double area_exact[5] = { 0.5, 0.46, 0.34, 0.16, 0.04 };
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     vv.set(d, d);
-    Kokkos::resize(polygon, 3);
-    polygon(0) = (vv + v1);
-    polygon(1) = (vv + v2);
-    polygon(2) = (vv + v3);
+    polygon.resize(3); 
+    polygon[0] = (vv + v1);
+    polygon[1] = (vv + v2);
+    polygon[2] = (vv + v3);
 
     double area = reg->intersect(polygon);
     CHECK_CLOSE(area_exact[n++], area, 1e-6);
@@ -360,18 +360,18 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg =
     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
 
-  Kokkos::View<Point*> xyz;
+  std::vector<Point> xyz;
   std::vector<std::vector<int>> faces(4);
 
   // int n(0); un-used
   // double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04}; //un-used
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     Point vv(d, d, d);
-    Kokkos::resize(xyz, 4);
-    xyz(0) = (vv + Point(0.0, 0.0, 0.0));
-    xyz(1) = (vv + Point(1.0, 0.0, 0.0));
-    xyz(2) = (vv + Point(0.0, 1.0, 0.0));
-    xyz(3) = (vv + Point(0.0, 0.0, 1.0));
+    xyz.resize(4); 
+    xyz[0] = (vv + Point(0.0, 0.0, 0.0));
+    xyz[1] = (vv + Point(1.0, 0.0, 0.0));
+    xyz[2] = (vv + Point(0.0, 1.0, 0.0));
+    xyz[3] = (vv + Point(0.0, 0.0, 1.0));
 
     for (int i = 0; i < 4; ++i) faces[i].clear();
     faces[0].push_back(0);

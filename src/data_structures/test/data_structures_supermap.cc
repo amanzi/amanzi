@@ -26,7 +26,9 @@
 #include "MeshFactory.hh"
 
 #include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 #include "TreeVectorSpace.hh"
+#include "TreeVector.hh"
 
 #define SUPERMAP_TESTING 1
 #include "SuperMapLumped.hh"
@@ -36,7 +38,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
-
+using namespace Amanzi::Operators;
 
 Teuchos::RCP<Mesh>
 getMesh(const Comm_ptr_type& comm)
@@ -54,12 +56,7 @@ getMesh(const Comm_ptr_type& comm)
   Teuchos::RCP<GeometricModel> gm =
     Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
   return meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 }
 
@@ -192,14 +189,14 @@ TEST(SUPERMAP_MANUAL)
   CHECK(map.getNumVectors("map2") == 2);
 
   // check that the maps properly export
-  Vector_type_<int> ghosted(map.GhostedMap());
-  Vector_type_<int> owned(map.Map());
-  Import_type importer(map.Map(), map.GhostedMap());
+  Vector_type_<int> ghosted(map.getGhostedMap());
+  Vector_type_<int> owned(map.getMap());
+  Import_type importer(map.getMap(), map.getGhostedMap());
 
   {
     auto owned_v = owned.getLocalViewHost();
-    for (int i = 0; i != map.Map()->getNodeNumElements(); ++i) {
-      owned_v(i, 0) = map.Map()->getGlobalElement(i);
+    for (int i = 0; i != map.getMap()->getNodeNumElements(); ++i) {
+      owned_v(i, 0) = map.getMap()->getGlobalElement(i);
     }
   }
 
@@ -208,8 +205,8 @@ TEST(SUPERMAP_MANUAL)
   ghosted.sync_host();
   {
     auto ghosted_v = ghosted.getLocalViewHost();
-    for (int i = 0; i != map.GhostedMap()->getNodeNumElements(); ++i) {
-      CHECK_EQUAL(ghosted_v(i, 0), map.GhostedMap()->getGlobalElement(i));
+    for (int i = 0; i != map.getGhostedMap()->getNodeNumElements(); ++i) {
+      CHECK_EQUAL(ghosted_v(i, 0), map.getGhostedMap()->getGlobalElement(i));
     }
   }
 
@@ -339,9 +336,9 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned,
-              map->Map()->getNodeNumElements());
+              map->getMap()->getNodeNumElements());
   CHECK_EQUAL(2 * ncells_used + 2 * nfaces_used,
-              map->GhostedMap()->getNodeNumElements());
+              map->getGhostedMap()->getNodeNumElements());
 
   // check CompMaps
   CHECK(mesh->cell_map(false)->isSameAs(*map->ComponentMap(0, "cell")));
@@ -443,8 +440,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
 
   // check basic sizes
-  CHECK_EQUAL(2 * ncells_owned, map->Map()->getNodeNumElements());
-  CHECK_EQUAL(2 * ncells_used, map->GhostedMap()->getNodeNumElements());
+  CHECK_EQUAL(2 * ncells_owned, map->getMap()->getNodeNumElements());
+  CHECK_EQUAL(2 * ncells_used, map->getGhostedMap()->getNodeNumElements());
 
   // check CompMaps
   CHECK(mesh->cell_map(false)->isSameAs(*map->ComponentMap(0, "cellA")));
@@ -497,8 +494,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   Teuchos::RCP<Operators::SuperMap> map2 =
     createSuperMap(cv2.CreateSpace().ptr());
 
-  CHECK(map->Map()->isSameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->isSameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 }
 
 
@@ -535,8 +532,8 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
     createSuperMap(cv2.CreateSpace().ptr());
 
   // same map!
-  CHECK(map->Map()->isSameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->isSameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
   CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
@@ -591,8 +588,8 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
     Teuchos::rcp(new SuperMap(comm, { cv2.CreateSpace().ptr() }));
 
   // same map!
-  CHECK(map->Map()->isSameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->isSameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
   CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
@@ -647,8 +644,8 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
     Teuchos::rcp(new SuperMap(comm, { cv2.CreateSpace().ptr() }));
 
   // same map!
-  CHECK(map->Map()->isSameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->isSameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
   CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
@@ -798,4 +795,108 @@ TEST(SUPERMAP_FROM_TREEVECTOR)
   Teuchos::RCP<Operators::SuperMap> map_singleton = createSuperMap(*tv_ss1);
   // create a SuperMapLumped from a tree space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(tv);
+}
+
+
+//
+// Tests copying to and from other vectors
+//
+struct Maps {
+  Maps()
+  {
+    comm = Amanzi::getDefaultComm();
+
+    // create a mesh
+    mesh = getMesh(comm);
+
+    // create a vector
+    cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
+    tvs0->SetData(cvs->CreateSpace());
+
+    tvs = Teuchos::rcp(new TreeVectorSpace());
+    tvs->PushBack(tvs0);
+    tvs->PushBack(tvs0);
+
+    // create a supermap, vec
+    map = createSuperMap(*tvs);
+  }
+
+  Comm_ptr_type comm;
+  Teuchos::RCP<Mesh> mesh;
+  Teuchos::RCP<CompositeVectorSpace> cvs;
+  Teuchos::RCP<TreeVectorSpace> tvs;
+  Teuchos::RCP<SuperMap> map;
+};
+
+
+TEST(SUPERMAP_COPY_INVERTIBLE)
+{
+  Maps maps;
+  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(maps.tvs));
+
+  // initialize randomly
+  tv->SubVector(0)->Data()->random();
+  tv->SubVector(1)->Data()->random();
+
+  Vector_type vec(maps.map->getMap());
+
+  // copy forward, backward
+  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(maps.tvs));
+  int ierr = copyToSuperVector(*maps.map, *tv, vec);
+  CHECK(!ierr);
+
+  ierr = copyFromSuperVector(*maps.map, vec, *tv2);
+  CHECK(!ierr);
+
+  // check the same
+  tv2->update(-1., *tv, 1.);
+  double norm;
+  norm = tv2->norm2();
+  CHECK_CLOSE(0., norm, 1.e-16);
+}
+
+
+TEST(SUPERMAP_COPY_INTS)
+{
+  Maps maps;
+  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(maps.tvs));
+  tv->SubVector(0)->Data()->GetComponent("cell", false)->putScalar(3.);
+  tv->SubVector(1)->Data()->GetComponent("cell", false)->putScalar(4.);
+  tv->SubVector(0)->Data()->GetComponent("face", false)->putScalar(5.);
+  tv->SubVector(1)->Data()->GetComponent("face", false)->putScalar(6.);
+
+  Vector_type vec(maps.map->getMap());
+
+  // copy forward
+  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(maps.tvs));
+  int ierr = copyToSuperVector(*maps.map, *tv, vec);
+  CHECK(!ierr);
+
+  // check values
+  int ncells =
+    maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  // check sizes
+  CHECK_EQUAL(2 * ncells + 2 * nfaces, vec.getLocalLength());
+
+  {
+    auto vec_v = vec.getLocalViewHost();
+    for (int i = 0; i != ncells; ++i) {
+      CHECK_EQUAL(3., vec_v(i * 2,0));
+      CHECK_EQUAL(4., vec_v(i * 2 + 1,0));
+    }
+
+    for (int i = 0; i != nfaces; ++i) {
+      CHECK_EQUAL(5., vec_v(2 * ncells + i * 2,0));
+      CHECK_EQUAL(6., vec_v(2 * ncells + i * 2 + 1,0));
+    }
+  }
 }

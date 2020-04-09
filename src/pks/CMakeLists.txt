@@ -104,6 +104,7 @@ if (BUILD_TESTS)
     mesh_factory
     data_structures
     mesh_functions
+    operators
     state
     solvers
     time_integration
@@ -128,25 +129,25 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/pks_increment.cc
                     LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-    # add_amanzi_test(pks_mpc_heirarchy pks_mpc_heirarchy
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/pks_mpc_heirarchy.cc
-    #                 LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+    add_amanzi_test(pks_mpc_heirarchy pks_mpc_heirarchy
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_mpc_heirarchy.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-    # add_amanzi_test(pks_mpc pks_mpc
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/pks_mpc.cc
-    #                 LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+    add_amanzi_test(pks_mpc pks_mpc
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_mpc.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
     add_amanzi_test(pks_ode pks_ode
                     KIND unit
                     SOURCE test/Main.cc test/pks_ode.cc
                     LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-    # add_amanzi_test(pks_pde pks_pde
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/pks_pde.cc
-    #                 LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+    add_amanzi_test(pks_pde pks_pde
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_pde.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
                   
 endif()
 

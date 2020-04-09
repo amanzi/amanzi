@@ -72,8 +72,6 @@ using int_type = int;
 using LO = int;
 using GO = int;
 
-
-
 // Tpetra uses Teuchos Comm
 typedef Teuchos::Comm<int> Comm_type;
 #  ifdef HAVE_MPI
@@ -86,14 +84,13 @@ typedef Tpetra::Map<LO,GO> BlockMap_type; // is there a Tpetra block map?
 typedef Tpetra::Import<LO,GO> Import_type;
 typedef Tpetra::Export<LO,GO> Export_type;
 
-
 // Tpetra vectors
 // -- alias
 template <typename Scalar>
-using Vector_type_ = Tpetra::Vector<Scalar>;
+using Vector_type_ = Tpetra::Vector<Scalar,LO,GO>;
 
 template <typename Scalar>
-using MultiVector_type_ = Tpetra::MultiVector<Scalar>;
+using MultiVector_type_ = Tpetra::MultiVector<Scalar,LO,GO>;
 
 template <typename Scalar>
 using Vector_ptr_type_ = Teuchos::RCP<Vector_type_<Scalar>>;

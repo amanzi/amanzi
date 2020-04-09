@@ -1,14 +1,20 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  Solution: u = t (1 + x^2 + y^2)
+  Diffusion: K = 0
+  Accumulation: a = 1
+  Reaction: r = 0
+  Velocity: v = [0.1 + x - x^2, y - y^2]
+  Source: exact
+*/
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
@@ -17,15 +23,12 @@
 
 class AnalyticDG02b : public AnalyticDGBase {
  public:
-  AnalyticDG02b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order,
-                bool advection)
-    : AnalyticDGBase(mesh, order, advection){};
-  ~AnalyticDG02b(){};
+  AnalyticDG02b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+    : AnalyticDGBase(mesh, order, advection) {};
+  ~AnalyticDG02b() {};
 
   // diffusion tensor
-  virtual Amanzi::WhetStone::Tensor
-  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
-  {
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
     Amanzi::WhetStone::Tensor K(d_, 1);
     K(0, 0) = 0.0;
     return K;
@@ -34,9 +37,9 @@ class AnalyticDG02b : public AnalyticDGBase {
   // analytic data in conventional Taylor basis
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& sol) override
-  {
-    sol.Reshape(d_, order_, true);
+                              Amanzi::WhetStone::Polynomial& sol) override {
+    AMANZI_ASSERT(order_ > 1);
+    sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
     sol(0) = 1.0 + p * p;
@@ -49,33 +52,34 @@ class AnalyticDG02b : public AnalyticDGBase {
   }
 
   // -- accumulation
-  virtual void
-  AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                     Amanzi::WhetStone::Polynomial& a) override
-  {
-    a.Reshape(d_, 0, true);
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                                  Amanzi::WhetStone::Polynomial& a) override {
+    a.Reshape(d_, 0, true); 
     a(0) = 1.0;
     a.set_origin(p);
   }
 
   // -- velocity
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::VectorPolynomial& v) override
-  {
+                              Amanzi::WhetStone::VectorPolynomial& v) override {
     double x(p[0]), y(p[1]);
 
     v.resize(d_);
-    if (!advection_) {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 0, true); }
+    if (! advection_) {
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 0, true); 
+      }
     } else {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 2, true); }
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 2, true); 
+      }
       v[0](0, 0) = 0.1 + x - x * x;
       v[0](1, 0) = 1.0 - 2 * x;
-      v[0](2, 0) = -1.0;
+      v[0](2, 0) =-1.0;
 
       v[1](0, 0) = y - y * y;
       v[1](1, 1) = 1.0 - 2 * y;
-      v[1](2, 2) = -1.0;
+      v[1](2, 2) =-1.0;
     }
 
     v.set_origin(p);
@@ -83,16 +87,14 @@ class AnalyticDG02b : public AnalyticDGBase {
 
   // -- reaction
   virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& r) override
-  {
-    r.Reshape(d_, 0, true);
+                              Amanzi::WhetStone::Polynomial& r) override {
+    r.Reshape(d_, 0, true); 
     r.set_origin(p);
   }
 
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                            Amanzi::WhetStone::Polynomial& src) override
-  {
+                            Amanzi::WhetStone::Polynomial& src) override {
     double x(p[0]), y(p[1]);
 
     if (!advection_) {
@@ -119,3 +121,4 @@ class AnalyticDG02b : public AnalyticDGBase {
 };
 
 #endif
+

@@ -36,7 +36,9 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
-  Kokkos::parallel_for(kernelName, range(beg, end), model);
+  Kokkos::parallel_for(
+    "Evaluator::ExecuteModel",
+    kernelName, range(beg, end), model);
 }
 
 // Execute over a continuous range, with tag.
@@ -49,7 +51,9 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, TagType, int>;
-  Kokkos::parallel_for(kernelName, range(beg, end), model);
+  Kokkos::parallel_for(
+    "Evaluator::ExecuteModel",
+    kernelName, range(beg, end), model);
 }
 
 
@@ -63,7 +67,9 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
-  Kokkos::parallel_for(kernelName,
+  Kokkos::parallel_for(
+    "Evaluator::ExecuteModel",
+    kernelName,
                        range(0, entities.extent(0)),
                        KOKKOS_LAMBDA(const int i) { model(entities(i)); });
 }
@@ -79,6 +85,7 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
   Kokkos::parallel_for(
+    "Evaluator::ExecuteModel",
     kernelName, range(0, entities.extent(0)), KOKKOS_LAMBDA(const int i) {
       model(TagType(), entities(i));
     });

@@ -69,32 +69,42 @@
 
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+        <Parameter name="method" type="string" value="BernardiRaugel"/>
+        <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="divergence operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <Parameter name="method order" type="int" value="1"/>  <!-- not used /-->
       <Parameter name="matrix type" type="string" value="divergence"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+        <Parameter name="method" type="string" value="BernardiRaugel"/>
+        <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
       <ParameterList name="schema range">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="0"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="gradient operator">
+      <Parameter name="matrix type" type="string" value="divergence transpose"/>
+      <Parameter name="factory" type="string" value="schema range"/>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="BernardiRaugel"/>
+        <Parameter name="method order" type="int" value="1"/>
+      </ParameterList>
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="0"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

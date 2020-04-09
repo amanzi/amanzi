@@ -69,10 +69,18 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Amesos2">
+    <ParameterList name="Amesos2: basker">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
         <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2: superludist">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="superludist"/>
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
@@ -110,69 +118,57 @@
     </ParameterList>
 
     <ParameterList name="diffusion operator Lagrange">
-      <Parameter name="method" type="string" value="Lagrange"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, vector, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 2, 3}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, vector, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 2, 3}"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
+        <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion operator Lagrange serendipity">
-      <Parameter name="method" type="string" value="Lagrange serendipity"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, vector}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 2}"/>
+        <Parameter name="method" type="string" value="Lagrange serendipity"/>
+        <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
-      <ParameterList name="schema range">
+    </ParameterList>
+
+    <ParameterList name="diffusion operator 3D Lagrange">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, vector}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 2}"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
+        <Parameter name="method order" type="int" value="3"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator 3D Lagrange serendipity">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="Lagrange serendipity"/>
+        <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
     <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
-      <Parameter name="method" type="string" value="diffusion edge"/>
-      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="method" type="string" value="diffusion edge"/>
+        <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion operator Crouzeix-Raviart">
-      <Parameter name="method" type="string" value="CrouzeixRaviart"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{vector, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{3, 3}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{vector, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{3, 3}"/>
+        <Parameter name="method" type="string" value="CrouzeixRaviart high order"/>
+        <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
@@ -256,15 +252,13 @@
 
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{6}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
+        <Parameter name="quadrature order" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

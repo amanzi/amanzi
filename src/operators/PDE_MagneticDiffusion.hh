@@ -1,14 +1,16 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  Magnetic diffusion exesices Amanzi's capability to discretize 
+  curl operators.
+*/
 
 #ifndef AMANZI_OPERATOR_MAGNETIC_DIFFUSION_HH_
 #define AMANZI_OPERATOR_MAGNETIC_DIFFUSION_HH_
@@ -34,30 +36,25 @@ namespace Operators {
 class PDE_MagneticDiffusion : public PDE_Electromagnetics {
  public:
   PDE_MagneticDiffusion(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Electromagnetics(global_op){};
+    : PDE_Electromagnetics(global_op)
+  {};
 
   PDE_MagneticDiffusion(Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Electromagnetics(plist, mesh)
   {
-    operator_type_ = OPERATOR_MAGNETIC_DIFFUSION;
     InitMagneticDiffusion_(plist);
   }
 
   // main virtual members
   // -- create a linearized operator
-  using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void
-  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                 const Teuchos::Ptr<const CompositeVector>& p) override;
+  virtual void UpdateMatrices();
 
   // -- before solving the problem
-  virtual void
-  ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) override;
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
 
   // -- after solving the problem
-  virtual void
-  ModifyFields(CompositeVector& E, CompositeVector& B, double dt) override;
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
   // physical quantities
   // -- energies
@@ -75,7 +72,9 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
   std::vector<WhetStone::DenseMatrix> curl_op_;
 };
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif
+
+

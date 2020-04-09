@@ -50,49 +50,48 @@ class TreeOperator {
  public:
   TreeOperator() : block_diagonal_(false){};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
-  virtual ~TreeOperator() = default;
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op,
-                        bool transpose = false);
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
 
-  virtual int Apply(const TreeVector& X, TreeVector& Y) const;
-  virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
-  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  void getLocalDiagCopy(TreeVector& tv) const;
+
+  int apply(const TreeVector& X, TreeVector& Y) const;
+  int applyAssembled(const TreeVector& X, TreeVector& Y) const;
+  int applyInverse(const TreeVector& X, TreeVector& Y) const;
 
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
-  const TreeVectorSpace& DomainMap() const { return *tvs_; }
-  const TreeVectorSpace& RangeMap() const { return *tvs_; }
+  Teuchos::RCP<const TreeVectorSpace> getDomainMap() const { return tvs_; }
+  Teuchos::RCP<const TreeVectorSpace> getRangeMap() const { return tvs_; }
+  Teuchos::RCP<const TreeVectorSpace> getRowMap() const { return tvs_; }  
 
-  // preconditioners
+  // preconditioners (deprecate)
   void InitPreconditioner(const std::string& prec_name,
                           const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitBlockDiagonalPreconditioner();
+  void InitBlockDiagonalPreconditioner() { block_diagonal_ = true; }
 
+
+  // two-stage initializeation (preferred)
   void InitializePreconditioner(Teuchos::ParameterList& plist);
   void UpdatePreconditioner();
 
   // access
-  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
-  Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
-
-  // deep copy for building interfaces to TPLs, mainly to solvers
-  void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
-  void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
+  Teuchos::RCP<Matrix_type> A() { return A_; }
+  Teuchos::RCP<const Matrix_type> A() const { return A_; }
+  Teuchos::RCP<const SuperMap> getSuperMap() const { return smap_; }
 
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator>>> blocks_;
-  Teuchos::Array<Teuchos::Array<bool>> transpose_;
 
-  Teuchos::RCP<Epetra_CrsMatrix> A_;
+  Teuchos::RCP<Matrix_type> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner<TreeOperator,TreeVector> > preconditioner_;
   bool block_diagonal_;
 
   Teuchos::RCP<VerboseObject> vo_;

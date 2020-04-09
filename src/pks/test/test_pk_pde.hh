@@ -23,6 +23,7 @@
 #include "PK_MixinExplicit.hh"
 #include "PK_MixinLeaf.hh"
 
+#include "LinearOperatorFactory.hh"
 #include "Evaluator_OperatorApply.hh"
 #include "Evaluator_PDE_Accumulation.hh"
 #include "Operator_Factory.hh"
@@ -77,6 +78,8 @@ class PK_PDE_Explicit : public Base_t {
     re_list.set("additional rhss keys",
                 Teuchos::Array<std::string>(1, "source_cv"));
     re_list.set("rhs coefficients", Teuchos::Array<double>(1, -1.0));
+    std::vector<int> cells{0,4,49};
+    re_list.set("debug cells", Teuchos::Array<int>(cells));
     auto dudt_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(this->dudt_key_, this->tag_inter_, dudt_eval);
   }
@@ -85,7 +88,7 @@ class PK_PDE_Explicit : public Base_t {
   {
     Base_t::Initialize();
     this->S_->template GetW<CompositeVector>(this->key_, "", this->key_)
-      .PutScalar(0.);
+      .putScalar(0.);
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
@@ -102,6 +105,11 @@ class PK_PDE_Explicit : public Base_t {
     const auto& dudt =
       this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
+    std::cout << "Dudt at t = " << t << std::endl;
+    std::cout << "================================================"
+              << std::endl;
+    this->db_->WriteVector("dudt", dudt);
+    
     // evaluate cell volume
     this->S_->GetEvaluator("cell_volume", tag_inter_)
       .Update(*this->S_, this->name());
@@ -109,13 +117,9 @@ class PK_PDE_Explicit : public Base_t {
       this->S_->template Get<CompositeVector>("cell_volume", tag_inter_);
 
     // dudt = -dudt_eval / cv
-    f.Data()->ReciprocalMultiply(-1.0, cv, dudt, 0.);
-
-    std::cout << "Dudt at t = " << t << std::endl;
-    std::cout << "================================================"
-              << std::endl;
-    std::cout << "  u = " << std::endl;
-    u.Print(std::cout);
+    f.Data()->reciprocal(cv);
+    f.Data()->elementWiseMultiply(-1.0, dudt, *f.Data(), 0.);
+    this->db_->WriteVector("f", *f.Data());
   }
 
  protected:
@@ -190,6 +194,8 @@ class PK_PDE_Implicit : public Base_t {
     re_list.set("rhs coefficients", rhs_coefs);
 
     // -- preconditioner for evaluating inverse
+    re_list.sublist("preconditioner").set("preconditioner type", "diagonal");
+    /*
     re_list.sublist("preconditioner").set("preconditioner type", "boomer amg");
     re_list.sublist("preconditioner")
       .sublist("boomer amg parameters")
@@ -203,6 +209,7 @@ class PK_PDE_Implicit : public Base_t {
     re_list.sublist("preconditioner")
       .sublist("boomer amg parameters")
       .set("verbosity", 0);
+    */
     auto res_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(res_key_, this->tag_new_, res_eval);
   }
@@ -212,7 +219,7 @@ class PK_PDE_Implicit : public Base_t {
     Base_t::Initialize();
     auto& ic_cv =
       this->S_->template GetW<CompositeVector>(this->key_, "", this->key_);
-    ic_cv.PutScalar(0.);
+    ic_cv.putScalar(0.);
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
@@ -226,31 +233,42 @@ class PK_PDE_Implicit : public Base_t {
     std::cout << "Updating residual at time t = " << t_new << std::endl;
     std::cout << "================================================"
               << std::endl;
-    // std::cout << "  u_old = ";
-    // u_old->Print(std::cout);
-    // std::cout << "  u_new = ";
-    // u_new->Print(std::cout);
+    this->db_->WriteVector("u_old", u_old->Data().ptr());
+    this->db_->WriteVector("u_new", u_new->Data().ptr());
     this->S_->GetEvaluator(res_key_, tag_new_).Update(*this->S_, this->name());
     *f->Data() = this->S_->template Get<CompositeVector>(res_key_, tag_new_);
-
-    // std::cout << "  res = ";
-    // f->Print(std::cout);
+    this->db_->WriteVector("res", f->Data().ptr());
   }
 
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                           Teuchos::RCP<TreeVector> Pu)
   {
-    const auto& lin_op = this->S_->template GetDerivative<Operators::Operator>(
-      res_key_, tag_new_, this->key_, tag_new_);
-    lin_op.ApplyInverse(*u->Data(), *Pu->Data());
+    if (!lin_solver_.get()) {
+      const auto& lin_op = this->S_->template GetDerivativePtr<Operators::Operator>(res_key_, tag_new_, this->key_, tag_new_);
+      
+      Teuchos::ParameterList ls_list;
+      ls_list.sublist("verbose object")
+          .set<std::string>("verbosity level", "high");
+      ls_list.set("iterative method", "gmres");
+      ls_list.sublist("gmres parameters").set("error tolerance", 1.e-10);
+      std::vector<std::string> crit = {"make one iteration", "relative residual"};
+      ls_list.sublist("gmres parameters").set("convergence criteria", Teuchos::Array<std::string>(crit));
+      ls_list.sublist("gmres parameters").sublist("verbose object")
+          .set<std::string>("verbosity level", "high");
+      
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeSpace> fac;
+      lin_solver_ = fac.Create(ls_list, lin_op);
+    }
+    this->db_->WriteVector("res", u->Data().ptr());
+    lin_solver_->applyInverse(*u->Data(), *Pu->Data());
+    this->db_->WriteVector("PC*res", Pu->Data().ptr());
     return 0;
   }
 
   double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
   {
-    double norm = 0.;
-    du->NormInf(&norm);
+    double norm = du->normInf();
     std::cout << "     error = " << norm << std::endl;
     return norm;
   }
@@ -269,6 +287,8 @@ class PK_PDE_Implicit : public Base_t {
  protected:
   Key res_key_;
   Key conserved_key_;
+
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator,CompositeVector,CompositeSpace> > lin_solver_;
 
   using Base_t::tag_new_;
   using Base_t::tag_old_;

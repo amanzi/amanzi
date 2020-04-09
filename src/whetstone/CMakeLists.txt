@@ -32,132 +32,61 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
+set(whetstone_inc_files
+  lapack.hh
+  WhetStoneDefs.hh
+  WhetStoneFunction.hh
+  WhetStoneMeshUtils.hh
+
+  DenseVector.hh
+  DenseMatrix.hh
+  Tensor.hh
+
+  PolynomialBase.hh
+  PolynomialIterator.hh
+  Monomial.hh
+  Polynomial.hh
+  SpaceTimePolynomial.hh
+  VectorObjects.hh
+  MatrixObjects.hh
+)
+
+set(whetstone_src_files
+  DenseVector.cc
+  DenseMatrix.cc
+  Tensor.cc
+  Polynomial.cc
+  SpaceTimePolynomial.cc
+  VectorObjects.cc
+)
+
 #
 # Library: whetstone
 #
 add_amanzi_library(whetstone
-                   SOURCE InnerProduct.cc 
-                          DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
-                          MFD3D.cc
-                          MFD3D_BernardiRaugel.cc
-			  MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartSerendipity.cc
-                          MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
-                          MFD3D_Elasticity.cc 
-                          MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
-                          MFD3D_Generalized_Diffusion.cc
-                          MFD3D_Lagrange.cc MFD3D_LagrangeSerendipity.cc
-                          DG_Modal.cc
-                          BilinearFormFactory.cc
-                          Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
-                          nlfv.cc 
-                          Tensor.cc DenseMatrix.cc DenseVector.cc
-                          Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
-                          NumericalIntegration.cc
-                          MeshMaps.cc
-                          MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
-                          GrammMatrix.cc
-                   HEADERS DenseMatrix.hh DenseVector.hh
-                           DG_Modal.hh
-                           Basis.hh BasisFactory.hh
-                           Basis_Natural.hh Basis_Regularized.hh 
-                           Basis_Normalized.hh Basis_Orthonormalized.hh
-                           lapack.hh
-                           InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
-                           BilinearForm.hh BilinearFormFactory.hh 
-                           DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
-                           GrammMatrix.hh
-                           FunctionUpwind.hh
-                           MFD3D.hh
-                           MFD3D_BernardiRaugel.hh
-			   MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartSerendipity.hh
-                           MFD3D_Diffusion.hh
-                           MFD3D_Elasticity.hh
-                           MFD3D_Electromagnetics.hh
-                           MFD3D_Generalized_Diffusion.hh
-                           MFD3D_Lagrange.hh MFD3D_LagrangeSerendipity.hh
-                           nlfv.hh
-                           NumericalIntegration.hh
-                           Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
-                           MeshMaps.hh MeshMapsFactory.hh
-                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
-                           CoordinateSystems.hh
-                           Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
-                           VectorPolynomial.hh MatrixPolynomial.hh PolynomialOnMesh.hh
-                           Tensor.hh
-                           WhetStoneDefs.hh
-                           WhetStoneFunction.hh WhetStoneMeshUtils.hh
-                           bilinear_form_registration.hh
-                   LINK_LIBS geometry mesh error_handling ${Tpetra_LIBRARIES})
+  SOURCE ${whetstone_src_files}
+  HEADERS ${whetstone_inc_files}
+  LINK_LIBS ${whetstone_link_libs}
+  )
 
 
 if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
-    include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
     if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}))
-        file(GLOB DataFiles "${WHETSTONE_SOURCE_DIR}/test/*.exo")
-        file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
+        file(GLOB whetstone_data_files "${WHETSTONE_SOURCE_DIR}/test/*.exo")
+        file(COPY ${whetstone_data_files} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
-
-    # Test: matrices for diffusion
-    add_amanzi_test(whetstone_diffusion whetstone_diffusion
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_diffusion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: matrices for elasticity
-    add_amanzi_test(whetstone_elasticity whetstone_elasticity
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_elasticity.cc
-                           test/whetstone_elasticity_other.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: matrices for electromagnetics
-    add_amanzi_test(whetstone_electromagnetics whetstone_electromagnetics
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_electromagnetics.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
+    set(whetstone_test_link_libs geometry whetstone)
+    
     # Test: miscalleneous library tools
     add_amanzi_test(whetstone_misc whetstone_misc
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
-                                        test/whetstone_geometry.cc
-                                        test/whetstone_factory.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: surface matrices for diffusion
-    add_amanzi_test(whetstone_surface whetstone_surface
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: various toolsets
-    add_amanzi_test(whetstone_nlfv whetstone_nlfv
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_nlfv.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: matrices for DG methods
-    add_amanzi_test(whetstone_dg whetstone_dg
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_polynomials.cc
-                                        test/whetstone_dg.cc
-                                        test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
-                                        test/whetstone_maps.cc
-                                        test/whetstone_projectors.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    # Test: matrices for Derham complex
-    add_amanzi_test(whetstone_derham whetstone_derham
-                    KIND unit
-                    SOURCE test/Main.cc test/whetstone_derham.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${whetstone_test_link_libs} ${UnitTest_LIBRARIES})
 
 endif()
 

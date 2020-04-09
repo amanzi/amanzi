@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -27,41 +27,40 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
- * Consistency condition for inner product in space of fluxes.
- * Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
- * Here R^T N = |c| K.
- * Fluxes include face areas!
- ****************************************************************** */
-int
-MFD3D_Diffusion::L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N,
-                                         DenseMatrix& Mc, bool symmetry)
+* Consistency condition for inner product in space of fluxes. 
+* Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
+* Here R^T N = |c| K.
+* Fluxes include face areas!
+****************************************************************** */
+int MFD3D_Diffusion::L2consistencyScaledArea(
+    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List faces;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  int nfaces = faces.extent(0);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
   Kinv.Transpose();
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     v2 = Kinv * (fm - cm);
 
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
-      f = faces(j);
+      f = faces[j];
       const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
       v1 = fm - cm;
       Mc(i, j) = (v1 * v2) / volume;
@@ -69,9 +68,9 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N,
   }
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs(i);
+    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i];
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -79,51 +78,49 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N,
 
 
 /* ******************************************************************
- * Consistency condition for inverse of the mass matrix in the space
- * of Darcy fluxes. Only the upper triangular part of matrix
- * Wc = N (N^T R)^{-1} N^T is calculated. Here N^T R = |c| K.
- * Flux is scaled by face area!
- ****************************************************************** */
-int
-MFD3D_Diffusion::L2consistencyInverseScaledArea(int c, const Tensor& K,
-                                                DenseMatrix& R, DenseMatrix& Wc,
-                                                bool symmetry)
+* Consistency condition for inverse of the mass matrix in the space
+* of Darcy fluxes. Only the upper triangular part of matrix 
+* Wc = N (N^T R)^{-1} N^T is calculated. Here N^T R = |c| K.
+* Flux is scaled by face area!
+****************************************************************** */
+int MFD3D_Diffusion::L2consistencyInverseScaledArea(
+    int c, const Tensor<>& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List faces;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  int nfaces = faces.extent(0);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
 
-  Tensor Kt(K);
+  Tensor<> Kt(K);
   Kt.Transpose();
 
   // Since N is scaled by K, N = N0 * K, we us tensor K in the
   // inverse L2 consistency term.
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = Kt * normal;
 
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
-      f = faces(j);
+      f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs(i) * dirs(j) * volume);
+      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume);
     }
   }
 
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d_; k++) R(i, k) = fm[k] - cm[k];
   }
@@ -133,54 +130,53 @@ MFD3D_Diffusion::L2consistencyInverseScaledArea(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Consistency condition for stiffness matrix in heat conduction.
- * Only the upper triangular part of Ac is calculated.
- * The degrees of freedom are at nodes.
- ****************************************************************** */
-int
-MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N,
-                               DenseMatrix& Ac)
+* Consistency condition for stiffness matrix in heat conduction. 
+* Only the upper triangular part of Ac is calculated.
+* The degrees of freedom are at nodes.
+****************************************************************** */
+int MFD3D_Diffusion::H1consistency(
+    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Kokkos::View<Entity_ID*> faces, nodes;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_nodes(c, nodes);
-  int nnodes = nodes.extent(0);
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // to calculate matrix R, we use temporary matrix N
   N.PutScalar(0.0);
 
-  int num_faces = faces.extent(0);
+  int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    Kokkos::View<Entity_ID*> face_nodes;
-    mesh_->face_get_nodes(f, face_nodes);
-    int num_face_nodes = face_nodes.extent(0);
+    Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(f, &face_nodes);
+    int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
-      int v = face_nodes(j);
+      int v = face_nodes[j];
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs(i);
+        u = 0.5 * dirs[i]; 
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
 
-        int vnext = face_nodes(jnext);
-        int vprev = face_nodes(jprev);
+        int vnext = face_nodes[jnext];
+        int vprev = face_nodes[jprev];
 
         mesh_->node_get_coordinates(v, &p);
         mesh_->node_get_coordinates(vnext, &pnext);
@@ -188,19 +184,17 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1 ^ v2;
-        u = dirs(i) * norm(v3) / (4 * area);
+        v3 = v1^v2;
+        u = dirs[i] * norm(v3) / (4 * area);
       }
-      int pos = 0;
-      for (pos = 0; pos < nodes.extent(0); ++pos) {
-        if (nodes(pos) == v) { break; }
-      }
+
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
       for (int k = 0; k < d_; k++) N(pos, k) += normal[k] * u;
     }
   }
 
   // calculate upper part of R K R^T / volume
-  for (int i = 0; i < nnodes; i++) {
+  for (int i = 0; i < nnodes; i++) { 
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
@@ -212,10 +206,10 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes(i);
+    int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
-    N(i, d_) = 1.0; // additional column is added to the consistency condition
+    N(i, d_) = 1.0;  // additional column is added to the consistency condition
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -223,14 +217,13 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
 
 /* ******************************************************************
- * Mass matrix in space of fluxes.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
+* Mass matrix in space of fluxes.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor<>& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, true);
@@ -242,46 +235,42 @@ MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
- * Mass matrix in space of fluxes for non-symmetric tensor
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
+* Mass matrix in space of fluxes for non-symmetric tensor
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor<>& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, false);
   if (ok) return ok;
 
-  StabilityScalarNonSymmetric_(c, N, M);
+  StabilityScalarNonSymmetric_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
 /* ******************************************************************
- * Inverse mass matrix for non-symmetric PD tensor.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K,
-                                               DenseMatrix& W)
+* Inverse mass matrix for non-symmetric PD tensor.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return ok;
 
-  StabilityScalarNonSymmetric_(c, R, W);
+  StabilityScalarNonSymmetric_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
 /* ******************************************************************
- * Stiffness matrix: the standard algorithm.
- ****************************************************************** */
-int
-MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+* Stiffness matrix: the standard algorithm.
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -294,11 +283,9 @@ MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 
 
 /* ******************************************************************
- * Stiffness matrix: the optimized algorithm.
- ****************************************************************** */
-int
-MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K,
-                                          DenseMatrix& A)
+* Stiffness matrix: the optimized algorithm.
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -311,10 +298,9 @@ MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Stiffness matrix: the M-matrix approach
- ****************************************************************** */
-int
-MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
+* Stiffness matrix: the M-matrix approach
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor<>& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -336,20 +322,20 @@ MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
 
 
 /* *****************************************************************
- * Low-order L2 projector.
- * NOTE: we abuse the interface and return a linear polynomial.
- ***************************************************************** */
-void
-MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
-                        const Polynomial* moments, Polynomial& vc)
+* Low-order L2 projector. 
+* NOTE: we abuse the interface and return a linear polynomial.
+***************************************************************** */
+void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& ve,
+                             const std::vector<Polynomial>& vf,
+                             const Polynomial* moments, Polynomial& vc)
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List faces;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  int num_faces = faces.extent(0);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int num_faces = faces.size();
 
   vc.Reshape(d_, 1, true);
   for (int i = 0; i < num_faces; i++) {
@@ -358,53 +344,51 @@ MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
-      vc(k + 1) += Rik * vf[i](0) * dirs(i);
+      vc(k + 1) += Rik * vf[i](0) * dirs[i];
     }
   }
 
-  vc *= -1.0 / mesh_->cell_volume(c, false);
+  vc *= -1.0 / mesh_->cell_volume(c);
 }
 
 
 /* ******************************************************************
- * Divergence matrix.
- ****************************************************************** */
-int
-MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
+* Divergence matrix.
+****************************************************************** */
+int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List faces;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  int nfaces = faces.extent(0);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
   A.Reshape(1, nfaces);
 
   for (int n = 0; n < nfaces; ++n) {
-    A(0, n) = mesh_->face_area(faces(n)) * dirs(n);
-  }
+    A(0, n) = mesh_->face_area(faces[n]) * dirs[n]; 
+  } 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
 /* *****************************************************************
- *  OTHER ROUTINES
- ***************************************************************** */
+*  OTHER ROUTINES
+***************************************************************** */
 
 /* ******************************************************************
- * Consistency condition for inverse of mass matrix in space of
- * fluxes. Only the upper triangular part of Wc is calculated.
- ****************************************************************** */
-int
-MFD3D_Diffusion::L2consistencyInverseDivKScaled(
-  int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad,
-  DenseMatrix& R, DenseMatrix& Wc)
+* Consistency condition for inverse of mass matrix in space of 
+* fluxes. Only the upper triangular part of Wc is calculated.
+****************************************************************** */
+int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
+    int c, const Tensor<>& K, double kmean, const AmanziGeometry::Point& kgrad,
+    DenseMatrix& R, DenseMatrix& Wc)
 {
-  Kokkos::View<Entity_ID*> faces, nodes;
-  Kokkos::View<int*> dirs;
+  Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-  int nfaces = faces.extent(0);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);
@@ -412,24 +396,24 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   // calculate areas of possibly curved faces
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     areas[i] = norm(mesh_->face_normal(f));
   }
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = (K * normal) / kmean;
 
     for (int j = i; j < nfaces; j++) {
-      f = faces(j);
+      f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs(i) * dirs(j) * volume * areas[i] * areas[j]);
+      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
     }
   }
 
@@ -437,12 +421,12 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces(i);
-    if (d_ == 2) {
-      mesh_->face_get_nodes(f, nodes);
+    int f = faces[i];
+    if (d_ == 2) { 
+      mesh_->face_get_nodes(f, &nodes);
 
-      mesh_->node_get_coordinates(nodes(0), &v1);
-      mesh_->node_get_coordinates(nodes(1), &v2);
+      mesh_->node_get_coordinates(nodes[0], &v1);
+      mesh_->node_get_coordinates(nodes[1], &v2);
 
       v1 -= cm;
       v2 -= cm;
@@ -465,16 +449,15 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 
 
 /* ******************************************************************
- * Inverse mass matrix in flux space via optimization, experimental.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+* Inverse mass matrix in flux space via optimization, experimental.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
-
+ 
   StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
 
@@ -483,11 +466,10 @@ MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 
 
 /* ******************************************************************
- * Mass matrix for a hexahedral element, a brick for now.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverseMMatrixHex(int c, const Tensor& K,
-                                             DenseMatrix& W)
+* Mass matrix for a hexahedral element, a brick for now.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -502,11 +484,10 @@ MFD3D_Diffusion::MassMatrixInverseMMatrixHex(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Mass matrix for a polyhedral element via simplex method.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverseMMatrix(int c, const Tensor& K,
-                                          DenseMatrix& W)
+* Mass matrix for a polyhedral element via simplex method.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseMMatrix(
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -528,17 +509,16 @@ MFD3D_Diffusion::MassMatrixInverseMMatrix(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Inverse mass matrix via optimization, experimental.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverseOptimized(int c, const Tensor& K,
-                                            DenseMatrix& W)
+* Inverse mass matrix via optimization, experimental.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseOptimized(
+    int c, const Tensor<>& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
-
+ 
   ok = StabilityOptimized_(K, R, W);
   RescaleMassMatrixInverse_(c, W);
 
@@ -547,19 +527,16 @@ MFD3D_Diffusion::MassMatrixInverseOptimized(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Inverse mass matrix via optimization, experimental.
- ****************************************************************** */
-int
-MFD3D_Diffusion::MassMatrixInverseDivKScaled(int c, const Tensor& K,
-                                             double kmean,
-                                             const AmanziGeometry::Point& kgrad,
-                                             DenseMatrix& W)
+* Inverse mass matrix via optimization, experimental.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
+    int c, const Tensor<>& K, double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W)
 {
   DenseMatrix R;
 
   int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, W);
   if (ok) return ok;
-
+ 
   StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
 
@@ -568,20 +545,19 @@ MFD3D_Diffusion::MassMatrixInverseDivKScaled(int c, const Tensor& K,
 
 
 /* ******************************************************************
- * Rescale matrix to area-weighted fluxes.
- ****************************************************************** */
-void
-MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
+* Rescale matrix to area-weighted fluxes.
+****************************************************************** */
+void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 {
-  Kokkos::View<Entity_ID*> faces;
+  Entity_ID_List faces;
 
-  mesh_->cell_get_faces(c, faces);
-  int num_faces = faces.extent(0);
+  mesh_->cell_get_faces(c, &faces);
+  int num_faces = faces.size();
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(num_faces, 0.0);
   for (int i = 0; i < num_faces; i++) {
-    int f = faces(i);
+    int f = faces[i];
     areas[i] = norm(mesh_->face_normal(f));
   }
 
@@ -593,10 +569,9 @@ MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 
 
 /* ******************************************************************
- * A simple monotone stability term for a 2D or 3D brick element.
- ****************************************************************** */
-int
-MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
+* A simple monotone stability term for a 2D or 3D brick element. 
+****************************************************************** */
+int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix& M)
 {
   int nrows = 2 * d_;
 
@@ -609,9 +584,9 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> dirs;
-  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;
@@ -619,18 +594,18 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
     int i1 = 2 * i;
     int i2 = i1 + 1;
 
-    int f = faces(i1);
+    int f = faces[i1];
     const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
     area1 = mesh_->face_area(f);
 
     s1 = 1.0;
     for (int j = i2; j < nrows; j++) {
-      int f = faces(j);
+      int f = faces[j];
       const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
       area2 = mesh_->face_area(f);
 
-      s2 = (normal1 * normal2) * (dirs(i) * dirs(j)) / (area1 * area2);
-      if (s2 < s1) { // swap map values in positions i2 and j
+      s2 = (normal1 * normal2) * (dirs[i] * dirs[j]) / (area1 * area2);
+      if (s2 < s1) {  // swap map values in positions i2 and j
         k = map[i2];
         map[i2] = j;
         map[j] = k;
@@ -641,23 +616,23 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   }
 
   // define transformed tensor
-  Tensor T1(d_, 2);
+  Tensor<> T1(d_, 2);
   AmanziGeometry::Point areas(d_);
   for (int i = 0; i < d_; i++) {
-    k = map[2 * i];
-    int f = faces(k);
+    k = map[2*i];
+    int f = faces[k];
     const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
     area1 = mesh_->face_area(f);
     areas[i] = area1;
 
     for (int j = i; j < d_; j++) {
-      l = map[2 * j];
-      f = faces(l);
+      l = map[2*j];
+      f = faces[l];
       const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
       area2 = mesh_->face_area(f);
 
-      s1 = (K * normal1) * normal2 * (dirs(k) * dirs(l)) / (area1 * area2);
-      if (i - j) {
+      s1 = (K * normal1) * normal2 * (dirs[k] * dirs[l]) / (area1 * area2);
+      if (i-j) {
         T1(i, j) = T1(j, i) = -fabs(s1);
       } else {
         T1(i, i) = s1;
@@ -680,51 +655,23 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   }
 
   // add stability term D_ik T1_kl D_il
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
   for (int i = 0; i < nrows; i++) {
     i1 = i / 2;
     k = map[i];
-    area1 = mesh_->face_area(faces(k));
+    area1 = mesh_->face_area(faces[k]);
 
     for (int j = i; j < nrows; j++) {
       i2 = j / 2;
       l = map[j];
-      area2 = mesh_->face_area(faces(l));
-      M(l, k) = M(k, l) +=
-        T1(i1, i2) * area1 * area2 / volume; // Fix (lipnikov@lanl.gov)
+      area2 = mesh_->face_area(faces[l]);
+      M(l, k) = M(k, l) += T1(i1, i2) * area1 * area2 / volume;  // Fix (lipnikov@lanl.gov)
     }
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+}  // namespace WhetStone
+}  // namespace Amanzi
 
-/* ******************************************************************
- * Simple stability term for nonsymmetric tensors.
- ****************************************************************** */
-void
-MFD3D_Diffusion::StabilityScalarNonSymmetric_(int c, DenseMatrix& N,
-                                              DenseMatrix& M)
-{
-  GrammSchmidt_(N);
-  CalculateStabilityScalar_(M);
 
-  int nrows = M.NumRows();
-  int ncols = N.NumCols();
-
-  // add projector ss * (I - N^T N) to matrix M
-  for (int i = 0; i < nrows; i++) {
-    M(i, i) += scalar_stability_;
-
-    for (int j = i; j < nrows; j++) {
-      double s = 0.0;
-      for (int k = 0; k < ncols; k++) s += N(i, k) * N(j, k);
-
-      s *= scalar_stability_;
-      M(i, j) -= s;
-      if (i - j) M(j, i) -= s;
-    }
-  }
-}
-
-} // namespace WhetStone
-} // namespace Amanzi

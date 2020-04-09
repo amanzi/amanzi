@@ -13,12 +13,13 @@
 #ifndef AMANZI_TENSOR_VECTOR_HH_
 #define AMANZI_TENSOR_VECTOR_HH_
 
-#include <vector>
-#include <algorithm>
-
+#include "AmanziTypes.hh"
+#include "AmanziVector.hh"
 #include "MeshDefs.hh"
 #include "Tensor.hh"
+#include "CSR.hh"
 #include "CompositeVectorSpace.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 
@@ -28,51 +29,90 @@ namespace Amanzi {
 // are associated with.
 // -----------------------------------------------------------------------------
 struct TensorVector {
-  TensorVector(CompositeVectorSpace map_, bool ghosted_ = false)
-    : map(std::move(map_)), ghosted(ghosted_)
+  TensorVector() {}
+  
+  TensorVector(const CompositeVectorSpace& map_, bool ghosted_ = false)
+      : map(map_), ghosted(ghosted_), inited(false)
   {
-    data.resize(size_());
+    prealloc_();
   }
 
 
-  TensorVector(CompositeVectorSpace map_, int dim_, int rank_,
+  TensorVector(const CompositeVectorSpace& map_, int dim_, int rank_,
                bool ghosted_ = false)
-    : map(std::move(map_)), ghosted(ghosted_)
+      : map(map_), ghosted(ghosted_), inited(false)
   {
-    data.resize(size_(), WhetStone::Tensor(dim_, rank_));
+    prealloc_();
+    for (int i=0; i!=size(); ++i) set_shape(i, dim_, rank_);
+    Init();
   }
 
-  std::vector<WhetStone::Tensor>::iterator begin() { return data.begin(); }
-  std::vector<WhetStone::Tensor>::const_iterator begin() const
-  {
-    return data.begin();
-  }
-  std::vector<WhetStone::Tensor>::iterator end() { return data.end(); }
-  std::vector<WhetStone::Tensor>::const_iterator end() const
-  {
-    return data.end();
-  }
-  std::size_t size() const { return data.size(); }
+  KOKKOS_INLINE_FUNCTION size_t size() const { return data.size(); }
 
-  const WhetStone::Tensor& operator[](std::size_t i) const { return data[i]; }
-  WhetStone::Tensor& operator[](std::size_t i) { return data[i]; }
+  void set_shape(const int& i, const int& d, const int& rank) {
+    int tsize = WhetStone::WHETSTONE_TENSOR_SIZE[d-1][rank-1];
+    data.set_shape(i, {d, rank, tsize}, tsize*tsize);
+  }
 
-  std::vector<WhetStone::Tensor> data;
+  /**
+    * Init the CSR based on a Host vector 
+  */
+  void Init(const std::vector<WhetStone::Tensor<Kokkos::HostSpace>>& ht){
+    // Extract max size 
+    const int row_map_size = ht.size(); 
+    // Set CSR 
+    data.set_size(row_map_size); 
+    // Fill row map  and size
+    for(int i = 0 ; i < ht.size(); ++i){
+      data.set_row_map(i,ht[i].mem());
+      data.set_sizes(i,0,ht[i].dimension());
+      data.set_sizes(i,1,ht[i].rank()); 
+      data.set_sizes(i,2,ht[i].size());
+    }
+    data.prefix_sum(); 
+    // Fill entries 
+    for(int i = 0 ; i < ht.size(); ++i){
+      int idx = data.row_map(i);
+      for(int j = 0 ; j < ht[i].data().extent(0); ++j){
+        data.set_entries(idx+j,ht[i].data()(j)); 
+      }
+    }
+  }
+
+  void Init() {
+    inited = true;
+    data.prefix_sum();
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  WhetStone::Tensor<Kokkos::CudaUVMSpace> operator[](const int& i) {
+    assert(inited);
+    return std::move(WhetStone::Tensor<Kokkos::CudaUVMSpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  WhetStone::Tensor<Kokkos::CudaUVMSpace> at(const int& i) const {
+    // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
+    // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
+    return std::move(WhetStone::Tensor<Kokkos::CudaUVMSpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+  }
+  
+  CSR_Tensor data;
   CompositeVectorSpace map;
   bool ghosted;
+  bool inited;
 
  private:
-  int size_()
-  {
+
+  void prealloc_() {
+    // how many entities?
     int count = 0;
-    for (auto& name : map) {
-      count +=
-        map.Mesh()->num_entities(AmanziMesh::entity_kind(name),
-                                 ghosted ? AmanziMesh::Parallel_type::ALL :
-                                           AmanziMesh::Parallel_type::OWNED);
-    }
-    return count;
+    for (const auto& comp : map)
+      count += map.getMap(comp, ghosted)->getNodeNumElements();
+
+    data = std::move(CSR_Tensor(count));
   }
+
 };
 
 

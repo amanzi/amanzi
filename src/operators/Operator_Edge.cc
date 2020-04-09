@@ -1,15 +1,16 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-      Ethan Coon (coonet@ornl.gov)
-*/
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  Operator whose unknowns are Edge.
+*/
 
 #include "DenseMatrix.hh"
 #include "Op_Edge_Edge.hh"
@@ -26,15 +27,14 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Apply a source which may or may not have edge volume included already.
- ****************************************************************** */
-void
-Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
+* Apply a source which may or may not have edge volume included already. 
+****************************************************************** */
+void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
-    rhs_->putScalarGhosted(0.0);
+    rhs_->PutScalarGhosted(0.0);
     Epetra_MultiVector& rhs_e = *rhs_->ViewComponent("edge", true);
     const Epetra_MultiVector& source_e = *source.ViewComponent("edge", true);
 
@@ -44,7 +44,7 @@ Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
       mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
-      double volume = mesh_->cell_volume(c, false);
+      double volume = mesh_->cell_volume(c);
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
         rhs_e[0][e] += source_e[0][e] * volume / nedges;
@@ -56,18 +56,16 @@ Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
 
 
 /* ******************************************************************
- * Apply the local matrices directly as schemas match.
- ****************************************************************** */
-int
-Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
-                                 const CompositeVector& X,
-                                 CompositeVector& Y) const
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-  Y.putScalarGhosted(0.0);
+  Y.PutScalarGhosted(0.0);
 
   {
     Epetra_MultiVector& Ye = *Y.ViewComponent("edge", true);
@@ -78,13 +76,17 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
-      for (int n = 0; n != nedges; ++n) { v(n) = Xe[0][edges[n]]; }
+      for (int n = 0; n != nedges; ++n) {
+        v(n) = Xe[0][edges[n]];
+      }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.elementWiseMultiply(v, av, false);
+      Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nedges; ++n) { Ye[0][edges[n]] += av(n); }
-    }
+      for (int n = 0; n != nedges; ++n) {
+        Ye[0][edges[n]] += av(n);
+      }
+    } 
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -93,19 +95,17 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 
 
 /* ******************************************************************
- * Visit methods for Apply.
- * Apply the local matrices directly as schema is a subset of
- * assembled schema.
- ****************************************************************** */
-int
-Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
-                                 const CompositeVector& X,
-                                 CompositeVector& Y) const
+* Visit methods for Apply.
+* Apply the local matrices directly as schema is a subset of 
+* assembled schema.
+****************************************************************** */
+int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
 {
   const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
   Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
 
-  for (int k = 0; k != Xc.getNumVectors(); ++k) {
+  for (int k = 0; k != Xc.NumVectors(); ++k) {
     for (int e = 0; e != nedges_owned; ++e) {
       Yc[k][e] += Xc[k][e] * (*op.diag)[k][e];
     }
@@ -115,23 +115,20 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
 
 
 /* ******************************************************************
- * Visit methods for symbolic assemble.
- * Apply the local matrices directly as schemas match.
- ****************************************************************** */
-void
-Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const
+* Visit methods for symbolic assemble.
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+void Operator_Edge::SymbolicAssembleMatrixOp(
+    const Op_Cell_Edge& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_edges);
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: cell and edge
-  const std::vector<int>& edge_row_inds =
-    map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds =
-    map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
@@ -150,19 +147,16 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
 
 
 /* ******************************************************************
- * Visit methods for symbolic assemble.
- * Insert the diagonal on edges
- ****************************************************************** */
-void
-Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const
+* Visit methods for symbolic assemble.
+* Insert the diagonal on edges
+****************************************************************** */
+void Operator_Edge::SymbolicAssembleMatrixOp(
+    const Op_Edge_Edge& op,
+    const SuperMap& map, GraphFE& graph,
+   int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& edge_row_inds =
-    map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds =
-    map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {
@@ -176,13 +170,13 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
 
 
 /* ******************************************************************
- * Visit methods for assemble
- * Apply the local matrices directly as schemas match.
- ****************************************************************** */
-void
-Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
-                                MatrixFE& mat, int my_block_row,
-                                int my_block_col) const
+* Visit methods for assemble
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+void Operator_Edge::AssembleMatrixOp(
+    const Op_Cell_Edge& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -190,10 +184,8 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: edge and cell
-  const std::vector<int>& edge_row_inds =
-    map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds =
-    map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
@@ -213,20 +205,18 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
 
 
 /* ******************************************************************
- * Visit methods for assemble
- * Insert each diagonal values for edges.
- ****************************************************************** */
-void
-Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
-                                MatrixFE& mat, int my_block_row,
-                                int my_block_col) const
+* Visit methods for assemble
+* Insert each diagonal values for edges.
+****************************************************************** */
+void Operator_Edge::AssembleMatrixOp(
+    const Op_Edge_Edge& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
+  AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& edge_row_inds =
-    map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds =
-    map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {
@@ -238,5 +228,8 @@ Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
   AMANZI_ASSERT(!ierr);
 }
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
+
+
+

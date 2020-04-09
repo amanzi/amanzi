@@ -99,7 +99,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
         target_volumes[i] = 0.90 * orig_volumes[i];
   }
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fixed_nodes;
+  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
   mesh->get_set_entities("Bottom Region",
                          Amanzi::AmanziMesh::NODE,
                          Amanzi::AmanziMesh::Parallel_type::ALL,
@@ -205,7 +205,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
     }
   }
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fixed_nodes;
+  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
   mesh->get_set_entities_and_vofs("Bottom Region",
                                   Amanzi::AmanziMesh::NODE,
                                   Amanzi::AmanziMesh::Parallel_type::ALL,

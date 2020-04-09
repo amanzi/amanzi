@@ -18,7 +18,6 @@
 */
 
 #include "EvaluatorIndependentFunction.hh"
-#include "CompositeVectorFunctionFactory.hh"
 #include "UniqueHelpers.hh"
 
 namespace Amanzi {
@@ -78,8 +77,7 @@ EvaluatorIndependentFunction::Update_(State& S)
     CompositeVectorSpace& cvs =
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
-    func_ =
-      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cvs);
+    func_ = Functions::createCompositeVectorFunction(plist_.sublist("function"), cvs.Mesh());
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

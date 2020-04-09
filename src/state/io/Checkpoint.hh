@@ -23,6 +23,7 @@
 #include "IOEvent.hh"
 #include "Output.hh"
 #include "Input.hh"
+#include "Data_Initializers.hh"
 
 namespace Amanzi {
 
@@ -40,7 +41,7 @@ class Checkpoint : public IOEvent {
   typename std::enable_if<!Output::writes<T>::value>::type
   Write(const Teuchos::ParameterList& attrs, const T& t) const
   {
-    UserWriteCheckpoint(*this, attrs, t);
+    Data_Initializers::UserWriteCheckpoint(*this, attrs, t);
   }
 
   // output-provided writing
@@ -56,7 +57,7 @@ class Checkpoint : public IOEvent {
   typename std::enable_if<!Input::reads<T>::value>::type
   Read(const Teuchos::ParameterList& attrs, T& t) const
   {
-    UserReadCheckpoint(*this, attrs, t);
+    Data_Initializers::UserReadCheckpoint(*this, attrs, t);
   }
 
   // input-provided reading

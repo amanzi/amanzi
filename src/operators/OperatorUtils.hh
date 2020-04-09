@@ -16,57 +16,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Schema.hh"
 
-class Epetra_Vector;
-
 namespace Amanzi {
-
-class CompositeVector;
-class TreeVector;
-
 namespace Operators {
 
-class SuperMap;
 class Schema;
-
-// Nonmember CompositeVector to/from Super-vector
-// -- as a block in TreeVector
-int
-CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-                                 Epetra_Vector& sv, int block_num = 0);
-int
-CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                 CompositeVector& cv, int block_num = 0);
-int
-AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                CompositeVector& cv, int block_num = 0);
-
-// -- complex schema version (deprecated?)
-int
-CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-                                 Epetra_Vector& sv, const Schema& schema,
-                                 int block_num = 0);
-int
-CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                 CompositeVector& cv, const Schema& schema,
-                                 int block_num = 0);
-
-// Nonmember TreeVector to/from Super-vector
-// -- simple schema version
-int
-CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv,
-                            Epetra_Vector& sv);
-int
-CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv,
-                            TreeVector& cv);
-int
-AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv,
-                           TreeVector& cv);
-
-// Supermap factory from CV and schema
-Teuchos::RCP<SuperMap>
-CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
-Teuchos::RCP<SuperMap>
-CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.
@@ -75,30 +28,37 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs = 1);
 unsigned int
 MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema);
 
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
-CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                   std::pair<Teuchos::RCP<const Epetra_BlockMap>,
-                             Teuchos::RCP<const Epetra_BlockMap>>& bnd_maps,
-                   std::pair<Teuchos::RCP<const Epetra_BlockMap>,
-                             Teuchos::RCP<const Epetra_BlockMap>>& face_maps);
 
-// Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_BlockMap>,
-          Teuchos::RCP<const Epetra_BlockMap>>
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
-
-// Factory of composite vector spaces
-Teuchos::RCP<CompositeVectorSpace>
-CreateCompositeVectorSpace(
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-  const std::vector<std::string>& names,
-  const std::vector<AmanziMesh::Entity_kind>& locations,
-  const std::vector<int>& num_dofs, bool ghosted = false);
-
-Teuchos::RCP<CompositeVectorSpace>
-CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                           std::string name, AmanziMesh::Entity_kind location,
-                           int num_dof, bool ghosted = false);
+// Do a Kokkos local mat-mult.
+//
+// This likely needs to be a better implementation...  FIXME --etc
+//
+// Calculates:
+//   Y[Y_inds] += mat[elem] * X[X_inds]
+template<class MatView_type, typename GO, class VecView_type>
+void
+LocalMatMultAdd(const MatView_type& mat,
+                const GO elem,
+                const typename VecView_type::const_type& X,
+                const AmanziMesh::Entity_ID_View& X_ids,
+                const VecView_type& Y,
+                const AmanziMesh::Entity_ID_View& Y_ids)
+{
+  auto num_cols = X_ids.extent(0);
+  auto num_rows = Y_ids.extent(0);
+  Kokkos::parallel_for(
+      "OperatorUtils::LocalMatMultAdd",
+      num_rows,
+      KOKKOS_LAMBDA(const int& i) {
+        double result = 0.0;
+        Kokkos::parallel_reduce("local_mat_mult_inner_reduction",
+                X_ids.extent(0),
+                [&](const int& j, double& lsum) {
+                  lsum += mat(elem, j+i*num_cols) * X(X_ids(j), 0);
+                }, result);
+        Kokkos::atomic_add(Y(Y_ids(i), 0), result);
+      });
+}
 
 } // namespace Operators
 } // namespace Amanzi

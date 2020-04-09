@@ -140,7 +140,9 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
     // Perform tests on GPU
     Kokkos::View<bool*> result_cv("result cv", ncells);
     Kokkos::View<bool*> result_found("result found", 1);
-    Kokkos::parallel_for(ncells, KOKKOS_LAMBDA(const Amanzi::LO& i) {
+    Kokkos::parallel_for(
+      "test_mesh_geometry::MESH_GEOMETRY_PLANAR loop 1",
+      ncells, KOKKOS_LAMBDA(const Amanzi::LO& i) {
       Kokkos::View<int*> test;
       Amanzi::AmanziGeometry::Point centroid = m->cell_centroid(i);
       for (int j = 0; j < ncells; ++j) {
@@ -166,7 +168,9 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
       assert(val < 1.0e-20);
     });
 
-    Kokkos::parallel_for(nfaces, KOKKOS_LAMBDA(const Amanzi::LO& i) {
+    Kokkos::parallel_for(
+      "test_mesh_geometry::MESH_GEOMETRY_PLANAR loop 2",
+      nfaces, KOKKOS_LAMBDA(const Amanzi::LO& i) {
       // for(int i = 0; i < nfaces; ++i){
       Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i);
       bool found = false;
@@ -526,7 +530,9 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
 
     Amanzi::AmanziMesh::Mesh* m = mesh.get();
 
-    Kokkos::parallel_for(ncells, KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "test_mesh_geometry::MESH_GEOMETRY_SOLID loop 1",
+      ncells, KOKKOS_LAMBDA(const int& i) {
       Amanzi::AmanziGeometry::Point centroid = m->cell_centroid(i);
       // Search for a cell with the same centroid in the
       // expected list of centroid
@@ -559,7 +565,9 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
 
 
     // for(int i = 0 ; i < nfaces; ++i){
-    Kokkos::parallel_for(nfaces, KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "test_mesh_geometry::MESH_GEOMETRY_SOLID loop 2",
+      nfaces, KOKKOS_LAMBDA(const int& i) {
       Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i);
 
       bool found = false;
@@ -617,7 +625,9 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
 
     // Now check the normals
 
-    Kokkos::parallel_for(ncells, KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "test_mesh_geometry::MESH_GEOMETRY_SOLID loop 3",
+      ncells, KOKKOS_LAMBDA(const int& i) {
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);
 

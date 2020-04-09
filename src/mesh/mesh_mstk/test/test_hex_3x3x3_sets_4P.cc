@@ -101,12 +101,12 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       CHECK_EQUAL(nents, set_size);
 
       // Verify that we can retrieve the set entities, and that all are there
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+      Amanzi::AmanziMesh::Entity_ID_List setents;
       mesh->get_set_entities(reg_name,
                              Amanzi::AmanziMesh::CELL,
                              Amanzi::AmanziMesh::Parallel_type::OWNED,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
       nents = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                  Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -120,7 +120,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                              Amanzi::AmanziMesh::CELL,
                              Amanzi::AmanziMesh::Parallel_type::ALL,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
       // FACEs
       CHECK(mesh->valid_set_name(reg_name, Amanzi::AmanziMesh::FACE));
@@ -137,7 +137,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                              Amanzi::AmanziMesh::FACE,
                              Amanzi::AmanziMesh::Parallel_type::OWNED,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
       nents = mesh->num_entities(Amanzi::AmanziMesh::FACE,
                                  Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -151,7 +151,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                              Amanzi::AmanziMesh::FACE,
                              Amanzi::AmanziMesh::Parallel_type::ALL,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
       // NODEs
       CHECK(mesh->valid_set_name(reg_name, Amanzi::AmanziMesh::NODE));
@@ -168,7 +168,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                              Amanzi::AmanziMesh::NODE,
                              Amanzi::AmanziMesh::Parallel_type::OWNED,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
       nents = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                  Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -182,7 +182,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                              Amanzi::AmanziMesh::NODE,
                              Amanzi::AmanziMesh::Parallel_type::ALL,
                              setents);
-      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents(i));
+      for (int i = 0; i != nents; ++i) CHECK_EQUAL(i, setents[i]);
 
 
     } else if (shape == "region: plane") {
@@ -208,7 +208,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
       // Verify that we can get the set entities
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+      Amanzi::AmanziMesh::Entity_ID_List setents;
       mesh->get_set_entities(reg_name,
                              Amanzi::AmanziMesh::FACE,
                              Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -246,7 +246,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
         // Verify that we can get the correct set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh->get_set_entities(reg_name,
                                Amanzi::AmanziMesh::FACE,
                                Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -274,7 +274,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
         // Verify that we can get the set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh->get_set_entities(reg_name,
                                Amanzi::AmanziMesh::CELL,
                                Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -312,7 +312,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
         // Verify that we can get the correct set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh->get_set_entities(reg_name,
                                Amanzi::AmanziMesh::FACE,
                                Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -341,7 +341,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
         // Verify that we can get the set entities
 
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+        Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh->get_set_entities(reg_name,
                                Amanzi::AmanziMesh::CELL,
                                Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -371,7 +371,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
       // Verify that we can get the set entities
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> setents;
+      Amanzi::AmanziMesh::Entity_ID_List setents;
       mesh->get_set_entities(reg_name,
                              Amanzi::AmanziMesh::CELL,
                              Amanzi::AmanziMesh::Parallel_type::OWNED,

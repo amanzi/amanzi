@@ -14,5 +14,7 @@ add_subdirectory(time_integration)
 add_subdirectory(operators)
 add_subdirectory(state)
 add_subdirectory(pks)
+add_subdirectory(physics)
+
 
 

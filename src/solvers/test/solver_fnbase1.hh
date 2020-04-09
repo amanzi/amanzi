@@ -32,7 +32,9 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<Vector_type> {
   {
     auto uv = u->getLocalViewDevice();
     auto fv = f->getLocalViewDevice();
-    Kokkos::parallel_for(fv.extent(0), KOKKOS_LAMBDA(const int c) {
+    Kokkos::parallel_for(
+      "solver_fnbase1::Residual",
+      fv.extent(0), KOKKOS_LAMBDA(const int c) {
       double x = uv(c, 0);
       fv(c, 0) = x * (x * x + 1.0);
     });
@@ -59,14 +61,18 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<Vector_type> {
     if (exact_jacobian_) {
       auto upv = up->getLocalViewDevice();
       auto hv = h_->getLocalViewDevice();
-      Kokkos::parallel_for(hv.extent(0), KOKKOS_LAMBDA(const int c) {
+      Kokkos::parallel_for(
+        "solver_fnbase1::UpdatePreconditioner loop 1",
+        hv.extent(0), KOKKOS_LAMBDA(const int c) {
         double x = upv(c, 0);
         hv(c, 0) = 3 * x * x + 1.0;
       });
     } else {
       auto upv = up->getLocalViewDevice();
       auto hv = h_->getLocalViewDevice();
-      Kokkos::parallel_for(hv.extent(0), KOKKOS_LAMBDA(const int c) {
+      Kokkos::parallel_for(
+        "solver_fnbase1::UpdatePreconditioner loop 2",
+        hv.extent(0), KOKKOS_LAMBDA(const int c) {
         double x = upv(c, 0);
         hv(c, 0) = x * x + 2.5;
       });

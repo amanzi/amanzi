@@ -89,7 +89,9 @@ SUITE(COMMON_MESH_OPERATIONS)
       assert(cv_view.extent(0) >= sl_view.extent(0));
 
       // typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
-      Kokkos::parallel_for(sl_view.extent(0), KOKKOS_LAMBDA(const LO i) {
+      Kokkos::parallel_for(
+        "data_structures_common_patterns::FOR_EACH_CELL_VOLUME_LAMBDA",
+        sl_view.extent(0), KOKKOS_LAMBDA(const LO i) {
         wc_view[i] =
           sl_view[i] * poro_view[i] * m->cell_volume(i); // cv_view(i);
       });
@@ -116,7 +118,9 @@ SUITE(COMMON_MESH_OPERATIONS)
       Mesh* m = mesh.get();
 
       typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
-      Kokkos::parallel_for(trans_view.extent(0), KOKKOS_LAMBDA(const LO& f) {
+      Kokkos::parallel_for(
+        "data_structures_common_patterns::CALC_TRANSMISSIBILITY",
+        trans_view.extent(0), KOKKOS_LAMBDA(const LO& f) {
         // face info
         const auto& fc = m->face_centroid(f);
         const auto& f_normal = m->face_normal(f);

@@ -71,7 +71,9 @@ class FunctionAdditive : public Function {
     f1_->apply(in, out_1);
     f2_->apply(in, out_2);
     // Sum result
-    Kokkos::parallel_for(in.extent(1), KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+      "FunctionAdditive::apply",
+      in.extent(1), KOKKOS_LAMBDA(const int& i) {
       out(i) = out_1(i) + out_2(i);
     });
   }

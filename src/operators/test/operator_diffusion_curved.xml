@@ -70,20 +70,11 @@
 
     <!-- Curved MFD schemes -->
     <ParameterList name="diffusion operator curved">
-      <Parameter name="method" type="string" value="diffusion generalized"/>
-      <Parameter name="method order" type="int" value="-1"/>  <!-- not used /-->
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{3, 1}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{3, 1}"/>
+        <Parameter name="method" type="string" value="diffusion generalized"/>
+        <Parameter name="method order" type="int" value="-1"/>  <!-- not used /-->
       </ParameterList>
     </ParameterList>
   </ParameterList>

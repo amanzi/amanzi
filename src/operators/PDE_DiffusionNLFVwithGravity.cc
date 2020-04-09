@@ -1,15 +1,14 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Daniil Svyatskiy (dasvyat@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -24,18 +23,18 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Populate face-based matrices.
- ****************************************************************** */
-void
-PDE_DiffusionNLFVwithGravity::UpdateMatrices(
-  const Teuchos::Ptr<const CompositeVector>& flux,
-  const Teuchos::Ptr<const CompositeVector>& u)
+* Populate face-based matrices.
+****************************************************************** */
+void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
   // affine map of u. It is equivalent to calculating hydraulic head.
   Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
@@ -45,11 +44,10 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(
   PDE_DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
-  global_op_->rhs()->putScalarGhosted(0.0);
+  global_op_->rhs()->PutScalarGhosted(0.0);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  Epetra_MultiVector& rhs_cell =
-    *global_op_->rhs()->ViewComponent("cell", true);
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -67,9 +65,11 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(
         v(n) = zc * rho_g;
       }
 
-      Aface.elementWiseMultiply(v, av, false);
+      Aface.Multiply(v, av, false);
 
-      for (int n = 0; n < ncells; n++) { rhs_cell[0][cells[n]] -= av(n); }
+      for (int n = 0; n < ncells; n++) {
+        rhs_cell[0][cells[n]] -= av(n);
+      }
     } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       int c = cells[0];
       double zf = (mesh_->face_centroid(f))[dim_ - 1];
@@ -83,12 +83,10 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(
 
 
 /* ******************************************************************
- * Calculate flux using cell-centered data.
- * **************************************************************** */
-void
-PDE_DiffusionNLFVwithGravity::UpdateFlux(
-  const Teuchos::Ptr<const CompositeVector>& u,
-  const Teuchos::Ptr<CompositeVector>& flux)
+* Calculate flux using cell-centered data.
+* **************************************************************** */
+void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                              const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
@@ -98,6 +96,7 @@ PDE_DiffusionNLFVwithGravity::UpdateFlux(
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
@@ -109,15 +108,16 @@ PDE_DiffusionNLFVwithGravity::UpdateFlux(
 
 
 /* ******************************************************************
- * BCs are typically given in base system and must be re-mapped.
- * **************************************************************** */
-double
-PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
+* BCs are typically given in base system and must be re-mapped.
+* **************************************************************** */
+double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
-  double rho_g = rho_ * fabs(g_[dim_ - 1]);
+  AMANZI_ASSERT(is_scalar_);
+  double rho_g = rho_ * fabs(g_[dim_ - 1]); 
   double zf = (mesh_->face_centroid(f))[dim_ - 1];
-  return u + rho_g * zf;
+  return u + rho_g * zf; 
 }
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
+
