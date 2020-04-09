@@ -100,7 +100,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   CompositeVector utmp(*u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
   Epetra_MultiVector& u_face = *u->ViewComponent("face");
-  Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
 
   // update relative permeability coefficients and upwind it
   darcy_flux_copy->ScatterMasterToGhosted("face");

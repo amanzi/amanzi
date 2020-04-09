@@ -44,7 +44,8 @@ Observable::Observable(Teuchos::ParameterList& plist) :
 
   functional_ = plist.get<std::string>("functional");
   if (functional_ == "observation data: point" ||
-      functional_ == "observation data: integral") {
+      functional_ == "observation data: integral" ||
+      functional_ == "observation data: average") {
     function_ = &ObservableIntensiveSum;
   } else if (functional_ == "observation data: extensive integral") {
     function_ = &ObservableExtensiveSum;
@@ -57,7 +58,6 @@ Observable::Observable(Teuchos::ParameterList& plist) :
     msg << "Observable: unrecognized functional " << functional_;
     Exceptions::amanzi_throw(msg);
   }
-    
   
   // entity of region
   location_ = plist.get<std::string>("location name", "cell");

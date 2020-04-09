@@ -582,9 +582,9 @@ ___________________
 +================+==============+=======================================+
 | method         | string       | ``gmres, pcg``                        |
 +----------------+--------------+---------------------------------------+
-| max_iterations | integer      |                                       |
+| max_iterations | integer      | *default = 100*                       |
 +----------------+--------------+---------------------------------------+
-| tolerance      | double       |                                       |
+| tolerance      | double       | *default = 1e-15*                     |
 +----------------+--------------+---------------------------------------+
 | preconditioner | string       | ``trilinos_ml, hypre_amg, block_ilu`` |
 +----------------+--------------+---------------------------------------+
@@ -593,13 +593,25 @@ ___________________
 Saturated_linear_solver
 _______________________
 
+The ``saturated_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``saturated_linear_solver``.
+
 
 Constraints_linear_solver
 _________________________
 
+The ``constraints_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``constraints_linear_solver``.
+
 
 Dispersion_linear_solver
 ________________________
+
+The ``dispersion_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``dispersion_linear_solver``.
 
 
 Unstr_nonlinear_solver
@@ -612,8 +624,6 @@ The nonlinear solver of choice is listed as the attribute ``name`` to the ``unst
 +=========================+==============+===============================================+
 | modify_correction       | boolean      | | ``true, false``                             |
 |                         |              | | *default = false*                           |
-+-------------------------+--------------+-----------------------------------------------+
-| update_upwind_frequency | string       | ``every_timestep, every_nonlinear_iteration`` |
 +-------------------------+--------------+-----------------------------------------------+
 
 
