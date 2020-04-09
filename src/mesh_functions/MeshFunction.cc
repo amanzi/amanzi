@@ -32,8 +32,10 @@ computeMeshFunction(const MultiFunction& f, double time, Patch& p)
                          ids_list);
 
   { // context for views
-    // note this is a workaround until we have a way of getting the view on device
-    AMANZI_ASSERT(ids_list.size() > 0);
+    // if empty, nothing to do
+    if (ids_list.size() == 0) return;
+
+    // note this is a workaround until we have a way of getting the view on device through the mesh interface
     Kokkos::View<int*> ids("ids", ids_list.size());
     {
       Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
