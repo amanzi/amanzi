@@ -14,9 +14,8 @@
 
 TEST(MSTK_QUAD_GEN_3x3)
 {
-
   int j, nc, nf, nv;
-  Amanzi::AmanziMesh::Set_ID faces[6], nodes[8];
+  Amanzi::AmanziMesh::Set_ID faces[6];
 
   int NV = 16;
   int NF = 24;
@@ -57,6 +56,5 @@ TEST(MSTK_QUAD_GEN_3x3)
   std::ofstream fout("test/mstk_quad_gen_4x4.out");
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
-
 }
 
