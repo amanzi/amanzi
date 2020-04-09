@@ -79,7 +79,7 @@ class Analytic01 : public AnalyticBase {
 
     double t01, t02, t03, t12, t13;
     double px, py, pxx, pxy, pyy;
-    double t04, t05, t06, tx4, tx5, tx6, ty4, ty5;
+    double t04, t05, t06, tx4, tx5, ty5;
 
     t01 = x*x*y;
     t02 = sin(2*M_PI*x*y);
@@ -100,12 +100,12 @@ class Analytic01 : public AnalyticBase {
     t06 = Kyy_(p, t);
 
     tx4 = 2*(x+1);  // d/dx (Kxx)
-    ty4 = 2*y;      // d/dy (Kxx)
+    // ty4 = 2*y;   // d/dy (Kxx)
 
     tx5 = -y;  // d/dx (Kxy)  
     ty5 = -x;  // d/dy (Kxy)
   
-    tx6 = 2*(x+1);  // d/dy (Kxy)
+    // tx6 = 2*(x+1);  // d/dy (Kxy)
     return -(tx4 + ty5)*px - tx5*py - t04*pxx - 2*t05*pxy - t06*pyy;
   }
 

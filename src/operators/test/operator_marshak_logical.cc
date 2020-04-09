@@ -205,7 +205,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 
-    double ds_max, ds_rel(0.0);
+    double ds_rel(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }
@@ -234,7 +234,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
-  CHECK_CLOSE(0., pl2_err, 0.1);
+  CHECK_CLOSE(0.0, pl2_err, 0.1);
 }
 
 
