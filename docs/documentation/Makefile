@@ -9,7 +9,7 @@ BUILDDIR      = build
 
 .PHONY: all sphinx_help worktree html pdf input_spec deploy clean
 
-all: html
+all: input_spec html
 
 
 sphinx_help:
@@ -27,7 +27,7 @@ pdf:
 input_spec:
 	$(MAKE) -C source/input_spec clean rst
 
-deploy: all
+deploy:
 	cd build/html && \
 	git add --all && \
 	git commit -m "Deployment to gh-pages" && \
