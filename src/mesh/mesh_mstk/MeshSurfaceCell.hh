@@ -54,7 +54,7 @@ class MeshSurfaceCell : public Mesh {
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual Entity_ID
-  entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
+  entity_get_parent_type(const Entity_kind kind, const Entity_ID entid) const
   {
     AMANZI_ASSERT(kind == CELL);
     AMANZI_ASSERT(entid == 0);
@@ -94,7 +94,7 @@ class MeshSurfaceCell : public Mesh {
 
   // Get nodes of a cell
   virtual void cell_get_nodes(const Entity_ID cellid,
-                              Kokkos::View<Entity_ID*>& nodeids) const;
+                              Entity_ID_List& nodeids) const;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -103,7 +103,7 @@ class MeshSurfaceCell : public Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   virtual void face_get_nodes(const Entity_ID faceid,
-                              Kokkos::View<Entity_ID*>& nodeids) const;
+                              Entity_ID_List& nodeids) const;
 
   // Get nodes of edge
   virtual void edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0,
@@ -116,13 +116,13 @@ class MeshSurfaceCell : public Mesh {
   // not guaranteed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const;
+                              Entity_ID_List& cellids) const;
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& faceids) const;
+                              Entity_ID_List& faceids) const;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node - The order of faces is not guarnateed to be the same
@@ -130,10 +130,10 @@ class MeshSurfaceCell : public Mesh {
   virtual void
   node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                       const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*>& faceids) const;
+                      Entity_ID_List& faceids) const;
   // Cells of type 'ptype' connected to an edges
   virtual void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const;
+                              Entity_ID_List& cellids) const;
 
   // Same level adjacencies
   //-----------------------
@@ -147,14 +147,14 @@ class MeshSurfaceCell : public Mesh {
   // faces given by cell_get_faces
   virtual void
   cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& fadj_cellids) const;
+                          Entity_ID_List& fadj_cellids) const;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   virtual void
   cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& nadj_cellids) const;
+                          Entity_ID_List& nadj_cellids) const;
 
 
   //
@@ -174,11 +174,11 @@ class MeshSurfaceCell : public Mesh {
   // Number of nodes is the vector size divided by number of spatial dimensions
   virtual void
   face_get_coordinates(const Entity_ID faceid,
-                       Kokkos::View<AmanziGeometry::Point*>& fcoords) const
+                       std::vector<AmanziGeometry::Point>& fcoords) const
   {
-    Kokkos::resize(fcoords, 2);
-    fcoords(0) = nodes_[faceid];
-    fcoords(1) = nodes_[(faceid + 1) % nodes_.size()];
+    fcoords.resize(2); 
+    fcoords[0] = nodes_[faceid];
+    fcoords[1] = nodes_[(faceid + 1) % nodes_.size()];
   }
 
   // Coordinates of cells in standard order (Exodus II convention)
@@ -188,10 +188,10 @@ class MeshSurfaceCell : public Mesh {
   // Number of nodes is vector size divided by number of spatial dimensions
   virtual void
   cell_get_coordinates(const Entity_ID cellid,
-                       Kokkos::View<AmanziGeometry::Point*>& ccoords) const
+                       std::vector<AmanziGeometry::Point>& ccoords) const
   {
-    Kokkos::resize(ccoords, nodes_.size());
-    for (int i = 0; i < nodes_.size(); ++i) ccoords(i) = nodes_[i];
+    ccoords.resize(nodes_.size());
+    for (int i = 0; i < nodes_.size(); ++i) ccoords[i] = nodes_[i];
   }
 
 
@@ -223,7 +223,7 @@ class MeshSurfaceCell : public Mesh {
   virtual int
   deform(const std::vector<double>& target_cell_volumes_in,
          const std::vector<double>& min_cell_volumes_in,
-         const Kokkos::View<Entity_ID*>& fixed_nodes, const bool move_vertical);
+         const Entity_ID_List& fixed_nodes, const bool move_vertical);
   //
   // Epetra maps
   //------------
@@ -272,13 +272,13 @@ class MeshSurfaceCell : public Mesh {
   // Get list of entities of type 'category' in set
   virtual void get_set_entities(const Set_ID setid, const Entity_kind kind,
                                 const Parallel_type ptype,
-                                Kokkos::View<Entity_ID*>& entids) const;
+                                Entity_ID_List& entids) const;
 
   virtual void
   get_set_entities_and_vofs(const std::string setname, const Entity_kind kind,
                             const Parallel_type ptype,
-                            Kokkos::View<Entity_ID*>& entids,
-                            Kokkos::View<double*>* vofs) const;
+                            Entity_ID_List& entids,
+                            std::vector<double>* vofs) const;
 
 
   // Miscellaneous functions
@@ -291,36 +291,36 @@ class MeshSurfaceCell : public Mesh {
   // cell_get_faces_and_dirs method of this class
   virtual void
   cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                    Kokkos::View<Entity_ID*>& faceids,
-                                    Kokkos::View<int*>& face_dirs) const;
+                                    Entity_ID_List& faceids,
+                                    std::vector<int>& face_dirs) const;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   virtual void face_get_cells_internal_(
     const Entity_ID faceid, const Parallel_type ptype,
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*>& cellids) const;
+    Entity_ID_List& cellids) const;
 
   // edges of a face - this function is implemented in each mesh
   // framework. The results are cached in the base class
   virtual void
   face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-                                    Kokkos::View<Entity_ID*>& edgeids,
-                                    Kokkos::View<int*>* edge_dirs,
+                                    Entity_ID_List& edgeids,
+                                    std::vector<int>* edge_dirs,
                                     const bool ordered = true) const;
 
   // edges of a cell - this function is implemented in each mesh
   // framework. The results are cached in the base class.
   virtual void
   cell_get_edges_internal_(const Entity_ID cellid,
-                           Kokkos::View<Entity_ID*>& edgeids) const;
+                           Entity_ID_List& edgeids) const;
 
 
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.
   virtual void
   cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                       Kokkos::View<Entity_ID*>& edgeids,
-                                       Kokkos::View<int*>* edge_dirs) const;
+                                       Entity_ID_List& edgeids,
+                                       std::vector<int>* edge_dirs) const;
 
  protected:
   Teuchos::RCP<const Mesh> parent_mesh_;

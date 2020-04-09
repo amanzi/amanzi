@@ -119,7 +119,7 @@ RegionBoxVolumeFractions::inside(const Point& p) const
 // -------------------------------------------------------------------
 double
 RegionBoxVolumeFractions::intersect(
-  const Kokkos::View<Point*>& polytope,
+  const std::vector<Point>& polytope,
   const std::vector<std::vector<int>>& faces) const
 {
   double volume(0.0);
@@ -127,7 +127,7 @@ RegionBoxVolumeFractions::intersect(
   int sdim;
 
   // mdim = manifold_dimension();
-  sdim = polytope(0).dim();
+  sdim = polytope[0].dim();
 
 
   if ((sdim == 2 && degeneracy_ < 0) || (sdim == 3 && degeneracy_ >= 0)) {
@@ -145,8 +145,8 @@ RegionBoxVolumeFractions::intersect(
     if (degeneracy_ >= 0) {
       double eps(1.0e-6);
 
-      for (int n = 0; n < polytope.extent(0); ++n) {
-        p3d = N_ * (polytope(n) - p0_);
+      for (int n = 0; n < polytope.size(); ++n) {
+        p3d = N_ * (polytope[n] - p0_);
         if (std::abs(p3d[degeneracy_]) > eps) return volume;
 
         int i(0);
@@ -155,8 +155,8 @@ RegionBoxVolumeFractions::intersect(
       }
       IntersectConvexPolygons(nodes, box, result_xy);
     } else {
-      for (int n = 0; n < polytope.extent(0); ++n) {
-        p2d = N_ * (polytope(n) - p0_);
+      for (int n = 0; n < polytope.size(); ++n) {
+        p2d = N_ * (polytope[n] - p0_);
         nodes.push_back(p2d);
       }
     }
@@ -192,8 +192,8 @@ RegionBoxVolumeFractions::intersect(
     std::vector<Point> nodes;
     Point p3d(3);
 
-    for (int n = 0; n < polytope.extent(0); ++n) {
-      p3d = N_ * (polytope(n) - p0_);
+    for (int n = 0; n < polytope.size(); ++n) {
+      p3d = N_ * (polytope[n] - p0_);
       nodes.push_back(p3d);
     }
     IntersectConvexPolyhedra(nodes, faces, box, result_xyz, result_faces);

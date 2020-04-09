@@ -202,14 +202,14 @@ Debugger::WriteCellInfo(bool include_faces)
 // Write a vector individually.
 void
 Debugger::WriteVector(const std::string& name,
-                      const Teuchos::Ptr<const CompositeVector>& vec,
+                      const CompositeVector& vec,
                       bool include_faces)
 {
   CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_c;
-  if (vec->HasComponent("cell")) vec_c = vec->ViewComponent("cell", false);
+  if (vec.HasComponent("cell")) vec_c = vec.ViewComponent("cell", false);
 
   CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_f;
-  if (vec->HasComponent("face")) vec_f = vec->ViewComponent("face", true);
+  if (vec.HasComponent("face")) vec_f = vec.ViewComponent("face", true);
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];

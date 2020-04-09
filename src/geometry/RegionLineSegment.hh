@@ -64,7 +64,7 @@ class RegionLineSegment : public Region {
   // a 0 if not.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double intersect(const Kokkos::View<Point*>& polytope,
+  double intersect(const std::vector<Point>& polytope,
                    const std::vector<std::vector<int>>& faces) const;
 
   void ComputeInterLinePoints(const std::vector<Point>& polytope,
@@ -79,7 +79,7 @@ class RegionLineSegment : public Region {
 };
 
 double
-PlaneLineIntersection(const Kokkos::View<Point*>& plane,
+PlaneLineIntersection(const std::vector<Point>& plane,
                       const std::vector<Point>& line);
 
 double

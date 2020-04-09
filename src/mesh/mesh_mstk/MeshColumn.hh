@@ -83,17 +83,17 @@ class MeshColumn : public Mesh {
   }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
-  virtual Entity_ID entity_get_parent(const Entity_kind kind,
+  virtual Entity_ID entity_get_parent_type(const Entity_kind kind,
                                       const Entity_ID entid) const override
   {
     Entity_ID ent;
     switch (kind) {
     case FACE:
-      ent = extracted_->entity_get_parent(kind, column_faces_[entid]);
+      ent = extracted_->entity_get_parent_type(kind, column_faces_[entid]);
       break;
 
     default:
-      ent = extracted_->entity_get_parent(kind, entid);
+      ent = extracted_->entity_get_parent_type(kind, entid);
       break;
     }
     return ent;
@@ -151,7 +151,7 @@ class MeshColumn : public Mesh {
 
   // Get nodes of a cell
   virtual void cell_get_nodes(const Entity_ID cellid,
-                              Kokkos::View<Entity_ID*>& nodeids) const override
+                              Entity_ID_List& nodeids) const override
   {
     extracted_->cell_get_nodes(cellid, nodeids);
   }
@@ -164,7 +164,7 @@ class MeshColumn : public Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   virtual void face_get_nodes(const Entity_ID faceid,
-                              Kokkos::View<Entity_ID*>& nodeids) const override
+                              Entity_ID_List& nodeids) const override
   {
     extracted_->face_get_nodes(column_faces_[faceid], nodeids);
   }
@@ -186,7 +186,7 @@ class MeshColumn : public Mesh {
   // not guaranteed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const override
+                              Entity_ID_List& cellids) const override
   {
     extracted_->node_get_cells(nodeid, ptype, cellids);
   }
@@ -196,7 +196,7 @@ class MeshColumn : public Mesh {
   // not guarnateed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& faceids) const override
+                              Entity_ID_List& faceids) const override
   {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
@@ -209,7 +209,7 @@ class MeshColumn : public Mesh {
   virtual void
   node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                       const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*>& faceids) const override
+                      Entity_ID_List& faceids) const override
   {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
@@ -219,7 +219,7 @@ class MeshColumn : public Mesh {
   // not guaranteed to be the same for corresponding edges on
   // different processors
   virtual void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
-                              Kokkos::View<Entity_ID*>& cellids) const override
+                              Entity_ID_List& cellids) const override
   {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
@@ -238,7 +238,7 @@ class MeshColumn : public Mesh {
   // faces given by cell_get_faces
   virtual void
   cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& fadj_cellids) const override
+                          Entity_ID_List& fadj_cellids) const override
   {
     extracted_->cell_get_face_adj_cells(cellid, ptype, fadj_cellids);
   }
@@ -249,7 +249,7 @@ class MeshColumn : public Mesh {
   // The cells are returned in no particular order
   virtual void
   cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& nadj_cellids) const override
+                          Entity_ID_List& nadj_cellids) const override
   {
     extracted_->cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
   }
@@ -273,7 +273,7 @@ class MeshColumn : public Mesh {
   // Number of nodes is the vector size divided by number of spatial dimensions
   virtual void face_get_coordinates(
     const Entity_ID faceid,
-    Kokkos::View<AmanziGeometry::Point*>& fcoords) const override
+    std::vector<AmanziGeometry::Point>& fcoords) const override
   {
     extracted_->face_get_coordinates(column_faces_[faceid], fcoords);
   }
@@ -285,7 +285,7 @@ class MeshColumn : public Mesh {
   // Number of nodes is vector size divided by number of spatial dimensions
   virtual void cell_get_coordinates(
     const Entity_ID cellid,
-    Kokkos::View<AmanziGeometry::Point*>& ccoords) const override
+    std::vector<AmanziGeometry::Point>& ccoords) const override
   {
     extracted_->cell_get_coordinates(cellid, ccoords);
   }
@@ -315,9 +315,9 @@ class MeshColumn : public Mesh {
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
   virtual int
-  deform(const Kokkos::View<Entity_ID*>& nodeids,
+  deform(const Entity_ID_List& nodeids,
          const AmanziGeometry::Point_List& new_positions, const bool keep_valid,
-         Kokkos::View<AmanziGeometry::Point*>& final_positions) override;
+         std::vector<AmanziGeometry::Point>& final_positions) override;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -326,7 +326,7 @@ class MeshColumn : public Mesh {
   // Nodes in any set in the fixed_sets will not be permitted to move.
   virtual int deform(const std::vector<double>& target_cell_volumes_in,
                      const std::vector<double>& min_cell_volumes_in,
-                     const Kokkos::View<Entity_ID*>& fixed_nodes,
+                     const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) override;
 
   //
@@ -380,18 +380,17 @@ class MeshColumn : public Mesh {
   virtual void
   get_set_entities_and_vofs(const std::string setname, const Entity_kind kind,
                             const Parallel_type ptype,
-                            Kokkos::View<Entity_ID*>& entids,
-                            Kokkos::View<double*>* vofs) const override
+                            Entity_ID_List& entids,
+                            std::vector<double>* vofs) const override
   {
     switch (kind) {
     case FACE: {
-      Kokkos::View<Entity_ID*> faces;
+      Entity_ID_List faces;
       extracted_->get_set_entities(setname, kind, ptype, faces);
 
-      for (int i = 0; i < faces.extent(0); ++i) {
-        if (face_in_column_[faces(i)] >= 0) {
-          Kokkos::resize(entids, entids.extent(0) + 1);
-          entids(entids.extent(0) - 1) = face_in_column_[faces(i)];
+      for (int i = 0; i < faces.size(); ++i) {
+        if (face_in_column_[faces[i]] >= 0) {
+          entids.push_back(face_in_column_[faces[i]]); 
         }
       }
       break;
@@ -418,11 +417,11 @@ class MeshColumn : public Mesh {
   // cached or it can be called directly by the
   // cell_get_faces_and_dirs method of this class
   virtual void cell_get_faces_and_dirs_internal_(
-    const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
-    Kokkos::View<int*>& face_dirs) const override
+    const Entity_ID cellid, Entity_ID_List& faceids,
+    std::vector<int>& face_dirs) const override
   {
-    Kokkos::resize(faceids, 2);
-    Kokkos::resize(face_dirs, 2);
+    faceids.resize(2);
+    face_dirs.resize(2); 
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
@@ -435,8 +434,8 @@ class MeshColumn : public Mesh {
     int count = 0;
     for (int i = 0; i != faceids_extracted.extent(0); ++i) {
       if (face_in_column_[faceids_extracted(i)] >= 0) {
-        faceids(count) = face_in_column_[faceids_extracted(i)];
-        face_dirs(count) = face_dirs_extracted(i);
+        faceids[count] = face_in_column_[faceids_extracted(i)];
+        face_dirs[count] = face_dirs_extracted(i);
         count++;
       }
     }
@@ -447,9 +446,9 @@ class MeshColumn : public Mesh {
   // mesh framework. The results are cached in the base class
   virtual void
   face_get_cells_internal_(const Entity_ID faceid, const Parallel_type ptype,
-                           Kokkos::View<Entity_ID*>& cellids) const override
+                           Entity_ID_List& cellids) const override
   {
-    extracted_->face_get_cells(column_faces_[faceid], ptype, cellids);
+    extracted_->face_get_cells_internal_(column_faces_[faceid], ptype, cellids);
   }
 
 
@@ -457,8 +456,8 @@ class MeshColumn : public Mesh {
   // framework. The results are cached in the base class
   virtual void
   face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-                                    Kokkos::View<Entity_ID*>& edgeids,
-                                    Kokkos::View<int*>* edge_dirs,
+                                    Entity_ID_List& edgeids,
+                                    std::vector<int>* edge_dirs,
                                     const bool ordered = true) const override
   {
     Errors::Message mesg("Not implemented");
@@ -469,7 +468,7 @@ class MeshColumn : public Mesh {
   // framework. The results are cached in the base class.
   virtual void
   cell_get_edges_internal_(const Entity_ID cellid,
-                           Kokkos::View<Entity_ID*>& edgeids) const override
+                           Entity_ID_List& edgeids) const override
   {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -479,8 +478,8 @@ class MeshColumn : public Mesh {
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.
   virtual void cell_2D_get_edges_and_dirs_internal_(
-    const Entity_ID cellid, Kokkos::View<Entity_ID*>& edgeids,
-    Kokkos::View<int*>* edge_dirs) const override
+    const Entity_ID cellid, Entity_ID_List& edgeids,
+    std::vector<int>* edge_dirs) const override
   {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -495,7 +494,7 @@ class MeshColumn : public Mesh {
   Teuchos::RCP<Mesh_MSTK> extracted_;
   int nfnodes_;
   int column_id_;
-  Kokkos::View<Entity_ID*> column_faces_;
+  Entity_ID_List column_faces_;
   Entity_ID_List face_in_column_;
 
   Map_ptr_type face_map_;

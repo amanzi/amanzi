@@ -20,6 +20,23 @@
 
 namespace Amanzi {
 
+namespace Impl {
+
+  //
+  // Hides need parallel_for in a function to avoid issues with public/protected access.
+  //
+  template<class View_type>
+  void assignViewToTensorVectorDiag(const View_type& v, int j, TensorVector& tv) {
+    Kokkos::parallel_for(
+        "TensorFunctionUpdate",
+        v.extent(0),
+        KOKKOS_LAMBDA(const int& i) {
+          WhetStone::Tensor<> Ti = tv.at(j+i);
+          Ti(0,0) = v(i,0);
+        });
+  }
+} // namespace Impl
+  
 class EvaluatorIndependentTensorFunction
   : public EvaluatorIndependent<TensorVector, TensorVector_Factory> {
  public:
@@ -32,10 +49,10 @@ class EvaluatorIndependentTensorFunction
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator& operator=(const Evaluator& other) override;
+  // virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentTensorFunction&
-  operator=(const EvaluatorIndependentTensorFunction& other);
+  // EvaluatorIndependentTensorFunction&
+  // operator=(const EvaluatorIndependentTensorFunction& other);
 
   virtual void EnsureCompatibility(State& S) override;
 

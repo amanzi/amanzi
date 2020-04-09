@@ -22,6 +22,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 #include "AmanziComm.hh"
+#include "AmanziVector.hh"
 #include "LinearOperatorPCG.hh"
 #include "PreconditionerFactory.hh"
 #include "PreconditionerDiagonal.hh"

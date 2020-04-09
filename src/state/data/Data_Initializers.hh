@@ -30,21 +30,48 @@
 //#include "BoundaryFunction.hh"
 
 namespace Amanzi {
+
+class Visualization;
+class Checkpoint;
+
 namespace Data_Initializers {
+
+
+//
+// Null functions for things that don't vis or checkpoint
+// ======================================================================
+template<class T>
+inline void
+UserWriteVis(const Visualization& vis,
+             const Teuchos::ParameterList& attrs, const T& t) {}
+
+template<class T>
+inline void
+UserWriteCheckpoint(const Checkpoint& vis,
+                    const Teuchos::ParameterList& attrs, const T& t) {}
+
+template<class T>
+inline void
+UserReadCheckpoint(const Checkpoint& vis,
+                   const Teuchos::ParameterList& attrs, T& t) {}
+
 
 //
 // Initialize
 // ======================================================================
-
-// This fails to compile if not provided by user.
+// default initialize does nothing
 template <typename T>
 bool
-Initialize(Teuchos::ParameterList& plist, const Teuchos::ParameterList& attrs,
-           T& t)
+Initialize(Teuchos::ParameterList& plist,
+           const Teuchos::ParameterList& attrs, T& t)
 {
-  return UserInitialize(plist, attrs, t);
+  return true;
 }
 
+
+//
+// Helper initializers
+//
 
 // Initialize from a single parameter value.
 template <typename T>
@@ -263,149 +290,6 @@ Initialize(Teuchos::ParameterList& plist, const Teuchos::ParameterList& attrs,
 // }
 
 
-//
-// Specializations for Op
-// ======================================================================
-/*
-template <>
-inline void
-WriteVis<Operators::Op>(const Visualization &vis, const Key &fieldname,
-                        const std::vector<std::string> &subfieldnames,
-                        const Operators::Op &vec) {}
-
-template <>
-inline void WriteCheckpoint<Operators::Op>(const Checkpoint &chkp,
-                                           const Key &fieldname,
-                                           const Operators::Op &vec) {}
-
-template <>
-inline void ReadCheckpoint<Operators::Op>(const Checkpoint &chkp,
-                                          const Key &fieldname,
-                                          Operators::Op &vec) {}
-
-template <>
-inline bool
-Initialize<Operators::Op>(Teuchos::ParameterList &plist, Operators::Op &t,
-                          const Key &fieldname,
-                          const std::vector<std::string> &subfieldnames) {
-  return true;
-}
-
-//
-// Specializations for Operator
-// ======================================================================
-
-template <>
-inline void
-WriteVis<Operators::Operator>(const Visualization &vis, const Key &fieldname,
-                              const std::vector<std::string> &subfieldnames,
-                              const Operators::Operator &global_operator) {}
-
-template <>
-inline void WriteCheckpoint<Operators::Operator>(
-    const Checkpoint &chkp, const Key &fieldname,
-    const Operators::Operator &global_operator) {}
-
-template <>
-inline void
-ReadCheckpoint<Operators::Operator>(const Checkpoint &chkp,
-                                    const Key &fieldname,
-                                    Operators::Operator &global_operator) {}
-
-template <>
-inline bool
-Initialize<Operators::Operator>(Teuchos::ParameterList &plist,
-                                Operators::Operator &t, const Key &fieldname,
-                                const std::vector<std::string> &subfieldnames) {
-  return true;
-}
-
-//
-// Specializations for WhetStone::Tensor
-// ======================================================================
-
-template <>
-inline void
-WriteVis<TensorVector>(const Visualization &vis, const Key &fieldname,
-                       const std::vector<std::string> &subfieldnames,
-                       const TensorVector &tensor) {}
-
-template <>
-inline void WriteCheckpoint<TensorVector>(const Checkpoint &chkp,
-                                          const Key &fieldname,
-                                          const TensorVector &tensor) {}
-
-template <>
-inline void ReadCheckpoint<TensorVector>(const Checkpoint &chkp,
-                                         const Key &fieldname,
-                                         TensorVector &tensor) {}
-
-template <>
-inline bool
-Initialize<TensorVector>(Teuchos::ParameterList &plist, TensorVector &tensor,
-                         const Key &fieldname,
-                         const std::vector<std::string> &subfieldnames) {
-  return true;
-}
-
-//
-// Specializations for Operators::BCs
-// ======================================================================
-*/
-/*
-template <>
-inline void
-WriteVis<Operators::BCs>(const Visualization &vis, const Key &fieldname,
-                         const std::vector<std::string> &subfieldnames,
-                         const Operators::BCs &bc) {}
-
-template <>
-inline void WriteCheckpoint<Operators::BCs>(const Checkpoint &chkp,
-                                            const Key &fieldname,
-                                            const Operators::BCs &bc) {}
-
-template <>
-inline void ReadCheckpoint<Operators::BCs>(const Checkpoint &chkp,
-                                           const Key &fieldname,
-                                           Operators::BCs &bc) {}
-
-template <>
-inline bool
-Initialize<Operators::BCs>(Teuchos::ParameterList &plist,
-                           Operators::BCs &bc, const Key &fieldname,
-                           const std::vector<std::string> &subfieldnames) {
-  return true;
-}
-
-
-//
-// Specializations for Functions::BoundaryFunction
-// ======================================================================
-
-template <>
-inline void
-WriteVis<Functions::BoundaryFunction>(const Visualization &vis, const Key
-&fieldname, const std::vector<std::string> &subfieldnames, const
-Functions::BoundaryFunction &bc) {}
-
-template <>
-inline void WriteCheckpoint<Functions::BoundaryFunction>(const Checkpoint &chkp,
-                                            const Key &fieldname,
-                                            const Functions::BoundaryFunction
-&bc) {}
-
-template <>
-inline void ReadCheckpoint<Functions::BoundaryFunction>(const Checkpoint &chkp,
-                                           const Key &fieldname,
-                                           Functions::BoundaryFunction &bc) {}
-
-template <>
-inline bool
-Initialize<Functions::BoundaryFunction>(Teuchos::ParameterList &plist,
-                           Functions::BoundaryFunction &bc, const Key
-&fieldname, const std::vector<std::string> &subfieldnames) { return true;
-}
-*/
 } // namespace Data_Initializers
 } // namespace Amanzi
 

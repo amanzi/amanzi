@@ -83,6 +83,7 @@ class EvaluatorIndependent_ : public Evaluator {
   bool temporally_variable_;
   bool computed_once_;
   bool deriv_once_;
+  bool inited_;
 
   KeySet requests_;
   KeySet deriv_requests_;

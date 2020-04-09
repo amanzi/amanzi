@@ -59,11 +59,9 @@ u = cos(pi/2 x)
 
 using namespace Amanzi;
 
-// static const double PI_2 = 1.5707963267948966;
-
 SUITE(PKS_PDE)
 {
-  // Forward Euler tests with each of 3 PKs
+  // Forward Euler time integration of a parabolic PDE
   TEST(DIFFUSION_FE_EXPLICIT)
   {
     // run the simulation
@@ -73,18 +71,20 @@ SUITE(PKS_PDE)
     auto nsteps = run_test(run->S, run->pk, 20.0);
 
     // print final solution
-    auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);
     std::cout << "Final solution" << std::endl;
-    u.Print(std::cout);
+    run->S->Get<CompositeVector>("u").Print(std::cout);
 
     // check error
     auto m = run->S->GetMesh();
     int ncells =
       m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c != ncells; ++c) {
-      auto p = m->cell_centroid(c);
-      double val = std::cos(PI_2 * p[0]);
-      CHECK_CLOSE(val, u[0][c], 1.e-3);
+    {
+      auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
+      for (int c = 0; c != ncells; ++c) {
+        auto p = m->cell_centroid(c);
+        double val = std::cos(PI_2 * p[0]);
+        CHECK_CLOSE(val, u(c,0), 1.e-3);
+      }
     }
 
     // check timesteps
@@ -92,7 +92,7 @@ SUITE(PKS_PDE)
     CHECK_EQUAL(0, nsteps.second);
   }
 
-  // Forward Euler tests with each of 3 PKs
+  // Backward Euler time integration of a parabolic PDE
   TEST(DIFFUSION_FE_IMPLICIT)
   {
     // run the simulation
@@ -102,20 +102,22 @@ SUITE(PKS_PDE)
     auto nsteps = run_test(run->S, run->pk, 20.0);
 
     // print final solution
-    auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);
     std::cout << "Final solution" << std::endl;
-    u.Print(std::cout);
+    run->S->Get<CompositeVector>("u").Print(std::cout);
 
     // check error
     auto m = run->S->GetMesh();
     int ncells =
       m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c != ncells; ++c) {
-      auto p = m->cell_centroid(c);
-      double val = std::cos(PI_2 * p[0]);
-      CHECK_CLOSE(val, u[0][c], 1.e-3);
+    {
+      auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
+      for (int c = 0; c != ncells; ++c) {
+        auto p = m->cell_centroid(c);
+        double val = std::cos(PI_2 * p[0]);
+        CHECK_CLOSE(val, u(c,0), 1.e-3);
+      }
     }
-
+    
     // check timesteps
     CHECK_EQUAL(20. / 1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);

@@ -8,42 +8,24 @@
       Ethan Coon
 */
 
-//! Evaluates a function to provide Dirichlet data on faces.
+//!
 
+#include "BCs.hh"
 #include "Evaluator_BCs.hh"
+#include "Patch.hh"
 
 namespace Amanzi {
 
 Evaluator_BCs::Evaluator_BCs(Teuchos::ParameterList& plist)
-  : EvaluatorSecondary(plist)
+    : EvaluatorSecondary(plist),
+      inited_(false)
 {
   AMANZI_ASSERT(my_keys_.size() == 1);
   for (auto sublist : plist.sublist("boundary functions")) {
     std::string sublist_name = Keys::cleanPListName(sublist.first);
     dependencies_.push_back(std::make_pair(sublist_name, my_keys_[0].second));
-    std::string bc_type = plist.sublist("boundary functions")
-                            .sublist(sublist_name)
-                            .get<std::string>("boundary condition type");
-    if (bc_type == "Dirichlet")
-      bc_types_.push_back(Operators::OPERATOR_BC_DIRICHLET);
-    else if (bc_type == "Neumann")
-      bc_types_.push_back(Operators::OPERATOR_BC_NEUMANN);
-    else if (bc_type == "mixed")
-      bc_types_.push_back(Operators::OPERATOR_BC_MIXED);
-    else {
-      Errors::Message msg;
-      msg << "BC for " << my_keys_[0].first << " has unknown type \"" << bc_type
-          << "\"";
-      throw(msg);
-    }
   }
 }
-
-// void Evaluator_BCs::EnsureCompatibleDerivative(State &S,
-//         const Key &wrt_key, const Key &wrt_tag) {
-//   Errors::Message msg("BCs are not differentiable");
-//   throw(msg);
-// }
 
 void
 Evaluator_BCs::EnsureCompatibility(State& S)
@@ -56,17 +38,16 @@ Evaluator_BCs::EnsureCompatibility(State& S)
   // check plist for vis or checkpointing control
   EnsureCompatibility_Flags_(S);
 
-  if (my_fac.mesh().get()) {
+  if (my_fac.mesh().get() && !inited_) {
     for (const auto& dep : dependencies_) {
       auto& eval = S.RequireEvaluator(dep.first, dep.second);
-      auto& fac =
-        S.Require<Functions::BoundaryFunction,
-                  Functions::BoundaryFunctionFactory>(dep.first, dep.second);
+      auto& fac = S.Require<MultiPatch, MultiPatchSpace>(dep.first, dep.second);
       fac.set_mesh(my_fac.mesh());
-      auto& bf_list = plist_.sublist("boundary functions").sublist(dep.first);
-      fac.set_parameterlist(bf_list);
+      fac.flag_entity = my_fac.entity_kind();
       eval.EnsureCompatibility(S);
+
     }
+    inited_ = true;
   }
 }
 
@@ -75,33 +56,25 @@ Evaluator_BCs::Update_(State& S)
 {
   auto& result = S.GetW<Operators::BCs>(
     my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
-  auto& model = result.bc_model();
-  auto& value = result.bc_value();
 
   // overwrite with actual BCs
-  int i = 0;
-  for (const auto& dep : dependencies_) {
-    const auto& bc_value =
-      S.Get<Functions::BoundaryFunction>(dep.first, dep.second);
-    for (const auto& fv : bc_value) {
-      model[fv.first] = bc_types_[i];
-      value[fv.first] = fv.second;
-    }
-    ++i;
-  }
+  {
+    auto model = result.model();
+    auto value = result.value();
+    model->putScalar(0);
+    value->putScalar(0.0);
 
-  // must be faces to set defaults?  The BC design need some work.
-  AMANZI_ASSERT(result.kind() == AmanziMesh::FACE);
-  int nfaces_owned = result.mesh()->num_entities(
-    AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  for (int f = 0; f != nfaces_owned; ++f) {
-    if (model[f] == Operators::OPERATOR_BC_NONE) {
-      AmanziMesh::Entity_ID_List cells;
-      result.mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      if (cells.size() == 1) {
-        model[f] = Operators::OPERATOR_BC_NEUMANN;
-        value[f] = 0.0;
-      }
+    // set the default, 0 Neumann
+    if (model->HasComponent("face")) {
+      MultiVector_type_<int> model_bf(model->Mesh()->exterior_face_map(true), 1);
+      model_bf.putScalar(Operators::OPERATOR_BC_NEUMANN);
+      model->GetComponent("face", true)->doExport(model_bf, *model->Mesh()->exterior_face_importer(), Tpetra::INSERT);
+    }
+
+    // loop over dependencies and accumulate them
+    for (const auto& dep : dependencies_) {
+      const auto& i_bcs = S.Get<MultiPatch>(dep.first, dep.second);
+      multiPatchToCompositeVector(i_bcs, AmanziMesh::entity_kind_string(result.kind()), *value, *model);
     }
   }
 }

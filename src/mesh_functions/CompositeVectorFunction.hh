@@ -5,13 +5,12 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-
+    Ethan Coon (coonet@ornl.gov)
 */
 
 //!
 
-#ifndef AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
-#define AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
+#pragma once
 
 #include <string>
 #include <utility>
@@ -26,23 +25,52 @@ namespace Functions {
 
 class CompositeVectorFunction {
  public:
-  CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
-                          const std::vector<std::string>& names);
-  virtual ~CompositeVectorFunction() = default;
+  CompositeVectorFunction(const MultiPatchSpace& space,
+                          const std::vector<Teuchos::RCP<const MultiFunction>>& funcs) :
+      space_(space),
+      funcs_(funcs) {}    
 
-  virtual void Compute(double time, CompositeVector& vec);
+  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+    space_.set_mesh(mesh);
+    
+  }
+  
+  void Compute(double time, CompositeVector& vec) {
+    Functions::computeMeshFunction(funcs_, time, space_, vec);
+  }
 
  protected:
-  typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec>>
-    CompositeVectorSpec;
-  typedef std::vector<Teuchos::RCP<CompositeVectorSpec>>
-    CompositeVectorSpecList;
-
-  Teuchos::RCP<const MeshFunction> func_;
-  CompositeVectorSpecList cv_spec_list_;
+  MultiPatchSpace space_;
+  std::vector<Teuchos::RCP<const MultiFunction>> funcs_;
 };
+
+
+//
+// Creates a function without a mesh, which must be set later.  For use by
+// evaluators.
+//
+inline Teuchos::RCP<CompositeVectorFunction>
+createCompositeVectorFunction(Teuchos::ParameterList& plist) {
+  auto speclist_funcs = processListWithFunction(plist);
+  return Teuchos::rcp(new CompositeVectorFunction(speclist_funcs.first,
+          speclist_funcs.second));
+}
+
+//
+// Creates a function with a mesh.  Preferred version of the above, which
+// should get deprecated eventually.
+//
+inline Teuchos::RCP<CompositeVectorFunction>
+createCompositeVectorFunction(Teuchos::ParameterList& plist,
+        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  auto func = createCompositeVectorFunction(plist);
+  func->set_mesh(mesh);
+  return func;
+}
+
+
 
 } // namespace Functions
 } // namespace Amanzi
 
-#endif
+

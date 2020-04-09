@@ -29,21 +29,14 @@ void
 EvaluatorCellVolume::Update_(State& S)
 {
   auto& vec = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
+  const AmanziMesh::Mesh* mesh = vec.Mesh().get();
   for (const auto& comp : vec) {
     if (comp == "cell") {
-      int ncells = vec.Mesh()->num_entities(AmanziMesh::CELL,
-                                            AmanziMesh::Parallel_type::OWNED);
-      auto& vec_c = *vec.ViewComponent("cell", false);
-      for (int c = 0; c != ncells; ++c) {
-        vec_c[0][c] = vec.Mesh()->cell_volume(c, false);
-      }
+      auto vec_c = vec.ViewComponent("cell", false);
+      Impl::copyCellVolume(mesh, vec_c);
     } else if (comp == "face") {
-      int nfaces = vec.Mesh()->num_entities(AmanziMesh::FACE,
-                                            AmanziMesh::Parallel_type::OWNED);
-      auto& vec_f = *vec.ViewComponent("face", false);
-      for (int f = 0; f != nfaces; ++f) {
-        vec_f[0][f] = vec.Mesh()->face_area(f);
-      }
+      auto vec_c = vec.ViewComponent("face", false);
+      Impl::copyFaceArea(mesh, vec_c);
     } else {
       Errors::Message message;
       message << "EvaluatorCellVolume for \"" << my_key_

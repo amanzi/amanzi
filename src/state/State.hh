@@ -35,7 +35,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "MeshPartition.hh"
 #include "UniqueHelpers.hh"
 
 #if (!STATE_OLD_INTERFACE_DEPRECATED)
@@ -62,8 +61,8 @@ class State {
   using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet>>;
   using EvaluatorMap =
     std::unordered_map<Key, std::unordered_map<Key, Teuchos::RCP<Evaluator>>>;
-  using MeshPartitionMap =
-    std::unordered_map<Key, Teuchos::RCP<Functions::MeshPartition>>;
+  // using MeshPartitionMap =
+  //   std::unordered_map<Key, Teuchos::RCP<Functions::MeshPartition>>;
 
  public:
   // Default constructor.
@@ -137,15 +136,15 @@ class State {
   mesh_iterator mesh_end() const { return meshes_.end(); }
   MeshMap::size_type mesh_count() { return meshes_.size(); }
 
-  // Some models, typically only defined on cells, are defined by the region.
-  // MeshPartitions are a non-overlapping set of cell regions whose union
-  // covers the mesh.
-  //
-  Teuchos::RCP<const Functions::MeshPartition>
-  GetMeshPartition(const Key& key) const
-  {
-    return mesh_partitions_.at(key);
-  }
+  // // Some models, typically only defined on cells, are defined by the region.
+  // // MeshPartitions are a non-overlapping set of cell regions whose union
+  // // covers the mesh.
+  // //
+  // Teuchos::RCP<const Functions::MeshPartition>
+  // GetMeshPartition(const Key& key) const
+  // {
+  //   return mesh_partitions_.at(key);
+  // }
 
   // Some models are repeated over and over again, especially subgrid models.
   // A flyweight pattern for input parameter lists for such models is enabled.
@@ -494,7 +493,7 @@ class State {
   RecordSetMap data_;
   RecordSetMap derivs_;
   EvaluatorMap evaluators_;
-  MeshPartitionMap mesh_partitions_;
+  // MeshPartitionMap mesh_partitions_;
   std::set<Key> domain_sets_;
 
   // parameter list

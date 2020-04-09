@@ -348,7 +348,7 @@ MeshFactory::create(const Teuchos::ParameterList& parameter_list,
  */
 Teuchos::RCP<Mesh>
 MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
-                    const Kokkos::View<Entity_ID*>& setids,
+                    const Entity_ID_List& setids,
                     const Entity_kind setkind, const bool flatten,
                     const bool request_faces, const bool request_edges)
 {
@@ -406,13 +406,11 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const Entity_kind setkind, const bool flatten,
                     const bool request_faces, const bool request_edges)
 {
-  Kokkos::View<Entity_ID*> ids;
+  Entity_ID_List ids;
   for (auto name : setnames) {
-    Kokkos::View<Entity_ID*> ids_l;
+    Entity_ID_List ids_l;
     inmesh->get_set_entities(name, setkind, Parallel_type::OWNED, ids_l);
-    size_t size = ids.extent(0);
-    Kokkos::resize(ids, size + ids_l.extent(0));
-    for (int i = 0; i < ids_l.extent(0); ++i) { ids(size + i) = ids_l(i); }
+    ids.insert(ids.end(),ids_l.begin(),ids_l.end()); 
   }
   return create(inmesh, ids, setkind, flatten, request_faces, request_edges);
 }

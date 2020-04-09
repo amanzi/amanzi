@@ -34,7 +34,17 @@
     <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="GMRES">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -65,15 +75,11 @@
 
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
-
       <ParameterList name="schema">
+        <Parameter name="method" type="string" value="BernardiRaugel"/>
+        <Parameter name="method order" type="int" value="1"/>
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

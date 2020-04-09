@@ -1,14 +1,17 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  WhetStone, version 2.1
+  Release name: naka-to.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-//! <MISSING_ONELINE_DOCSTRING>
+  Mimetic discretization of elliptic operator using edge-based
+  degrees of freedom shows flexibility of the discretization framework.
+*/
 
 #include <cmath>
 #include <iterator>
@@ -20,26 +23,25 @@
 
 #include "MFD3D_Diffusion_Edge.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-RegisteredFactory<MFD3D_Diffusion_Edge>
-  MFD3D_Diffusion_Edge::factory_("diffusion edge");
+RegisteredFactory<MFD3D_Diffusion_Edge> MFD3D_Diffusion_Edge::factory_("diffusion edge");
 
 /* ******************************************************************
- * Consistency condition for stiffness matrix in heat conduction.
- * Only the upper triangular part of Ac is calculated.
- * The degrees of freedom are at nodes.
- ****************************************************************** */
-int
-MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N,
-                                    DenseMatrix& Ac)
+* Consistency condition for stiffness matrix in heat conduction. 
+* Only the upper triangular part of Ac is calculated.
+* The degrees of freedom are at nodes.
+****************************************************************** */
+int MFD3D_Diffusion_Edge::H1consistency(
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List faces, edges, fedges;
   std::vector<int> dirs, edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
   mesh_->cell_get_edges(c, &edges);
@@ -49,10 +51,10 @@ MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N,
   Ac.Reshape(nedges, nedges);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c, false);
+  double volume = mesh_->cell_volume(c);
 
   // calculate matrix R (we re-use matrix N)
-  if (d_ == 3) N.putScalar(0.0);
+  if (d_ == 3) N.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -76,10 +78,12 @@ MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N,
       for (int m = 0; m < nfedges; ++m) {
         int e = fedges[m];
         const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+ 
+        double tmp = ((tau^normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
 
-        double tmp = ((tau ^ normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
-
-        for (int k = 0; k < d_; ++k) { N(map[m], k) += normal[k] * tmp / area; }
+        for (int k = 0; k < d_; ++k) {
+          N(map[m], k) += normal[k] * tmp / area;
+        }
       }
     }
   }
@@ -105,9 +109,9 @@ MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N,
     N(n, d_) = 1.0;
   }
 
-  // Internal verification
+  // Internal verification 
   // DenseMatrix NtR(d_ + 1, d_ + 1);
-  // NtR.elementWiseMultiply(N, R, true);
+  // NtR.Multiply(N, R, true);
   // std::cout << NtR << std::endl;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -115,10 +119,9 @@ MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
 
 /* ******************************************************************
- * Stiffness matrix: the standard algorithm.
- ****************************************************************** */
-int
-MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+* Stiffness matrix: the standard algorithm.
+****************************************************************** */
+int MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -129,5 +132,8 @@ MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
-} // namespace WhetStone
-} // namespace Amanzi
+}  // namespace WhetStone
+}  // namespace Amanzi
+
+
+

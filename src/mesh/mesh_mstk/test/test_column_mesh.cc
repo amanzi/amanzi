@@ -85,7 +85,7 @@ TEST(COLUMN_MESH_3D)
     xyz[2] += 0.005 * xyz[0] * xyz[1] * xyz[2];
     mesh->node_set_coordinates(n, xyz);
   }
-
+ 
   // verify in-going topology
   CHECK_EQUAL(16, mesh->num_columns());
   CHECK_EQUAL(4, mesh->cells_of_column(10).size());
@@ -114,7 +114,7 @@ TEST(COLUMN_MESH_3D)
 
     CHECK_EQUAL(2, cfaces.extent(0));
   }
-
+ 
   for (int j = 0; j < nfaces; j++) {
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
     colmesh.face_get_cells(j, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
@@ -200,14 +200,14 @@ TEST(COLUMN_MESH_3D)
 
 
   // verify that the regions have made it through
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> myregion;
+  Amanzi::AmanziMesh::Entity_ID_List myregion;
   colmesh.get_set_entities("myregion",
                            Amanzi::AmanziMesh::CELL,
                            Amanzi::AmanziMesh::Parallel_type::ALL,
                            myregion);
-  CHECK_EQUAL(2, myregion.extent(0));
-  CHECK(colmesh.cell_centroid(myregion(0))[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion(1))[2] >= 2.5);
+  CHECK_EQUAL(2, myregion.size());
+  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
   std::cout << "End first" << std::endl;
 }
 
@@ -367,12 +367,12 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
 
   // verify that the regions have made it through
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> myregion;
+  Amanzi::AmanziMesh::Entity_ID_List myregion;
   colmesh.get_set_entities("myregion",
                            Amanzi::AmanziMesh::CELL,
                            Amanzi::AmanziMesh::Parallel_type::ALL,
                            myregion);
-  CHECK_EQUAL(2, myregion.extent(0));
-  CHECK(colmesh.cell_centroid(myregion(0))[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion(1))[2] >= 2.5);
+  CHECK_EQUAL(2, myregion.size());
+  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
 }

@@ -297,7 +297,7 @@ class PK_ODE_Implicit : public Base_t {
 #if DEBUG
     {
       auto hv = f->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
-      std::cout << "R: res" << hv(0,0)  << std::endl;
+      std::cout << "R: res: " << hv(0,0)  << std::endl;
     }
 #endif    
   }
@@ -329,7 +329,8 @@ class PK_ODE_Implicit : public Base_t {
       std::cout << "PC: Jac: " << hv(0,0)  << std::endl;
     }
 #endif
-    
+
+    //TreeVector tmp(Pr->getMap());
     Pr->reciprocal(*Pr);
 
 #if DEBUG
@@ -338,7 +339,7 @@ class PK_ODE_Implicit : public Base_t {
       std::cout << "PC: 1/Jac: " << hv(0,0)  << std::endl;
     }
 #endif
-    
+
     Pr->elementWiseMultiply(1.0, *Pr, *r, 0.);
 
 #if DEBUG

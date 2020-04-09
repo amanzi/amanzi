@@ -34,6 +34,7 @@ namespace Amanzi {
 
 class CompositeSpace;
 class TreeVectorSpace;
+class TreeVector;
 
 namespace AmanziMesh {
 class Mesh;
@@ -50,8 +51,8 @@ class SuperMap {
 
   // map accessors
   // -- global map accessors
-  Map_ptr_type Map() const { return smap_->Map(); }
-  Map_ptr_type GhostedMap() const { return smap_->GhostedMap(); }
+  Map_ptr_type getMap() const { return smap_->getMap(); }
+  Map_ptr_type getGhostedMap() const { return smap_->getGhostedMap(); }
 
   // -- component map accessors
   BlockMap_ptr_type
@@ -77,7 +78,7 @@ class SuperMap {
   }
 
   // index accessors
-  template <class DeviceType>
+  template <class DeviceType=AmanziDefaultDevice>
   cVectorView_type_<DeviceType, LO>
   Indices(std::size_t block_num, const std::string& compname,
           std::size_t dof_num) const
@@ -92,7 +93,7 @@ class SuperMap {
     return smap_->Indices<DeviceType>(bi->second.first, bi->second.second);
   }
 
-  template <class DeviceType>
+  template <class DeviceType=AmanziDefaultDevice>
   cVectorView_type_<DeviceType, LO>
   GhostIndices(std::size_t block_num, const std::string& compname,
                std::size_t dof_num) const
@@ -127,6 +128,30 @@ Teuchos::RCP<SuperMap>
 createSuperMap(const Teuchos::Ptr<const BlockSpace>& cv);
 Teuchos::RCP<SuperMap>
 createSuperMap(const TreeVectorSpace& cv);
+
+// Copy in/out
+int
+copyToSuperVector(const SuperMap& map, const BlockVector<Vector_type::scalar_type>& bv,
+                  Vector_type& sv, int block_num = 0);
+int
+copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                    BlockVector<Vector_type::scalar_type>& bv, int block_num = 0);
+int
+addFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                   BlockVector<Vector_type::scalar_type>& bv, int block_num = 0);
+
+// Nonmember TreeVector to/from Super-vector
+// -- simple schema version
+int
+copyToSuperVector(const SuperMap& map, const TreeVector& tv,
+                  Vector_type& sv);
+int
+copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                    TreeVector& tv);
+int
+addFromSuperVector(const SuperMap& map, const Vector_type& sv,
+                   TreeVector& tv);
+
 
 } // namespace Operators
 } // namespace Amanzi

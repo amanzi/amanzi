@@ -19,7 +19,6 @@
 */
 
 #include "EvaluatorIndependentTensorFunction.hh"
-#include "CompositeVectorFunctionFactory.hh"
 #include "UniqueHelpers.hh"
 
 namespace Amanzi {
@@ -44,31 +43,31 @@ EvaluatorIndependentTensorFunction::Clone() const
   return Teuchos::rcp(new EvaluatorIndependentTensorFunction(*this));
 }
 
-// ---------------------------------------------------------------------------
-// Operator=
-// ---------------------------------------------------------------------------
-Evaluator&
-EvaluatorIndependentTensorFunction::operator=(const Evaluator& other)
-{
-  if (this != &other) {
-    const EvaluatorIndependentTensorFunction* other_p =
-      dynamic_cast<const EvaluatorIndependentTensorFunction*>(&other);
-    AMANZI_ASSERT(other_p != NULL);
-    *this = *other_p;
-  }
-  return *this;
-}
+// // ---------------------------------------------------------------------------
+// // Operator=
+// // ---------------------------------------------------------------------------
+// Evaluator&
+// EvaluatorIndependentTensorFunction::operator=(const Evaluator& other)
+// {
+//   if (this != &other) {
+//     const EvaluatorIndependentTensorFunction* other_p =
+//       dynamic_cast<const EvaluatorIndependentTensorFunction*>(&other);
+//     AMANZI_ASSERT(other_p != NULL);
+//     *this = *other_p;
+//   }
+//   return *this;
+// }
 
-EvaluatorIndependentTensorFunction&
-EvaluatorIndependentTensorFunction::
-operator=(const EvaluatorIndependentTensorFunction& other)
-{
-  if (this != &other) {
-    AMANZI_ASSERT(my_key_ == other.my_key_);
-    requests_ = other.requests_;
-  }
-  return *this;
-}
+// EvaluatorIndependentTensorFunction&
+// EvaluatorIndependentTensorFunction::
+// operator=(const EvaluatorIndependentTensorFunction& other)
+// {
+//   if (this != &other) {
+//     AMANZI_ASSERT(my_key_ == other.my_key_);
+//     requests_ = other.requests_;
+//   }
+//   return *this;
+// }
 
 void
 EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
@@ -87,6 +86,7 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
     auto& map_old = f.map();
     map_new.SetMesh(map_old.Mesh());
     num_funcs_ = WhetStone::WHETSTONE_TENSOR_SIZE[dimension_ - 1][rank_ - 1];
+    num_funcs_ *= num_funcs_;
     for (auto& name : map_old) {
       map_new.AddComponent(name, map_old.Location(name), num_funcs_);
     }
@@ -105,27 +105,23 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
     auto& tv = S.Get<TensorVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
 
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
-                                                     tv.map);
+    func_ = Functions::createCompositeVectorFunction(plist_.sublist("function"),
+            tv.map.Mesh());
   }
 
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);
-  CompositeVector cv(tv.map);
+  CompositeVector cv(tv.map.CreateSpace());
 
   time_ = S.time(my_tag_);
   func_->Compute(time_, cv);
   if (tv.ghosted) cv.ScatterMasterToGhosted();
 
   // move data into tensor vector
-  int i = 0;
-  std::vector<double> arr(num_funcs_);
+  int j = 0;
   for (auto name : tv.map) {
-    const auto& vec = *cv.ViewComponent(name, tv.ghosted);
-    for (int j = 0; j != vec.getLocalLength(); ++j) {
-      for (int k = 0; k != vec.getNumVectors(); ++k) arr[k] = vec[k][j];
-      tv.data[i] = WhetStone::Tensor(dimension_, rank_, &arr[0]);
-      i++;
-    }
+    auto vec = cv.ViewComponent(name, tv.ghosted);
+    Impl::assignViewToTensorVectorDiag(vec, j, tv);
+    j += vec.extent(0);
   }
 }
 

@@ -55,22 +55,22 @@ TEST(NUMBERING)
   }
 
   // Write face-node connectivity
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnode;
+  Amanzi::AmanziMesh::Entity_ID_List fnode;
   for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 6; ++j) {
     mesh->face_get_nodes(j, fnode);
-    CHECK_EQUAL(4, fnode.extent(0));
-    for (int k = 0; k < fnode.extent(0); ++k) {
-      CHECK_EQUAL(expfacenodes[j][k], fnode(k));
+    CHECK_EQUAL(4, fnode.size());
+    for (int k = 0; k < fnode.size(); ++k) {
+      CHECK_EQUAL(expfacenodes[j][k], fnode[k]);
     }
   }
 
   // Write cell-node connectivity
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cnode;
+  Amanzi::AmanziMesh::Entity_ID_List cnode;
   for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 1; ++j) {
     mesh->cell_get_nodes(j, cnode);
-    CHECK_EQUAL(8, cnode.extent(0));
-    for (int k = 0; k < cnode.extent(0); ++k) {
-      CHECK_EQUAL(expcellnodes[k], cnode(k));
+    CHECK_EQUAL(8, cnode.size());
+    for (int k = 0; k < cnode.size(); ++k) {
+      CHECK_EQUAL(expcellnodes[k], cnode[k]);
     }
   }
 

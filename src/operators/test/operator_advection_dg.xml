@@ -6,54 +6,39 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="upwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
 
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="advection operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="reaction operator">
       <Parameter name="coef" type="double" value="200"/>
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -63,54 +48,39 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
 
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="advection operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="false"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="reaction operator">
       <Parameter name="coef" type="double" value="200"/>
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -120,54 +90,39 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind at gauss points"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
 
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="advection operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="false"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="reaction operator">
       <Parameter name="coef" type="double" value="200"/>
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="3"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -177,54 +132,39 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="upwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
 
-      <ParameterList name="schema domain">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="base" type="string" value="face"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="advection operator">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="reaction operator">
       <Parameter name="coef" type="double" value="200"/>
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{10}"/>
+        <Parameter name="method" type="string" value="dg modal"/>
+        <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

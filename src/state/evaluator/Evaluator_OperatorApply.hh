@@ -29,8 +29,9 @@ Where:
   Aji, rhs_Aji         | are not-necessarily diagonal, local operators and their
                        | RHSs applied to the xj.
   rhs_1 ... rhs_k      | are arbitrary source terms which CANNOT NOT BE AFFECTED
-BY | boundary conditions (i.e, for conservation equations | discretized using
-control volume methods, BCs affect only | faces while sources are on cells.
+                       | BY boundary conditions (i.e, for conservation equations
+                       | discretized using control volume methods, BCs affect
+                       | only faces while sources are on cells.
 
 Note that we can infer some constraints here:
 
@@ -58,6 +59,7 @@ scale the linear operators by dh/dp. --etc
 #ifndef STATE_EVALUATOR_OPERATOR_APPLY_HH_
 #define STATE_EVALUATOR_OPERATOR_APPLY_HH_
 
+#include "Debugger.hh"
 #include "EvaluatorSecondary.hh"
 #include "Evaluator_Factory.hh"
 
@@ -103,6 +105,9 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   std::string primary_entity_;
   AmanziMesh::Entity_kind primary_entity_kind_;
 
+  // debugger for dumping vectors
+  Teuchos::RCP<Debugger> db_;
+  
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply> fac_;
 };

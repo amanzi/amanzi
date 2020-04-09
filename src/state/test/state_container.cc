@@ -15,6 +15,8 @@
 // TPLs
 #include "UnitTest++.h"
 
+#include "RegionBox.hh"
+#include "Patch.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "errors.hh"
@@ -131,4 +133,56 @@ TEST(STATE_HETEROGENEOUS_DATA)
   s.GetW<double>("my_double", "prev", "my_double_prev_owner") = 3.3;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
+
+  
 }
+
+
+
+TEST(STATE_PATCH_DATA)
+{
+  using namespace Amanzi;
+
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2));
+  gm->AddRegion(Teuchos::rcp(new AmanziGeometry::RegionBox("box1", 0,
+          AmanziGeometry::Point(0.,0.),
+          AmanziGeometry::Point(2.0, 4.0))));
+  gm->AddRegion(Teuchos::rcp(new AmanziGeometry::RegionBox("box2", 1,
+          AmanziGeometry::Point(2.,0.),
+          AmanziGeometry::Point(4.0, 4.0))));
+  
+  // create a mesh
+  AmanziMesh::MeshFactory fac(comm, gm);
+  auto mesh = fac.create(0.0, 0.0, 4.0, 4.0, 2, 2);
+
+  // create a state
+  State s;
+  s.RegisterDomainMesh(mesh);
+
+  auto& mps = s.Require<MultiPatch,MultiPatchSpace>("multipatch", "", "multipatch");
+  mps.set_mesh(mesh);
+  mps.ghosted = false;
+  mps.AddPatch("box1", AmanziMesh::FACE, 1);
+  mps.AddPatch("box2", AmanziMesh::FACE, 1);
+
+  s.Setup();
+
+  // existence
+  CHECK(s.HasData("multipatch"));
+
+  {
+    auto& mp = s.GetW<MultiPatch>("multipatch","","multipatch");
+    CHECK_EQUAL(7, mp[0].data.extent(0));
+    CHECK_EQUAL(1, mp[0].data.extent(1));
+    mp[0].data(3,0) = 1.0;
+  }
+
+  {
+    const auto& mp = s.Get<MultiPatch>("multipatch", "");
+    CHECK_EQUAL(1.0, mp[0].data(3,0));
+  }  
+}
+                    
+             

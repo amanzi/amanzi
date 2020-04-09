@@ -438,7 +438,7 @@ MeshLogical::entity_get_ptype(const Entity_kind kind,
 
 // Parent entity in the source mesh if mesh was derived from another mesh
 Entity_ID
-MeshLogical::entity_get_parent(const Entity_kind kind,
+MeshLogical::entity_get_parent_type(const Entity_kind kind,
                                const Entity_ID entid) const
 {
   return -1;

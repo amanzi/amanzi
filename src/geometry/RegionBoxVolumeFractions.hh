@@ -75,7 +75,7 @@ class RegionBoxVolumeFractions : public Region {
   // dimensionality.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double intersect(const Kokkos::View<Point*>& polytope,
+  double intersect(const std::vector<Point>& polytope,
                    const std::vector<std::vector<int>>& faces) const;
 
  protected:

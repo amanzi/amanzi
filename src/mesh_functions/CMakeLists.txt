@@ -32,26 +32,18 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(mesh_functions_src_files BoundaryFunction.cc
-  UniqueMeshFunction.cc
-  DynamicBoundaryFunction.cc
-  MaterialMeshFunction.cc
-  #MeshPartition.cc
-  CompositeVectorFunction.cc
-  CompositeVectorFunctionFactory.cc
+set(mesh_functions_inc_files
+  MeshFunction.hh
+  CompositeVectorFunction.hh
   )
 
-set(mesh_functions_inc_files MeshFunction.hh
-  BoundaryFunction.hh
-  UniqueMeshFunction.hh
-  DynamicBoundaryFunction.hh
-  MaterialMeshFunction.hh
-  #MeshPartition.hh
-  CompositeVectorFunction.hh
-  CompositeVectorFunctionFactory.hh
+set(mesh_functions_src_files
+  MeshFunction.cc
   )
 
 set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
+
+# HEADER ONLY
 
 #
 # Library: mesh_functions
@@ -79,17 +71,12 @@ if (BUILD_TESTS)
       # file(COPY ${DataFiles} DESTINATION ${MFUNCS_BINARY_DIR}/test/)
     endif()
 
-    set(mesh_functions_test_link_libs mesh_functions mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+    set(mesh_functions_test_link_libs
+      mesh_functions mesh_factory ${mesh_functions_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
-# these are currently broken
   add_amanzi_test(mesh_functions_boundary_function mesh_functions_boundary_function
                   KIND unit
                   SOURCE test/mesh_functions_boundary_function.cc
-                  LINK_LIBS ${mesh_functions_test_link_libs})
-
-  add_amanzi_test(mesh_functions_material_function mesh_functions_material_function
-                  KIND unit
-                  SOURCE test/mesh_functions_material_function.cc
                   LINK_LIBS ${mesh_functions_test_link_libs})
 
   add_amanzi_test(mesh_functions_composite_vector_function mesh_functions_composite_vector_function

@@ -20,67 +20,97 @@
 #include <iostream>
 #include <iomanip>
 
+#include "Teuchos_RCP.hpp"
 #include "lapack.hh"
+
+#include <Kokkos_Core.hpp>
 
 namespace Amanzi {
 namespace WhetStone {
 
 class DenseVector {
  public:
-  DenseVector() : m_(0), mem_(0), data_(NULL){};
+  KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0) {};
 
   explicit DenseVector(int mrow) : m_(mrow), mem_(mrow)
   {
-    data_ = new double[mem_];
+    Kokkos::resize(data_,mem_);
   }
 
+  KOKKOS_INLINE_FUNCTION 
+  DenseVector(Kokkos::View<double*> base)
+      : m_(base.extent(0)),
+        mem_(base.extent(0)),
+        data_(base) {}
+  
   DenseVector(int mrow, double* data)
   {
     m_ = mrow;
     mem_ = mrow;
-    data_ = new double[mem_];
+    Kokkos::resize(data_,mem_); 
     for (int i = 0; i < m_; i++) data_[i] = data[i];
   }
 
-  DenseVector(const DenseVector& B)
+  DenseVector(const DenseVector& other)
   {
-    m_ = B.NumRows();
-    mem_ = m_;
-    data_ = NULL;
-    if (m_ > 0) {
-      data_ = new double[m_];
-      const double* dataB = B.Values();
-      for (int i = 0; i < m_; i++) data_[i] = dataB[i];
+    m_ = other.NumRows();
+    if (m_ != mem_) {
+      mem_ = m_;
+      Kokkos::resize(data_, mem_);
+      Kokkos::deep_copy(data_, other.data_);
     }
   }
 
-  ~DenseVector()
-  {
-    if (data_ != NULL) { delete[] data_; }
+  KOKKOS_INLINE_FUNCTION
+  DenseVector(Kokkos::View<double*> data, const int& mrow){
+    m_ = mrow;
+    mem_ = m_;
+    data_ = data; 
   }
+
+
+#if 0 
+  DenseVector(const Teuchos::RCP<const int>& map){
+    //map_ = map; 
+    mem_ = *(map.get()); 
+    m_ = mem_; 
+    data_ = NULL; 
+    if(m_ > 0){
+      data_ = new double[mem_]; 
+    }
+  }
+#endif 
 
   // primary members
   // -- smart memory management: preserves data only for vector reduction
-  void Reshape(int mrow);
+  void reshape(int mrow);
 
   // -- initialization
-  DenseVector& operator=(const DenseVector& B);
-
-  void PutScalar(double val)
+  KOKKOS_INLINE_FUNCTION
+  void assign(const DenseVector& other) {
+    if (this != &other) {
+      assert(mem_ == other.mem_);
+      for(int i = 0 ; i < mem_; ++i){
+        data_[i] = other.data_[i]; 
+      }
+    }
+  }
+  
+  KOKKOS_INLINE_FUNCTION void putScalar(double val)
   {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }
 
   // -- access to components
-  double& operator()(int i) { return data_[i]; }
-  const double& operator()(int i) const { return data_[i]; }
+  KOKKOS_INLINE_FUNCTION double& operator()(int i) { return data_[i]; }
+  KOKKOS_INLINE_FUNCTION const double& operator()(int i) const { return data_[i]; }
 
   // -- dot products
-  int Dot(const DenseVector& B, double* result)
+  KOKKOS_INLINE_FUNCTION int dot(const DenseVector& B, double* result)
   {
     if (m_ != B.m_) return -1;
 
-    const double* b = B.Values();
+    const Kokkos::View<double*> b = B.Values();
     *result = 0.0;
     for (int i = 0; i < m_; i++) *result += data_[i] * b[i];
 
@@ -95,31 +125,32 @@ class DenseVector {
   }
 
   // -- scalar type behaviour
-  DenseVector& operator*=(double val)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator*=(double val)
   {
     for (int i = 0; i < m_; ++i) data_[i] *= val;
     return *this;
   }
 
-  DenseVector& operator/=(double val)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator/=(double val)
   {
     for (int i = 0; i < m_; ++i) data_[i] /= val;
     return *this;
   }
 
-  DenseVector& operator-=(double val)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator-=(double val)
   {
     for (int i = 0; i < m_; ++i) data_[i] -= val;
     return *this;
   }
 
-  DenseVector& operator=(double val)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator=(double val)
   {
-    if (data_ == NULL) {
-      m_ = 1;
-      mem_ = 1;
-      data_ = new double[mem_];
-    }
+    assert(data_.extent(0) != 0); 
+    //if (data_ == NULL) {
+    //  m_ = 1;
+    //  mem_ = 1;
+    //  data_ = new double[mem_];
+    //}
     for (int i = 0; i < m_; ++i) data_[i] = val;
     return *this;
   }
@@ -133,35 +164,35 @@ class DenseVector {
   }
 
   // -- vector type behaviour (no checks for compatiility)
-  DenseVector& operator+=(const DenseVector& v)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator+=(const DenseVector& v)
   {
-    const double* datav = v.Values();
+    const Kokkos::View<double*> datav = v.Values();
     for (int i = 0; i < m_; ++i) data_[i] += datav[i];
     return *this;
   }
 
-  DenseVector& operator-=(const DenseVector& A)
+  KOKKOS_INLINE_FUNCTION DenseVector& operator-=(const DenseVector& A)
   {
-    const double* dataA = A.Values();
+    const Kokkos::View<double*> dataA = A.Values();
     for (int i = 0; i < m_; ++i) data_[i] -= dataA[i];
     return *this;
   }
 
   // compatibility members
   // -- for nonlinear solvers: this = sa * A + sthis * this
-  DenseVector& Update(double sa, const DenseVector& A, double sthis)
+  KOKKOS_INLINE_FUNCTION DenseVector& update(double sa, const DenseVector& A, double sthis)
   {
-    const double* dataA = A.Values();
+    const Kokkos::View<double*> dataA = A.Values();
     for (int i = 0; i < m_; ++i) data_[i] = sa * dataA[i] + sthis * data_[i];
     return *this;
   }
 
   // -- for nonlinear solvers: this = sa * A + sb * B + sthis * this
-  DenseVector& Update(double sa, const DenseVector& A, double sb,
+  KOKKOS_INLINE_FUNCTION DenseVector& update(double sa, const DenseVector& A, double sb,
                       const DenseVector& B, double sthis)
   {
-    const double* dataA = A.Values();
-    const double* dataB = B.Values();
+    const Kokkos::View<double*> dataA = A.Values();
+    const Kokkos::View<double*> dataB = B.Values();
     for (int i = 0; i < m_; ++i) {
       data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
     }
@@ -169,52 +200,63 @@ class DenseVector {
   }
 
   // -- scale
-  void Scale(double val)
+  KOKKOS_INLINE_FUNCTION void scale(double val)
   {
     for (int i = 0; i < m_; ++i) data_[i] *= val;
   }
 
   // access to private data
-  int NumRows() const { return m_; }
-  double* Values() { return data_; }
-  const double* Values() const { return data_; }
-
+  KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*> Values() const { return data_; }
+  KOKKOS_INLINE_FUNCTION double* Values_ptr() {return &data_[0];}
+  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const { return &data_[0];}
   // output
   friend std::ostream& operator<<(std::ostream& os, const DenseVector& A)
   {
     for (int i = 0; i < A.NumRows(); i++)
       os << std::setw(12) << std::setprecision(12) << A(i) << " ";
-    os << "\n";
     return os;
   }
 
   // First level routines
-  void Norm2(double* result) const
+  KOKKOS_INLINE_FUNCTION double norm2() const
   {
-    *result = 0.0;
-    for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
-    *result = std::pow(*result, 0.5);
+    double result = 0.0;
+    for (int i = 0; i < m_; i++) result += data_[i] * data_[i];
+    return pow(result, 0.5);
   }
 
   // -- we use 'inf' instead of 'max' for compatibility with solvers
-  void NormInf(double* result) const
+  KOKKOS_INLINE_FUNCTION double normInf() const
   {
-    *result = 0.0;
+    double result = 0.0;
     for (int i = 0; i < m_; ++i) {
-      *result = std::max(*result, std::fabs(data_[i]));
+      if(result < fabs(data_[i]))
+        result = fabs(data_[i]);
     }
+    return result; 
   }
 
-  void SwapRows(int m1, int m2)
+  KOKKOS_INLINE_FUNCTION void SwapRows(int m1, int m2)
   {
     double tmp = data_[m2];
     data_[m2] = data_[m1];
     data_[m1] = tmp;
   }
 
+  //const Teuchos::RCP<const int>& getMap() const {
+    //return Teuchos::rcp(new int(mem_));
+  //  return Teuchos::null; 
+  //}
+
+  // Default assigment implies view semantics
+  DenseVector& operator=(const DenseVector& B) = default;
+
  private:
+
   int m_, mem_;
-  double* data_;
+  Kokkos::View<double*> data_;
 };
 
 } // namespace WhetStone

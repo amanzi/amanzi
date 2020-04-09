@@ -21,8 +21,8 @@ project(STATE)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
-#include_directories(${OPERATORS_SOURCE_DIR})
-#include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
@@ -63,18 +63,19 @@ set(state_inc_files
   evaluator/EvaluatorIndependentFromFile.hh
   evaluator/EvaluatorIndependentFunction.hh
   evaluator/EvaluatorIndependentConstant.hh
-#  evaluator/EvaluatorIndependentTensorFunction.hh
+  evaluator/EvaluatorIndependentTensorFunction.hh
   evaluator/EvaluatorPrimary.hh
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
-#  evaluator/Evaluator_OperatorApply.hh
-#  evaluator/Evaluator_PDE_Diffusion.hh
-#  evaluator/Evaluator_PDE_Accumulation.hh
-#  evaluator/Evaluator_BCs.hh
+  evaluator/Evaluator_OperatorApply.hh
+  evaluator/Evaluator_PDE_Diffusion.hh
+  evaluator/Evaluator_PDE_Accumulation.hh
+  evaluator/Evaluator_BCs.hh
+  evaluator/Evaluator_BCsFunction.hh
   evaluator/EvaluatorSecondaryMonotypeAdditive.hh
   evaluator/EvaluatorSecondaryMonotypeMultiplicative.hh
-#  evaluator/EvaluatorCellVolume.hh
+  evaluator/EvaluatorCellVolume.hh
 #  evaluator/cell_volume_evaluator.hh
 #  evaluator/deforming_cell_volume_evaluator.hh
 #  evaluator/rank_evaluator.hh
@@ -87,6 +88,7 @@ set(state_inc_files
   State.hh
 )
 
+
 set(state_src_files 
   data/Data_Initializers.cc
   data/Record.cc
@@ -97,15 +99,16 @@ set(state_src_files
   evaluator/EvaluatorIndependentFromFile.cc
   evaluator/EvaluatorIndependentFunction.cc
   evaluator/EvaluatorIndependentConstant.cc
+  evaluator/EvaluatorIndependentTensorFunction.cc
   evaluator/EvaluatorPrimary.cc
   evaluator/EvaluatorSecondary.cc
   evaluator/EvaluatorSecondaryMonotype.cc
   evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
-#  evaluator/Evaluator_OperatorApply.cc
-#  evaluator/Evaluator_PDE_Diffusion.cc
-#  evaluator/Evaluator_PDE_Accumulation.cc
-#  evaluator/Evaluator_BCs.cc
-#  evaluator/EvaluatorCellVolume.cc
+  evaluator/Evaluator_OperatorApply.cc
+  evaluator/Evaluator_PDE_Diffusion.cc
+  evaluator/Evaluator_PDE_Accumulation.cc
+  evaluator/Evaluator_BCs.cc
+  evaluator/EvaluatorCellVolume.cc
 #  evaluator/cell_volume_evaluator.cc
 #  evaluator/deforming_cell_volume_evaluator.cc
 #  evaluator/rank_evaluator.cc
@@ -124,6 +127,7 @@ set(state_link_libs
   data_structures
   mesh_functions
   output
+  operators
   ${Boost_LIBRARIES}
   )
 
@@ -146,18 +150,18 @@ add_install_include_file(${state_inc_files})
 #
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentConstant_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCs_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BoundaryFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCs_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCsFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeAdditive_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeMultiplicative_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 

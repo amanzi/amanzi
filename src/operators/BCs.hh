@@ -8,7 +8,7 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! Simple struct of views for BCs with first-touch initialization.
 
 #ifndef AMANZI_OPERATORS_BC_HH_
 #define AMANZI_OPERATORS_BC_HH_
@@ -17,9 +17,11 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "WhetStoneDefs.hh"
 #include "Mesh.hh"
-
 #include "OperatorDefs.hh"
+#include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -113,88 +115,124 @@ class BCs {
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid
   // velocity)
-  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind,
-      DOF_Type type)
-    : mesh_(mesh), kind_(kind), type_(type){};
-  ~BCs(){};
+  BCs(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+      AmanziMesh::Entity_kind kind,
+      WhetStone::DOF_Type type)
+      : kind_(kind), type_(type), kind_str_(AmanziMesh::entity_kind_string(kind))
+  {
+    cvs_.SetMesh(mesh);
+    cvs_.SetGhosted(true);
+    cvs_.SetComponent(kind_str_, kind, 1);
+
+    model_ = Teuchos::rcp(new CompositeVector_<int>(cvs_.CreateSpace()));
+    value_ = cvs_.Create();
+  };
 
   // access
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return cvs_.Mesh(); }
   AmanziMesh::Entity_kind kind() const { return kind_; }
-  DOF_Type type() const { return type_; }
+  WhetStone::DOF_Type type() const { return type_; }
+  const CompositeVectorSpace& space() const { return cvs_; }
 
-  std::vector<int>& bc_model()
+  Teuchos::RCP<CompositeVector_<int>> model() { return model_; };
+  Teuchos::RCP<CompositeVector> value() { return value_; }
+  Teuchos::RCP<CompositeVector> mixed() {
+    if (!mixed_.get()) mixed_ = cvs_.Create();
+    return mixed_;
+  }  
+
+  
+  Kokkos::View<int*> bc_model(bool ghosted=true)
   {
-    if (bc_model_.size() == 0) {
-      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_model_.resize(nent, Operators::OPERATOR_BC_NONE);
-    }
-    return bc_model_;
+    return Kokkos::subview(model_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
+  }
+  
+
+  Kokkos::View<double*> bc_value(bool ghosted=true)
+  {
+    return Kokkos::subview(value_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
 
-  std::vector<double>& bc_value()
+  Kokkos::View<double*> bc_mixed(bool ghosted=true)
   {
-    if (bc_value_.size() == 0) {
-      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_.resize(nent, 0.0);
-    }
-    return bc_value_;
+    if (!mixed_.get()) mixed_ = cvs_.Create();
+    return Kokkos::subview(mixed_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
 
-  std::vector<double>& bc_mixed()
-  {
-    if (bc_mixed_.size() == 0) {
-      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_mixed_.resize(nent, 0.0);
-    }
-    return bc_mixed_;
-  }
+  // Kokkos::View<AmanziGeometry::Point*> bc_value_point()
+  // {
+  //   if (bc_value_point_.size() == 0) {
+  //     AmanziGeometry::Point p(mesh_->space_dimension());
+  //     int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
+  //     Kokkos::resize(bc_value_point_, nent);
+  //   }
+  //   return bc_value_point_;
+  // }
 
-  std::vector<AmanziGeometry::Point>& bc_value_point()
-  {
-    if (bc_value_point_.size() == 0) {
-      AmanziGeometry::Point p(mesh_->space_dimension());
-      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_point_.resize(nent, p);
-    }
-    return bc_value_point_;
-  }
+  // Kokkos::View<double**> bc_value_vector(int n = 1)
+  // {
+  //   if (bc_value_vector_.size() == 0) {
+  //     int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
+  //     Kokkos::resize(bc_value_vector_, nent, n);
+  //   }
+  //   return bc_value_vector_;
+  // }
 
-  std::vector<std::vector<double>>& bc_value_vector(int n = 1)
-  {
-    if (bc_value_vector_.size() == 0) {
-      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_vector_.resize(nent);
-
-      for (int i = 0; i < nent; ++i) { bc_value_vector_[i].resize(n); }
-    }
-    return bc_value_vector_;
+  Kokkos::View<const int*> bc_model(bool ghosted=true) const {
+    return Kokkos::subview(model_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
-
-  const std::vector<int>& bc_model() const { return bc_model_; }
-  const std::vector<double>& bc_value() const { return bc_value_; }
-  const std::vector<double>& bc_mixed() const { return bc_mixed_; }
-  const std::vector<AmanziGeometry::Point>& bc_value_point() const
-  {
-    return bc_value_point_;
+  Kokkos::View<const double*> bc_value(bool ghosted=true) const {
+    return Kokkos::subview(value_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
-  const std::vector<std::vector<double>>& bc_value_vector() const
-  {
-    return bc_value_vector_;
+  Kokkos::View<const double*> bc_mixed(bool ghosted=true) const {
+    if (!mixed_.get()) mixed_ = cvs_.Create();
+    return Kokkos::subview(mixed_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
+  // Kokkos::View<const AmanziGeometry::Point*> bc_value_point() const
+  // {
+  //   return bc_value_point_;
+  // }
+  // Kokkos::View<const double**> bc_value_vector() const
+  // {
+  //   return bc_value_vector_;
+  // }
 
  private:
   AmanziMesh::Entity_kind kind_;
-  DOF_Type type_;
+  std::string kind_str_;
+  WhetStone::DOF_Type type_;
 
-  std::vector<int> bc_model_;
-  std::vector<double> bc_value_;
-  std::vector<double> bc_mixed_;
+  CompositeVectorSpace cvs_;
+  
+  Teuchos::RCP<CompositeVector_<int>> model_;
+  Teuchos::RCP<CompositeVector> value_;
+  mutable Teuchos::RCP<CompositeVector> mixed_;
 
-  std::vector<std::vector<double>> bc_value_vector_;
-  std::vector<AmanziGeometry::Point> bc_value_point_;
+};
 
+class BCs_Factory {
+ public:
+  BCs_Factory () {}
+
+  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
+  void set_type(WhetStone::DOF_Type type) { type_ = type; }
+  void set_entity_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
+  void set_parameterlist(Teuchos::ParameterList& plist) { plist_ = plist; }
+  
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
+  AmanziMesh::Entity_kind entity_kind() const { return kind_; }
+  WhetStone::DOF_Type type() const { return type_; }
+  
+  Teuchos::RCP<BCs> Create() const {
+    return Teuchos::rcp(new BCs(mesh_, kind_, type_));
+  }
+  
+ private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  AmanziMesh::Entity_kind kind_;
+  WhetStone::DOF_Type type_;
+
+  Teuchos::ParameterList plist_;
 };
 
 } // namespace Operators

@@ -10,60 +10,63 @@
 
 //! <MISSING_ONELINE_DOCSTRING>
 
-#ifndef AMANZI_MESH_FUNCTION_HH_
-#define AMANZI_MESH_FUNCTION_HH_
-
+#pragma once
 
 #include <utility>
 #include <vector>
 #include <string>
 
 #include "Teuchos_RCP.hpp"
+
 #include "Mesh.hh"
 #include "MultiFunction.hh"
+#include "Patch.hh"
 
 namespace Amanzi {
 namespace Functions {
 
-class MeshFunction {
- public:
-  // Tuple of a region plus a mesh entity provides the domain on which a
-  // function can be evaluated.
-  typedef std::vector<std::string> RegionList;
-  typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
+//
+// Computes function on a patch.
+//
+//template<class Device=AmanziDefaultDevice>
+void
+computeMeshFunction(const MultiFunction& f, double time, Patch& p);
 
-  // A specification for domain and function.
-  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const MultiFunction>>
-    Spec;
-  typedef std::vector<Teuchos::RCP<Spec>> SpecList;
+//
+// Compute functions on a multi-patch.
+//
+//template<class Device=AmanziDefaultDevice>
+void
+computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
+                    double time, MultiPatch& mp);
 
-  // constructor
-  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh){};
-  virtual ~MeshFunction() = default;
+//
+// Compute set of functions on CompositeVector
+//
+//template<class Device=AmanziDefaultDevice>
+void
+computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
+                         double time, const MultiPatchSpace& mp, CompositeVector& cv);
 
-  // add a spec -- others may inherit this and overload to do some checking?
-  virtual void AddSpec(const Teuchos::RCP<Spec>& spec)
-  {
-    spec_list_.push_back(spec);
-  }
 
-  // access specs
-  typedef SpecList::const_iterator spec_iterator;
-  spec_iterator begin() const { return spec_list_.begin(); }
-  spec_iterator end() const { return spec_list_.end(); }
-  SpecList::size_type size() const { return spec_list_.size(); }
+using Spec = std::tuple<Teuchos::Array<std::string>,
+                        Teuchos::Array<std::string>,
+                        Teuchos::RCP<MultiFunction>>;
+             
 
-  // access mesh
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
+//
+// process a list for regions, components, and functions
+//
+Spec
+processSpecWithFunction(Teuchos::ParameterList& list,
+                        std::string function_name);
 
- protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  SpecList spec_list_;
-};
+//
+// parse a list of region-based specs
+std::pair<MultiPatchSpace,
+          std::vector<Teuchos::RCP<const MultiFunction>>>
+processListWithFunction(Teuchos::ParameterList& list,
+                        std::string function_name="function");
 
 } // namespace Functions
 } // namespace Amanzi
-
-
-#endif

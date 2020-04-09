@@ -27,10 +27,10 @@ TEST(MSTK_HEX1)
 {
   int i, j, k, err, nc, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> expfacenodes(4);
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> facenodes("", 4), faces("", 6),
-    cellnodes("", 8);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("", 6);
+  Amanzi::AmanziMesh::Entity_ID_List cellnodes(8), facenodes(4);
   Kokkos::View<int*> facedirs("", 6);
-  Kokkos::View<Amanzi::AmanziGeometry::Point*> ccoords("", 8), fcoords("", 4);
+  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
   int NF = 6;
@@ -81,7 +81,7 @@ TEST(MSTK_HEX1)
   mesh->cell_get_coordinates(0, ccoords);
 
   for (j = 0; j < 8; j++) {
-    CHECK_ARRAY_EQUAL(xyz[cellnodes(j)], ccoords(j), 3);
+    CHECK_ARRAY_EQUAL(xyz[cellnodes[j]], ccoords[j], 3);
   }
 
 
@@ -92,7 +92,7 @@ TEST(MSTK_HEX1)
     mesh->face_get_coordinates(faces(j), fcoords);
 
 
-    for (k = 0; k < 4; k++) expfacenodes[k] = cellnodes(local_facenodes[j][k]);
+    for (k = 0; k < 4; k++) expfacenodes[k] = cellnodes[local_facenodes[j][k]];
 
     // The order of nodes returned may be different from what we expected
     // So make sure we have a matching node to start with
@@ -100,7 +100,7 @@ TEST(MSTK_HEX1)
     int k0 = -1;
     int found = 0;
     for (k = 0; k < 4; k++) {
-      if (expfacenodes[k] == facenodes(0)) {
+      if (expfacenodes[k] == facenodes[0]) {
         k0 = k;
         found = 1;
         break;
@@ -111,13 +111,13 @@ TEST(MSTK_HEX1)
 
     if (facedirs(j) == 1) {
       for (k = 0; k < 4; k++) {
-        CHECK_EQUAL(expfacenodes[(k0 + k) % 4], facenodes(k));
-        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + k) % 4]], fcoords(k), 3);
+        CHECK_EQUAL(expfacenodes[(k0 + k) % 4], facenodes[k]);
+        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + k) % 4]], fcoords[k], 3);
       }
     } else {
       for (k = 0; k < 4; k++) {
-        CHECK_EQUAL(expfacenodes[(k0 + 4 - k) % 4], facenodes(k));
-        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + 4 - k) % 4]], fcoords(k), 3);
+        CHECK_EQUAL(expfacenodes[(k0 + 4 - k) % 4], facenodes[k]);
+        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + 4 - k) % 4]], fcoords[k], 3);
       }
     }
   }

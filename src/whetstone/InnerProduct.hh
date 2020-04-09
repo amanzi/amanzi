@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -28,15 +28,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class InnerProduct {
+class InnerProduct { 
  public:
-  InnerProduct(){};
-  InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh), stability_method_(WHETSTONE_STABILITY_GENERIC)
-  {
-    d_ = mesh_->space_dimension();
-  }
-  ~InnerProduct(){};
+  InnerProduct() : stability_method_(WHETSTONE_STABILITY_GENERIC) {};
+  ~InnerProduct() {};
 
   // access
   double scalar_stability() { return scalar_stability_; }
@@ -45,20 +40,18 @@ class InnerProduct {
  protected:
   // supporting stability methods
   void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
-  int StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
+  void StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M);
+  int StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMatrix& M);
 
   double CalculateStabilityScalar_(DenseMatrix& Mc);
   void GrammSchmidt_(DenseMatrix& N);
 
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int d_;
-
-  int stability_method_; // stability parameters
+  int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;
 };
 
-} // namespace WhetStone
-} // namespace Amanzi
+}  // namespace WhetStone
+}  // namespace Amanzi
 
 #endif

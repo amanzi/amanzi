@@ -62,14 +62,14 @@ TEST(FACE_ADJ_CELLS)
 
 
   for (int i = 0; i < exp_ncell; i++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> adjcells;
+    Amanzi::AmanziMesh::Entity_ID_List adjcells;
 
     Mm.cell_get_face_adj_cells(
       i, Amanzi::AmanziMesh::Parallel_type::OWNED, adjcells);
 
-    unsigned int nadj = adjcells.extent(0);
+    unsigned int nadj = adjcells.size();
     CHECK_EQUAL(exp_nadj[i], nadj);
 
-    for (int j = 0; j < nadj; j++) CHECK_EQUAL(exp_adjcells[i][j], adjcells(j));
+    for (int j = 0; j < nadj; j++) CHECK_EQUAL(exp_adjcells[i][j], adjcells[j]);
   }
 }

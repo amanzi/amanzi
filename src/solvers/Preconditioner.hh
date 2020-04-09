@@ -25,10 +25,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
-
-#include "exceptions.hh"
 
 namespace Amanzi {
 namespace AmanziPreconditioners {
@@ -44,7 +40,7 @@ class Preconditioner {
   Init(const std::string& name, const Teuchos::ParameterList& list) = 0;
 
   // Rebuild the preconditioner using the given matrix A.
-  virtual void Update(const Teuchos::RCP<const Matrix>& A) = 0;
+  virtual void Update(const Teuchos::RCP<Matrix>& A) = 0;
 
   // Destroy the preconditioner and auxiliary data structures.
   virtual void Destroy() = 0;

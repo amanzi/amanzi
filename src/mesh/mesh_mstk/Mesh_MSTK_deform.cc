@@ -44,7 +44,7 @@ double c1 = 1.0, c2 = 1.0, c3 = 1.0, k1 = 1.0, k2 = 1.0, k3 = 0.0;
 int
 Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
                   const std::vector<double>& min_cell_volumes_in,
-                  const Kokkos::View<Entity_ID*>& fixed_nodes,
+                  const Entity_ID_List& fixed_nodes,
                   const bool move_vertical, const double min_vol_const1,
                   const double min_vol_const2, const double target_vol_const1,
                   const double target_vol_const2,
@@ -87,9 +87,9 @@ Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   // ---- Begin code by ETC ----
   int fixedmk = MSTK_GetMarker();
   List_ptr fixed_verts = List_New(0);
-  for (int i = 0; i < fixed_nodes.extent(0); ++i) {
-    if (fixed_nodes(i) < nv) {
-      MVertex_ptr mv = vtx_id_to_handle[fixed_nodes(i)];
+  for (int i = 0; i < fixed_nodes.size(); ++i) {
+    if (fixed_nodes[i] < nv) {
+      MVertex_ptr mv = vtx_id_to_handle[fixed_nodes[i]];
       if (!MEnt_IsMarked(mv, fixedmk)) {
         List_Add(fixed_verts, mv);
         MEnt_Mark(mv, fixedmk);

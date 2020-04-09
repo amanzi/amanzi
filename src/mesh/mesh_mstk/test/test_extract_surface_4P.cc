@@ -66,7 +66,7 @@ TEST(Extract_Surface_MSTK1_4P)
   setnames.push_back(std::string("Top Surface"));
   setnames.push_back(std::string("Right Surface"));
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1, ids2;
+  Amanzi::AmanziMesh::Entity_ID_List ids1, ids2;
   mesh->get_set_entities(setnames[0],
                          Amanzi::AmanziMesh::FACE,
                          Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -169,7 +169,7 @@ TEST(Extract_Surface_MSTK2_4P)
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1;
+  Amanzi::AmanziMesh::Entity_ID_List ids1;
   mesh->get_set_entities(setnames[0],
                          Amanzi::AmanziMesh::FACE,
                          Amanzi::AmanziMesh::Parallel_type::OWNED,
@@ -265,7 +265,7 @@ TEST(Extract_Surface_MSTK3_4P)
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1;
+  Amanzi::AmanziMesh::Entity_ID_List ids1;
   mesh->get_set_entities(setnames[0],
                          Amanzi::AmanziMesh::FACE,
                          Amanzi::AmanziMesh::Parallel_type::OWNED,

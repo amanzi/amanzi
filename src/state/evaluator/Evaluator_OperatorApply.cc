@@ -165,6 +165,8 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   //
   bool has_derivs = S.HasDerivativeSet(my_keys_[0].first, my_keys_[0].second);
   if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
+    db_ = Teuchos::rcp(new Debugger(my_fac.Mesh(), std::string("OperatorApply: ")+my_keys_[0].first, plist_));
+
     // add the primary
     my_fac.AddComponent(primary_entity_, primary_entity_kind_, 1);
     CompositeVectorSpace my_fac_mesh_only(my_fac);
@@ -246,7 +248,7 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
         deriv_fac.set_mesh(my_fac.Mesh());
 
         // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
-        deriv_fac.set_cvs(my_fac);
+        deriv_fac.set_cvs(my_fac.CreateSpace());
         auto plist = Teuchos::rcp(new Teuchos::ParameterList());
         deriv_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
       }
@@ -293,10 +295,13 @@ Evaluator_OperatorApply::Update_(State& S)
 
   const auto& x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
   x.ScatterMasterToGhosted();
+  db_->WriteVector("x", x);
   result.putScalarMasterAndGhosted(0.);
 
   int i = 0;
   for (const auto& op_key : op0_keys_) {
+    db_->WriteDivider();
+
     // create the global operator
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(result.Mesh());
@@ -306,14 +311,11 @@ Evaluator_OperatorApply::Update_(State& S)
     // do the apply
     S.Get<Operators::Op>(op_key, my_keys_[0].second)
       .ApplyMatrixFreeOp(&*global_op, x, result);
-    // std::cout << "Result after op0 op:" << std::endl;
-    // result.Print(std::cout);
+    db_->WriteVector(op_key+" Ax", result);
 
     // Ax - b
-    result.Update(
-      -1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
-    // std::cout << "Result after op0 rhs:" << std::endl;
-    // result.Print(std::cout);
+    result.update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
+    db_->WriteVector(op_key+"Ax-b", result);
     ++i;
   }
 
@@ -324,6 +326,8 @@ Evaluator_OperatorApply::Update_(State& S)
 
     int k = 0;
     for (const auto& op_key : op_list) {
+      db_->WriteDivider();
+
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
@@ -333,16 +337,14 @@ Evaluator_OperatorApply::Update_(State& S)
       // do the apply
       S.Get<Operators::Op>(op_key, my_keys_[0].second)
         .ApplyMatrixFreeOp(&*global_op, xj, result);
-      // std::cout << "Result after offdiagonal op:" << std::endl;
-      // result.Print(std::cout);
+      db_->WriteVector(op_key+" Ax", result);
 
       // Ax - b
-      result.Update(
+      result.update(
         -1.0,
         S.Get<CompositeVector>(op_rhs_keys_[j][k], my_keys_[0].second),
         1.0);
-      // std::cout << "Result after offdiagonal op rhs:" << std::endl;
-      // result.Print(std::cout);
+      db_->WriteVector(op_key+" Ax-b", result);
       ++k;
     }
     ++j;
@@ -351,12 +353,13 @@ Evaluator_OperatorApply::Update_(State& S)
   // add all the additional RHSs
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
-    result.Update(rhs_scalars_[j],
+    db_->WriteDivider();
+
+    result.update(rhs_scalars_[j],
                   S.Get<CompositeVector>(rhs_key, my_keys_[0].second),
                   1.0);
+    db_->WriteVector(rhs_key, result);
     ++j;
-    // std::cout << "Result after rhs " << j << ":" << std::endl;
-    // result.Print(std::cout);
   }
 }
 
@@ -376,14 +379,14 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
   auto global_op = S.GetDerivativePtrW<Operators::Operator>(
     my_keys_[0].first, my_keys_[0].second, wrt_key, wrt_tag, my_keys_[0].first);
 
-  if (global_op->OpSize() == 0) {
+  if (global_op->size() == 0) {
     // push in local ops the first time
     if (wrt_key == x0_key_) {
       // diagonal entry
       // collect all operators and jacobian info
       for (const auto& op_key : op0_keys_) {
         // FIX ME AND MAKE THIS CONST CORRECT --etc
-        std::cout << "Adding diffusion op to operator" << std::endl;
+        //std::cout << "Adding diffusion op to operator" << std::endl;
         global_op->OpPushBack(
           S.GetPtrW<Operators::Op>(op_key, my_keys_[0].second, op_key));
         if (S.GetEvaluator(op_key, my_keys_[0].second)
@@ -407,7 +410,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
               auto op_cell =
                 Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
               // clobber the diag
-              *op_cell->diag = *drhs.ViewComponent(comp, false);
+              op_cell->diag->assign(*drhs.GetComponent(comp, false));
               op_cell->diag->scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {
@@ -423,12 +426,12 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     }
 
     // symbolic assemble the first time
-    global_op->SymbolicAssembleMatrix();
+    //    global_op->SymbolicAssembleMatrix();
     global_op->InitializePreconditioner(plist_.sublist("preconditioner"));
   }
 
   // assemble
-  global_op->AssembleMatrix();
+  //global_op->AssembleMatrix();
   global_op->UpdatePreconditioner();
 }
 

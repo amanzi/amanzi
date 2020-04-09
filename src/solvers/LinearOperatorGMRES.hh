@@ -17,6 +17,7 @@
 #include <cmath>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
@@ -216,6 +217,8 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(const Vector& f,
     return criteria; // Zero solution satifies all criteria.
   }
 
+  Teuchos::RCP<int> t = Teuchos::rcp(new int(1)); 
+
   // Ignore all criteria if one iteration is enforced.
   if (!(criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     int ierr = CheckConvergence_(rnorm0, fnorm);
@@ -353,7 +356,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // calculate the first (num_ritz_ + l) rows of c.
   int i0(0);
   double tmp;
-  d.PutScalar(0.0);
+  d.putScalar(0.0);
   if (num_ritz_ == 0) {
     v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
     v_[0]->scale(1.0 / rnorm0);
@@ -367,7 +370,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // set the leading diagonal block of T
-  T.PutScalar(0.0);
+  T.putScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
     for (int j = 0; j < num_ritz_; ++j) { T(i, j) = Hu_(i, j); }
   }
@@ -407,17 +410,17 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
                        &m,
                        &n,
                        &nrhs,
-                       Ttmp.Values(),
+                       Ttmp.Values_ptr(),
                        &m,
-                       d.Values(),
+                       d.Values_ptr(),
                        &m,
-                       work.Values(),
+                       work.Values_ptr(),
                        &lwork,
                        &info);
 
   residual_ = fabs(d(n));
   num_itrs_total_ += krylov_dim_;
-  ComputeSolution_(x, d.Values(), p, r);
+  ComputeSolution_(x, d.Values_ptr(), p, r);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << num_itrs_total_ << " ||r||=" << residual_
@@ -444,15 +447,15 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   WhetStone::DGEEV_F77("N",
                        "V",
                        &n,
-                       Sm.Values(),
+                       Sm.Values_ptr(),
                        &n,
-                       wr.Values(),
-                       wi.Values(),
+                       wr.Values_ptr(),
+                       wi.Values_ptr(),
                        Vl,
                        &nrhs,
-                       Vr.Values(),
+                       Vr.Values_ptr(),
                        &m,
-                       work.Values(),
+                       work.Values_ptr(),
                        &lwork,
                        &info);
 
@@ -503,8 +506,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
   WhetStone::DenseMatrix Vr2(krylov_dim_ + 1,
                              num_ritz_ + 1,
-                             Vr.Values(),
-                             WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
+                             Vr.Values_ptr());
 
   TVr.Multiply(T, Vr1, false);
   VTVr.Multiply(Vr2, TVr, true);
