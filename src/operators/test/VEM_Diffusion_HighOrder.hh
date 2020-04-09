@@ -35,7 +35,7 @@ namespace WhetStone {
 class VEM_Diffusion_HighOrder : public MFD3D {
  public:
   VEM_Diffusion_HighOrder(const Teuchos::ParameterList& plist,
-                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh), plist_(plist) {};
   ~VEM_Diffusion_HighOrder() {};
 
@@ -59,6 +59,9 @@ class VEM_Diffusion_HighOrder : public MFD3D {
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override { return -1; }
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
+
+  // post-processing method
+  void UpdateFlux(int c, const Tensor& T, double** lambda, const double* p, double** flux);
 
  private:
   Teuchos::ParameterList plist_;

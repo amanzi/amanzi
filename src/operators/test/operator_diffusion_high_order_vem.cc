@@ -31,6 +31,7 @@
 
 // Operators
 #include "Analytic07b.hh"
+#include "MeshDeformation.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "VEM_Diffusion_HighOrder.hh"
@@ -60,7 +61,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
   Teuchos::RCP<GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, true, true);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, true, true);
+  DeformMesh(mesh, 5, 1.0);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -90,12 +92,13 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
 
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
       bc_value_f[f][0] = ana.pressure_exact(xf, 0.0);
-      bc_value_f[f][1] = ana.pressure_exact(xf, 0.0);
-      bc_value_f[f][2] = ana.pressure_exact(xf, 0.0);
+      bc_value_f[f][1] = 0.0;
+      bc_value_f[f][2] = 0.0;
     }
   }
 
-  Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  RCP<const Mesh> mesh_tmp(mesh);
+  Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh_tmp));
   op->AddBCs(bc_f, bc_f);
 
   // create source term
@@ -138,12 +141,36 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
   solver.ApplyInverse(rhs, solution);
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  auto& lambda = *solution.ViewComponent("face");
+  auto& p = *solution.ViewComponent("cell");
   double pnorm, pl2_err, pinf_err;
+
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
+  // compute flux and flux error. Since, the abstract operator does not support
+  // flux calculation at the moment, we delegate this to the discretization class
+  Epetra_MultiVector flux(lambda);
+  double unorm, ul2_err, uinf_err;
+
+  ParameterList vem_list = op_list.sublist("schema");
+  VEM_Diffusion_HighOrder vem(vem_list, mesh);
+
+  double **pf, **uf;
+  lambda.ExtractView(&pf);
+  flux.ExtractView(&uf);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xc = mesh->cell_centroid(c);
+    auto K = ana.TensorDiffusivity(xc, 0.0);
+    vem.UpdateFlux(c, K, pf, p[0], uf);
+  }
+
+  ana.ComputeFaceError(flux, 0.0, unorm, ul2_err, uinf_err);
+
   if (MyPID == 0) {
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    ul2_err /= unorm;  // this is l2 norm (little l)
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6f  Inf(u)=%9.6f  size=%d  itr=%d\n", 
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->A()->NumGlobalRows(), solver.num_itrs());
 
     CHECK(pl2_err < 1e-2);
   }

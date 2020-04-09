@@ -44,10 +44,12 @@ namespace WhetStone {
 VEM_RaviartThomasSerendipity::VEM_RaviartThomasSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh)
+  : MFD3D(mesh),
+    save_face_matrices_(false)
 {
   order_ = plist.get<int>("method order");
-  save_face_matrices_ = plist.get<bool>("save face matrices");
+  if (plist.isParameter("save face matrices"))
+    save_face_matrices_ = plist.get<bool>("save face matrices");
 }
 
 

@@ -376,13 +376,13 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     }
 
     // check conservation law
-    DenseVector e(nk), b(nk);
-    e.PutScalar(1.0);
+    DenseVector one(nk), b(nk);
+    one.PutScalar(1.0);
 
-    A0.Multiply(e, b, false);
+    A0.Multiply(one, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
 
-    A1.Multiply(e, b, false);
+    A1.Multiply(one, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
   }
 }

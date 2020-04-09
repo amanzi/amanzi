@@ -50,9 +50,9 @@ class Analytic07b : public AnalyticBase {
     double z = p[2];
 
     Amanzi::AmanziGeometry::Point v(3);
-    v[0] = (1.0 - 2 * x) * y * (1.0 - y) * z * (1.0 - z);
-    v[1] = x * (1.0 - x) * (1.0 - 2 * y) * z * (1.0 - z);
-    v[2] = x * (1.0 - x) * y * (1.0 - y) * (1.0 - 2 * z);
+    v[0] = (2 * x - 1.0) * y * (1.0 - y) * z * (1.0 - z);
+    v[1] = x * (1.0 - x) * (2 * y - 1.0) * z * (1.0 - z);
+    v[2] = x * (1.0 - x) * y * (1.0 - y) * (2 * z - 1.0);
     return v;
   }
  

@@ -45,9 +45,7 @@ int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix
 
   // static condensation
   Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   const auto& MGf = vem.MGf(); 
@@ -66,7 +64,7 @@ int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix
 
     int mrows = MGf[n].NumRows(); 
     C.InsertSubMatrix(MGf[n], 0, mrows, 0, mrows, pos, pos);
-    B(pos, 0) = BT(0, pos) = area;
+    B(pos, 0) = BT(0, pos) = -area;  // trick to make off-diagonal blocks negative
 
     pos += mrows;
   }
@@ -88,6 +86,59 @@ int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix
   A(nrows, nrows) = BMB(0, 0);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Post-Processing
+****************************************************************** */
+void VEM_Diffusion_HighOrder::UpdateFlux(
+    int c, const Tensor& K, double** lambda, const double* p, double** flux)
+{
+  // calculate local matrices (costly, good only for test)
+  DenseMatrix M;
+  plist_.set<bool>("save face matrices", true);
+  VEM_RaviartThomasSerendipity vem(plist_, mesh_);
+
+  vem.MassMatrix(c, K, M);
+  int nrows = M.NumRows(); 
+
+  // calculate flux, face-by-face
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  const auto& MGf = vem.MGf(); 
+  int ndf = MGf[0].NumRows();
+
+  DenseVector dp(nrows), uf(nrows), ploc(ndf), tmp(ndf);
+
+  int pos(0);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    double area = mesh_->face_area(f);
+
+    for (int i = 0; i < ndf; ++i) ploc(i) = lambda[i][f];
+    MGf[n].Multiply(ploc, tmp, false);
+    for (int i = 0; i < ndf; ++i) dp(pos + i) = -tmp(i);
+    dp(pos) += area * p[c];
+
+    pos += ndf;
+  }
+
+  M.InverseSPD();
+  M.Multiply(dp, uf, false);
+
+  // copy flux to the global vector and scale it by area
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    double area = mesh_->face_area(f);
+
+    for (int i = 0; i < ndf; ++i)
+      flux[i][f] = uf(ndf * n + i) * dirs[n] * area;
+  }
 }
 
 }  // namespace WhetStone
