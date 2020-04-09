@@ -1048,7 +1048,6 @@ void Projector3DNedelecSerendipitySurface(const std::string& filename)
 
   for (int m = 0; m < nfaces; ++m) {
     int f = faces[m];
-    double area = mesh->face_area(f);
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
