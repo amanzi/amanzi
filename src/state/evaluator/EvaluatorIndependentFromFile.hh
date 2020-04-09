@@ -1,15 +1,22 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-A field evaluator with no dependencies specified by discrete data in an HDF5
-file.
+//! An evaluator with no dependencies specified by discrete data in an HDF5
+//! file.
 
-TODO: This needs a test and documentation! --etc
-------------------------------------------------------------------------- */
+/*!
+
+.. todo:
+    This needs a test and documentation! --etc
+
+*/
 
 #ifndef AMANZI_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_
 #define AMANZI_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_
@@ -20,37 +27,36 @@ TODO: This needs a test and documentation! --etc
 namespace Amanzi {
 
 class EvaluatorIndependentFromFile
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-
-public:
+  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList &plist);
+  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList& plist);
 
-  EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile &other) =
-      default;
+  EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile& other) =
+    default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator &operator=(const Evaluator &other) override;
+  virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentFromFile &
-  operator=(const EvaluatorIndependentFromFile &other);
+  EvaluatorIndependentFromFile&
+  operator=(const EvaluatorIndependentFromFile& other);
 
-  virtual void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State& S) override;
 
-protected:
+ protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State &S) override;
+  virtual void Update_(State& S) override;
 
   // implementation
   void LoadFile_(int i);
-  void Interpolate_(double time, CompositeVector &v);
+  void Interpolate_(double time, CompositeVector& v);
 
-protected:
+ protected:
   double t_before_, t_after_;
   Teuchos::RCP<CompositeVector> val_before_, val_after_;
   std::string filename_;
@@ -65,7 +71,7 @@ protected:
 
   Teuchos::RCP<Function> time_func_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> fac_;
 };
 

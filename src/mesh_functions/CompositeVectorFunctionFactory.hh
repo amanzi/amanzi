@@ -1,12 +1,15 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
-//! Mesh Functions, evaluate a function on a mesh and stick the result in a vector.
+
+//! Mesh Functions, evaluate a function on a mesh and stick the result in a
+//! vector.
 
 /*!
 
@@ -27,16 +30,17 @@ Each entry in that list is a:
 ONE OF:
 * `"region`" ``[string]`` Region on which this function is evaluated.
 OR:
-* `"regions`" ``[Array(string)]`` List of regions on which this function is evaluated.
-END
+* `"regions`" ``[Array(string)]`` List of regions on which this function is
+evaluated. END
 
 ONE OF:
-* `"component`" ``[string]`` Mesh component to evaluate this on.  This is one of "cell", "face", or "node"
-OR:
-* `"components`" ``[Array(string)]`` Mesh components to evaluate this on.  This is some collection of "cell", "face", and/or "node"
-END
+* `"component`" ``[string]`` Mesh component to evaluate this on.  This is one of
+"cell", "face", or "node" OR:
+* `"components`" ``[Array(string)]`` Mesh components to evaluate this on.  This
+is some collection of "cell", "face", and/or "node" END
 
-* `"function`" ``[function-spec]`` The spec to provide the actual algebraic function.  
+* `"function`" ``[function-spec]`` The spec to provide the actual algebraic
+function.
 
  */
 
@@ -55,10 +59,10 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& factory);
+                              const CompositeVectorSpace& factory);
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif

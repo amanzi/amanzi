@@ -1,15 +1,14 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Trilinos' multigrid solver.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "Teuchos_RCP.hpp"
 
@@ -20,10 +19,12 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner. 
- * ML's return code is set to 0 if successful, see Trilinos webpages. 
+ * Apply the preconditioner.
+ * ML's return code is set to 0 if successful, see Trilinos webpages.
  ****************************************************************** */
-int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int
+PreconditionerML::ApplyInverse(const Epetra_MultiVector& v,
+                               Epetra_MultiVector& hv) const
 {
   returned_code_ = ML_->ApplyInverse(v, hv);
   return returned_code_;
@@ -33,7 +34,9 @@ int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVect
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerML::Init(const std::string& name, const Teuchos::ParameterList& list)
+void
+PreconditionerML::Init(const std::string& name,
+                       const Teuchos::ParameterList& list)
 {
   list_ = list;
   initialized_ = false;
@@ -43,23 +46,25 @@ void PreconditionerML::Init(const std::string& name, const Teuchos::ParameterLis
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerML::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void
+PreconditionerML::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
   if (initialized_) ML_->DestroyPreconditioner();
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, list_, false));
   ML_->ComputePreconditioner();
-  initialized_ = true; 
+  initialized_ = true;
 }
 
 
 /* ******************************************************************
  * Destroy the preconditioner and auxiliary data structures.
  ****************************************************************** */
-void PreconditionerML::Destroy()
+void
+PreconditionerML::Destroy()
 {
   if (initialized_) ML_->DestroyPreconditioner();
   initialized_ = false;
 }
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
+} // namespace AmanziPreconditioners
+} // namespace Amanzi

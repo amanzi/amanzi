@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -33,30 +33,30 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor parses the parameter list
-****************************************************************** */
-MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
-    InnerProduct(mesh),
-    use_always_ho_(false)
+ * Constructor parses the parameter list
+ ****************************************************************** */
+MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(
+  const Teuchos::ParameterList& plist,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : MFD3D(mesh), InnerProduct(mesh), use_always_ho_(false)
 {
   order_ = plist.get<int>("method order");
 }
 
 
 /* ******************************************************************
-* Consistency condition for stiffness matrix. 
-* Only the upper triangular part of Ac is calculated.
-****************************************************************** */
-int MFD3D_CrouzeixRaviart::H1consistencyLO_(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+ * Consistency condition for stiffness matrix.
+ * Only the upper triangular part of Ac is calculated.
+ ****************************************************************** */
+int
+MFD3D_CrouzeixRaviart::H1consistencyLO_(int c, const Tensor& K, DenseMatrix& N,
+                                        DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+  int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_ + 1);
   R_.Reshape(nfaces, d_ + 1);
@@ -64,16 +64,16 @@ int MFD3D_CrouzeixRaviart::H1consistencyLO_(
 
   // calculate matrix R
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    for (int k = 0; k < d_; k++) R_(n, k) = normal[k] * dirs[n];
+    for (int k = 0; k < d_; k++) R_(n, k) = normal[k] * dirs(n);
     R_(n, d_) = 0.0;
   }
 
   // calculate R K R^T / volume
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c, false);
   for (int n = 0; n < nfaces; ++n) {
     for (int k = 0; k < d_; k++) v1[k] = R_(n, k);
     v2 = K * v1;
@@ -87,10 +87,10 @@ int MFD3D_CrouzeixRaviart::H1consistencyLO_(
   // calculate N
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   for (int n = 0; n < nfaces; n++) {
-    int f = faces[n];
+    int f = faces(n);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     for (int k = 0; k < d_; k++) N(n, k) = xf[k] - xc[k];
-    N(n, d_) = 1.0;  // additional column is added to the consistency condition
+    N(n, d_) = 1.0; // additional column is added to the consistency condition
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -98,9 +98,11 @@ int MFD3D_CrouzeixRaviart::H1consistencyLO_(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm. 
-****************************************************************** */
-int MFD3D_CrouzeixRaviart::StiffnessMatrixLO_(int c, const Tensor& K, DenseMatrix& A)
+ * Stiffness matrix: the standard algorithm.
+ ****************************************************************** */
+int
+MFD3D_CrouzeixRaviart::StiffnessMatrixLO_(int c, const Tensor& K,
+                                          DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -113,26 +115,25 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrixLO_(int c, const Tensor& K, DenseMatri
 
 
 /* ******************************************************************
-* High-order consistency condition for stiffness matrix. 
-* Only the upper triangular part of Ac is calculated. 
-****************************************************************** */
-int MFD3D_CrouzeixRaviart::H1consistencyHO_(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+ * High-order consistency condition for stiffness matrix.
+ * Only the upper triangular part of Ac is calculated.
+ ****************************************************************** */
+int
+MFD3D_CrouzeixRaviart::H1consistencyHO_(int c, const Tensor& K, DenseMatrix& N,
+                                        DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+  int nfaces = faces.extent(0);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
-  double volume = mesh_->cell_volume(c); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c, false);
 
-  // calculate degrees of freedom 
+  // calculate degrees of freedom
   Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
-  if (order_ > 1) {
-    pc.Reshape(d_, order_ - 2);
-  }
+  if (order_ > 1) { pc.Reshape(d_, order_ - 2); }
   int nd = poly.size();
   int ndf = pf.size();
   int ndc = pc.size();
@@ -148,7 +149,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   Basis_Regularized basis;
   basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
-  // pre-calculate integrals of natural monomials 
+  // pre-calculate integrals of natural monomials
   NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
@@ -159,42 +160,40 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   std::vector<const PolynomialBase*> polys(2);
 
-  for (auto it = poly.begin(); it < poly.end(); ++it) { 
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Polynomial cmono(d_, index, factor);
-    cmono.set_origin(xc);  
+    cmono.set_origin(xc);
 
-    // N and R: degrees of freedom on faces 
+    // N and R: degrees of freedom on faces
     auto grad = Gradient(cmono);
-     
+
     polys[0] = &cmono;
 
     int col = it.PolynomialPosition();
     int row(0);
 
     for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      int f = faces(i);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       double area = mesh_->face_area(f);
 
       // local coordinate system with origin at face centroid
       AmanziGeometry::Point normal = mesh_->face_normal(f);
       FaceCoordinateSystem(normal, tau);
-      normal *= dirs[i];
+      normal *= dirs(i);
 
       auto conormal = K * normal;
       Polynomial tmp = grad * conormal;
       tmp.ChangeCoordinates(xf, tau);
 
-      for (int n = 0; n < tmp.size(); ++n) {
-        R_(row + n, col) = tmp(n);
-      }
+      for (int n = 0; n < tmp.size(); ++n) { R_(row + n, col) = tmp(n); }
 
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         Polynomial fmono(d_ - 1, jndex, 1.0);
-        fmono.InverseChangeCoordinates(xf, tau);  
+        fmono.InverseChangeCoordinates(xf, tau);
 
         polys[1] = &fmono;
 
@@ -229,21 +228,21 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
           nm += multi_index[i];
         }
 
-        int np = MonomialSetPosition(d_, multi_index); 
+        int np = MonomialSetPosition(d_, multi_index);
         double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
                         basis.monomial_scales()[jt.MonomialSetOrder()];
-        N(row + n, col) = integrals_.poly()(nm, np) * factor / volume; 
+        N(row + n, col) = integrals_.poly()(nm, np) * factor / volume;
       }
     }
   }
 
-  // Gramm matrix for gradients of polynomials 
+  // Gramm matrix for gradients of polynomials
   G_.Multiply(N, R_, true);
 
   // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
 
-  // to invert degenerate matrix, we add and subtruct positive diagonal entry 
+  // to invert degenerate matrix, we add and subtruct positive diagonal entry
   G_(0, 0) = 1.0;
   G_.Inverse();
   G_(0, 0) = 0.0;
@@ -257,10 +256,11 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
 
 /* ******************************************************************
-* Stiffness matrix for a high-order scheme.
-****************************************************************** */
-int MFD3D_CrouzeixRaviart::StiffnessMatrixHO_(
-    int c, const Tensor& K, DenseMatrix& A)
+ * Stiffness matrix for a high-order scheme.
+ ****************************************************************** */
+int
+MFD3D_CrouzeixRaviart::StiffnessMatrixHO_(int c, const Tensor& K,
+                                          DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -273,47 +273,45 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrixHO_(
 
 
 /* ******************************************************************
-* Energy projector on the space of linear polynomials in cell c.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
-    int c, const std::vector<Polynomial>& vf, Polynomial& uc)
+ * Energy projector on the space of linear polynomials in cell c.
+ ****************************************************************** */
+void
+MFD3D_CrouzeixRaviart::ProjectorCell_LO_(int c,
+                                         const std::vector<Polynomial>& vf,
+                                         Polynomial& uc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double vol = mesh_->cell_volume(c);
+  double vol = mesh_->cell_volume(c, false);
 
   // create zero vector polynomial
   uc.Reshape(d_, 1, true);
 
-  for (int n = 0; n < nfaces; ++n) {  
-    int f = faces[n];
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces(n);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    double tmp = vf[n].Value(xf) * dirs[n] / vol;
+    double tmp = vf[n].Value(xf) * dirs(n) / vol;
 
-    for (int j = 0; j < d_; ++j) {
-      uc(1, j) += tmp * normal[j];
-    }
+    for (int j = 0; j < d_; ++j) { uc(1, j) += tmp * normal[j]; }
   }
 
   // calculate projector's low-order term
   AmanziGeometry::Point grad(d_);
-  for (int j = 0; j < d_; ++j) {
-    grad[j] = uc(1, j);
-  }
-    
+  for (int j = 0; j < d_; ++j) { grad[j] = uc(1, j); }
+
   double a1(0.0), a2(0.0), tmp;
-  for (int n = 0; n < nfaces; ++n) {  
-    int f = faces[n];
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces(n);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
-       
+
     tmp = vf[n].Value(xf) - grad * (xf - xc);
     a1 += tmp * area;
     a2 += area;
@@ -327,18 +325,19 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
 
 
 /* ******************************************************************
-* Energy projector on space of linear polynomials in face f.
-* Uniqueness requires to specify projector's value at face centroid.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::H1Face(
-    int f, const AmanziGeometry::Point& p0,
-    const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const
+ * Energy projector on space of linear polynomials in face f.
+ * Uniqueness requires to specify projector's value at face centroid.
+ ****************************************************************** */
+void
+MFD3D_CrouzeixRaviart::H1Face(int f, const AmanziGeometry::Point& p0,
+                              const std::vector<VectorPolynomial>& ve,
+                              VectorPolynomial& uf) const
 {
-  Entity_ID_List edges;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> edges;
+  Kokkos::View<int*> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-  int nedges = edges.size();
+  mesh_->face_get_edges_and_dirs(f, edges, &dirs);
+  int nedges = edges.extent(0);
 
   double area = mesh_->face_area(f);
   AmanziGeometry::Point fnormal = mesh_->face_normal(f);
@@ -346,25 +345,21 @@ void MFD3D_CrouzeixRaviart::H1Face(
 
   // create zero vector polynomial
   uf.resize(d_);
-  for (int i = 0; i < d_; ++i) { 
-    uf[i].Reshape(d_, 1, true);
-  }
+  for (int i = 0; i < d_; ++i) { uf[i].Reshape(d_, 1, true); }
 
   AmanziGeometry::Point enormal(d_);
 
-  for (int n = 0; n < nedges; ++n) {  
-    int e = edges[n];
+  for (int n = 0; n < nedges; ++n) {
+    int e = edges(n);
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
 
-    enormal = tau^fnormal;
+    enormal = tau ^ fnormal;
 
     for (int i = 0; i < d_; ++i) {
-      double tmp = ve[n][i].Value(xe) * dirs[n] / area;
+      double tmp = ve[n][i].Value(xe) * dirs(n) / area;
 
-      for (int j = 0; j < d_; ++j) {
-        uf[i](1, j) += tmp * enormal[j];
-      }
+      for (int j = 0; j < d_; ++j) { uf[i](1, j) += tmp * enormal[j]; }
     }
   }
 
@@ -379,28 +374,30 @@ void MFD3D_CrouzeixRaviart::H1Face(
 
 
 /* ******************************************************************
-* Generic projector on space of polynomials of order k in cell c.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
-    int c, const std::vector<Polynomial>& vf,
-    const ProjectorType type,
-    const Polynomial* moments, Polynomial& uc)
+ * Generic projector on space of polynomials of order k in cell c.
+ ****************************************************************** */
+void
+MFD3D_CrouzeixRaviart::ProjectorCell_HO_(int c,
+                                         const std::vector<Polynomial>& vf,
+                                         const ProjectorType type,
+                                         const Polynomial* moments,
+                                         Polynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  Kokkos::View<Entity_ID*> faces;
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c, false);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
   DenseMatrix N, A;
 
   T(0, 0) = 1.0;
-  StiffnessMatrixHO_(c, T, A);  
+  StiffnessMatrixHO_(c, T, A);
 
   // number of degrees of freedom
   Polynomial pf(d_ - 1, order_ - 1);
@@ -424,7 +421,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   int row(0);
   // degrees of freedom on faces
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     CalculateFaceDOFs_(f, vf[n], pf, vdof, row);
   }
 
@@ -434,9 +431,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
-    for (int n = 0; n < ndof_c; ++n) {
-      vdof(row + n) = v3(n);
-    }
+    for (int n = 0; n < ndof_c; ++n) { vdof(row + n) = v3(n); }
   }
 
   // calculate polynomial coefficients (in natural basis)
@@ -449,16 +444,14 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   // uniqueness requires to specify constant in polynomial
   if (order_ == 1) {
     AmanziGeometry::Point grad(d_);
-    for (int j = 0; j < d_; ++j) {
-      grad[j] = uc(j + 1);
-    }
-    
+    for (int j = 0; j < d_; ++j) { grad[j] = uc(j + 1); }
+
     double a1(0.0), a2(0.0), tmp;
-    for (int n = 0; n < nfaces; ++n) {  
-      int f = faces[n];
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces(n);
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       double area = mesh_->face_area(f);
-       
+
       tmp = vf[n].Value(xf) - grad * (xf - xc);
       a1 += tmp * area;
       a2 += area;
@@ -489,12 +482,10 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
+      v4(n) = v3(n) * mesh_->cell_volume(c, false);
     }
 
-    for (int n = 0; n < nd - ndof_c; ++n) {
-      v4(ndof_c + n) = v6(n);
-    }
+    for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }
 
     M.Inverse();
     M.Multiply(v4, v5, false);
@@ -502,39 +493,39 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
   }
 
-  // set correct origin 
+  // set correct origin
   uc.set_origin(xc);
 }
 
 
 /* ******************************************************************
-* L2 projector of gradient on the space of polynomials of order k-1.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
-    int c, const std::vector<VectorPolynomial>& vf,
-    const ProjectorType type, 
-    const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
+ * L2 projector of gradient on the space of polynomials of order k-1.
+ ****************************************************************** */
+void
+MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
+  int c, const std::vector<VectorPolynomial>& vf, const ProjectorType type,
+  const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
+  int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c, false);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
   DenseMatrix N, A;
 
   T(0, 0) = 1.0;
-  StiffnessMatrixHO_(c, T, A);  
+  StiffnessMatrixHO_(c, T, A);
 
   // number of degrees of freedom
-  Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
+  Polynomial poly(d_, order_ - 1), pf(d_ - 1, order_ - 1);
   int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
@@ -567,19 +558,19 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
         double factor = basis.monomial_scales()[it.MonomialSetOrder()];
         Polynomial cmono(d_, index, factor);
-        cmono.set_origin(xc);  
+        cmono.set_origin(xc);
 
         polys[0] = &cmono;
 
         // -- face contribution
         for (int n = 0; n < nfaces; ++n) {
-          int f = faces[n];
+          int f = faces(n);
           const AmanziGeometry::Point& normal = mesh_->face_normal(f);
           double area = mesh_->face_area(f);
 
           polys[1] = &(vf[n][i]);
           double tmp = numi.IntegratePolynomialsFace(f, polys) / area;
-          v4(row) += tmp * normal[j] * dirs[n];
+          v4(row) += tmp * normal[j] * dirs(n);
         }
 
         // -- cell contribution
@@ -589,7 +580,8 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
           for (auto jt = grad[j].begin(); jt < grad[j].end(); ++jt) {
             int m = jt.MonomialSetOrder();
             int s = jt.PolynomialPosition();
-            v4(row) -= grad[j](s) / basis.monomial_scales()[m] * (*moments)(s) * volume;
+            v4(row) -=
+              grad[j](s) / basis.monomial_scales()[m] * (*moments)(s)*volume;
           }
         }
       }
@@ -608,18 +600,19 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
 
 /* ******************************************************************
-* Degrees of freedom on face f.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
-    int f, const Polynomial& vf, const Polynomial& pf,
-    DenseVector& vdof, int& row)
+ * Degrees of freedom on face f.
+ ****************************************************************** */
+void
+MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(int f, const Polynomial& vf,
+                                          const Polynomial& pf,
+                                          DenseVector& vdof, int& row)
 {
   std::vector<const PolynomialBase*> polys(2);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
   NumericalIntegration numi(mesh_);
 
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
   double area = mesh_->face_area(f);
 
   // local coordinate system with origin at face centroid
@@ -631,7 +624,7 @@ void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
   for (auto it = pf.begin(); it < pf.end(); ++it) {
     const int* index = it.multi_index();
     Polynomial fmono(d_ - 1, index, 1.0);
-    fmono.InverseChangeCoordinates(xf, tau);  
+    fmono.InverseChangeCoordinates(xf, tau);
 
     polys[1] = &fmono;
 
@@ -640,6 +633,5 @@ void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

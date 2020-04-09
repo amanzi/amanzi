@@ -1,21 +1,14 @@
 /*
-  This is the operators component of the Amanzi code.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Linear solution for problem with nonsymmetric diffusion coefficient:
-
-  Solution: p = 2x + y
-  Diffusion: K = [1   -x^2]
-                 [x^2  0.2]
-  Velocity: v = [0, 0]
-  Source: f = -div(K grad(p))
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_05_HH_
 #define AMANZI_OPERATOR_ANALYTIC_05_HH_
@@ -24,10 +17,13 @@
 
 class Analytic05 : public AnalyticBase {
  public:
-  Analytic05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
-  ~Analytic05() {};
+  Analytic05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh){};
+  ~Analytic05(){};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor
+  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = 1.0;
@@ -37,28 +33,33 @@ class Analytic05 : public AnalyticBase {
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     return 2 * x + y;
   }
 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point
+  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::AmanziGeometry::Point v(2);
     v[0] = 2.0;
     v[1] = 1.0;
     return v;
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point
+  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(2);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     return 2 * x;
   }
 };
 
 #endif
-

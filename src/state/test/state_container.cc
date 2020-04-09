@@ -1,8 +1,16 @@
 /*
- State
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
- Tests for state as a container of data
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
+
+// Tests for state as a container of data
 
 // TPLs
 #include "UnitTest++.h"
@@ -11,12 +19,12 @@
 #include "State.hh"
 #include "errors.hh"
 
-#include "Data_Helpers.hh"
 //#include "Op_Cell_Cell.hh"
 //#include "Op_Factory.hh"
 #include "Vec.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
 
   State s;
@@ -24,7 +32,8 @@ TEST(STATE_CREATION) {
   s.Setup();
 }
 
-TEST(STATE_ASSIGNMENT) {
+TEST(STATE_ASSIGNMENT)
+{
   using namespace Amanzi;
 
   State s;
@@ -34,11 +43,12 @@ TEST(STATE_ASSIGNMENT) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
 
-TEST(STATE_FACTORIES_PERSIST) {
+TEST(STATE_FACTORIES_PERSIST)
+{
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -48,20 +58,21 @@ TEST(STATE_FACTORIES_PERSIST) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetGhosted();
 
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec").SetComponent(
-      "cell", AmanziMesh::CELL, 1);
+    "cell", AmanziMesh::CELL, 1);
 
   s.Setup();
 }
 
-TEST(STATE_HETEROGENEOUS_DATA) {
+TEST(STATE_HETEROGENEOUS_DATA)
+{
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -77,9 +88,9 @@ TEST(STATE_HETEROGENEOUS_DATA) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1)
-      ->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetComponent("cell", AmanziMesh::CELL, 1)
+    ->SetGhosted();
 
   s.Setup();
 
@@ -120,36 +131,4 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   s.GetW<double>("my_double", "prev", "my_double_prev_owner") = 3.3;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
-}
-
-TEST(STATE_VIRTUAL_DATA) {
-  /*
-  using namespace Amanzi;
-
-  // create a mesh
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-
-  AmanziMesh::MeshFactory fac(comm);
-  auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-
-  // create a state
-  State s;
-  s.RegisterDomainMesh(mesh);
-  
-  // require some data
-  auto &f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", "",
-                                                            "my_op_owner");
-  f.set_mesh(mesh);
-  f.set_name("cell");
-  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
-                                 Operators::OPERATOR_SCHEMA_DOFS_CELL});
-
-  s.Setup();
-
-  // existence
-  CHECK(s.HasData("my_op"));
-  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL |
-                  Operators::OPERATOR_SCHEMA_BASE_CELL,
-		  s.Get<Operators::Op>("my_op").schema_old_);*/
-  CHECK_EQUAL(1, 1);
 }

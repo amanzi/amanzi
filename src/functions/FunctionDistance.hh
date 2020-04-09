@@ -1,14 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionDistance: distance from a reference point.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! FunctionDistance: distance from a reference point.
 
 /*!
 
@@ -34,7 +34,7 @@ Example:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_DISTANCE_FUNCTION_HH_
 #define AMANZI_DISTANCE_FUNCTION_HH_
 
@@ -46,13 +46,39 @@ namespace Amanzi {
 
 class FunctionDistance : public Function {
  public:
-  FunctionDistance(const std::vector<double>& x0, const std::vector<double>& metric);
+  FunctionDistance(const Kokkos::View<double*>& x0,
+                   const Kokkos::View<double*>& metric);
   ~FunctionDistance() {}
   FunctionDistance* Clone() const { return new FunctionDistance(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*>&) const;
+
+  KOKKOS_INLINE_FUNCTION double
+  apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double tmp(0.0), y(0.0);
+    if (x.extent(0) < x0_.extent(0)) {
+      assert(false && "FunctionDistance expects higher-dimension argument.");
+      // Errors::Message m;
+      // m << "FunctionDistance expects higher-dimensional argument.";
+      // Exceptions::amanzi_throw(m);
+    }
+    for (int j = 0; j < x0_.extent(0); ++j) {
+      tmp = x(j, i) - x0_[j];
+      y += metric_[j] * tmp * tmp;
+    }
+    y = sqrt(y);
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
+  {
+    assert(in.extent(1) == out.extent(0));
+    Kokkos::parallel_for(
+      in.extent(1), KOKKOS_LAMBDA(const int& i) { out(i) = apply_gpu(in, i); });
+  }
 
  private:
-  std::vector<double> x0_, metric_;
+  Kokkos::View<double*> x0_, metric_;
 };
 
 } // namespace Amanzi

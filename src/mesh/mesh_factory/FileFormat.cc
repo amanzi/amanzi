@@ -1,10 +1,11 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: William Perkins, others
+  Authors:
+      William Perkins, others
 */
 
 //! Utility functions for working with various file formats and names.
@@ -36,7 +37,8 @@ static const std::regex NemesisExt(".*\\.par$");
 // -------------------------------------------------------------
 // file_format_name
 // -------------------------------------------------------------
-std::string fileFormatName(const FileFormat f)
+std::string
+fileFormatName(const FileFormat f)
 {
   std::string result;
   switch (f) {
@@ -63,15 +65,15 @@ std::string fileFormatName(const FileFormat f)
 /*
  Collective
 
- This routine identifies the format of the mesh file specified by @c name.  
+ This routine identifies the format of the mesh file specified by @c name.
 
  Currently, this is very stupid.  Format is basically only
- determined by file name extension, as follows: 
+ determined by file name extension, as follows:
 
    - .exo is ::ExodusII
    - .par.N.i is ::Nemesis, where N is # cpu and i is this process id
    - .h5m is ::MOAB_HDF5
- 
+
  This routine also makes sure the specified file is there and is readable.
 
  In parallel, all processes should perform this check, even if
@@ -80,7 +82,8 @@ std::string fileFormatName(const FileFormat f)
  If the file exists and can be opened, this routine returns a
  Format. If anything goes wrong, an exception is thrown.
  */
-FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname) 
+FileFormat
+fileFormatFromFilename(const Comm_type& comm, std::string fname)
 {
   const int np(comm.getSize());
   const int me(comm.getRank());
@@ -96,8 +99,7 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
     result = FileFormat::NEMESIS;
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    fname = boost::str(boost::format(fmt) % 
-                       fname % np % me);
+    fname = boost::str(boost::format(fmt) % fname % np % me);
   }
 
   // check to see if there is actually a file first
@@ -107,14 +109,14 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
     e.add_data(": path not found");
     amanzi_throw(e);
   }
-    
+
   // check the file's magic number
   std::ifstream s(fname.c_str(), std::ios::binary);
   if (s.fail()) {
     e.add_data(": cannot open");
     amanzi_throw(e);
   }
-    
+
   char buffer[magiclen];
   s.read(buffer, magiclen);
   s.close();
@@ -123,18 +125,14 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
   bool ok(false);
   switch (result) {
   case (FileFormat::UNKNOWN):
-      Exceptions::amanzi_throw(e);
-      break;
+    Exceptions::amanzi_throw(e);
+    break;
   case (FileFormat::EXODUS_II):
   case (FileFormat::NEMESIS):
     fmagic.assign(buffer, NetCDFmagic1.size());
-    if (fmagic == NetCDFmagic1) { 
-      ok = true;
-    } 
+    if (fmagic == NetCDFmagic1) { ok = true; }
     fmagic.assign(buffer, NetCDFmagic2.size());
-    if (fmagic == NetCDFmagic2) { 
-      ok = true;
-    } 
+    if (fmagic == NetCDFmagic2) { ok = true; }
     if (!ok) {
       e.add_data(": bad magic number, expected NetCDF");
       fmagic.assign(buffer, HDF5magic.size());
@@ -143,7 +141,7 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
       } else {
         e.add_data(", expected HDF5");
       }
-    } 
+    }
     break;
   case (FileFormat::MOAB_HDF5):
     fmagic.assign(buffer, HDF5magic.size());
@@ -154,9 +152,7 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
     }
     break;
   }
-  if (!ok) {
-    Exceptions::amanzi_throw(e);
-  }
+  if (!ok) { Exceptions::amanzi_throw(e); }
 
   return result;
 }

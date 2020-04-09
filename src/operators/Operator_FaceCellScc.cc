@@ -1,23 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
-
-  Operator whose unknowns are CELL + FACE, but which assembles the
-  CELL only system and Schur complements the face.
-
-  This uses special assembly. Apply is done as if we had the full 
-  FACE+CELL system. SymbolicAssembly() is done as if we had the CELL 
-  system, but with an additional step to get the layout due to the 
-  Schur'd system on FACE+CELL. Assemble, however, is done using a 
-  totally different approach.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -40,10 +32,12 @@ namespace Amanzi {
 namespace Operators {
 
 // Special Apply Inverse required to deal with schur complement
-int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_FaceCellScc::ApplyInverse(const CompositeVector& X,
+                                   CompositeVector& Y) const
 {
   int ierr(0);
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -58,8 +52,9 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   AmanziMesh::Entity_ID_List faces;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ ==
+        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL |
+         OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -80,8 +75,9 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   X.ScatterMasterToGhosted("face");
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ ==
+        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL |
+         OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -99,7 +95,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   // Solve the Schur complement system Scc * Yc = Tc.
   {
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-    preconditioner_->ApplyInverse(Tc, Yc);
+    preconditioner_->applyInverse(Tc, Yc);
   }
 
   // BACKWARD SUBSTITUTION:  Yf = inv(Aff) (Xf - Afc Yc)
@@ -109,8 +105,9 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     Yf = Xf;
 
     for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-      if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                                 OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+      if ((*it)->schema_old_ ==
+          (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL |
+           OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
           mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
@@ -137,28 +134,30 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
 
 
 // Special AssembleMatrix required to deal with schur complement
-void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                                          int my_block_row, int my_block_col) const
+void
+Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+                                     int my_block_row, int my_block_col) const
 {
-  // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
+  // first check preconditions -- Scc must have exactly one face-based schema (a
+  // FACE+CELL)
   int num_with_faces = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_FACE) {
-      num_with_faces++;
-    }
+    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_FACE) { num_with_faces++; }
   }
   if (num_with_faces == 0 || num_with_faces > 1) {
-    Errors::Message msg("Schur complement to Scc must have exactly one face-based schema for diffusion.");
+    Errors::Message msg("Schur complement to Scc must have exactly one "
+                        "face-based schema for diffusion.");
     Exceptions::amanzi_throw(msg);
   }
 
-  
+
   // schur complement can be split into a CELL_CELL schema, Acc, and a
   // FACE_CELL schema, -Acf*(Aff^-1)*Afc.
   int i_schur = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ ==
+        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL |
+         OPERATOR_SCHEMA_DOFS_FACE)) {
       AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
@@ -194,10 +193,8 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       for (int c = 0; c != ncells_owned; ++c) {
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         int n = Acell.NumCols() - 1;
-        diag[0][c] = (*it)->matrices[c](n,n);
-        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) {
-          AMANZI_ASSERT(0);
-        }
+        diag[0][c] = (*it)->matrices[c](n, n);
+        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) { AMANZI_ASSERT(0); }
       }
 
       // populate the schur component
@@ -214,7 +211,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       AmanziMesh::Entity_ID_List cells, faces;
 
-      Ttmp.PutScalar(0.0);
+      Ttmp.putScalar(0.0);
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -238,21 +235,23 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       T.GatherGhostedToMaster();
 
       // -- populate the local matrices
-      int lid_r[2],lid_c[2],gid[2];
+      int lid_r[2], lid_c[2], gid[2];
       double a1, a2, values[2];
       int ierr(0);
 
       std::vector<WhetStone::DenseMatrix>& mats = schur_op->matrices;
 
-      const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
-      const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
+      const std::vector<int>& cell_row_inds =
+        map.GhostIndices(my_block_row, "cell", 0);
+      const std::vector<int>& cell_col_inds =
+        map.GhostIndices(my_block_col, "cell", 0);
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
-        for (int n=0; n!=ncells; ++n) {
+        for (int n = 0; n != ncells; ++n) {
           lid_r[n] = cell_row_inds[cells[n]];
           lid_c[n] = cell_col_inds[cells[n]];
           gid[n] = cmap_wghost.getGlobalElement(cells[n]);
@@ -268,17 +267,14 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         double coef = fabs(a1 + a2);
         if (coef == 0.0) continue;
 
-        mat(0,0) = -a1 * a1 / coef;
-        if (mat(0,0) > 1.e30 || mat(0,0) < -1.e30) {
-          AMANZI_ASSERT(0);
-        }
+        mat(0, 0) = -a1 * a1 / coef;
+        if (mat(0, 0) > 1.e30 || mat(0, 0) < -1.e30) { AMANZI_ASSERT(0); }
         if (ncells > 1) {
-          mat(0,1) = -a1 * a2 / coef;
-          mat(1,0) = -a1 * a2 / coef;
-          mat(1,1) = -a2 * a2 / coef;
-          if (mat(1,0) > 1.e30 || mat(1,0) < -1.e30
-              || mat(0,1) > 1.e30 || mat(0,1) < -1.e30
-              || mat(1,1) > 1.e30 || mat(1,1) < -1.e30) {
+          mat(0, 1) = -a1 * a2 / coef;
+          mat(1, 0) = -a1 * a2 / coef;
+          mat(1, 1) = -a2 * a2 / coef;
+          if (mat(1, 0) > 1.e30 || mat(1, 0) < -1.e30 || mat(0, 1) > 1.e30 ||
+              mat(0, 1) < -1.e30 || mat(1, 1) > 1.e30 || mat(1, 1) < -1.e30) {
             AMANZI_ASSERT(0);
           }
         }
@@ -298,12 +294,14 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
 // visit method for Apply -- this is identical to Operator_FaceCell's
 // version.
-int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                                            const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                        const CompositeVector& X,
+                                        CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -313,22 +311,18 @@ int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
     AmanziMesh::Entity_ID_List faces;
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n=0; n!=nfaces; ++n) {
-        v(n) = Xf[0][faces[n]];
-      }
+      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
-      for (int n=0; n!=nfaces; ++n) {
-        Yf[0][faces[n]] += av(n);
-      }
+      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
       Yc[0][c] += av(nfaces);
     }
   }
@@ -340,7 +334,8 @@ int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 /* ******************************************************************
  * Create a global matrix.
  ****************************************************************** */
-void Operator_FaceCellScc::SymbolicAssembleMatrix()
+void
+Operator_FaceCellScc::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
@@ -349,14 +344,14 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(
+    smap_->getMap(), smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create global matrix
@@ -366,19 +361,22 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 
 
 // visit method for sparsity structure of Schur complement
-void Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                                    const SuperMap& map, GraphFE& graph,
-                                                    int my_block_row, int my_block_col) const
+void
+Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                               const SuperMap& map,
+                                               GraphFE& graph, int my_block_row,
+                                               int my_block_col) const
 {
   std::string name = "Scc alt as FACE_CELL";
   Op_Face_Cell schur_op(name, mesh_);
-  Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
+  Operator_Cell::SymbolicAssembleMatrixOp(
+    schur_op, map, graph, my_block_row, my_block_col);
 
   name = "Scc alt as CELL_CELL";
   Op_Cell_Cell diag_op(name, mesh_);
-  Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
+  Operator_Cell::SymbolicAssembleMatrixOp(
+    diag_op, map, graph, my_block_row, my_block_col);
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

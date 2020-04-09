@@ -1,15 +1,18 @@
 /*
-  State
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon
+      Markus Berndt
+*/
 
-  Visualization of data.
+//! Visualization writes data and meshes to files.
+
+/*
+  Writes to file for visualization using generic Output object.
 */
 
 #ifndef AMANZI_STATE_VISUALIZATION_HH_
@@ -18,71 +21,47 @@
 #include <string>
 #include <vector>
 
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Mesh.hh"
+#include "MeshDefs.hh"
+#include "CompositeVector.hh"
 
 #include "IOEvent.hh"
-//#include "Output.hh"
+#include "Output.hh"
 
 namespace Amanzi {
 
-class Visualization : public IOEvent {
-public:
-  Visualization(Teuchos::ParameterList &plist);
-  Visualization();
+namespace AmanziMesh {
+class Mesh;
+}
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
-  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
-    mesh_ = mesh;
+class Visualization : public IOEvent {
+ public:
+  Visualization(Teuchos::ParameterList& plist,
+                const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
+
+  void CreateFile(const double& time, const int& cycle);
+  void FinalizeFile();
+
+  // user-provided writing
+  template <typename T>
+  typename std::enable_if<!Output::writes<T>::value>::type
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
+    UserWriteVis(*this, attrs, t);
   }
 
-  std::string name() const { return name_; }
-  void set_name(const std::string &name) { name_ = name; }
+  // output-provided writing
+  template <typename T>
+  typename std::enable_if<Output::writes<T>::value>::type
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
+    output_->Write(attrs, t);
+  }
 
-  // public interface for coordinator clients
-  void CreateFiles();
-  void CreateTimestep(const double &time, const int &cycle);
-  void FinalizeTimestep() const;
-
-  // public interface for data clients
-  template <typename T> void Write(const std::string &name, const T &t) const;
-
-  void WriteRegions();
-  void WritePartition();
-
-protected:
-  void ReadParameters_();
-
-  std::string name_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  //  Teuchos::RCP<Output> visualization_output_;
-
-  std::map<std::string, Teuchos::Array<std::string>> regions_;
-  bool write_partition_;
-  bool dynamic_mesh_;
-  bool write_mesh_exo_;
+ protected:
+  std::unique_ptr<Output> output_;
 };
-
-template <>
-inline void Visualization::Write<Epetra_Vector>(const std::string &name,
-                                                const Epetra_Vector &t) const {
-  //visualization_output_->WriteVector(t, name);
-}
-
-template <>
-inline void Visualization::Write<double>(const std::string &name,
-                                         const double &t) const {
-  //visualization_output_->WriteAttribute(t, name);
-}
-
-template <>
-inline void Visualization::Write<int>(const std::string &name,
-                                      const int &t) const {
-  //visualization_output_->WriteAttribute(t, name);
-}
 
 } // namespace Amanzi
 

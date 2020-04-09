@@ -158,6 +158,7 @@ int
 MatrixFE::ResumeFill() {
   offproc_matrix_->resumeFill();
   matrix_->resumeFill();
+  return 0;
 }
 
 

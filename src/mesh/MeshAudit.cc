@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #include "MeshAudit.hh"
 
 #include <algorithm>
@@ -19,18 +31,19 @@
 using namespace std;
 using namespace boost;
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-  MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh, std::ostream& os) :
-      mesh_(mesh),
-      comm_(mesh->get_comm()),
-      os_(os),
-      nnode(mesh->node_map(true)->getNodeNumElements()),
-      nface(mesh->face_map(true)->getNodeNumElements()),
-      ncell(mesh->cell_map(true)->getNodeNumElements()),
-      MAX_OUT(5)
-    { create_test_dependencies(); }
+MeshAudit::MeshAudit(Teuchos::RCP<AmanziMesh::Mesh>& mesh, std::ostream& os)
+  : mesh_(mesh),
+    comm_(mesh->get_comm()),
+    os_(os),
+    nnode(mesh->node_map(true)->getNodeNumElements()),
+    nface(mesh->face_map(true)->getNodeNumElements()),
+    ncell(mesh->cell_map(true)->getNodeNumElements()),
+    MAX_OUT(5)
+{
+  create_test_dependencies();
+}
 
 // Verify runs all the tests in an order that respects the dependencies
 // between tests.  If a particular test fails, all other tests that have it
@@ -38,7 +51,8 @@ namespace Amanzi
 // a collective fail/pass result in parallel, so that all processes proceed
 // through the tests in lockstep.
 
-int MeshAudit::Verify() const
+int
+MeshAudit::Verify() const
 {
   int status = 0;
 
@@ -48,7 +62,9 @@ int MeshAudit::Verify() const
 
   mark_do_not_run vis;
 
-  for (std::list<Vertex>::iterator itr = run_order.begin(); itr != run_order.end(); ++itr) {
+  for (std::list<Vertex>::iterator itr = run_order.begin();
+       itr != run_order.end();
+       ++itr) {
     if (g[*itr].run) {
       os_ << "Checking " << g[*itr].name << " ..." << std::endl;
       if (((*this).*(g[*itr].test))()) {
@@ -57,7 +73,8 @@ int MeshAudit::Verify() const
         breadth_first_search(g, *itr, visitor(vis));
       }
     } else {
-      os_ << "Skipping " << g[*itr].name << " check because of previous failures." << std::endl;
+      os_ << "Skipping " << g[*itr].name
+          << " check because of previous failures." << std::endl;
     }
   }
 
@@ -75,7 +92,8 @@ int MeshAudit::Verify() const
 // The last line specifies that other_test_handle is a pre-requisite for
 // my_test_handle.  There may be multiple pre-requisites or none.
 
-void MeshAudit::create_test_dependencies()
+void
+MeshAudit::create_test_dependencies()
 {
   // Entity_counts tests
   Graph::vertex_descriptor test01 = add_vertex(g);
@@ -282,56 +300,63 @@ void MeshAudit::create_test_dependencies()
 // if any discrepancy is found, but it is safe to perform other tests as
 // they do not use these methods.
 
-bool MeshAudit::check_entity_counts() const
+bool
+MeshAudit::check_entity_counts() const
 {
   int n, nref;
   bool error = false;
 
   // Check the number of owned nodes.
-  n = mesh_->num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::OWNED);
+  n = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   nref = mesh_->node_map(false)->getNodeNumElements();
   if (n != nref) {
-    os_ << ": ERROR: num_entities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
+    os_ << ": ERROR: num_entities(NODE,OWNED)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
   // Check the number of used nodes.
-  n = mesh_->num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::ALL);
+  n = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   nref = mesh_->node_map(true)->getNodeNumElements();
   if (n != nref) {
-    os_ << "ERROR: num_entities(NODE,ALL)=" << n << "; should be " << nref << std::endl;
+    os_ << "ERROR: num_entities(NODE,ALL)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
   // Check the number of owned faces.
-  n = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
+  n = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nref = mesh_->face_map(false)->getNodeNumElements();
   if (n != nref) {
-    os_ << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
+    os_ << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
   // Check the number of used faces.
-  n = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
+  n = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nref = mesh_->face_map(true)->getNodeNumElements();
   if (n != nref) {
-    os_ << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
+    os_ << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
   // Check the number of owned cells.
-  n = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+  n = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   nref = mesh_->cell_map(false)->getNodeNumElements();
   if (n != nref) {
-    os_ << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
+    os_ << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
   // Check the number of used cells.
-  n = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::ALL);
+  n = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   nref = mesh_->cell_map(true)->getNodeNumElements();
   if (n != nref) {
-    os_ << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
+    os_ << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref
+        << std::endl;
     error = true;
   }
 
@@ -343,18 +368,19 @@ bool MeshAudit::check_entity_counts() const
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
 
-bool MeshAudit::check_cell_to_nodes() const
+bool
+MeshAudit::check_cell_to_nodes() const
 {
   AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
   AmanziMesh::Entity_ID_List free_nodes;
-  AmanziMesh::Entity_ID_List cnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh_->cell_get_nodes(j, &cnode); // this may fail
+      mesh_->cell_get_nodes(j, cnode); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < cnode.size(); ++k) {
-        if (cnode[k] >= nnode) invalid_refs = true;
+      for (int k = 0; k < cnode.extent(0); ++k) {
+        if (cnode(k) >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -383,14 +409,15 @@ bool MeshAudit::check_cell_to_nodes() const
 // that cell_to_nodes have been verified to return valid data.  A nonzero
 // return value indicates that one or more nodes are not attached to any cell.
 
-bool MeshAudit::check_node_refs_by_cells() const
+bool
+MeshAudit::check_node_refs_by_cells() const
 {
-  AmanziMesh::Entity_ID_List cnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh_->cell_get_nodes(j, &cnode); // this should not fail
-    for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
+    mesh_->cell_get_nodes(j, cnode); // this should not fail
+    for (int k = 0; k < cnode.extent(0); ++k) ref[cnode(k)] = true;
   }
 
   AmanziMesh::Entity_ID_List free_nodes;
@@ -414,19 +441,20 @@ bool MeshAudit::check_node_refs_by_cells() const
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
 
-bool MeshAudit::check_cell_to_faces() const
+bool
+MeshAudit::check_cell_to_faces() const
 {
   AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
   AmanziMesh::Entity_ID_List bad_faces;
   AmanziMesh::Entity_ID_List free_faces;
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh_->cell_get_faces(j, &cface); // this may fail
+      mesh_->cell_get_faces(j, cface); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < cface.size(); ++k) {
-        if (cface[k] >= nface) invalid_refs = true;
+      for (int k = 0; k < cface.extent(0); ++k) {
+        if (cface(k) >= nface) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -456,14 +484,15 @@ bool MeshAudit::check_cell_to_faces() const
 // nonzero return value indicates that faces were found that do not belong
 // to any cell or belong to more than two cells (bad topology).
 
-bool MeshAudit::check_face_refs_by_cells() const
+bool
+MeshAudit::check_face_refs_by_cells() const
 {
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
   vector<unsigned int> refs(nface, 0);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh_->cell_get_faces(j, &cface);
-    for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
+    mesh_->cell_get_faces(j, cface);
+    for (int k = 0; k < cface.extent(0); ++k) (refs[cface(k)])++;
   }
 
   AmanziMesh::Entity_ID_List free_faces;
@@ -498,17 +527,18 @@ bool MeshAudit::check_face_refs_by_cells() const
 // the alternative accessors is checked elsewhere.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
 
-bool MeshAudit::check_face_to_nodes() const
+bool
+MeshAudit::check_face_to_nodes() const
 {
   AmanziMesh::Entity_ID_List bad_faces, bad_faces1;
-  AmanziMesh::Entity_ID_List fnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     try {
-      mesh_->face_get_nodes(j, &fnode); // this may fail
+      mesh_->face_get_nodes(j, fnode); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < fnode.size(); ++k) {
-        if (fnode[k] >= nnode) invalid_refs = true;
+      for (int k = 0; k < fnode.extent(0); ++k) {
+        if (fnode(k) >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_faces.push_back(j);
     } catch (...) {
@@ -537,14 +567,15 @@ bool MeshAudit::check_face_to_nodes() const
 // that face_to_nodes has been verified to return valid data.  A nonzero
 // return value indicates that one or more nodes are not attached to any face.
 
-bool MeshAudit::check_node_refs_by_faces() const
+bool
+MeshAudit::check_node_refs_by_faces() const
 {
-  AmanziMesh::Entity_ID_List fnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
-    mesh_->face_get_nodes(j, &fnode);
-    for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
+    mesh_->face_get_nodes(j, fnode);
+    for (int k = 0; k < fnode.extent(0); ++k) ref[fnode(k)] = true;
   }
 
   AmanziMesh::Entity_ID_List free_nodes;
@@ -568,19 +599,20 @@ bool MeshAudit::check_node_refs_by_faces() const
 // the consistency of the alternative methods is checked elsewhere.  If this
 // test fails, further tests using this data should be avoided.
 
-bool MeshAudit::check_cell_to_face_dirs() const
+bool
+MeshAudit::check_cell_to_face_dirs() const
 {
-  AmanziMesh::Entity_ID_List faces;
-  vector<int> fdirs;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  Kokkos::View<int*> fdirs;
   AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    fdirs.assign(6, INT_MAX);
+    // fdirs.assign(6, INT_MAX);
     try {
-      mesh_->cell_get_faces_and_dirs(j, &faces, &fdirs);  // this may fail
+      mesh_->cell_get_faces_and_dirs(j, faces, fdirs); // this may fail
       bool bad_data = false;
-      for (int k = 0; k < fdirs.size(); ++k)
-        if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
+      for (int k = 0; k < fdirs.extent(0); ++k)
+        if (fdirs(k) != -1 && fdirs(k) != 1) bad_data = true;
       if (bad_data) bad_cells.push_back(j);
     } catch (...) {
       bad_cells_exc.push_back(j);
@@ -609,15 +641,16 @@ bool MeshAudit::check_cell_to_face_dirs() const
 // If this test fails, many further tests involving the cell_to_nodes data
 // should be avoided.
 
-bool MeshAudit::check_cell_degeneracy() const
+bool
+MeshAudit::check_cell_degeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  AmanziMesh::Entity_ID_List cnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh_->cell_get_nodes(j, &cnode); // should not fail
+    mesh_->cell_get_nodes(j, cnode); // should not fail
     if (!distinct_values(cnode)) bad_cells.push_back(j);
   }
 
@@ -629,7 +662,7 @@ bool MeshAudit::check_cell_degeneracy() const
     error = true;
   }
 
-    return global_any(error);
+  return global_any(error);
 }
 
 // Check that cell_to_faces and face_to_nodes are returning the correct
@@ -641,13 +674,14 @@ bool MeshAudit::check_cell_degeneracy() const
 // cell_to_face_dirs are returning incorrect results and that further tests
 // using their values should be avoided.
 
-bool MeshAudit::check_cell_to_faces_to_nodes() const
+bool
+MeshAudit::check_cell_to_faces_to_nodes() const
 {
-  AmanziMesh::Entity_ID_List cnode;
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
   AmanziMesh::Entity_ID_List fnode_ref;
-  AmanziMesh::Entity_ID_List fnode;
-  vector<int> fdirs;
+  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
+  Kokkos::View<int*> fdirs;
   AmanziMesh::Entity_ID_List bad_cells0;
   AmanziMesh::Entity_ID_List bad_cells1;
 
@@ -657,53 +691,48 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
     // If this is a general, non-standard element there is nothing to
     // to check against
 
-    if (ctype == AmanziMesh::CELLTYPE_UNKNOWN || 
-	ctype == AmanziMesh::POLYGON || 
-	ctype == AmanziMesh::POLYHED)
+    if (ctype == AmanziMesh::CELLTYPE_UNKNOWN || ctype == AmanziMesh::POLYGON ||
+        ctype == AmanziMesh::POLYHED)
       continue;
 
-    mesh_->cell_get_nodes(j, &cnode); // this should not fail
+    mesh_->cell_get_nodes(j, cnode); // this should not fail
 
-    mesh_->cell_get_faces_and_dirs(j, &cface, &fdirs, true); // this should not fail
+    mesh_->cell_get_faces_and_dirs(j, cface, fdirs); // this should not fail
 
     bool bad_face = false;
-    bool bad_dir  = false;
+    bool bad_dir = false;
 
-    if (cface.size() != AmanziMesh::nface_std[ctype])
+    if (cface.extent(0) != AmanziMesh::nface_std[ctype])
       bad_face = true;
     else {
+      for (int k = 0; k < cface.extent(0); ++k) {
+        mesh_->face_get_nodes(cface(k), fnode); // this should not fail
 
-      for (int k = 0; k < cface.size(); ++k) {
+        int nfn = AmanziMesh::nfnodes_std[ctype][k];
 
-	mesh_->face_get_nodes(cface[k], &fnode); // this should not fail
+        if (fnode.extent(0) != nfn) {
+          bad_face = true;
+          break;
+        }
 
-	int nfn = AmanziMesh::nfnodes_std[ctype][k];
+        fnode_ref.clear();
+        for (int i = 0; i < nfn; ++i) {
+          int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
+          fnode_ref.push_back(cnode(nodenum));
+        }
 
-	if (fnode.size() != nfn) {
-	  bad_face = true;
-	  break;
-	}
-
-	fnode_ref.clear();
-	for (int i = 0; i < nfn; ++i) {
-	  int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
-	  fnode_ref.push_back(cnode[nodenum]);
-	}
-
-	int dir = same_face(fnode, fnode_ref); // should be the same face
-	if (dir == 0) { // wrong face
-	  bad_face = true;
-	  break;
-	}
-	else if (dir != fdirs[k]) { // right face but wrong dir value
-	  bad_dir = true;
-	  break;
-	}
+        int dir = same_face(fnode, fnode_ref); // should be the same face
+        if (dir == 0) {                        // wrong face
+          bad_face = true;
+          break;
+        } else if (dir != fdirs(k)) { // right face but wrong dir value
+          bad_dir = true;
+          break;
+        }
       }
-
     }
     if (bad_face) bad_cells0.push_back(j);
-    if (bad_dir)  bad_cells1.push_back(j);
+    if (bad_dir) bad_cells1.push_back(j);
   }
 
   bool error = false;
@@ -726,7 +755,8 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 // Check that node_get_coordinates successfully returns data for all nodes
 // A negative return value signals a terminal error
 
-bool MeshAudit::check_node_to_coordinates() const
+bool
+MeshAudit::check_node_to_coordinates() const
 {
   vector<double> x(3);
   AmanziMesh::Entity_ID_List bad_nodes, bad_nodes_exc;
@@ -770,29 +800,29 @@ bool MeshAudit::check_node_to_coordinates() const
 // elsewhere.  If this test fails, further tests using cell_to_coordinates data
 // should be avoided.
 
-bool MeshAudit::check_cell_to_coordinates() const
+bool
+MeshAudit::check_cell_to_coordinates() const
 {
   int spdim = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List cnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
   AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    vector<AmanziGeometry::Point> x0;
+    Kokkos::View<AmanziGeometry::Point*> x0;
     try {
-      mesh_->cell_get_coordinates(j, &x0); // this may fail
-      mesh_->cell_get_nodes(j, &cnode); // this should not fail
-      for (int k = 0; k < cnode.size(); ++k) {
-	AmanziGeometry::Point xref(spdim);
-	bool bad_data = false;
-        mesh_->node_get_coordinates(cnode[k], &xref); // this should not fail
-	for (int i = 0; i < spdim; i++)
-	  if (x0[k][i] != xref[i]) {
-	    bad_data = true;
-	    bad_cells.push_back(j);
-	    break;
-	  }
-	if (bad_data)
-	  break;
+      mesh_->cell_get_coordinates(j, x0); // this may fail
+      mesh_->cell_get_nodes(j, cnode);    // this should not fail
+      for (int k = 0; k < cnode.extent(0); ++k) {
+        AmanziGeometry::Point xref(spdim);
+        bool bad_data = false;
+        mesh_->node_get_coordinates(cnode(k), &xref); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0(k)[i] != xref[i]) {
+            bad_data = true;
+            bad_cells.push_back(j);
+            break;
+          }
+        if (bad_data) break;
       }
     } catch (...) {
       bad_cells_exc.push_back(j);
@@ -825,29 +855,29 @@ bool MeshAudit::check_cell_to_coordinates() const
 // negative return value signals a terminal error.
 
 
-bool MeshAudit::check_face_to_coordinates() const
+bool
+MeshAudit::check_face_to_coordinates() const
 {
   int spdim = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List fnode;
+  Kokkos::View<AmanziMesh::Entity_ID*> fnode;
   AmanziMesh::Entity_ID_List bad_faces, bad_faces_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     try {
-      vector<AmanziGeometry::Point> x0;
+      Kokkos::View<AmanziGeometry::Point*> x0;
       bool bad_data = false;
-      mesh_->face_get_coordinates(j, &x0); // this may fail
-      mesh_->face_get_nodes(j, &fnode); // this should not fail
-      for (int k = 0; k < fnode.size(); ++k) {
-	AmanziGeometry::Point xref(spdim);
-        mesh_->node_get_coordinates(fnode[k], &xref); // this should not fail
-	for (int i = 0; i < spdim; i++)
-	  if (x0[k][i] != xref[i]) {
-	    bad_data = true;
-	    bad_faces.push_back(j);
-	    break;
-	  }
-	if (bad_data)
-	  break;
+      mesh_->face_get_coordinates(j, x0); // this may fail
+      mesh_->face_get_nodes(j, fnode);    // this should not fail
+      for (int k = 0; k < fnode.extent(0); ++k) {
+        AmanziGeometry::Point xref(spdim);
+        mesh_->node_get_coordinates(fnode(k), &xref); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0(k)[i] != xref[i]) {
+            bad_data = true;
+            bad_faces.push_back(j);
+            break;
+          }
+        if (bad_data) break;
       }
     } catch (...) {
       bad_faces_exc.push_back(j);
@@ -876,7 +906,8 @@ bool MeshAudit::check_face_to_coordinates() const
 // node index) or geometrically (with coincident nodes).
 
 
-bool MeshAudit::check_cell_geometry() const
+bool
+MeshAudit::check_cell_geometry() const
 {
   os_ << "Checking cell geometry ..." << std::endl;
   AmanziGeometry::Point centroid;
@@ -884,8 +915,8 @@ bool MeshAudit::check_cell_geometry() const
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    hvol = mesh_->cell_volume(j);
-      
+    hvol = mesh_->cell_volume(j, false);
+
     if (hvol <= 0.0) bad_cells.push_back(j);
   }
 
@@ -908,27 +939,32 @@ bool MeshAudit::check_cell_geometry() const
 // the index base for all maps is 0, and that the owned maps (ones without
 // ghost) are 1-1 maps.  In serial the owned and overlap (one with ghosts)
 // maps should be the same.  In parallel, the overlap version should extend
-// the owned version (owned.getGlobalElement() = overlapped.getGlobalElement() for all owned LIDs),
-// and that the remaining overlapped LIDs (if any) refer to GIDs owned
-// by other processes.  In addition there should be no duplicate GIDs on
-// any processes map.
+// the owned version (owned.getGlobalElement() = overlapped.getGlobalElement()
+// for all owned LIDs), and that the remaining overlapped LIDs (if any) refer to
+// GIDs owned by other processes.  In addition there should be no duplicate GIDs
+// on any processes map.
 
-bool MeshAudit::check_node_maps() const
+bool
+MeshAudit::check_node_maps() const
 {
   return check_maps(mesh_->node_map(false), mesh_->node_map(true));
 }
 
-bool MeshAudit::check_face_maps() const
+bool
+MeshAudit::check_face_maps() const
 {
   return check_maps(mesh_->face_map(false), mesh_->face_map(true));
 }
 
-bool MeshAudit::check_cell_maps() const
+bool
+MeshAudit::check_cell_maps() const
 {
   return check_maps(mesh_->cell_map(false), mesh_->cell_map(true));
 }
 
-bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_use) const
+bool
+MeshAudit::check_maps(const Map_ptr_type& map_own,
+                      const Map_ptr_type& map_use) const
 {
   bool error = false;
 
@@ -956,12 +992,12 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
     owned_GIDs[i] = map_own->getGlobalElement(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
-  for (int i = 0; i < map_own->getNodeNumElements()-1; i++) {
-    int diff = owned_GIDs[i+1]-owned_GIDs[i];
+  for (int i = 0; i < map_own->getNodeNumElements() - 1; i++) {
+    int diff = owned_GIDs[i + 1] - owned_GIDs[i];
     if (diff > 1) {
       os_ << "ERROR: owned map is not contiguous" << std::endl;
-      os_ << "Global IDs jump from " << owned_GIDs[i] << " to " <<
-          owned_GIDs[i+1] << std::endl;
+      os_ << "Global IDs jump from " << owned_GIDs[i] << " to "
+          << owned_GIDs[i + 1] << std::endl;
       error = true;
     }
   }
@@ -969,22 +1005,19 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
   error = global_any(error);
   if (error) return error;
 
-  if (comm_->getSize() == 1)
-  {
-
+  if (comm_->getSize() == 1) {
     // Serial or 1-process MPI
 
     if (!map_use->isSameAs(*map_own)) {
-      os_ << "ERROR: the overlap map differs from the owned map (single process)." << std::endl;
+      os_
+        << "ERROR: the overlap map differs from the owned map (single process)."
+        << std::endl;
       error = true;
     }
 
     return global_any(error);
 
-  }
-  else
-  {
-
+  } else {
     // Multi-process MPI
 
     int num_own = map_own->getNodeNumElements();
@@ -997,7 +1030,8 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
       bad_map = true;
     else {
       for (int j = 0; j < num_own; ++j)
-        if (map_use->getGlobalElement(j) != map_own->getGlobalElement(j)) bad_map = true;
+        if (map_use->getGlobalElement(j) != map_own->getGlobalElement(j))
+          bad_map = true;
     }
     if (bad_map) {
       os_ << "ERROR: overlap map does not extend the owned map." << std::endl;
@@ -1008,10 +1042,11 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
     if (error) return error;
 
     // Verify that the overlap indices are owned by other processes.
-    int *gids = new int[num_ovl];
-    int *pids = new int[num_ovl];
-    int *lids = new int[num_ovl];
-    for (int j = 0; j < num_ovl; ++j) gids[j] = map_use->getGlobalElement(j+num_own);
+    int* gids = new int[num_ovl];
+    int* pids = new int[num_ovl];
+    int* lids = new int[num_ovl];
+    for (int j = 0; j < num_ovl; ++j)
+      gids[j] = map_use->getGlobalElement(j + num_own);
 
     auto gid_av = Teuchos::arrayView(gids, num_ovl);
     auto pid_av = Teuchos::arrayView(pids, num_ovl);
@@ -1026,16 +1061,16 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
     }
 
     // Look for duplicates among the overlap indices.
-    vector<int> ovl_gids(gids, gids+num_ovl);
+    vector<int> ovl_gids(gids, gids + num_ovl);
     sort(ovl_gids.begin(), ovl_gids.end());
-    if (adjacent_find(ovl_gids.begin(),ovl_gids.end()) != ovl_gids.end()) {
+    if (adjacent_find(ovl_gids.begin(), ovl_gids.end()) != ovl_gids.end()) {
       os_ << "ERROR: duplicate ghosts in overlap map." << std::endl;
       error = true;
     }
 
-    delete [] lids;
-    delete [] pids;
-    delete [] gids;
+    delete[] lids;
+    delete[] pids;
+    delete[] gids;
 
     return global_any(error);
   }
@@ -1043,9 +1078,12 @@ bool MeshAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_
 
 // Check that ghost nodes are exact copies of their master.
 // This simply means that they have the same coordinates.
-bool MeshAudit::check_node_to_coordinates_ghost_data() const
+bool
+MeshAudit::check_node_to_coordinates_ghost_data() const
 {
-  os_ << "WARNING: check_node_to_coordinates_ghost_data() test disabled in tpetra" << std::endl;
+  os_
+    << "WARNING: check_node_to_coordinates_ghost_data() test disabled in tpetra"
+    << std::endl;
   return false;
   // int spdim = mesh_->space_dimension();
 
@@ -1094,9 +1132,11 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 // that the the GIDs of the nodes defining the face are the same, including
 // their order (face orientation).
 
-bool MeshAudit::check_face_to_nodes_ghost_data() const
+bool
+MeshAudit::check_face_to_nodes_ghost_data() const
 {
-  os_ << "WARNING: check_face_to_nodes_ghost_data() test disabled in tpetra" << std::endl;
+  os_ << "WARNING: check_face_to_nodes_ghost_data() test disabled in tpetra"
+      << std::endl;
   return false;
   // auto node_map = mesh_->node_map(true);
   // auto face_map_own = mesh_->face_map(false);
@@ -1116,8 +1156,9 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   //   maxnodes = fnode.size() > maxnodes ? fnode.size() : maxnodes;
   // }
 
-  // Epetra_IntSerialDenseMatrix gids(nface_use,maxnodes); // no Epetra_IntMultiVector :(
-  // for (AmanziMesh::Entity_ID j = 0; j < nface_own; ++j) {
+  // Epetra_IntSerialDenseMatrix gids(nface_use,maxnodes); // no
+  // Epetra_IntMultiVector :( for (AmanziMesh::Entity_ID j = 0; j < nface_own;
+  // ++j) {
   //   mesh_->face_get_nodes(j, &fnode);
   //   for (int k = 0; k < fnode.size(); ++k)
   //     gids(j,k) = node_map->getGlobalElement(fnode[k]);
@@ -1138,7 +1179,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   //   mesh_->face_get_nodes(j, &fnode);
   //   bool bad_data = false;
   //   for (int k = 0; k < fnode.size(); ++k)
-  //     if (node_map->getGlobalElement(fnode[k]) != gids(j,k)) { 
+  //     if (node_map->getGlobalElement(fnode[k]) != gids(j,k)) {
   //       bad_data = true;
   //     }
   //   if (bad_data) {
@@ -1153,7 +1194,8 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   //     case 0: // completely bad -- different face
   //       bad_faces.push_back(j);
 
-  //       std::cerr << "P " << comm_->getRank() << ": ghost face " << j << " (GID "
+  //       std::cerr << "P " << comm_->getRank() << ": ghost face " << j << "
+  //       (GID "
   //                 << face_map_use->getGlobalElement(j) << "),"
   //                 << " has different nodes than its master " << std::endl;
   //       std::cerr << "ghost face nodes (GIDs): ";
@@ -1168,9 +1210,10 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   //     case -1: // very bad -- same face but wrong orientation
   //       bad_faces1.push_back(j);
 
-  //       std::cerr << "P " << comm_->getRank() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
-  //       std::cerr << "ghost face nodes (GIDs): ";
-  //       for (int k = 0; k < fnode.size(); ++k)
+  //       std::cerr << "P " << comm_->getRank() << ": ghost face " << j << ",
+  //       has different orientation than its master " << std::endl; std::cerr
+  //       << "ghost face nodes (GIDs): "; for (int k = 0; k < fnode.size();
+  //       ++k)
   //         std::cerr << fnode[k];
   //       std::cerr << std::endl;
   //       std::cerr << "master face nodes (GIDs): ";
@@ -1178,7 +1221,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   //         std::cerr << fnode_ref[k];
   //       std::cerr << std::endl;
   //       break;
-  //     case 1:  
+  //     case 1:
   //       // This is fine because there is no way to ensure this for
   //       // general meshes (think of building a tet mesh and defining
   //       // the faces such that they return the same vertices in the
@@ -1212,11 +1255,13 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
 // that the the GIDs of the nodes defining the cell are the same, including
 // their order (face orientation).
 
-bool MeshAudit::check_cell_to_nodes_ghost_data() const
+bool
+MeshAudit::check_cell_to_nodes_ghost_data() const
 {
-  os_ << "WARNING: check_cell_to_nodes_ghost_data() test disabled in tpetra" << std::endl;
+  os_ << "WARNING: check_cell_to_nodes_ghost_data() test disabled in tpetra"
+      << std::endl;
   return false;
-  
+
   // auto node_map = mesh_->node_map(true);
   // auto cell_map_own = mesh_->cell_map(false);
   // auto cell_map_use = mesh_->cell_map(true);
@@ -1232,7 +1277,8 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
   //   mesh_->cell_get_nodes(j, &cnode);
   //   maxnodes = (cnode.size() > maxnodes) ? cnode.size() : maxnodes;
   // }
-  // Epetra_IntSerialDenseMatrix gids(ncell_use,maxnodes); // no Epetra_IntMultiVector :(
+  // Epetra_IntSerialDenseMatrix gids(ncell_use,maxnodes); // no
+  // Epetra_IntMultiVector :(
 
   // // Create a matrix of the GIDs for all owned cells.
   // for (AmanziMesh::Entity_ID j = 0; j < ncell_own; ++j) {
@@ -1278,8 +1324,8 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
   // if (!bad_cells.empty()) {
   //   os_ << "ERROR: found bad data for ghost cells:";
   //   write_list(bad_cells, MAX_OUT);
-  //   os_ << "       The ghost cells don't have the same nodes as their respective masters." << std::endl;
-  //   error = true;
+  //   os_ << "       The ghost cells don't have the same nodes as their
+  //   respective masters." << std::endl; error = true;
   // }
 
   // return global_any(error);
@@ -1294,9 +1340,11 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
 // the same nodes as the correct face.  So the two faces would be
 // geometrically identical, including orientation, but be distinct.
 
-bool MeshAudit::check_cell_to_faces_ghost_data() const
+bool
+MeshAudit::check_cell_to_faces_ghost_data() const
 {
-  os_ << "WARNING: check_face_to_faces_ghost_data() test disabled in tpetra" << std::endl;
+  os_ << "WARNING: check_face_to_faces_ghost_data() test disabled in tpetra"
+      << std::endl;
   return false;
 
   // auto face_map = mesh_->face_map(true);
@@ -1316,7 +1364,8 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
   //   maxfaces = (cface.size() > maxfaces) ? cface.size() : maxfaces;
   // }
 
-  // Epetra_IntSerialDenseMatrix gids(ncell_use,maxfaces); // no Epetra_IntMultiVector :(
+  // Epetra_IntSerialDenseMatrix gids(ncell_use,maxfaces); // no
+  // Epetra_IntMultiVector :(
 
   // for (AmanziMesh::Entity_ID j = 0; j < ncell_own; ++j) {
   //   mesh_->cell_get_faces(j, &cface);
@@ -1348,8 +1397,8 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
   // if (!bad_cells.empty()) {
   //   os_ << "ERROR: found bad data for ghost cells:";
   //   write_list(bad_cells, MAX_OUT);
-  //   os_ << "       The ghost cells are not exact copies of their master." << std::endl;
-  //   error = true;
+  //   os_ << "       The ghost cells are not exact copies of their master." <<
+  //   std::endl; error = true;
   // }
 
   // return global_any(error);
@@ -1366,27 +1415,33 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
 // duplicates, and that each process gets the exact same vector of set IDs.
 // This is a collective test, returning a collective pass/fail result.
 
-bool MeshAudit::check_node_set_ids() const
+bool
+MeshAudit::check_node_set_ids() const
 {
   return check_get_set_ids(AmanziMesh::NODE);
 }
 
-bool MeshAudit::check_face_set_ids() const
+bool
+MeshAudit::check_face_set_ids() const
 {
   return check_get_set_ids(AmanziMesh::FACE);
 }
 
-bool MeshAudit::check_cell_set_ids() const
+bool
+MeshAudit::check_cell_set_ids() const
 {
   return check_get_set_ids(AmanziMesh::CELL);
 }
 
-bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
+bool
+MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 {
-  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set "
+         "specification methods (Tkt #686)"
+      << std::endl;
   return false;
 
-  bool error = false;
+  // bool error = false;
 
   // // Get the number of sets.
   // int nset;
@@ -1456,37 +1511,43 @@ bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   //     for (int j = 0; j < nset; ++j)
   //       if (sids[j] != sids0[j]) bad_data = true;
   //     if (bad_data) {
-  //       os_ << "ERROR: get_set_ids() returned inconsistent values" << std::endl;
-  //       error = true;
+  //       os_ << "ERROR: get_set_ids() returned inconsistent values" <<
+  //       std::endl; error = true;
   //     }
   //     delete [] sids0;
   //   }
   // }
 
-  return global_any(error);
+  // return global_any(error);
 }
 
 // Check that valid_set_id() returns the correct results.
 // This is a collective test, returning a collective pass/fail result.
 
-bool MeshAudit::check_valid_node_set_id() const
+bool
+MeshAudit::check_valid_node_set_id() const
 {
   return check_valid_set_id(AmanziMesh::NODE);
 }
 
-bool MeshAudit::check_valid_face_set_id() const
+bool
+MeshAudit::check_valid_face_set_id() const
 {
   return check_valid_set_id(AmanziMesh::FACE);
 }
 
-bool MeshAudit::check_valid_cell_set_id() const
+bool
+MeshAudit::check_valid_cell_set_id() const
 {
   return check_valid_set_id(AmanziMesh::CELL);
 }
 
-bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
+bool
+MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
 {
-  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set "
+         "specification methods (Tkt #686)"
+      << std::endl;
   return false;
 
   // // Get the list of set IDs.
@@ -1508,7 +1569,7 @@ bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
   //   if (!valid[n] && mesh_->valid_set_id(n, kind)) bad_sids2.push_back(n);
   // }
 
-  bool error = false;
+  // bool error = false;
 
   // if (!bad_sids1.empty()) {
   //   os_ << "ERROR: valid_set_id() returned false for valid set IDs:";
@@ -1522,35 +1583,44 @@ bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
   //   error = true;
   // }
 
-  return global_any(error);
+  // return global_any(error);
 }
 
 // For each set, check that get_set successfully returns valid references to
 // local entities, without duplicates, and that the used set is consistent
 // with the owned set.
 
-bool MeshAudit::check_node_sets() const
+bool
+MeshAudit::check_node_sets() const
 {
-  return check_sets(AmanziMesh::NODE, mesh_->node_map(false), mesh_->node_map(true));
+  return check_sets(
+    AmanziMesh::NODE, mesh_->node_map(false), mesh_->node_map(true));
 }
 
-bool MeshAudit::check_face_sets() const
+bool
+MeshAudit::check_face_sets() const
 {
-  return check_sets(AmanziMesh::FACE, mesh_->face_map(false), mesh_->face_map(true));
+  return check_sets(
+    AmanziMesh::FACE, mesh_->face_map(false), mesh_->face_map(true));
 }
 
-bool MeshAudit::check_cell_sets() const
+bool
+MeshAudit::check_cell_sets() const
 {
-  return check_sets(AmanziMesh::CELL, mesh_->cell_map(false), mesh_->cell_map(true));
+  return check_sets(
+    AmanziMesh::CELL, mesh_->cell_map(false), mesh_->cell_map(true));
 }
 
-bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
-                          const Map_ptr_type& map_own, const Map_ptr_type& map_use) const
+bool
+MeshAudit::check_sets(AmanziMesh::Entity_kind kind, const Map_ptr_type& map_own,
+                      const Map_ptr_type& map_use) const
 {
-  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set "
+         "specification methods (Tkt #686)"
+      << std::endl;
   return false;
 
-  bool error = false;
+  // bool error = false;
 
   // // Get the list of set IDs.
   // int nset = mesh_->num_sets(kind);
@@ -1561,9 +1631,11 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
   //   os_ << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
   //   // Basic sanity checks of the owned and used sets.
-  //   bool bad_set = check_get_set(sids[n], kind, AmanziMesh::Parallel_type::OWNED, 
+  //   bool bad_set = check_get_set(sids[n], kind,
+  //   AmanziMesh::Parallel_type::OWNED,
   //       			 map_own) ||
-  //                  check_get_set(sids[n], kind, AmanziMesh::Parallel_type::ALL,  
+  //                  check_get_set(sids[n], kind,
+  //                  AmanziMesh::Parallel_type::ALL,
   //       			 map_use);
   //   bad_set = global_any(bad_set);
 
@@ -1575,35 +1647,37 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
   //   if (bad_set) error = true;
   // }
 
-  return error;
+  // return error;
 }
 
 // Basic sanity check on set values: no duplicates, and all LID values belong
 // to the map.  This test runs independently on each process and returns a
 // per-process pass/fail result.
 
-bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid, 
-			      AmanziMesh::Entity_kind kind,
-			      AmanziMesh::Parallel_type ptype, 
-			      const Map_ptr_type& map) const
+bool
+MeshAudit::check_get_set(AmanziMesh::Set_ID sid, AmanziMesh::Entity_kind kind,
+                         AmanziMesh::Parallel_type ptype,
+                         const Map_ptr_type& map) const
 {
-  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set "
+         "specification methods (Tkt #686)"
+      << std::endl;
   return false;
 
   // Get the size of the set.
-  int n;
+  // int n;
   try {
-    n = mesh_->get_set_size(sid, kind, ptype); // this may fail
+    mesh_->get_set_size(sid, kind, ptype); // this may fail
   } catch (...) {
     os_ << "  ERROR: caught exception from get_set_size()" << std::endl;
     return true;
   }
 
   // Get the set.
-  AmanziMesh::Entity_ID_List set;
+  Kokkos::View<AmanziMesh::Entity_ID*> set;
   try {
     std::string set_name = mesh_->geometric_model()->FindRegion(sid)->name();
-    mesh_->get_set_entities(set_name, kind, ptype, &set);  // this may fail
+    mesh_->get_set_entities(set_name, kind, ptype, set); // this may fail
   } catch (...) {
     os_ << "  ERROR: caught exception from get_set()" << std::endl;
     return true;
@@ -1611,30 +1685,34 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 
   // Check that all values were assigned.
   bool bad_data = false;
-  for (int j = 0; j < set.size(); ++j)
-    if (set[j] == UINT_MAX) bad_data = true;
+  for (int j = 0; j < set.extent(0); ++j)
+    if (set(j) == UINT_MAX) bad_data = true;
   if (bad_data) {
     os_ << "  ERROR: not all values assigned by get_set()" << std::endl;
     return true;
   }
 
   // Check that the LIDs in the set belong to the map.
-  os_ << "  WARNING: LIDs in the set check is not implemented yet for Tpetra" << std::endl;
-  // AmanziMesh::Entity_ID_List bad_LIDs;
-  // for (int j = 0; j < set.size(); ++j)
-  //   if (!map->MyLID(set[j])) bad_LIDs.push_back(set[j]);
-  // if (!bad_LIDs.empty()) {
-  //   os_ << "  ERROR: set contains invalid LIDs:";
-  //   write_list(bad_LIDs, MAX_OUT);
-  //   return true;
-  // }
+  os_ << "  WARNING: LIDs in the set check is not implemented yet for Tpetra"
+      << std::endl;
+// AmanziMesh::Entity_ID_List bad_LIDs;
+// for (int j = 0; j < set.size(); ++j)
+//   if (!map->MyLID(set[j])) bad_LIDs.push_back(set[j]);
+// if (!bad_LIDs.empty()) {
+//   os_ << "  ERROR: set contains invalid LIDs:";
+//   write_list(bad_LIDs, MAX_OUT);
+//   return true;
+// }
 
-  // Check that there are no duplicates in the set.
+// Check that there are no duplicates in the set.
+// TODO implement in Kokkos
+#if 0
   if (!distinct_values(set)) {
     os_ << "  ERROR: set contains duplicate LIDs." << std::endl;
     // it would be nice to output the duplicates
     return true;
   }
+#endif
 
   return false;
 }
@@ -1646,12 +1724,14 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 // presented in any order.  This is a collective test, returning a collective
 // pass/fail result.
 
-bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid, 
-			       AmanziMesh::Entity_kind kind,
-                               const Map_ptr_type& map_own, 
-			       const Map_ptr_type& map_use) const
+bool
+MeshAudit::check_used_set(AmanziMesh::Set_ID sid, AmanziMesh::Entity_kind kind,
+                          const Map_ptr_type& map_own,
+                          const Map_ptr_type& map_use) const
 {
-  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set "
+         "specification methods (Tkt #686)"
+      << std::endl;
   return false;
 
   // std::string set_name = mesh_->geometric_model()->FindRegion(sid)->name();
@@ -1661,10 +1741,11 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 
   //   int n = mesh_->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
   //   AmanziMesh::Entity_ID_List set_own;
-  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED, &set_own);
+  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED,
+  //   &set_own);
 
   //   // Set sizes had better be the same.
-  //   if (mesh_->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL) != 
+  //   if (mesh_->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL) !=
   //       set_own.size()) {
   //     os_ << "  ERROR: owned and used set sizes differ" << std::endl;
   //     return true;
@@ -1672,9 +1753,8 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 
   //   // Verify that the two sets are identical.
   //   AmanziMesh::Entity_ID_List set_use;
-  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::ALL, &set_use);
-  //   bool bad_data = false;
-  //   for (int j = 0; j < n; ++j)
+  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::ALL,
+  //   &set_use); bool bad_data = false; for (int j = 0; j < n; ++j)
   //     if (set_use[j] != set_own[j]) bad_data = true;
   //   if (bad_data) {
   //     os_ << "  ERROR: owned and used sets differ" << std::endl;
@@ -1687,11 +1767,13 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 
   //   int n = mesh_->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
   //   AmanziMesh::Entity_ID_List set_own;
-  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED, &set_own);
+  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED,
+  //   &set_own);
 
   //   n = mesh_->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL);
   //   AmanziMesh::Entity_ID_List set_use(n);
-  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::ALL, &set_use);
+  //   mesh_->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::ALL,
+  //   &set_use);
 
   //   // Tag all LIDs in the used map that should belong to the used set;
   //   // the owned set LIDs are taken as definitive.
@@ -1715,9 +1797,8 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
   //   for (int j = 0; j < set_use.size(); ++j)
   //     if (tag_use[j] < 0) bad_LIDs.push_back(j);
   //   if (!bad_LIDs.empty()) {
-  //     os_ << "  ERROR: found used LIDs that belong to the set but shouldn't:";
-  //     write_list(bad_LIDs, MAX_OUT);
-  //     error = true;
+  //     os_ << "  ERROR: found used LIDs that belong to the set but
+  //     shouldn't:"; write_list(bad_LIDs, MAX_OUT); error = true;
   //   }
 
   //   // Check for positive tag values;
@@ -1745,26 +1826,33 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 // that owns a particular face (node) must also own one of the cells containing
 // the face (node).
 
-bool MeshAudit::check_face_partition() const
+bool
+MeshAudit::check_face_partition() const
 {
   // Mark all the faces contained by owned cells.
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
-  AmanziMesh::Entity_ID_List cface;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh_->cell_map(false)->getNodeNumElements(); ++j) {
-    mesh_->cell_get_faces(j, &cface);
-    for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
+  Kokkos::View<int*> dfaces;
+  for (AmanziMesh::Entity_ID j = 0;
+       j < mesh_->cell_map(false)->getNodeNumElements();
+       ++j) {
+    mesh_->cell_get_faces_and_dirs(j, cface, dfaces);
+    for (int k = 0; k < cface.extent(0); ++k) owned[cface(k)] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_faces;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh_->face_map(false)->getNodeNumElements(); ++j)
+  for (AmanziMesh::Entity_ID j = 0;
+       j < mesh_->face_map(false)->getNodeNumElements();
+       ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
   if (!bad_faces.empty()) {
     os_ << "ERROR: found orphaned owned faces:";
     write_list(bad_faces, MAX_OUT);
-    os_ << "       Process doesn't own either of the cells sharing the face." << std::endl;
+    os_ << "       Process doesn't own either of the cells sharing the face."
+        << std::endl;
     return true;
   }
 
@@ -1772,26 +1860,32 @@ bool MeshAudit::check_face_partition() const
 }
 
 
-bool MeshAudit::check_node_partition() const
+bool
+MeshAudit::check_node_partition() const
 {
   // Mark all the nodes contained by owned cells.
   bool owned[nnode];
   for (int j = 0; j < nnode; ++j) owned[j] = false;
-  AmanziMesh::Entity_ID_List cnode;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh_->cell_map(false)->getNodeNumElements(); ++j) {
-    mesh_->cell_get_nodes(j, &cnode);
-    for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
+  Kokkos::View<AmanziMesh::Entity_ID*> cnode;
+  for (AmanziMesh::Entity_ID j = 0;
+       j < mesh_->cell_map(false)->getNodeNumElements();
+       ++j) {
+    mesh_->cell_get_nodes(j, cnode);
+    for (int k = 0; k < cnode.extent(0); ++k) owned[cnode(k)] = true;
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_nodes;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh_->node_map(false)->getNodeNumElements(); ++j)
+  for (AmanziMesh::Entity_ID j = 0;
+       j < mesh_->node_map(false)->getNodeNumElements();
+       ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 
   if (!bad_nodes.empty()) {
     os_ << "ERROR: found orphaned owned nodes:";
     write_list(bad_nodes, MAX_OUT);
-    os_ << "       Process doesn't own any of the cells containing the node." << std::endl;
+    os_ << "       Process doesn't own any of the cells containing the node."
+        << std::endl;
     return true;
   }
 
@@ -1800,11 +1894,15 @@ bool MeshAudit::check_node_partition() const
 
 // Returns true if the values in the list are distinct -- no repeats.
 
-bool MeshAudit::distinct_values(const AmanziMesh::Entity_ID_List &list) const
+bool
+MeshAudit::distinct_values(
+  const Kokkos::View<AmanziMesh::Entity_ID*>& list) const
 {
-  AmanziMesh::Entity_ID_List copy(list);
-  sort(copy.begin(), copy.end());
-  return (adjacent_find(copy.begin(),copy.end()) == copy.end());
+  Kokkos::View<AmanziMesh::Entity_ID*> copy(list);
+
+  sort(copy.data(), copy.data() + copy.extent(0));
+  return (adjacent_find(copy.data(), copy.data() + copy.extent(0)) ==
+          copy.data() + copy.extent(0));
 }
 
 
@@ -1814,16 +1912,18 @@ bool MeshAudit::distinct_values(const AmanziMesh::Entity_ID_List &list) const
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
 
-int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMesh::Entity_ID_List fnode2) const
+int
+MeshAudit::same_face(const Kokkos::View<AmanziMesh::Entity_ID*> fnode1,
+                     const AmanziMesh::Entity_ID_List fnode2) const
 {
-  int nn = fnode1.size();
+  int nn = fnode1.extent(0);
 
   if (nn != fnode2.size()) return 0;
 
   // Locate position in fnode1 of fnode2[0].
   int i, n;
   for (i = 0, n = -1; i < nn; ++i)
-    if (fnode1[i] == fnode2[0]) {
+    if (fnode1(i) == fnode2[0]) {
       n = i;
       break;
     }
@@ -1831,43 +1931,46 @@ int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMe
 
   if (nn == 2) {
     // These are edges in a 2D mesh
-    
-    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
-    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
-    
-    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
-    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
 
-  }
-  else {
+    if (n == 0 && fnode1(1) == fnode2[1]) return 1;
+    if (n == 1 && fnode1(0) == fnode2[1]) return -1;
+
+    if (n == 0 && fnode1(1) == fnode2[1]) return 1;
+    if (n == 1 && fnode1(0) == fnode2[1]) return -1;
+
+  } else {
     for (i = 1; i < nn; ++i)
-      if (fnode1[(n+i)%nn] != fnode2[i]) break;
-    if (i == nn) return 1;  // they match
+      if (fnode1((n + i) % nn) != fnode2[i]) break;
+    if (i == nn) return 1; // they match
 
     // Modify the permutation to reverse the orientation of fnode1.
-    
+
     for (i = 1; i < nn; ++i)
-      if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
-    if (i == nn) return -1;   // matched nodes but orientation is reversed
+      if (fnode1((n - i + nn) % nn) != fnode2[i]) break;
+    if (i == nn) return -1; // matched nodes but orientation is reversed
   }
 
   return 0; // different faces
 }
 
 
-void MeshAudit::write_list(const AmanziMesh::Entity_ID_List &list, unsigned int max_out) const
+void
+MeshAudit::write_list(const AmanziMesh::Entity_ID_List& list,
+                      unsigned int max_out) const
 {
-  int num_out = min((unsigned int) list.size(), max_out);
+  int num_out = min((unsigned int)list.size(), max_out);
   for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
-  if (num_out < list.size()) os_ << " [" << list.size()-num_out << " items omitted]";
+  if (num_out < list.size())
+    os_ << " [" << list.size() - num_out << " items omitted]";
   os_ << std::endl;
 }
 
-bool MeshAudit::global_any(bool value) const
+bool
+MeshAudit::global_any(bool value) const
 {
-  int lval=value, gval;
+  int lval = value, gval;
   Teuchos::reduceAll(*comm_, Teuchos::REDUCE_MAX, 1, &lval, &gval);
   return gval;
 }
 
-} // close namespace Amanzi
+} // namespace Amanzi

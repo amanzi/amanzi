@@ -1,14 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLogical: A region defined by a logical operation on one or two other regions
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
+  Authors:
+      Rao Garimella
 */
+
+//! RegionLogical: A region defined by a logical operation on one or two other
+//! regions
 
 /*!
 
@@ -33,7 +34,8 @@ Example:
   <ParameterList name="LOWER_LAYERs">
     <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="union"/>
-      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2,
+Bottom}"/>
     </ParameterList>
   </ParameterList>
 
@@ -49,25 +51,26 @@ namespace AmanziGeometry {
 
 class RegionLogical : public Region {
  public:
-
-  // constructor 
-  RegionLogical(const std::string& name, 
-                const int id, 
+  // constructor
+  RegionLogical(const std::string& name, const int id,
                 const std::string& operation_str,
                 const std::vector<std::string>& component_regions,
-                const LifeCycleType lifecycle=PERMANENT);
-  
+                const LifeCycleType lifecycle = PERMANENT);
+
   // Label in the file
   BoolOpType operation() const { return operation_; }
 
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-  std::vector<std::string> component_regions() const { return component_regions_; }
+  std::vector<std::string> component_regions() const
+  {
+    return component_regions_;
+  }
 
-protected:  
-  BoolOpType operation_;  // what logical operation should be performed
-  std::vector<std::string> component_regions_;  // names of regions in operation
+ protected:
+  BoolOpType operation_; // what logical operation should be performed
+  std::vector<std::string> component_regions_; // names of regions in operation
 };
 
 } // namespace AmanziGeometry

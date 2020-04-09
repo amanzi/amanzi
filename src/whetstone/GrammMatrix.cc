@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -20,11 +20,11 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Gramm matrix G for polynomials.
-****************************************************************** */
-void GrammMatrix(
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G)
+ * Gramm matrix G for polynomials.
+ ****************************************************************** */
+void
+GrammMatrix(const Polynomial& poly, const PolynomialOnMesh& integrals,
+            const Basis_Regularized& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
@@ -40,24 +40,22 @@ void GrammMatrix(
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
-      
-      for (int i = 0; i < d; ++i) {
-        multi_index[i] = index[i] + jndex[i];
-      }
 
-      int pos = PolynomialPosition(d, multi_index); 
-      G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel; 
+      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
+
+      int pos = PolynomialPosition(d, multi_index);
+      G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel;
     }
   }
 }
 
 /* ******************************************************************
-* Gramm matrix for gradient of polynomials with tensorial weight.
-****************************************************************** */
-void GrammMatrixGradients(
-    const Tensor& K, 
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G)
+ * Gramm matrix for gradient of polynomials with tensorial weight.
+ ****************************************************************** */
+void
+GrammMatrixGradients(const Tensor& K, const Polynomial& poly,
+                     const PolynomialOnMesh& integrals,
+                     const Basis_Regularized& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
@@ -66,7 +64,7 @@ void GrammMatrixGradients(
   Tensor Ktmp(d, 2);
   if (K.rank() == 2)
     Ktmp = K;
-  else 
+  else
     Ktmp.MakeDiagonal(K(0, 0));
 
   int multi_index[3];
@@ -79,10 +77,8 @@ void GrammMatrixGradients(
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
-      
-      for (int i = 0; i < d; ++i) {
-        multi_index[i] = index[i] + jndex[i];
-      }
+
+      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
 
       double sum(0.0), tmp;
       for (int i = 0; i < d; ++i) {
@@ -104,11 +100,10 @@ void GrammMatrixGradients(
         }
       }
 
-      G(l, k) = G(k, l) = sum * scalek * scalel; 
+      G(l, k) = G(k, l) = sum * scalek * scalel;
     }
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

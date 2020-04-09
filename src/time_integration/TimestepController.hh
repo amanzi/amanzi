@@ -1,15 +1,14 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  Virtual interface for timestep adaptation.
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_TIMESTEP_CONTROLLER_HH_
 #define AMANZI_TIMESTEP_CONTROLLER_HH_
@@ -19,15 +18,14 @@
 namespace Amanzi {
 
 class TimestepController {
-
-public:
+ public:
   // virtual destructor
-  virtual ~TimestepController() {};
+  virtual ~TimestepController(){};
 
   // single method for timestep control
   virtual double get_timestep(double dt, int iterations) = 0;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -1,13 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -41,25 +42,26 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist)
-    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist) {};
-  ~MyRemapDG() {};
+    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist){};
+  ~MyRemapDG(){};
 
-  // access 
+  // access
   const std::vector<WhetStone::VectorPolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
-* Remap of polynomilas in two dimensions. Explicit time scheme.
-* Dual formulation places gradient and jumps on a test function.
-***************************************************************** */
-void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
-                      std::string map_name, std::string file_name,
-                      int nx, int ny, int nz, double dt,
-                      int deform = 1) {
+ * Remap of polynomilas in two dimensions. Explicit time scheme.
+ * Dual formulation places gradient and jumps on a test function.
+ ***************************************************************** */
+void
+RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
+                 std::string map_name, std::string file_name, int nx, int ny,
+                 int nz, double dt, int deform = 1)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -76,7 +78,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   int order = plist.sublist("PK operator")
-                   .sublist("flux operator").get<int>("method order");
+                .sublist("flux operator")
+                .get<int>("method order");
 
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
@@ -91,23 +94,23 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string map_name = map_list.get<std::string>("map name");
-      
+
     std::cout << "\nTest: " << dim << "D remap:"
               << " mesh=" << ((ny == 0) ? file_name : "square")
               << " deform=" << deform << std::endl;
 
-    std::cout << "      discretization: order=" << order 
-              << ", map=" << map_name << std::endl;
+    std::cout << "      discretization: order=" << order << ", map=" << map_name
+              << std::endl;
 
-    std::cout << "      map details: order=" << vel_order 
-              << ", projector=" << vel_projector 
-              << ", method=\"" << vel_method << "\"" << std::endl;
+    std::cout << "      map details: order=" << vel_order
+              << ", projector=" << vel_projector << ", method=\"" << vel_method
+              << "\"" << std::endl;
   }
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
+  // meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  meshfactory.set_preference(Preference({ AmanziMesh::Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
@@ -117,25 +120,31 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   } else if (dim == 2) {
     mesh0 = meshfactory.create(file_name);
     mesh1 = meshfactory.create(file_name);
-  } else { 
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+  } else {
+    mesh0 =
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh1 =
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
   }
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  // create and initialize cell-based field 
+  // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, nk);
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
   // we need dg to use correct scaling of basis functions
-  Teuchos::ParameterList dglist = plist.sublist("PK operator").sublist("flux operator");
+  Teuchos::ParameterList dglist =
+    plist.sublist("PK operator").sublist("flux operator");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dglist, mesh0));
 
   AnalyticDG04 ana(mesh0, order, true);
@@ -168,7 +177,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.NonConservativeToConservative(0.0, *p1, p1aux);
 
   double t(0.0), tend(1.0);
-  while(t < tend - dt/2) {
+  while (t < tend - dt / 2) {
     // remap.ApplyLimiter(t, p1aux);
     rk.TimeStep(t, dt, p1aux, *p1);
     *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
@@ -184,24 +193,29 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   CompositeVectorSpace cvs3;
-  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, 1);
 
   CompositeVector q2(p2);
   Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
   q2c = p2c;
 
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
-  ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+  ana.ComputeCellErrorRemap(
+    *dg, p2c, tend, 0, mesh1, pnorm, l2_err, inf_err, l20_err, inf0_err);
 
   CHECK(l2_err < 0.12 / (order + 1));
 
   if (getRank == 0) {
-    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n",
+           nx,
+           l20_err,
+           l2_err,
+           inf0_err,
+           inf_err);
   }
 
-  // optional projection on the space of polynomials 
+  // optional projection on the space of polynomials
   for (int c = 0; c < ncells_owned; ++c) {
     const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
     const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
@@ -218,12 +232,16 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     }
   }
 
-  ana.ComputeCellErrorRemap(*dg, q2c, tend, 1, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+  ana.ComputeCellErrorRemap(
+    *dg, q2c, tend, 1, mesh1, pnorm, l2_err, inf_err, l20_err, inf0_err);
 
   if (getRank == 0) {
-    printf("nx=%3d (proj) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (proj) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n",
+           nx,
+           l20_err,
+           l2_err,
+           inf0_err,
+           inf_err);
   }
 
   // concervation errors: mass and volume (CGL)
@@ -232,7 +250,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c][0]);
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->cell_volume(c, false);
 
     area += vol1;
     area1 += vol2;
@@ -283,7 +301,9 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   if (getRank == 0) {
     printf("Conservation: dMass=%10.4g  dVol=%10.6g  dVolLinear=%10.6g\n",
-           mass1 - mass0, 1.0 - area, 1.0 - area1);
+           mass1 - mass0,
+           1.0 - area,
+           1.0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
 
@@ -298,12 +318,13 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   io.FinalizeCycle();
 }
 
-TEST(REMAP_DUAL_2D) {
+TEST(REMAP_DUAL_2D)
+{
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
-  RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
+  RemapTestsDualRK(rk_method, "FEM", "", 10, 10, 0, dT);
 
-  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
+  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0, 0, 0, dT / 2);
   // RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT);
 
   /*
@@ -323,11 +344,12 @@ TEST(REMAP_DUAL_2D) {
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 4;
-  RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median255x256.exo", 256,0,0, dT/16,deform);
+  RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,
+  deform); RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0,
+  dT/2, deform); RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",
+  64,0,0, dT/4, deform); RemapTestsDualRK(rk_method, maps,
+  "test/median127x128.exo", 128,0,0, dT/8, deform); RemapTestsDualRK(rk_method,
+  maps, "test/median255x256.exo", 256,0,0, dT/16,deform);
   */
 
   /*
@@ -335,10 +357,11 @@ TEST(REMAP_DUAL_2D) {
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 4;
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly20x20.exo",    20,0,0, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly40x40.exo",    40,0,0, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly80x80.exo",    80,0,0, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly160x160.exo", 160,0,0, dT/8, deform);
+  RemapTestsDualRK(rk_method, maps, "test/mesh_poly20x20.exo",    20,0,0, dT,
+  deform); RemapTestsDualRK(rk_method, maps, "test/mesh_poly40x40.exo", 40,0,0,
+  dT/2, deform); RemapTestsDualRK(rk_method, maps, "test/mesh_poly80x80.exo",
+  80,0,0, dT/4, deform); RemapTestsDualRK(rk_method, maps,
+  "test/mesh_poly160x160.exo", 160,0,0, dT/8, deform);
   */
 
   /*
@@ -362,4 +385,3 @@ TEST(REMAP_DUAL_2D) {
   RemapTestsDualRK(rk_method, maps, "test/triangular128.exo",0,0,0, dT/16);
   */
 }
-

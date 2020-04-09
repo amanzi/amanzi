@@ -45,7 +45,7 @@ add_feature_info(DBC
                  ENABLE_DBC
                  "Toggle design by contract (DBC) checking")
 if (ENABLE_DBC)
-  add_definitions("-D ENABLE_DBC")
+  add_definitions("-DENABLE_DBC")
 endif()    
 
 # Trilinos error checking is defined in macros

@@ -1,98 +1,81 @@
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License:
-Author: Markus Berndt
+  Authors:
+      Ethan Coon
+      Markus Berndt
+*/
 
-Checkpointing for state.
+//! Checkpoint writes ALL data, but no meshes to files.
 
-NOTE: Should make this class RAII
-------------------------------------------------------------------------- */
+/*
+  Reads/writes to/from file using a generic Input/Output object.
+*/
 
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObject.hpp"
-#include "Epetra_Vector.h"
 
-#include "AmanziTypes.hh"
-
-//#include "HDF5_MPI.hh"
 #include "IOEvent.hh"
+#include "Output.hh"
+#include "Input.hh"
 
 namespace Amanzi {
 
 class Checkpoint : public IOEvent {
+ public:
+  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+             bool read = false);
 
-public:
-  // standard output constructor
-  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
+  // start/finish checkpoint writing
+  void CreateFile(double time, int cycle);
+  void FinalizeFile(bool final = false);
 
-  // standard input constructor
-  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
+  // user-provided writing
+  template <typename T>
+  typename std::enable_if<!Output::writes<T>::value>::type
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
+    UserWriteCheckpoint(*this, attrs, t);
+  }
 
-  // this object will not create any output
-  Checkpoint();
+  // output-provided writing
+  template <typename T>
+  typename std::enable_if<Output::writes<T>::value>::type
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
+    output_->Write(attrs, t);
+  }
 
-  // public interface for coordinator clients
-  void CreateFile(int cycle);
+  // user-provided reading
+  template <typename T>
+  typename std::enable_if<!Input::reads<T>::value>::type
+  Read(const Teuchos::ParameterList& attrs, T& t) const
+  {
+    UserReadCheckpoint(*this, attrs, t);
+  }
 
-  template <typename T> void Write(const std::string &name, const T &t) const;
-  template <typename T> void Read(const std::string &name, T &t) const {}
+  // input-provided reading
+  template <typename T>
+  typename std::enable_if<Input::reads<T>::value>::type
+  Read(const Teuchos::ParameterList& attrs, T& t) const
+  {
+    input_->Read(attrs, t);
+  }
 
-  void SetFinal(bool fnl) { final_ = fnl; }
-  bool IsFinal() { return final_; }
-  void Finalize();
-
-  void set_filebasename(std::string base) { filebasename_ = base; }
-
-protected:
-  void ReadParameters_();
-
-  std::string filebasename_;
-  int filenamedigits_;
-  int restart_cycle_;
-  bool final_;
-
-  // the Epetra communicator
+ protected:
   Comm_ptr_type comm_;
-  //  Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
+
+  std::unique_ptr<Output> output_;
+  std::unique_ptr<Input> input_;
+
+  std::string filename_base_;
 };
 
-template <>
-inline void Checkpoint::Write<Epetra_Vector>(const std::string &name,
-                                             const Epetra_Vector &t) const {
-  //checkpoint_output_->writeCellDataReal(t, name);
-}
-
-template <>
-inline void Checkpoint::Write<double>(const std::string &name,
-                                      const double &t) const {
-  //checkpoint_output_->writeAttrReal(t, name);
-}
-
-template <>
-inline void Checkpoint::Write<int>(const std::string &name,
-                                   const int &t) const {
-  //checkpoint_output_->writeAttrInt(t, name);
-}
-
-template <>
-inline void Checkpoint::Read<Epetra_Vector>(const std::string &name,
-                                            Epetra_Vector &t) const {
-  //checkpoint_output_->readData(t, name);
-}
-
-template <>
-inline void Checkpoint::Read<double>(const std::string &name, double &t) const {
-  //checkpoint_output_->readAttrReal(t, name);
-}
-
-template <>
-inline void Checkpoint::Read<int>(const std::string &name, int &t) const {
-  //checkpoint_output_->readAttrInt(t, name);
-}
 
 } // namespace Amanzi
 

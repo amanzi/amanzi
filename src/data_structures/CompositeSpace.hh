@@ -1,12 +1,15 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
-           Daniil Svyatsky (dasvyat@lanl.gov)
+  Authors:
+      Ethan Coon
+      Daniil Svyatsky (dasvyat@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 /*
   A CompositeSpace is a BlockSpace where all maps come from a specific mesh.
@@ -49,7 +52,7 @@ class CompositeSpace : public BlockSpace {
                  const std::map<std::string, BlockMap_ptr_type>& master_maps,
                  const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
                  const std::map<std::string, std::size_t>& num_vectors,
-                 bool ghosted);                 
+                 bool ghosted);
 
   CompositeSpace(const CompositeSpace& other) = default;
   CompositeSpace& operator=(const CompositeSpace&) = default;

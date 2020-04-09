@@ -1,8 +1,16 @@
 /*
- State
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
- Tests for state as a container of meshes
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
+
+// Tests for state as a container of meshes
 
 // TPLs
 #include "UnitTest++.h"
@@ -11,11 +19,12 @@
 #include "MeshFactory.hh"
 #include "State.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
-  auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+  auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
   State s;
   s.RegisterDomainMesh(mesh);

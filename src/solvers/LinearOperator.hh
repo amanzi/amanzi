@@ -1,16 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//!  Base class for linear solvers.
+//! Base class for linear solvers.
 
 /*!
 
@@ -19,7 +18,7 @@
 * `"iterative method type`" ``[string]`` Iterative method to be used.
 * `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
   Parameters associated with the requested iterative method.
-  
+
  */
 
 
@@ -37,38 +36,48 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Matrix, class Vector, class VectorSpace>
-class LinearOperator : public Matrix {
+template <class Matrix, class Vector, class VectorSpace>
+class LinearOperator {
  public:
   LinearOperator(const Teuchos::RCP<const Matrix>& m,
-                 const Teuchos::RCP<const Matrix>& h) :
-      Matrix(),
-      m_(m),
-      h_(h)
-  {};
+                 const Teuchos::RCP<const Matrix>& h)
+    : m_(m), h_(h){};
 
-  virtual ~LinearOperator() {};
+  virtual ~LinearOperator() = default;
 
   virtual void Init(Teuchos::ParameterList& plist) = 0;
-  void Init() { 
+  void Init()
+  {
     Teuchos::ParameterList plist;
     Init(plist);
   }
 
   // standard interface recommended in MatrixBase.hh
-  virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
+  virtual int apply(const Vector& v, Vector& mv) const
+  {
+    std::cout << "In LinOp::Apply: v = " << v.norm2();
+    return m_->apply(v, mv);
+    std::cout << " mv = " << mv.norm2() << std::endl;
+  }
+  virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
 
-  virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
-  virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
+  virtual const Teuchos::RCP<const VectorSpace>& getDomainMap() const
+  {
+    return this->m_->getDomainMap();
+  }
+  virtual const Teuchos::RCP<const VectorSpace>& getRangeMap() const
+  {
+    return this->m_->getRangeMap();
+  }
 
-  double TrueResidual(const Vector& f, const Vector& v) const {
+  double TrueResidual(const Vector& f, const Vector& v) const
+  {
     Vector r(f);
-    m_->Apply(v, r);  // r = f - M * x
-    r.Update(1.0, f, -1.0);
+    m_->apply(v, r); // r = f - M * x
+    r.update(1.0, f, -1.0);
 
     double true_residual;
-    r.Norm2(&true_residual);
+    true_residual = r.norm2();
     return true_residual;
   }
 
@@ -82,19 +91,21 @@ class LinearOperator : public Matrix {
   void set_name(std::string name) { name_ = name; }
 
   // to recuperate from a crash, we post-process errors here
-  Errors::Message DecodeErrorCode(int ierr) {
+  Errors::Message DecodeErrorCode(int ierr)
+  {
     Errors::Message msg;
-    switch(ierr) {
+    switch (ierr) {
     case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY:
-         msg << "Linear system is not SPD.\n";
+      msg << "Linear system is not SPD.\n";
     case AmanziSolvers::LIN_SOLVER_NON_SPD_APPLY_INVERSE:
-         msg << "Linear system is not SPD.\n";
+      msg << "Linear system is not SPD.\n";
     case AmanziSolvers::LIN_SOLVER_MAX_ITERATIONS:
-         msg << "Maximum iterations are reached in solution of linear system.\n";
+      msg << "Maximum iterations are reached in solution of linear system.\n";
     case AmanziSolvers::LIN_SOLVER_RESIDUAL_OVERFLOW:
-         msg << "Residual overflow in solution of linear system.\n";
+      msg << "Residual overflow in solution of linear system.\n";
     default:
-         msg << "\nLinear solver returned an unrecoverable error code: " << ierr << ".\n";
+      msg << "\nLinear solver returned an unrecoverable error code: " << ierr
+          << ".\n";
     }
     return msg;
   }
@@ -106,12 +117,11 @@ class LinearOperator : public Matrix {
 
  private:
   LinearOperator();
-  LinearOperator(const LinearOperator<Matrix,Vector,VectorSpace>& other); // specifically not implemented
+  LinearOperator(const LinearOperator<Matrix, Vector, VectorSpace>&
+                   other); // specifically not implemented
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
- 
-#endif
-               
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
+#endif

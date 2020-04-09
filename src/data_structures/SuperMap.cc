@@ -1,23 +1,26 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
 
-//! SuperMap class provides a convenient way of creating and using SuperMapLumped
+//! SuperMap class provides a convenient way of creating and using
+//! SuperMapLumped
 
 /*
-  Amanzi uses SuperMapLumped in a few different ways that make its natural interface
-  not that convenient.  SuperMapLumped also has a few limitations that simplify its
-  design and implementaiton a great deal.
+  Amanzi uses SuperMapLumped in a few different ways that make its natural
+  interface not that convenient.  SuperMapLumped also has a few limitations that
+  simplify its design and implementaiton a great deal.
 
   This class is a Helper class in that it wraps a SuperMapLumped, providing a
   related interface that is better designed for users.
 
-  It also enforces and mitigates the design limitations of SuperMapLumped itself.
+  It also enforces and mitigates the design limitations of SuperMapLumped
+  itself.
 */
 
 #include "AmanziVector.hh"
@@ -38,7 +41,7 @@ namespace Operators {
 Teuchos::RCP<SuperMap>
 createSuperMap(const Teuchos::Ptr<const BlockSpace>& cv)
 {
-  return Teuchos::rcp(new SuperMap(cv->Comm(), {cv}));
+  return Teuchos::rcp(new SuperMap(cv->Comm(), { cv }));
 }
 
 Teuchos::RCP<SuperMap>
@@ -52,16 +55,15 @@ createSuperMap(const TreeVectorSpace& tvs)
     // grab the leaf nodes
     auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
-    std::vector<Teuchos::Ptr<const BlockSpace> > cvss;
-    for (auto a_tvs : tvss) {
-      cvss.push_back(a_tvs->Data().ptr());
-    }
+    std::vector<Teuchos::Ptr<const BlockSpace>> cvss;
+    for (auto a_tvs : tvss) { cvss.push_back(a_tvs->Data().ptr()); }
     return Teuchos::rcp(new SuperMap(tvs.Comm(), cvss));
   }
 }
 
 
-SuperMap::SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<const BlockSpace> >& cvss)
+SuperMap::SuperMap(const Comm_ptr_type& comm,
+                   const std::vector<Teuchos::Ptr<const BlockSpace>>& cvss)
 {
   std::vector<std::string> names;
   std::map<std::string, std::size_t> dofnums;
@@ -69,32 +71,36 @@ SuperMap::SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<con
   std::map<std::string, BlockMap_ptr_type> ghost_maps;
 
   // this groups maps by map equivalence, not component names.
-  
+
   // loop over nodes, finding unique component names on unique meshes
   std::size_t block_num = 0;
   for (auto cvs : cvss) {
     for (const auto& compname : *cvs) {
       // check if this component's map matches any previously accepted map
       auto this_map = cvs->ComponentMap(compname, false);
-      auto index_iter = std::find_if(master_maps.begin(), master_maps.end(),
-              [=](const std::pair<const std::string, const BlockMap_ptr_type>& m)
-              { return this_map->locallySameAs(*m.second); } );
+      auto index_iter = std::find_if(
+        master_maps.begin(),
+        master_maps.end(),
+        [=](const std::pair<const std::string, const BlockMap_ptr_type>& m) {
+          return this_map->locallySameAs(*m.second);
+        });
       if (index_iter == master_maps.end()) {
         // new map with no previous matches, keep the map
         // -- ensure this name is unique by appending the block_num
-        std::string compname_unique = compname+"-"+std::to_string(block_num);
+        std::string compname_unique =
+          compname + "-" + std::to_string(block_num);
         names.push_back(compname_unique);
         master_maps[compname_unique] = this_map;
         ghost_maps[compname_unique] = cvs->ComponentMap(compname, true);
 
-        std::size_t this_dofnum = cvs->NumVectors(compname);
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
         dofnums[compname_unique] = this_dofnum;
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
-        for (std::size_t dnum=0; dnum!=this_dofnum; ++dnum) {
+        for (std::size_t dnum = 0; dnum != this_dofnum; ++dnum) {
           block_info_[std::make_tuple(block_num, compname, dnum)] =
-              std::make_pair(compname_unique, dnum);
+            std::make_pair(compname_unique, dnum);
         }
 
       } else {
@@ -104,24 +110,26 @@ SuperMap::SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<con
         // too?  If this assert ever throws, it can be added to the above
         // lambda, to ensure that both the owned map and the ghosted map are
         // the same.
-        AMANZI_ASSERT(cvs->ComponentMap(compname, true)->locallySameAs(*ghost_maps[index_iter->first]));
+        AMANZI_ASSERT(cvs->ComponentMap(compname, true)
+                        ->locallySameAs(*ghost_maps[index_iter->first]));
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
-        std::size_t this_dofnum = cvs->NumVectors(compname);
-        for (std::size_t dnum=0; dnum!=this_dofnum; ++dnum) {
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
+        for (std::size_t dnum = 0; dnum != this_dofnum; ++dnum) {
           block_info_[std::make_tuple(block_num, compname, dnum)] =
-              std::make_pair(index_iter->first, dnum+dofnums[index_iter->first]);
+            std::make_pair(index_iter->first,
+                           dnum + dofnums[index_iter->first]);
         }
         dofnums[index_iter->first] += this_dofnum;
-
       }
     }
     block_num++;
   }
 
   if (cvss.size() > 0) {
-    auto block_map = Teuchos::rcp(new BlockSpace(comm, names, master_maps, ghost_maps, dofnums));
+    auto block_map = Teuchos::rcp(
+      new BlockSpace(comm, names, master_maps, ghost_maps, dofnums));
     smap_ = std::make_unique<SuperMapLumped>(block_map);
   }
 }

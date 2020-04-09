@@ -1,16 +1,14 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
-
-//!  Timestep controller which loads a timestep history from file.
+//! Timestep controller which loads a timestep history from file.
 
 /*!
 
@@ -22,7 +20,8 @@ number of iterations enough to alter the timestep history, resulting in
 solutions which are enough different to cause doubt over their correctness.
 
 * `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
-* `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
+* `"timestep header`" ``[string]`` Name of the dataset containing the history of
+timestep sizes.
 
 */
 
@@ -39,7 +38,6 @@ solutions which are enough different to cause doubt over their correctness.
 namespace Amanzi {
 
 class TimestepControllerFromFile : public TimestepController {
-
  public:
   TimestepControllerFromFile(Teuchos::ParameterList& plist);
 

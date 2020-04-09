@@ -19,13 +19,21 @@ include(LibraryManager)
 # through these variables.
 project(DBC)
 
+if(AMANZI_ARCH STREQUAL "Summit")
+  message(STATUS "SUMMIT ARCH")
+  message(STATUS "INCLUDE: ${Kokkos_INCLUDE_DIRS}")
+  message(STATUS "INCLUDE: ${CUDA_INCLUDE_DIRS}")
+  include_directories(${Kokkos_INCLUDE_DIRS})
+  include_directories(${CUDA_INCLUDE_DIRS})
+endif()
+
 
 #
 # Library Target: error_handling
 #
 file(GLOB dbc_lib_files "*.cc")
 file(GLOB dbc_inc_files "*.hh")
-add_amanzi_library(error_handling SOURCE ${dbc_lib_files} HEADERS ${dbc_inc_files})
+add_amanzi_library(error_handling SOURCE ${dbc_lib_files} HEADERS ${dbc_inc_files} LINK_LIBS ${Kokkos_LIBRARIES} ${CUDA_LIBRARIES})
 
 if (BUILD_TESTS)
   # Get the UnitTest libraries

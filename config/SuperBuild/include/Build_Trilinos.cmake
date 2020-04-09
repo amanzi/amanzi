@@ -169,6 +169,7 @@ if (Trilinos_Build_Config_File)
     message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
 
+set(Trilinos_CMAKE_CXX_FLAGS ${Amanzi_COMMON_CXXFLAGS})
 
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS
@@ -177,29 +178,46 @@ set(Trilinos_CMAKE_ARCH_ARGS
         "-DKokkos_ENABLE_Pthread:BOOL=OFF"
         )
 
-if ( ${AMANZI_ARCH} STREQUAL "Summit" )
-   message("GOT SUMMIT! : ${AMANZI_ARCH}")
+# By default compiler with the standard mpi compiler 
+set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+message(STATUS "Trilinos COMPILER: ${Trilinos_CXX_COMPILER}")
+
+if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
+   message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
+     message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
+   endif() 
+   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
+   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+        -Wno-deprecated-declarations -lineinfo \
+        -Xcudafe --diag_suppress=conversion_function_not_usable \
+        -Xcudafe --diag_suppress=cc_clobber_ignored \
+        -Xcudafe --diag_suppress=code_is_unreachable")
+   message("Wrapper: ${NVCC_WRAPPER_PATH}")
+   message("COMPILR: ${CMAKE_CXX_COMPILER}")
+   message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_Cuda:BOOL=ON"
+        "-DTrilinos_ENABLE_STK:BOOL=OFF"
+	"-DTPL_ENABLE_CUDA:BOOL=ON"
+	"-DKokkos_ENABLE_Cuda:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-        "-DKOKKOS_ENABLE_CUDA_UVM:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-        "-DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON"
-        "-DTPL_ENABLE_CUDA:BOOL=ON"
-        "-DKOKKOS_ARCH:STRING=Power9,Volta70")
+        "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
+   # Change the default compiler for Trilinos to use nvcc_wrapper 
+   set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
  else()
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_CUDA:BOOL=OFF")               
- endif()   
+        "-DKokkos_ENABLE_CUDA:BOOL=OFF")
+ endif()
 
-#  - Final Trilinos CMake Arguments 
-set(Trilinos_CMAKE_ARGS 
+#  - Final Trilinos CMake Arguments
+set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_PACKAGE_ARGS}
    ${Trilinos_CMAKE_TPL_ARGS}
    ${Trilinos_CMAKE_ARCH_ARGS}
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
-
 
 #  --- Define the Trilinos patch step
 #
@@ -218,54 +236,6 @@ else()
   message(STATUS "Patch NOT APPLIED for trilinos")
 endif()
 
-# Trilinos needs a patch for GNU versions > 4.6
-#LPRITCHif ( CMAKE_CXX_COMPILER_VERSION )
-#LPRITCH  if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-#LPRITCH    if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
-#LPRITCH      set(ENABLE_Trilinos_Patch OFF)
-#LPRITCH    else()
-#LPRITCH      message(STATUS "Trilinos requires a patch when using"
-#LPRITCH                     " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-#LPRITCH      set(ENABLE_Trilinos_Patch ON)
-#LPRITCH    endif()
-#LPRITCH  endif()
-#LPRITCHendif()  
-#LPRITCH
-#LPRITCHset(Trilinos_PATCH_COMMAND)
-#LPRITCHif (ENABLE_Trilinos_Patch)
-#LPRITCH    set(Trilinos_patch_file)
-#LPRITCH    # Set the patch file name
-#LPRITCH    if(CMAKE_CXX_COMPILER_VERSION)
-#LPRITCH      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#LPRITCH        if ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.6" )
-#LPRITCH          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
-#LPRITCH                              " for version ${CMAKE_CXX_COMPILER_VERSION}.")
-#LPRITCH        elseif( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" )
-#LPRITCH          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc46.patch)
-#LPRITCH        elseif ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8" )
-#LPRITCH          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc47.patch)
-#LPRITCH        else()
-#LPRITCH          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
-#LPRITCH                             " for version ${CMAKE_CXX_COMPILER_VERSION}.")
-#LPRITCH        endif()
-#LPRITCH      endif()
-#LPRITCH    endif()
-#LPRITCH
-#LPRITCH    #print_variable(Trilinos_patch_file)
-#LPRITCH    if(Trilinos_patch_file)
-#LPRITCH       configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-#LPRITCH                      ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-#LPRITCH                      @ONLY)
-#LPRITCH       set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
-#LPRITCH    else()
-#LPRITCH       message(WARNING "ENABLE_Trilinos_Patch is ON but no patch file found for "
-#LPRITCH                       "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} "
-#LPRITCH                       "Will not patch Trilinos.")
-#LPRITCH    endif()                   
-#LPRITCH                      
-#LPRITCHendif()  
-#print_variable(Trilinos_PATCH_COMMAND)
-
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
 
@@ -276,17 +246,16 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-		    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}                    
-		    #URL          ${Trilinos_URL}                      # URL may be a web site OR a local file
-                    #URL_MD5      ${Trilinos_MD5_SUM}                  # md5sum of the archive file
-                    # -- Patch
-                    PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
+		                GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+                    GIT_TAG ${Trilinos_GIT_TAG}      
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
+			                                -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
+				                              -DTpetraCore_ENABLE_TESTS:BOOL=ON
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
-                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                      -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
                                       -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
@@ -302,11 +271,6 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     # -- Output control
                     ${Trilinos_logging_args}
 		    )
-
-#                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-#                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-#                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-
 
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})

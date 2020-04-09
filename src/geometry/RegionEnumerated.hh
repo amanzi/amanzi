@@ -1,25 +1,26 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionEnumerated: A region enumerated as a list of IDs.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! RegionEnumerated: A region enumerated as a list of IDs.
 
 /*!
 
-List *region: enumerated set* defines a set of mesh entities via the list 
+List *region: enumerated set* defines a set of mesh entities via the list
 of input global ids. Note that global ids are not defined correctly when
 parallle mesh is created on a fly.
 
-* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
+* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*,
+*edge*, *node*
 
 * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
-  
+
 
 Example:
 
@@ -48,21 +49,19 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionEnumerated : public Region {
-public:
-
-  RegionEnumerated(const std::string& name,
-                   const int id,
+ public:
+  RegionEnumerated(const std::string& name, const int id,
                    const std::string& entity_str,
                    const std::vector<Entity_ID>& ents,
-                   const LifeCycleType lifecycle=PERMANENT);
+                   const LifeCycleType lifecycle = PERMANENT);
 
   const std::vector<Entity_ID>& entities() const { return entities_; }
   const std::string& entity_str() const { return entity_str_; }
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-  
-protected:
+
+ protected:
   std::string entity_str_; // what kind of entities make up this set
   const std::vector<Entity_ID> entities_; // list of those included
 };

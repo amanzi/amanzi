@@ -1,13 +1,14 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -23,9 +24,10 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialize operator from parameter list.
-****************************************************************** */
-void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
+ * Initialize operator from parameter list.
+ ****************************************************************** */
+void
+PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList& range = plist.sublist("schema");
 
@@ -37,17 +39,21 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     local_schema_col_ = local_schema_row_;
     global_schema_col_ = global_schema_row_;
 
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    Teuchos::RCP<CompositeVectorSpace> cvs =
+      Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
+    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end();
+         ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
       const auto& maps = Amanzi::getMaps(*mesh_, it->kind);
       cvs->AddComponent(name, it->kind, maps.first, maps.second, it->num);
     }
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    global_op_ = Teuchos::rcp(new Operator_Schema(
+      cvs, cvs, plist, global_schema_row_, global_schema_col_));
+    local_op_ = Teuchos::rcp(
+      new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
 
   } else {
     // constructor was given an Operator
@@ -58,7 +64,8 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     local_schema_row_.Init(range, mesh_);
     local_schema_col_ = local_schema_row_;
 
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    local_op_ = Teuchos::rcp(
+      new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
@@ -70,14 +77,16 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Collection of local matrices.
-* NOTE: Not all input parameters are used yet.
-****************************************************************** */
-void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<const CompositeVector>& p)
+ * Collection of local matrices.
+ * NOTE: Not all input parameters are used yet.
+ ****************************************************************** */
+void
+PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                             const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow =
+    local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
@@ -99,13 +108,13 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 
 
 /* *******************************************************************
-* Apply boundary condition to the local matrices
-******************************************************************* */
-void PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+ * Apply boundary condition to the local matrices
+ ******************************************************************* */
+void
+PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-  }
+  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {}
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

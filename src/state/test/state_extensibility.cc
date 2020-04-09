@@ -1,4 +1,16 @@
 /*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
+/*
  State
 
  Tests for state as a container of data
@@ -9,11 +21,11 @@
 // TPLs
 #include "UnitTest++.h"
 
-#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "AmanziComm.hh"
 #include "MeshFactory.hh"
 
 #include "MeshFactory.hh"
@@ -27,40 +39,37 @@ struct MyPoint {
 
 using MyPointList = std::vector<MyPoint>;
 
-bool inline UserInitialize(Teuchos::ParameterList &plist, MyPointList &t,
-                           const Amanzi::Key &fieldname,
-                           const std::vector<std::string> &subfieldnames) {
-  std::cout << "found it!" << std::endl;
+bool inline UserInitialize(Teuchos::ParameterList& plist,
+                           const Teuchos::ParameterList& attrs, MyPointList& t)
+{
+  std::cout << "Successfully initialized a MyPoint!" << std::endl;
   return true;
 }
 
-void UserWriteVis(const Amanzi::Visualization &vis,
-                  const Amanzi::Key &fieldname,
-                  const std::vector<std::string> &subfieldnames,
-                  const MyPointList &vec) {}
+void
+UserWriteVis(const Amanzi::Visualization& vis,
+             const Teuchos::ParameterList& attrs, const MyPointList& vec)
+{}
+void
+UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
+                    const Teuchos::ParameterList& attrs, const MyPointList& vec)
+{}
+void
+UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+                   const Teuchos::ParameterList& attrs, MyPointList& vec)
+{}
 
-void UserWriteCheckpoint(const Amanzi::Checkpoint &chkp,
-                         const Amanzi::Key &fieldname, const MyPointList &vec) {
-}
-void UserReadCheckpoint(const Amanzi::Checkpoint &chkp,
-                        const Amanzi::Key &fieldname, MyPointList &vec) {}
-
-TEST(STATE_EXTENSIBILITY_CREATION) {
+TEST(STATE_EXTENSIBILITY_CREATION)
+{
   using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   Teuchos::ParameterList region_list;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
-      new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
+    new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  Amanzi::AmanziMesh::FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::MSTK);
-
-  Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> m =
-      meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  auto m = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
   std::string xmlFileName = "test/state_extensibility.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -73,11 +82,9 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
   s.Setup();
   s.InitializeFields();
 
-  Visualization vis(plist->sublist("visualization"));
-  vis.set_mesh(m);
-  vis.CreateFiles();
+  Visualization vis(plist->sublist("visualization"), m);
   WriteVis(vis, s);
 
-  Checkpoint chkp(plist->sublist("checkpoint"), Epetra_MpiComm(MPI_COMM_WORLD));
-  WriteCheckpoint(chkp, comm, s, 0.0);
+  Checkpoint chkp(plist->sublist("checkpoint"), comm);
+  WriteCheckpoint(chkp, s);
 }

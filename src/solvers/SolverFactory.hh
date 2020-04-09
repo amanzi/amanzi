@@ -1,10 +1,11 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
 
 //! A factory for creating nonlinear solvers.
@@ -33,19 +34,18 @@ solver.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector,class VectorSpace>
+template <class Vector, class VectorSpace>
 struct SolverFactory {
  public:
-  Teuchos::RCP<Solver<Vector,VectorSpace> >
-  Create(const std::string& name,
-         const Teuchos::ParameterList& solver_list);
+  Teuchos::RCP<Solver<Vector, VectorSpace>>
+  Create(const std::string& name, const Teuchos::ParameterList& solver_list);
 
-  Teuchos::RCP<Solver<Vector,VectorSpace> >
+  Teuchos::RCP<Solver<Vector, VectorSpace>>
   Create(Teuchos::ParameterList& solver_list);
 };
 
-}  // namespace Amanzisolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

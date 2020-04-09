@@ -1,11 +1,11 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
 //! A factory for creating control-volume logical meshes from segments.
@@ -36,7 +36,8 @@ V_c = sum_{each face in c} length of cell-to-face connector * face area.
     above formula.  Otherwise each segment must provide the `"cell volume`" or
     `"cell volumes`" parameter described below.
 
-* `"segments`" ``[mesh-logical-segment-spec-list]``  List of segment specs below:
+* `"segments`" ``[mesh-logical-segment-spec-list]``  List of segment specs
+below:
 
 Each segment consists of a collection of cells, and it is assumed that
 face-to-cell connectors within the segment are half of the cell length.  For
@@ -96,7 +97,7 @@ end-begin.
 Finally, often tips of segments may be boundaries (faces with boundary
 conditions), no type (i.e. there is no face), junction (at least one, likely
 more, faces will be connected to the end cell eventually), or branch (the tip
-cell will add a face to a junction tip of another segment).  
+cell will add a face to a junction tip of another segment).
 
 * `"first tip type`" ``[string]`` Type of the first tip.  One of `"none`",
    `"boundary`", `"junction`", or `"branch`".
@@ -129,9 +130,9 @@ while still have the correct solution.
 Alternatively, cell centroids can be manually specified (note this is checked
 first):
 
-* `"cell centroids`" ``[Array(double)]`` **optional** A list of dimension * n_cells length,
-    where the first d values specify cell 0's centroid, the next d specify cell
-    1's centroid, etc.
+* `"cell centroids`" ``[Array(double)]`` **optional** A list of dimension *
+n_cells length, where the first d values specify cell 0's centroid, the next d
+specify cell 1's centroid, etc.
 
 Finally, there are a few factory-global options:
 
@@ -146,7 +147,7 @@ coordinate.  In this case, specify:
 
 This option is provided in the `"logical from segments parameters`"
 list.
-    
+
 As an example, consider the confluence of the Allegheny and the Monongahela,
 which come together in Pittsburgh to form the Ohio.  This could be simply
 modeled by three segments:
@@ -158,41 +159,43 @@ modeled by three segments:
       <Parameter name="mesh type" type="string" value="logical from segments" />
       <ParameterList name="logical from segments parameters">
         <Parameter name="cell volumes provided" type="bool" value="false" />
-        <Parameter name="infer segment begin and end coordaintes" type="bool" value="true" />
-        <ParameterList name="segments">
-          <ParameterList name="ohio">
+        <Parameter name="infer segment begin and end coordaintes" type="bool"
+value="true" /> <ParameterList name="segments"> <ParameterList name="ohio">
             <Parameter name="number of cells" type="int" value="10" />
             <Parameter name="segment length [m]" type="double" value="10000." />
-            <Parameter name="cross sectional area [m^2]" type="double" value="300.0" />
-            <Parameter name="first tip" type="Array(double)" value="{0.0,0.0}" />
-            <Parameter name="first tip type" type="string" value="boundary" />
-            <Parameter name="last tip type" type="string" value="junction" />
+            <Parameter name="cross sectional area [m^2]" type="double"
+value="300.0" /> <Parameter name="first tip" type="Array(double)"
+value="{0.0,0.0}" /> <Parameter name="first tip type" type="string"
+value="boundary" /> <Parameter name="last tip type" type="string"
+value="junction" />
           </ParameterList>
           <ParameterList name="allegheny">
             <Parameter name="number of cells" type="int" value="10" />
             <Parameter name="segment length [m]" type="double" value="7000." />
-            <Parameter name="cross sectional area [m^2]" type="double" value="120.0" />
-            <Parameter name="orientation" type="Array(double)" value="{1,1}" />
-            <Parameter name="first tip type" type="string" value="branch" />
-            <Parameter name="first tip branch segment" type="string" value="ohio" />
-            <Parameter name="first tip branch segment tip" type="string" value="last" />
-            <Parameter name="last tip type" type="string" value="boundary" />
+            <Parameter name="cross sectional area [m^2]" type="double"
+value="120.0" /> <Parameter name="orientation" type="Array(double)"
+value="{1,1}" /> <Parameter name="first tip type" type="string" value="branch"
+/> <Parameter name="first tip branch segment" type="string" value="ohio" />
+            <Parameter name="first tip branch segment tip" type="string"
+value="last" /> <Parameter name="last tip type" type="string" value="boundary"
+/>
           </ParameterList>
           <ParameterList name="monongahela">
             <Parameter name="number of cells" type="int" value="10" />
             <Parameter name="segment length [m]" type="double" value="8000." />
-            <Parameter name="cross sectional area [m^2]" type="double" value="180.0" />
-            <Parameter name="orientation" type="Array(double)" value="{-1,1}" />
-            <Parameter name="first tip type" type="string" value="branch" />
-            <Parameter name="first tip branch segment" type="string" value="ohio" />
-            <Parameter name="first tip branch segment tip" type="string" value="last" />
-            <Parameter name="last tip type" type="string" value="boundary" />
+            <Parameter name="cross sectional area [m^2]" type="double"
+value="180.0" /> <Parameter name="orientation" type="Array(double)"
+value="{-1,1}" /> <Parameter name="first tip type" type="string" value="branch"
+/> <Parameter name="first tip branch segment" type="string" value="ohio" />
+            <Parameter name="first tip branch segment tip" type="string"
+value="last" /> <Parameter name="last tip type" type="string" value="boundary"
+/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-    
+
  */
 
 #ifndef AMANZI_LOGICAL_MESH_FACTORY2_HH_
@@ -214,7 +217,6 @@ namespace AmanziMesh {
 
 class MeshLogicalFactory {
  public:
-
   enum class LogicalTip_t {
     NONE,     // do nothing
     BOUNDARY, // tip is a boundary, include the face
@@ -222,39 +224,32 @@ class MeshLogicalFactory {
     BRANCH    // tip branches from a junction.  Add the face.
   };
 
-  
+
   MeshLogicalFactory(const Comm_ptr_type& comm,
                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm,
-                     bool calculated_volume = true) :
-    comm_(comm),
-    gm_(gm),
-    calculated_volume_(calculated_volume),
-    tracking_centroids_(false)    
+                     bool calculated_volume = true)
+    : comm_(comm),
+      gm_(gm),
+      calculated_volume_(calculated_volume),
+      tracking_centroids_(false)
   {}
 
   // Create, assuming AddSegment, etc have all been called previously.
-  Teuchos::RCP<MeshLogical>
-  Create() const;
+  Teuchos::RCP<MeshLogical> Create() const;
 
   // Create from parameterlist
-  Teuchos::RCP<MeshLogical>
-  Create(Teuchos::ParameterList& plist);
+  Teuchos::RCP<MeshLogical> Create(Teuchos::ParameterList& plist);
 
   //
   // Convenience function to add a segment, mostly for testing
   //
-  void
-  AddSegment(
-      int n_cells,
-      const AmanziGeometry::Point& begin,
-      const AmanziGeometry::Point& end,
-      double face_area,
-      MeshLogicalFactory::LogicalTip_t first_tip_type,
-      MeshLogicalFactory::LogicalTip_t last_tip_type,
-      std::string const& name,
-      std::vector<Entity_ID> *const cells,
-      std::vector<Entity_ID> *const faces);
-  
+  void AddSegment(int n_cells, const AmanziGeometry::Point& begin,
+                  const AmanziGeometry::Point& end, double face_area,
+                  MeshLogicalFactory::LogicalTip_t first_tip_type,
+                  MeshLogicalFactory::LogicalTip_t last_tip_type,
+                  std::string const& name, std::vector<Entity_ID>* const cells,
+                  std::vector<Entity_ID>* const faces);
+
 
   // Add a segment
   //
@@ -263,39 +258,30 @@ class MeshLogicalFactory {
   // Cells and faces are optional return values containing the list of
   // entities in the new segment.
   void
-  AddSegment(
-      std::vector<AmanziGeometry::Point> const * const cell_centroids,
-      std::vector<double> const *const cell_volumes,
-      std::vector<double> const& cell_lengths,
-      std::vector<double> const& face_areas,
-      AmanziGeometry::Point const& orientation,
-      MeshLogicalFactory::LogicalTip_t first_tip_type,
-      MeshLogicalFactory::LogicalTip_t last_tip_type,
-      std::string const& name,
-      std::vector<Entity_ID> *const cells,
-      std::vector<Entity_ID> *const faces);
+  AddSegment(std::vector<AmanziGeometry::Point> const* const cell_centroids,
+             std::vector<double> const* const cell_volumes,
+             std::vector<double> const& cell_lengths,
+             std::vector<double> const& face_areas,
+             AmanziGeometry::Point const& orientation,
+             MeshLogicalFactory::LogicalTip_t first_tip_type,
+             MeshLogicalFactory::LogicalTip_t last_tip_type,
+             std::string const& name, std::vector<Entity_ID>* const cells,
+             std::vector<Entity_ID>* const faces);
 
   // Add segment from sublist
-  void
-  AddSegment(Teuchos::ParameterList& sublist);
-  
+  void AddSegment(Teuchos::ParameterList& sublist);
+
   // Reserve a slot for a face (likely to be added via AddFace!)
-  int
-  ReserveFace();
+  int ReserveFace();
   // Manually add a connection, returning the face id.
-  int
-  AddFace(int f,
-          const Entity_ID_List& cells,
-          const AmanziGeometry::Point& normal,
-          const std::vector<double>& lengths,
-          double area);
+  int AddFace(int f, const Entity_ID_List& cells,
+              const AmanziGeometry::Point& normal,
+              const std::vector<double>& lengths, double area);
 
   // Add a set from a list of entities
-  int
-  AddSet(const std::string& set_name,
-         const std::string& ent,
-         const Entity_ID_List& ents);
-  
+  int AddSet(const std::string& set_name, const std::string& ent,
+             const Entity_ID_List& ents);
+
  protected:
   // Reads a tip type from plist
   MeshLogicalFactory::LogicalTip_t
@@ -304,12 +290,12 @@ class MeshLogicalFactory {
   // Reads a point from plist
   AmanziGeometry::Point
   GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);
-  
+
  protected:
   std::vector<double> cell_volumes_;
   std::vector<double> cell_lengths_;
   std::vector<Entity_ID_List> face_cell_list_;
-  std::vector<std::vector<double> > face_cell_lengths_;
+  std::vector<std::vector<double>> face_cell_lengths_;
   std::vector<AmanziGeometry::Point> face_area_normals_;
   std::vector<AmanziGeometry::Point> cell_centroids_;
 
@@ -324,7 +310,7 @@ class MeshLogicalFactory {
   bool tracking_centroids_;
   std::map<std::string, AmanziGeometry::Point> tracking_end_points_;
 };
-  
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

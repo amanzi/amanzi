@@ -1,14 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-
-  Interface for a Record.  A field contains meta-data about a data structure
-  such as ownership, initialization, etc.
-------------------------------------------------------------------------- */
+//!
 
 #include "Record.hh"
 #include "errors.hh"
@@ -17,16 +17,26 @@ namespace Amanzi {
 
 // Basic constructor
 Record::Record(Key fieldname, Key owner)
-    : fieldname_(std::move(fieldname)), owner_(std::move(owner)),
-      vis_key_(fieldname_), units_(), io_checkpoint_(true), io_vis_(true),
-      initialized_(false) {}
+  : fieldname_(std::move(fieldname)),
+    owner_(std::move(owner)),
+    vis_key_(fieldname_),
+    units_(),
+    io_checkpoint_(true),
+    io_vis_(true),
+    initialized_(false)
+{}
 
 // Copy constructor does not copy data!
-Record::Record(const Record &other)
-    : fieldname_(other.fieldname_), owner_(other.owner_),
-      vis_key_(other.vis_key_), units_(other.units_),
-      io_checkpoint_(other.io_checkpoint_), io_vis_(other.io_vis_),
-      initialized_(other.initialized_), subfieldnames_(other.subfieldnames_) {}
+Record::Record(const Record& other)
+  : fieldname_(other.fieldname_),
+    owner_(other.owner_),
+    vis_key_(other.vis_key_),
+    units_(other.units_),
+    io_checkpoint_(other.io_checkpoint_),
+    io_vis_(other.io_vis_),
+    initialized_(other.initialized_),
+    subfieldnames_(other.subfieldnames_)
+{}
 
 // Record&
 // Record::operator=(const Record& other)
@@ -45,23 +55,35 @@ Record::Record(const Record &other)
 // }
 
 // pass-throughs for other functionality
-void Record::WriteVis(const Visualization &vis) const {
+void
+Record::WriteVis(const Visualization& vis, Teuchos::ParameterList attrs) const
+{
   if (io_vis()) {
-    data_.WriteVis(vis, vis_fieldname(), subfieldnames());
+    attributes(attrs);
+    data_.WriteVis(vis, attrs);
   }
 }
-void Record::WriteCheckpoint(const Checkpoint &chkp) const {
+void
+Record::WriteCheckpoint(const Checkpoint& chkp,
+                        Teuchos::ParameterList attrs) const
+{
   if (io_checkpoint()) {
-    data_.WriteCheckpoint(chkp, vis_fieldname());
+    attributes(attrs);
+    data_.WriteCheckpoint(chkp, attrs);
   }
 }
-void Record::ReadCheckpoint(const Checkpoint &chkp) {
+void
+Record::ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList attrs)
+{
   if (io_checkpoint()) {
-    data_.ReadCheckpoint(chkp, vis_fieldname());
+    attributes(attrs);
+    data_.ReadCheckpoint(chkp, attrs);
   }
 }
 
-bool Record::Initialize(Teuchos::ParameterList &plist) {
+bool
+Record::Initialize(Teuchos::ParameterList& plist, Teuchos::ParameterList attrs)
+{
   // check meta-data
   if (plist.isParameter("write checkpoint")) {
     bool checkpoint_io = plist.get<bool>("write checkpoint", false);
@@ -75,20 +97,17 @@ bool Record::Initialize(Teuchos::ParameterList &plist) {
 
   bool initialized_here = false;
   if (!initialized()) {
-    if (plist.isParameter("subfieldnames")) {
-      set_subfieldnames(
-          plist.get<Teuchos::Array<std::string>>("subfieldnames").toVector());
-    }
-
-    initialized_here =
-        data_.Initialize(plist, vis_fieldname(), subfieldnames());
-    if (initialized_here)
-      set_initialized();
+    attributes(attrs);
+    initialized_here = data_.Initialize(plist, attrs);
+    if (initialized_here) set_initialized();
   }
   return initialized_here;
 }
 
-void Record::AssertOwnerOrDie(const Key &test_owner) const {
+
+void
+Record::AssertOwnerOrDie(const Key& test_owner) const
+{
   if (test_owner != owner()) {
     Errors::Message message;
     message << "Record \"" << fieldname_ << "\" requested by \"" << test_owner

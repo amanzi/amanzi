@@ -1,13 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -33,17 +34,15 @@
 #include "UpwindFlux.hh"
 #include "UpwindFluxAndGravity.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
 class Model {
  public:
-  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~Model() {};
+  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  ~Model(){};
 
   // main members
-  double Value(int c, double pc) const { 
-    return analytic(pc); 
-  }
+  double Value(int c, double pc) const { return analytic(pc); }
 
   double analytic(double pc) const { return 1e-5 + pc; }
 
@@ -51,25 +50,29 @@ class Model {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-typedef double(Model::*ModelUpwindFn)(int c, double pc) const; 
+typedef double (Model::*ModelUpwindFn)(int c, double pc) const;
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
-* Test one upwind model.
-* **************************************************************** */
+ * Test one upwind model.
+ * **************************************************************** */
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-template<class UpwindClass>
-void RunTestUpwind(std::string method) {
+template <class UpwindClass>
+void
+RunTestUpwind(std::string method)
+{
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
 
-  if (getRank == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
+  if (getRank == 0)
+    std::cout << "\nTest: 1st-order convergence for upwind \"" << method
+              << "\"\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_upwind.xml";
@@ -78,17 +81,22 @@ void RunTestUpwind(std::string method) {
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
+  Teuchos::RCP<GeometricModel> gm =
+    Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   for (int n = 4; n < 17; n *= 2) {
-    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+    Teuchos::RCP<const Mesh> mesh =
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost =
+      mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_owned =
+      mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost =
+      mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -100,18 +108,20 @@ void RunTestUpwind(std::string method) {
       const Point& xf = mesh->face_centroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
           fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-          fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
+          fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
 
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
+        bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = model->analytic(xf[0]);
     }
 
-    // create and initialize cell-based field 
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+    // create and initialize cell-based field
+    Teuchos::RCP<CompositeVectorSpace> cvs =
+      Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
@@ -120,13 +130,13 @@ void RunTestUpwind(std::string method) {
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0]); 
+      fcells[0][c] = model->Value(c, xc[0]);
     }
 
     // add boundary face component
     const Epetra_Map& ext_face_map = mesh->exterior_face_map(true);
     const Epetra_Map& face_map = mesh->face_map(true);
-    for (int f=0; f!=face_map.getNodeNumElements(); ++f) {
+    for (int f = 0; f != face_map.getNodeNumElements(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -135,14 +145,14 @@ void RunTestUpwind(std::string method) {
         fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
       }
     }
-    
+
 
     // create and initialize face-based flux field
     cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
-  
+
     Point vel(1.0, 2.0, 3.0);
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& normal = mesh->face_normal(f);
@@ -170,28 +180,31 @@ void RunTestUpwind(std::string method) {
     double tmp = error;
     Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &error);
     int itmp = nfaces_owned;
-    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nfaces_owned);
+    Teuchos::reduceAll(
+      *mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nfaces_owned);
 #endif
     error = sqrt(error / nfaces_owned);
-  
+
     if (comm->getRank() == 0)
-        printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
+      printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
   }
 }
 
-TEST(UPWIND_FLUX) {
-  RunTestUpwind<UpwindFlux<Model> >("flux");
+TEST(UPWIND_FLUX)
+{
+  RunTestUpwind<UpwindFlux<Model>>("flux");
 }
 
-TEST(UPWIND_DIVK) {
-  RunTestUpwind<UpwindDivK<Model> >("divk");
+TEST(UPWIND_DIVK)
+{
+  RunTestUpwind<UpwindDivK<Model>>("divk");
 }
 
-TEST(UPWIND_GRAVITY) {
-  RunTestUpwind<UpwindGravity<Model> >("gravity");
+TEST(UPWIND_GRAVITY)
+{
+  RunTestUpwind<UpwindGravity<Model>>("gravity");
 }
 
 // TEST(UPWIND_FLUX_GRAVITY) {
 //  RunTestUpwind<UpwindFluxAndGravity<Model> >("flux_gravity");
 // }
-

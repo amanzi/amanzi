@@ -1,16 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Mini classes implement mathematical models for special physics, such 
-  as serial 1D dual porosity models. 
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <dbc.hh>
 
@@ -21,20 +19,21 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Create a tri-diagonal matrix. Structure of underlying equation is
-*   down_(i) x_{i-1} + diag_(i) x_i + up_(i) x_{i + 1} = b_i
-* We use end values of sub-diagonals to impose boundary conditions.
-****************************************************************** */
-void Mini_Diffusion1D::UpdateMatrices()
+ * Create a tri-diagonal matrix. Structure of underlying equation is
+ *   down_(i) x_{i-1} + diag_(i) x_i + up_(i) x_{i + 1} = b_i
+ * We use end values of sub-diagonals to impose boundary conditions.
+ ****************************************************************** */
+void
+Mini_Diffusion1D::UpdateMatrices()
 {
-  int ncells = mesh_->NumRows() - 1; 
+  int ncells = mesh_->NumRows() - 1;
   double al, ar, hl, hr, x0, x1, Kc;
 
   const auto& mesh = *mesh_;
 
   x0 = mesh(0);
   x1 = mesh(ncells);
-  
+
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
 
   hl = Kc / (mesh(1) - mesh(0));
@@ -69,14 +68,14 @@ void Mini_Diffusion1D::UpdateMatrices()
 
 
 /* ******************************************************************
-* Jacobian matrix for operator A(k(p)) p - f(k(p)).
-* NOTE: we assume that k_ != NULL and dkdp_ != NULL, i.e. J != A.
-****************************************************************** */
-void Mini_Diffusion1D::UpdateJacobian(
-    const WhetStone::DenseVector& p,
-    double bcl, int type_l, double bcr, int type_r)
+ * Jacobian matrix for operator A(k(p)) p - f(k(p)).
+ * NOTE: we assume that k_ != NULL and dkdp_ != NULL, i.e. J != A.
+ ****************************************************************** */
+void
+Mini_Diffusion1D::UpdateJacobian(const WhetStone::DenseVector& p, double bcl,
+                                 int type_l, double bcr, int type_r)
 {
-  int ncells = mesh_->NumRows() - 1; 
+  int ncells = mesh_->NumRows() - 1;
   double al, ar, bl, br, hl, hr, x0, x1, Kc, tmp0, tmp1;
 
   const auto& mesh = *mesh_;
@@ -85,17 +84,17 @@ void Mini_Diffusion1D::UpdateJacobian(
 
   x0 = mesh(0);
   x1 = mesh(ncells);
-  
+
   // derivatives of A(k(p))
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
-  hl = Kc / mesh_cell_volume(0);
+  hl = Kc / mesh_cell_volume(0, false);
   al = 2 * hl;
   tmp0 = al;
   bl = al * p(0);
   al *= k(0);
 
   for (int i = 0; i < ncells - 1; ++i) {
-    int j = (i == 0) ? 0 : i - 1; 
+    int j = (i == 0) ? 0 : i - 1;
 
     Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
     hr = Kc / (mesh(i + 2) - mesh(i + 1));
@@ -113,7 +112,7 @@ void Mini_Diffusion1D::UpdateJacobian(
   }
 
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
-  hr = Kc / mesh_cell_volume(ncells - 1);
+  hr = Kc / mesh_cell_volume(ncells - 1, false);
   ar = 2 * hr;
   tmp1 = ar;
   br = ar * p(ncells - 1);
@@ -130,17 +129,17 @@ void Mini_Diffusion1D::UpdateJacobian(
 
   if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
     diag_(ncells - 1) -= tmp1 * dkdp(ncells - 1) * bcr;
-  }
-  else if (type_r == Operators::OPERATOR_BC_NEUMANN) {
+  } else if (type_r == Operators::OPERATOR_BC_NEUMANN) {
     diag_(ncells - 1) += up_(ncells - 1);
   }
 }
 
 
 /* ******************************************************************
-* Apply boundary conditions.
-****************************************************************** */
-void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
+ * Apply boundary conditions.
+ ****************************************************************** */
+void
+Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
 {
   if (type_l == Operators::OPERATOR_BC_DIRICHLET) {
     rhs_(0) -= down_(0) * bcl;
@@ -158,8 +157,5 @@ void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
-
+} // namespace Operators
+} // namespace Amanzi

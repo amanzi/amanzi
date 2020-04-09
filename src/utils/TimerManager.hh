@@ -1,13 +1,14 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Nathan Barnett
+  Authors:
+      Nathan Barnett
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_TIMER_MANAGER_HH_
 #define AMANZI_TIMER_MANAGER_HH_
@@ -33,35 +34,35 @@ namespace Amanzi {
  */
 
 class TimerManager {
-public:
-  friend std::ostream& operator <<(std::ostream&, TimerManager&);
- 
-  TimerManager() {};
-  ~TimerManager() {};
+ public:
+  friend std::ostream& operator<<(std::ostream&, TimerManager&);
 
-  void    add(std::string name, Timer::Type type);
-  size_t  size();
-  void    start();
-  void    start(std::string);
-  void    stop();
-  void    stop(std::string);
-  Timer&  operator()(std::string& name);
-  void    parSync(MPI_Comm comm);
-  void    print();
+  TimerManager(){};
+  ~TimerManager(){};
 
-protected:
-  std::map<std::string, std::shared_ptr<Timer> > _timer;
-  
-private:
+  void add(std::string name, Timer::Type type);
+  size_t size();
+  void start();
+  void start(std::string);
+  void stop();
+  void stop(std::string);
+  Timer& operator()(std::string& name);
+  void parSync(MPI_Comm comm);
+  void print();
+
+ protected:
+  std::map<std::string, std::shared_ptr<Timer>> _timer;
+
+ private:
   TimerManager(const TimerManager&);
   TimerManager& operator=(const TimerManager&);
 };
 
 
-// Declare a global instance. Messy, but beats modding all functions to take another parameter
+// Declare a global instance. Messy, but beats modding all functions to take
+// another parameter
 extern TimerManager timer_manager;
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

@@ -1,10 +1,21 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 /* -------------------------------------------------------------------------
 Amanzi
 
 License:
 Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+        Ethan Coon (coonet@ornl.gov)
 
 Observable data object
 
@@ -24,15 +35,30 @@ Observable data object
 
 namespace Amanzi {
 
-double ObservableExtensiveSum(double a, double b, double vol) { return a + b; }
-double ObservableIntensiveSum(double a, double b, double vol) {
+double
+ObservableExtensiveSum(double a, double b, double vol)
+{
+  return a + b;
+}
+double
+ObservableIntensiveSum(double a, double b, double vol)
+{
   return a + b * vol;
 }
-double ObservableMin(double a, double b, double vol) { return std::min(a, b); }
-double ObservableMax(double a, double b, double vol) { return std::max(a, b); }
+double
+ObservableMin(double a, double b, double vol)
+{
+  return std::min(a, b);
+}
+double
+ObservableMax(double a, double b, double vol)
+{
+  return std::max(a, b);
+}
 
-Observable::Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm)
-    : IOEvent(plist), count_(0) {
+Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm* comm)
+  : IOEvent(plist), count_(0)
+{
   // process the spec
   name_ = plist.name();
   variable_ = plist.get<std::string>("variable");
@@ -81,10 +107,10 @@ Observable::Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm)
   }
 }
 
-void Observable::Update(const State &S,
-                        Amanzi::ObservationData::DataQuadruple &data) {
-  if (count_ == 0)
-    WriteHeader_();
+void
+Observable::Update(const State& S, Amanzi::ObservationData::DataQuadruple& data)
+{
+  if (count_ == 0) WriteHeader_();
 
   ++count_;
   Update_(S, data);
@@ -97,17 +123,19 @@ void Observable::Update(const State &S,
             << "NaN" << std::endl;
     }
 
-    if (count_ % interval_ == 0)
-      out_->flush();
+    if (count_ % interval_ == 0) out_->flush();
   }
 }
 
-void Observable::Flush() {
-  if (out_.get())
-    out_->flush();
+void
+Observable::Flush()
+{
+  if (out_.get()) out_->flush();
 }
 
-void Observable::WriteHeader_() {
+void
+Observable::WriteHeader_()
+{
   if (out_.get()) {
     *out_ << "# Observation Name: " << name_ << std::endl;
     *out_ << "# Region: " << region_ << std::endl;
@@ -121,8 +149,10 @@ void Observable::WriteHeader_() {
   }
 }
 
-void Observable::Update_(const State &S,
-                         Amanzi::ObservationData::DataQuadruple &data) {
+void
+Observable::Update_(const State& S,
+                    Amanzi::ObservationData::DataQuadruple& data)
+{
   // data.time = S.time();
 
   // Teuchos::RCP<const Field> field = S.GetField(variable_);
@@ -139,7 +169,8 @@ void Observable::Update_(const State &S,
 
   //   AmanziMesh::Entity_kind entity = vec->Location(location_);
   //   AmanziMesh::Entity_ID_List ids;
-  //   vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+  //   vec->Mesh()->get_set_entities(region_, entity,
+  //   AmanziMesh::Parallel_type::OWNED, &ids);
 
   //   double value(0.);
   //   if (functional_ == "observation data: minimum") {
@@ -154,7 +185,7 @@ void Observable::Update_(const State &S,
   //   if (entity == AmanziMesh::CELL) {
   //     for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
   //          id != ids.end(); ++id) {
-  //       double vol = vec->Mesh()->cell_volume(*id);
+  //       double vol = vec->Mesh()->cell_volume(*id,false);
   //       value = (*function_)(value, subvec[0][*id], vol);
   //       volume += vol;
   //     }
@@ -167,8 +198,8 @@ void Observable::Update_(const State &S,
   //       int sign = 1;
   //       if (flux_normalize_) {
   //         AmanziMesh::Entity_ID_List cells;
-  //         vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
-  //         AMANZI_ASSERT(cells.size() == 1);
+  //         vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL,
+  //         &cells); AMANZI_ASSERT(cells.size() == 1);
   //         AmanziMesh::Entity_ID_List faces;
   //         std::vector<int> dirs;
   //         vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);

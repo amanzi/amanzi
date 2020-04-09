@@ -1,14 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_SOLVER_CONSTANTS_HH_
 #define AMANZI_SOLVER_CONSTANTS_HH_
@@ -20,7 +21,7 @@ namespace AmanziSolvers {
 // which can be turned on or off.  Currently convergence is met if any of the
 // enabled criteria match.  The exception to this is ONE_ITERATION, which
 // requires at least one iteration independent of the initial residual.
-const int LIN_SOLVER_RELATIVE_RHS = 1;  // must be power of 2
+const int LIN_SOLVER_RELATIVE_RHS = 1; // must be power of 2
 const int LIN_SOLVER_RELATIVE_RESIDUAL = 2;
 const int LIN_SOLVER_ABSOLUTE_RESIDUAL = 4;
 const int LIN_SOLVER_MAKE_ONE_ITERATION = 8;
@@ -39,8 +40,7 @@ const int LIN_SOLVER_AMESOS_SAYS_FAIL = -1;
 const int LIN_SOLVER_AMESOS_SYMBOLIC_FAIL = -2;
 const int LIN_SOLVER_AMESOS_FACTORIZATION_FAIL = -3;
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
- 
-#endif
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
+#endif

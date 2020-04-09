@@ -1,9 +1,9 @@
 /*
   WhetStone
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -37,19 +37,22 @@
 
 
 /* **************************************************************** */
-TEST(PROJECTORS_SQUARE_CR) {
+TEST(PROJECTORS_SQUARE_CR)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square" << std::endl;
+  std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square"
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true);
+
   int cell(1);
   AmanziGeometry::Point zero(2);
   Polynomial uc;
@@ -57,15 +60,13 @@ TEST(PROJECTORS_SQUARE_CR) {
 
   // test zero cell deformation
   std::cout << "      subtest: ZERO deformation" << std::endl;
-  for (int n = 0; n < 4; ++n) {
-    vf[n].Reshape(2, 1, true);
-  }
+  for (int n = 0; n < 4; ++n) { vf[n].Reshape(2, 1, true); }
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
   MFD3D_CrouzeixRaviart mfd(plist, mesh);
-  Polynomial moments(2, 0);  // trivial polynomials p=0
+  Polynomial moments(2, 0); // trivial polynomials p=0
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, &moments, uc);
@@ -80,7 +81,7 @@ TEST(PROJECTORS_SQUARE_CR) {
     vf[n](1, 0) = 2.0;
     vf[n](1, 1) = 3.0;
   }
-  
+
   mfd.set_order(1);
   mfd.H1Cell(cell, vf, &moments, uc);
 
@@ -112,8 +113,8 @@ TEST(PROJECTORS_SQUARE_CR) {
   // test re-location of the right-top corner to (2,3)
   std::cout << "      subtest: BILINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n].PutScalar(0.0);
-  vf[1](1, 1) = 0.8 / 1.1; 
-  vf[2](1, 0) = 0.8 / 1.2; 
+  vf[1](1, 1) = 0.8 / 1.1;
+  vf[2](1, 0) = 0.8 / 1.2;
 
   moments.Reshape(2, 0, true);
   moments(0) = 0.2;
@@ -126,26 +127,28 @@ TEST(PROJECTORS_SQUARE_CR) {
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
   CHECK(fabs(uc.Value(p) - 0.8) < 1e-12);
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(PROJECTORS_POLYGON_CR) {
+TEST(PROJECTORS_POLYGON_CR)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
+  std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon"
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true, true);
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/one_pentagon.exo", true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true,
+  // true);
+
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
   Polynomial uc;
@@ -159,7 +162,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     vf[n](1, 0) = 2.0;
     vf[n](1, 1) = 3.0;
   }
-  
+
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
@@ -176,7 +179,7 @@ TEST(PROJECTORS_POLYGON_CR) {
   CHECK(uc.NormInf() < 1e-12);
 
   // -- new scheme (k=1)
-  Polynomial moments(2, 0);  // trivial polynomials p=0
+  Polynomial moments(2, 0); // trivial polynomials p=0
   mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
     if (k > 1) moments.Reshape(2, k - 2, true);
@@ -238,7 +241,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     moments(0, 0) = 9.72312102102103;
     if (k > 2) {
       moments(1, 0) = 2.60365194630611;
-      moments(1, 1) =-0.95827249608879;
+      moments(1, 1) = -0.95827249608879;
     }
 
     mfd.set_order(k);
@@ -276,7 +279,8 @@ TEST(PROJECTORS_POLYGON_CR) {
   NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
+    const AmanziGeometry::Point& normal =
+      mesh->face_normal(n, false, cell, &dir);
     double factor = normal[0] / mesh->face_area(n) * dir;
 
     std::vector<const PolynomialBase*> polys;
@@ -313,24 +317,24 @@ TEST(PROJECTORS_POLYGON_CR) {
     for (auto it = moments.begin(); it < moments.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
       mono.set_origin(mesh->cell_centroid(cell));
-   
+
       Polynomial poly(uc);
       poly.ChangeOrigin(mesh->cell_centroid(cell));
       poly *= mono;
 
-      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->cell_volume(cell);
+      double val = numi.IntegratePolynomialCell(cell, poly) /
+                   mesh->cell_volume(cell, false);
       int n = it.PolynomialPosition();
       if (n == 0) CHECK_CLOSE(1.0, val, 1e-12);
       if (n >= 1) CHECK(fabs(val - (1.0 + n)) > 0.05);
     }
   }
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(L2_PROJECTORS_SQUARE_CR) {
+TEST(L2_PROJECTORS_SQUARE_CR)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -339,10 +343,11 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2.0, 4.0, 1, 2, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 2.0, 4.0, 1, 2, true, true);
+
   int cell(1);
   AmanziGeometry::Point zero(2);
   Polynomial uc;
@@ -372,25 +377,26 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
 
   uc -= vf[0];
   CHECK(uc.NormInf() < 1e-12);
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
+TEST(L2GRADIENT_PROJECTORS_SQUARE_CR)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
+  std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square"
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 4.0, 2.0, 2, 1, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 4.0, 2.0, 2, 1, true, true);
+
   int cell(1);
   AmanziGeometry::Point zero(2);
   MatrixPolynomial uc;
@@ -403,7 +409,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
     vf[n][0].Reshape(2, 3, true);
     vf[n][0].set_origin(mesh->cell_centroid(cell));
     vf[n][0](3, 1) = 3.0;
-    vf[n][0](3, 3) =-1.0;
+    vf[n][0](3, 3) = -1.0;
     vf[n][0].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
   auto grad = Gradient(vf[0][0]);
@@ -431,25 +437,26 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   std::cout << "    moments: " << *moments << std::endl;
 
   CHECK_CLOSE(1.0 / 15, (*moments)(2), 1e-12);
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(PROJECTORS_SQUARE_PK) {
+TEST(PROJECTORS_SQUARE_PK)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO Lagrange projectors for square (linear deformation)" << std::endl;
+  std::cout << "\nTest: HO Lagrange projectors for square (linear deformation)"
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true);
+
   int cell(1);
   AmanziGeometry::Point zero(2);
   Polynomial uc, uc2;
@@ -471,7 +478,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     vf[n](1, 0) = 2.0;
     vf[n](1, 1) = 3.0;
   }
-  
+
   for (int k = 1; k < 4; ++k) {
     if (k > 1) moments.Reshape(2, k - 2, true);
     moments(0, 0) = 3.85;
@@ -481,7 +488,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);  
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     uc -= vf[0];
@@ -490,17 +497,18 @@ TEST(PROJECTORS_SQUARE_PK) {
 
   // test re-location of the right-top corner to (2,3)
   // cross-check with the CR projectors
-  std::cout << "Test: HO Lagrange projectors for square (bilinear deformation)" << std::endl;
+  std::cout << "Test: HO Lagrange projectors for square (bilinear deformation)"
+            << std::endl;
   for (int n = 0; n < 4; ++n) vf[n].PutScalar(0.0);
-  vf[1](1, 1) = 0.8 / 1.1; 
-  vf[2](1, 0) = 0.8 / 1.2; 
+  vf[1](1, 1) = 0.8 / 1.1;
+  vf[2](1, 0) = 0.8 / 1.2;
 
   moments.Reshape(2, 0, true);
   moments(0) = 0.2;
 
-  for (int k = 1; k < 3; ++k) { 
+  for (int k = 1; k < 3; ++k) {
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);  
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     mfd_cr.set_order(k);
     mfd_cr.H1Cell(cell, vf, &moments, uc2);
@@ -520,26 +528,29 @@ TEST(PROJECTORS_SQUARE_PK) {
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
   CHECK(fabs(uc.Value(p) - 0.8) < 1e-12);
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(PROJECTORS_POLYGON_PK) {
+TEST(PROJECTORS_POLYGON_PK)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO Lagrange projectors for pentagon (linear deformation)" << std::endl;
+  std::cout
+    << "\nTest: HO Lagrange projectors for pentagon (linear deformation)"
+    << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true, true);
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/one_pentagon.exo", true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true,
+  // true);
+
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
   Polynomial uc, uc2;
@@ -559,7 +570,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     vf[n](1, 0) = 2.0;
     vf[n](1, 1) = 3.0;
   }
-  
+
   for (int k = 1; k < 4; ++k) {
     if (k > 1) moments.Reshape(2, k - 2, true);
     moments(0, 0) = 5.36606606606607;
@@ -579,7 +590,8 @@ TEST(PROJECTORS_POLYGON_PK) {
   }
 
   // test globally quadratic deformation
-  std::cout << "\nTest: HO Lagrange for pentagon (quadratic deformation)" << std::endl;
+  std::cout << "\nTest: HO Lagrange for pentagon (quadratic deformation)"
+            << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     vf[n].Reshape(2, 2, false);
     vf[n](2, 0) = 4.0;
@@ -605,7 +617,9 @@ TEST(PROJECTORS_POLYGON_PK) {
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
-  std::cout << "\nTest: HO Lagrange projectors for pentagon (trace compatibility)" << std::endl;
+  std::cout
+    << "\nTest: HO Lagrange projectors for pentagon (trace compatibility)"
+    << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     vf[n].Reshape(2, 2, false);
     vf[n](2, 0) = 4.0;
@@ -626,7 +640,8 @@ TEST(PROJECTORS_POLYGON_PK) {
   NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
+    const AmanziGeometry::Point& normal =
+      mesh->face_normal(n, false, cell, &dir);
     double factor = normal[0] / mesh->face_area(n) * dir;
 
     std::vector<const PolynomialBase*> polys;
@@ -646,12 +661,14 @@ TEST(PROJECTORS_POLYGON_PK) {
   CHECK_CLOSE(valx, 0.0, 1e-12);
 
   // test piecewise linear deformation
-  std::cout << "\nTest: HO Lagrange projectors for pentagon (piece-wice linear deformation)" << std::endl;
+  std::cout << "\nTest: HO Lagrange projectors for pentagon (piece-wice linear "
+               "deformation)"
+            << std::endl;
   std::vector<AmanziGeometry::Point> vv;
-  vv.push_back(AmanziGeometry::Point( 0.0, 0.0));
-  vv.push_back(AmanziGeometry::Point( 0.0,-0.1));
-  vv.push_back(AmanziGeometry::Point( 0.1, 0.0));
-  vv.push_back(AmanziGeometry::Point( 0.0, 0.1));
+  vv.push_back(AmanziGeometry::Point(0.0, 0.0));
+  vv.push_back(AmanziGeometry::Point(0.0, -0.1));
+  vv.push_back(AmanziGeometry::Point(0.1, 0.0));
+  vv.push_back(AmanziGeometry::Point(0.0, 0.1));
   vv.push_back(AmanziGeometry::Point(-0.1, 0.0));
 
   AmanziGeometry::Point x1(2), x2(2), tau(2);
@@ -668,7 +685,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     vf[n](1, 0) = (vv[m][0] - vv[n][0]) * tau[0];
     vf[n](1, 1) = (vv[m][0] - vv[n][0]) * tau[1];
   }
-  
+
   for (int k = 1; k < 4; ++k) {
     if (k > 1) moments.Reshape(2, k - 2, true);
     moments(0, 0) = 0.1;
@@ -693,45 +710,52 @@ TEST(PROJECTORS_POLYGON_PK) {
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     if (k < 3) CHECK(uc2.NormInf() < 1e-12);
-    if (k > 2) std::cout << " moments: " << moments(0, 0) << " " 
-                                         << moments(1, 0) << " " << moments(1, 1) << std::endl;
+    if (k > 2)
+      std::cout << " moments: " << moments(0, 0) << " " << moments(1, 0) << " "
+                << moments(1, 1) << std::endl;
   }
 
   // preservation of moments (reusing previous boundary functions)
-  std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
+  std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)"
+            << std::endl;
   for (int k = 2; k < 4; ++k) {
     moments.Reshape(2, k - 2);
     moments.PutScalar(1.0);
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, &moments, uc);
-    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
+    double tmp =
+      numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell, false);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
     mfd.L2Cell(cell, vf, &moments, uc);
-    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
+    tmp =
+      numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell, false);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
-
-  
 }
 
 
 /* **************************************************************** */
-template<class Serendipity>
-void SerendipityProjectorPolygon() {
+template <class Serendipity>
+void
+SerendipityProjectorPolygon()
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (linear deformation)" << std::endl;
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon "
+               "(linear deformation)"
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/one_pentagon.exo", true, true);
+
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
   Polynomial uc, uc2;
@@ -749,7 +773,7 @@ void SerendipityProjectorPolygon() {
     vf[n](1, 0) = 2.0;
     vf[n](1, 1) = 3.0;
   }
-  
+
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, NULL, uc);
@@ -766,7 +790,9 @@ void SerendipityProjectorPolygon() {
   }
 
   // test globally quadratic deformation
-  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (quadratic deformation)" << std::endl;
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon "
+               "(quadratic deformation)"
+            << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     vf[n].Reshape(2, 2, false);
     vf[n](2, 0) = 4.0;
@@ -790,12 +816,14 @@ void SerendipityProjectorPolygon() {
   }
 
   // test piecewise linear deformation (part I)
-  std::cout << "\nTest: HO Sependipity Lagrange projectors for pentagon (piece-wice linear)" << std::endl;
+  std::cout << "\nTest: HO Sependipity Lagrange projectors for pentagon "
+               "(piece-wice linear)"
+            << std::endl;
   std::vector<AmanziGeometry::Point> vv;
-  vv.push_back(AmanziGeometry::Point( 0.0, 0.0));
-  vv.push_back(AmanziGeometry::Point( 0.05,-0.1));
-  vv.push_back(AmanziGeometry::Point( 0.1, 0.0));
-  vv.push_back(AmanziGeometry::Point( 0.0, 0.1));
+  vv.push_back(AmanziGeometry::Point(0.0, 0.0));
+  vv.push_back(AmanziGeometry::Point(0.05, -0.1));
+  vv.push_back(AmanziGeometry::Point(0.1, 0.0));
+  vv.push_back(AmanziGeometry::Point(0.0, 0.1));
   vv.push_back(AmanziGeometry::Point(-0.1, 0.0));
 
   AmanziGeometry::Point x1(2), x2(2), tau(2);
@@ -812,7 +840,7 @@ void SerendipityProjectorPolygon() {
     vf[n](1, 0) = (vv[m][0] - vv[n][0]) * tau[0];
     vf[n](1, 1) = (vv[m][0] - vv[n][0]) * tau[1];
   }
-  
+
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, NULL, uc);
@@ -829,15 +857,15 @@ void SerendipityProjectorPolygon() {
     uc2 -= uc;
     CHECK(uc2.NormInf() < 2e-2);
   }
-
-  
 }
 
-TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
+TEST(SERENDIPITY_PROJECTORS_POLYGON_PK)
+{
   SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_LagrangeSerendipity>();
 }
 
-TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
-  SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
+TEST(SERENDIPITY_PROJECTORS_POLYGON_CR)
+{
+  SerendipityProjectorPolygon<
+    Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
 }
-

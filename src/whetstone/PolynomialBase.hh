@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Virtual helper class for monomials and polynomials. It is used
@@ -25,9 +25,9 @@ namespace WhetStone {
 
 class PolynomialBase : public WhetStoneFunction {
  public:
-  PolynomialBase() : d_(0), order_(-1), size_(0) {};
-  PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d) {};
-  virtual ~PolynomialBase() {};
+  PolynomialBase() : d_(0), order_(-1), size_(0){};
+  PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d){};
+  virtual ~PolynomialBase(){};
 
   // convert to regular polynomial
   virtual DenseVector ExpandCoefficients() const = 0;
@@ -49,9 +49,9 @@ class PolynomialBase : public WhetStoneFunction {
 };
 
 
-// calculate dimension of monomial space of given order 
-inline
-int MonomialSpaceDimension(int d, int order)
+// calculate dimension of monomial space of given order
+inline int
+MonomialSpaceDimension(int d, int order)
 {
   int nk = (order == 0) ? 1 : d;
   for (int i = 1; i < order; ++i) {
@@ -61,10 +61,10 @@ int MonomialSpaceDimension(int d, int order)
   return nk;
 }
 
-// calculate dimension of polynomial space of given order 
+// calculate dimension of polynomial space of given order
 // we assume that space of negative order has dimension zero
-inline
-int PolynomialSpaceDimension(int d, int order)
+inline int
+PolynomialSpaceDimension(int d, int order)
 {
   if (order < 0) return 0;
 
@@ -79,8 +79,8 @@ int PolynomialSpaceDimension(int d, int order)
 
 // Position in set of same-order monomials defined by multi_index.
 // Multi index defines both monomial order and monomial position.
-inline
-int MonomialSetPosition(int d, const int* multi_index)
+inline int
+MonomialSetPosition(int d, const int* multi_index)
 {
   int m(multi_index[1]);
   if (d == 3) {
@@ -92,8 +92,8 @@ int MonomialSetPosition(int d, const int* multi_index)
 
 
 // Position in polynomial defined by multi_index. 2D algorithm.
-inline
-int PolynomialPosition(int d, const int* multi_index)
+inline int
+PolynomialPosition(int d, const int* multi_index)
 {
   // current monomial order
   int k = 0;
@@ -106,9 +106,9 @@ int PolynomialPosition(int d, const int* multi_index)
 }
 
 
-// calculate order of polynomial space from given dspace dimension 
-inline
-int PolynomialSpaceOrder(int d, int nk)
+// calculate order of polynomial space from given dspace dimension
+inline int
+PolynomialSpaceOrder(int d, int nk)
 {
   int order = -1;
   while (PolynomialSpaceDimension(d, order) != nk) order++;

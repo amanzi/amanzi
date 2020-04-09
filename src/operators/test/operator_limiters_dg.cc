@@ -1,15 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Tests for limiters for DG schemes.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -35,12 +34,13 @@
 #include "LimiterCell.hh"
 #include "OperatorDefs.hh"
 
-const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
+const std::string LIMITERS[3] = { "B-J", "B-J c2c", "B-J all" };
 
 /* *****************************************************************
-* Limiters must be localized based on a smoothness indicator.
-***************************************************************** */
-void RunTest(std::string filename, std::string basis, double& l2norm)
+ * Limiters must be localized based on a smoothness indicator.
+ ***************************************************************** */
+void
+RunTest(std::string filename, std::string basis, double& l2norm)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,24 +49,26 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
-  if (getRank == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: Smoothness indicator and limiters for DG, basis="
+              << basis << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(filename);
 
-  // create and initialize cell-based field 
+  // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
   Teuchos::ParameterList dglist;
-  dglist.set<int>("method order", order)
-        .set<std::string>("dg basis", basis);
+  dglist.set<int>("method order", order).set<std::string>("dg basis", basis);
 
   WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
@@ -75,13 +77,17 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, dim);
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
 
@@ -92,13 +98,13 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "face to cells");
+        .set<std::string>("limiter stencil", "face to cells");
     } else if (i == 1) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "cell to closest cells");
+        .set<std::string>("limiter stencil", "cell to closest cells");
     } else if (i == 2) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "cell to all cells");
+        .set<std::string>("limiter stencil", "cell to all cells");
     }
 
     std::vector<int> bc_model(nfaces_wghost, 0);
@@ -127,7 +133,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     // create list of cells where to apply limiter
     double L(0.0);
-    double threshold = -4 * std::log10((double) order) - L;
+    double threshold = -4 * std::log10((double)order) - L;
     AmanziMesh::Entity_ID_List ids;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -156,10 +162,14 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     int nids, itmp = ids.size();
     Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
-    double fraction = 100.0 * nids / grad_c.GlobalLength();
-    if (getRank == 0) 
+    double fraction = 100.0 * nids / grad_c.getGlobalLength();
+    if (getRank == 0)
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
-          LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
+             LIMITERS[i].c_str(),
+             err_int,
+             err_glb,
+             gnorm,
+             fraction);
     CHECK(fraction < 15.0);
 
     // calculate true L2 error of limited gradient
@@ -170,7 +180,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     l2norm = 0.0;
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
-      double volume = mesh->cell_volume(c);
+      double volume = mesh->cell_volume(c, false);
 
       for (int i = 0; i < nk; ++i) data2(i) = (*field_c)[i][c];
 
@@ -182,26 +192,30 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
       WhetStone::DenseMatrix M;
       dg.MassMatrix(c, K, M);
 
-      M.Multiply(data2, data3, false);
+      M.elementWiseMultiply(data2, data3, false);
       l2norm += data2 * data3;
 
       data2 -= data;
-      M.Multiply(data2, data3, false);
+      M.elementWiseMultiply(data2, data3, false);
       err += data2 * data3;
     }
 
     double tmp = err;
     Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &err);
     tmp = l2norm;
-    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2norm);
-    if (getRank == 0) 
-      printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
+    Teuchos::reduceAll(
+      *mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2norm);
+    if (getRank == 0)
+      printf("       sol errors: %10.6f   ||u||=%8.4f\n",
+             std::pow(err, 0.5),
+             std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
   }
 }
 
 
-TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
+TEST(LIMITER_SMOOTHNESS_INDICATOR_2D)
+{
   double l2norm1, l2norm2;
   RunTest("test/circle_quad10.exo", "orthonormalized", l2norm1);
   // RunTest("test/circle_quad20.exo");
@@ -212,8 +226,8 @@ TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
 
 
 /* *****************************************************************
-* New limiters
-***************************************************************** */
+ * New limiters
+ ***************************************************************** */
 TEST(LIMITER_GAUSS_POINTS)
 {
   using namespace Amanzi;
@@ -223,24 +237,26 @@ TEST(LIMITER_GAUSS_POINTS)
 
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
-  if (getRank == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: Limiters at Gauss points" << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/circle_quad10.exo");
 
-  // create and initialize cell-based field 
+  // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
   Teuchos::ParameterList dglist;
   dglist.set<int>("method order", order)
-        .set<std::string>("dg basis", "orthonormalized");
+    .set<std::string>("dg basis", "orthonormalized");
 
   WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
@@ -249,22 +265,26 @@ TEST(LIMITER_GAUSS_POINTS)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent(
+    "cell", AmanziMesh::CELL, dim);
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
 
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 2)
-       .set<bool>("limiter extension for transport", false)
-       .set<std::string>("limiter", "Barth-Jespersen dg")
-       .set<std::string>("limiter stencil", "cell to all cells")
-       .set<int>("limiter points", 3);
+    .set<bool>("limiter extension for transport", false)
+    .set<std::string>("limiter", "Barth-Jespersen dg")
+    .set<std::string>("limiter stencil", "cell to all cells")
+    .set<int>("limiter points", 3);
 
   // boundary data
   std::vector<int> bc_model(nfaces_wghost, 0);
@@ -304,11 +324,10 @@ TEST(LIMITER_GAUSS_POINTS)
   Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &umax);
   if (getRank == 0) {
     printf("function min/max: %10.6f %10.6f\n", umin, umax);
-    printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);
+    printf(
+      "limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);
   }
 
   CHECK(umax > 0.84);
   CHECK(avglim > 0.97);
 }
-
-

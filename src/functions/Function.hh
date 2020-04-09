@@ -1,12 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Function: base class for all functions of space and time.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+
 */
+
+//! Function: base class for all functions of space and time.
 
 /*!
 Analytic, algabraic functions of space and time are used for a variety of
@@ -56,11 +58,14 @@ OR:
 #* `"function: squared distance`" ``[squared-distance-function-spec]``
 END
 */
-  
+
 #ifndef AMANZI_FUNCTION_HH_
 #define AMANZI_FUNCTION_HH_
 
 #include <vector>
+#include <Kokkos_Core.hpp>
+#include <cassert>
+
 
 namespace Amanzi {
 
@@ -68,7 +73,12 @@ class Function {
  public:
   virtual ~Function() {}
   virtual Function* Clone() const = 0;
-  virtual double operator()(const std::vector<double>& ) const = 0;
+
+  // Keep host version working
+  virtual double operator()(const Kokkos::View<double*>&) const = 0;
+
+  virtual void
+  apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0;
 };
 
 } // namespace Amanzi

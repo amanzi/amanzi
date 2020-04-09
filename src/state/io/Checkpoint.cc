@@ -1,87 +1,70 @@
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon
+      Markus Berndt
+*/
 
-Checkpointing for state.
-------------------------------------------------------------------------- */
+//! Checkpoint writes ALL data, but no meshes to files.
+
+/*
+  Reads/writes to/from file using a generic Input/Output object.
+*/
+
 #include <iomanip>
 #include <iostream>
 
 #include "boost/filesystem.hpp"
 
 #include "Checkpoint.hh"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "UniqueHelpers.hh"
+#include "InputFactory.hh"
+#include "OutputFactory.hh"
 
 namespace Amanzi {
 
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
-                       const Comm_ptr_type& comm)
-    : IOEvent(plist),
-      comm_(comm)
+// standard constructor
+Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+                       bool read)
+  : IOEvent(plist),
+    filename_base_(
+      plist.template get<std::string>("file name base", "checkpoint")),
+    comm_(comm)
+
 {
-  // ReadParameters_();
-
-  // // set the line prefix for output
-  // this->setLinePrefix("Amanzi::Checkpoint     ");
-  // // make sure that the line prefix is printed
-  // this->getOStream()->setShowLinePrefix(true);
-
-  // // Read the sublist for verbosity settings.
-  // Teuchos::readVerboseObjectSublist(&plist_, this);
-
-  // // Set up the HDF5
-  // //checkpoint_output_ = Teuchos::rcp(new HDF5_MPI(comm_));
-  // //checkpoint_output_->setTrackXdmf(false);
-  // final_ = false;
+  if (read)
+    input_ = std::move(InputFactory::CreateForCheckpoint(plist, comm));
+  else
+    output_ = std::move(OutputFactory::CreateForCheckpoint(plist, comm));
 }
 
-Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm)
-    : IOEvent(),
-      comm_(comm) {
-  //checkpoint_output_ = Teuchos::rcp(new HDF5_MPI(comm_, filename));
-  //checkpoint_output_->open_h5file();
-}
+void
+Checkpoint::CreateFile(double time, int cycle)
+{
+  output_->CreateFile(time, cycle);
 
-// this constructor makes an object that will not create any output
-Checkpoint::Checkpoint()
-    : IOEvent(),
-      comm_(Teuchos::null) {}
-
-// -----------------------------------------------------------------------------
-// Set up control from parameter list.
-// -----------------------------------------------------------------------------
-void Checkpoint::ReadParameters_() {
-  filebasename_ = plist_.get<std::string>("file name base", "checkpoint");
-  filenamedigits_ = plist_.get<int>("file name digits", 5);
+  // write comm size
+  Teuchos::ParameterList plist("mpi_num_procs");
+  plist.set("units", "-");
+  Write(plist, comm_->getSize());
 };
 
-void Checkpoint::CreateFile(const int cycle) {
-  // // create the restart file
-  // std::stringstream oss;
-  // oss.flush();
-  // oss << filebasename_;
-  // oss.fill('0');
-  // oss.width(filenamedigits_);
-  // oss << std::right << cycle;
-  // //checkpoint_output_->createDataFile(oss.str());
-  // //checkpoint_output_->open_h5file();
-
-  // if (final_) {
-  //   std::string ch_file = oss.str() + ".h5";
-
-  //   std::stringstream oss_final;
-  //   oss_final << filebasename_ << "_final.h5";
-  //   std::string ch_final = oss_final.str();
-
-  //   boost::filesystem::remove(ch_final.data());
-  //   boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
-  // }
-};
-
-void Checkpoint::Finalize() { //checkpoint_output_->close_h5file(); 
+void
+Checkpoint::FinalizeFile(bool final)
+{
+  output_->FinalizeFile();
+  if (final) {
+    std::string filename = output_->Filename();
+    std::string filename_extension = boost::filesystem::extension(filename);
+    std::string filename_final =
+      filename_base_ + "_finale" + filename_extension;
+    boost::filesystem::remove(filename_extension);
+    boost::filesystem::create_hard_link(filename.data(), filename_final.data());
+  }
 }
 
 } // namespace Amanzi

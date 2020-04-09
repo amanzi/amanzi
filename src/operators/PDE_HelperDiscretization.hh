@@ -1,17 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
-
-  Helper class for discrete PDE operators. It provides support of
-  common functionality.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
 #define AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
@@ -30,32 +28,36 @@ namespace Operators {
 
 class PDE_HelperDiscretization : public PDE_HelperBCsList {
  public:
-  PDE_HelperDiscretization() {};
+  PDE_HelperDiscretization(){};
   PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
   PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~PDE_HelperDiscretization() {};
+  ~PDE_HelperDiscretization(){};
 
   // generate linearized operator
   // -- generate matrix. We can use parameter to define coefficeints
-  //    or/and perform on-a-fly linearization. 
+  //    or/and perform on-a-fly linearization.
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) = 0;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) {
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
+  {
     UpdateMatrices(u, Teuchos::null);
   }
-  virtual void UpdateMatrices() {
+  virtual void UpdateMatrices()
+  {
     UpdateMatrices(Teuchos::null, Teuchos::null);
   }
-  // -- modify matrix due to boundary conditions: generic implementation 
-  //    for PDE classes based on new schema: 
-  //    primary=true indicates that the operator updates both matrix and right-hand
+  // -- modify matrix due to boundary conditions: generic implementation
+  //    for PDE classes based on new schema:
+  //    primary=true indicates that the operator updates both matrix and
+  //    right-hand
   //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial 
-  //      function, i.e. zeros go in the corresponding matrix columns and 
-  //      right-hand side is modified using BC values. This is the optional 
+  //    eliminate=true indicates that we eliminate essential BCs for a trial
+  //      function, i.e. zeros go in the corresponding matrix columns and
+  //      right-hand side is modified using BC values. This is the optional
   //      parameter that enforces symmetry for a symmetric tree  operators.
-  //    essential_eqn=true indicates that the operator places a positive number on 
+  //    essential_eqn=true indicates that the operator places a positive number
+  //    on
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementtion trick/
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
@@ -69,22 +71,25 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   // -- global operator (collection of ops with Apply, etc)
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
-  void set_global_operator(const Teuchos::RCP<Operator>& global_op) { global_op_ = global_op; }
+  void set_global_operator(const Teuchos::RCP<Operator>& global_op)
+  {
+    global_op_ = global_op;
+  }
 
   // -- local operator (container of elemental matrices)
   Teuchos::RCP<Op> local_matrices() { return local_op_; }
   Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
   void set_local_matrices(const Teuchos::RCP<Op>& op);
-  
- protected:
-  void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
-                             bool primary, bool eliminate, bool essential_eqn);
-  
-  void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op,
-                            bool primary, bool eliminate, bool essential_eqn);
 
-  void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op,
-                             bool primary, bool eliminate, bool essential_eqn);
+ protected:
+  void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+                             bool eliminate, bool essential_eqn);
+
+  void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+                            bool eliminate, bool essential_eqn);
+
+  void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op, bool primary,
+                             bool eliminate, bool essential_eqn);
 
  private:
   void PopulateDimensions_();
@@ -103,9 +108,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   int nedges_owned, nedges_wghost;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

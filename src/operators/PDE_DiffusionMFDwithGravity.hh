@@ -1,13 +1,18 @@
-// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
+
+// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD
+// diffusion operator.
+
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
@@ -24,12 +29,12 @@
 
 /*!
 Additional options for MFD with the gravity term include:
-  
-* `"gravity term discretization`" ``[string]`` selects a model for discretizing the 
-  gravity term. Available options are `"hydraulic head`" (default) and `"finite volume`". 
-  The first option starts with equation for the shifted solution, i.e. the hydraulic 
-  head, and derives gravity discretization by the reserve shifting.
-  The second option is based on the divergence formula.
+
+* `"gravity term discretization`" ``[string]`` selects a model for discretizing
+the gravity term. Available options are `"hydraulic head`" (default) and
+`"finite volume`". The first option starts with equation for the shifted
+solution, i.e. the hydraulic head, and derives gravity discretization by the
+reserve shifting. The second option is based on the divergence formula.
 */
 
 namespace Amanzi {
@@ -41,29 +46,29 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
                                     public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<Operator>& global_op) :
-      PDE_DiffusionMFD(plist, global_op),
+                              const Teuchos::RCP<Operator>& global_op)
+    : PDE_DiffusionMFD(plist, global_op),
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
-  
+
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_DiffusionMFD(plist, mesh),
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_DiffusionMFD(plist, mesh),
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
-  
+
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<Operator>& global_op,
-                              const AmanziGeometry::Point& g) :
-      PDE_DiffusionMFD(plist, global_op),
+                              const AmanziGeometry::Point& g)
+    : PDE_DiffusionMFD(plist, global_op),
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
@@ -71,11 +76,11 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
     Init_(plist);
     SetGravity(g);
   }
-  
+
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                              const AmanziGeometry::Point& g) :
-      PDE_DiffusionMFD(plist, mesh),
+                              const AmanziGeometry::Point& g)
+    : PDE_DiffusionMFD(plist, mesh),
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
@@ -83,11 +88,11 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
     Init_(plist);
     SetGravity(g);
   }
-  
+
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<Operator>& global_op,
-                              double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionMFD(plist, global_op),
+                              double rho, const AmanziGeometry::Point& g)
+    : PDE_DiffusionMFD(plist, global_op),
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
@@ -99,8 +104,8 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
 
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                              double rho, const AmanziGeometry::Point& g) :
-      PDE_DiffusionMFD(plist, mesh),
+                              double rho, const AmanziGeometry::Point& g)
+    : PDE_DiffusionMFD(plist, mesh),
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
@@ -112,31 +117,35 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
 
   // main members
   // -- required by the base class
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u) override;
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                 const Teuchos::Ptr<const CompositeVector>& u) override;
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void
+  UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                        const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- problem initialiation
   using PDE_DiffusionMFD::Setup;
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
              const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             double rho, const AmanziGeometry::Point& g) {
+             const Teuchos::RCP<const CompositeVector>& dkdp, double rho,
+             const AmanziGeometry::Point& g)
+  {
     SetDensity(rho);
     SetGravity(g);
     PDE_DiffusionMFD::SetTensorCoefficient(K);
     PDE_DiffusionMFD::SetScalarCoefficient(k, dkdp);
-  } 
+  }
 
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
              const Teuchos::RCP<const CompositeVector>& k,
              const Teuchos::RCP<const CompositeVector>& dkdp,
              const Teuchos::RCP<const CompositeVector>& rho,
-             const AmanziGeometry::Point& g) {
+             const AmanziGeometry::Point& g)
+  {
     SetDensity(rho);
     SetGravity(g);
     PDE_DiffusionMFD::SetTensorCoefficient(K);
@@ -157,8 +166,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
   int gravity_method_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

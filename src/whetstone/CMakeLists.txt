@@ -1,5 +1,4 @@
 # -*- mode: cmake -*-
-
 #
 #  Amanzi
 #   Discretization library

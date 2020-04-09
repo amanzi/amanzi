@@ -1,5 +1,17 @@
 /*
-Author: Ethan Coon (ecoon@lanl.gov)
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
+/*
+Author: Ethan Coon (coonet@ornl.gov)
 
 A plausibly scalable graph for use in FE-like systems, where assembly
 must be done into rows of ghost entities as well as owned entities.
@@ -23,9 +35,7 @@ namespace Amanzi {
 namespace Operators {
 
 class GraphFE {
-
  public:
-
   // Constructor
   GraphFE(const Map_ptr_type& row_map,
 	  const Map_ptr_type& ghosted_row_map,
@@ -40,7 +50,7 @@ class GraphFE {
 
   // does this graph include off-process entries?
   bool includes_offproc() const { return includes_ghosted_; }
-  
+
   // accessors to maps
   Map_ptr_type DomainMap() const { return domain_map_; }
   Map_ptr_type RangeMap() const { return range_map_; }
@@ -87,7 +97,7 @@ class GraphFE {
 };
 
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

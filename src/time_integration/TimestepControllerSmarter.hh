@@ -1,13 +1,15 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
-//!  Slightly smarter timestep controller based upon a history of previous timesteps.
+//! Slightly smarter timestep controller based upon a history of previous
+//! timesteps.
 
 /*!
 
@@ -17,13 +19,21 @@ the step size decreases, converges in few iterations, increases, but then
 fails again.  It also tries to grow the step geometrically to more quickly
 recover from tricky nonlinearities.
 
-* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
-* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
-* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
-* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.
-* `"max time step increase factor`" ``[double]`` **10.** The max :math:`f_increase` will ever get.
-* `"growth wait after fail`" ``[int]`` Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.
-* `"count before increasing increase factor`" ``[int]`` Require this many successive increasions before multiplying :math:`f_increase` by itself.
+* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the
+previous step took more than this.
+* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the
+previous step took less than this.
+* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the
+previous timestep by this multiple.
+* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the
+previous timestep by this multiple.  Note that this can be modified
+geometrically in the case of repeated successful steps.
+* `"max time step increase factor`" ``[double]`` **10.** The max
+:math:`f_increase` will ever get.
+* `"growth wait after fail`" ``[int]`` Wait at least this many timesteps before
+attempting to grow the timestep after a failed timestep.
+* `"count before increasing increase factor`" ``[int]`` Require this many
+successive increasions before multiplying :math:`f_increase` by itself.
 
 
 */
@@ -40,7 +50,6 @@ recover from tricky nonlinearities.
 namespace Amanzi {
 
 class TimestepControllerSmarter : public TimestepController {
-
  public:
   TimestepControllerSmarter(Teuchos::ParameterList& plist);
 
@@ -69,6 +78,6 @@ class TimestepControllerSmarter : public TimestepController {
   int growth_wait_after_fail0_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

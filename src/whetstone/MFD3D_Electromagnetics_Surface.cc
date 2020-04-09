@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -28,17 +28,18 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for the mass matrix in electromagnetics for
-* face f of a 3D cell.
-****************************************************************** */
-int MFD3D_Electromagnetics::L2consistencyBoundary(
-    int f, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+ * Consistency condition for the mass matrix in electromagnetics for
+ * face f of a 3D cell.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::L2consistencyBoundary(int f, const Tensor& T,
+                                              DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List edges;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> edges;
+  Kokkos::View<int*> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-  int nedges = edges.size();
+  mesh_->face_get_edges_and_dirs(f, edges, &dirs);
+  int nedges = edges.extent(0);
 
   N.Reshape(nedges, d_ - 1);
   Mc.Reshape(nedges, nedges);
@@ -49,13 +50,11 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   double area = mesh_->face_area(f);
 
   // calculate rotation matrix
-  Tensor P(d_, 2); 
+  Tensor P(d_, 2);
 
   v3 = normal / area;
   for (int i = 0; i < d_; i++) {
-    for (int j = 0; j < d_; j++) { 
-      P(i, j) = v3[i] * v3[j];
-    }
+    for (int j = 0; j < d_; j++) { P(i, j) = v3[i] * v3[j]; }
   }
   P(0, 1) -= v3[2];
   P(0, 2) += v3[1];
@@ -73,13 +72,13 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   PTP = Pt * Tinv * P;
 
   for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
+    int e = edges(i);
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     double a1 = mesh_->edge_length(e);
     v2 = PTP * (xe - xf);
 
     for (int j = i; j < nedges; j++) {
-      e = edges[j];
+      e = edges(j);
       const AmanziGeometry::Point& ye = mesh_->edge_centroid(e);
       double a2 = mesh_->edge_length(e);
 
@@ -89,14 +88,14 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   }
 
   // Rows of matrix N are normal vectors in the plane of face f.
-  v1 = mesh_->edge_vector(edges[0]) / mesh_->edge_length(edges[0]);
-  v2 = v3^v1;
+  v1 = mesh_->edge_vector(edges(0)) / mesh_->edge_length(edges(0));
+  v2 = v3 ^ v1;
   for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
+    int e = edges(i);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
-    N(i, 0) = -(tau * v2) * dirs[i] / len; 
-    N(i, 1) = (tau * v1) * dirs[i] / len; 
+    N(i, 0) = -(tau * v2) * dirs(i) / len;
+    N(i, 1) = (tau * v1) * dirs(i) / len;
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -104,9 +103,11 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 
 
 /* ******************************************************************
-* Matrix matrix for edge-based discretization.
-****************************************************************** */
-int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
+ * Matrix matrix for edge-based discretization.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T,
+                                           DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -117,8 +118,5 @@ int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatr
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

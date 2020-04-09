@@ -1,13 +1,14 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GLOBAL_VERBOSITY_
 #define AMANZI_GLOBAL_VERBOSITY_
@@ -21,7 +22,8 @@ class VerbosityLevel {
   static Teuchos::EVerbosityLevel level_;
 
   static const unsigned int kVerbositySize = 16;
-  static std::string verbosityHeader(const std::string str) {
+  static std::string verbosityHeader(const std::string str)
+  {
     std::string header(str);
     if (header.size() > kVerbositySize) {
       header.erase(kVerbositySize);

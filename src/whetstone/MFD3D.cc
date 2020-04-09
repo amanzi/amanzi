@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -25,8 +25,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructors
-****************************************************************** */
+ * Constructors
+ ****************************************************************** */
 MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : InnerProduct(mesh)
 {
@@ -36,10 +36,11 @@ MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 
 
 /* ******************************************************************
-* Set up positive scaling factor for a scalar stability term.
-* Warning: Ignores silently negative factors.
-****************************************************************** */
-void MFD3D::ModifyStabilityScalingFactor(double factor)
+ * Set up positive scaling factor for a scalar stability term.
+ * Warning: Ignores silently negative factors.
+ ****************************************************************** */
+void
+MFD3D::ModifyStabilityScalingFactor(double factor)
 {
   if (factor > 0.0) {
     stability_method_ = WHETSTONE_STABILITY_GENERIC_SCALED;
@@ -49,10 +50,10 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 
 
 /* ******************************************************************
-* A wrapper for the simplex method that finds monotone parameters. 
-****************************************************************** */
-int MFD3D::StabilityMMatrix_(
-    int c, DenseMatrix& N, DenseMatrix& M, int objective)
+ * A wrapper for the simplex method that finds monotone parameters.
+ ****************************************************************** */
+int
+MFD3D::StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, int objective)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();
@@ -90,7 +91,7 @@ int MFD3D::StabilityMMatrix_(
         m2++;
       }
       T(ir, 0) = b;
-      
+
       nx = 0;
       for (int k = 0; k < mcols; k++) {
         tmp = D(i, k) * D(j, k);
@@ -168,19 +169,19 @@ int MFD3D::StabilityMMatrix_(
 
   if (fabs(T(m12 + 1, 0)) > 1e-8) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
-  simplex_functional_ = T(0,0); 
-  simplex_num_itrs_ = itrs; 
+  simplex_functional_ = T(0, 0);
+  simplex_num_itrs_ = itrs;
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;
   for (int i = 1; i < m12 + 1; i++) {
     int k = iypos[i] - 1;
-    if (k < mx) u[k] = T(i,0);
+    if (k < mx) u[k] = T(i, 0);
   }
 
   // add matrix D' U D
   for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) { 
+    for (int j = i; j < nrows; j++) {
       nx = 0;
       for (int k = 0; k < mcols; k++) {
         M(i, j) += D(i, k) * D(j, k) * u[nx];
@@ -200,16 +201,17 @@ int MFD3D::StabilityMMatrix_(
 
 
 /* ******************************************************************
-* A simplex method for fining monotone parameters. 
-* We assume that m3 = 0; otherwise, routine MaxRowValue() has 
-* to be modified by looping over columns in array l1.
-****************************************************************** */
-int MFD3D::SimplexFindFeasibleSolution_(
-    DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos)
+ * A simplex method for fining monotone parameters.
+ * We assume that m3 = 0; otherwise, routine MaxRowValue() has
+ * to be modified by looping over columns in array l1.
+ ****************************************************************** */
+int
+MFD3D::SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3,
+                                    int* izrow, int* iypos)
 {
-  int m = m1 + m2 + m3;     // Number of constraints.
-  int n = T.NumCols() - 1;  // Number of unknowns.
-  
+  int m = m1 + m2 + m3;    // Number of constraints.
+  int n = T.NumCols() - 1; // Number of unknowns.
+
   for (int k = 0; k < n + 1; k++) {
     double q1 = 0.0;
     for (int i = m1 + 1; i < m + 1; i++) q1 += T(i, k);
@@ -234,11 +236,11 @@ int MFD3D::SimplexFindFeasibleSolution_(
     for (int itr = 0; itr < itr_max; itr++) {
       // find maximum coeffient of the auxiliary functional
       double vmax;
-      T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
+      T.MaxRowValue(m + 1, 1, n, &kp, &vmax);
 
-      // feasible solution does not exist 
-      if (vmax < tol && T(m + 1, 0) < -tol) 
-          return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
+      // feasible solution does not exist
+      if (vmax < tol && T(m + 1, 0) < -tol)
+        return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
 
       // feasible solution has been found
       if (vmax < tol && fabs(T(m + 1, 0)) < tol) {
@@ -254,7 +256,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
 
         for (int i = m1 + 1; i < m + 1; i++) {
           if (l3[i - m1 - 1] == 1) {
-            for (int k = 0; k < n + 1; k++) T(i, k) *= -1; 
+            for (int k = 0; k < n + 1; k++) T(i, k) *= -1;
           }
         }
         itr1 = itr;
@@ -273,15 +275,16 @@ int MFD3D::SimplexFindFeasibleSolution_(
       // Make sure it stays out by removing it from the l1 list.
       if (iypos[ip] >= n + m1 + m2 + 1) {
         for (int k = 1; k <= nl1; k++) {
-          if (l1[k] == kp) { 
+          if (l1[k] == kp) {
             --nl1;
             for (int i = k; i <= nl1; i++) l1[i] = l1[i + 1];
             break;
           }
         }
       } else {
-      // Exchanged out an m2 type constraint for the first time. 
-      // Correct sign of the pivot column and the implicit artificial variable.
+        // Exchanged out an m2 type constraint for the first time.
+        // Correct sign of the pivot column and the implicit artificial
+        // variable.
         int kh = iypos[ip] - m1 - n - 1;
         if (kh >= 0 && l3[kh] == 1) {
           l3[kh] = 0;
@@ -328,9 +331,10 @@ int MFD3D::SimplexFindFeasibleSolution_(
 
 
 /* ******************************************************************
-* Locates a pivot elements taking degeneracy into account.
-***************************************************************** */
-void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
+ * Locates a pivot elements taking degeneracy into account.
+ ***************************************************************** */
+void
+MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
@@ -341,7 +345,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
   for (int i = 1; i < m + 1; i++) {
     tmp = T(i, kp);
     if (tmp < -tol) {
-      // Round-off errors may generate small but negative RHS, so that 
+      // Round-off errors may generate small but negative RHS, so that
       // we take its absolute value
       q = -fabs(T(i, 0)) / tmp;
 
@@ -353,7 +357,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
         *ip = i;
         qmin = q;
         tmin = tmp;
-      } else if (q == qmin) {  // we have a degeneracy.
+      } else if (q == qmin) { // we have a degeneracy.
 #ifdef WHETSTONE_SIMPLEX_PIVOT_BRANDT
         double tmp0 = T(*ip, kp);
         for (int k = 1; k <= n; k++) {
@@ -377,9 +381,10 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 
 
 /* ******************************************************************
-* Exchanges left-hand and right-hand variables.
-****************************************************************** */
-void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
+ * Exchanges left-hand and right-hand variables.
+ ****************************************************************** */
+void
+MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
@@ -400,8 +405,5 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 }
 
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

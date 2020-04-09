@@ -32,26 +32,35 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
+set(mesh_functions_src_files BoundaryFunction.cc
+  UniqueMeshFunction.cc
+  DynamicBoundaryFunction.cc
+  MaterialMeshFunction.cc
+  #MeshPartition.cc
+  CompositeVectorFunction.cc
+  CompositeVectorFunctionFactory.cc
+  )
+
+set(mesh_functions_inc_files MeshFunction.hh
+  BoundaryFunction.hh
+  UniqueMeshFunction.hh
+  DynamicBoundaryFunction.hh
+  MaterialMeshFunction.hh
+  #MeshPartition.hh
+  CompositeVectorFunction.hh
+  CompositeVectorFunctionFactory.hh
+  )
+
+set(mesh_functions_link_libs mesh data_structures functions error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
+
 #
 # Library: mesh_functions
 #
 add_amanzi_library(mesh_functions
-                   SOURCE CompositeVectorFunction.cc
-                          CompositeVectorFunctionFactory.cc
-                          UniqueMeshFunction.cc
-                          BoundaryFunction.cc
-                          DynamicBoundaryFunction.cc
-                          #MeshPartition.cc
-                          MaterialMeshFunction.cc
-                   HEADERS BoundaryFunction.hh
-                           DynamicBoundaryFunction.hh
-                           CompositeVectorFunction.hh
-                           CompositeVectorFunctionFactory.hh
-                           #MeshPartition.hh
-                           MeshFunction.hh
-                           UniqueMeshFunction.hh
-                           MaterialMeshFunction.hh
-                   LINK_LIBS mesh data_structures error_handling functions ${Teuchos_LIBRARIES})
+  SOURCE ${mesh_functions_src_files}
+  HEADERS ${mesh_functions_inc_files}
+  LINK_LIBS ${mesh_functions_link_libs}
+  )
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -68,25 +77,24 @@ if (BUILD_TESTS)
   if (NOT (MFUNCS_SOURCE_DIR STREQUAL MFUNCS_BINARY_DIR))
       # file(GLOB DataFiles "${MFUNCS_SOURCE_DIR}/test/*.xml")
       # file(COPY ${DataFiles} DESTINATION ${MFUNCS_BINARY_DIR}/test/)
-  endif()
+    endif()
+
+    set(mesh_functions_test_link_libs mesh_functions mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
 # these are currently broken
-  add_amanzi_test(boundary_function boundary_function
+  add_amanzi_test(mesh_functions_boundary_function mesh_functions_boundary_function
                   KIND unit
-                  SOURCE test/boundary_function.cc
-                  LINK_LIBS mesh_functions mesh_factory data_structures
-                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+                  SOURCE test/mesh_functions_boundary_function.cc
+                  LINK_LIBS ${mesh_functions_test_link_libs})
 
-  add_amanzi_test(material_function material_function
+  add_amanzi_test(mesh_functions_material_function mesh_functions_material_function
                   KIND unit
-                  SOURCE test/material_function.cc
-                  LINK_LIBS mesh_functions mesh_factory data_structures
-                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+                  SOURCE test/mesh_functions_material_function.cc
+                  LINK_LIBS ${mesh_functions_test_link_libs})
 
-  # add_amanzi_test(cv_function cv_function
-  #                 KIND unit
-  #                 SOURCE test/composite_vector_function.cc
-  #                 LINK_LIBS  mesh_functions mesh_factory data_structures 
-  #                            ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
-  #                            ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+  add_amanzi_test(mesh_functions_composite_vector_function mesh_functions_composite_vector_function
+                  KIND unit
+                  SOURCE test/mesh_functions_composite_vector_function.cc
+                  LINK_LIBS ${mesh_functions_test_link_libs})
+  
 endif()

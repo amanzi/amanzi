@@ -1,28 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The helper advection-based base class for various remap methods. It
-  provides support of time integration and calculation of various static
-  and dynamic geometric quantities. The actual time-step loop could be
-  implemented differently by an application.
-
-  The integration is performed on the pseudo-time interval from 0 to 1. 
-  The remap velocity u is constant, but since the integration is performed
-  in the reference coordinate system associated with mesh0, the transformed
-  velocity v is the time-dependent quantity. The call it the co-velocity,
-  v = C^t u where C is the matrix of co-factors for the Jacobian matrix J.
-  Recall that C = det(J) J^{-T}. 
-
-  Input parameter list describes operators, limiters, and mesh maps,
-  see native spec for more detail. 
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_REMAP_DG_HH_
 #define AMANZI_OPERATOR_REMAP_DG_HH_
@@ -57,32 +43,36 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
           Teuchos::ParameterList& plist);
-  ~RemapDG() {};
+  ~RemapDG(){};
 
   // main members required by the time integration class
   // -- calculate functional f(t, u) where u is the conservative quantity
-  virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
+  virtual void FunctionalTimeDerivative(double t, const CompositeVector& u,
+                                        CompositeVector& f) override;
 
   // -- limit solution at all steps of the RK scheme
   virtual void ModifySolution(double t, CompositeVector& u) override;
 
   // initialization routines
-  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
+  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg);
   void InitializeFaceVelocity();
   void InitializeJacobianMatrix();
 
   // dynamic geometric quantities
-  virtual void DynamicJacobianMatrix(
-      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
+  virtual void
+  DynamicJacobianMatrix(int c, double t, const WhetStone::MatrixPolynomial& J,
+                        WhetStone::MatrixPolynomial& Jt);
   virtual void DynamicFaceVelocity(double t);
   virtual void DynamicCellVelocity(double t);
 
   // change between conservative and non-conservative variable
-  void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
-  void NonConservativeToConservative(double t, const CompositeVector& u, CompositeVector& v);
+  void ConservativeToNonConservative(double t, const CompositeVector& u,
+                                     CompositeVector& v);
+  void NonConservativeToConservative(double t, const CompositeVector& u,
+                                     CompositeVector& v);
 
   // limiters
-  void ApplyLimiter(double t, CompositeVector& u); 
+  void ApplyLimiter(double t, CompositeVector& u);
 
   // access
   Teuchos::RCP<LimiterCell> limiter() { return limiter_; }
@@ -95,14 +85,14 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   Teuchos::ParameterList plist_;
   std::shared_ptr<WhetStone::MeshMaps> maps_;
-  Teuchos::RCP<WhetStone::DG_Modal> dg_; 
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 
   // operators
   int order_;
   Teuchos::RCP<PDE_Abstract> op_adv_;
   Teuchos::RCP<PDE_AdvectionRiemann> op_flux_;
-  Teuchos::RCP<PDE_Reaction>op_reac_;
-  
+  Teuchos::RCP<PDE_Reaction> op_reac_;
+
   int bc_type_;
 
   // shock inticators and limiters
@@ -117,10 +107,10 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   std::vector<WhetStone::VectorPolynomial> uc_;
   std::vector<WhetStone::MatrixPolynomial> J_;
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > det_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>> det_;
 
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>> velc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial>> velf_;
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
 
   // statistics
@@ -129,7 +119,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   double sharp_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

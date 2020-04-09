@@ -1,15 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for testing elasticity and Stokes-type problems.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELASTICITY_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_ELASTICITY_BASE_HH_
@@ -20,27 +19,39 @@
 
 class AnalyticElasticityBase {
  public:
-  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {
-    nnodes_owned = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-    ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh)
+  {
+    nnodes_owned = mesh_->num_entities(
+      Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    ncells_owned = mesh_->num_entities(
+      Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
-    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+                                        Amanzi::AmanziMesh::Parallel_type::ALL);
+    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+                                        Amanzi::AmanziMesh::Parallel_type::ALL);
   };
-  ~AnalyticElasticityBase() {};
+  ~AnalyticElasticityBase(){};
 
   // analytic solution for elasticity-type problem
   // -- stiffness/elasticity tensor T
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  // -- analytic solution 
-  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  // -- analytic solution
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double
+  pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- source term
-  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation
   // -- velocity
-  void ComputeNodeError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err) {
+  void ComputeNodeError(Amanzi::CompositeVector& u, double t, double& unorm,
+                        double& l2_err, double& inf_err)
+  {
     unorm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;
@@ -48,26 +59,27 @@ class AnalyticElasticityBase {
     // calculate nodal volumes
     Amanzi::AmanziMesh::Entity_ID_List nodes;
 
-    Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
+    Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs =
+      Teuchos::rcp(new Amanzi::CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent(
+      "node", Amanzi::AmanziMesh::NODE, 1);
 
     Amanzi::CompositeVector vol(*cvs);
     Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
-    vol.PutScalar(0.0);
+    vol.putScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
       for (int i = 0; i < nnodes; i++) {
-        vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+        vol_node[0][nodes[i]] += mesh_->cell_volume(c, false) / nnodes;
       }
     }
     vol.GatherGhostedToMaster("node");
 
     // calculate errors
-    int d = mesh_->space_dimension(); 
+    int d = mesh_->space_dimension();
     Amanzi::AmanziGeometry::Point p(d), ucalc(d);
     Epetra_MultiVector& u_node = *u.ViewComponent("node");
 
@@ -96,7 +108,9 @@ class AnalyticElasticityBase {
   }
 
   // -- pressure
-  void ComputeCellError(Amanzi::CompositeVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
+  void ComputeCellError(Amanzi::CompositeVector& p, double t, double& pnorm,
+                        double& l2_err, double& inf_err)
+  {
     pnorm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;
@@ -105,7 +119,7 @@ class AnalyticElasticityBase {
 
     for (int c = 0; c < ncells_owned; ++c) {
       const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-      double area = mesh_->cell_volume(c);
+      double area = mesh_->cell_volume(c, false);
 
       double pexact = pressure_exact(xm, t);
       double tmp = fabs(p_cell[0][c] - pexact);
@@ -113,7 +127,8 @@ class AnalyticElasticityBase {
       l2_err += tmp * tmp * area;
       inf_err = std::max(inf_err, tmp);
       pnorm += pexact * pexact * area;
-      // std::cout << c << " ph=" << p_cell[0][c] << " ex=" << pexact << std::endl;
+      // std::cout << c << " ph=" << p_cell[0][c] << " ex=" << pexact <<
+      // std::endl;
     }
 #ifdef HAVE_MPI
     double tmp = pnorm;
@@ -134,4 +149,3 @@ class AnalyticElasticityBase {
 };
 
 #endif
-

@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -25,34 +25,39 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis_Regularized : public Basis { 
+class Basis_Regularized : public Basis {
  public:
   Basis_Regularized() { id_ = TAYLOR_BASIS_REGULARIZED; }
-  ~Basis_Regularized() {};
+  ~Basis_Regularized(){};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                    AmanziMesh::Entity_ID id, int c, int order,
-                    Polynomial& integrals);
+  virtual void
+  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+       AmanziMesh::Entity_ID id, int c, int order, Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
-  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
-                                       std::shared_ptr<Basis> br, DenseMatrix& A) const;
+  virtual void
+  BilinearFormNaturalToMy(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br,
+                          DenseMatrix& A) const;
 
   // transformation of linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const;
 
-  // transformation of vector 
+  // transformation of vector
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                         int c, int order, DenseVector& coefs) const;
+  virtual Polynomial
+  CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c,
+                      int order, DenseVector& coefs) const;
 
   // access
-  const std::vector<double>& monomial_scales() const { return monomial_scales_; }
+  const std::vector<double>& monomial_scales() const
+  {
+    return monomial_scales_;
+  }
 
  private:
   using Basis::id_;
@@ -61,8 +66,7 @@ class Basis_Regularized : public Basis {
   int d_, order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

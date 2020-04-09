@@ -2,15 +2,15 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Tensors of rank 1 are numbers in all dimensions.
-  General tensors of rank 2 are square matrices in all dimensions. 
+  General tensors of rank 2 are square matrices in all dimensions.
   Only symmetric tensors of rank 4 are considered here.
 */
 
@@ -27,23 +27,28 @@
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
-                                         {1, 2, 0, 3},
-                                         {1, 3, 0, 6}};
+const int WHETSTONE_TENSOR_SIZE[3][4] = { { 1, 1, 0, 1 },
+                                          { 1, 2, 0, 3 },
+                                          { 1, 3, 0, 6 } };
 
 class Tensor {
  public:
-  Tensor() { 
-    d_ = rank_ = size_ = 0; 
+  Tensor()
+  {
+    d_ = rank_ = size_ = 0;
     data_ = NULL;
   }
   Tensor(const Tensor& T);
-  Tensor(int d, int rank) {
+  Tensor(int d, int rank)
+  {
     data_ = NULL;
     Init(d, rank);
   }
   Tensor(int d, int rank, const double* data);
-  ~Tensor() { if (data_) delete[] data_; }
+  ~Tensor()
+  {
+    if (data_) delete[] data_;
+  }
 
   // primary members
   int Init(int d, int rank);
@@ -63,14 +68,15 @@ class Tensor {
   Tensor& operator+=(double c);
   Tensor& operator-=(const Tensor& T);
   Tensor& operator=(const Tensor& T);
-  friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
+  friend AmanziGeometry::Point
+  operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
   friend double DotTensor(const Tensor& T1, const Tensor& T2);
 
   // initialization
   void MakeDiagonal(double s);
-  int SetColumn(int column, const AmanziGeometry::Point& p); 
-  int SetRow(int row, const AmanziGeometry::Point& p); 
+  int SetColumn(int column, const AmanziGeometry::Point& p);
+  int SetRow(int row, const AmanziGeometry::Point& p);
 
   // access members
   double& operator()(int i, int j) { return data_[j * size_ + i]; }
@@ -84,7 +90,7 @@ class Tensor {
 
   // miscaleneous
   friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
- 
+
  private:
   int d_, rank_, size_;
   double* data_;
@@ -93,7 +99,9 @@ class Tensor {
 
 // non-member functions
 // -- comparison operators
-inline bool operator==(const Tensor& T1, const Tensor& T2) {
+inline bool
+operator==(const Tensor& T1, const Tensor& T2)
+{
   if (T1.rank() != T1.rank()) return false;
   if (T1.size() != T2.size()) return false;
 
@@ -104,15 +112,19 @@ inline bool operator==(const Tensor& T1, const Tensor& T2) {
   return true;
 }
 
-inline bool operator!=(const Tensor& T1, const Tensor& T2) {
+inline bool
+operator!=(const Tensor& T1, const Tensor& T2)
+{
   return !(T1 == T2);
 }
 
 // -- expanding tensor to a constant size vector and reverse.
-void TensorToVector(const Tensor& T, DenseVector& v);
-void VectorToTensor(const DenseVector& v, Tensor& T);
+void
+TensorToVector(const Tensor& T, DenseVector& v);
+void
+VectorToTensor(const DenseVector& v, Tensor& T);
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif

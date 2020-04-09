@@ -1,21 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLineSegment: A line segment, defined by two points in space.
-
 /*
- Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Daniil Svyatsky (dasvyat@lanl.gov)
+  Authors:
+      Daniil Svyatsky (dasvyat@lanl.gov)
 */
+
+//! RegionLineSegment: A line segment, defined by two points in space.
 
 /*!
 
 List *region: line segment* desribes a region defined by a line
 segment. This region is a set of cells which intersect with a line
-segment.  The line segment is allowed to intersect with one or more cells. Zero length
-line segments are allowed. The line segment is defined by its ends
+segment.  The line segment is allowed to intersect with one or more cells. Zero
+length line segments are allowed. The line segment is defined by its ends
 points.
 
 * `"end coordinate`" ``[Array(double)]`` Location of one end of a line
@@ -30,10 +30,11 @@ Example:
 
    <ParameterList name="WELL"> <!-- parent list -->
       <ParameterList name="region: line segment">
-        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
-        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
+        <Parameter name="end coordinate" type="Array(double)" value="{497542.44,
+5393755.77, 0.0}"/> <Parameter name="opposite end coordinate"
+type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
       </ParameterList>
-    </ParameterList>     
+    </ParameterList>
 
 */
 
@@ -49,14 +50,11 @@ Example:
 namespace Amanzi {
 namespace AmanziGeometry {
 
-class RegionLineSegment: public Region {
+class RegionLineSegment : public Region {
  public:
   // Default constructor uses two corner points (order not important)
-  RegionLineSegment(const std::string& name,
-                    const int id,
-                    const Point& p0, 
-                    const Point& p1,
-                    const LifeCycleType lifecycle=PERMANENT);
+  RegionLineSegment(const std::string& name, const int id, const Point& p0,
+                    const Point& p1, const LifeCycleType lifecycle = PERMANENT);
 
   // Is the specified point inside this region?
   bool inside(const Point& p) const;
@@ -66,25 +64,27 @@ class RegionLineSegment: public Region {
   // a 0 if not.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double intersect(const std::vector<Point>& polytope, 
-                   const std::vector<std::vector<int> >& faces) const;
+  double intersect(const Kokkos::View<Point*>& polytope,
+                   const std::vector<std::vector<int>>& faces) const;
 
   void ComputeInterLinePoints(const std::vector<Point>& polytope,
-                              const std::vector<std::vector<int> >& faces,
+                              const std::vector<std::vector<int>>& faces,
                               Point& res_point) const;
 
  protected:
   const Point p0_, p1_; // two end points of the line.
-  //std::vector<Point> line_points_;
-  //std::vector<double> line_frac_;
-  //bool complete_;
+  // std::vector<Point> line_points_;
+  // std::vector<double> line_frac_;
+  // bool complete_;
 };
 
-double PlaneLineIntersection(const std::vector<Point>& plane,
-                             const std::vector<Point>& line);
-  
-double det_aux(const std::vector<double>& first_row,
-               const std::vector<double>& submatr);
+double
+PlaneLineIntersection(const Kokkos::View<Point*>& plane,
+                      const std::vector<Point>& line);
+
+double
+det_aux(const std::vector<double>& first_row,
+        const std::vector<double>& submatr);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

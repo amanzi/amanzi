@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #ifndef AMANZI_SOLUTION_HISTORY_H_
 #define AMANZI_SOLUTION_HISTORY_H_
 
@@ -6,19 +18,17 @@
 // Modified for Amanzi.
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
 
 #include "dbc.hh"
 #include "errors.hh"
 
 namespace Amanzi {
 
-  // The Amanzi::SolutionHistory class stores the solution history of the time
-  // stepper and provides interpolation methods that are used in the DAE
-  // object.
+// The Amanzi::SolutionHistory class stores the solution history of the time
+// stepper and provides interpolation methods that are used in the DAE
+// object.
 
-template<class Vector>
+template <class Vector>
 class SolutionHistory {
  public:
   SolutionHistory(int mvec, double t, const Vector& x);
@@ -80,70 +90,82 @@ class SolutionHistory {
  protected:
   unsigned int nvec_;
   std::vector<double> times_;
-  std::vector<Teuchos::RCP<Vector> > d_; // divided differences
+  std::vector<Teuchos::RCP<Vector>> d_; // divided differences
 };
 
 
 /* ******************************************************************
-* Constructors
-****************************************************************** */
-template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x) {
+ * Constructors
+ ****************************************************************** */
+template <class Vector>
+SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x)
+{
   Initialize_(mvec, x);
   RecordSolution(t, x);
 }
 
 
-template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x, const Vector& xdot) {
+template <class Vector>
+SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x,
+                                         const Vector& xdot)
+{
   Initialize_(mvec, x);
   RecordSolution(t, x, xdot);
 }
 
 
 /* ******************************************************************
-* Initialize and allocate memory
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
+ * Initialize and allocate memory
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
+{
   nvec_ = 0;
   d_.resize(mvec);
   times_.resize(mvec);
 
-  for (int j=0; j<mvec; j++)
-    d_[j] = Teuchos::rcp(new Vector(initvec));
+  for (int j = 0; j < mvec; j++)
+    d_[j] = Teuchos::rcp(new Vector(initvec.getMap()));
 }
 
 
 /* ******************************************************************
-* Modify history
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x) {
+ * Modify history
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::FlushHistory(double t, const Vector& x)
+{
   nvec_ = 0;
   RecordSolution(t, x);
 }
 
 
-template<class Vector>
-void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, const Vector& xdot) {
+template <class Vector>
+void
+SolutionHistory<Vector>::FlushHistory(double t, const Vector& x,
+                                      const Vector& xdot)
+{
   nvec_ = 0;
   RecordSolution(t, x, xdot);
 }
 
 
 /* *****************************************************************
-* Update history.
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
+ * Update history.
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::RecordSolution(double t, const Vector& x)
+{
   // update the number of vectors
   nvec_++;
   if (nvec_ > d_.size()) nvec_ = d_.size();
 
   // shift the times and history vectors,
   // while storing the pointer to the last one
-  Teuchos::RCP<Vector> tmp = d_[nvec_-1];
+  Teuchos::RCP<Vector> tmp = d_[nvec_ - 1];
   for (int j = nvec_ - 1; j >= 1; j--) {
     times_[j] = times_[j - 1];
     d_[j] = d_[j - 1];
@@ -152,7 +174,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
   // insert the new vector
   times_[0] = t;
   d_[0] = tmp;
-  *d_[0] = x;
+  d_[0]->assign(x);
 
   // update the divided differences
   for (unsigned int j = 1; j <= nvec_ - 1; j++) {
@@ -161,16 +183,18 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
       Exceptions::amanzi_throw(message);
     }
     double div = 1.0 / (times_[0] - times_[j]);
-    d_[j]->Update(div, *d_[j - 1], -div);
+    d_[j]->update(div, *d_[j - 1], -div);
   }
 }
 
 
 /* *****************************************************************
-* Update history, including differences.
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Vector& xdot)
+ * Update history, including differences.
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::RecordSolution(double t, const Vector& x,
+                                        const Vector& xdot)
 {
   RecordSolution(t, x);
 
@@ -178,72 +202,77 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Ve
   nvec_++;
   if (nvec_ > d_.size()) nvec_ = d_.size();
 
-  if (d_.size()>1) {
+  if (d_.size() > 1) {
     // shift the divided differences, except the first; the new vector and
     // time index are the same as the most recent.
-    Teuchos::RCP<Vector> tmp = d_[nvec_-1];
+    Teuchos::RCP<Vector> tmp = d_[nvec_ - 1];
     for (unsigned int j = nvec_ - 1; j >= 2; j--) {
       times_[j] = times_[j - 1];
       d_[j] = d_[j - 1];
     }
 
-    // the first divided difference (same time index) is the specified derivative.
+    // the first divided difference (same time index) is the specified
+    // derivative.
     times_[1] = times_[0];
     d_[1] = tmp;
-    *d_[1] = xdot;
+    d_[1]->assign(xdot);
 
     // update the rest of the divided differences
-    for (unsigned int j = 2; j <= nvec_-1; j++) {
+    for (unsigned int j = 2; j <= nvec_ - 1; j++) {
       double div = 1.0 / (times_[0] - times_[j]);
-      d_[j]->Update(div, *d_[j-1], -div);
+      d_[j]->update(div, *d_[j - 1], -div);
     }
   }
 }
 
 
 /* *****************************************************************
-* Interpolation routines.
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
+ * Interpolation routines.
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 {
   unsigned int order = nvec_ - 1;
   InterpolateSolution(t, x, order);
 }
 
 
-template<class Vector>
-void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int order)
+template <class Vector>
+void
+SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x,
+                                             unsigned int order)
 {
   AMANZI_ASSERT(order < nvec_);
-  AMANZI_ASSERT(order >= 0);
+  AMANZI_ASSERT(order > 0);
 
-  x = *d_[order];
-  for (int k = order - 1; k >= 0; k--) {
-    x.Update(1.0, *d_[k], t - times_[k]);
-  }
+  x.assign(*d_[order]);
+  for (int k = order - 1; k >= 0; k--) { x.update(1.0, *d_[k], t - times_[k]); }
 }
 
 
 /* *****************************************************************
-* Access members.
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::MostRecentSolution(Vector& x)
+ * Access members.
+ ****************************************************************** */
+template <class Vector>
+void
+SolutionHistory<Vector>::MostRecentSolution(Vector& x)
 {
-  x = *d_[0];
+  x.assign(*d_[0]);
 }
 
 
-template<class Vector>
-double SolutionHistory<Vector>::MostRecentTime()
+template <class Vector>
+double
+SolutionHistory<Vector>::MostRecentTime()
 {
   return times_[0];
 }
 
 
-template<class Vector>
-void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
+template <class Vector>
+void
+SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
 {
   h.resize(nvec_ - 1);
 
@@ -253,6 +282,6 @@ void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
 }
 
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

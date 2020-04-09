@@ -1,11 +1,14 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 /*
 
@@ -47,32 +50,39 @@ namespace Amanzi {
 //
 // Class interface
 //
-template<typename Scalar>
+template <typename Scalar>
 class CompositeVector_ : public BlockVector<Scalar> {
-
-public:
+ public:
   // -- Constructors --
   // Constructor from a CompositeSpace (which is like a Map).
-  CompositeVector_(const Teuchos::RCP<const CompositeSpace>& space, InitMode mode=InitMode::ZERO);
-  //CompositeVector_(const Teuchos::RCP<const CompositeSpace>& space, bool ghosted);
+  CompositeVector_(const Teuchos::RCP<const CompositeSpace>& space,
+                   InitMode mode = InitMode::ZERO);
+  // CompositeVector_(const Teuchos::RCP<const CompositeSpace>& space, bool
+  // ghosted);
 
   // Copy constructor.
-  CompositeVector_(const CompositeVector_<Scalar>& other, InitMode mode=InitMode::COPY);
-  //CompositeVector_(const CompositeVector_<Scalar>& other, bool ghosted, InitMode mode=INIT_MODE_COPY);
+  CompositeVector_(const CompositeVector_<Scalar>& other,
+                   Teuchos::DataAccess access = Teuchos::DataAccess::Copy,
+                   InitMode mode = InitMode::COPY);
+  // CompositeVector_(const CompositeVector_<Scalar>& other,
+  //                  bool ghosted,
+  //                  InitMode mode=INIT_MODE_COPY);
 
   // Assignment operator.
   CompositeVector_<Scalar>& operator=(const CompositeVector_<Scalar>& other);
-  
+  void assign(const CompositeVector_<Scalar>& other) { *this = other; }
+
   // -- Accessors to meta-data --
   // Space/VectorSpace/Map accessor.
-  Teuchos::RCP<const CompositeSpace> Map() const { return cvs_; }
-  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return Map()->Mesh(); }
-  
- protected:
+  Teuchos::RCP<const CompositeSpace> getMap() const { return cvs_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return getMap()->Mesh(); }
 
-  virtual cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const override;
-  virtual MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) override;
-  
+ protected:
+  virtual cMultiVector_ptr_type_<Scalar>
+  GetComponent_(const std::string& name, bool ghosted = false) const override;
+  virtual MultiVector_ptr_type_<Scalar>
+  GetComponent_(const std::string& name, bool ghosted = false) override;
+
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
   void CreateVandelay_() const;
@@ -85,7 +95,7 @@ public:
   mutable MultiVector_ptr_type_<Scalar> vandelay_vector_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 
 #endif

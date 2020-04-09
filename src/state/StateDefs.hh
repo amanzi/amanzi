@@ -1,12 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-   Some basic typedefs for State and company.
-   ------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_STATE_DEFS_HH_
 #define AMANZI_STATE_DEFS_HH_
@@ -22,6 +24,12 @@ namespace Amanzi {
 // Keys and containers
 typedef std::string Units;
 typedef bool NullFactory; // placeholder object for no factory required
+
+
+// Tag type for derivatives in models.
+template <int>
+struct Deriv {};
+
 
 } // namespace Amanzi
 

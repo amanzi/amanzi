@@ -1,15 +1,14 @@
 /*
-  Geometry
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  Definitions for geometry, regions.
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GEOMETRY_DEFS_HH_
 #define AMANZI_GEOMETRY_DEFS_HH_
@@ -17,9 +16,10 @@
 #include "Point.hh"
 
 namespace Amanzi {
-namespace AmanziGeometry {  
+namespace AmanziGeometry {
 
-typedef int Entity_ID;  // should be consistent with similar definition in class Mesh
+typedef int
+  Entity_ID; // should be consistent with similar definition in class Mesh
 typedef std::vector<Point> Point_List;
 
 typedef enum {
@@ -29,7 +29,7 @@ typedef enum {
   LAYER,
   SURFACE,
   POINT,
-  COLORFUNCTION,  
+  COLORFUNCTION,
   LOGICAL,
   POLYGON,
   ENUMERATED,
@@ -40,14 +40,11 @@ typedef enum {
 } RegionType;
 
 
-typedef enum {
-  PERMANENT=0,
-  TEMPORARY
-} LifeCycleType;
+typedef enum { PERMANENT = 0, TEMPORARY } LifeCycleType;
 
 
 typedef enum {
-  NOBOOLEAN=-1,
+  NOBOOLEAN = -1,
   COMPLEMENT,
   UNION,
   INTERSECT,
@@ -58,9 +55,9 @@ const double TOL = 1.0e-08;
 
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions
-const unsigned int REGION_ID_OFFSET = 59049;  
+const unsigned int REGION_ID_OFFSET = 59049;
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

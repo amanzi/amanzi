@@ -1,48 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi's Arcos
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: BSD, see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-Basic object that may store heterogeneous data and put in State.  The
-underlying object is stored as a Teuchos::RCP.
-
-Ownership: Note that this object TAKES OWNERSHIP of whatever it is created
-with.  While initializing the data with a raw pointer is possible, this is a
-bad idea.  Alternatively, you can pass in an RCP, which is then shared
-ownership.
-
-
-Usage:
-
-Creation:
----------
-
-Data obj = data<TypeToBeStored>(const TypeToBeStored& t);
-
-i.e.
-
-Data obj = data<double>(1.1);
-
-
-Setting value:
-(if not done on creation)
--------------------------
-T my_val(...);
-obj.Set(my_val);
-
-Access:
--------
-const T& obj.Get<T>();
-
-etc.
-
-
-Implementation note -- Teuchos::RCP does NOT support move semantics, but we
-hope it will at some point.
-
-------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_DATA_HH_
 #define AMANZI_DATA_HH_
@@ -67,7 +33,7 @@ class Checkpoint;
 // pointers to Data_Intf objects.
 //
 class Data {
-public:
+ public:
   //
   // Default constructor
   //
@@ -84,16 +50,17 @@ public:
 
   // Copy constructor deleted, as we don't necessarily know how to copy
   // construct
-  Data(const Data &other) = delete;
+  Data(const Data& other) = delete;
 
   // move constructor
-  Data(Data &&other) noexcept : p_(std::move(other.p_)) {}
+  Data(Data&& other) noexcept : p_(std::move(other.p_)) {}
 
   // steal an r-value
-  void swap(Data &&other) noexcept { p_.swap(other.p_); }
+  void swap(Data&& other) noexcept { p_.swap(other.p_); }
 
   // operator= with lvalue reference sets the values equal
-  Data &operator=(const Data &other) {
+  Data& operator=(const Data& other)
+  {
     if (&other != this) {
       if (!p_) {
         Errors::Message msg;
@@ -107,10 +74,12 @@ public:
   }
 
   // operator= with rvalue steals the data via swap
-  Data &operator=(Data &&other) = default;
+  Data& operator=(Data&& other) = default;
 
   // accessor -- const ref
-  template <typename T> const T &Get() const {
+  template <typename T>
+  const T& Get() const
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
@@ -121,7 +90,9 @@ public:
   }
 
   // accessor -- non-const ref
-  template <typename T> T &GetW() {
+  template <typename T>
+  T& GetW()
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
@@ -132,7 +103,9 @@ public:
   }
 
   // accessor -- const pointer
-  template <typename T> Teuchos::RCP<const T> GetPtr() const {
+  template <typename T>
+  Teuchos::RCP<const T> GetPtr() const
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
@@ -143,7 +116,9 @@ public:
   }
 
   // accessor -- non-const shared pointer
-  template <typename T> Teuchos::RCP<T> GetPtrW() {
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW()
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
@@ -154,15 +129,17 @@ public:
   }
 
   // mutator -- set data by pointer
-  template <typename T> void SetPtr(Teuchos::RCP<T> t) {
-    if (!p_) {
-      p_ = std::make_unique<Data_Impl<T>>(t);
-    }
+  template <typename T>
+  void SetPtr(Teuchos::RCP<T> t)
+  {
+    if (!p_) { p_ = std::make_unique<Data_Impl<T>>(t); }
     p_->SetPtr(t);
   }
 
   // mutator -- set value
-  template <typename T> void Set(const T &t) {
+  template <typename T>
+  void Set(const T& t)
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
@@ -173,60 +150,72 @@ public:
   }
 
   // virtual interface for ad-hoc polymorphism
-  void WriteVis(const Visualization &vis, const Key &fieldname,
-                const std::vector<std::string> &subfieldnames) const {
+  void
+  WriteVis(const Visualization& vis, const Teuchos::ParameterList& attrs) const
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->WriteVis(vis, fieldname, subfieldnames);
+    p_->WriteVis(vis, attrs);
   }
-  void WriteCheckpoint(const Checkpoint &chkp, const Key &fieldname) const {
+  void WriteCheckpoint(const Checkpoint& chkp,
+                       const Teuchos::ParameterList& attrs) const
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->WriteCheckpoint(chkp, fieldname);
+    p_->WriteCheckpoint(chkp, attrs);
   }
-  void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) {
+  void
+  ReadCheckpoint(const Checkpoint& chkp, const Teuchos::ParameterList& attrs)
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->ReadCheckpoint(chkp, fieldname);
+    p_->ReadCheckpoint(chkp, attrs);
   }
-  bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                  const std::vector<std::string> &subfieldnames) {
+  bool
+  Initialize(Teuchos::ParameterList& plist, const Teuchos::ParameterList& attrs)
+  {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    return p_->Initialize(plist, fieldname, subfieldnames);
+    return p_->Initialize(plist, attrs);
   }
 
-private:
+ private:
   std::unique_ptr<Data_Intf> p_;
 };
 
 //
 // Non-member constructor of default (empty) Data
 // --------------------------------------------------------
-template <typename T> Data data() {
+template <typename T>
+Data
+data()
+{
   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>()));
 }
 
 //
 // Non-member constructor of Data with RCP
 // --------------------------------------------------------
-template <typename T> Data data(const Teuchos::RCP<T> &p) {
+template <typename T>
+Data
+data(const Teuchos::RCP<T>& p)
+{
   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(p)));
 }
 

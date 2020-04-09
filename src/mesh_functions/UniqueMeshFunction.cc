@@ -1,17 +1,14 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  Function applied to a mesh component with at most one function
-  application per entity. Domains of functions in different specs
-  should not overlap.
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 
@@ -21,24 +18,30 @@ namespace Amanzi {
 namespace Functions {
 
 // Overload the AddSpec method to check uniqueness.
-void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
-  // Ensure uniqueness of the spec and create the set of IDs contained in 
+void
+UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
+{
+  // Ensure uniqueness of the spec and create the set of IDs contained in
   // the domain of the spec.
-  
+
   Teuchos::RCP<Domain>& domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 
   // Loop over regions in the spec, getting their ids and adding to the set.
   Teuchos::RCP<MeshIDs> this_spec_ids = Teuchos::rcp(new MeshIDs());
-  for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
+  for (auto region = domain->first.begin(); region != domain->first.end();
+       ++region) {
     // Get all region IDs by the region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
-      this_spec_ids->insert(id_list.begin(), id_list.end());
+      Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+      mesh_->get_set_entities(
+        *region, kind, AmanziMesh::Parallel_type::ALL, id_list);
+      for (int i = 0; i < id_list.extent(0); ++i)
+        this_spec_ids->insert(id_list(i));
     } else {
       std::stringstream m;
-      m << "Unknown region in processing mesh function spec: \"" << *region << "\"";
+      m << "Unknown region in processing mesh function spec: \"" << *region
+        << "\"";
       Errors::Message message(m.str());
       Exceptions::amanzi_throw(message);
     }
@@ -51,13 +54,16 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
     other_specs = Teuchos::rcp(new UniqueSpecList());
     unique_specs_[kind] = other_specs;
   } else {
-    for (auto uspec = other_specs->begin(); uspec != other_specs->end(); ++uspec) {
+    for (auto uspec = other_specs->begin(); uspec != other_specs->end();
+         ++uspec) {
       MeshIDs overlap;
       MeshIDs::iterator overlap_end;
       const MeshIDs& prev_spec_ids = *(*uspec)->second;
 
-      std::set_intersection(prev_spec_ids.begin(), prev_spec_ids.end(),
-                            this_spec_ids->begin(), this_spec_ids->end(),
+      std::set_intersection(prev_spec_ids.begin(),
+                            prev_spec_ids.end(),
+                            this_spec_ids->begin(),
+                            this_spec_ids->end(),
                             std::inserter(overlap, overlap.end()));
       if (overlap.size() != 0) {
         Errors::Message m;
@@ -74,4 +80,3 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 
 } // namespace Functions
 } // namespace Amanzi
-

@@ -1,15 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Nonmember function for creating regions.
-
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Rao Garimella
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <iostream>
 #include <sstream>
@@ -45,10 +45,8 @@ namespace AmanziGeometry {
 
 // Create region from XML specification
 Teuchos::RCP<Region>
-createRegion(const std::string reg_name,
-             int reg_id,
-             Teuchos::ParameterList& reg_spec,
-             const Comm_type& comm)
+createRegion(const std::string reg_name, int reg_id,
+             Teuchos::ParameterList& reg_spec, const Comm_type& comm)
 {
   std::stringstream sstream;
 
@@ -66,7 +64,7 @@ createRegion(const std::string reg_name,
         << "\" should have exactly one shape sublist.";
     Exceptions::amanzi_throw(msg);
   }
-  
+
   Teuchos::ParameterList::ConstIterator k = reg_spec.begin();
   std::string shape = reg_spec.name(k);
 
@@ -89,80 +87,78 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList& box_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p0_vec =
-      box_params.get<Teuchos::Array<double> >("low coordinate");
-        
+      box_params.get<Teuchos::Array<double>>("low coordinate");
+
     Teuchos::Array<double> p1_vec =
-      box_params.get<Teuchos::Array<double> >("high coordinate");
+      box_params.get<Teuchos::Array<double>>("high coordinate");
 
     int dim = p0_vec.size();
     Point p0, p1;
-      
-    p0.set(dim,&(p0_vec[0]));
-    p1.set(dim,&(p1_vec[0]));
 
-    region = Teuchos::rcp(new RegionBox(reg_name, reg_id,
-                                        p0, p1, lifecycle));
+    p0.set(dim, &(p0_vec[0]));
+    p1.set(dim, &(p1_vec[0]));
+
+    region = Teuchos::rcp(new RegionBox(reg_name, reg_id, p0, p1, lifecycle));
 
   } else if (shape == "region: plane") {
     Teuchos::ParameterList plane_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p_vec =
-      plane_params.get< Teuchos::Array<double> >("point");
-        
+      plane_params.get<Teuchos::Array<double>>("point");
+
     Teuchos::Array<double> n_vec =
-      plane_params.get< Teuchos::Array<double> >("normal");
+      plane_params.get<Teuchos::Array<double>>("normal");
 
     int dim = p_vec.size();
     Point p, n;
-    p.set(dim,&(p_vec[0]));
-    n.set(dim,&(n_vec[0]));
+    p.set(dim, &(p_vec[0]));
+    n.set(dim, &(n_vec[0]));
 
-    region = Teuchos::rcp(new RegionPlane(reg_name, reg_id, p, n,
-                                          lifecycle));
+    region = Teuchos::rcp(new RegionPlane(reg_name, reg_id, p, n, lifecycle));
   } else if (shape == "region: halfspace") {
     Teuchos::ParameterList halfspace_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p_vec =
-      halfspace_params.get< Teuchos::Array<double> >("point");
-        
+      halfspace_params.get<Teuchos::Array<double>>("point");
+
     Teuchos::Array<double> n_vec =
-      halfspace_params.get< Teuchos::Array<double> >("normal");
+      halfspace_params.get<Teuchos::Array<double>>("normal");
 
     int dim = p_vec.size();
     Point p, n;
-    p.set(dim,&(p_vec[0]));
-    n.set(dim,&(n_vec[0]));
+    p.set(dim, &(p_vec[0]));
+    n.set(dim, &(n_vec[0]));
 
-    region = Teuchos::rcp(new RegionHalfSpace(reg_name, reg_id, p, n,
-                                          lifecycle));
+    region =
+      Teuchos::rcp(new RegionHalfSpace(reg_name, reg_id, p, n, lifecycle));
 
   } else if (shape == "region: polygon") {
     Teuchos::ParameterList poly_params = reg_spec.sublist(shape);
 
     int num_points = poly_params.get<int>("number of points");
     Teuchos::Array<double> pvec =
-      poly_params.get<Teuchos::Array<double> >("points");
+      poly_params.get<Teuchos::Array<double>>("points");
 
-    if (pvec.size()%num_points != 0) {
+    if (pvec.size() % num_points != 0) {
       Errors::Message mesg;
       mesg << "Incorrect number of values specified for polygon region \""
-           << reg_name << "\"";        
+           << reg_name << "\"";
       Exceptions::amanzi_throw(mesg);
     }
 
-    int dim = pvec.size()/num_points;
+    int dim = pvec.size() / num_points;
     std::vector<Point> points;
     Point pnt(dim);
     for (int i = 0; i < num_points; ++i) {
       if (dim == 2)
-        pnt.set(pvec[i*dim],pvec[i*dim+1]);
+        pnt.set(pvec[i * dim], pvec[i * dim + 1]);
       else if (dim == 3)
-        pnt.set(pvec[i*dim],pvec[i*dim+1],pvec[i*dim+2]);
+        pnt.set(pvec[i * dim], pvec[i * dim + 1], pvec[i * dim + 2]);
       points.push_back(pnt);
     }
 
-    region = Teuchos::rcp(new RegionPolygon(reg_name, reg_id,
-                                            points, lifecycle));
+    region =
+      Teuchos::rcp(new RegionPolygon(reg_name, reg_id, points, lifecycle));
 
   } else if (shape == "region: labeled set") {
     Teuchos::ParameterList labeledset_params = reg_spec.sublist(shape);
@@ -174,55 +170,55 @@ createRegion(const std::string reg_name,
 
     if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
       entity_str = "CELL";
-    else if (entity_str == "Face" || entity_str == "face" || entity_str == "FACE")
+    else if (entity_str == "Face" || entity_str == "face" ||
+             entity_str == "FACE")
       entity_str = "FACE";
-    else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
+    else if (entity_str == "Node" || entity_str == "node" ||
+             entity_str == "NODE")
       entity_str = "NODE";
 
-    region = Teuchos::rcp(new RegionLabeledSet(reg_name, reg_id, entity_str,
-                                               file, format, name, lifecycle));
+    region = Teuchos::rcp(new RegionLabeledSet(
+      reg_name, reg_id, entity_str, file, format, name, lifecycle));
 
-  // } else if (shape == "region: color function") {
-  //   Teuchos::ParameterList colorfunc_params = reg_spec.sublist(shape);
+    // } else if (shape == "region: color function") {
+    //   Teuchos::ParameterList colorfunc_params = reg_spec.sublist(shape);
 
-  //   std::string file = colorfunc_params.get<std::string>("file");
-  //   int value = colorfunc_params.get<int>("value");
+    //   std::string file = colorfunc_params.get<std::string>("file");
+    //   int value = colorfunc_params.get<int>("value");
 
-  //   region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file, 
-  //                                                 value, comm, lifecycle));
+    //   region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file,
+    //                                                 value, comm, lifecycle));
 
   } else if (shape == "region: point") {
     Teuchos::ParameterList point_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p_vec =
-      point_params.get<Teuchos::Array<double> >("coordinate");
-        
+      point_params.get<Teuchos::Array<double>>("coordinate");
+
     int dim = p_vec.size();
     Point pnt;
-    pnt.set(dim,&(p_vec[0]));
+    pnt.set(dim, &(p_vec[0]));
 
     region = Teuchos::rcp(new RegionPoint(reg_name, reg_id, pnt, lifecycle));
 
   } else if (shape == "region: logical") {
     Teuchos::ParameterList logical_params = reg_spec.sublist(shape);
     std::string opstr = logical_params.get<std::string>("operation");
-    Teuchos::Array<std::string> region_names = 
-      logical_params.get< Teuchos::Array<std::string> >("regions");
+    Teuchos::Array<std::string> region_names =
+      logical_params.get<Teuchos::Array<std::string>>("regions");
 
-    region = Teuchos::rcp(new RegionLogical(reg_name, reg_id, opstr,
-                                            region_names.toVector(),
-                                            lifecycle));
+    region = Teuchos::rcp(new RegionLogical(
+      reg_name, reg_id, opstr, region_names.toVector(), lifecycle));
 
   } else if (shape == "region: enumerated set") {
     Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
     std::string entity_str = enum_params.get<std::string>("entity");
 
-    Teuchos::Array<int> entity_list = 
-      enum_params.get< Teuchos::Array<int> >("entity gids");
+    Teuchos::Array<int> entity_list =
+      enum_params.get<Teuchos::Array<int>>("entity gids");
 
-    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str,
-                                               entity_list.toVector(),
-                                               lifecycle));
+    region = Teuchos::rcp(new RegionEnumerated(
+      reg_name, reg_id, entity_str, entity_list.toVector(), lifecycle));
 
   } else if (shape == "region: all") {
     region = Teuchos::rcp(new RegionAll(reg_name, reg_id, lifecycle));
@@ -233,14 +229,16 @@ createRegion(const std::string reg_name,
   } else if (shape == "region: box volume fractions") {
     Teuchos::ParameterList& box_params = reg_spec.sublist(shape);
 
-    Teuchos::Array<double> p0_vec = box_params.get<Teuchos::Array<double> >("corner coordinate");
-    Teuchos::Array<double> p1_vec = box_params.get<Teuchos::Array<double> >("opposite corner coordinate");
+    Teuchos::Array<double> p0_vec =
+      box_params.get<Teuchos::Array<double>>("corner coordinate");
+    Teuchos::Array<double> p1_vec =
+      box_params.get<Teuchos::Array<double>>("opposite corner coordinate");
 
     int dim = p0_vec.size();
     Teuchos::Array<double> normals_vec;
 
     if (box_params.isParameter("normals")) {
-      normals_vec = box_params.get<Teuchos::Array<double> >("normals");
+      normals_vec = box_params.get<Teuchos::Array<double>>("normals");
     } else {
       for (int i = 0; i < dim; ++i) {
         for (int j = 0; j < dim; ++j) {
@@ -252,35 +250,37 @@ createRegion(const std::string reg_name,
 
     Point p0, p1, p2;
     std::vector<Point> normals;
-      
-    p0.set(dim,&(p0_vec[0]));
-    p1.set(dim,&(p1_vec[0]));
+
+    p0.set(dim, &(p0_vec[0]));
+    p1.set(dim, &(p1_vec[0]));
     for (int i = 0; i < dim; ++i) {
-      p2.set(dim,&(normals_vec[i*dim]));
+      p2.set(dim, &(normals_vec[i * dim]));
       normals.push_back(p2);
     }
 
     region = Teuchos::rcp(new RegionBoxVolumeFractions(
-        reg_name, reg_id, p0, p1, normals, lifecycle));
+      reg_name, reg_id, p0, p1, normals, lifecycle));
 
   } else if (shape == "region: line segment") {
     Teuchos::ParameterList& reg_params = reg_spec.sublist(shape);
 
-    Teuchos::Array<double> p0_vec = reg_params.get<Teuchos::Array<double> >("end coordinate");
-    Teuchos::Array<double> p1_vec = reg_params.get<Teuchos::Array<double> >("opposite end coordinate");
+    Teuchos::Array<double> p0_vec =
+      reg_params.get<Teuchos::Array<double>>("end coordinate");
+    Teuchos::Array<double> p1_vec =
+      reg_params.get<Teuchos::Array<double>>("opposite end coordinate");
 
     int dim = p0_vec.size();
 
     Point p0, p1;
-    p0.set(dim,&(p0_vec[0]));
-    p1.set(dim,&(p1_vec[0]));
+    p0.set(dim, &(p0_vec[0]));
+    p1.set(dim, &(p1_vec[0]));
 
-    region = Teuchos::rcp(new RegionLineSegment(reg_name, reg_id, p0, p1, lifecycle));
+    region =
+      Teuchos::rcp(new RegionLineSegment(reg_name, reg_id, p0, p1, lifecycle));
 
   } else {
     Errors::Message mesg;
-    mesg << "Cannot process region with shape \""
-         << shape << "\"";
+    mesg << "Cannot process region with shape \"" << shape << "\"";
     Exceptions::amanzi_throw(mesg);
   }
 

@@ -1,13 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -39,9 +40,12 @@
 
 
 /* *****************************************************************
-* Exactness test for mixed diffusion solver.
-***************************************************************** */
-void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre AMG") {
+ * Exactness test for mixed diffusion solver.
+ ***************************************************************** */
+void
+RunTestDiffusionMixed(int dim, double gravity,
+                      std::string pc_name = "Hypre AMG")
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,8 +54,9 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
 
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
-  if (getRank == 0) std::cout << "\nTest: " << dim << "D elliptic solver, exactness test" 
-                            << " for mixed discretization, g=" << gravity << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: " << dim << "D elliptic solver, exactness test"
+              << " for mixed discretization, g=" << gravity << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, diffusion operator, and solver
@@ -64,21 +69,26 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   MeshFactory meshfactory(comm);
   RCP<const Mesh> mesh;
   if (dim == 2) {
-    meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
     // mesh = meshfactory.create("test/median15x16.exo");
     mesh = meshfactory.create("test/circle_quad10.exo");
     // mesh = meshfactory.create("test/circle_poly10.exo");
   } else {
-    meshfactory.set_preference(Preference({AmanziMesh::Framework::SIMPLE}));
-    if (comm->getSize() > 1) meshfactory.set_preference(Preference({Framework::MSTK}));
-    mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
+    meshfactory.set_preference(Preference({ AmanziMesh::Framework::SIMPLE }));
+    if (comm->getSize() > 1)
+      meshfactory.set_preference(Preference({ Framework::MSTK }));
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 5, 6);
   }
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh, gravity);
 
@@ -89,7 +99,8 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
@@ -107,28 +118,30 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
     if (xf[0] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-/*
-    } else if (xf[1] < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+      /*
+          } else if (xf[1] < 1e-6) {
+            bc_model[f] = Operators::OPERATOR_BC_MIXED;
+            bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
 
-      double tmp = ana.pressure_exact(xf, 0.0);
-      bc_mixed[f] = 1.0;
-      bc_value[f] -= bc_mixed[f] * tmp;
-*/
+            double tmp = ana.pressure_exact(xf, 0.0);
+            bc_mixed[f] = 1.0;
+            bc_value[f] -= bc_mixed[f] * tmp;
+      */
     } else {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
-  // create diffusion operator 
+  // create diffusion operator
   double rho(1.0);
   AmanziGeometry::Point g(dim);
   g[dim - 1] = -gravity;
 
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator mixed");
+  auto op =
+    Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -155,21 +168,23 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   ver.CheckPreconditionerSPD();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+  ParameterList lop_list =
+    plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::
+    LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
       solver(global_op, global_op);
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> solution =
+    Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
   }
@@ -187,10 +202,14 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (getRank == 0) {
-    pl2_err /= pnorm; 
+    pl2_err /= pnorm;
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+           pl2_err,
+           pinf_err,
+           ul2_err,
+           uinf_err,
+           solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
     if (pc_name != "identity") CHECK(solver.num_itrs() < 10);
@@ -198,20 +217,23 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
 }
 
 
-TEST(OPERATOR_DIFFUSION_MIXED) {
+TEST(OPERATOR_DIFFUSION_MIXED)
+{
   RunTestDiffusionMixed(2, 0.0, "identity");
   RunTestDiffusionMixed(3, 0.0);
 }
 
-TEST(OPERATOR_DIFFUSION_MIXED_wGRAVITY) {
+TEST(OPERATOR_DIFFUSION_MIXED_wGRAVITY)
+{
   RunTestDiffusionMixed(2, 0.1);
 }
 
 
 /* *****************************************************************
-* Exactness test for cell-based diffusion solver.
-***************************************************************** */
-TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
+ * Exactness test for cell-based diffusion solver.
+ ***************************************************************** */
+TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -221,8 +243,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
 
-  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
-                            << " test for cell-based discretization" << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: 2D elliptic solver, exactness"
+              << " test for cell-based discretization" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -231,13 +254,16 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // create a geometric model and mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 15, 8);
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
@@ -253,7 +279,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   }
 
   // create boundary data.
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_f =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_f->bc_model();
   std::vector<double>& bc_value = bc_f->bc_value();
 
@@ -264,25 +291,27 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = 3.0;
-    /*
-    } else if (fabs(xf[1]) < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = 2.0;
+      /*
+      } else if (fabs(xf[1]) < 1e-6) {
+        bc_model[f] = Operators::OPERATOR_BC_MIXED;
+        bc_value[f] = 2.0;
 
-      double tmp = ana.pressure_exact(xf, 0.0);
-      bc_mixed[f] = 1.0;
-      bc_value[f] -= bc_mixed[f] * tmp;
-    */
-    } else if (fabs(xf[0] - 1.0) < 1e-6 || 
-               fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
+        double tmp = ana.pressure_exact(xf, 0.0);
+        bc_mixed[f] = 1.0;
+        bc_value[f] -= bc_mixed[f] * tmp;
+      */
+    } else if (fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+               fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
-  // create diffusion operator 
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator cell");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
+  // create diffusion operator
+  ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator cell");
+  Teuchos::RCP<PDE_Diffusion> op =
+    Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -295,27 +324,28 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
-  
+
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+  ParameterList lop_list =
+    plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::
+    LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
       solver(global_op, global_op);
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
   }
@@ -326,11 +356,13 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (getRank == 0) {
-    pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    pl2_err /= pnorm;
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
+           pl2_err,
+           pinf_err,
+           solver.num_itrs());
 
     CHECK(pl2_err < 1e-5);
     CHECK(solver.num_itrs() < 10);
   }
 }
-

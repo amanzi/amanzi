@@ -1,14 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! VerboseObject: a controller for writing log files on multiple cores with varying verbosity.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! VerboseObject: a controller for writing log files on multiple cores with
+//! varying verbosity.
 
 /*
   Basic VerboseObject for use by Amanzi code.  Trilinos's VerboseObject is
@@ -53,7 +54,8 @@
 This allows control of log-file verbosity for a wide variety of objects
 and physics.
 
-* `"verbosity level`" ``[string]`` **GLOBAL_VERBOSITY**, `"low`", `"medium`", `"high`", `"extreme`"
+* `"verbosity level`" ``[string]`` **GLOBAL_VERBOSITY**, `"low`", `"medium`",
+`"high`", `"extreme`"
 
    The default is set by the global verbosity spec, (fix me!)  Typically,
    `"low`" prints out minimal information, `"medium`" prints out errors and
@@ -62,7 +64,7 @@ and physics.
 
 Note: while there are other options, users should typically not need them.
 Instead, developers can use them to control output.
-   
+
 Example:
 
 .. code-block:: xml
@@ -76,7 +78,7 @@ Example:
 
 */
 
- 
+
 #ifndef AMANZI_VERBOSE_OBJECT_HH_
 #define AMANZI_VERBOSE_OBJECT_HH_
 
@@ -99,9 +101,10 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // this constructor is fragile and should be frowned upon, but is useful for
   // maintaining backward compatibility with the Epetra stack
   VerboseObject(const Comm_type& comm, const std::string& name,
-                Teuchos::ParameterList plist) :
-      VerboseObject(Teuchos::rcpFromRef(comm), name, plist) {}
-      
+                Teuchos::ParameterList plist)
+    : VerboseObject(Teuchos::rcpFromRef(comm), name, plist)
+  {}
+
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -112,11 +115,15 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
   // Simple one-line wrapper
-  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
-  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+  inline void Write(Teuchos::EVerbosityLevel verbosity,
+                    const std::stringstream& data) const;
+  inline void
+  Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
 
-  void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
-  void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+  void WriteWarning(Teuchos::EVerbosityLevel verbosity,
+                    const std::stringstream& data) const;
+  void WriteWarning(Teuchos::EVerbosityLevel verbosity,
+                    const std::string& data) const;
 
  public:
   // The default global verbosity level.
@@ -141,18 +148,24 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 };
 
 
-bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
-  return out_.get() &&
-      includesVerbLevel(getVerbLevel(), verbosity, true);
+bool
+VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const
+{
+  return out_.get() && includesVerbLevel(getVerbLevel(), verbosity, true);
 };
 
 
-Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
+Teuchos::RCP<Teuchos::FancyOStream>
+VerboseObject::os() const
+{
   return out_;
 };
 
 
-void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const {
+void
+VerboseObject::Write(Teuchos::EVerbosityLevel verbosity,
+                     const std::stringstream& data) const
+{
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
     *os() << data.str();
@@ -160,13 +173,16 @@ void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::strings
 }
 
 
-void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {
+void
+VerboseObject::Write(Teuchos::EVerbosityLevel verbosity,
+                     const std::string& data) const
+{
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
     *os() << data;
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

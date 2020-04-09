@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -19,12 +19,12 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Prepare scaling data for the regularized basis.
-****************************************************************** */
-void Basis_Regularized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    AmanziMesh::Entity_ID id, int c, int order,
-    Polynomial& integrals)
+ * Prepare scaling data for the regularized basis.
+ ****************************************************************** */
+void
+Basis_Regularized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                        AmanziMesh::Entity_ID id, int c, int order,
+                        Polynomial& integrals)
 {
   int dim, k0 = monomial_scales_.size();
   double volume;
@@ -33,12 +33,12 @@ void Basis_Regularized::Init(
     order_ = order;
     d_ = mesh->space_dimension();
     if (id == AmanziMesh::CELL) {
-      volume = mesh->cell_volume(c);
+      volume = mesh->cell_volume(c, false);
       dim = d_;
     } else if (id == AmanziMesh::FACE) {
       volume = mesh->face_area(c);
       dim = d_ - 1;
-    } else { 
+    } else {
       AMANZI_ASSERT(false);
     }
 
@@ -51,9 +51,10 @@ void Basis_Regularized::Init(
 
 
 /* ******************************************************************
-* Transformation from natural basis to my basis: A_new = R^T A_old R.
-****************************************************************** */
-void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
+ * Transformation from natural basis to my basis: A_new = R^T A_old R.
+ ****************************************************************** */
+void
+Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   std::vector<double> a(nrows);
@@ -67,17 +68,16 @@ void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] * a[i];
-    }
+    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] * a[i]; }
   }
 }
 
 
 /* ******************************************************************
-* Transformation from natural basis to my basis: f_new = R^T f_old.
-****************************************************************** */
-void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
+ * Transformation from natural basis to my basis: f_new = R^T f_old.
+ ****************************************************************** */
+void
+Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -89,10 +89,12 @@ void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 
 
 /* ******************************************************************
-* Transformation of interface matrix from natural to my bases.
-****************************************************************** */
-void Basis_Regularized::BilinearFormNaturalToMy(
-    std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
+ * Transformation of interface matrix from natural to my bases.
+ ****************************************************************** */
+void
+Basis_Regularized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                           std::shared_ptr<Basis> br,
+                                           DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   int m(nrows / 2);
@@ -124,9 +126,10 @@ void Basis_Regularized::BilinearFormNaturalToMy(
 
 
 /* ******************************************************************
-* Transformation from my to natural bases: v_old = R * v_new.
-****************************************************************** */
-void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
+ * Transformation from my to natural bases: v_old = R * v_new.
+ ****************************************************************** */
+void
+Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -138,9 +141,10 @@ void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 
 
 /* ******************************************************************
-* Transformation from natural to my bases: v_new = inv(R) * v_old.
-****************************************************************** */
-void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
+ * Transformation from natural to my bases: v_new = inv(R) * v_old.
+ ****************************************************************** */
+void
+Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -152,12 +156,13 @@ void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial in the natural basis from vector coefs of 
-* coefficients in the regularized basis. 
-****************************************************************** */
-Polynomial Basis_Regularized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    int c, int order, DenseVector& coefs) const
+ * Recover polynomial in the natural basis from vector coefs of
+ * coefficients in the regularized basis.
+ ****************************************************************** */
+Polynomial
+Basis_Regularized::CalculatePolynomial(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+  DenseVector& coefs) const
 {
   int d = mesh->space_dimension();
   Polynomial poly(d, order, coefs);
@@ -173,6 +178,5 @@ Polynomial Basis_Regularized::CalculatePolynomial(
   return poly;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

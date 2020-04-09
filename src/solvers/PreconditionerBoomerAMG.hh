@@ -1,36 +1,40 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
 
 /*!
 Internal parameters for Boomer AMG include
 
-* `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic 
+* `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic
   and approximate the inverse matrix with the prescribed tolerance (in
   the energy norm ???).
 
-* `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops. Default is 3.
+* `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops.
+Default is 3.
 
 * `"cycle applications`" ``[int]`` **5** defines the number of V-cycles.
 
-* `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles. Default is 5.
+* `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles.
+Default is 5.
 
-* `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6 
-  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!
+* `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default
+is 6 which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
+TODO: add others!
 
-* `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0 
-  which specifies a Falgout method. TODO: add others!
+* `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used.
+Default is 0 which specifies a Falgout method. TODO: add others!
 
-* `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
+* `"max multigrid levels`" ``[int]`` optionally defined the maximum number of
+multigrid levels.
 
 * `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
     PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
@@ -41,7 +45,7 @@ Internal parameters for Boomer AMG include
   this approach, unknowns must be ordered with DoF fastest varying (i.e. not
   the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
   approach in which each equation is coarsened and interpolated independently.
-  
+
 * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
     that each variable has the same coarse grid - sometimes this is more
     "physical" for a particular problem. The value chosen here for nodal
@@ -55,7 +59,7 @@ Internal parameters for Boomer AMG include
   smoothing info, and `"3`'" prints both.
 
 Example:
-  
+
 .. code-block:: xml
 
   <ParameterList name="boomer amg parameters">
@@ -86,36 +90,37 @@ Example:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerBoomerAMG : public Preconditioner {
+class PreconditionerBoomerAMG
+  : public Preconditioner<Epetra_RowMatrix, Epetra_MultiVector> {
  public:
-  PreconditionerBoomerAMG() :
-      num_blocks_(0),
-      block_indices_(Teuchos::null),
-      IfpHypre_(Teuchos::null) {}
-  ~PreconditionerBoomerAMG() {};
+  PreconditionerBoomerAMG()
+    : num_blocks_(0), block_indices_(Teuchos::null), IfpHypre_(Teuchos::null)
+  {}
+  ~PreconditionerBoomerAMG(){};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy() {};
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
+  void Destroy() override{};
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  int ApplyInverse(const Epetra_MultiVector& v,
+                   Epetra_MultiVector& hv) const override;
 
-  int returned_code() { return returned_code_; }
+  int returned_code() override { return returned_code_; }
 
  private:
   Teuchos::ParameterList plist_;
-  std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
-  Teuchos::RCP<std::vector<int> > block_indices_;
+  std::vector<Teuchos::RCP<FunctionParameter>> funcs_;
+  Teuchos::RCP<std::vector<int>> block_indices_;
   int num_blocks_;
   int block_index_function_index_;
-  
-  int returned_code_;
+
+  mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif

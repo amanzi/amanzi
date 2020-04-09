@@ -1,13 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -32,9 +33,10 @@
 
 
 /* *****************************************************************
-* Exactness on linear functions in two dimensions
-***************************************************************** */
-TEST(RECONSTRUCTION_LINEAR_2D) {
+ * Exactness on linear functions in two dimensions
+ ***************************************************************** */
+TEST(RECONSTRUCTION_LINEAR_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -43,20 +45,24 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
 
-  if (getRank == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
-  // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  // create and initialize cell-based field
+  Teuchos::RCP<Epetra_MultiVector> field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -75,23 +81,26 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
-  lifting.ComputeGradient(); 
+  lifting.ComputeGradient();
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
-  Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+  Epetra_MultiVector& grad_computed =
+    *lifting.gradient()->ViewComponent("cell");
 
   ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-  if (getRank == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
+  if (getRank == 0)
+    printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
 
 /* *****************************************************************
-* Exactness on linear functions in three dimensions
-***************************************************************** */
-TEST(RECONSTRUCTION_LINEAR_3D) {
+ * Exactness on linear functions in three dimensions
+ ***************************************************************** */
+TEST(RECONSTRUCTION_LINEAR_3D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -100,20 +109,25 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
 
-  if (getRank == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
+  Teuchos::RCP<const Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
-  // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  // create and initialize cell-based field
+  Teuchos::RCP<Epetra_MultiVector> field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -133,16 +147,16 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
-  lifting.ComputeGradient(); 
+  lifting.ComputeGradient();
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
-  Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+  Epetra_MultiVector& grad_computed =
+    *lifting.gradient()->ViewComponent("cell");
 
   ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-  if (getRank == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
+  if (getRank == 0)
+    printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
-
-

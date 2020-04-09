@@ -1,18 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Uses NKA as a linear solver. This is effectively equivalent 
-  to GMRES with a rolling restart, i.e. vectors fall off the 
-  end of the space.
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_NKA_OPERATOR_HH_
 #define AMANZI_NKA_OPERATOR_HH_
@@ -30,31 +27,31 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Matrix, class Vector, class VectorSpace>
+template <class Matrix, class Vector, class VectorSpace>
 class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
-
  public:
   LinearOperatorNKA(const Teuchos::RCP<const Matrix>& m,
-                    const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+                    const Teuchos::RCP<const Matrix>& h)
+    : LinearOperator<Matrix, Vector, VectorSpace>(m, h),
       tol_(1e-6),
-      overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
+      overflow_tol_(3.0e+50), // mass of the Universe (J.Hopkins)
       max_itrs_(100),
       nka_dim_(10),
       criteria_(LIN_SOLVER_RELATIVE_RHS),
-      initialized_(false) {};
+      initialized_(false){};
 
   void Init(Teuchos::ParameterList& plist);
-  void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
+  void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
 
-  int ApplyInverse(const Vector& v, Vector& hv) const {
+  int applyInverse(const Vector& v, Vector& hv) const
+  {
     if (!initialized_) {
       Errors::Message msg("LinearOperatorNKA: has not been initialized.");
       Exceptions::amanzi_throw(msg);
     }
     int ierr = NKA_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
-    //return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
+    // return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
     return returned_code_;
   }
 
@@ -73,7 +70,8 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int NKA_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+  int NKA_(const Vector& f, Vector& x, double tol, int max_itrs,
+           int criteria) const;
 
   LinearOperatorNKA(const LinearOperatorNKA& other); // not implemented
 
@@ -88,46 +86,45 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   mutable double residual_;
   mutable bool initialized_;
 
-  Teuchos::RCP<NKA_Base<Vector,VectorSpace> > nka_;
+  Teuchos::RCP<NKA_Base<Vector, VectorSpace>> nka_;
 };
 
 
-
 // Apply the inverse, x <-- A^-1 b
-template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
-    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
+template <class Matrix, class Vector, class VectorSpace>
+int
+LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(const Vector& f, Vector& x,
+                                                     double tol, int max_itrs,
+                                                     int criteria) const
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-
-  //  AMANZI_ASSERT(f.Map().SameAs(m_->RangeMap()));
-  //  AMANZI_ASSERT(x.Map().SameAs(m_->DomainMap()));
   nka_->Restart();
 
   residual_ = 0.0;
   num_itrs_ = 0;
 
-  Teuchos::RCP<Vector> dx  = Teuchos::rcp(new Vector(x));
-  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x));  // preconditioned correction
-  Teuchos::RCP<Vector> r   = Teuchos::rcp(new Vector(x));
+  Vector dx(x.getMap());
+  Vector dxp(x.getMap());
+  Vector r(x.getMap());
 
   double fnorm, xnorm;
-  f.Norm2(&fnorm);
+  fnorm = f.norm2();
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Converged, itr = " << num_itrs_ << ", ||r|| = " << residual_ << std::endl;
-    return criteria;  // Zero solution satifies all criteria.
+      *vo_->os() << "Converged, itr = " << num_itrs_
+                 << ", ||r|| = " << residual_ << std::endl;
+    return criteria; // Zero solution satifies all criteria.
   }
 
-  x.Norm2(&xnorm);
+  xnorm = x.norm2();
 
-  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->apply(x, r); // r = f - A * x
   AMANZI_ASSERT(!ierr);
-  r->Update(1.0, f, -1.0);
+  r.update(1.0, f, -1.0);
 
   double rnorm0;
-  r->Norm2(&rnorm0);
+  rnorm0 = r.norm2();
   residual_ = rnorm0;
 
   if (initialized_) {
@@ -138,7 +135,9 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   if (criteria & LIN_SOLVER_RELATIVE_RHS) {
     if (rnorm0 < tol * fnorm) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+        *vo_->os() << "Converged (relative ||RHS|| = " << fnorm
+                   << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0
+                   << std::endl;
       return LIN_SOLVER_RELATIVE_RHS;
     }
   }
@@ -151,18 +150,17 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   bool done = false;
   while (!done) {
-    ierr = h_->ApplyInverse(*r, *dxp);
+    ierr = h_->applyInverse(r, dxp);
     AMANZI_ASSERT(!ierr);
 
-    nka_->Correction(*dxp, *dx);
-    x.Update(1.0, *dx, 1.0);
+    nka_->Correction(dxp, dx);
+    x.update(1.0, dx, 1.0);
 
-    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->apply(x, r); // r = f - A * x
     AMANZI_ASSERT(!ierr);
-    r->Update(1.0, f, -1.0);
+    r.update(1.0, f, -1.0);
 
-    double rnorm;
-    r->Norm2(&rnorm);
+    double rnorm = r.norm2();
     residual_ = rnorm;
 
     num_itrs_++;
@@ -181,7 +179,9 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm < tol * fnorm) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+          *vo_->os() << "Converged (relative ||RHS|| = " << fnorm
+                     << "), itr = " << num_itrs_ << " ||r|| = " << rnorm
+                     << std::endl;
         return LIN_SOLVER_RELATIVE_RHS;
       }
     }
@@ -189,14 +189,17 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (rnorm < tol * rnorm0) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (relative ||res|| = " << rnorm0 << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+          *vo_->os() << "Converged (relative ||res|| = " << rnorm0
+                     << "), itr = " << num_itrs_ << " ||r|| = " << rnorm
+                     << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     }
     if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm < tol) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+          *vo_->os() << "Converged (absolute), itr = " << num_itrs_
+                     << " ||r|| = " << rnorm << std::endl;
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
@@ -205,8 +208,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
-               << residual_ << std::endl;
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = " << residual_
+               << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 
@@ -217,8 +220,10 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
  * "maximum number of iterations" [int] default = 100
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+template <class Matrix, class Vector, class VectorSpace>
+void
+LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(
+  Teuchos::ParameterList& plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::NKA", plist));
 
@@ -229,7 +234,8 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {
     std::vector<std::string> names;
-    names = plist.get<Teuchos::Array<std::string> > ("convergence criteria").toVector();
+    names =
+      plist.get<Teuchos::Array<std::string>>("convergence criteria").toVector();
 
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "relative rhs") {
@@ -241,9 +247,10 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
       } else if (names[i] == "make one iteration") {
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
-	Errors::Message msg;
-	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
-	Exceptions::amanzi_throw(msg);
+        Errors::Message msg;
+        msg << "LinearOperatorGMRES: \"convergence criteria\" type \""
+            << names[i] << "\" is not recognized.";
+        Exceptions::amanzi_throw(msg);
       }
     }
   } else {
@@ -257,13 +264,13 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
 
   // NKA
-  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
-  nka_->Init(plist);
+  nka_ = Teuchos::rcp(
+      new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap(), vo_));
 
   initialized_ = true;
 }
 
-} // namespace
-} // namespace
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

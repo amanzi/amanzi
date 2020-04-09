@@ -1,18 +1,17 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (amklinv@sandia.gov)
-
-  Direct solvers via Trilinos.
+  Authors:
+      Konstantin Lipnikov (amklinv@sandia.gov)
 */
 
-#ifndef  AMANZI_AMESOS_OPERATOR_HH_
-#define  AMANZI_AMESOS_OPERATOR_HH_
+//! <MISSING_ONELINE_DOCSTRING>
+
+#ifndef AMANZI_AMESOS_OPERATOR_HH_
+#define AMANZI_AMESOS_OPERATOR_HH_
 
 #include <cmath>
 
@@ -35,20 +34,21 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 /* ******************************************************************
-* Auxiliary base class.
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-class LinearOperatorAmesosBase : public LinearOperator<Matrix, Vector, VectorSpace> {
+ * Auxiliary base class.
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+class LinearOperatorAmesosBase
+  : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
   LinearOperatorAmesosBase(const Teuchos::RCP<const Matrix>& m,
-                           const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {};
+                           const Teuchos::RCP<const Matrix>& h)
+    : LinearOperator<Matrix, Vector, VectorSpace>(m, h){};
 
   void Init(Teuchos::ParameterList& plist);
   void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
 
   // access
-  void add_criteria(int criteria) {};
+  void add_criteria(int criteria){};
   int num_itrs() { return 0; }
   double residual() { return 0.0; }
   int returned_code() { return 0; }
@@ -64,15 +64,15 @@ class LinearOperatorAmesosBase : public LinearOperator<Matrix, Vector, VectorSpa
 
 
 /* ******************************************************************
-* Primary interface to direct solvers in Amesos.
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>
-{
+ * Primary interface to direct solvers in Amesos.
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+class LinearOperatorAmesos
+  : public LinearOperatorAmesosBase<Matrix, Vector, VectorSpace> {
  public:
   LinearOperatorAmesos(const Teuchos::RCP<const Matrix>& m,
-                       const Teuchos::RCP<const Matrix>& h) :
-      LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>(m, h) {};
+                       const Teuchos::RCP<const Matrix>& h)
+    : LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>(m, h){};
 
   int ApplyInverse(const Vector& v, Vector& hv) const;
 
@@ -90,48 +90,55 @@ class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, Vec
 
 
 /* ******************************************************************
-* Partial specification for MatrixJF<Vector, VectorSpace>
-****************************************************************** */
-template<class Vector, class VectorSpace>
-class LinearOperatorAmesos<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> :
-    public LinearOperatorAmesosBase<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> {
+ * Partial specification for MatrixJF<Vector, VectorSpace>
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
+class LinearOperatorAmesos<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace>
+  : public LinearOperatorAmesosBase<MatrixJF<Vector, VectorSpace>, Vector,
+                                    VectorSpace> {
  public:
-  LinearOperatorAmesos(const Teuchos::RCP<const MatrixJF<Vector, VectorSpace> >& m,
-                       const Teuchos::RCP<const MatrixJF<Vector, VectorSpace> >& h) :
-      LinearOperatorAmesosBase<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace>(m, h) {};
+  LinearOperatorAmesos(
+    const Teuchos::RCP<const MatrixJF<Vector, VectorSpace>>& m,
+    const Teuchos::RCP<const MatrixJF<Vector, VectorSpace>>& h)
+    : LinearOperatorAmesosBase<MatrixJF<Vector, VectorSpace>, Vector,
+                               VectorSpace>(m, h){};
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override {
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override
+  {
     Errors::Message msg("LinearOperatorAmesos: missing partial specification.");
     Exceptions::amanzi_throw(msg);
-    return LIN_SOLVER_AMESOS_SAYS_FAIL; 
+    return LIN_SOLVER_AMESOS_SAYS_FAIL;
   }
 };
 
 
 /* ******************************************************************
-* Partial specification for CompositeMatrix
-****************************************************************** */
-template<class Vector, class VectorSpace>
-class LinearOperatorAmesos<CompositeMatrix, Vector, VectorSpace> :
-    public LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace> {
+ * Partial specification for CompositeMatrix
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
+class LinearOperatorAmesos<CompositeMatrix, Vector, VectorSpace>
+  : public LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace> {
  public:
   LinearOperatorAmesos(const Teuchos::RCP<const CompositeMatrix>& m,
-                       const Teuchos::RCP<const CompositeMatrix>& h) :
-      LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace>(m, h) {};
+                       const Teuchos::RCP<const CompositeMatrix>& h)
+    : LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace>(m, h){};
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override {
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override
+  {
     Errors::Message msg("LinearOperatorAmesos: missing partial specification.");
     Exceptions::amanzi_throw(msg);
-    return LIN_SOLVER_AMESOS_SAYS_FAIL; 
+    return LIN_SOLVER_AMESOS_SAYS_FAIL;
   }
 };
 
 
 /* ******************************************************************
-* Initialization from a parameter list.
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-void LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+ * Initialization from a parameter list.
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+void
+LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(
+  Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
@@ -148,10 +155,12 @@ void LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
 
 
 /* ******************************************************************
-* Generic implementation
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
+ * Generic implementation
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+int
+LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(
+  const Vector& v, Vector& hv) const
 {
   if (!initialized_) {
     Errors::Message msg("LinearOperatorAmesos: has not been initialized.");
@@ -169,17 +178,20 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector
 
 
 /* ******************************************************************
-* Generic implementation for Amesos1
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer1_(const Vector& v, Vector& hv) const
+ * Generic implementation for Amesos1
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+int
+LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer1_(
+  const Vector& v, Vector& hv) const
 {
   Epetra_Vector rhs(m_->A()->RowMap());
   Epetra_Vector sol(rhs);
 
   m_->CopyVectorToSuperVector(v, rhs);
 
-  Epetra_LinearProblem problem(const_cast<Epetra_CrsMatrix*>(&*m_->A()), &sol, &rhs);
+  Epetra_LinearProblem problem(
+    const_cast<Epetra_CrsMatrix*>(&*m_->A()), &sol, &rhs);
 
   Amesos factory;
   auto solver = factory.Create(name_, problem);
@@ -200,7 +212,7 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer1_(const V
   try {
     solver->Solve();
     delete solver;
-  } catch(...) {
+  } catch (...) {
     Errors::Message msg("LinearOperatorAmesos: solver failed");
     Exceptions::amanzi_throw(msg);
   }
@@ -212,10 +224,12 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer1_(const V
 
 
 /* ******************************************************************
-* Generic implementation for Amesos2
-****************************************************************** */
-template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer2_(const Vector& v, Vector& hv) const
+ * Generic implementation for Amesos2
+ ****************************************************************** */
+template <class Matrix, class Vector, class VectorSpace>
+int
+LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer2_(
+  const Vector& v, Vector& hv) const
 {
   Epetra_Vector rhs(m_->A()->RowMap());
   Epetra_Vector sol(rhs);
@@ -223,10 +237,10 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer2_(const V
   m_->CopyVectorToSuperVector(v, rhs);
 
   auto solver = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(
-      name_, m_->A(), Teuchos::rcpFromRef(sol), Teuchos::rcpFromRef(rhs));
+    name_, m_->A(), Teuchos::rcpFromRef(sol), Teuchos::rcpFromRef(rhs));
 
-  try{
-   solver->solve();
+  try {
+    solver->solve();
   } catch (...) {
     Errors::Message msg("LinearOperatorAmesos: solver failed");
     Exceptions::amanzi_throw(msg);
@@ -237,7 +251,7 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer2_(const V
   return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

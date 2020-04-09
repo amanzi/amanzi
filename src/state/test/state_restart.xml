@@ -10,6 +10,7 @@
   </ParameterList>
   
   <ParameterList name="checkpoint">
+    <Parameter name="file format" type="string" value="HDF5"/>
     <Parameter name="file name base" type="string" value="restartdump"/>
     <Parameter name="file name digits" type="int" value="5"/>    
     <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>

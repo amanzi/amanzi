@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Maps between mesh objects located on different meshes, e.g. two states 
+  Maps between mesh objects located on different meshes, e.g. two states
   of a deformable mesh: finite element implementation.
 */
 
@@ -24,22 +24,23 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c. 
-****************************************************************** */
-void MeshMaps_FEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+ * Calculate mesh velocity in cell c.
+ ****************************************************************** */
+void
+MeshMaps_FEM::VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                           VectorPolynomial& vc) const
 {
-  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> nodes;
 
-  mesh1_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh1_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
   AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
-  mesh1_->node_get_coordinates(nodes[0], &p1);
-  mesh1_->node_get_coordinates(nodes[1], &p2);
-  mesh1_->node_get_coordinates(nodes[2], &p3);
-  mesh1_->node_get_coordinates(nodes[3], &p4);
+  mesh1_->node_get_coordinates(nodes(0), &p1);
+  mesh1_->node_get_coordinates(nodes(1), &p2);
+  mesh1_->node_get_coordinates(nodes(2), &p3);
+  mesh1_->node_get_coordinates(nodes(3), &p4);
 
   AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2);
   AmanziGeometry::Point pp(p32 - p41);
@@ -60,7 +61,7 @@ void MeshMaps_FEM::VelocityCell(
   }
 
   // rebase polynomial to global coordinate system
-  mesh0_->node_get_coordinates(nodes[0], &p1);
+  mesh0_->node_get_coordinates(nodes(0), &p1);
   AmanziGeometry::Point zero(0.0, 0.0);
   for (int i = 0; i < d_; ++i) {
     vc[i].set_origin(p1);
@@ -68,30 +69,29 @@ void MeshMaps_FEM::VelocityCell(
   }
 
   // calculate velocity u(X) = F(X) - X
-  for (int i = 0; i < d_; ++i) {
-    vc[i](1, i) -= 1.0;
-  }
+  for (int i = 0; i < d_; ++i) { vc[i](1, i) -= 1.0; }
 }
 
 
 /* ******************************************************************
-* Supporting routine for calculating Jacobian.
-****************************************************************** */
-Tensor MeshMaps_FEM::JacobianValueInternal_(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    int c, const AmanziGeometry::Point& xref) const
+ * Supporting routine for calculating Jacobian.
+ ****************************************************************** */
+Tensor
+MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                     int c,
+                                     const AmanziGeometry::Point& xref) const
 {
-  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> nodes;
 
-  mesh->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
   AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
-  mesh->node_get_coordinates(nodes[0], &p1);
-  mesh->node_get_coordinates(nodes[1], &p2);
-  mesh->node_get_coordinates(nodes[2], &p3);
-  mesh->node_get_coordinates(nodes[3], &p4);
+  mesh->node_get_coordinates(nodes(0), &p1);
+  mesh->node_get_coordinates(nodes(1), &p2);
+  mesh->node_get_coordinates(nodes(2), &p3);
+  mesh->node_get_coordinates(nodes(3), &p4);
 
   j0 = (1.0 - xref[1]) * (p2 - p1) + xref[1] * (p3 - p4);
   j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);
@@ -103,6 +103,5 @@ Tensor MeshMaps_FEM::JacobianValueInternal_(
   return jac;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

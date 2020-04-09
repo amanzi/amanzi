@@ -64,6 +64,24 @@ if ( NOT MPI_WRAPPERS_IN_USE )
 endif()
 
 ##############################################################################
+# CUDA
+##############################################################################
+if("${AMANZI_ARCH}" STREQUAL "Summit")
+  find_package(CUDA REQUIRED)
+
+  message(STATUS "CUDA Package information")
+  message(STATUS "\tCUDA_DIR          = ${CUDA_DIR}")
+  message(STATUS "\tCUDA_INCLUDE_DIR  = ${CUDA_INCLUDE_DIR}")
+  message(STATUS "\tCUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
+  message(STATUS "\tCUDA_LIBRARY_DIR  = ${CUDA_LIBRARY_DIR}")
+  message(STATUS "\tCUDA_LIBRARY      = ${CUDA_LIBRARY}")
+  message(STATUS "\tCUDA_LIBRARIES    = ${CUDA_LIBRARIES}")
+  message(STATUS "")
+
+endif()
+
+
+##############################################################################
 # ZLIB
 ##############################################################################
 
@@ -197,7 +215,10 @@ if (Trilinos_FOUND)
   # Epetra  - distributed data objects
   # NOX     - nonlinear solver (Unstructured ONLY)
   # ML      - multilevel preconditioner (Unstructured ONLY)
-  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
+  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra)
+  if(AMANZI_ARCH STREQUAL "Summit")
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Kokkos)
+  endif() 
   if (ENABLE_Unstructured)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
@@ -216,6 +237,7 @@ if (Trilinos_FOUND)
 
     # Update the <PACKAGE>_INCLUDE_DIRS variable 
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
+      message(STATUS "\t${tri_package}_INCLUDE_DIRS ${_inc}")
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
   endforeach()

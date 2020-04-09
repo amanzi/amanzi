@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 //
 // Unit test to check if a polygon region can be constructed correctly
 // Author: Rao Garimella
@@ -30,84 +42,85 @@ TEST(POLYGON_REGION2)
 
 
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  const std::string reg_name = reg_spec.name(i);     
-  const unsigned int reg_id = 9959;                   // something arbitrary
+  const std::string reg_name = reg_spec.name(i);
+  const unsigned int reg_id = 9959; // something arbitrary
 
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
   // Create a rectangular region
-  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, *ecomm);
-  
+  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg =
+    Amanzi::AmanziGeometry::createRegion(
+      reg_spec.name(i), reg_id, reg_params, *ecomm);
+
   // See if we retrieved the name and id correctly
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
-  
+  CHECK_EQUAL(reg->name(), reg_name);
+  CHECK_EQUAL(reg->id(), reg_id);
+
   // Get the min-max bounds of the region from the XML specification
   int numpoints;
   Teuchos::Array<double> in_xyz;
-  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
+  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)), true);
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
   numpoints = poly_params.get<int>("number of points");
-  in_xyz = poly_params.get< Teuchos::Array<double> >("points");
+  in_xyz = poly_params.get<Teuchos::Array<double>>("points");
 
   double tolerance = 1.0e-08;
   // if (poly_params.isSublist("expert parameters")) {
-  //   Teuchos::ParameterList expert_params = poly_params.sublist("expert parameters");
-  //   tolerance = expert_params.get<double>("tolerance");
+  //   Teuchos::ParameterList expert_params = poly_params.sublist("expert
+  //   parameters"); tolerance = expert_params.get<double>("tolerance");
   // }
-  
+
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
-  
+  CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::POLYGON);
+
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
   int np = poly->PointsSize();
-  CHECK_EQUAL(numpoints,np);
+  CHECK_EQUAL(numpoints, np);
 
-  int lcv=0;
+  int lcv = 0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
-       p!=poly->PointsEnd(); ++lcv,++p) {
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p =
+         poly->PointsBegin();
+       p != poly->PointsEnd();
+       ++lcv, ++p) {
     dim = p->dim();
-    for (int j = 0; j < dim; j++)
-      CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
+    for (int j = 0; j < dim; j++) CHECK_EQUAL((*p)[j], in_xyz[dim * lcv + j]);
   }
 
   // See if the derived parameters are sane
 
   Amanzi::AmanziGeometry::Point normal = poly->normal();
-  CHECK_CLOSE(normal[0],sqrt(0.5),1.0e-06);
-  CHECK_CLOSE(normal[1],sqrt(0.5),1.0e-06);
+  CHECK_CLOSE(normal[0], sqrt(0.5), 1.0e-06);
+  CHECK_CLOSE(normal[1], sqrt(0.5), 1.0e-06);
 
 
   // See if a point we know is considered to be inside
 
   Amanzi::AmanziGeometry::Point testp(dim);
-  testp.set(0.0,0.0);
+  testp.set(0.0, 0.0);
   CHECK(poly->inside(testp));
 
   // Check a point that is on the boundary of the polygon
-  testp.set(0.5,-0.5);
+  testp.set(0.5, -0.5);
   CHECK(poly->inside(testp));
-    
+
   // Check a point we know to be off the plane
-  testp.set(0.0,0.1);
+  testp.set(0.0, 0.1);
   CHECK(!poly->inside(testp));
 
   // Check a point we know to be on the plane but outside the polygon
-  testp.set(0.9,0.9);
+  testp.set(0.9, 0.9);
   CHECK(!poly->inside(testp));
 
   // Check a point we know to be very close to the plane (within tolerance)
-  testp.set(0.0,tolerance/2.0);
+  testp.set(0.0, tolerance / 2.0);
   CHECK(poly->inside(testp));
-}  
+}
 
 TEST(POLYGON_REGION3)
 {
@@ -122,22 +135,22 @@ TEST(POLYGON_REGION3)
 
 
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  const std::string reg_name = reg_spec.name(i);     
-  const unsigned int reg_id = 9959;                   // something arbitrary
+  const std::string reg_name = reg_spec.name(i);
+  const unsigned int reg_id = 9959; // something arbitrary
 
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
   // Create a rectangular region
-  
-  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, *ecomm);
-  
+
+  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg =
+    Amanzi::AmanziGeometry::createRegion(
+      reg_spec.name(i), reg_id, reg_params, *ecomm);
+
   // See if we retrieved the name and id correctly
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
-  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
-  
+  CHECK_EQUAL(reg->name(), reg_name);
+  CHECK_EQUAL(reg->id(), reg_id);
+  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)), true);
+
   // Get the min-max bounds of the region from the XML specification
   int numpoints;
   Teuchos::Array<double> in_xyz;
@@ -145,68 +158,65 @@ TEST(POLYGON_REGION3)
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
   numpoints = poly_params.get<int>("number of points");
-  in_xyz = poly_params.get< Teuchos::Array<double> >("points");
- 
+  in_xyz = poly_params.get<Teuchos::Array<double>>("points");
+
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
-  
+  CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::POLYGON);
+
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
   int np = poly->PointsSize();
-  CHECK_EQUAL(numpoints,np);
- 
-  int lcv=0;
+  CHECK_EQUAL(numpoints, np);
+
+  int lcv = 0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
-       p!=poly->PointsEnd(); ++lcv,++p) {
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p =
+         poly->PointsBegin();
+       p != poly->PointsEnd();
+       ++lcv, ++p) {
     dim = p->dim();
-    for (int j = 0; j < dim; j++)
-      CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
+    for (int j = 0; j < dim; j++) CHECK_EQUAL((*p)[j], in_xyz[dim * lcv + j]);
   }
 
   Amanzi::AmanziGeometry::Point normal = poly->normal();
-  CHECK_CLOSE(normal[0],0.0,1.0e-06);
-  CHECK_CLOSE(normal[1],-sqrt(0.5),1.0e-06);
-  CHECK_CLOSE(normal[2],sqrt(0.5),1.0e-06);
+  CHECK_CLOSE(normal[0], 0.0, 1.0e-06);
+  CHECK_CLOSE(normal[1], -sqrt(0.5), 1.0e-06);
+  CHECK_CLOSE(normal[2], sqrt(0.5), 1.0e-06);
 
 
   // See if a point we know is considered to be inside
   Amanzi::AmanziGeometry::Point testp(dim);
-  testp.set(0.1,0.1,0.1);
+  testp.set(0.1, 0.1, 0.1);
   CHECK(poly->inside(testp));
 
   // Check a point known to be on a vertex of the polygon
-  testp.set(0.5,-0.5,-0.5);     // passes
-  testp.set(-0.5,-0.5,-0.5);    // fails
+  testp.set(0.5, -0.5, -0.5);  // passes
+  testp.set(-0.5, -0.5, -0.5); // fails
   CHECK(poly->inside(testp));
 
   // Check a point known to be on an edge of the polygon
-  testp.set(0.1,-0.5,-0.5);    // passes
-  testp.set(-0.5,0.1,0.1);     // fails
+  testp.set(0.1, -0.5, -0.5); // passes
+  testp.set(-0.5, 0.1, 0.1);  // fails
   CHECK(poly->inside(testp));
 
   // Check a point along the infinite line of an edge of the polygon
   // but outside the edge
 
-  testp.set(-0.9,-0.5,-0.5);
+  testp.set(-0.9, -0.5, -0.5);
   CHECK(!poly->inside(testp));
 
   // Check a point we know to be off the plane
-  testp.set(0.1,0.1,-0.9);
+  testp.set(0.1, 0.1, -0.9);
   CHECK(!poly->inside(testp));
 
   // Check a point we know to be on the plane but outside the polygon
-  testp.set(1.0,0.0,0.0);
+  testp.set(1.0, 0.0, 0.0);
   CHECK(!poly->inside(testp));
 
   // Check a point that is close to the plane - assume tolerance has been
   // set to something greater than 1.0e-8 in the XML file
-  testp.set(0.1,0.1,0.10000001);
+  testp.set(0.1, 0.1, 0.10000001);
   CHECK(poly->inside(testp));
-
-}  
-
-
-
+}

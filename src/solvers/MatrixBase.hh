@@ -1,20 +1,17 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Example of a Matrix base class used in our templates. The 
-  routines below are mandatory for any implementation of a 
-  Matrix class to be compatible with Amanzi.
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-template<class Vector, class VectorSpace>
+//! <MISSING_ONELINE_DOCSTRING>
+
+template <class Vector, class VectorSpace>
 class MatrixBase {
  public:
   // NOTE that a default constructor MUST be allowed, even if it

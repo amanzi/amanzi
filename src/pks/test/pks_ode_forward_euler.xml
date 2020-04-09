@@ -1,0 +1,74 @@
+<ParameterList name="Main" type="ParameterList">
+  <ParameterList name="mesh" type="ParameterList">
+    <ParameterList name="domain" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="generate mesh" />
+      <ParameterList name="generate mesh parameters" type="ParameterList">
+        <Parameter name="number of cells" type="Array(int)" value="{1,1,1}" />
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0,0.0,0.0}" />
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.0,1.0,1.0}" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="regions" type="ParameterList">
+    <ParameterList name="computational domain" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,10.0}" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs" type="ParameterList">
+    <ParameterList name="A, forward euler" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="initial time step" type="double" value="0.1" />
+      <ParameterList name="time integrator" type="ParameterList">
+        <Parameter name="RK method" type="string" value="forward euler" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="B, forward euler" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="initial time step" type="double" value="0.1" />
+      <ParameterList name="time integrator" type="ParameterList">
+        <Parameter name="RK method" type="string" value="forward euler" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="C, forward euler" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="initial time step" type="double" value="0.1" />
+      <ParameterList name="time integrator" type="ParameterList">
+        <Parameter name="RK method" type="string" value="forward euler" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="state" type="ParameterList">
+    <ParameterList name="evaluators" type="ParameterList">
+      <ParameterList name="scaling" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function" type="ParameterList">
+          <ParameterList name="domain" type="ParameterList">
+            <Parameter name="region" type="string" value="computational domain" />
+            <Parameter name="component" type="string" value="cell" />
+            <ParameterList name="function" type="ParameterList">
+              <ParameterList name="function-constant" type="ParameterList">
+                <Parameter name="value" type="double" value="2.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+        
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

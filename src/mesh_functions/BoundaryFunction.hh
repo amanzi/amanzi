@@ -1,19 +1,15 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: (v1) Neil Carlson
-           (v2) Ethan Coon
-
-  Function applied to a mesh component with at most one function 
-  application per entity.
- 
-  Amanzi is no longer using this function!
+  Authors:
+      (v1) Neil Carlson
+      (v2) Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BOUNDARY_FUNCTION_HH_
 #define AMANZI_BOUNDARY_FUNCTION_HH_
@@ -32,36 +28,33 @@ namespace Amanzi {
 namespace Functions {
 
 class BoundaryFunction : public UniqueMeshFunction {
-
-public:
-  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh),
-      finalized_(false) {};
+ public:
+  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : UniqueMeshFunction(mesh), finalized_(false){};
 
   void Define(const std::vector<std::string>& regions,
               const Teuchos::RCP<const MultiFunction>& f);
 
-  void Define(std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f);
+  void Define(std::string& region, const Teuchos::RCP<const MultiFunction>& f);
 
   void Compute(double time);
 
   void Finalize();
 
   // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
+  typedef std::map<int, double>::const_iterator Iterator;
   Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
+  Iterator end() const { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
+  std::map<int, double>::size_type size() { return value_.size(); }
 
-protected:
-  std::map<int,double> value_;
+ protected:
+  std::map<int, double> value_;
   bool finalized_;
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif

@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 //
 // Set of functions that create demo meshes for testing.
 //
@@ -23,7 +35,7 @@ demoMeshLogicalSegmentRegularManual();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentRegular();
-  
+
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentIrregularManual();
 
@@ -34,24 +46,25 @@ Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalY();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalYFromXML(const std::string& meshname="logical mesh Y");
+demoMeshLogicalYFromXML(const std::string& meshname = "logical mesh Y");
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded();
-  
+
 class RegularMeshCellFromCoordFunctor {
  public:
   RegularMeshCellFromCoordFunctor(const Amanzi::AmanziGeometry::Point& X0,
-				  const Amanzi::AmanziGeometry::Point& X1,
-				  int nx, int ny, int nz);
+                                  const Amanzi::AmanziGeometry::Point& X1,
+                                  int nx, int ny, int nz);
 
-  Amanzi::AmanziMesh::Entity_ID operator()(const Amanzi::AmanziGeometry::Point& p);
+  Amanzi::AmanziMesh::Entity_ID
+  operator()(const Amanzi::AmanziGeometry::Point& p);
 
  private:
   Amanzi::AmanziGeometry::Point X0_;
   Amanzi::AmanziGeometry::Point X1_;
   Amanzi::AmanziGeometry::Point dX_;
-  int nx_,ny_,nz_;
+  int nx_, ny_, nz_;
 };
 
 } // namespace Testing

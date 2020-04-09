@@ -1,20 +1,14 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  This decorator class wraps a nonlinear SolverFnBase with a class
-  that replaces ApplyPreconditioner() with a Jacobian-free
-  implementation of the inverse.
-
-  Note this is a pass-through to the SolverFnBase in all but
-  ApplyPreconditioner() and UpdatePreconditioner().
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_JF_SOLVER_FN_BASE_HH_
 #define AMANZI_JF_SOLVER_FN_BASE_HH_
@@ -32,68 +26,73 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class SolverFnBaseJF : public SolverFnBase<Vector> {
  public:
   SolverFnBaseJF(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<SolverFnBase<Vector> > fn,
+                 const Teuchos::RCP<SolverFnBase<Vector>> fn,
                  const VectorSpace& map);
 
   // -- Standard SolverFnBase interface.
   // computes the non-linear functional r = F(u)
-  virtual void Residual(const Teuchos::RCP<Vector>& u,
-                        const Teuchos::RCP<Vector>& r) {
+  virtual void
+  Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
+  {
     fn_->Residual(u, r);
   }
 
   // preconditioner application
   virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                   const Teuchos::RCP<Vector>& Pr);
+                                  const Teuchos::RCP<Vector>& Pr);
 
   // Update the preconditioner
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0);
 
   // error norm
   virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du) {
+                           const Teuchos::RCP<const Vector>& du)
+  {
     return fn_->ErrorNorm(u, du);
   }
 
   // Check the admissibility of an inner iterate (ensures preconditions for
   // F(u) to be defined).
-  virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up) {
+  virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up)
+  {
     return fn_->IsAdmissible(up);
   }
 
   // Hack a correction for some reason.
   virtual FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(const Teuchos::RCP<const Vector>& res,
-                       const Teuchos::RCP<const Vector>& u,
-                       const Teuchos::RCP<Vector>& du) {
+  ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+                   const Teuchos::RCP<const Vector>& u,
+                   const Teuchos::RCP<Vector>& du)
+  {
     return fn_->ModifyCorrection(res, u, du);
   }
 
   // bookkeeping for state
-  virtual void ChangedSolution() {
-    fn_->ChangedSolution();
-  }
+  virtual void ChangedSolution() { fn_->ChangedSolution(); }
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<MatrixJF<Vector, VectorSpace> > jf_mat_;
-  Teuchos::RCP<LinearOperator<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> > lin_op_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
+  Teuchos::RCP<MatrixJF<Vector, VectorSpace>> jf_mat_;
+  Teuchos::RCP<
+    LinearOperator<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace>>
+    lin_op_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
 
   double typical_u_;
 };
 
 
 // constructor
-template<class Vector, class VectorSpace>
-SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist,
-                                                   const Teuchos::RCP<SolverFnBase<Vector> > fn,
-                                                   const VectorSpace& map) :
-    plist_(plist), fn_(fn) {
+template <class Vector, class VectorSpace>
+SolverFnBaseJF<Vector, VectorSpace>::SolverFnBaseJF(
+  Teuchos::ParameterList& plist, const Teuchos::RCP<SolverFnBase<Vector>> fn,
+  const VectorSpace& map)
+  : plist_(plist), fn_(fn)
+{
   typical_u_ = plist.get<double>("typical solution value", 1.0);
 
   // create the JF matrix, a Matrix<Vector,VectorSpace> class that
@@ -110,21 +109,26 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 
 
 // preconditioner application
-template<class Vector, class VectorSpace>
-int SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(
-    const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr) {
-  return lin_op_->ApplyInverse(*r, *Pr);
+template <class Vector, class VectorSpace>
+int
+SolverFnBaseJF<Vector, VectorSpace>::ApplyPreconditioner(
+  const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr)
+{
+  return lin_op_->applyInverse(*r, *Pr);
 }
 
 
 // preconditioner update
-template<class Vector, class VectorSpace>
-void SolverFnBaseJF<Vector,VectorSpace>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0) {
+template <class Vector, class VectorSpace>
+void
+SolverFnBaseJF<Vector, VectorSpace>::UpdatePreconditioner(
+  const Teuchos::RCP<const Vector>& u0)
+{
   fn_->UpdatePreconditioner(u0);
   jf_mat_->set_linearization_point(u0);
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

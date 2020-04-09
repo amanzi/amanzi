@@ -151,6 +151,7 @@ int
 GraphFE::ResumeFill() {
   offproc_graph_->resumeFill();
   graph_->resumeFill();
+  return 0;
 }
 
 

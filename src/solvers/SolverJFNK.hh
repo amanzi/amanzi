@@ -1,15 +1,14 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Decorator for using a Solver with JFNK as the preconditioner.
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_JFNK_SOLVER_
 #define AMANZI_JFNK_SOLVER_
@@ -31,25 +30,23 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class SolverJFNK : public Solver<Vector, VectorSpace> {
  public:
-  SolverJFNK(Teuchos::ParameterList& plist) :
-      plist_(plist) {}
+  SolverJFNK(Teuchos::ParameterList& plist) : plist_(plist) {}
 
   SolverJFNK(Teuchos::ParameterList& plist,
-             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-             const VectorSpace& map) :
-      plist_(plist) {
+             const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+             const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
-    return solver_->Solve(u);
-  }
+  int Solve(const Teuchos::RCP<Vector>& u) { return solver_->Solve(u); }
 
   // mutators
   void set_tolerance(double tol) { solver_->set_tolerance(tol); }
@@ -62,21 +59,22 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
   int returned_code() { return solver_->returned_code(); }
   int pc_calls() { return solver_->pc_calls(); }
   int pc_updates() { return solver_->pc_updates(); }
-  
+
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBaseJF<Vector,VectorSpace> > jf_fnbase_;
-  Teuchos::RCP<SolverFnBase<Vector> > wrapped_fnbase_;
-  Teuchos::RCP<Solver<Vector,VectorSpace> > solver_;
+  Teuchos::RCP<SolverFnBaseJF<Vector, VectorSpace>> jf_fnbase_;
+  Teuchos::RCP<SolverFnBase<Vector>> wrapped_fnbase_;
+  Teuchos::RCP<Solver<Vector, VectorSpace>> solver_;
 };
 
 
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverJFNK<Vector, VectorSpace>::Init(
-    const Teuchos::RCP<SolverFnBase<Vector> >& fn, const VectorSpace& map)
+ * Public Init method.
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
+void
+SolverJFNK<Vector, VectorSpace>::Init(
+  const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map)
 {
   // create the nonlinear solver
   Teuchos::ParameterList& slist = plist_.sublist("nonlinear solver");
@@ -87,42 +85,50 @@ void SolverJFNK<Vector, VectorSpace>::Init(
 
     if (type == "nka") {
       if (!slist.isSublist("nka parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nka parameters\"");
+        Errors::Message msg(
+          "SolverFactory: missing sublist \"nka parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
-      solver_ = Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
+      solver_ = Teuchos::rcp(new SolverNKA<Vector, VectorSpace>(nka_list));
 
     } else if (type == "Newton") {
       if (!slist.isSublist("Newton parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"Newton parameters\"");
+        Errors::Message msg(
+          "SolverFactory: missing sublist \"Newton parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList newton_list = slist.sublist("Newton parameters");
-      solver_ = Teuchos::rcp(new SolverNewton<Vector,VectorSpace>(newton_list));
+      solver_ =
+        Teuchos::rcp(new SolverNewton<Vector, VectorSpace>(newton_list));
 
     } else if (type == "nka_bt") {
       if (!slist.isSublist("nka_bt parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nka_bt parameters\"");
+        Errors::Message msg(
+          "SolverFactory: missing sublist \"nka_bt parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList nka_list = slist.sublist("nka_bt parameters");
-      solver_ = Teuchos::rcp(new SolverNKA_BT<Vector,VectorSpace>(nka_list));
+      solver_ = Teuchos::rcp(new SolverNKA_BT<Vector, VectorSpace>(nka_list));
 
     } else if (type == "nka_bt_ats") {
       if (!slist.isSublist("nka_bt_ats parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nka_bt_ats parameters\"");
+        Errors::Message msg(
+          "SolverFactory: missing sublist \"nka_bt_ats parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList nka_list = slist.sublist("nka_bt_ats parameters");
-      solver_ = Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
+      solver_ =
+        Teuchos::rcp(new SolverNKA_BT_ATS<Vector, VectorSpace>(nka_list));
 
     } else {
-      Errors::Message msg("JFNK solver factory: wrong value of parameter `\"solver type`\"");
+      Errors::Message msg(
+        "JFNK solver factory: wrong value of parameter `\"solver type`\"");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("JFNK solver factory: parameter `\"solver type`\" is missing");
+    Errors::Message msg(
+      "JFNK solver factory: parameter `\"solver type`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -130,13 +136,14 @@ void SolverJFNK<Vector, VectorSpace>::Init(
   wrapped_fnbase_ = fn;
 
   // wrap the base fn in a JF fn
-  jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<Vector,VectorSpace>(plist_, wrapped_fnbase_, map));
+  jf_fnbase_ = Teuchos::rcp(
+    new SolverFnBaseJF<Vector, VectorSpace>(plist_, wrapped_fnbase_, map));
 
   // Init the nonlinear method with this wrapped SolverFnBase
   solver_->Init(jf_fnbase_, map);
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

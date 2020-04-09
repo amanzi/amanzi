@@ -1,9 +1,9 @@
 /*
   WhetStone
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -22,9 +22,10 @@
 
 
 /* ****************************************************************
-* Test of Taylor polynomials
-**************************************************************** */
-TEST(DG_TAYLOR_POLYNOMIALS) {
+ * Test of Taylor polynomials
+ **************************************************************** */
+TEST(DG_TAYLOR_POLYNOMIALS)
+{
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
@@ -42,17 +43,17 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int m = MonomialSetPosition(2, index);
     p(index[0] + index[1], m) = pos;
   }
-  std::cout << p << std::endl; 
+  std::cout << p << std::endl;
   CHECK(p.size() == 10);
 
   // re-define polynomials
   p.Reshape(2, 4);
-  std::cout << p << std::endl; 
+  std::cout << p << std::endl;
   CHECK(p.size() == 15);
 
   Polynomial p_tmp(p);
   p.Reshape(2, 2);
-  std::cout << "Reshaping last polynomial\n" << p << std::endl; 
+  std::cout << "Reshaping last polynomial\n" << p << std::endl;
   CHECK(p.size() == 6);
 
   // operations with polynomials
@@ -77,18 +78,18 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int m = MonomialSetPosition(3, index);
     q(index[0] + index[1] + index[2], m) = pos;
   }
-  std::cout << "Original polynomial\n" << q << std::endl; 
+  std::cout << "Original polynomial\n" << q << std::endl;
   CHECK(q.size() == 20);
   Polynomial q_orig(q);
 
   // reshape polynomials
   q.Reshape(3, 2);
   Polynomial q1(q), q2(q), q3(q);
-  std::cout << "Reshaping last 3D polynomial\n" << q << std::endl; 
+  std::cout << "Reshaping last 3D polynomial\n" << q << std::endl;
   CHECK(q.size() == 10);
 
   q.Reshape(3, 3);
-  std::cout << "Reshaping last 3D polynomial, (name q)\n" << q << std::endl; 
+  std::cout << "Reshaping last 3D polynomial, (name q)\n" << q << std::endl;
   CHECK(q.size() == 20);
 
   // ring operations with polynomials
@@ -107,11 +108,11 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   // derivatives
   auto grad = Gradient(q_orig);
   std::cout << "Gradient of a polynomial:\n" << grad << std::endl;
- 
+
   Polynomial lp = q_orig.Laplacian();
   std::cout << "Laplacian of original polynomial:\n" << lp << std::endl;
 
-  q4 = Divergence(grad) - lp; 
+  q4 = Divergence(grad) - lp;
   CHECK_CLOSE(0.0, q4.NormInf(), 1e-12);
 
   // change origin of coordinate system
@@ -119,7 +120,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   q.Reshape(3, 2);
   val = q.Value(xyz);
   q.ChangeOrigin(origin);
-  std::cout << "Changed origin of polynomial q\n" << q << std::endl; 
+  std::cout << "Changed origin of polynomial q\n" << q << std::endl;
   CHECK_CLOSE(val, q.Value(xyz), 1e-10);
 
   // trace of a 2D polynomial

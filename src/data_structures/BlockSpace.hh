@@ -1,11 +1,14 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (coonet@ornl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 /*
   Data Structures
@@ -25,11 +28,10 @@ namespace Amanzi {
 
 class BlockSpace {
  public:
-  BlockSpace(const Comm_ptr_type& comm,
-          const std::vector<std::string>& names,
-          const std::map<std::string, BlockMap_ptr_type>& master_maps,
-          const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
-          const std::map<std::string, std::size_t>& num_vectors);
+  BlockSpace(const Comm_ptr_type& comm, const std::vector<std::string>& names,
+             const std::map<std::string, BlockMap_ptr_type>& master_maps,
+             const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
+             const std::map<std::string, std::size_t>& num_vectors);
   BlockSpace(const BlockSpace& other) = default;
   BlockSpace& operator=(const BlockSpace&) = default;
 
@@ -43,14 +45,17 @@ class BlockSpace {
 
   Comm_ptr_type Comm() const { return comm_; }
 
-  GO GlobalLength(bool ghosted=false) const;
-  LO MyLength(bool ghosted=false) const;
+  GO getGlobalLength(bool ghosted = false) const;
+  LO getLocalLength(bool ghosted = false) const;
 
   //
   // Component meta-data
   // ---------------------------------------------
   // Component name information
-  bool HasComponent(const std::string& name) const { return (bool) master_maps_.count(name); }
+  bool HasComponent(const std::string& name) const
+  {
+    return (bool)master_maps_.count(name);
+  }
 
   using name_iterator = std::vector<std::string>::const_iterator;
   name_iterator begin() const { return names_.begin(); }
@@ -58,9 +63,16 @@ class BlockSpace {
   std::size_t size() const { return names_.size(); }
 
   // accessors
-  std::size_t NumVectors(const std::string& name) const { return num_vectors_.at(name); }
-  BlockMap_ptr_type ComponentMap(const std::string& name, bool ghosted=false) const;
-  Import_ptr_type Importer(const std::string& name) const { return importers_.at(name); }
+  std::size_t getNumVectors(const std::string& name) const
+  {
+    return num_vectors_.at(name);
+  }
+  BlockMap_ptr_type
+  ComponentMap(const std::string& name, bool ghosted = false) const;
+  Import_ptr_type Importer(const std::string& name) const
+  {
+    return importers_.at(name);
+  }
 
  protected:
   Comm_ptr_type comm_;

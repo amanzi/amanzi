@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #include <algorithm>
 
 #include "FunctionPolynomial.hh"
@@ -5,44 +17,59 @@
 
 namespace Amanzi {
 
-FunctionPolynomial::FunctionPolynomial (const std::vector<double> &c, const std::vector<int> &p, double x0)
+FunctionPolynomial::FunctionPolynomial(const Kokkos::View<double*>& c,
+                                       const Kokkos::View<int*>& p, double x0)
 {
-  if (c.size() < 1) {
+  if (c.extent(0) < 1) {
     Errors::Message m;
     m << "at least one value requred for the coefficient vector";
     Exceptions::amanzi_throw(m);
   }
-  if (p.size() != c.size()) {
+  if (p.extent(0) != c.extent(0)) {
     Errors::Message m;
     m << "the number of values for the coefficient and exponent vectors differ";
     Exceptions::amanzi_throw(m);
   }
+
   // Minimum and maximum powers.
-  pmin_ = std::min(0, *(std::min_element(p.begin(), p.end())));
-  pmax_ = std::max(0, *(std::max_element(p.begin(), p.end())));
+  // pmin_ = std::min(0, *(std::min_element(p.begin(), p.end())));
+  // pmax_ = std::max(0, *(std::max_element(p.begin(), p.end())));
+
+  // Find min and max
+  pmin_ = p(0);
+  pmax_ = p(0);
+  for (int i = 1; i < p.extent(0); ++i) {
+    pmin_ = std::min(pmin_, p(i));
+    pmax_ = std::max(pmax_, p(i));
+  }
+  pmin_ = std::min(0, pmin_);
+  pmax_ = std::max(0, pmax_);
+
   int n = pmax_ - pmin_ + 1;
-  c_.resize(n);
-  c_.assign(n, 0.0);
-  for (int j = 0; j < c.size(); ++j) c_[p[j]-pmin_] += c[j];
+  Kokkos::resize(c_, n);
+  for (int i = 0; i < n; ++i) { c_(i) = 0.0; }
+  // c_.resize(n);
+  // c_.assign(n, 0.0);
+  for (int j = 0; j < c.extent(0); ++j) c_[p[j] - pmin_] += c[j];
   x0_ = x0;
 }
 
-double FunctionPolynomial::operator()(const std::vector<double>& x) const
+double
+FunctionPolynomial::operator()(const Kokkos::View<double*>& x) const
 {
   // Polynomial terms with non-negative exponents
-  double y = c_[pmax_-pmin_];
+  double y = c_[pmax_ - pmin_];
   if (pmax_ > 0) {
     double z = x[0] - x0_;
-    for (int j = pmax_; j > 0; --j) y = c_[j-1-pmin_] + z*y;
+    for (int j = pmax_; j > 0; --j) y = c_[j - 1 - pmin_] + z * y;
   }
   // Polynomial terms with negative exponents.
   if (pmin_ < 0) {
     double w = c_[0];
     double z = 1.0 / (x[0] - x0_);
-    for (int j = pmin_; j < -1; ++j) w = c_[j+1-pmin_] + z*w;
-    y += z*w;
+    for (int j = pmin_; j < -1; ++j) w = c_[j + 1 - pmin_] + z * w;
+    y += z * w;
   }
   return y;
 }
-
 } // namespace Amanzi

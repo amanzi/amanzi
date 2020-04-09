@@ -1,21 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Example of a Vector base class used in our templates. The 
-  routines below are mandatory for any implementation of a 
-  vector class to be compatible with Amanzi.
-
-  Note that this class is NEVER used, it simply is documentation of
-  the implied interface.
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 class VectorBase {
  public:
@@ -34,4 +28,3 @@ class VectorBase {
   // dot product: a = (*this) * u, returns error code 0 if success, !0 otherwise
   int Dot(const VectorBase& u, double* a);
 };
-

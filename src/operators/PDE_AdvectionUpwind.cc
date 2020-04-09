@@ -1,14 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -22,9 +23,10 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialize operator from parameter list.
-****************************************************************** */
-void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
+ * Initialize operator from parameter list.
+ ****************************************************************** */
+void
+PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -32,9 +34,11 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
     global_schema_row_.AddItem(AmanziMesh::CELL, DOF_Type::SCALAR, 1);
     global_schema_col_ = global_schema_row_;
 
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    Teuchos::RCP<CompositeVectorSpace> cvs =
+      Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
+    global_op_ = Teuchos::rcp(
+      new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
 
     std::string name("FACE_CELL");
 
@@ -51,7 +55,8 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 
     if (!(global_schema_row_.OldSchema() & OPERATOR_SCHEMA_DOFS_CELL)) {
       Errors::Message msg;
-      msg << "Operators: global schema for adding advection operator must contain CELL dofs.\n";
+      msg << "Operators: global schema for adding advection operator must "
+             "contain CELL dofs.\n";
       Exceptions::amanzi_throw(msg);
     } else {
       mesh_ = global_op_->DomainMap().Mesh();
@@ -72,23 +77,27 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Advection requires a velocity field.
-****************************************************************** */
-void PDE_AdvectionUpwind::Setup(const CompositeVector& u)
+ * Advection requires a velocity field.
+ ****************************************************************** */
+void
+PDE_AdvectionUpwind::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
 
-  
+
 /* ******************************************************************
-* A simple first-order transport method.
-* Advection operator is of the form: div (u C), where u is the given
-* velocity field and C is the advected field.
-****************************************************************** */
-void PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
+ * A simple first-order transport method.
+ * Advection operator is of the form: div (u C), where u is the given
+ * velocity field and C is the advected field.
+ ****************************************************************** */
+void
+PDE_AdvectionUpwind::UpdateMatrices(
+  const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow =
+    local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
@@ -100,7 +109,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
@@ -119,19 +128,21 @@ void PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 
 
 /* ******************************************************************
-* Add a simple first-order upwind method where the advected quantity
-* is not the primary variable (used in Jacobians).
-* Advection operator is of the form: div (u h(T))
-*     u: flux
-*     h: advected quantity (i.e. enthalpy)
-*     T: primary varaible (i.e. temperature)
-****************************************************************** */
-void PDE_AdvectionUpwind::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& dhdT)
+ * Add a simple first-order upwind method where the advected quantity
+ * is not the primary variable (used in Jacobians).
+ * Advection operator is of the form: div (u h(T))
+ *     u: flux
+ *     h: advected quantity (i.e. enthalpy)
+ *     T: primary varaible (i.e. temperature)
+ ****************************************************************** */
+void
+PDE_AdvectionUpwind::UpdateMatrices(
+  const Teuchos::Ptr<const CompositeVector>& u,
+  const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow =
+    local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
@@ -146,7 +157,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
@@ -165,34 +176,36 @@ void PDE_AdvectionUpwind::UpdateMatrices(
 
 
 /* *******************************************************************
-* Apply boundary condition to the local matrices
-*
-* Advection only problem.
-* Recommended options: primary=true, eliminate=false, essential_eqn=true
-*  - must deal with Dirichlet BC on inflow boundary
-*  - Dirichlet on outflow boundary is ill-posed
-*  - Neumann on inflow boundary is typically not used, since it is 
-*    equivalent to Dirichlet BC. We perform implicit conversion to 
-*    Dirichlet BC.
-*
-* Advection-diffusion problem.
-* Recommended options: primary=false, eliminate=true, essential_eqn=true
-*  - Dirichlet BC is treated as usual
-*  - Neuman on inflow boundary: If diffusion takes care of the total
-*    flux, then TOTAL_FLUX model must be used. If diffusion deals
-*    with the diffusive flux only (NEUMANN model), value of the 
-*    advective flux is in general not available and negative value
-*    is added to matrix diagonal. The discrete system may lose SPD 
-*    property.
-*  - Neuman on outflow boundary: If diffusion takes care of the total
-*    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
-*
-* FIXME: So far we support the case bc_test = bc_trial
-******************************************************************* */
-void PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+ * Apply boundary condition to the local matrices
+ *
+ * Advection only problem.
+ * Recommended options: primary=true, eliminate=false, essential_eqn=true
+ *  - must deal with Dirichlet BC on inflow boundary
+ *  - Dirichlet on outflow boundary is ill-posed
+ *  - Neumann on inflow boundary is typically not used, since it is
+ *    equivalent to Dirichlet BC. We perform implicit conversion to
+ *    Dirichlet BC.
+ *
+ * Advection-diffusion problem.
+ * Recommended options: primary=false, eliminate=true, essential_eqn=true
+ *  - Dirichlet BC is treated as usual
+ *  - Neuman on inflow boundary: If diffusion takes care of the total
+ *    flux, then TOTAL_FLUX model must be used. If diffusion deals
+ *    with the diffusive flux only (NEUMANN model), value of the
+ *    advective flux is in general not available and negative value
+ *    is added to matrix diagonal. The discrete system may lose SPD
+ *    property.
+ *  - Neuman on outflow boundary: If diffusion takes care of the total
+ *    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
+ *
+ * FIXME: So far we support the case bc_test = bc_trial
+ ******************************************************************* */
+void
+PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow =
+    local_op_->matrices_shadow;
 
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
@@ -210,7 +223,7 @@ void PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_
         rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
         matrix[f] = 0.0;
       }
-    } 
+    }
 
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
@@ -220,35 +233,35 @@ void PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_
       }
     }
     // leave in matrix for composite operator
-    else if (bc_model[f] == OPERATOR_BC_NEUMANN && ! primary) {
-      if (c1 < 0)
-        matrix[f] *= -1.0;
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && !primary) {
+      if (c1 < 0) matrix[f] *= -1.0;
     }
     // total flux was processed by another operator -> remove here
-    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && ! primary) {
+    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && !primary) {
       matrix[f] = 0.0;
     }
     // do not know what to do
     else if (bc_model[f] != OPERATOR_BC_NONE) {
       AMANZI_ASSERT(false);
-    } 
+    }
   }
 }
 
 
 /* *******************************************************************
-* Identify the advected flux of u
-******************************************************************* */
-void PDE_AdvectionUpwind::UpdateFlux(
-    const Teuchos::Ptr<const CompositeVector>& h,
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
+ * Identify the advected flux of u
+ ******************************************************************* */
+void
+PDE_AdvectionUpwind::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                const Teuchos::RCP<BCs>& bc,
+                                const Teuchos::Ptr<CompositeVector>& flux)
 {
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
-  flux->PutScalar(0.0);
-  
+  flux->putScalar(0.0);
+
   // apply preconditioner inversion
   h->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& h_c = *h->ViewComponent("cell", true);
@@ -264,15 +277,16 @@ void PDE_AdvectionUpwind::UpdateFlux(
       // upwind cell enthalpy
       flux_f[0][f] = u_f[0][f] * h_c[0][c1];
     }
-  }  
+  }
 }
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the  Darcy velocity.                               
-******************************************************************* */
-void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
+ * Identify flux direction based on orientation of the face normal
+ * and sign of the  Darcy velocity.
+ ******************************************************************* */
+void
+PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
@@ -282,7 +296,7 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    (*upwind_cell_)[f] = -1;  // negative value indicates boundary
+    (*upwind_cell_)[f] = -1; // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
   }
 
@@ -290,7 +304,7 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, fdirs);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -303,5 +317,5 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

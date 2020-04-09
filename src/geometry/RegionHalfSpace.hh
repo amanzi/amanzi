@@ -1,18 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionHalfSpace: A planar (infinite) region in space, defined by a point and a normal.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Rao Garimella
+      Ethan Coon (coonet@ornl.gov)
 */
 
+//! RegionHalfSpace: A planar (infinite) region in space, defined by a point and
+//! a normal.
+
 /*!
-List *region: halfspace* defines a halfspace determined by a plane an assuming outward normal to the plane.
+List *region: halfspace* defines a halfspace determined by a plane an assuming
+outward normal to the plane.
 
 * `"normal`" ``[Array(double)]`` Normal to the plane.
 
@@ -44,15 +46,12 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionHalfSpace : public Region {
-
  public:
   // Default constructor uses point and normal
-  RegionHalfSpace(const std::string& name,
-                  const int id,
-                  const Point& p, 
+  RegionHalfSpace(const std::string& name, const int id, const Point& p,
                   const Point& normal,
-                  const LifeCycleType lifecycle=PERMANENT);
-  
+                  const LifeCycleType lifecycle = PERMANENT);
+
   // Get the point defining the plane
   const Point& point() const { return p_; }
 
@@ -63,9 +62,9 @@ class RegionHalfSpace : public Region {
   // means on the plane
   bool inside(const Point& p) const;
 
-protected:
-  const Point p_;  /* point on the plane */
-  const Point n_;  /* normal to the plane */
+ protected:
+  const Point p_; /* point on the plane */
+  const Point n_; /* normal to the plane */
 };
 
 } // namespace AmanziGeometry

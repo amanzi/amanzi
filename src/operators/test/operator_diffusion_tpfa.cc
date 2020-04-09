@@ -1,13 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <cstdlib>
 #include <cmath>
@@ -40,9 +41,10 @@
 
 
 /* *****************************************************************
-* This tests diffusion solvers with zero coefficients
-* **************************************************************** */
-TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
+ * This tests diffusion solvers with zero coefficients
+ * **************************************************************** */
+TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +53,9 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
-  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, TPFA with zero permeability" << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: 2D elliptic solver, TPFA with zero permeability"
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_strip.xml";
@@ -60,39 +64,47 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // create a mesh
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
+  Teuchos::RCP<GeometricModel> gm =
+    Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory(-4.0, 0.0, 4.0, 1.0, 30, 1, gm);
 
   // model
   Analytic04 ana(mesh);
 
   // vector spaces
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<CompositeVectorSpace> cell_space = Teuchos::rcp(new CompositeVectorSpace());
-  cell_space->SetMesh(mesh)->SetComponent("cell",CELL,1)->SetGhosted();
+  Teuchos::RCP<CompositeVectorSpace> cell_space =
+    Teuchos::rcp(new CompositeVectorSpace());
+  cell_space->SetMesh(mesh)->SetComponent("cell", CELL, 1)->SetGhosted();
 
-  Teuchos::RCP<CompositeVectorSpace> face_space = Teuchos::rcp(new CompositeVectorSpace());
-  face_space->SetMesh(mesh)->SetComponent("face",FACE,1)->SetGhosted();
+  Teuchos::RCP<CompositeVectorSpace> face_space =
+    Teuchos::rcp(new CompositeVectorSpace());
+  face_space->SetMesh(mesh)->SetComponent("face", FACE, 1)->SetGhosted();
 
   // create source
   CompositeVector source(*cell_space);
   Epetra_MultiVector& src = *source.ViewComponent("cell", false);
-  src.PutScalar(0.0);
+  src.putScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c, false);
     src[0][c] = ana.source_exact(xc, 0.0) * volume;
   }
 
-  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cell_space,0));
+  Teuchos::RCP<OperatorSource> op1 =
+    Teuchos::rcp(new OperatorSource(cell_space, 0));
   op1->UpdateMatrices(source);
 
   // modify diffusion coefficient
@@ -106,9 +118,10 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   }
 
   // -- scalar part
-  Teuchos::RCP<CompositeVector> coef = Teuchos::rcp(new CompositeVector(*face_space));
+  Teuchos::RCP<CompositeVector> coef =
+    Teuchos::rcp(new CompositeVector(*face_space));
   {
-    Epetra_MultiVector& coef_faces = *coef->ViewComponent("face",false);
+    Epetra_MultiVector& coef_faces = *coef->ViewComponent("face", false);
 
     for (int f = 0; f != nfaces; ++f) {
       const Point& xf = mesh->face_centroid(f);
@@ -125,35 +138,40 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   std::vector<double> bc_mixed;
 
   AmanziMesh::Entity_ID_List left;
-  mesh->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &left);
-  for (int f=0; f!=left.size(); ++f) {
+  mesh->get_set_entities(
+    "Left side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &left);
+  for (int f = 0; f != left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
     bc_value[f] = ana.pressure_exact(xv, 0.0);
   }
 
   AmanziMesh::Entity_ID_List right;
-  mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &right);
-  for (int f=0; f!=right.size(); ++f) {
+  mesh->get_set_entities(
+    "Right side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &right);
+  for (int f = 0; f != right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
     bc_value[f] = ana.pressure_exact(xv, 0.0);
   }
-  
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create diffusion operator 
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+
+  // create diffusion operator
+  ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator");
   Point g(2);
   g[0] = 0.0;
   g[1] = 0.0;
 
-  Teuchos::RCP<DiffusionTPFA> op2 = Teuchos::rcp(new DiffusionTPFA(*op1, op_list, bc));
+  Teuchos::RCP<DiffusionTPFA> op2 =
+    Teuchos::rcp(new DiffusionTPFA(*op1, op_list, bc));
   op2->SetUpwind(0);
   op2->SetGravity(g);
-  
+
   const CompositeVectorSpace& cvs = op2->DomainMap();
-  
+
   // populate the diffusion operator
   op2->Setup(K, coef, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -177,17 +195,15 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   solution.Print(std::cout);
 
   op2->rhs()->Print(std::cout);
-  int ierr = op2->Apply(solution, residual);
+  int ierr = op2->apply(solution, residual);
 
   residual.Print(std::cout);
-  residual.Update(1.0, *op2->rhs(), -1.0);
+  residual.update(1.0, *op2->rhs(), -1.0);
   residual.Print(std::cout);
   CHECK(!ierr);
 
   double res_norm(0.0);
-  ierr |= residual.Norm2(&res_norm);
+  res_norm = ierr |= residual.norm2();
   CHECK(!ierr);
   CHECK_CLOSE(0.0, res_norm, 1.0e-8);
 }
-
-

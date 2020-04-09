@@ -1,15 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Includes and a few helper functions to make it easier to work with Comms.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
 
+//! Includes and a few helper functions to make it easier to work with Comms.
 
 /*!
 
@@ -27,19 +26,19 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#else
-#include "Teuchos_SerialComm.hpp"
-#endif
+#  ifdef HAVE_MPI
+#    include "Teuchos_DefaultMpiComm.hpp"
+#  else
+#    include "Teuchos_SerialComm.hpp"
+#  endif
 
 #else // Epetra stack
 
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#  ifdef HAVE_MPI
+#    include "Epetra_MpiComm.h"
+#  else
+#    include "Epetra_SerialComm.h"
+#  endif
 
 #endif // trilinos stack
 
@@ -52,47 +51,47 @@ namespace Amanzi {
 //
 // Get a default communicator, based on MPI_COMM_WORLD if possible.
 // -----------------------------------------------------------------------------
-inline
-Comm_ptr_type getDefaultComm() {
+inline Comm_ptr_type
+getDefaultComm()
+{
 #ifdef TRILINOS_TPETRA_STACK
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-#else
+#  else
   return Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+#  endif
 #else
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
+#  else
   return Teuchos::rcp(new Epetra_SerialComm());
-#endif
+#  endif
 #endif
 }
 
 //
 // Get a serial communicator, based on MPI_COMM_SELF if possible.
 // -----------------------------------------------------------------------------
-inline
-Comm_ptr_type getCommSelf() {
+inline Comm_ptr_type
+getCommSelf()
+{
 #ifdef TRILINOS_TPETRA_STACK
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_SELF));
-#else
+#  else
   return Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+#  endif
 #else
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_SELF));
-#else
+#  else
   return Teuchos::rcp(new Epetra_SerialComm());
+#  endif
 #endif
-#endif
-
 }
 
 
-} // namespace amanzi
-
+} // namespace Amanzi
 
 
 #endif

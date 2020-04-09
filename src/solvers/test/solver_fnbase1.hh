@@ -1,64 +1,85 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #ifndef AMANZI_TEST_SOLVER_FNBASE1_HH_
 #define AMANZI_TEST_SOLVER_FNBASE1_HH_
 
 #include <math.h>
-#include "Epetra_Vector.h"
+#include "AmanziVector.hh"
 
 #include "SolverFnBase.hh"
 
+using namespace Amanzi;
+
 // ODE: f(u) = u (u^2 + 1) = 0.
-class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
+class NonlinearProblem : public AmanziSolvers::SolverFnBase<Vector_type> {
  public:
-  NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
-    rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {}
+  NonlinearProblem(double atol, double rtol, bool exact_jacobian)
+    : rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian)
+  {}
 
-  void Residual(const Teuchos::RCP<Epetra_Vector>& u,
-                const Teuchos::RCP<Epetra_Vector>& f) {
-    for (int c = 0; c != u->MyLength(); ++c) {
-      double x = (*u)[c];
-      (*f)[c] = x * (x * x + 1.0);
-    }
+  void Residual(const Teuchos::RCP<Vector_type>& u,
+                const Teuchos::RCP<Vector_type>& f)
+  {
+    auto uv = u->getLocalViewDevice();
+    auto fv = f->getLocalViewDevice();
+    Kokkos::parallel_for(fv.extent(0), KOKKOS_LAMBDA(const int c) {
+      double x = uv(c, 0);
+      fv(c, 0) = x * (x * x + 1.0);
+    });
   }
 
-  int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
-                           const Teuchos::RCP<Epetra_Vector>& hu) {
-    return hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
+  int ApplyPreconditioner(const Teuchos::RCP<const Vector_type>& u,
+                          const Teuchos::RCP<Vector_type>& hu)
+  {
+    hu->elementWiseMultiply(1., *h_, *u, 0.);
+    return 0;
   }
 
-  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
-                   const Teuchos::RCP<const Epetra_Vector>& du) {
-    double norm2_du;
-    double norm_du, norm_u;
-    du->NormInf(&norm_du);
-    u->NormInf(&norm_u);
-    du->Norm2(&norm2_du);
-    return norm_du;
-    //return norm_du / (atol_ + rtol_ * norm_u);
+  double ErrorNorm(const Teuchos::RCP<const Vector_type>& u,
+                   const Teuchos::RCP<const Vector_type>& du)
+  {
+    return du->normInf();
+    // return norm_du / (atol_ + rtol_ * norm_u);
   }
 
-  void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {
-    h_ = Teuchos::rcp(new Epetra_Vector(*up));
+  void UpdatePreconditioner(const Teuchos::RCP<const Vector_type>& up)
+  {
+    if (!h_.get()) h_ = Teuchos::rcp(new Vector_type(up->getMap()));
 
     if (exact_jacobian_) {
-      for (int c = 0; c != up->MyLength(); ++c) {
-        double x = (*up)[c];
-        (*h_)[c] = 3 * x * x + 1.0;
-      }
+      auto upv = up->getLocalViewDevice();
+      auto hv = h_->getLocalViewDevice();
+      Kokkos::parallel_for(hv.extent(0), KOKKOS_LAMBDA(const int c) {
+        double x = upv(c, 0);
+        hv(c, 0) = 3 * x * x + 1.0;
+      });
     } else {
-      for (int c = 0; c != up->MyLength(); ++c) {
-        double x = (*up)[c];
-        (*h_)[c] = x * x + 2.5;
-      }
+      auto upv = up->getLocalViewDevice();
+      auto hv = h_->getLocalViewDevice();
+      Kokkos::parallel_for(hv.extent(0), KOKKOS_LAMBDA(const int c) {
+        double x = upv(c, 0);
+        hv(c, 0) = x * x + 2.5;
+      });
     }
+    h_->reciprocal(*h_);
   }
 
-  void ChangedSolution() {};
+  void ChangedSolution(){};
 
  protected:
   double atol_, rtol_;
   bool exact_jacobian_;
-  Teuchos::RCP<Epetra_Vector> h_;  // preconditioner
+  Teuchos::RCP<Vector_type> h_; // preconditioner
 };
 
 #endif
-

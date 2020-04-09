@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -22,8 +22,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor of zero polynomial.
-****************************************************************** */
+ * Constructor of zero polynomial.
+ ****************************************************************** */
 Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
@@ -33,8 +33,8 @@ Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
 
 
 /* ******************************************************************
-* Constructor from a given vector.
-****************************************************************** */
+ * Constructor from a given vector.
+ ****************************************************************** */
 Polynomial::Polynomial(int d, int order, const DenseVector& coefs)
   : PolynomialBase(d, order)
 {
@@ -45,11 +45,11 @@ Polynomial::Polynomial(int d, int order, const DenseVector& coefs)
 
 
 /* ******************************************************************
-* Constructor of a polynomial with a single term:
-*    p(x) = factor * (x)^multi_index
-****************************************************************** */
+ * Constructor of a polynomial with a single term:
+ *    p(x) = factor * (x)^multi_index
+ ****************************************************************** */
 Polynomial::Polynomial(int d, const int* multi_index, double factor)
-   : PolynomialBase(d, 0)
+  : PolynomialBase(d, 0)
 {
   for (int i = 0; i < d_; ++i) order_ += multi_index[i];
 
@@ -63,8 +63,8 @@ Polynomial::Polynomial(int d, const int* multi_index, double factor)
 
 
 /* ******************************************************************
-* Copy constructor.
-****************************************************************** */
+ * Copy constructor.
+ ****************************************************************** */
 Polynomial::Polynomial(const Polynomial& poly)
 {
   d_ = poly.dimension();
@@ -76,8 +76,8 @@ Polynomial::Polynomial(const Polynomial& poly)
 
 
 /* ******************************************************************
-* Constructor of a polynomial from a monomial.
-****************************************************************** */
+ * Constructor of a polynomial from a monomial.
+ ****************************************************************** */
 Polynomial::Polynomial(const Monomial& mono)
 {
   d_ = mono.dimension();
@@ -94,10 +94,10 @@ Polynomial::Polynomial(const Monomial& mono)
 
 
 /* ******************************************************************
-* Complex constructor based on minimum set of given points and value.
-****************************************************************** */
+ * Complex constructor based on minimum set of given points and value.
+ ****************************************************************** */
 Polynomial::Polynomial(int d, int order,
-                       const std::vector<AmanziGeometry::Point>& xyz, 
+                       const std::vector<AmanziGeometry::Point>& xyz,
                        const DenseVector& values)
   : PolynomialBase(d, order)
 {
@@ -122,13 +122,11 @@ Polynomial::Polynomial(int d, int order,
 
       for (int n = 0; n < size_; ++n) {
         double val(1.0);
-        for (int k = 0; k < d_; ++k) {
-          val *= std::pow(xyz[n][k], idx[k]);
-        }
+        for (int k = 0; k < d_; ++k) { val *= std::pow(xyz[n][k], idx[k]); }
         psi(n, i) = val;
       }
     }
-      
+
     // form linear system
     DenseMatrix A(size_, size_);
     DenseVector b(size_);
@@ -144,10 +142,11 @@ Polynomial::Polynomial(int d, int order,
 
 
 /* ******************************************************************
-* Re-shape polynomial
-* NOTE: case d > d_ can be treated more intelligently.
-****************************************************************** */
-void Polynomial::Reshape(int d, int order, bool reset)
+ * Re-shape polynomial
+ * NOTE: case d > d_ can be treated more intelligently.
+ ****************************************************************** */
+void
+Polynomial::Reshape(int d, int order, bool reset)
 {
   if (d_ != d) {
     d_ = d;
@@ -164,7 +163,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
     size_ = PolynomialSpaceDimension(d_, order_);
     coefs_.Reshape(size_);
 
-    if (reset) { 
+    if (reset) {
       coefs_.PutScalar(0.0);
     } else {
       for (int i = size; i < size_; ++i) coefs_(i) = 0.0;
@@ -176,12 +175,13 @@ void Polynomial::Reshape(int d, int order, bool reset)
 
 
 /* ******************************************************************
-* Implemented ring algebra operations.
-* NOTE: implementation is order independent.
-****************************************************************** */
-Polynomial& Polynomial::operator+=(const Polynomial& poly)
+ * Implemented ring algebra operations.
+ * NOTE: implementation is order independent.
+ ****************************************************************** */
+Polynomial&
+Polynomial::operator+=(const Polynomial& poly)
 {
-  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(d_ == poly.dimension()); // FIXME
   AMANZI_ASSERT(origin_ == poly.origin());
 
   int order = poly.order();
@@ -192,9 +192,10 @@ Polynomial& Polynomial::operator+=(const Polynomial& poly)
 }
 
 
-Polynomial& Polynomial::operator-=(const Polynomial& poly)
+Polynomial&
+Polynomial::operator-=(const Polynomial& poly)
 {
-  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(d_ == poly.dimension()); // FIXME
   AMANZI_ASSERT(origin_ == poly.origin());
 
   int order = poly.order();
@@ -205,27 +206,28 @@ Polynomial& Polynomial::operator-=(const Polynomial& poly)
 }
 
 
-Polynomial& Polynomial::operator*=(const Polynomial& poly)
+Polynomial&
+Polynomial::operator*=(const Polynomial& poly)
 {
-  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(d_ == poly.dimension()); // FIXME
   AMANZI_ASSERT(origin_ == poly.origin());
 
   int order = poly.order();
   if (order == 0) {
     coefs_ *= poly(0);
-    return *this; 
+    return *this;
   }
 
   if (order_ == 0) {
     coefs_ = coefs_(0) * poly.coefs();
     size_ = poly.size();
     order_ = poly.order();
-    return *this; 
+    return *this;
   }
 
   Polynomial arg1(*this);
   const Polynomial* arg2 = &poly;
-  if (this == arg2) arg2 = &arg1; 
+  if (this == arg2) arg2 = &arg1;
 
   int order_prod = order_ + order;
   Reshape(d_, order_prod, true);
@@ -242,9 +244,7 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
       int n2 = it2.PolynomialPosition();
       double val2 = arg2->operator()(n2);
 
-      for (int i = 0; i < d_; ++i) {
-        index[i] = idx1[i] + idx2[i];
-      }
+      for (int i = 0; i < d_; ++i) { index[i] = idx1[i] + idx2[i]; }
       int l = PolynomialPosition(d_, index);
       coefs_(l) += val1 * val2;
     }
@@ -254,29 +254,30 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
 }
 
 
-Polynomial& Polynomial::operator*=(double val) {
+Polynomial&
+Polynomial::operator*=(double val)
+{
   coefs_ *= val;
   return *this;
 }
 
 
 /* ******************************************************************
-* Rebase polynomial to different origin.
-****************************************************************** */
-void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
+ * Rebase polynomial to different origin.
+ ****************************************************************** */
+void
+Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 {
   AmanziGeometry::Point shift(origin - origin_);
 
   if (order_ == 1) {
-    for (int i = 0; i < d_; ++i) {
-      coefs_(0) += coefs_(i + 1) * shift[i];
-    }
+    for (int i = 0; i < d_; ++i) { coefs_(0) += coefs_(i + 1) * shift[i]; }
   } else if (order_ > 1) {
     if (AmanziGeometry::L22(shift) == 0.0) return;
 
     // create powers (x_i - o_i)^k
     // FIXME: cost could be reduced using split Cnk * a^k
-    std::vector<std::vector<DenseVector> > powers(d_);
+    std::vector<std::vector<DenseVector>> powers(d_);
 
     for (int i = 0; i < d_; ++i) {
       powers[i].resize(order_ + 1);
@@ -310,11 +311,11 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       Polynomial tmp(d_, k);
       for (int i0 = 0; i0 <= index[0]; ++i0) {
         idx[0] = i0;
-        double coef0 = powers[0][index[0]](i0); 
+        double coef0 = powers[0][index[0]](i0);
 
         for (int i1 = 0; i1 <= index[1]; ++i1) {
           idx[1] = i1;
-          double coef1 = powers[1][index[1]](i1); 
+          double coef1 = powers[1][index[1]](i1);
 
           if (d_ == 2) {
             int pos = PolynomialPosition(d_, idx);
@@ -322,7 +323,7 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
           } else {
             for (int i2 = 0; i2 <= index[2]; ++i2) {
               idx[2] = i2;
-              double coef2 = powers[2][index[2]](i2); 
+              double coef2 = powers[2][index[2]](i2);
 
               int pos = PolynomialPosition(d_, idx);
               tmp(pos) = coef * coef0 * coef1 * coef2;
@@ -332,18 +333,19 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       }
       rebased += tmp;
     }
-    
+
     *this = rebased;
   }
-  origin_ = origin;   
+  origin_ = origin;
 }
 
 
 /* ******************************************************************
-* Rebase monomial to different origin. 
-****************************************************************** */
-Polynomial Polynomial::ChangeOrigin(
-    const Monomial& mono, const AmanziGeometry::Point& origin)
+ * Rebase monomial to different origin.
+ ****************************************************************** */
+Polynomial
+Polynomial::ChangeOrigin(const Monomial& mono,
+                         const AmanziGeometry::Point& origin)
 {
   int d = mono.dimension();
   int order = mono.order();
@@ -353,8 +355,7 @@ Polynomial Polynomial::ChangeOrigin(
 
   if (order == 0) {
     poly(0) = coef;
-  }
-  else if (order > 0) {
+  } else if (order > 0) {
     AmanziGeometry::Point shift(origin - mono.origin());
     const int* index = mono.multi_index();
 
@@ -378,11 +379,11 @@ Polynomial Polynomial::ChangeOrigin(
     int idx[3];
     for (int i0 = 0; i0 <= index[0]; ++i0) {
       idx[0] = i0;
-      double coef0 = powers[0](i0); 
+      double coef0 = powers[0](i0);
 
       for (int i1 = 0; i1 <= index[1]; ++i1) {
         idx[1] = i1;
-        double coef1 = powers[1](i1); 
+        double coef1 = powers[1](i1);
 
         if (d == 2) {
           int pos = MonomialSetPosition(d_, idx);
@@ -390,7 +391,7 @@ Polynomial Polynomial::ChangeOrigin(
         } else {
           for (int i2 = 0; i2 <= index[2]; ++i2) {
             idx[2] = i2;
-            double coef2 = powers[2](i2); 
+            double coef2 = powers[2](i2);
 
             int pos = MonomialSetPosition(d_, idx);
             poly(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
@@ -406,12 +407,13 @@ Polynomial Polynomial::ChangeOrigin(
 
 
 /* ******************************************************************
-* Calculate polynomial value at a given point. 
-****************************************************************** */
-double Polynomial::Value(const AmanziGeometry::Point& xp) const
+ * Calculate polynomial value at a given point.
+ ****************************************************************** */
+double
+Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(coefs_(0));
-  
+
   if (order_ > 0) {
     for (int i = 0; i < d_; ++i) {
       sum += (xp[i] - origin_[i]) * coefs_(i + 1);
@@ -436,11 +438,12 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 
 /* ******************************************************************
-* Change of coordinates: x = x0 + B * s 
-* Note: resulting polynomial is centered at new origin.
-****************************************************************** */
-void Polynomial::ChangeCoordinates(
-    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
+ * Change of coordinates: x = x0 + B * s
+ * Note: resulting polynomial is centered at new origin.
+ ****************************************************************** */
+void
+Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
+                              const std::vector<AmanziGeometry::Point>& B)
 {
   int dnew = B.size();
   AMANZI_ASSERT(dnew > 0);
@@ -457,22 +460,23 @@ void Polynomial::ChangeCoordinates(
     if (dnew == 1) {
       double coef = coefs_(n);
       for (int i = 0; i < d_; ++i) {
-        coef *= std::pow(B[0][i], multi_index[i]);  
+        coef *= std::pow(B[0][i], multi_index[i]);
       }
       tmp(m, 0) += coef;
     }
-  }  
-  
+  }
+
   *this = tmp;
 }
 
 
 /* ******************************************************************
-* Inverse change of coordinates: s = B^+ (x - x0) 
-* Note: resulting polynomial is centered at x0.
-****************************************************************** */
-void Polynomial::InverseChangeCoordinates(
-    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
+ * Inverse change of coordinates: s = B^+ (x - x0)
+ * Note: resulting polynomial is centered at x0.
+ ****************************************************************** */
+void
+Polynomial::InverseChangeCoordinates(
+  const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
   int dnew = x0.dim();
 
@@ -489,16 +493,17 @@ void Polynomial::InverseChangeCoordinates(
       int m = it.MonomialSetOrder();
       tmp(m, i * m) = this->operator()(m, 0) * std::pow(scale, m);
     }
-  }  
-  
+  }
+
   *this = tmp;
 }
 
 
 /* ******************************************************************
-* Laplacian operator
-****************************************************************** */
-Polynomial Polynomial::Laplacian()
+ * Laplacian operator
+ ****************************************************************** */
+Polynomial
+Polynomial::Laplacian()
 {
   int order = std::max(0, order_ - 2);
 
@@ -529,13 +534,14 @@ Polynomial Polynomial::Laplacian()
 
 
 /* ******************************************************************
-* Fancy I/O
-****************************************************************** */
-std::ostream& operator << (std::ostream& os, const Polynomial& p)
+ * Fancy I/O
+ ****************************************************************** */
+std::ostream&
+operator<<(std::ostream& os, const Polynomial& p)
 {
   int d = p.dimension();
-  os << "polynomial: order=" << p.order() << " d=" << d
-     << " size=" << p.size() << std::endl;
+  os << "polynomial: order=" << p.order() << " d=" << d << " size=" << p.size()
+     << std::endl;
   for (auto it = p.begin(); it < p.end(); ++it) {
     int k = it.MonomialSetOrder();
     int m = it.MonomialSetPosition();
@@ -547,19 +553,17 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
 
     const int* index = it.multi_index();
     if (index[0] == 1) os << "x";
-    if (index[0] > 1)  os << "x^" << index[0];
+    if (index[0] > 1) os << "x^" << index[0];
     if (index[1] == 1) os << "y";
-    if (index[1] > 1)  os << "y^" << index[1];
+    if (index[1] > 1) os << "y^" << index[1];
     if (index[2] == 1) os << "z";
-    if (index[2] > 1)  os << "z^" << index[2];
+    if (index[2] > 1) os << "z^" << index[2];
 
     if (m == MonomialSpaceDimension(d, k) - 1) os << std::endl;
-  } 
+  }
   os << "origin: " << p.origin() << std::endl;
   return os;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
+} // namespace WhetStone
+} // namespace Amanzi

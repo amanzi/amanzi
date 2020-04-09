@@ -1,10 +1,22 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #include "UnitTest++.h"
 #include "VerboseObject.hh"
 
 #include "Teuchos_ParameterList.hpp"
 
 
-TEST(VERBOSE_OBJECT_DEFAULTS) 
+TEST(VERBOSE_OBJECT_DEFAULTS)
 {
   Teuchos::ParameterList plist;
   Amanzi::VerboseObject vo("my verb object", plist);
@@ -18,7 +30,8 @@ TEST(VERBOSE_OBJECT_DEFAULTS)
 }
 
 
-TEST(VERBOSE_OBJECT_GLOBAL) {
+TEST(VERBOSE_OBJECT_GLOBAL)
+{
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_HIGH;
 
   Teuchos::ParameterList plist;
@@ -33,7 +46,7 @@ TEST(VERBOSE_OBJECT_GLOBAL) {
 }
 
 
-TEST(VERBOSE_OBJECT_LOCAL) 
+TEST(VERBOSE_OBJECT_LOCAL)
 {
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& vo_plist = plist.sublist("verbose object");
@@ -50,7 +63,7 @@ TEST(VERBOSE_OBJECT_LOCAL)
 }
 
 
-TEST(VERBOSE_OBJECT_GET_VERBOSITY) 
+TEST(VERBOSE_OBJECT_GET_VERBOSITY)
 {
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& vo_plist = plist.sublist("verbose object");
@@ -67,7 +80,7 @@ TEST(VERBOSE_OBJECT_GET_VERBOSITY)
 }
 
 
-TEST(VERBOSE_TWO_OBJECTS) 
+TEST(VERBOSE_TWO_OBJECTS)
 {
   Teuchos::ParameterList plist;
   Amanzi::VerboseObject vo1("my verb object 1", plist);
@@ -99,7 +112,8 @@ TEST(VERBOSE_TWO_OBJECTS)
 }
 
 
-TEST(VERBOSE_TWO_OBJECTS_NOTAB) {
+TEST(VERBOSE_TWO_OBJECTS_NOTAB)
+{
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList plist;
@@ -117,7 +131,4 @@ TEST(VERBOSE_TWO_OBJECTS_NOTAB) {
   if (vo1.os_OK(Teuchos::VERB_MEDIUM)) {
     *vo1.os() << "test object 1" << std::endl;
   }
-
 }
-
-

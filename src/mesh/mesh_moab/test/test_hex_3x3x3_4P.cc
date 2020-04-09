@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+
+*/
+
+//!
+
 #include <UnitTest++.h>
 
 #include <iostream>
@@ -20,57 +32,58 @@ TEST(MOAB_HEX_3x3x3_4P)
   int facedirs[6];
   double ccoords[24], fcoords[12];
 
-  int NVowned[4] = {16,16,16,16};
-  int NFowned[4] = {16,26,26,40};
-  int NCowned[4] = {3,6,6,12};
-  int NVused[4] = {36,48,48,64};
-  int NFused[4] = {52,75,75,108};
-  int NCused[4] = {12,18,18,27};
-  int NVghost[4] = {20,32,32,48};
-  int NFghost[4] = {36,49,49,68};
-  int NCghost[4] = {9,12,12,15};
+  int NVowned[4] = { 16, 16, 16, 16 };
+  int NFowned[4] = { 16, 26, 26, 40 };
+  int NCowned[4] = { 3, 6, 6, 12 };
+  int NVused[4] = { 36, 48, 48, 64 };
+  int NFused[4] = { 52, 75, 75, 108 };
+  int NCused[4] = { 12, 18, 18, 27 };
+  int NVghost[4] = { 20, 32, 32, 48 };
+  int NFghost[4] = { 36, 49, 49, 68 };
+  int NCghost[4] = { 9, 12, 12, 15 };
 
-  auto comm = Amanzi::getDefaultComm();			      
+  auto comm = Amanzi::getDefaultComm();
 
   int rank, size;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  CHECK_EQUAL(4,size);
+  CHECK_EQUAL(4, size);
 
   if (rank == 0) {
     int DebugWait = 0;
-    while (DebugWait);
+    while (DebugWait)
+      ;
   }
 
   // Load a single hex from the hex1.exo file
 
   AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss_4P.h5m", comm);
 
-  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);  
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NVowned[rank], nv);
-  
-  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);  
+
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NFowned[rank], nf);
-  
+
   nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NCowned[rank], nc);
 
-  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);  
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   CHECK_EQUAL(NVused[rank], nv);
-  
-  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);  
+
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   CHECK_EQUAL(NFused[rank], nf);
-  
+
   nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   CHECK_EQUAL(NCused[rank], nc);
 
-  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::GHOST);  
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::GHOST);
   CHECK_EQUAL(NVghost[rank], nv);
-  
-  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::GHOST);  
+
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::GHOST);
   CHECK_EQUAL(NFghost[rank], nf);
-  
+
   nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::GHOST);
   CHECK_EQUAL(NCghost[rank], nc);
 
@@ -80,12 +93,15 @@ TEST(MOAB_HEX_3x3x3_4P)
   auto cell_map = mesh.cell_map(false);
   auto face_map = mesh.face_map(true);
 
-  for (int c = cell_map->getMinLocalIndex(); c <= cell_map->getMaxLocalIndex(); c++) {
-    CHECK_EQUAL(cell_map->getGlobalElement(c), mesh.getGlobalElement(c, AmanziMesh::CELL));
-    mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
+  for (int c = cell_map->getMinLocalIndex(); c <= cell_map->getMaxLocalIndex();
+       c++) {
+    CHECK_EQUAL(cell_map->getGlobalElement(c),
+                mesh.getGlobalElement(c, AmanziMesh::CELL));
+    mesh.cell_get_faces_and_dirs(c, &c2f, c2fdirs);
 
     for (int j = 0; j < 6; j++) {
-      int f = face_map->getLocalElement(mesh.getGlobalElement(c2f[j], AmanziMesh::FACE));
+      int f = face_map->getLocalElement(
+        mesh.getGlobalElement(c2f[j], AmanziMesh::FACE));
       CHECK_EQUAL(f, c2f[j]);
       CHECK_EQUAL(1, abs(c2fdirs[j]));
     }
@@ -99,7 +115,9 @@ TEST(MOAB_HEX_3x3x3_4P)
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nfaces, &nall);
     CHECK_EQUAL(nall, 54);
 
-    for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); ++f) {
+    for (int f = extface_map->getMinLocalIndex();
+         f <= extface_map->getMaxLocalIndex();
+         ++f) {
       gid = extface_map->getGlobalElement(f);
       g = face_map->getLocalElement(gid);
       const AmanziGeometry::Point& xf = mesh.face_centroid(g);
@@ -113,7 +131,9 @@ TEST(MOAB_HEX_3x3x3_4P)
   // verify boundary maps: owned + ghost
   {
     auto extface_map = mesh.exterior_face_map(true);
-    for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); ++f) {
+    for (int f = extface_map->getMinLocalIndex();
+         f <= extface_map->getMaxLocalIndex();
+         ++f) {
       gid = extface_map->getGlobalElement(f);
       g = face_map->getLocalElement(gid);
       const AmanziGeometry::Point& xf = mesh.face_centroid(g);
@@ -124,4 +144,3 @@ TEST(MOAB_HEX_3x3x3_4P)
     }
   }
 }
-

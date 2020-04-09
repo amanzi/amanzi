@@ -28,7 +28,8 @@
 
 
 /* **************************************************************** */
-TEST(ELASTICITY_STIFFNESS_2D) {
+TEST(ELASTICITY_STIFFNESS_2D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -43,10 +44,10 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
+
   Teuchos::ParameterList plist;
   MFD3D_Elasticity mfd(plist, mesh);
 
@@ -71,12 +72,13 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     // mfd.StiffnessMatrix(cell, T, A);
     mfd.StiffnessMatrixOptimized(cell, T, A);
     // mfd.StiffnessMatrixMMatrix(cell, T, A);
-    // std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
-    // std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+    // std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() <<
+    // std::endl; std::cout << "Functional value=" << mfd.simplex_functional()
+    // << std::endl;
 
     printf("Stiffness matrix for cell %3d\n", cell);
     for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
+      for (int j = 0; j < nrows; j++) printf("%8.4f ", A(i, j));
       printf("\n");
     }
 
@@ -84,25 +86,25 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List nodes;
-    mesh->cell_get_nodes(cell, &nodes);
-    
+    Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+    mesh->cell_get_nodes(cell, nodes);
+
     int d = mesh->space_dimension();
     Point p(d);
 
     double xx[nrows], yy[nrows];
     for (int i = 0; i < nnodes; i++) {
-      int v = nodes[i];
+      int v = nodes(i);
       mesh->node_get_coordinates(v, &p);
-      xx[i] = p[0];    
-      xx[i + nnodes] = 0.0;    
+      xx[i] = p[0];
+      xx[i + nnodes] = 0.0;
 
-      yy[i] = 0.0;    
+      yy[i] = 0.0;
       yy[i + nnodes] = p[1];
     }
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nnodes; i++) {
       for (int j = 0; j < nnodes; j++) {
         vxx += A(i, j) * xx[i] * xx[j];
@@ -112,13 +114,12 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
-
-  
 }
 
 
 /* **************************************************************** */
-TEST(ELASTICITY_STIFFNESS_3D) {
+TEST(ELASTICITY_STIFFNESS_3D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -133,10 +134,10 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
+
   Teuchos::ParameterList plist;
   MFD3D_Elasticity mfd(plist, mesh);
 
@@ -149,7 +150,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 
   printf("Stiffness matrix for cell %3d\n", cell);
   for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
+    for (int j = 0; j < nrows; j++) printf("%8.4f ", A(i, j));
     printf("\n");
   }
 
@@ -157,21 +158,21 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
-    
+  Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+  mesh->cell_get_nodes(cell, nodes);
+
   int d = mesh->space_dimension();
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
+    int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
     xi = p[0];
     yi = p[1];
     for (int j = 0; j < nnodes; j++) {
-      v = nodes[j];
+      v = nodes(j);
       mesh->node_get_coordinates(v, &p);
       xj = p[0];
       vxx += A(i, j) * xi * xj;
@@ -180,8 +181,4 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
-
-  
 }
-
-

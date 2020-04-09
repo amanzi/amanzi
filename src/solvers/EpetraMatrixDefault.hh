@@ -1,16 +1,14 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Default implementation, simply wraps either an Epetra_CrsMatrix or an
-  Epetra_VbrMatrix with an Amanzi Precoditioner for ApplyInverse().
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_EPETRAMATRIXDEFAULT_HH_
 #define AMANZI_EPETRAMATRIXDEFAULT_HH_
@@ -21,24 +19,25 @@
 
 namespace Amanzi {
 
-template<class Matrix>
+template <class Matrix>
 class EpetraMatrixDefault : public EpetraMatrix {
-
  public:
   // constructor
-  EpetraMatrixDefault(const Teuchos::ParameterList& plist) :
-      plist_(plist) {
+  EpetraMatrixDefault(const Teuchos::ParameterList& plist) : plist_(plist)
+  {
     AmanziPreconditioners::PreconditionerFactory fac;
     if (!plist.isSublist("preconditioner")) {
-      Errors::Message msg("EpetraMatrixDefault: missing \"preconditioner\" sublist");
+      Errors::Message msg(
+        "EpetraMatrixDefault: missing \"preconditioner\" sublist");
       Exceptions::amanzi_throw(msg);
     }
     pc_ = fac.Create(plist_.sublist("preconditioner"));
   }
 
   // copy constructor
-  EpetraMatrixDefault(const EpetraMatrixDefault<Matrix>& other) :
-      plist_(other.plist_) {
+  EpetraMatrixDefault(const EpetraMatrixDefault<Matrix>& other)
+    : plist_(other.plist_)
+  {
     AmanziPreconditioners::PreconditionerFactory fac;
     pc_ = fac.Create(plist_);
     if (other.m_ != Teuchos::null) {
@@ -48,7 +47,8 @@ class EpetraMatrixDefault : public EpetraMatrix {
   }
 
   // Methods to work with the PC
-  void Update(const Teuchos::RCP<Matrix>& m) {
+  void Update(const Teuchos::RCP<Matrix>& m)
+  {
     m_ = m;
     pc_->Update(m);
   }
@@ -64,20 +64,21 @@ class EpetraMatrixDefault : public EpetraMatrix {
   virtual const Epetra_BlockMap& RangeMap() const { return m_->RangeMap(); }
 
   // Virtual copy constructor.
-  virtual Teuchos::RCP<EpetraMatrix> Clone() const {
+  virtual Teuchos::RCP<EpetraMatrix> Clone() const
+  {
     return Teuchos::rcp(new EpetraMatrixDefault<Matrix>(*this));
   }
 
   // Apply matrix, b <-- Ax, returns ierr
-  virtual int Apply(const Epetra_Vector& x,
-                    Epetra_Vector& b) const {
-    return m_->Apply(x,b);
+  virtual int Apply(const Epetra_Vector& x, Epetra_Vector& b) const
+  {
+    return m_->Apply(x, b);
   }
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const Epetra_Vector& b,
-                           Epetra_Vector& x) const {
-    return pc_->ApplyInverse(b,x);
+  virtual int ApplyInverse(const Epetra_Vector& b, Epetra_Vector& x) const
+  {
+    return pc_->ApplyInverse(b, x);
   }
 
  protected:
@@ -86,6 +87,6 @@ class EpetraMatrixDefault : public EpetraMatrix {
   Teuchos::ParameterList plist_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

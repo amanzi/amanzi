@@ -1,12 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 /*
 
@@ -30,8 +32,7 @@ assumed in several places.
 #include <string>
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
+#include "Teuchos_DataAccess.hpp"
 
 #include "Iterators.hh"
 #include "DataStructuresHelpers.hh"
@@ -42,34 +43,31 @@ assumed in several places.
 namespace Amanzi {
 
 class TreeVector {
-
  public:
   // -- Constructors --
-
   // Basic constructors of a TreeVector
-  TreeVector();
-  TreeVector(const Comm_ptr_type& comm);
-  explicit TreeVector(const TreeVectorSpace& space, InitMode mode=InitMode::ZERO);
-  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=InitMode::ZERO);
+  explicit TreeVector(const Teuchos::RCP<const TreeVectorSpace>& space,
+                      InitMode mode = InitMode::ZERO);
 
   // copy constructors
-  TreeVector(const TreeVector& other, InitMode mode=InitMode::COPY);
+  TreeVector(const TreeVector& other,
+             Teuchos::DataAccess access = Teuchos::DataAccess::Copy,
+             InitMode mode = InitMode::COPY);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
+  void assign(const TreeVector& other) { *this = other; }
 
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
-  Comm_ptr_type Comm() const {
-    return Map().Comm();
-  }
+  Comm_ptr_type Comm() const { return getMap()->Comm(); }
 
   // Access to the space.
-  const TreeVectorSpace& Map() const { return *map_; }
+  const Teuchos::RCP<const TreeVectorSpace>& getMap() const { return map_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;
+  typedef std::vector<Teuchos::RCP<TreeVector>> SubVectorsContainer;
   typedef Utils::iterator<SubVectorsContainer, TreeVector> iterator;
   typedef Utils::const_iterator<SubVectorsContainer, TreeVector> const_iterator;
 
@@ -78,12 +76,15 @@ class TreeVector {
   iterator end() { return iterator(subvecs_.end()); }
   const_iterator end() const { return const_iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
-  
+
   // Access to the sub-vector by index
   Teuchos::RCP<TreeVector> SubVector(int index);
 
   // Const access to the sub-vector by index
   Teuchos::RCP<const TreeVector> SubVector(int index) const;
+
+  // Access to the sub-vector by index
+  void SetSubVector(int index, const Teuchos::RCP<TreeVector>& tv);
 
   // Access to the data CompositeVector.
   Teuchos::RCP<CompositeVector> Data() { return data_; }
@@ -91,63 +92,63 @@ class TreeVector {
   // Const access to the data CompositeVector.
   Teuchos::RCP<const CompositeVector> Data() const { return data_; }
 
-
-  // Add a sub-vector as a child of this node.
-  void PushBack(const Teuchos::RCP<TreeVector>& subvec);
-
   // Set data by pointer
   void SetData(const Teuchos::RCP<CompositeVector>& data);
 
 
   // -- Assorted vector operations, this implements a Vec --
   // total length of the containing data
-  int GlobalLength() const;
-  
+  int getGlobalLength() const;
+
   // this <- scalar
-  int PutScalar(double scalar);
+  void putScalar(double scalar);
 
   // this <- random
-  int Random();
+  void random();
 
   // n_l <- || this ||_{l}
-  int Norm2(double* n2) const;
-  int Norm1(double* n1) const;
-  int NormInf(double* ninf) const;
+  double norm2() const;
+  double norm1() const;
+  double normInf() const;
 
   // this <- abs(this)
-  int Abs(const TreeVector& other);
-  
+  void abs(const TreeVector& other);
+
   // this <- value*this
-  int Scale(double value);
+  void scale(double value);
 
   // this <- this + scalarA
-  int Shift(double scalarA);
+  void shift(double scalarA);
 
   // this <- element wise reciprocal(this)
-  int Reciprocal(const TreeVector& other);
-  
+  void reciprocal(const TreeVector& other);
+
   // result <- other \dot this
-  int Dot(const TreeVector& other, double* result) const;
+  double dot(const TreeVector& other) const;
 
   // this <- scalarA*A + scalarThis*this
-  TreeVector& Update(double scalarA, const TreeVector& A, double scalarThis);
+  void update(double scalarA, const TreeVector& A, double scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  TreeVector& Update(double scalarA, const TreeVector& A,
-                     double scalarB, const TreeVector& B, double scalarThis);
+  void update(double scalarA, const TreeVector& A, double scalarB,
+              const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
-               double scalarThis);
+  void elementWiseMultiply(double scalarAB, const TreeVector& A,
+                           const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
-  // int ReciprocalMultiply(double scalarAB, const TreeVector& A,
+  // int ReciprocalelementWiseMultiply(double scalarAB, const TreeVector& A,
   //                        const TreeVector& B, double scalarThis);
 
   // non-inherited extras
-  void Print(std::ostream &os) const;
+  void Print(std::ostream& os) const;
 
-  int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
+  int getGlobalLength()
+  {
+    std::cerr << "This method is not yet implemented\n";
+    return 0;
+  }
 
  private:
   // Init's version of PushBack, which does not add to the space.
@@ -155,13 +156,13 @@ class TreeVector {
   void InitMap_(InitMode mode);
 
  private:
-  Teuchos::RCP<TreeVectorSpace> map_;
+  Teuchos::RCP<const TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
-  std::vector<Teuchos::RCP<TreeVector> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVector>> subvecs_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 
 #endif

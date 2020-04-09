@@ -1,16 +1,14 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  A MeshPartition is a collection of non-overlapping regions which cover 
-  (optionally) a mesh.
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 #include "MeshPartition.hh"
@@ -19,22 +17,20 @@ namespace Amanzi {
 namespace Functions {
 
 /* ******************************************************************
-* Simple constructor.
-****************************************************************** */
+ * Simple constructor.
+ ****************************************************************** */
 MeshPartition::MeshPartition(AmanziMesh::Entity_kind kind,
-                             const std::vector<std::string>& regions) :
-    kind_(kind),
-    regions_(regions),
-    initialized_(false) 
-{
-}
+                             const std::vector<std::string>& regions)
+  : kind_(kind), regions_(regions), initialized_(false)
+{}
 
 
 /* ******************************************************************
-* Populate the map entity -> number in the list of names.
-****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               const int default_value) 
+ * Populate the map entity -> number in the list of names.
+ ****************************************************************** */
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          const int default_value)
 {
   default_value_ = default_value;
 
@@ -47,7 +43,8 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
   for (int lcv = 0; lcv != regions_.size(); ++lcv) {
     AmanziMesh::Entity_ID_List block;
-    mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+    mesh->get_set_entities(
+      regions_[lcv], kind_, AmanziMesh::Parallel_type::OWNED, &block);
 
     for (auto id : block) {
       // Check regions are non-overlapping
@@ -75,12 +72,13 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
 
 /* ******************************************************************
-* Populate the map entity -> number in the list of names.
-****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               AmanziMesh::Entity_kind kind,
-                               const std::vector<std::vector<std::string> >& regions,
-                               const int default_value) 
+ * Populate the map entity -> number in the list of names.
+ ****************************************************************** */
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          AmanziMesh::Entity_kind kind,
+                          const std::vector<std::vector<std::string>>& regions,
+                          const int default_value)
 {
   kind_ = kind;
   default_value_ = default_value;
@@ -93,10 +91,11 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions.size(); ++lcv) {
-    const std::vector<std::string>& regs = regions[lcv]; 
+    const std::vector<std::string>& regs = regions[lcv];
     for (int r = 0; r < regs.size(); ++r) {
       AmanziMesh::Entity_ID_List block;
-      mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+      mesh->get_set_entities(
+        regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
 
       for (auto id : block) {
         if ((*map_)[id] >= 0) {
@@ -124,24 +123,27 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
 
 /* ******************************************************************
-* In general, we allow incomplete coverage of the mesh. This 
-* routine verifies that ther are no wholes in the map.
-****************************************************************** */
-void MeshPartition::Verify() const
+ * In general, we allow incomplete coverage of the mesh. This
+ * routine verifies that ther are no wholes in the map.
+ ****************************************************************** */
+void
+MeshPartition::Verify() const
 {
   if (!initialized_) {
     Errors::Message msg("MeshPartition was not initialzied.");
     Exceptions::amanzi_throw(msg);
   }
 
-  for (AmanziMesh::Entity_ID id = 0; id < map_->MyLength(); id++) {
+  for (AmanziMesh::Entity_ID id = 0; id < map_->getLocalLength(); id++) {
     if ((*map_)[id] == default_value_) {
-      Errors::Message msg("The following mesh partition regions do not cover the mesh:");
-      for (auto it = regions_.begin(); it != regions_.end(); ++it) msg << " " << *it;
+      Errors::Message msg(
+        "The following mesh partition regions do not cover the mesh:");
+      for (auto it = regions_.begin(); it != regions_.end(); ++it)
+        msg << " " << *it;
       Exceptions::amanzi_throw(msg);
     }
   }
 }
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi

@@ -1,15 +1,14 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  Slightly smarter timestep control based upon a history of previous timesteps.
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 #include "dbc.hh"
@@ -17,11 +16,13 @@
 
 namespace Amanzi {
 
-TimestepControllerSmarter::TimestepControllerSmarter(Teuchos::ParameterList& plist) :
-    plist_(plist),
+TimestepControllerSmarter::TimestepControllerSmarter(
+  Teuchos::ParameterList& plist)
+  : plist_(plist),
     count_increased_before_increase_(0),
     last_fail_(0),
-    successive_increases_(0) {
+    successive_increases_(0)
+{
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
   AMANZI_ASSERT(max_its_ > min_its_);
@@ -33,7 +34,8 @@ TimestepControllerSmarter::TimestepControllerSmarter(Teuchos::ParameterList& pli
 
   increase_factor_ = plist_.get<double>("time step increase factor");
   increase_factor0_ = increase_factor_;
-  max_increase_factor_ = plist_.get<double>("max time step increase factor", 10.);
+  max_increase_factor_ =
+    plist_.get<double>("max time step increase factor", 10.);
   AMANZI_ASSERT(increase_factor_ >= 1.0);
 
   max_dt_ = plist_.get<double>("max time step");
@@ -41,12 +43,14 @@ TimestepControllerSmarter::TimestepControllerSmarter(Teuchos::ParameterList& pli
 
   growth_wait_after_fail_ = plist_.get<int>("growth wait after fail");
   growth_wait_after_fail0_ = growth_wait_after_fail_;
-  count_increased_before_increase_ = plist_.get<int>("count before increasing increase factor");
+  count_increased_before_increase_ =
+    plist_.get<int>("count before increasing increase factor");
 }
 
 
 double
-TimestepControllerSmarter::get_timestep(double dt, int iterations) {
+TimestepControllerSmarter::get_timestep(double dt, int iterations)
+{
   double dt_next(dt);
 
   // iterations < 0 implies failed timestep
@@ -76,9 +80,11 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
       if (last_fail_ > growth_wait_after_fail_) { // grow the timestep
         successive_increases_++;
 
-        // increase faster than geometric if we are growing the timestep repeatedly
+        // increase faster than geometric if we are growing the timestep
+        // repeatedly
         if (successive_increases_ > count_increased_before_increase_) {
-          increase_factor_ = std::min(increase_factor_ * increase_factor0_, max_increase_factor_);
+          increase_factor_ = std::min(increase_factor_ * increase_factor0_,
+                                      max_increase_factor_);
         }
 
         dt_next = dt * increase_factor_;

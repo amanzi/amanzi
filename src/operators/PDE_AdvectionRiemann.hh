@@ -1,17 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Riemann flux-based advection operator for a scalar field.
-  The family will include DG and CG methods for linear and nonlinear
-  fluxes. We shall start with the existing node2-face1 schema.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
 #define AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
@@ -29,35 +26,38 @@ namespace Operators {
 class PDE_AdvectionRiemann : public PDE_Advection {
  public:
   PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<Operator> global_op) :
-      PDE_Advection(plist, global_op)
+                       Teuchos::RCP<Operator> global_op)
+    : PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_Advection(plist, mesh)
+                       Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
   }
 
-  // main members 
+  // main members
   // -- setup
-  virtual void Setup(const CompositeVector& u) override {};
+  virtual void Setup(const CompositeVector& u) override{};
 
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& Kc,
-             const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& Kf) {
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& Kc,
+             const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& Kf)
+  {
     Kc_ = Kc;
     Kf_ = Kf;
   }
 
   // -- generate linearized operator: standard interface
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override {};
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                 const Teuchos::Ptr<const CompositeVector>& p) override{};
 
   // -- generate linearized operator: new interface
-  void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u);
+  void UpdateMatrices(
+    const Teuchos::Ptr<const std::vector<WhetStone::Polynomial>>& u);
 
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
@@ -66,7 +66,8 @@ class PDE_AdvectionRiemann : public PDE_Advection {
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // boundary conditions
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+  virtual void
+  ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // access
   const WhetStone::DG_Modal& dg() const { return *dg_; }
@@ -75,8 +76,8 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   void InitAdvection_(Teuchos::ParameterList& plist);
 
  private:
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>> Kc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial>> Kf_;
 
   std::string method_, matrix_, flux_;
   bool jump_on_test_;
@@ -84,8 +85,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

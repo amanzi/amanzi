@@ -1,17 +1,15 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
-
-  This class is based on Neil Carlson's BDF2_DAE module
-  that is part of LANL's Truchas code.
+  Authors:
+      Markus Berndt
+      Ethan Coon (coonet@ornl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BDF1STATE_HH_
 #define AMANZI_BDF1STATE_HH_
@@ -28,10 +26,10 @@
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 struct BDF1_State {
-  BDF1_State() :
-      maxpclag(0),
+  BDF1_State()
+    : maxpclag(0),
       extrapolate_guess(true),
       seq(-1),
       failed_solve(0),
@@ -41,29 +39,31 @@ struct BDF1_State {
       pc_updates(0),
       uhist_size(2),
       hmax(std::numeric_limits<double>::min()),
-      hmin(std::numeric_limits<double>::max()) {}
+      hmin(std::numeric_limits<double>::max())
+  {}
 
   // Parameters and control
-  int maxpclag;  // maximum iterations that the preconditioner can be lagged
-  bool extrapolate_guess;  // extrapolate forward in time or use previous
-                           // step as initial guess for nonlinear solver
+  int maxpclag; // maximum iterations that the preconditioner can be lagged
+  bool extrapolate_guess; // extrapolate forward in time or use previous
+                          // step as initial guess for nonlinear solver
   int extrapolation_order;
 
   // Solution history
-  Teuchos::RCP<SolutionHistory<Vector> > uhist;
+  Teuchos::RCP<SolutionHistory<Vector>> uhist;
 
   // internal counters and state
-  int uhist_size;  // extrapolation order for initial guess
-  double hlast;  // last step size
-  double hpc;  // step size built into the current preconditioner
-  int pc_lag;  // counter for how many iterations the preconditioner has been lagged
-  int pc_calls;  // counter for the number of preconditioner calls
+  int uhist_size; // extrapolation order for initial guess
+  double hlast;   // last step size
+  double hpc;     // step size built into the current preconditioner
+  int pc_lag;     // counter for how many iterations the preconditioner has been
+                  // lagged
+  int pc_calls;   // counter for the number of preconditioner calls
 
   // performance counters
-  int seq;  // number of steps taken
-  int failed_solve;  // number of total failed BCE steps
+  int seq;            // number of steps taken
+  int failed_solve;   // number of total failed BCE steps
   int failed_current; // number of current cycle failed steps
-  int pc_updates;  // counter for the number of preconditioner updates
+  int pc_updates;     // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 
   // performane of nonlinear solver
@@ -72,23 +72,26 @@ struct BDF1_State {
   // restart fine constrol
   double tol_multiplier, tol_multiplier_damp;
 
-  void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vector>&);
+  void InitializeFromPlist(Teuchos::ParameterList&,
+                           const Teuchos::RCP<const Vector>&);
 };
 
 
 /* ******************************************************************
-* Initiazition of fundamental parameters
-****************************************************************** */
-template<class Vector>
-void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const Vector>& initvec) {
-  
+ * Initiazition of fundamental parameters
+ ****************************************************************** */
+template <class Vector>
+void
+BDF1_State<Vector>::InitializeFromPlist(
+  Teuchos::ParameterList& plist, const Teuchos::RCP<const Vector>& initvec)
+{
   // preconditioner lag control
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
-  extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
+  extrapolation_order =
+    plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
   if (extrapolation_order == 0) extrapolate_guess = false;
 
   // solution history object
@@ -96,11 +99,12 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   uhist = Teuchos::rcp(new SolutionHistory<Vector>(uhist_size, t0, *initvec));
 
   // restart fine control
-  tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);
-  tol_multiplier_damp = plist.get<double>("restart tolerance relaxation factor damping", 1.0);
+  tol_multiplier =
+    plist.get<double>("restart tolerance relaxation factor", 1.0);
+  tol_multiplier_damp =
+    plist.get<double>("restart tolerance relaxation factor damping", 1.0);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

@@ -1,14 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! PreconditionerML: Trilinos ML multigrid.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! PreconditionerML: Trilinos ML multigrid.
 
 /*!
 Internal parameters of Trilinos ML includes
@@ -54,30 +54,32 @@ Example:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerML : public Preconditioner {
+class PreconditionerML
+  : public Preconditioner<Epetra_RowMatrix, Epetra_MultiVector> {
  public:
-  PreconditionerML() {};
-  ~PreconditionerML() {};
+  PreconditionerML(){};
+  ~PreconditionerML() = default;
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy();
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
+  void Destroy() override;
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  int ApplyInverse(const Epetra_MultiVector& v,
+                   Epetra_MultiVector& hv) const override;
 
-  int returned_code() { return returned_code_; }
+  int returned_code() override { return returned_code_; }
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
   bool initialized_;
-  int returned_code_;
+  mutable int returned_code_;
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif

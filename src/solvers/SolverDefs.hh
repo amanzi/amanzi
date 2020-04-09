@@ -1,14 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_SOLVER_DEFS_HH_
 #define AMANZI_SOLVER_DEFS_HH_
@@ -16,37 +17,32 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-enum ConvergenceMonitor {
-     SOLVER_MONITOR_UPDATE = 0,
-     SOLVER_MONITOR_PCED_RESIDUAL = 1,
-     SOLVER_MONITOR_RESIDUAL = 2
+enum class Monitor {
+  UPDATE = 0,
+  RESIDUAL = 1,
+  //  PRECONDITIONED_RESIDUAL = 2 // NOTE: Never used...  
 };
 
-enum BacktrackMonitor {
-  BT_MONITOR_ENORM,   // accept decrease in the ENORM
-  BT_MONITOR_L2,      // accept decrease in the Linf of the ConvergenceMonitor (residual)
-  BT_MONITOR_EITHER   // accept decrease in either of the above
+enum class MonitorNorm {
+  LINF = 1, // accept decrease in L_INF norm
+  L2 = 3,    // accept decrease in L2 norm
+  ENORM = 5  // accept decrease in PK's ErrorNorm()
 };
 
-const int SOLVER_CONTINUE = 1;
-const int SOLVER_CONVERGED = 0;
+enum class MonitorStatus {
+  CONTINUE = 1,
+  CONVERGED = 0,
+  MAX_ITERATIONS = -1,
+  DIVERGED = -2,
+  STAGNATING = -3,
+  DIVERGING = -4,
+  INADMISSIBLE_SOLUTION = -5,
+  INTERNAL_EXCEPTION = -6,
+  BAD_SEARCH_DIRECTION = -7,
+  LINEAR_SOLVER_ERROR = -8
+};
 
-const int SOLVER_MAX_ITERATIONS = -1;
-const int SOLVER_OVERFLOW = -2;
-const int SOLVER_STAGNATING = -3;
-const int SOLVER_DIVERGING = -4;
-const int SOLVER_INADMISSIBLE_SOLUTION = -5;
-const int SOLVER_INTERNAL_EXCEPTION = -6;
-const int SOLVER_BAD_SEARCH_DIRECTION = -7;
-const int SOLVER_LINEAR_SOLVER_ERROR = -8;
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
-const double BACKTRACKING_GOOD_REDUCTION = 0.5;
-const int BACKTRACKING_USED = 1;
-const int BACKTRACKING_MAX_ITERATIONS = 4;
-const int BACKTRACKING_ROUNDOFF_PROBLEM = 8;
-
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
- 
 #endif
-

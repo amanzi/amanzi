@@ -1,13 +1,14 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -24,9 +25,10 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialize operator from parameter list.
-****************************************************************** */
-void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
+ * Initialize operator from parameter list.
+ ****************************************************************** */
+void
+PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList& range = plist.sublist("schema range");
   Teuchos::ParameterList& domain = plist.sublist("schema domain");
@@ -37,10 +39,12 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     local_schema_row_.Init(range, mesh_);
     global_schema_row_ = local_schema_row_;
 
-    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
+    Teuchos::RCP<CompositeVectorSpace> cvs_row =
+      Teuchos::rcp(new CompositeVectorSpace());
     cvs_row->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
+    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end();
+         ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
       cvs_row->AddComponent(name, it->kind, it->num);
     }
@@ -49,19 +53,24 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     local_schema_col_.Init(domain, mesh_);
     global_schema_col_ = local_schema_col_;
 
-    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
+    Teuchos::RCP<CompositeVectorSpace> cvs_col =
+      Teuchos::rcp(new CompositeVectorSpace());
     cvs_col->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
+    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end();
+         ++it) {
       std::string name(local_schema_col_.KindToString(it->kind));
       cvs_col->AddComponent(name, it->kind, it->num);
     }
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
+    global_op_ = Teuchos::rcp(new Operator_Schema(
+      cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
     if (local_schema_col_.base() == AmanziMesh::CELL) {
-      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+      local_op_ = Teuchos::rcp(
+        new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
     } else if (local_schema_col_.base() == AmanziMesh::FACE) {
-      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+      local_op_ = Teuchos::rcp(
+        new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
     }
 
   } else {
@@ -74,9 +83,11 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     local_schema_col_.Init(domain, mesh_);
 
     if (local_schema_col_.base() == AmanziMesh::CELL) {
-      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+      local_op_ = Teuchos::rcp(
+        new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
     } else if (local_schema_col_.base() == AmanziMesh::FACE) {
-      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+      local_op_ = Teuchos::rcp(
+        new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
     }
   }
 
@@ -106,14 +117,16 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* A simple first-order transport method of the form div (u C), where 
-* u is the given velocity field and C is the advected field.
-****************************************************************** */
-void PDE_AdvectionRiemann::UpdateMatrices(
-    const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
+ * A simple first-order transport method of the form div (u C), where
+ * u is the given velocity field and C is the advected field.
+ ****************************************************************** */
+void
+PDE_AdvectionRiemann::UpdateMatrices(
+  const Teuchos::Ptr<const std::vector<WhetStone::Polynomial>>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow =
+    local_op_->matrices_shadow;
 
   WhetStone::DenseMatrix Aface;
 
@@ -152,12 +165,14 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
 
 /* *******************************************************************
-* Apply boundary condition to the local matrices
-******************************************************************* */
-void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+ * Apply boundary condition to the local matrices
+ ******************************************************************* */
+void
+PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
+  const std::vector<std::vector<double>>& bc_value =
+    bcs_trial_[0]->bc_value_vector();
   int nk = bc_value[0].size();
 
   Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
@@ -178,13 +193,12 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& normal =
+        mesh_->face_normal(f, false, c, &dir);
 
       // --set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
-      for (int i = 0; i < nk; ++i) {
-        coef(i) = bc_value[f][i];
-      }
+      for (int i = 0; i < nk; ++i) { coef(i) = bc_value[f][i]; }
 
       WhetStone::Polynomial pf(d, dg_->order(), coef);
       pf.set_origin(xf);
@@ -192,7 +206,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       // -- convert boundary polynomial to regularized space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
 
-      // -- extract coefficients and update right-hand side 
+      // -- extract coefficients and update right-hand side
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
       int nrows = Aface.NumRows();
       int ncols = Aface.NumCols();
@@ -201,50 +215,45 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       v = pf.coefs();
       dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
-      Aface.Multiply(v, av, false);
+      Aface.elementWiseMultiply(v, av, false);
 
       // now fork the work flow
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        for (int i = 0; i < ncols; ++i) {
-          rhs_c[i][c] -= av(i);
-        }
+        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] -= av(i); }
         local_op_->matrices_shadow[f] = Aface;
-        Aface.PutScalar(0.0);
+        Aface.putScalar(0.0);
       } else {
-        for (int i = 0; i < ncols; ++i) {
-          rhs_c[i][c] += av(i);
-        }
+        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] += av(i); }
       }
-    } 
-    else if (bc_model[f] == OPERATOR_BC_REMOVE) {
-      local_op_->matrices[f].PutScalar(0.0);
-    }
-    else if (bc_model[f] != OPERATOR_BC_NONE) {
+    } else if (bc_model[f] == OPERATOR_BC_REMOVE) {
+      local_op_->matrices[f].putScalar(0.0);
+    } else if (bc_model[f] != OPERATOR_BC_NONE) {
       AMANZI_ASSERT(false);
     }
-  } 
+  }
 }
 
 
 /* *******************************************************************
-* Identify the advected flux of u
-******************************************************************* */
-void PDE_AdvectionRiemann::UpdateFlux(
-    const Teuchos::Ptr<const CompositeVector>& h,
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
+ * Identify the advected flux of u
+ ******************************************************************* */
+void
+PDE_AdvectionRiemann::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
+                                 const Teuchos::Ptr<const CompositeVector>& u,
+                                 const Teuchos::RCP<BCs>& bc,
+                                 const Teuchos::Ptr<CompositeVector>& flux)
 {
   h->ScatterMasterToGhosted("cell");
-  
+
   const Epetra_MultiVector& h_f = *h->ViewComponent("face", true);
   const Epetra_MultiVector& u_f = *u->ViewComponent("face", false);
   Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
-  flux->PutScalar(0.0);
+  flux->putScalar(0.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     flux_f[0][f] = u_f[0][f] * h_f[0][f];
-  }  
+  }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

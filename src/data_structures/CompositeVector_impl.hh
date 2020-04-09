@@ -1,11 +1,14 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors:
+      Ethan Coon
 */
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 /*
 
@@ -39,42 +42,46 @@ namespace Amanzi {
 
 
 // Constructor
-template<typename Scalar>
-CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpace>& map, InitMode mode)
-    : BlockVector<Scalar>(map, mode),
-      cvs_(map)
+template <typename Scalar>
+CompositeVector_<Scalar>::CompositeVector_(
+  const Teuchos::RCP<const CompositeSpace>& map, InitMode mode)
+  : BlockVector<Scalar>(map, mode), cvs_(map)
 {}
 
 
 // template<typename Scalar>
-// CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpace>& map, bool ghosted)
+// CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const
+// CompositeSpace>& map, bool ghosted)
 //     : map_(map),
-//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(map->Map(false)))),
-//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(map->Map(true)))),
+//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(map->getMap(false)))),
+//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(map->getMap(true)))),
 //       ghosted_(ghosted)
 // {
 //   CreateData_();
 // }
 
 
-template<typename Scalar>
-CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>& other, InitMode mode)
-    : BlockVector<Scalar>(other.Map(), mode),
-      cvs_(other.Map())
+template <typename Scalar>
+CompositeVector_<Scalar>::CompositeVector_(
+  const CompositeVector_<Scalar>& other, Teuchos::DataAccess access,
+  InitMode mode)
+  : BlockVector<Scalar>(other, access, mode), cvs_(other.getMap())
 {}
 
 // template<typename Scalar>
-// CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>& other, bool ghosted, InitMode mode)
-//     : map_(other->Map()),
-//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(other.Map()->Map(false)))),
-//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(other.Map()->Map(true)))),
-//       ghosted_(ghosted)
+// CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>&
+// other, bool ghosted, InitMode mode)
+//     : map_(other->getMap()),
+//       mastervec_(Teuchos::rcp(new
+//       CompVector<Scalar>(other.getMap()->getMap(false)))),
+//       ghostvec_(Teuchos::rcp(new
+//       CompVector<Scalar>(other.getMap()->getMap(true)))), ghosted_(ghosted)
 // {
 //   CreateData_();
 //   InitData_(other, mode);
 // }
 
-template<typename Scalar>
+template <typename Scalar>
 CompositeVector_<Scalar>&
 CompositeVector_<Scalar>::operator=(const CompositeVector_<Scalar>& other)
 {
@@ -83,52 +90,59 @@ CompositeVector_<Scalar>::operator=(const CompositeVector_<Scalar>& other)
 }
 
 
-
 // -- Access a view of a single component's data.
 // Ghosted views are simply the vector itself, while non-ghosted views are
 // lazily generated.
-template<typename Scalar>
+template <typename Scalar>
 cMultiVector_ptr_type_<Scalar>
-CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted) const {
-  if (name == std::string("boundary_face") && !this->HasComponent("boundary_face") && this->HasComponent("face")) {
+CompositeVector_<Scalar>::GetComponent_(const std::string& name,
+                                        bool ghosted) const
+{
+  if (name == std::string("boundary_face") &&
+      !this->HasComponent("boundary_face") && this->HasComponent("face")) {
     ApplyVandelay_();
     return vandelay_vector_;
   }
-  return BlockVector<Scalar>::GetComponent_(name,ghosted);
+  return BlockVector<Scalar>::GetComponent_(name, ghosted);
 };
 
 
-template<typename Scalar>
+template <typename Scalar>
 MultiVector_ptr_type_<Scalar>
-CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted) {
-  if (name == std::string("boundary_face") && !this->HasComponent("boundary_face") && this->HasComponent("face")) {
+CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted)
+{
+  if (name == std::string("boundary_face") &&
+      !this->HasComponent("boundary_face") && this->HasComponent("face")) {
     ApplyVandelay_();
     return vandelay_vector_;
   }
-  return BlockVector<Scalar>::GetComponent_(name,ghosted);
+  return BlockVector<Scalar>::GetComponent_(name, ghosted);
 };
 
 
 //
 // Vandelay functionality
 // -----------------------------------------------------------------------------
-template<typename Scalar>
+template <typename Scalar>
 void
 CompositeVector_<Scalar>::CreateVandelay_() const
 {
-  vandelay_vector_ = Teuchos::rcp(new MultiVector_type_<Scalar>(Mesh()->exterior_face_map(false), this->NumVectors("face"), false));
+  vandelay_vector_ = Teuchos::rcp(new MultiVector_type_<Scalar>(
+    Mesh()->exterior_face_map(false), this->getNumVectors("face"), false));
 }
 
 
-template<typename Scalar>
+template <typename Scalar>
 void
 CompositeVector_<Scalar>::ApplyVandelay_() const
 {
   if (vandelay_vector_ == Teuchos::null) CreateVandelay_();
-  vandelay_vector_->doImport(*GetComponent_("face",false), *Mesh()->exterior_face_importer(), Tpetra::INSERT);
+  vandelay_vector_->doImport(*GetComponent_("face", false),
+                             *Mesh()->exterior_face_importer(),
+                             Tpetra::INSERT);
 }
 
 
-} // namespace
+} // namespace Amanzi
 
 #endif
