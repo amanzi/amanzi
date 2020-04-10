@@ -630,7 +630,8 @@ The nonlinear solver of choice is listed as the attribute ``name`` to the ``unst
 Unstr_preconditioners
 _____________________
 
-Options for each available precondition are set in the ``unstr_preconditioners`` section.  The preconditioners assigned to each numerical solver are specified in the appropriate sections above.  Note that only one set of options may be specified for each precondition.  There is multiple solvers are assigned the preconditioner they will all utilize the same set of options.  The ``unstr_preconditioners`` element is defined as follows:
+Options for each available precondition are set in the ``unstr_preconditioners`` section.  The preconditioners assigned to each numerical solver are specified in the appropriate sections above.  Note that only one set of options may be specified for each precondition.
+If multiple solvers are assigned the preconditioner they will all utilize the same set of options.  The ``unstr_preconditioners`` element is defined as follows:
 
 .. code-block:: xml
 
@@ -644,13 +645,13 @@ The subelements for the Hyper AMG preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| hypre_cycle_applications    | integer      |                                          |
+| hypre_cycle_applications    | integer      | *default = 5*                            |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_smoother_sweeps       | integer      |                                          |
+| hypre_smoother_sweeps       | integer      | *default = 3*                            |
 +-----------------------------+--------------+------------------------------------------+
 | hypre_tolerance             | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_strong_threshold      | double       |                                          |
+| hypre_strong_threshold      | double       | *default = 0.5*                          |
 +-----------------------------+--------------+------------------------------------------+
 
 The subelements for the Trilinos ML preconditioner are as follows:
@@ -658,13 +659,14 @@ The subelements for the Trilinos ML preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| trilinos_smoother_type      | string       | ``jacobi, gauss_seidel, ilu``            |
+| trilinos_smoother_type      | string       | | ``jacobi, gauss_seidel, ilu``          |
+|                             |              | | *default = jacobi*                     |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_threshold          | double       |                                          |
+| trilinos_threshold          | double       | *default = 0.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_smoother_sweeps    | integer      |                                          |
+| trilinos_smoother_sweeps    | integer      | *default = 3*                            |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_cycle_applications | integer      |                                          |
+| trilinos_cycle_applications | integer      | *default = 2*                            |
 +-----------------------------+--------------+------------------------------------------+
 
 The subelements for the Block ILU preconditioner are as follows:
@@ -672,15 +674,15 @@ The subelements for the Block ILU preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| ilu_overlap                 | integer      |                                          |
+| ilu_overlap                 | integer      | *default = 0*                            |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_relax                   | double       |                                          |
+| ilu_relax                   | double       | *default = 1.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_rel_threshold           | double       |                                          |
+| ilu_rel_threshold           | double       | *default = 1.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_abs_threshold           | double       |                                          |
+| ilu_abs_threshold           | double       | *default = 0.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_level_of_fill           | integer      |                                          |
+| ilu_level_of_fill           | integer      | *default = 0*                            |
 +-----------------------------+--------------+------------------------------------------+
 
 An example ``unstructured_controls`` section would look as the following:
@@ -692,6 +694,7 @@ An example ``unstructured_controls`` section would look as the following:
                 <discretization_method>fv-default</discretization_method>
                 <rel_perm_method>upwind-darcy_velocity</rel_perm_method>
                 <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+                <update_upwind_frequency>every_timestep</update_upwind_frequency>
             </unstr_flow_controls>
             <unstr_transport_controls>
                 <algorithm>explicit first-order</algorithm>
@@ -737,12 +740,11 @@ An example ``unstructured_controls`` section would look as the following:
             <unstr_linear_solver>
                 <method>gmres</method>
                 <max_iterations>100</max_iterations>
-                <tolerance>1.0e-16</tolerance>
+                <tolerance>1.0e-15</tolerance>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_linear_solver>
             <unstr_nonlinear_solver name="nka">
                 <modify_correction>false</modify_correction>
-                <update_upwind_frequency>every_timestep</update_upwind_frequency>
             </unstr_nonlinear_solver>
         </unstructured_controls>
 
