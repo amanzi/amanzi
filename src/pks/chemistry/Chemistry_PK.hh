@@ -57,7 +57,9 @@ class Chemistry_PK : public PK_Physical {
                                Teuchos::RCP<Teuchos::ParameterList> state_list);
 
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
-
+  
+  Key domain_name() {return domain_;}
+  int num_aqueous_components() {return number_aqueous_components_;}
   // -- access
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
