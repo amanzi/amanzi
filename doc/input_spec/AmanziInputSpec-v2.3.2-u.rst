@@ -794,19 +794,21 @@ Regions
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. 
 
 The ``regions`` block is required.  Within the region block at least one regions is required to be defined.  Most users define at least one region the encompasses the entire domain.  The optional elements valid for both structured and unstructured include `"region`", `"box`", `"point`", and `"plane`".  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  Below are further descriptions of these elements.
-
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  
+Additional regions are ``polygonal_surface`` and ``logical``.  
+Below are further descriptions of these elements.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
+      Optional Elements: comments, box, point, plane, region, region_file,
+                         cylinder, halfspace, polygonal_surface, labeled set,
+                         boundary, line_segment, box_volume_fractions, logical
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
@@ -818,7 +820,8 @@ A box region region is defined by a low corner coordinates and high corner coord
 
 .. code-block:: xml
 
-  <box  name="box name" low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
+  <box name="box name" low_coordinates="x_low, y_low, z_low" 
+                       high_coordinates="x_high, y_high, z_high"/>
 
 Point
 -----
@@ -827,7 +830,7 @@ A point region region is defined by a point coordinates.
 
 .. code-block:: xml
 
-  <point name="point name" coordinate = "x,y,z" />
+  <point name="MY_POINT" coordinate="x, y, z" />
 
 Plane
 -----
@@ -836,14 +839,30 @@ A plane region is defined by a point on the plane and the normal direction of th
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/> 
+  <plane name="MY_PLANE" location="x, y, z" normal="nx, ny, nz"  tolerance="optional exp"/> 
 
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+The attribute ``tolerance`` is optional.  
+This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+
+Region_file
+-----------
+
+A `"region_file`" is defined as follows.
+
+.. code-block:: xml
+
+  <region_file name="MY_FILE" type="[color|labeled set]" format="exodus ii" 
+               entity="[cell|face|edge|node]" label="integer"/>
+
+Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.
+Recall that the values for attributes above are case-sensitive.
+For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  
+Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
 Region
 ------
 
-A region allows for a box region, a point region, or a region file to be defined.
+A region allows for a box region, a point region, or a region_file to be defined.
 
 .. code-block:: xml
 
@@ -852,14 +871,12 @@ A region allows for a box region, a point region, or a region file to be defined
       Optional Elements: comments
   </region>
 
-A region is define as describe above.  A file is define as follows.
 
+Cylinder
+--------
 
-.. code-block:: xml
-
-  <region_file name="filename" type=["color"|"labeled set"] format=["exodus ii"] entity=["cell"|"face"] label="integer"/>
-
-Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
+Halfspace
+---------
 
 Polygonal_Surface
 -----------------
@@ -875,6 +892,18 @@ A polygonal_surface region is used to define a bounded planar region and is spec
     </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+
+Labeled set
+-----------
+
+Line_segment
+------------
+
+Boundary
+--------
+
+Box_volume_fractions
+--------------------
 
 Logical
 -------

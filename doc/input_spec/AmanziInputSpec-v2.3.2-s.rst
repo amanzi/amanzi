@@ -502,19 +502,20 @@ Regions
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. 
+Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
 
 The ``regions`` block is required.  Within the region block at least one regions is required to be defined.  Most users define at least one region the encompasses the entire domain.  The optional elements valid for both structured and unstructured include `"region`", `"box`", `"point`", and `"plane`".  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  Below are further descriptions of these elements.
-
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  
+Additional regions include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+Below are further descriptions of these elements.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
+      Optional Elements: comments, box, point, region, polygon, ellipse, rotated_polygon, swept_polygon
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
