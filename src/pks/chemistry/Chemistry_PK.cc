@@ -29,7 +29,7 @@ Chemistry_PK::Chemistry_PK() :
     using_sorption_(false),
     using_sorption_isotherms_(false),    
     number_aqueous_kinetics_(0),
-    min_tcc_(1e-20), max_tcc_(1. - min_tcc_), sat_tol_(1e-15)
+    min_tcc_(1e-30), max_tcc_(1. - min_tcc_), sat_tol_(1e-15)
     {};
 
 

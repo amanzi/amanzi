@@ -70,8 +70,8 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
-  min_tcc_ = cp_list_->get<double>("min concentration", 1e-20);
-  max_tcc_ = cp_list_->get<double>("max concentration", 1 - 1e-20);
+  min_tcc_ = cp_list_->get<double>("min concentration", 1e-30);
+  max_tcc_ = cp_list_->get<double>("max concentration", 1 - 1e-30);
   
 
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
@@ -556,10 +556,10 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
-    if (positive_[i]) {
+    if (positive_[i] || (*aqueous_components)[i][cell] > 0.0 ) {
       state.total_mobile.data[i] = std::max((*aqueous_components)[i][cell], min_tcc_);
     } else {
-      state.total_mobile.data[i] = std::min((*aqueous_components)[i][cell], min_tcc_);
+      state.total_mobile.data[i] = std::min((*aqueous_components)[i][cell], -min_tcc_);
     }
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
