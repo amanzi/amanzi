@@ -807,8 +807,8 @@ Below are further descriptions of these elements.
   <regions>
       Required Elements: NONE
       Optional Elements: comments, box, point, plane, region, region_file,
-                         cylinder, halfspace, polygonal_surface, labeled set,
-                         boundary, line_segment, box_volume_fractions, logical
+                         cylinder, halfspace, polygonal_surface, boundary,
+                         line_segment, box_volume_fractions, logical
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
@@ -820,8 +820,8 @@ A box region region is defined by a low corner coordinates and high corner coord
 
 .. code-block:: xml
 
-  <box name="box name" low_coordinates="x_low, y_low, z_low" 
-                       high_coordinates="x_high, y_high, z_high"/>
+  <box name="MY_BOX" low_coordinates="x_low, y_low, z_low" 
+                     high_coordinates="x_high, y_high, z_high"/>
 
 Point
 -----
@@ -854,66 +854,107 @@ A `"region_file`" is defined as follows.
   <region_file name="MY_FILE" type="[color|labeled set]" format="exodus ii" 
                entity="[cell|face|edge|node]" label="integer"/>
 
-Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.
+Currently color functions and labeled sets can only be read from Exodus II files.  
+This will likely be the same file specified in the ``mesh`` element.
 Recall that the values for attributes above are case-sensitive.
 For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  
 Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-Region
-------
+Cylinder
+--------
 
-A region allows for a box region, a point region, or a region_file to be defined.
+A region `"cylinder`" is defined by a point on its axis, direction of the axis and its radius.
 
 .. code-block:: xml
 
-  <region name="Name of Region">
+  <cylinder name="MY_CILYNDER" location="x0, y0, z0" axis="ax, ay, az" radius="double"/>
+
+Halfspace
+---------
+
+A region `"halfspace`" is defined by a point on a place that bound the halfspace and
+by a outward normal.
+
+.. code-block:: xml
+
+  <halfspace name="MY_HALFSPACE" location="x0, y0, z0" normal="nx, ny, nz"/>
+
+Polygonal_Surface
+-----------------
+
+A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  
+
+.. code-block:: xml
+
+    <polygonal_surface name="MY_POLYGON" num_points="3" tolerance="optional exp">
+      <point> X1, Y1, Z1 </point>
+      <point> X2, Y2, Z2 </point>
+      <point> X3, Y3, Z3 </point>
+    </polygonal_surface>
+
+The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+
+Line_segment
+------------
+
+The region `"line_segment`" is defined by two end-points points.
+by a outward normal.
+
+.. code-block:: xml
+
+  <line_segment name="MY_SEGMENT" end_coordinates="x0, y0, z0"
+                                  opposite_end_coordinates="x1, y1, y2"/>
+
+Boundary
+--------
+
+The region `"boundary`" defines the boundary of a computational domain.
+
+.. code-block:: xml
+
+  <boundary name="MY_BOUNDARY" entity="[face|edge|node]"/>
+
+Box_volume_fractions
+--------------------
+
+The region `"box_volume_fractions`" is the generalization of the region `"box`".
+It allows to define a box that is not alinghed with the system axes.
+In addition, the region calculates relative volume of the intersection of the box with mesh cells,
+called volume fractions.
+For this reason, we need normals to box sides.
+The normals may be scaled arbitrarily but must be orthogonal to one another and form the right coordinate frame.
+This is the optional parameter with default values representing columns of the identity matrix.
+
+.. code-block:: xml
+
+  <box name="MY_BOX" corner_coordinates="x0, y0, z0" 
+                     opposite_corner_coordinates="x1, y1, z1" normals="n1x, n1y, n1z,
+                                                                       n2x, n2y, n2z,
+                                                                       n3x, n3y, n3z"/>
+
+Region
+------
+
+A region allows us to wrap up definition of other regions.
+
+.. code-block:: xml
+
+  <region name="MY_REGION">
       Required Elements: 1 of the following - region_file, box, point  
       Optional Elements: comments
   </region>
 
 
-Cylinder
---------
-
-Halfspace
----------
-
-Polygonal_Surface
------------------
-
-A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
-
-.. code-block:: xml
-
-    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-    </polygonal_surface>
-
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
-
-Labeled set
------------
-
-Line_segment
-------------
-
-Boundary
---------
-
-Box_volume_fractions
---------------------
-
 Logical
 -------
 
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
+Logical regions are compound regions formed from other primitive type regions using boolean operations. 
+Supported operators are union, intersection, subtraction and complement.  
 
 .. code-block:: xml
 
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
+    <logical name="MY_REGION" operation="[union|intersection|subtraction|complement]"
+             region_list="region1, region2, region3"/>
 
 
 Geochemistry

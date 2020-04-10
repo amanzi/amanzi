@@ -570,20 +570,8 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-
-Logical
+Polygon
 -------
-
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
-
-.. code-block:: xml
-
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
-
-
-Polygon [S]
------------
 
 A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
 
@@ -595,8 +583,8 @@ A polygon region is used to define a bounded planar region and is specified by t
       <point> X, Y </point>
     </polygon>
 
-Ellipse [S]
------------
+Ellipse
+-------
 
 An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
 
@@ -607,8 +595,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
       <radius> radiusX, radiusY </radius>
     </ellipse>
 
-Rotated Polygon [S]
--------------------
+Rotated Polygon
+---------------
 
 A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -623,8 +611,8 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
         <reference_point> X, Y </reference_point>
     </rotated_polygon>
 
-Swept Polygon [S]
------------------
+Swept Polygon
+-------------
 
 A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -638,6 +626,7 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
         <extent_min> exponential </extent_min>
         <extent_max> exponential </extent_max>
     </swept_polygon>
+
 
 Geochemistry
 ============
