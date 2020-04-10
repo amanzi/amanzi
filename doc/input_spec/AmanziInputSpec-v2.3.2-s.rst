@@ -481,51 +481,21 @@ The user may define 1 or more refinement indicators.  Each refinement indicator 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  The ``mesh`` element varies slightly depending on whether the simulation type is ``structured`` or ``unstructured`` but is required for both.  For `"unstructured`", the ``mesh`` element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial). For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
-
-To internally generate a mesh the ``mesh`` element takes the following form.  The mesh framework attribute only applies to the `"unstructured`" and therefore is skipped for `"structured`" simulations.
-
-Also, for parallel unstructured meshes, it is possible to choose a Partitioner from the available options, `"metis"`, `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"` and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which can lead to better partitioning in meshes that are thin in a particular direction. Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to detect columns of elements in a mesh and adjust the partitioning such that no column is split over multiple partitions. If no partitioner is specified, a default method is used (`"metis"`).
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  
+For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
 
 .. code-block:: xml
 
-   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
-      <comments> May be included in the Mesh element </comments>
-      <dimension>3</dimension>
-      <partitioner>"some partitioner keyword"</partitioner>
+   <mesh>
+      <comments> This is a box mesh in a unit square </comments>
+      <dimension>2</dimension>
+      <partitioner>metis</partitioner>
       <generate>
-         <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
-         <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
+         <number_of_cells nx="10"  ny="12"/>
+         <box low_coordinates="0.0,0.0"  high_coordinates="1.0,1.0"/>
       </generate>
    </mesh>
 
-For example:
-
-.. code-block:: xml
-
-  <mesh framework="mstk">
-    <dimension>2</dimension>
-    <partitioner>"zoltan_rcb"</partitioner>
-    <generate>
-      <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
-    </generate>
-  </mesh>
-
-Currently Amanzi only read Exodus II mesh files for `"unstructured`" simulations.  An example ``mesh`` element would look as the following.
-
-.. code-block:: xml
-
-  <mesh framework="mstk"> 
-    <comments> May be included in the Mesh element </comments>
-    <dimension>3</dimension>
-    <read>
-      <file>mesh.exo</file>
-      <format>exodus ii</format>
-    </read>
-  </mesh>
-
-Note that the ``format`` content is case-sensitive and compared against a set of known and acceptable formats.  That set is [`"exodus ii`",`"exodus II`",`"Exodus II`",`"Exodus ii`"].  The set of all such limited options can always be verified by checking the Amanzi schema file.
 
 Regions
 =======
