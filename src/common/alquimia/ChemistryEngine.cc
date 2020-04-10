@@ -305,6 +305,15 @@ void ChemistryEngine::GetAqueousKineticNames(std::vector<std::string>& kinetics_
     kinetics_names[i] = std::string(metadata->aqueous_kinetic_names.data[i]);
 }
 
+void ChemistryEngine::GetPositivity(std::vector<int>& positive) const
+{
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->positivity.size;
+  positive.resize(N);
+  for (int i = 0; i < N; ++i)
+    positive[i] = int(metadata->positivity.data[i]);
+}
+
 void ChemistryEngine::CreateCondition(const std::string& condition_name)
 {
   // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 

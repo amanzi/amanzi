@@ -73,6 +73,7 @@ class ChemistryEngine {
   void GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const;
   int NumAqueousKinetics() const;
   void GetAqueousKineticNames(std::vector<std::string>& kinetics_names) const;
+  void GetPositivity(std::vector<int>& positive) const;
   
   // Returns a reference to a "sizes" object that can be queried to find the sizes of the various 
   // arrays representing the geochemical state within the engine.

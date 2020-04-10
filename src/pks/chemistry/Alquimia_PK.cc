@@ -133,6 +133,8 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   chem_engine_->GetAqueousKineticNames(aqueous_kinetics_names_);
   number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
+
+  chem_engine_->GetPositivity(positive_);
   
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Alquimia_PK "+domain_name_, *cp_list_));
@@ -554,7 +556,11 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
-    state.total_mobile.data[i] = std::max((*aqueous_components)[i][cell], min_tcc_);
+    if (positive_[i]) {
+      state.total_mobile.data[i] = std::max((*aqueous_components)[i][cell], min_tcc_);
+    } else {
+      state.total_mobile.data[i] = std::min((*aqueous_components)[i][cell], min_tcc_);
+    }
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];

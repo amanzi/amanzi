@@ -93,6 +93,7 @@ class Chemistry_PK : public PK_Physical {
   int number_free_ion_, number_ion_exchange_sites_;
 
   double min_tcc_, max_tcc_, sat_tol_;
+  std::vector<int> positive_;
 
   // names of state fields 
   Key tcc_key_;
