@@ -960,7 +960,9 @@ Supported operators are union, intersection, subtraction and complement.
 Geochemistry
 ============
 
-Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  Currently available through Alquimia is the PFloTran engine. The user may specify engine specific information using the appropriate subelement.
+Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  
+Currently available through Alquimia is the PFloTran and CrunchFlow engines. 
+The user may specify engine specific information using the appropriate subelement.
 
 .. code-block:: xml
 
@@ -985,7 +987,7 @@ Individual constraints can have an unbounded number of chemical constraints defi
 
   * Primary constraints are specified using the element ``primary``.  Attributes include ``name`` the name of the primary species, ``type`` the constraint type, and ``value`` the initial value to be used. For constraints based on equilibrium with a specific mineral or gas, an additional attribute specifying the mineral or gas is expected, ``mineral`` or ``gas`` respectively.  The table below lists the constraint types, which attributes are requires, and the corresponding value of the attribute ``type``.  Note, for non-reactive species/solutes, use the type "total".
 
-  * Mineral constraints are specified using the element ``mineral``.  Attributes include ``name`` the name of the mineral, ``volume_fraction`` the volume fraction, and ``surface_area`` the specific surface area.
+  * Mineral constraints are specified using the element ``mineral``.  Attributes include ``name`` the name of the mineral, ``volume_fraction`` the volume fraction, and ``specific_surface_area`` the specific surface area.
 
 
 +------------------+---------------------+----------------+
@@ -1028,10 +1030,10 @@ An example of a fully specified constraint is as follows.
 
   <constraints>
     <constraint name="initial">
-        <primary name="Tc-99"   value="1e-3" type="total"/>
-        <primary name="H2O"     value="1e-9"   type="mineral" mineral="Calcite"/>
-        <primary name="CO2(aq)" value="1e-9"   type="gas" gas="CO2"/>
-        <mineral name="Calcite" volume_fraction="1e-3" surface_area ="1e-5"/>
+        <primary name="Tc-99"   value="1e-3"  type="total"/>
+        <primary name="H2O"     value="1e-9"  type="mineral" mineral="Calcite"/>
+        <primary name="CO2(aq)" value="1e-9"  type="gas" gas="CO2"/>
+        <mineral name="Calcite" volume_fraction="1e-3" surface_area="1e-5"/>
     </constraint>
   </constraints>
 
@@ -1045,10 +1047,12 @@ Note, if the user has provided a PFloTran input file, all that is required is th
 
 Any additional information provided is for the user's reference and will be ignored by Amanzi.
 
+
 Materials
 =========
 
-The ``material`` in this context is meant to represent the media through with fluid phases are transported. In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. The ``materials`` block is required.
+The ``material`` in this context is meant to represent the media through which fluid phases are transported. 
+In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. The ``materials`` block is required.
 
 Material
 --------
