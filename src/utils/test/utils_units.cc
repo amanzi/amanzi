@@ -108,8 +108,16 @@ TEST(UNITS_DERIVED_DOUBLE)
   Units units("molar");
   bool flag;
 
-  std::string in_unit("m/d"), out_unit("ft/y");
-  double tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  // trivial
+  std::string in_unit("noleap"), out_unit("s");
+  double tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 0.0, flag);
+  std::cout << "Derived tests:\n  1 noleap = " << tmp << " s, flag=" << flag
+            << std::endl;
+  CHECK_CLOSE(86400.*365, tmp, 1e-3);
+  
+  in_unit = "m/d";
+  out_unit = "ft/y";
+  tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
   std::cout << "Derived tests:\n  1 m/d = " << tmp << " ft/y, flag=" << flag
             << std::endl;
   CHECK_CLOSE(tmp, 1198.326, 1e-3);
@@ -137,6 +145,14 @@ TEST(UNITS_DERIVED_DOUBLE)
   std::cout << "  2 Pa/s = " << tmp << " kg/m/s^3, flag=" << flag << std::endl;
   CHECK_CLOSE(tmp, 2.0, 1.0e-10);
 
+  // Derived units are hard-coded (not Boost)
+  // Only ones supported are Pa and J.
+  // in_unit = "MPa/s";
+  // out_unit = "kg/m/s^3";
+  // tmp = units.ConvertUnitD(2.0, in_unit, out_unit, 51.9961e-3, flag);
+  // std::cout << "  2 MPa/s = " << tmp << " kg/m/s^3, flag=" << flag << std::endl;
+  // CHECK_CLOSE(2.0e6, tmp, 1.0e-10);
+  
   in_unit = "J/s";
   out_unit = "kg*m^2/s^3";
   tmp = units.ConvertUnitD(3.0, in_unit, out_unit, 1.0, flag);

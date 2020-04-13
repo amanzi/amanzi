@@ -92,7 +92,7 @@ MatrixFE::SumIntoMyValues_Transposed(const int *row_indices, const int *col_indi
         const WhetStone::DenseMatrix& vals) {
   int ierr(0);
   for (int i=0; i!=vals.NumCols(); ++i)
-    ierr |= SumIntoMyValues(row_indices[i], vals.NumRows(), vals.Value(0,i), col_indices);
+    ierr |= SumIntoMyValues(row_indices[i], vals.NumRows(), &vals.Value(0,i), col_indices);
   return ierr;
 }
 

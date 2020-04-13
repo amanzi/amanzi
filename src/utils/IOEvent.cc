@@ -53,7 +53,7 @@ IOEvent::disable(bool disabled)
 // Place vis times in the manager.
 // -----------------------------------------------------------------------------
 void
-IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm)
+IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) const
 {
   if (times_.size() != 0) { tsm->RegisterTimeEvent(times_.toVector(), false); }
   if (times_sps_.size() != 0) {

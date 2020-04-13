@@ -61,36 +61,36 @@ using namespace Amanzi;
 
 SUITE(PKS_PDE)
 {
-  // Forward Euler time integration of a parabolic PDE
-  TEST(DIFFUSION_FE_EXPLICIT)
-  {
-    // run the simulation
-    using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<
-      PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
-    auto run = createRunPDE<PK_t>("diffusion FE explicit", "test/pks_pde.xml");
-    auto nsteps = run_test(run->S, run->pk, 20.0);
+  // // Forward Euler time integration of a parabolic PDE
+  // TEST(DIFFUSION_FE_EXPLICIT)
+  // {
+  //   // run the simulation
+  //   using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<
+  //     PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
+  //   auto run = createRunPDE<PK_t>("diffusion FE explicit", "test/pks_pde.xml");
+  //   auto nsteps = run_test(run->S, run->pk, 20.0);
 
-    // print final solution
-    std::cout << "Final solution" << std::endl;
-    run->S->Get<CompositeVector>("u").Print(std::cout);
+  //   // print final solution
+  //   std::cout << "Final solution" << std::endl;
+  //   run->S->Get<CompositeVector>("u").Print(std::cout);
 
-    // check error
-    auto m = run->S->GetMesh();
-    int ncells =
-      m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    {
-      auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
-      for (int c = 0; c != ncells; ++c) {
-        auto p = m->cell_centroid(c);
-        double val = std::cos(PI_2 * p[0]);
-        CHECK_CLOSE(val, u(c,0), 1.e-3);
-      }
-    }
+  //   // check error
+  //   auto m = run->S->GetMesh();
+  //   int ncells =
+  //     m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  //   {
+  //     auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
+  //     for (int c = 0; c != ncells; ++c) {
+  //       auto p = m->cell_centroid(c);
+  //       double val = std::cos(PI_2 * p[0]);
+  //       CHECK_CLOSE(val, u(c,0), 1.e-3);
+  //     }
+  //   }
 
-    // check timesteps
-    CHECK_EQUAL(20. / 0.001, nsteps.first);
-    CHECK_EQUAL(0, nsteps.second);
-  }
+  //   // check timesteps
+  //   CHECK_EQUAL(20. / 0.001, nsteps.first);
+  //   CHECK_EQUAL(0, nsteps.second);
+  // }
 
   // Backward Euler time integration of a parabolic PDE
   TEST(DIFFUSION_FE_IMPLICIT)
@@ -122,4 +122,5 @@ SUITE(PKS_PDE)
     CHECK_EQUAL(20. / 1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
+
 }
