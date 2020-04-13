@@ -582,9 +582,9 @@ ___________________
 +================+==============+=======================================+
 | method         | string       | ``gmres, pcg``                        |
 +----------------+--------------+---------------------------------------+
-| max_iterations | integer      |                                       |
+| max_iterations | integer      | *default = 100*                       |
 +----------------+--------------+---------------------------------------+
-| tolerance      | double       |                                       |
+| tolerance      | double       | *default = 1e-15*                     |
 +----------------+--------------+---------------------------------------+
 | preconditioner | string       | ``trilinos_ml, hypre_amg, block_ilu`` |
 +----------------+--------------+---------------------------------------+
@@ -593,13 +593,25 @@ ___________________
 Saturated_linear_solver
 _______________________
 
+The ``saturated_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``saturated_linear_solver``.
+
 
 Constraints_linear_solver
 _________________________
 
+The ``constraints_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``constraints_linear_solver``.
+
 
 Dispersion_linear_solver
 ________________________
+
+The ``dispersion_linear_solver`` has the same set of the parameters as the ``unstr_linear_solver``.
+The default values of the parameters are taken from ``unstr_linear_solver`` and over-written by
+that in the ``dispersion_linear_solver``.
 
 
 Unstr_nonlinear_solver
@@ -613,14 +625,13 @@ The nonlinear solver of choice is listed as the attribute ``name`` to the ``unst
 | modify_correction       | boolean      | | ``true, false``                             |
 |                         |              | | *default = false*                           |
 +-------------------------+--------------+-----------------------------------------------+
-| update_upwind_frequency | string       | ``every_timestep, every_nonlinear_iteration`` |
-+-------------------------+--------------+-----------------------------------------------+
 
 
 Unstr_preconditioners
 _____________________
 
-Options for each available precondition are set in the ``unstr_preconditioners`` section.  The preconditioners assigned to each numerical solver are specified in the appropriate sections above.  Note that only one set of options may be specified for each precondition.  There is multiple solvers are assigned the preconditioner they will all utilize the same set of options.  The ``unstr_preconditioners`` element is defined as follows:
+Options for each available precondition are set in the ``unstr_preconditioners`` section.  The preconditioners assigned to each numerical solver are specified in the appropriate sections above.  Note that only one set of options may be specified for each precondition.
+If multiple solvers are assigned the preconditioner they will all utilize the same set of options.  The ``unstr_preconditioners`` element is defined as follows:
 
 .. code-block:: xml
 
@@ -634,13 +645,13 @@ The subelements for the Hyper AMG preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| hypre_cycle_applications    | integer      |                                          |
+| hypre_cycle_applications    | integer      | *default = 5*                            |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_smoother_sweeps       | integer      |                                          |
+| hypre_smoother_sweeps       | integer      | *default = 3*                            |
 +-----------------------------+--------------+------------------------------------------+
 | hypre_tolerance             | double       |                                          |
 +-----------------------------+--------------+------------------------------------------+
-| hypre_strong_threshold      | double       |                                          |
+| hypre_strong_threshold      | double       | *default = 0.5*                          |
 +-----------------------------+--------------+------------------------------------------+
 
 The subelements for the Trilinos ML preconditioner are as follows:
@@ -648,13 +659,14 @@ The subelements for the Trilinos ML preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| trilinos_smoother_type      | string       | ``jacobi, gauss_seidel, ilu``            |
+| trilinos_smoother_type      | string       | | ``jacobi, gauss_seidel, ilu``          |
+|                             |              | | *default = jacobi*                     |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_threshold          | double       |                                          |
+| trilinos_threshold          | double       | *default = 0.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_smoother_sweeps    | integer      |                                          |
+| trilinos_smoother_sweeps    | integer      | *default = 3*                            |
 +-----------------------------+--------------+------------------------------------------+
-| trilinos_cycle_applications | integer      |                                          |
+| trilinos_cycle_applications | integer      | *default = 2*                            |
 +-----------------------------+--------------+------------------------------------------+
 
 The subelements for the Block ILU preconditioner are as follows:
@@ -662,15 +674,15 @@ The subelements for the Block ILU preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | Element Names               | Content Type | Content Value                            |
 +=============================+==============+==========================================+
-| ilu_overlap                 | integer      |                                          |
+| ilu_overlap                 | integer      | *default = 0*                            |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_relax                   | double       |                                          |
+| ilu_relax                   | double       | *default = 1.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_rel_threshold           | double       |                                          |
+| ilu_rel_threshold           | double       | *default = 1.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_abs_threshold           | double       |                                          |
+| ilu_abs_threshold           | double       | *default = 0.0*                          |
 +-----------------------------+--------------+------------------------------------------+
-| ilu_level_of_fill           | integer      |                                          |
+| ilu_level_of_fill           | integer      | *default = 0*                            |
 +-----------------------------+--------------+------------------------------------------+
 
 An example ``unstructured_controls`` section would look as the following:
@@ -682,6 +694,7 @@ An example ``unstructured_controls`` section would look as the following:
                 <discretization_method>fv-default</discretization_method>
                 <rel_perm_method>upwind-darcy_velocity</rel_perm_method>
                 <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+                <update_upwind_frequency>every_timestep</update_upwind_frequency>
             </unstr_flow_controls>
             <unstr_transport_controls>
                 <algorithm>explicit first-order</algorithm>
@@ -727,12 +740,11 @@ An example ``unstructured_controls`` section would look as the following:
             <unstr_linear_solver>
                 <method>gmres</method>
                 <max_iterations>100</max_iterations>
-                <tolerance>1.0e-16</tolerance>
+                <tolerance>1.0e-15</tolerance>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_linear_solver>
             <unstr_nonlinear_solver name="nka">
                 <modify_correction>false</modify_correction>
-                <update_upwind_frequency>every_timestep</update_upwind_frequency>
             </unstr_nonlinear_solver>
         </unstructured_controls>
 
@@ -740,43 +752,31 @@ An example ``unstructured_controls`` section would look as the following:
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  The ``mesh`` element varies slightly depending on whether the simulation type is ``structured`` or ``unstructured`` but is required for both.  For `"unstructured`", the ``mesh`` element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial). For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  
+For `"unstructured`", the ``mesh`` element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are MOAB and simple (in serial). 
 
-To internally generate a mesh the ``mesh`` element takes the following form.  The mesh framework attribute only applies to the `"unstructured`" and therefore is skipped for `"structured`" simulations.
+To internally generate a mesh the ``mesh`` element takes the framework attribute.
 
 Also, for parallel unstructured meshes, it is possible to choose a Partitioner from the available options, `"metis"`, `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"` and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which can lead to better partitioning in meshes that are thin in a particular direction. Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to detect columns of elements in a mesh and adjust the partitioning such that no column is split over multiple partitions. If no partitioner is specified, a default method is used (`"metis"`).
-
-.. code-block:: xml
-
-   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
-      <comments> May be included in the Mesh element </comments>
-      <dimension>3</dimension>
-      <partitioner>"some partitioner keyword"</partitioner>
-      <generate>
-         <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
-         <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
-      </generate>
-   </mesh>
-
 For example:
 
 .. code-block:: xml
 
-  <mesh framework="mstk">
-    <dimension>2</dimension>
-    <partitioner>"zoltan_rcb"</partitioner>
-    <generate>
-      <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
-    </generate>
-  </mesh>
+   <mesh framework=["mstk"|"moab"|"simple"]>
+      <comments> This is a box mesh in a unit cube </comments>
+      <dimension>3</dimension>
+      <partitioner>metis</partitioner>
+      <generate>
+         <number_of_cells nx="10"  ny="12"  nz="14"/>
+         <box low_coordinates="0.0,0.0,0.0"  high_coordinates="1.0,1.0,1.0"/>
+      </generate>
+   </mesh>
 
 Currently Amanzi only read Exodus II mesh files for `"unstructured`" simulations.  An example ``mesh`` element would look as the following.
 
 .. code-block:: xml
 
   <mesh framework="mstk"> 
-    <comments> May be included in the Mesh element </comments>
     <dimension>3</dimension>
     <read>
       <file>mesh.exo</file>
@@ -784,26 +784,31 @@ Currently Amanzi only read Exodus II mesh files for `"unstructured`" simulations
     </read>
   </mesh>
 
-Note that the ``format`` content is case-sensitive and compared against a set of known and acceptable formats.  That set is [`"exodus ii`",`"exodus II`",`"Exodus II`",`"Exodus ii`"].  The set of all such limited options can always be verified by checking the Amanzi schema file.
+Note that the ``format`` content is case-sensitive and compared against a set of known and acceptable formats.
+That set is [`"exodus ii`", `"exodus II`", `"Exodus II`", `"Exodus ii`", `"H5M`", `"h5m`"].  
+The set of all options can always be verified by checking the Amanzi schema file.
+
 
 Regions
 =======
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. 
 
 The ``regions`` block is required.  Within the region block at least one regions is required to be defined.  Most users define at least one region the encompasses the entire domain.  The optional elements valid for both structured and unstructured include `"region`", `"box`", `"point`", and `"plane`".  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  Below are further descriptions of these elements.
-
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  
+Additional regions are ``polygonal_surface`` and ``logical``.  
+Below are further descriptions of these elements.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
+      Optional Elements: comments, box, point, plane, region, region_file,
+                         cylinder, halfspace, polygonal_surface, boundary,
+                         line_segment, box_volume_fractions, logical
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
@@ -815,7 +820,8 @@ A box region region is defined by a low corner coordinates and high corner coord
 
 .. code-block:: xml
 
-  <box  name="box name" low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
+  <box name="MY_BOX" low_coordinates="x_low, y_low, z_low" 
+                     high_coordinates="x_high, y_high, z_high"/>
 
 Point
 -----
@@ -824,7 +830,7 @@ A point region region is defined by a point coordinates.
 
 .. code-block:: xml
 
-  <point name="point name" coordinate = "x,y,z" />
+  <point name="MY_POINT" coordinate="x, y, z" />
 
 Plane
 -----
@@ -833,61 +839,130 @@ A plane region is defined by a point on the plane and the normal direction of th
 
 .. code-block:: xml
 
-  <plane name="plane name" location="x,y,z" normal="dx,dy,dz" tolerance="optional exp"/> 
+  <plane name="MY_PLANE" location="x, y, z" normal="nx, ny, nz"  tolerance="optional exp"/> 
 
-The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
+The attribute ``tolerance`` is optional.  
+This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
-Region
-------
+Region_file
+-----------
 
-A region allows for a box region, a point region, or a region file to be defined.
-
-.. code-block:: xml
-
-  <region name="Name of Region">
-      Required Elements: 1 of the following - region_file, box, point  
-      Optional Elements: comments
-  </region>
-
-A region is define as describe above.  A file is define as follows.
-
+A `"region_file`" is defined as follows.
 
 .. code-block:: xml
 
-  <region_file name="filename" type=["color"|"labeled set"] format=["exodus ii"] entity=["cell"|"face"] label="integer"/>
+  <region_file name="MY_FILE" type="[color|labeled set]" format="exodus ii" 
+               entity="[cell|face|edge|node]" label="integer"/>
 
-Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
+Currently color functions and labeled sets can only be read from Exodus II files.  
+This will likely be the same file specified in the ``mesh`` element.
+Recall that the values for attributes above are case-sensitive.
+For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  
+Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
+
+Cylinder
+--------
+
+A region `"cylinder`" is defined by a point on its axis, direction of the axis and its radius.
+
+.. code-block:: xml
+
+  <cylinder name="MY_CILYNDER" location="x0, y0, z0" axis="ax, ay, az" radius="double"/>
+
+Halfspace
+---------
+
+A region `"halfspace`" is defined by a point on a place that bound the halfspace and
+by a outward normal.
+
+.. code-block:: xml
+
+  <halfspace name="MY_HALFSPACE" location="x0, y0, z0" normal="nx, ny, nz"/>
 
 Polygonal_Surface
 -----------------
 
-A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
+A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  
 
 .. code-block:: xml
 
-    <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
+    <polygonal_surface name="MY_POLYGON" num_points="3" tolerance="optional exp">
+      <point> X1, Y1, Z1 </point>
+      <point> X2, Y2, Z2 </point>
+      <point> X3, Y3, Z3 </point>
     </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
 
-Logical
--------
+Line_segment
+------------
 
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
+The region `"line_segment`" is defined by two end-points points.
+by a outward normal.
 
 .. code-block:: xml
 
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
+  <line_segment name="MY_SEGMENT" end_coordinates="x0, y0, z0"
+                                  opposite_end_coordinates="x1, y1, y2"/>
+
+Boundary
+--------
+
+The region `"boundary`" defines the boundary of a computational domain.
+
+.. code-block:: xml
+
+  <boundary name="MY_BOUNDARY" entity="[face|edge|node]"/>
+
+Box_volume_fractions
+--------------------
+
+The region `"box_volume_fractions`" is the generalization of the region `"box`".
+It allows to define a box that is not alinghed with the system axes.
+In addition, the region calculates relative volume of the intersection of the box with mesh cells,
+called volume fractions.
+For this reason, we need normals to box sides.
+The normals may be scaled arbitrarily but must be orthogonal to one another and form the right coordinate frame.
+This is the optional parameter with default values representing columns of the identity matrix.
+
+.. code-block:: xml
+
+  <box name="MY_BOX" corner_coordinates="x0, y0, z0" 
+                     opposite_corner_coordinates="x1, y1, z1" normals="n1x, n1y, n1z,
+                                                                       n2x, n2y, n2z,
+                                                                       n3x, n3y, n3z"/>
+
+Region
+------
+
+A region allows us to wrap up definition of other regions.
+
+.. code-block:: xml
+
+  <region name="MY_REGION">
+      Required Elements: 1 of the following - region_file, box, point  
+      Optional Elements: comments
+  </region>
+
+
+Logical
+-------
+
+Logical regions are compound regions formed from other primitive type regions using boolean operations. 
+Supported operators are union, intersection, subtraction and complement.  
+
+.. code-block:: xml
+
+    <logical name="MY_REGION" operation="[union|intersection|subtraction|complement]"
+             region_list="region1, region2, region3"/>
 
 
 Geochemistry
 ============
 
-Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  Currently available through Alquimia is the PFloTran engine. The user may specify engine specific information using the appropriate subelement.
+Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  
+Currently available through Alquimia is the PFloTran and CrunchFlow engines. 
+The user may specify engine specific information using the appropriate subelement.
 
 .. code-block:: xml
 
@@ -912,7 +987,7 @@ Individual constraints can have an unbounded number of chemical constraints defi
 
   * Primary constraints are specified using the element ``primary``.  Attributes include ``name`` the name of the primary species, ``type`` the constraint type, and ``value`` the initial value to be used. For constraints based on equilibrium with a specific mineral or gas, an additional attribute specifying the mineral or gas is expected, ``mineral`` or ``gas`` respectively.  The table below lists the constraint types, which attributes are requires, and the corresponding value of the attribute ``type``.  Note, for non-reactive species/solutes, use the type "total".
 
-  * Mineral constraints are specified using the element ``mineral``.  Attributes include ``name`` the name of the mineral, ``volume_fraction`` the volume fraction, and ``surface_area`` the specific surface area.
+  * Mineral constraints are specified using the element ``mineral``.  Attributes include ``name`` the name of the mineral, ``volume_fraction`` the volume fraction, and ``specific_surface_area`` the specific surface area.
 
 
 +------------------+---------------------+----------------+
@@ -955,10 +1030,10 @@ An example of a fully specified constraint is as follows.
 
   <constraints>
     <constraint name="initial">
-        <primary name="Tc-99"   value="1e-3" type="total"/>
-        <primary name="H2O"     value="1e-9"   type="mineral" mineral="Calcite"/>
-        <primary name="CO2(aq)" value="1e-9"   type="gas" gas="CO2"/>
-        <mineral name="Calcite" volume_fraction="1e-3" surface_area ="1e-5"/>
+        <primary name="Tc-99"   value="1e-3"  type="total"/>
+        <primary name="H2O"     value="1e-9"  type="mineral" mineral="Calcite"/>
+        <primary name="CO2(aq)" value="1e-9"  type="gas" gas="CO2"/>
+        <mineral name="Calcite" volume_fraction="1e-3" surface_area="1e-5"/>
     </constraint>
   </constraints>
 
@@ -972,10 +1047,12 @@ Note, if the user has provided a PFloTran input file, all that is required is th
 
 Any additional information provided is for the user's reference and will be ignored by Amanzi.
 
+
 Materials
 =========
 
-The ``material`` in this context is meant to represent the media through with fluid phases are transported. In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. The ``materials`` block is required.
+The ``material`` in this context is meant to represent the media through which fluid phases are transported. 
+In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. The ``materials`` block is required.
 
 Material
 --------
@@ -995,23 +1072,32 @@ Mechanical_properties
 .. code-block:: xml
 
   <mechanical_properties>
-      Required Elements: porosity (FILE OPTION NOT IMPLEMENTED) 
-      Optional Elements: particle_density, specific_storage, specific_yield, dispersion_tensor, tortuosity
+      Required Elements: porosity
+      Optional Elements: particle_density, specific_storage, specific_yield,
+                         dispersion_tensor, tortuosity, tortuosity_gas, transport_porosity
   </mechanical_properties>
 
-* ``mechanical_properties`` has six elements that can be either values or specified as files.  It has the following requirements.
+The ``mechanical_properties`` has multiple elements that can be either values or specified as files.
+It has the following requirements.
 
-    * ``porosity`` is defined in-line using attributes.  It is specified in one of three ways: as a value between 0 and 1 using value="<value>", through a file using type="file" and filename="<filename>", or as a gslib file using type="gslib", parameter_file="<filename>", value="<value>" and (optionally) data_file="<filename>" (defaults to ``porosity_data``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``porosity``, ``particle_density`` and ``transport_porosity`` are defined in-line using attributes. 
+      It is specified in one of three ways: as a value between 0 and 1 
+      using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
+      HDF5 file (formatted differently than restart file)  using using type="h5file" and filename="<filename>".
 
-    * ``particle_density`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``specific_storage`` and ``specific_yeild`` are defined in-line using attributes.
+      Either it is specified as a value greater than 0 using ``value`` or it specified through a file using type="file" and filename="<filename>".
 
-    * ``specific_storage`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
+      The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
+      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.
+      For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``.
+      For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.i
 
-    * ``specific_yield`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``tortuosity`` is defined in-line using attributes. Either it is specified as a value using ``value`` or it specified 
+      through a file using ``filename`` and ``type``.  The file initializtion is not implemented yet.
 
-    * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize of that a file is to be read.  The ``type`` options are: uniform_isotropic, burnett_frind, lichtner_kelkar_robinson, or file.  For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.  For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``. For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.  For ``file`` the file name is specified using ``filename``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-    * ``tortuosity`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``tortuosity_gas`` is defined in-line using attribute. It is specified as a value using ``value``.
 
 
 .. code-block:: xml
@@ -1021,7 +1107,7 @@ Mechanical_properties
       <particle_density value="double"/>
       <specific_storage value="double"/>
       <specific_yield value="double"/>
-      <dispersion_tensor type="uniform_isotropic" "alpha_l="double" alpha_t="double"/>
+      <dispersion_tensor type="uniform_isotropic" alpha_l="double" alpha_t="double"/>
       <tortuosity value="double"/>
   </mechanical_properties>
 

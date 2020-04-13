@@ -481,70 +481,41 @@ The user may define 1 or more refinement indicators.  Each refinement indicator 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  The ``mesh`` element varies slightly depending on whether the simulation type is ``structured`` or ``unstructured`` but is required for both.  For `"unstructured`", the ``mesh`` element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial). For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
-
-To internally generate a mesh the ``mesh`` element takes the following form.  The mesh framework attribute only applies to the `"unstructured`" and therefore is skipped for `"structured`" simulations.
-
-Also, for parallel unstructured meshes, it is possible to choose a Partitioner from the available options, `"metis"`, `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"` and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which can lead to better partitioning in meshes that are thin in a particular direction. Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to detect columns of elements in a mesh and adjust the partitioning such that no column is split over multiple partitions. If no partitioner is specified, a default method is used (`"metis"`).
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  
+For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
 
 .. code-block:: xml
 
-   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
-      <comments> May be included in the Mesh element </comments>
-      <dimension>3</dimension>
-      <partitioner>"some partitioner keyword"</partitioner>
+   <mesh>
+      <comments> This is a box mesh in a unit square </comments>
+      <dimension>2</dimension>
+      <partitioner>metis</partitioner>
       <generate>
-         <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
-         <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
+         <number_of_cells nx="10"  ny="12"/>
+         <box low_coordinates="0.0,0.0"  high_coordinates="1.0,1.0"/>
       </generate>
    </mesh>
 
-For example:
-
-.. code-block:: xml
-
-  <mesh framework="mstk">
-    <dimension>2</dimension>
-    <partitioner>"zoltan_rcb"</partitioner>
-    <generate>
-      <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
-    </generate>
-  </mesh>
-
-Currently Amanzi only read Exodus II mesh files for `"unstructured`" simulations.  An example ``mesh`` element would look as the following.
-
-.. code-block:: xml
-
-  <mesh framework="mstk"> 
-    <comments> May be included in the Mesh element </comments>
-    <dimension>3</dimension>
-    <read>
-      <file>mesh.exo</file>
-      <format>exodus ii</format>
-    </read>
-  </mesh>
-
-Note that the ``format`` content is case-sensitive and compared against a set of known and acceptable formats.  That set is [`"exodus ii`",`"exodus II`",`"Exodus II`",`"Exodus ii`"].  The set of all such limited options can always be verified by checking the Amanzi schema file.
 
 Regions
 =======
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. 
+Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
 
 The ``regions`` block is required.  Within the region block at least one regions is required to be defined.  Most users define at least one region the encompasses the entire domain.  The optional elements valid for both structured and unstructured include `"region`", `"box`", `"point`", and `"plane`".  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  Below are further descriptions of these elements.
-
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  
+Additional regions include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+Below are further descriptions of these elements.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
+      Optional Elements: comments, box, point, region, polygon, ellipse, rotated_polygon, swept_polygon
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
@@ -599,20 +570,8 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-
-Logical
+Polygon
 -------
-
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
-
-.. code-block:: xml
-
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
-
-
-Polygon [S]
------------
 
 A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
 
@@ -624,8 +583,8 @@ A polygon region is used to define a bounded planar region and is specified by t
       <point> X, Y </point>
     </polygon>
 
-Ellipse [S]
------------
+Ellipse
+-------
 
 An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
 
@@ -636,8 +595,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
       <radius> radiusX, radiusY </radius>
     </ellipse>
 
-Rotated Polygon [S]
--------------------
+Rotated Polygon
+---------------
 
 A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -652,8 +611,8 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
         <reference_point> X, Y </reference_point>
     </rotated_polygon>
 
-Swept Polygon [S]
------------------
+Swept Polygon
+-------------
 
 A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -667,6 +626,7 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
         <extent_min> exponential </extent_min>
         <extent_max> exponential </extent_max>
     </swept_polygon>
+
 
 Geochemistry
 ============
