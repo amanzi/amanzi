@@ -93,7 +93,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool is_disabled() const;
 
   // public interface for coordinator clients
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) const;
   bool DumpRequested(int cycle, double time) const;
   bool DumpRequested(int cycle) const;
   bool DumpRequested(double time) const;

@@ -35,10 +35,17 @@
 
 namespace Amanzi {
 
-State::State() : state_plist_(Teuchos::rcp(new Teuchos::ParameterList())){};
+State::State() :
+    state_plist_(Teuchos::rcp(new Teuchos::ParameterList()))
+{
+  vo_ = Teuchos::rcp(new VerboseObject("State", *state_plist_));
+};
 
 State::State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist)
-  : state_plist_(state_plist){};
+    : state_plist_(state_plist)
+{
+  vo_ = Teuchos::rcp(new VerboseObject("State", *state_plist_));
+};
 
 // -----------------------------------------------------------------------------
 // State handles mesh management.
@@ -253,15 +260,6 @@ State::SetEvaluator(const Key& key, const Key& tag,
   }  
 };
 
-void
-State::WriteDependencyGraph() const
-{
-  std::ofstream os("dependency_graph.txt", std::ios::out);
-  for (auto& fe : evaluators_) {
-    for (auto& e : fe.second) { os << *e.second; }
-  }
-  os.close();
-}
 
 // -----------------------------------------------------------------------------
 // State handles model parameters.
@@ -297,6 +295,7 @@ State::Setup()
   Require<double>("time", "next", "time");
   Require<int>("cycle", "", "cycle");
   Require<int>("cycle", "next", "cycle");
+  Require<double>("dt", "", "dt");
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
@@ -323,110 +322,22 @@ State::Setup()
   //   }
   // }
 
+  // Alias evaluators: multiple fields may share an evaluator
+  AliasEvaluators();
+  
   // -- Create the data for all fields.
   for (auto& f : data_) { f.second->CreateData(); }
   for (auto& deriv : derivs_) { deriv.second->CreateData(); }
 
   Set("time", "", "time", 0.0);
-  GetRecordW("time", "time").set_initialized();
   Set("time", "next", "time", 0.0);
-  GetRecordW("time", "next", "time").set_initialized();
   Set("cycle", "", "cycle", 0);
-  GetRecordW("cycle", "cycle").set_initialized();
   Set("cycle", "next", "cycle", 0);
-  GetRecordW("cycle", "next", "cycle").set_initialized();
+  Set("dt", "", "dt", 0.0);
+
+  Print();
 };
 
-void
-State::Initialize()
-{
-  // Initialize any other fields from state plist.
-  InitializeFields();
-
-  // Alias evaluators: multiple fields may share an evaluator
-  AliasEvaluators();
-
-  // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized();
-
-  // Initialize other field evaluators.
-  InitializeEvaluators();
-
-  // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized();
-
-  // Write dependency graph.
-  WriteDependencyGraph();
-};
-
-// Initialized this from other state
-void
-State::Initialize(const State& other)
-{
-  // initialize data in this from data in other
-  for (auto& e : data_) {
-    if (!e.second->initialized()) {
-      for (auto& et : *e.second) {
-        auto& fieldname = e.first;
-        auto& tag = et.first;
-        auto& record = *et.second;
-        if (other.HasData(fieldname, tag)) {
-          record = other.GetRecord(fieldname, tag);
-          record.set_initialized(true);
-        }
-      }
-    }
-  }
-
-  // Initialize any other fields from state plist.
-  InitializeFields();
-
-  // Alias evaluators: multiple fields may share an evaluator
-  AliasEvaluators();
-
-  // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized();
-
-  // Initialize other field evaluators.
-  InitializeEvaluators();
-
-  // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized();
-
-  // Write dependency graph.
-  //
-  // FIXME: This needs a stage identifyier or something?  Currently just
-  // overwrites the last State's WriteDependencyGraph() output. --etc
-  WriteDependencyGraph();
-};
-
-void
-State::InitializeEvaluators(){
-  // for (auto& f_it : evaluators_) {
-  //   for (auto& e : f_it.second) {
-  //     std::cout << "Initing eval: \"" << f_it.first << "\" tag \"" <<
-  //     e.first << "\"" << std::endl;
-  //     e.second->Update(*this, "state");
-  //     GetRecordW(f_it.first, e.first, f_it.first).set_initialized();
-  //   }
-  // }
-};
-
-void
-State::InitializeFields()
-{
-  if (state_plist_->isSublist("initial conditions")) {
-    for (auto& e : data_) {
-      if (!e.second->initialized()) {
-        if (state_plist_->sublist("initial conditions").isSublist(e.first)) {
-          Teuchos::ParameterList sublist =
-            state_plist_->sublist("initial conditions").sublist(e.first);
-          e.second->Initialize(sublist);
-        }
-      }
-    }
-  }
-}
 
 // Some fields share evaluators, these must be aliased by pointer.
 void
@@ -457,46 +368,52 @@ State::AliasEvaluators()
   }
 }
 
-// Make sure all fields that are not evaluated by a Evaluator are
-// initialized.  Such fields may be used by an evaluator field but are not in
-// the dependency tree due to poor design.
-bool
-State::CheckNotEvaluatedFieldsInitialized()
-{
-  // for (auto& f_it : data_) {
-  //   for (auto& field : *f_it.second) {
-  //     if (!HasEvaluator(f_it.first, field.first) &&
-  //     !field.second->initialized()) {
-  //       // No evaluator, not intialized... FAIL.
-  //       Errors::Message message;
-  //       message << "Field \"" << f_it.first << "\" at tag \"" << field.first
-  //               << "\" was not initialized.";
-  //       throw(message);
-  //       return false;
-  //     }
-  //   }
-  // }
-  return true;
-};
 
-// Make sure all fields have gotten their IC, either from State or the owning
-// PK.
-bool
-State::CheckAllFieldsInitialized()
+// Print 
+void
+State::Print() const
 {
-  // for (auto& f_it : data_) {
-  //   Record& field = f_it.second->GetRecord("");
-  //   if (!field.initialized()) {
-  //     // field was not initialized
-  //     std::stringstream messagestream;
-  //     messagestream << "Field \"" << f_it.first << "\" was not initialized.";
-  //     Errors::Message message(messagestream.str());
-  //     throw(message);
-  //     return false;
-  //   }
-  // }
-  return true;
-};
+  WriteDependencyGraph();
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << std::endl
+               << "Evaluators" << std::endl
+               << "----------" << std::endl;
+    for (const auto& fe : evaluators_) {
+      for (const auto& e : fe.second) { *vo_->os() << *e.second; }
+    }
+
+
+    *vo_->os() << std::endl
+               << std::endl
+               << "Fields" << std::endl
+               << "------" << std::endl;
+    for (const auto& f : data_) {
+      *vo_->os() << f.first << ":" << std::endl;
+      for (const auto& el : *f.second) {
+        *vo_->os() << "  " << el.first << std::endl;
+      }
+    }
+  }
+}
+
+void
+State::WriteDependencyGraph() const
+{
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    auto dep_graph_fname =
+        state_plist_->get<std::string>("write dependency graph to file",
+                "dependency_graph.txt");
+    std::ofstream os(dep_graph_fname, std::ios::out);
+    for (const auto& fe : evaluators_) {
+      for (const auto& e : fe.second) { os << *e.second; }
+    }
+    os.close();
+  }
+}
+
+
 
 // Non-member function for vis.
 void

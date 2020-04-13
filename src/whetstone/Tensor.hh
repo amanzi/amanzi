@@ -27,6 +27,7 @@
 #include "Kokkos_Core.hpp"
 #include "exceptions.hh"
 #include "errors.hh"
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -35,7 +36,7 @@ const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
                                          {1, 2, 0, 3},
                                          {1, 3, 0, 6 }};
 
-template<class MEMSPACE = Kokkos::CudaUVMSpace> 
+template<class MEMSPACE = AmanziDefaultDevice::memory_space> 
 class Tensor {
  public:
 

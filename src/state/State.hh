@@ -87,20 +87,14 @@ class State {
   // Create data structures, finalizing the structure of the state.
   void Setup();
 
-  // Sub-steps in the initialization process. (Used by Amanzi)
-  void InitializeEvaluators();
-  void InitializeFields();
+  // Sub-step in Setup
   void AliasEvaluators();
-  bool CheckNotEvaluatedFieldsInitialized();
-  bool CheckAllFieldsInitialized();
 
-  // Using another state for initialization
-  void Initialize(const State& S);
-  // bool CheckAllFieldsInitialized(Teuchos::RCP<State> S);
-  // bool CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S);
-
-  // (Used by ATS.)
-  void Initialize();
+  // Print state info for debugging
+  void Print() const;
+  
+  // deprecated, remove me!
+  void Initialize() {}
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -498,6 +492,7 @@ class State {
 
   // parameter list
   Teuchos::RCP<Teuchos::ParameterList> state_plist_;
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 // -----------------------------------------------------------------------------

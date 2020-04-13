@@ -80,7 +80,6 @@ TEST(STATE_EXTENSIBILITY_CREATION)
   s.Require<MyPointList>("my_points", "", "my_points");
   s.GetRecordW("my_points", "my_points").set_io_vis();
   s.Setup();
-  s.InitializeFields();
 
   Visualization vis(plist->sublist("visualization"), m);
   WriteVis(vis, s);
