@@ -55,7 +55,8 @@ class EvaluatorIndependentTensorFunction
   // operator=(const EvaluatorIndependentTensorFunction& other);
 
   virtual void EnsureCompatibility(State& S) override;
-
+  virtual std::string name() const override { return "tensor independent variable"; }
+  
  protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.

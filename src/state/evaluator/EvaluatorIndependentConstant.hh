@@ -43,6 +43,8 @@ class EvaluatorIndependentConstant
   EvaluatorIndependentConstant&
   operator=(const EvaluatorIndependentConstant& other);
 
+  virtual std::string name() const override { return "independent variable constant value"; }
+  
  protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.

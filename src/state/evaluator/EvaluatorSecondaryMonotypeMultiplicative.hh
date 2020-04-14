@@ -59,6 +59,8 @@ class EvaluatorSecondaryMonotypeMultiplicative
     return Teuchos::rcp(new EvaluatorSecondaryMonotypeMultiplicative(*this));
   }
 
+  virtual std::string name() const override { return "multiplicative"; }
+  
  protected:
   virtual void
   Evaluate_(const State& S, const std::vector<Data_t*>& results) override

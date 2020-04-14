@@ -392,7 +392,7 @@ State::Print() const
     for (const auto& f : data_) {
       *vo_->os() << f.first << ":" << std::endl;
       for (const auto& el : *f.second) {
-        *vo_->os() << "  " << el.first << std::endl;
+        *vo_->os() << "  " << (el.first.empty() ? "< >" : el.first) << std::endl;
       }
     }
   }

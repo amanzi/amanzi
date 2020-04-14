@@ -35,6 +35,7 @@ class MyPK : public MyMixin< ... < PK_Default > > {
 #include "Teuchos_RCP.hpp"
 
 #include "PK.hh"
+#include "PK_Factory.hh"
 
 namespace Amanzi {
 
@@ -102,6 +103,11 @@ class PK_Adaptor : public PK, public Base_t {
   {
     Base_t::StateToState(tag_from, tag_to);
   }
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<PK_Adaptor<Base_t>> reg_;
+
 };
 
 template <class Base_t>
@@ -173,6 +179,10 @@ class PK_Explicit_Adaptor : public PK_Explicit<>, public Base_t {
   {
     Base_t::StateToState(tag_from, tag_to);
   }
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<PK_Explicit_Adaptor<Base_t>> reg_;
 };
 
 template <class Base_t>
@@ -310,6 +320,9 @@ class PK_Implicit_Adaptor : public PK_Implicit<TreeVector>, public Base_t {
   {
     Base_t::StateToState(tag_from, tag_to);
   }
+ private:
+  // factory registration
+  static RegisteredPKFactory<PK_Implicit_Adaptor<Base_t>> reg_;
 };
 
 template <class Base_t>
@@ -455,6 +468,11 @@ class PK_ImplicitExplicit_Adaptor : public PK_ImplicitExplicit<TreeVector>,
   {
     Base_t::StateToState(tag_from, tag_to);
   }
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<PK_ImplicitExplicit_Adaptor<Base_t>> reg_;
+
 };
 
 } // namespace Amanzi

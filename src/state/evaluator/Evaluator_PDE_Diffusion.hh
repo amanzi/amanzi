@@ -53,6 +53,8 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
     return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }
 
+  virtual std::string name() const override { return "diffusion operator"; }
+  
  protected:
   virtual void Update_(State& S) override;
   virtual void

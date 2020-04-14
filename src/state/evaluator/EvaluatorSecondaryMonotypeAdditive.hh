@@ -41,6 +41,8 @@ class EvaluatorSecondaryMonotypeAdditive
   EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
+  virtual std::string name() const override { return "additive"; }
+  
  protected:
   virtual void
   Evaluate_(const State& S, const std::vector<Data_t*>& results) override;

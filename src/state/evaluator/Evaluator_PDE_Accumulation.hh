@@ -40,6 +40,8 @@ class Evaluator_PDE_Accumulation
 
   virtual void EnsureCompatibility(State& S) override;
 
+  virtual std::string name() const override { return "accumulation operator"; }
+  
  protected:
   virtual void EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Key& wrt_tag,

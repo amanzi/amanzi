@@ -89,6 +89,9 @@
 
 
   <ParameterList name="state" type="ParameterList">
+    <ParameterList name="verbose object" type="ParameterList">
+      <Parameter name="verbosity level" type="string" value="extreme" />
+    </ParameterList>
     <ParameterList name="evaluators" type="ParameterList">
 
       <ParameterList name="source" type="ParameterList">

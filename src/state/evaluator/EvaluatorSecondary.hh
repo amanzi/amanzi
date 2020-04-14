@@ -67,6 +67,7 @@ class EvaluatorSecondary : public Evaluator {
     return IsDependency(S, wrt_key, wrt_tag) || ProvidesKey(wrt_key, wrt_tag);
   }
 
+  virtual std::string name() const override { return "secondary (missing type)"; }
   virtual std::string WriteToString() const override;
 
  protected:

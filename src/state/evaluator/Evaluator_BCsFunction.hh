@@ -74,6 +74,7 @@ class Evaluator_BCsFunction
     }      
   }
 
+  virtual std::string name() const override { return "boundary condition function"; }
 
  protected:
   // ---------------------------------------------------------------------------

@@ -274,9 +274,9 @@ EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
   for (const auto& key : my_keys_) {
-    result << key.first << ":" << key.second << ",";
+    result << key.first << ":" << (key.second.empty() ? "< >" : key.second) << ",";
   }
-  result << std::endl << "  Type: secondary" << std::endl;
+  result << std::endl << "  Type: secondary: " << name() << std::endl;
   for (const auto& dep : dependencies_) {
     result << "  Dep: " << dep.first << "," << dep.second << std::endl;
   }

@@ -40,16 +40,18 @@ class EvaluatorCellVolume
                              CompositeVectorSpace>::EvaluatorIndependent;
   EvaluatorCellVolume(const EvaluatorCellVolume& other) = default;
 
-  Teuchos::RCP<Evaluator> Clone() const
+  Teuchos::RCP<Evaluator> Clone() const override
   {
     return Teuchos::rcp(new EvaluatorCellVolume(*this));
   }
 
+  virtual std::string name() const override { return "cell volume"; }
+  
  protected:
   // ---------------------------------------------------------------------------
   // Does the actual work to update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State& S);
+  virtual void Update_(State& S) override;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> fac_;

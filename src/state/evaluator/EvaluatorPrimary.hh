@@ -74,6 +74,7 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   void SetChanged();
 
+  virtual std::string name() const override { return "primary variable"; }
   virtual std::string WriteToString() const override;
 
  protected:

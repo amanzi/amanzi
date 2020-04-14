@@ -66,6 +66,7 @@ class EvaluatorIndependent_ : public Evaluator {
   //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key,
   //  const Key& wrt_tag) override;
 
+  virtual std::string name() const override { return "independent"; }
   virtual std::string WriteToString() const override;
 
  protected:
