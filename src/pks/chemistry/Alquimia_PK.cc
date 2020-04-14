@@ -496,7 +496,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
-  std::cout<<"CopyToAlquimia-1: \n";
   Teuchos::RCP<const Epetra_MultiVector> tcc =
       S_->GetFieldData(tcc_key_)->ViewComponent("cell", true);
   CopyToAlquimia(cell, tcc, mat_props, state, aux_data);
@@ -521,7 +520,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
     if (cell ==0)
-      std::cout<<"CopyToAlq-2: "<<i<<" "<<(*aqueous_components)[i][cell]<<" "<<fluid_density[0][cell]<<"\n";
     //  if ((*aqueous_components)[i][cell] > 0) abort();
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
@@ -638,7 +636,6 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
       if (aux_names_.at(i) == "pH") {
         double* cell_aux_output = (*aux_output_)[i];
         cell_aux_output[cell] = aux_output.pH;
-        //std::cout<<domain_<<" cell "<<cell<<" pH "<< aux_output.pH<<"\n";
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
@@ -721,7 +718,6 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   for (int i = 0; i < number_aqueous_components_; ++i) {
     (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
     if (cell ==0)
-      std::cout<<"CopyFromAlq: "<<i<<" "<<(*aqueous_components)[i][cell]<<"\n";
     // if (convert2mole_fraction_) {
     //   if (S_->HasField(molar_fluid_den_key_)) {
     //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
@@ -810,7 +806,6 @@ int Alquimia_PK::AdvanceSingleCell(
     double dt, Teuchos::RCP<Epetra_MultiVector>& aqueous_components,
     int cell)
 {
-  std::cout<<"CopyToAlquimia-AdvanceSingleCell: \n";
   // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
   CopyToAlquimia(cell, aqueous_components, 
@@ -840,7 +835,6 @@ int Alquimia_PK::AdvanceSingleCell(
 ******************************************************************* */
 bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::cout<<"CopyToAlquimia-AdvancedStep: \n";
   bool failed(false);
 
   double dt = t_new - t_old;
