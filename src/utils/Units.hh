@@ -283,6 +283,24 @@ class Units {
   UnitsSystem system_;
 };
 
+//
+// Nonmember functions to help read units from ParameterLists
+//
+double
+readValueAndUnits(Units& units,
+                  Teuchos::ParameterList& plist,
+                  const std::string& name,
+                  const std::string& default_unit,
+                  double default_val);
+
+//
+// Nonmember functions to help read units from ParameterLists
+//
+double
+readValueAndUnits(Units& units,
+                  Teuchos::ParameterList& plist,
+                  const std::string& name,
+                  const std::string& default_unit);
 
 } // namespace Utils
 } // namespace Amanzi

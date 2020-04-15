@@ -26,32 +26,18 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#  include "Teuchos_Comm.hpp"
-#  include "Teuchos_DefaultMpiComm.hpp"
-#  include "Tpetra_Map_fwd.hpp"
-#  include "Tpetra_Import_fwd.hpp"
-#  include "Tpetra_Vector_fwd.hpp"
-#  include "Tpetra_MultiVector_fwd.hpp"
-#  include "Tpetra_RowMatrix_fwd.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 
-#  include "Kokkos_Core.hpp"
+#include "Kokkos_Core.hpp"
 
-// // host execution space
-// #ifdef KOKKOS_ENANLE_OPENMP
-// using AmanziHostExecutionSpace = Kokkos::OpenMP;
-// #elif KOKKOS_ENABLE_THREADS
-// using AmanziHostExecutionSpace = Kokkos::Threads;
-// #else
-// using AmanziHostExecutionSpace = Kokkos::Serial;
-// #endif // KOKKOS_HOST
-
-// #ifdef KOKKOS_ENABLE_CUDA
-// // Default CUDA using UVM
-// using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda,
-// Kokkos::CudaUVMSpace>; using AmanziDefaultHost =
-// Kokkos::Device<AmanziHostExecutionSpace, Kokkos::CudaUVMSpace>;
-// //Kokkos::Serial; // ???? #else using AmanziDefaultHost =
-// AmanziHostExecutionSpace; #endif // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_CUDA
 using AmanziDeviceSpace = Kokkos::CudaSpace; 
@@ -73,6 +59,7 @@ using AmanziDefaultHost =
 
 
 #else  // TRILINOS_TPETRA_STACK
+
 class Epetra_Comm;
 class Epetra_MpiComm;
 class Epetra_Map;
@@ -106,6 +93,7 @@ typedef Teuchos::MpiComm<int> MpiComm_type;
 typedef Tpetra::Map<LO,GO> Map_type;
 typedef Tpetra::Map<LO,GO> BlockMap_type; // is there a Tpetra block map?
 typedef Tpetra::Import<LO,GO> Import_type;
+typedef Tpetra::Export<LO,GO> Export_type;
 
 // Tpetra vectors
 // -- alias
@@ -128,10 +116,6 @@ using Vector_type = Vector_type_<double_type>;
 using MultiVector_type = MultiVector_type_<double_type>;
 using IntVector_type = Vector_type_<int_type>;
 using IntMultiVector_type = MultiVector_type_<int_type>;
-
-using Matrix_type = Tpetra::RowMatrix<double_type,LO,GO>;
-using Matrix_ptr_type = Teuchos::RCP<Matrix_type>;
-using cMatrix_ptr_type = Teuchos::RCP<const Matrix_type>;
 
 // Kokkos Views into vectors
 template <class Device_type, typename Scalar>
@@ -170,6 +154,9 @@ using IntMultiVectorView_type = MultiVectorView_type_<Device_type, int_type>;
 template <class Device_type>
 using cIntMultiVectorView_type = cMultiVectorView_type_<Device_type, int_type>;
 
+// Graphs and Matrices
+using Graph_type = Tpetra::CrsGraph<LO,GO>;
+using Matrix_type = Tpetra::CrsMatrix<double_type, LO,GO>;
 
 #else // Trilinos Epetra stack
 
@@ -198,7 +185,8 @@ typedef Epetra_MultiVector MultiVector_type;
 typedef Teuchos::RCP<const Comm_type> Comm_ptr_type;
 typedef Teuchos::RCP<const Map_type> Map_ptr_type;
 typedef Teuchos::RCP<const BlockMap_type> BlockMap_ptr_type;
-typedef Teuchos::RCP<const Import_type> Import_ptr_type;
+using Import_ptr_type = Teuchos::RCP<const Import_type>;
+using Export_ptr_type = Teuchos::RCP<const Export_type>;
 
 // non-const
 typedef Teuchos::RCP<Vector_type> Vector_ptr_type;
@@ -208,6 +196,9 @@ typedef Teuchos::RCP<MultiVector_type> MultiVector_ptr_type;
 typedef Teuchos::RCP<const Vector_type> cVector_ptr_type;
 typedef Teuchos::RCP<const MultiVector_type> cMultiVector_ptr_type;
 
+using Graph_ptr_type = Teuchos::RCP<Graph_type>;
+using Matrix_ptr_type = Teuchos::RCP<Matrix_type>;
+using cMatrix_ptr_type = Teuchos::RCP<const Matrix_type>;
 
 } // namespace Amanzi
 

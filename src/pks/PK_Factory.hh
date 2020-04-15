@@ -74,16 +74,14 @@ class PKFactory {
   CreatePK(std::string pk_name,
            const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-           const Teuchos::RCP<State>& state,
-           const Teuchos::RCP<TreeVector>& soln);
+           const Teuchos::RCP<State>& state);
 
   // typedef describing a map with string keys and PK constructor values, this
   // stores constructors for all known PK classes
   typedef std::map<std::string,
                    PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
                            const Teuchos::RCP<Teuchos::ParameterList>&,
-                           const Teuchos::RCP<State>&,
-                           const Teuchos::RCP<TreeVector>&)>
+                           const Teuchos::RCP<State>&)>
     map_type;
 
  protected:
@@ -101,9 +99,9 @@ template <typename T>
 PK*
 CreateT(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-        const Teuchos::RCP<State>& state, const Teuchos::RCP<TreeVector>& soln)
+        const Teuchos::RCP<State>& state)
 {
-  return new T(pk_tree, global_list, state, soln);
+  return new T(pk_tree, global_list, state);
 }
 
 template <typename T>
@@ -118,8 +116,7 @@ class RegisteredPKFactory : public PKFactory {
       std::pair<std::string,
                 PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
                         const Teuchos::RCP<Teuchos::ParameterList>&,
-                        const Teuchos::RCP<State>&,
-                        const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
+                        const Teuchos::RCP<State>&)>(s, &CreateT<T>));
   }
 };
 

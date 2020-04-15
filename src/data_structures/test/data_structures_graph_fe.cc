@@ -23,6 +23,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "AmanziComm.hh"
+#include "AmanziMap.hh"
 #include "VerboseObject.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -68,39 +69,36 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells =
-    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  Teuchos::RCP<Epetra_Map> cell_map =
-    Teuchos::rcp(new Epetra_Map(mesh->cell_map(false)));
-  Teuchos::RCP<Epetra_Map> cell_map_ghosted =
-    Teuchos::rcp(new Epetra_Map(mesh->cell_map(true)));
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto cell_map = mesh->cell_map(false);
+  auto cell_map_ghosted = mesh->cell_map(true);
 
   // create the graphs, one to test local, the other to test global insertion
   int ierr(0);
   GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
+  Entity_ID_View faces;
+  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    mesh->cell_get_faces(c, &faces);
+    mesh->cell_get_faces(c, faces);
     for (int n = 0; n != faces.size(); ++n) {
       mesh->face_get_cells(
-        faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
+        faces[n], AmanziMesh::Parallel_type::ALL, face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] :
                                                       face_cells[0]);
       }
     }
 
-    int global_c = cell_map->GID(c);
+    int global_c = cell_map->getGlobalElement(c);
     std::vector<int> global_neighbors(neighbor_cells.size());
-    for (int n = 0; n != neighbor_cells.size(); ++n)
-      global_neighbors[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+    for (int n=0; n!=neighbor_cells.size(); ++n)
+      global_neighbors[n] = cell_map_ghosted->getGlobalElement(neighbor_cells[n]);
 
     ierr |=
       graph_local.InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
@@ -157,28 +155,25 @@ TEST(FE_GRAPH_FACE_FACE)
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells =
-    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  Teuchos::RCP<Epetra_Map> face_map =
-    Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-  Teuchos::RCP<Epetra_Map> face_map_ghosted =
-    Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto face_map = mesh->face_map(false);
+  auto face_map_ghosted = mesh->face_map(true);
 
   // create the graph
   int ierr(0);
   GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
   GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
+  Entity_ID_View faces;
+  Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    mesh->cell_get_faces(c, faces);
 
     std::vector<int> global_faces(faces.size());
-    for (int n = 0; n != faces.size(); ++n)
-      global_faces[n] = face_map_ghosted->GID(faces[n]);
-
-    for (int n = 0; n != faces.size(); ++n) {
+    for (int n=0; n!=faces.size(); ++n)
+      global_faces[n] = face_map_ghosted->getGlobalElement(faces[n]);
+    
+    for (int n=0; n!=faces.size(); ++n) {
       ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
       AMANZI_ASSERT(global_faces[n] >= 0);

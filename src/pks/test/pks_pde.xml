@@ -43,16 +43,24 @@
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="forward euler" />
       </ParameterList>
-      <Parameter name="debug cells" type="Array(int)" value="{0,4,49}" />
+
+      <ParameterList name="operator" type="ParameterList">
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+        <Parameter name="debug cells" type="Array(int)" value="{0,4,49}" />
+      </ParameterList>
+
+      <!--<Parameter name="debug cells" type="Array(int)" value="{0,4,49}" />-->
       <ParameterList name="verbose object" type="ParameterList">
-        <Parameter name="verbosity level" type="string" value="high" />
+        <Parameter name="verbosity level" type="string" value="low" />
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion FE implicit" type="ParameterList">
       <Parameter name="debug cells" type="Array(int)" value="{0,4,49}" />
       <ParameterList name="verbose object" type="ParameterList">
-        <Parameter name="verbosity level" type="string" value="high" />
+        <Parameter name="verbosity level" type="string" value="medium" />
       </ParameterList>
 
       <Parameter name="domain name" type="string" value="domain" />
@@ -61,12 +69,12 @@
 
       <ParameterList name="time integrator" type="ParameterList">
         <ParameterList name="verbose object" type="ParameterList">
-          <Parameter name="verbosity level" type="string" value="high" />
+          <Parameter name="verbosity level" type="string" value="medium" />
         </ParameterList>
         <Parameter name="solver type" type="string" value="Newton" />
         <ParameterList name="Newton parameters" type="ParameterList">
           <ParameterList name="verbose object" type="ParameterList">
-            <Parameter name="verbosity level" type="string" value="high" />
+            <Parameter name="verbosity level" type="string" value="medium" />
           </ParameterList>
           <Parameter name="nonlinear tolerance" type="double" value="1.e-4" />
           <Parameter name="monitor" type="string" value="monitor update" />

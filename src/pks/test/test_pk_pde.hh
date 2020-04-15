@@ -66,9 +66,8 @@ class PK_PDE_Explicit : public Base_t {
         dudt_key_, this->tag_inter_, dudt_key_)
       .SetMesh(this->mesh_);
 
-    Teuchos::ParameterList re_list(dudt_key_);
-    re_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "high");
+    Teuchos::ParameterList re_list = this->plist_->sublist("operator");
+    re_list.setName(this->dudt_key_);
     re_list.set("tag", this->tag_inter_);
     re_list.set("diagonal primary x key", this->key_);
     re_list.set("diagonal local operators keys",
@@ -78,8 +77,7 @@ class PK_PDE_Explicit : public Base_t {
     re_list.set("additional rhss keys",
                 Teuchos::Array<std::string>(1, "source_cv"));
     re_list.set("rhs coefficients", Teuchos::Array<double>(1, -1.0));
-    std::vector<int> cells{0,4,49};
-    re_list.set("debug cells", Teuchos::Array<int>(cells));
+    
     auto dudt_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(this->dudt_key_, this->tag_inter_, dudt_eval);
   }

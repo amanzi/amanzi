@@ -300,8 +300,6 @@ Evaluator_OperatorApply::Update_(State& S)
 
   int i = 0;
   for (const auto& op_key : op0_keys_) {
-    db_->WriteDivider();
-
     // create the global operator
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(result.Mesh());
@@ -326,7 +324,6 @@ Evaluator_OperatorApply::Update_(State& S)
 
     int k = 0;
     for (const auto& op_key : op_list) {
-      db_->WriteDivider();
 
       // create the global operator
       Operators::Operator_Factory global_op_fac;
@@ -353,8 +350,6 @@ Evaluator_OperatorApply::Update_(State& S)
   // add all the additional RHSs
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
-    db_->WriteDivider();
-
     result.update(rhs_scalars_[j],
                   S.Get<CompositeVector>(rhs_key, my_keys_[0].second),
                   1.0);

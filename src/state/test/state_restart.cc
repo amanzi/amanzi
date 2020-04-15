@@ -58,7 +58,6 @@ SUITE(RESTART)
       ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
 
     S0.Setup();
-    S0.InitializeFields();
     // randomize
     S0.GetW<Amanzi::CompositeVector>("celldata", "", "state_restart").random();
     S0.set_time(1.02);
@@ -77,7 +76,6 @@ SUITE(RESTART)
       ->SetGhosted(false)
       ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
     S1.Setup();
-    S1.InitializeFields();
 
     S1.GetW<Amanzi::CompositeVector>("celldata", "state_restart").putScalar(0.);
 

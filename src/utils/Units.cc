@@ -21,6 +21,7 @@
 #include <boost/units/base_units/metric/liter.hpp>
 
 #include "Units.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace Utils {
@@ -585,6 +586,70 @@ Units::OutputConcentration(double val)
   ss << val << " " << unit;
   return ss.str();
 }
+
+//
+// Nonmember functions to help read units from ParameterLists
+//
+double
+readValueAndUnits(Units& units,
+                  Teuchos::ParameterList& plist,
+                  const std::string& name,
+                  const std::string& default_unit,
+                  double default_val)
+{
+  if (plist.isParameter(name)) {
+    double val = plist.get<double>(name);
+    std::string unit = plist.get<std::string>(name+" units", default_unit);
+    if (unit != default_unit) {
+      bool flag;
+      val = units.ConvertUnitD(val, unit, default_unit, 0., flag);
+      if (!flag) {
+        Errors::Message msg;
+        msg << "In reading parameter \"" << name
+            << "\" could not convert unit \""
+            << unit << "\" to \"" << default_unit << "\"";
+        throw(msg);
+      }
+    }
+    return val;
+  } else {
+    std::string name_wunit = name + "[" + default_unit +"]";
+    return plist.get<double>(name_wunit, default_val);
+  }
+}
+
+
+//
+// Nonmember functions to help read units from ParameterLists
+//
+double
+readValueAndUnits(Units& units,
+                  Teuchos::ParameterList& plist,
+                  const std::string& name,
+                  const std::string& default_unit)
+{
+  if (plist.isParameter(name)) {
+    double val = plist.get<double>(name);
+    std::string unit = plist.get<std::string>(name+" units", default_unit);
+    if (unit != default_unit) {
+      bool flag;
+      val = units.ConvertUnitD(val, unit, default_unit, 0., flag);
+      if (!flag) {
+        Errors::Message msg;
+        msg << "In reading parameter \"" << name
+            << "\" could not convert unit \""
+            << unit << "\" to \"" << default_unit << "\"";
+        throw(msg);
+      }
+    }
+    return val;
+  } else {
+    std::string name_wunit = name + "[" + default_unit +"]";
+    return plist.get<double>(name_wunit);    
+  }
+}
+
+
 
 } // namespace Utils
 } // namespace Amanzi

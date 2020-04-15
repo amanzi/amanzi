@@ -59,7 +59,6 @@ SUITE(VISUALIZATION)
       ->SetGhosted(false)
       ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
     S0.Setup();
-    S0.InitializeFields();
 
     S0.set_time(1.02);
 

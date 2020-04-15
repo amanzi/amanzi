@@ -50,8 +50,8 @@ set(data_structures_src_files BlockSpace.cc
   #NoxVector.cc
   TreeVectorSpace.cc
   TreeVector.cc
-  #GraphFE.cc
-  #MatrixFE.cc
+  GraphFE.cc
+  MatrixFE.cc
   SuperMapLumped.cc
   SuperMap.cc
   )
@@ -74,8 +74,8 @@ set(data_structures_inc_files DataStructuresHelpers.hh
   TreeVector.hh
   TreeMatrix.hh
   TensorVector.hh
-  #GraphFE.hh
-  #MatrixFE.hh
+  GraphFE.hh
+  MatrixFE.hh
   #NoxVector.hh
   SuperMap.hh
   SuperMapLumped.hh
@@ -135,19 +135,19 @@ if (BUILD_TESTS)
                            test/data_structures_vandelay.cc
                     LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
-    # # Test: tests for FE graph and matrices
-    # add_amanzi_test(graph_fe_test graph_fe_test
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/data_structures_graph_fe.cc
-    #                 LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+    # Test: tests for FE graph and matrices
+    add_amanzi_test(data_structures_graph_fe data_structures_graph_fe
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_graph_fe.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(matrix_fe_test matrix_fe_test
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/data_structures_matrix_fe.cc
-    #                 LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(data_structures_matrix_fe data_structures_matrix_fe
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_matrix_fe.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
-    # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
+    add_amanzi_test(data_structures_matrix_fe_np2 data_structures_matrix_fe NPROCS 2 KIND unit)
+    add_amanzi_test(data_structures_matrix_fe_np4 data_structures_matrix_fe NPROCS 4 KIND unit)
 
     add_amanzi_test(data_structures_supermap data_structures_supermap
                     KIND unit
