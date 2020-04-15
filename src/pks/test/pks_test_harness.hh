@@ -49,9 +49,7 @@ run_test(const Teuchos::RCP<State>& S, const Teuchos::RCP<PK>& pk,
     double dt = std::min(pk->get_dt(), 1.0);
     S->set_time("next", S->time() + dt);
     S->set_cycle("next", S->cycle() + 1);
-
     bool fail = pk->AdvanceStep("", "next");
-
     if (fail) {
       pk->FailStep("", "next");
       nsteps_bad++;

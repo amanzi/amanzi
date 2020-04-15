@@ -91,7 +91,6 @@ SUITE(PKS_PDE)
     CHECK_EQUAL(20. / 0.001, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
-
   // Backward Euler time integration of a parabolic PDE
   TEST(DIFFUSION_FE_IMPLICIT)
   {

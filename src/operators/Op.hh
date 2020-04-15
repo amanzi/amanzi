@@ -30,6 +30,7 @@
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
+#include "AmanziTypes.hh"
 #include "AmanziVector.hh"
 
 #include "CSR.hh"
@@ -127,6 +128,10 @@ class Op {
 
   // collection of local matrices
   CSR_Matrix csr;
+
+  mutable CSR<double,1,AmanziDeviceSpace> csr_v_;
+  mutable CSR<double,1,AmanziDeviceSpace> csr_Av_;
+
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };

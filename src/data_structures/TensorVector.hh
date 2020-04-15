@@ -51,7 +51,8 @@ struct TensorVector {
 
   void set_shape(const int& i, const int& d, const int& rank) {
     int tsize = WhetStone::WHETSTONE_TENSOR_SIZE[d-1][rank-1];
-    data.set_shape(i, {d, rank, tsize}, tsize*tsize);
+    int loc[3] = {d, rank, tsize};
+    data.set_shape(i, loc, tsize*tsize);
   }
 
   /**

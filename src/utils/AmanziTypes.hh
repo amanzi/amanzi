@@ -53,6 +53,17 @@
 // //Kokkos::Serial; // ???? #else using AmanziDefaultHost =
 // AmanziHostExecutionSpace; #endif // KOKKOS_ENABLE_CUDA
 
+#ifdef KOKKOS_ENABLE_CUDA
+using AmanziDeviceSpace = Kokkos::CudaSpace; 
+using AmanziSharedSpace = Kokkos::CudaUVMSpace;
+using AmanziHostSpace = Kokkos::HostSpace; 
+#else // KOKKOS_ENABLE_CUDA
+using AmanziDeviceSpace = Kokkos::HostSpace; 
+using AmanziSharedSpace = Kokkos::HostSpace; 
+using AmanziHostSpace = Kokkos::HostSpace; 
+#endif // KOKKOS_ENABLE_CUDA
+
+
 using AmanziDefaultDevice =
   Kokkos::Device<Kokkos::DefaultExecutionSpace,
                  Kokkos::DefaultExecutionSpace::memory_space>;

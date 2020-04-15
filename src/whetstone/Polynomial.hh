@@ -41,13 +41,13 @@ class Polynomial : public PolynomialBase {
  public:
   Polynomial() {};
   Polynomial(int d, int order);
-  Polynomial(int d, int order, const DenseVector& coefs);
+  Polynomial(int d, int order, const DenseVector<>& coefs);
   Polynomial(int d, const int* multi_index, double factor);
   Polynomial(const Polynomial& poly);
   Polynomial(const Monomial& mono);
   Polynomial(int d, int order,
              const std::vector<AmanziGeometry::Point>& xyz, 
-             const DenseVector& values);
+             const DenseVector<>& values);
 
   Polynomial& operator=(const Polynomial& other) {
     if (this != &other) {
@@ -75,7 +75,7 @@ class Polynomial : public PolynomialBase {
   // -- polynomial values
   virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- get all polynomial coefficients
-  virtual DenseVector ExpandCoefficients() const override { return coefs_; }
+  virtual DenseVector<> ExpandCoefficients() const override { return coefs_; }
   // -- polynomial norms (we use 'inf' instead of 'max' for uniformity)
   double normInf() const {
     return coefs_.normInf();

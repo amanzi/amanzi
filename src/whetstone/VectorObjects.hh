@@ -115,9 +115,9 @@ class VectorObjects {
 
   // typical operations with vector polynomials
   // -- value
-  DenseVector Value(const AmanziGeometry::Point& xp) const {
+  DenseVector<> Value(const AmanziGeometry::Point& xp) const {
     int n = polys_.size();
-    DenseVector val(n);
+    DenseVector<> val(n);
     for (int i = 0; i < n; ++i) val(i) = polys_[i].Value(xp);
     return val;
   }

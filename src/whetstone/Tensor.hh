@@ -515,10 +515,10 @@ operator*(const Tensor<MEMSPACE>& T, const AmanziGeometry::Point& p)
 // -- expanding tensor to a constant size vector and reverse.
 template<class MEMSPACE>
 void
-TensorToVector(const Tensor<MEMSPACE>& T, DenseVector& v);
+TensorToVector(const Tensor<MEMSPACE>& T, DenseVector<MEMSPACE>& v);
 template<class MEMSPACE>
 void
-VectorToTensor(const DenseVector& v, Tensor<MEMSPACE>& T);
+VectorToTensor(const DenseVector<MEMSPACE>& v, Tensor<MEMSPACE>& T);
 
 // identity is used frequently
 template<class MEMSPACE>

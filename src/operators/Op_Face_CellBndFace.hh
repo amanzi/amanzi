@@ -41,7 +41,8 @@ class Op_Face_CellBndFace : public Op {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     csr = std::move(CSR_Matrix(nfaces_owned));
     for (int f=0; f!=nfaces_owned; ++f) {
-      csr.set_shape(f, {2,2});
+      int loc[2] = {2,2};
+      csr.set_shape(f, loc);
     }
     csr.prefix_sum(); 
   }

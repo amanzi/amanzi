@@ -123,7 +123,7 @@ operator<<(std::ostream& os, const Tensor<MEMSPACE>& T)
  ****************************************************************** */
 template<class MEMSPACE>
 void
-TensorToVector(const Tensor<MEMSPACE>& T, DenseVector& v)
+TensorToVector(const Tensor<MEMSPACE>& T, DenseVector<MEMSPACE>& v)
 {
   const Kokkos::View<double*,MEMSPACE> data1 = T.data();
   Kokkos::View<double*,MEMSPACE> data2 = v.Values();
@@ -141,7 +141,7 @@ TensorToVector(const Tensor<MEMSPACE>& T, DenseVector& v)
 
 template<class MEMSPACE>
 void
-VectorToTensor(const DenseVector& v, Tensor<MEMSPACE>& T)
+VectorToTensor(const DenseVector<MEMSPACE>& v, Tensor<MEMSPACE>& T)
 {
   AMANZI_ASSERT(v.NumRows() == T.size() * T.size());
 

@@ -262,6 +262,7 @@ int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r, bool
     ierr = apply(u, r, -1.0);
   }
   r.update(1.0, *rhs_, -1.0);
+
   return ierr;
 }
 
@@ -279,7 +280,6 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
   }    
   
   r.update(-1.0, *rhs_, 1.0);
-
   return ierr;
 }
 
@@ -986,7 +986,7 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 void Operator::AssembleVectorCellOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
+                                    const WhetStone::DenseVector<>& v, CompositeVector& X) const {
   Errors::Message msg("Assembly fo local cell-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
 }
