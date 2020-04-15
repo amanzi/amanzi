@@ -30,9 +30,9 @@ namespace AmanziSolvers {
 class ResidualDebugger : public IOEvent {
  public:
   // Constructor
-  ResidualDebugger(Teuchos::ParameterList& plist) : IOEvent(plist)
+  ResidualDebugger(const Teuchos::RCP<Teuchos::ParameterList>& plist) : IOEvent(plist)
   {
-    filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
+    filebasename_ = plist_->get<std::string>("file name base", "amanzi_dbg");
   }
 
   template <class VectorSpace>

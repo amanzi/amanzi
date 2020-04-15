@@ -24,7 +24,7 @@ namespace Amanzi {
 template <class Vector>
 class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
  public:
-  BDF1_SolverFnBase(Teuchos::ParameterList& plist,
+  BDF1_SolverFnBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     const Teuchos::RCP<BDFFnBase<Vector>>& bdf_fn)
     : plist_(plist), bdf_fn_(bdf_fn){};
 
@@ -75,7 +75,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   }
 
  protected:
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   double t_new_;
   double t_old_;

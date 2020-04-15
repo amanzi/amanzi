@@ -28,18 +28,19 @@
 namespace Amanzi {
 
 // standard constructor
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+Checkpoint::Checkpoint(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       const Comm_ptr_type& comm,
                        bool read)
   : IOEvent(plist),
     filename_base_(
-      plist.template get<std::string>("file name base", "checkpoint")),
+      plist->template get<std::string>("file name base", "checkpoint")),
     comm_(comm)
 
 {
   if (read)
-    input_ = std::move(InputFactory::CreateForCheckpoint(plist, comm));
+    input_ = std::move(InputFactory::CreateForCheckpoint(*plist, comm));
   else
-    output_ = std::move(OutputFactory::CreateForCheckpoint(plist, comm));
+    output_ = std::move(OutputFactory::CreateForCheckpoint(*plist, comm));
 }
 
 void

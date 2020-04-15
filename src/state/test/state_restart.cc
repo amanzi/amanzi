@@ -33,12 +33,12 @@ SUITE(RESTART)
   {
     std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    Teuchos::ParameterList plist = xmlreader.getParameters();
+    auto plist = Teuchos::parameterList(xmlreader.getParameters());
 
     auto comm = Amanzi::getDefaultComm();
 
     // set up mesh
-    Teuchos::ParameterList region_list = plist.sublist("regions");
+    Teuchos::ParameterList region_list = plist->sublist("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
       new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
@@ -46,7 +46,7 @@ SUITE(RESTART)
     auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     // set up state
-    Teuchos::ParameterList state_list = plist.sublist("state");
+    auto state_list = Teuchos::sublist(plist, "state");
     Amanzi::State S0(state_list);
 
     S0.RegisterDomainMesh(mesh);
@@ -64,8 +64,7 @@ SUITE(RESTART)
     S0.set_cycle(5);
 
     // write checkpoint
-    Teuchos::ParameterList checkpoint_list = plist.sublist("checkpoint");
-    Amanzi::Checkpoint ckp(checkpoint_list, comm);
+    Amanzi::Checkpoint ckp(Teuchos::sublist(plist, "checkpoint"), comm);
     WriteCheckpoint(ckp, S0);
 
     // read checkpoint

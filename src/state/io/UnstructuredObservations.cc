@@ -23,21 +23,16 @@
 namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
-  Teuchos::ParameterList& plist,
-  const Teuchos::RCP<ObservationData>& observation_data, Epetra_MpiComm* comm)
-  : observation_data_(observation_data)
+    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    const Comm_ptr_type& comm)
 {
   // interpret paramerter list
   // loop over the sublists and create an observation for each
-  for (Teuchos::ParameterList::ConstIterator i = plist.begin();
-       i != plist.end();
-       i++) {
-    if (plist.isSublist(plist.name(i))) {
-      Teuchos::ParameterList sublist = plist.sublist(plist.name(i));
-      Teuchos::RCP<Observable> obs =
-        Teuchos::rcp(new Observable(sublist, comm));
-
-      observations_.insert(std::make_pair(sublist.name(), obs));
+  for (auto& i : *plist) {
+    if (plist->isSublist(i.first)) {
+      auto sublist = Teuchos::sublist(plist, i.first);
+      auto obs = Teuchos::rcp(new Observable(sublist, comm));
+      observations_.insert(std::make_pair(sublist->name(), obs));
     }
   }
 }
@@ -66,27 +61,17 @@ UnstructuredObservations::MakeObservations(const State& S)
 
       // make the observation
       lcv->second->Update(S, data_triplet);
-
-      // push back into observation_data
-      if (observation_data_ != Teuchos::null) {
-        std::vector<Amanzi::ObservationData::DataQuadruple>& od =
-          (*observation_data_)[lcv->first];
-        od.push_back(data_triplet);
-      }
     }
   }
 }
 
 void
 UnstructuredObservations::RegisterWithTimeStepManager(
-  const Teuchos::Ptr<TimeStepManager>& tsm)
+  TimeStepManager& tsm)
 {
   // loop over all observables
-  for (ObservableMap::iterator lcv = observations_.begin();
-       lcv != observations_.end();
-       ++lcv) {
-    // register
-    lcv->second->RegisterWithTimeStepManager(tsm);
+  for (auto& lcv : observations_) {
+    lcv.second->RegisterWithTimeStepManager(tsm);
   }
 }
 

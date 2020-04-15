@@ -24,10 +24,10 @@ SUITE(IOEVENT)
 {
   TEST(IOEVENT_CYCLES)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<int> p_cycles(std::vector<int>{ 0, 3, 4, 11 });
-    plist.set("cycles", p_cycles);
+    plist->set("cycles", p_cycles);
 
     Amanzi::IOEvent V(plist);
 
@@ -41,13 +41,13 @@ SUITE(IOEVENT)
 
   TEST(IOEVENT_CYCLES_SPS)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<int> csps(3);
     csps[0] = 0;
     csps[1] = 4;
     csps[2] = 10;
-    plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
+    plist->set<Teuchos::Array<int>>("cycles start period stop", csps);
 
     Amanzi::IOEvent V(plist);
 
@@ -63,18 +63,18 @@ SUITE(IOEVENT)
 
   TEST(IOEVENT_TIMES)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<double> tsps(3);
     tsps[0] = 0.0;
     tsps[1] = 4.0;
     tsps[2] = 10.0;
-    plist.set<Teuchos::Array<double>>("times start period stop", tsps);
+    plist->set<Teuchos::Array<double>>("times start period stop", tsps);
 
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
     times[1] = 3.0;
-    plist.set<Teuchos::Array<double>>("times", times);
+    plist->set<Teuchos::Array<double>>("times", times);
 
     Amanzi::IOEvent V(plist);
 
@@ -95,16 +95,16 @@ SUITE(IOEVENT)
 
   TEST(IOEVENT_MULTIPLE)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<double> tsps(3);
     tsps[0] = 0.0;
     tsps[1] = 4.0;
     tsps[2] = 10.0;
-    plist.set<Teuchos::Array<double>>("times start period stop", tsps);
+    plist->set<Teuchos::Array<double>>("times start period stop", tsps);
 
     Teuchos::Array<int> p_cycles(std::vector<int>{ 0, 3, 4, 11 });
-    plist.set("cycles", p_cycles);
+    plist->set("cycles", p_cycles);
 
     Amanzi::IOEvent V(plist);
 
@@ -148,20 +148,20 @@ SUITE(IOEVENT)
 
   TEST(IOEVENT_TIMES_WITH_UNITS)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<double> tsps(3);
     tsps[0] = 0.0;
     tsps[1] = 4.0;
     tsps[2] = 10.0;
-    plist.set<Teuchos::Array<double>>("times start period stop", tsps);
-    plist.set<std::string>("times start period stop units", "noleap");
+    plist->set<Teuchos::Array<double>>("times start period stop", tsps);
+    plist->set<std::string>("times start period stop units", "noleap");
 
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
     times[1] = 3.0;
-    plist.set<Teuchos::Array<double>>("times", times);
-    plist.set<std::string>("times units", "d");
+    plist->set<Teuchos::Array<double>>("times", times);
+    plist->set<std::string>("times units", "d");
 
     Amanzi::IOEvent V(plist);
 
@@ -186,20 +186,20 @@ SUITE(IOEVENT)
 
   TEST(IOEVENT_TIMES_WITH_UNITS_NEGATIVE)
   {
-    Teuchos::ParameterList plist;
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList());
 
     Teuchos::Array<double> tsps(3);
     tsps[0] = 0.0;
     tsps[1] = 4.0;
     tsps[2] = -1.0;
-    plist.set<Teuchos::Array<double>>("times start period stop", tsps);
-    plist.set<std::string>("times start period stop units", "noleap");
+    plist->set<Teuchos::Array<double>>("times start period stop", tsps);
+    plist->set<std::string>("times start period stop units", "noleap");
 
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
     times[1] = 3.0;
-    plist.set<Teuchos::Array<double>>("times", times);
-    plist.set<std::string>("times units", "d");
+    plist->set<Teuchos::Array<double>>("times", times);
+    plist->set<std::string>("times units", "d");
 
     Amanzi::IOEvent V(plist);
 

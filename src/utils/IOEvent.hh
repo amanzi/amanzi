@@ -85,7 +85,7 @@ class TimeStepManager;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
  public:
-  IOEvent(Teuchos::ParameterList& plist);
+  IOEvent(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   IOEvent(); // created with this constructor this object will not create any
              // output
 
@@ -93,7 +93,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool is_disabled() const;
 
   // public interface for coordinator clients
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) const;
+  void RegisterWithTimeStepManager(TimeStepManager& tsm) const;
   bool DumpRequested(int cycle, double time) const;
   bool DumpRequested(int cycle) const;
   bool DumpRequested(double time) const;
@@ -102,7 +102,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   void ReadParameters_();
   void ValidUnitOrThrow_(const std::string&);
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   Utils::Units units_;
 

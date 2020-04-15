@@ -29,7 +29,8 @@ namespace Amanzi {
 
 class Checkpoint : public IOEvent {
  public:
-  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+  Checkpoint(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Comm_ptr_type& comm,
              bool read = false);
 
   // start/finish checkpoint writing

@@ -61,6 +61,9 @@ class PK_MixinImplicit : public Base_t {
   // with tags we would not need these.
   Key tag_old_, tag_new_;
 
+  // the tag at which evaluators are required
+  Key tag_inter_;
+
   // timestep algorithm
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> time_stepper_;
 
@@ -89,6 +92,7 @@ PK_MixinImplicit<Base_t>::Setup()
   // set up tags
   tag_old_ = "";
   tag_new_ = "next";
+  tag_inter_ = tag_new_;
 
   // require data at the new and old times
   this->SolutionToState(tag_new_, "");
@@ -131,8 +135,8 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
   // create the time integrator if first call
   if (!time_stepper_.get()) {
     // -- instantiate time stepper
-    Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
-    bdf_plist.set("initial time", S_->time(tag_old));
+    auto bdf_plist = Teuchos::sublist(plist_, "time integrator");
+    bdf_plist->set("initial time", S_->time(tag_old));
 
     auto this_as_bdf_p = dynamic_cast<BDFFnBase<TreeVector>*>(this);
     AMANZI_ASSERT(this_as_bdf_p);

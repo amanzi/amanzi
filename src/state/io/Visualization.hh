@@ -38,7 +38,7 @@ class Mesh;
 
 class Visualization : public IOEvent {
  public:
-  Visualization(Teuchos::ParameterList& plist,
+  Visualization(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
 
   void CreateFile(const double& time, const int& cycle);

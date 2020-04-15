@@ -57,13 +57,12 @@ class PK_MixinExplicit : public Base_t {
   // timestep size
   double dt_;
 
-  Key tag_old_, tag_new_;
-
   // timestep algorithm
   Teuchos::RCP<Explicit_TI::RK<TreeVector>> time_stepper_;
 
   // tag at which evaluators are needed
   Key tag_inter_;
+  Key tag_old_, tag_new_;
 
   using Base_t::S_;
   using Base_t::plist_;

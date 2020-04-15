@@ -56,16 +56,17 @@ ObservableMax(double a, double b, double vol)
   return std::max(a, b);
 }
 
-Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm* comm)
+Observable::Observable(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       const Comm_ptr_type& comm)
   : IOEvent(plist), count_(0)
 {
   // process the spec
-  name_ = plist.name();
-  variable_ = plist.get<std::string>("variable");
-  region_ = plist.get<std::string>("region");
-  delimiter_ = plist.get<std::string>("delimiter", ",");
+  name_ = plist->name();
+  variable_ = plist->get<std::string>("variable");
+  region_ = plist->get<std::string>("region");
+  delimiter_ = plist->get<std::string>("delimiter", ",");
 
-  functional_ = plist.get<std::string>("functional");
+  functional_ = plist->get<std::string>("functional");
   if (functional_ == "observation data: point" ||
       functional_ == "observation data: integral") {
     function_ = &ObservableIntensiveSum;
@@ -82,20 +83,20 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm* comm)
   }
 
   // entity of region
-  location_ = plist.get<std::string>("location name", "cell");
+  location_ = plist->get<std::string>("location name", "cell");
 
   // hack to orient flux to outward-normal along a boundary only
-  flux_normalize_ = plist.get<bool>("direction normalized flux", false);
+  flux_normalize_ = plist->get<bool>("direction normalized flux", false);
 
   // write mode
-  interval_ = plist.get<int>("write interval", 0);
+  interval_ = plist->get<int>("write interval", 0);
   write_ = interval_ > 0;
 
   if (write_) {
-    filenamebase_ = plist.get<std::string>("observation output filename");
+    filenamebase_ = plist->get<std::string>("observation output filename");
 
     // open file only on process 0
-    if (!comm->MyPID()) {
+    if (!comm->getRank()) {
       std::string safename(name_);
       std::replace(safename.begin(), safename.end(), ' ', '_');
       std::replace(safename.begin(), safename.end(), ':', '_');

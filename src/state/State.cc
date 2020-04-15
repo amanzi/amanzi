@@ -453,9 +453,9 @@ WriteCheckpoint(Checkpoint& chkp, const State& S, bool final)
 void
 ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename)
 {
-  Teuchos::ParameterList plist;
-  plist.set("file name", filename);
-  plist.set("file type", "HDF5");
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->set("file name", filename);
+  plist->set("file type", "HDF5");
   Checkpoint chkp(plist, comm, true);
 
   // Load the number of processes and ensure they are the same.

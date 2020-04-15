@@ -36,7 +36,6 @@ set(whetstone_inc_files
   lapack.hh
   WhetStoneDefs.hh
   WhetStoneFunction.hh
-  WhetStoneMeshUtils.hh
 
   DenseVector.hh
   DenseMatrix.hh
