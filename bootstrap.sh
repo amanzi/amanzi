@@ -122,6 +122,10 @@ geochemistry=$TRUE
 #    stk framewotk was deprecated and removed
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
+# -- physics
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
+ats_dev=${FALSE}
 # -- tools
 amanzi_branch=
 ats_branch=
@@ -134,16 +138,14 @@ build_stage_2=${FALSE}
 dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
+clm=${FALSE}
 crunchtope=${FALSE}
 hypre=${TRUE}
 netcdf4=${TRUE}
 petsc=${TRUE}
 pflotran=${FALSE}
-amanzi_physics=${TRUE}
-ats_physics=${FALSE}
-ats_dev=${FALSE}
-shared=${FALSE}
 silo=${FALSE}
+shared=${FALSE}
 
 # System specific options
 # - Intended for supercomputing facilities, and institutional computing
@@ -493,6 +495,7 @@ Amanzi TPLs:
     hypre        = '"${hypre}"'
     petsc        = '"${petsc}"'
     pflotran     = '"${pflotran}"'
+    pf_clm       = '"${clm}"'
     silo         = '"${silo}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
@@ -754,12 +757,12 @@ List of INPUT parameters
     crunchtope=${geochemistry}
   fi
 
-  if [ "${ats_physics}" -eq "${FALSE}" ]; then
-    if [ "${clm}" -eq "${TRUE}" ]; then
-      error_message "Option 'clm' requires option 'ats_physics'"
-      exit_now 30
-    fi
-  fi
+  #if [ "${ats_physics}" -eq "${FALSE}" ]; then
+  #  if [ "${clm}" -eq "${TRUE}" ]; then
+  #    error_message "Option 'clm' requires option 'ats_physics'"
+  #    exit_now 30
+  #  fi
+  #fi
 
   # check compatibility
   if [ "${geochemistry}" -eq "${FALSE}" ]; then
