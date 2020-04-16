@@ -44,7 +44,7 @@ namespace Amanzi {
 using DefaultExecutionSpace = Kokkos::DefaultExecutionSpace;
 using DefaultHostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 
-using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
+using DefaultMemorySpace = DefaultExecutionSpace::memory_space;
 using DefaultHostMemorySpace = DefaultHostExecutionSpace::memory_space;
 using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
 
