@@ -89,7 +89,7 @@ TEST_FIXTURE(reference_mesh, cv_function)
   // Check
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   {
-    auto cv_c = cv->ViewComponent<AmanziDefaultHost>("cell", false);
+    auto cv_c = cv->ViewComponent<DefaultHost>("cell", false);
     for (int c=0; c!=ncells; ++c) {
       CHECK_CLOSE(1.0, cv_c(c, 0), 0.0000001);
     }
@@ -97,7 +97,7 @@ TEST_FIXTURE(reference_mesh, cv_function)
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   {
-    auto cv_c = cv->ViewComponent<AmanziDefaultHost>("face", false);
+    auto cv_c = cv->ViewComponent<DefaultHost>("face", false);
     for (int c=0; c!=nfaces; ++c) {
       CHECK_CLOSE(1.0, cv_c(c, 0), 0.0000001);
     }

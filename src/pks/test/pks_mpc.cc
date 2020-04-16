@@ -73,21 +73,21 @@ SUITE(PKS_MPC)
     // check B soln -- same as B_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.59374, // calculated via test.py
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 1.e-4);
 
     // check C soln -- same as C_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 0.4);
     CHECK_CLOSE(2.33463, // calculated via test.py
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 1.e-4);
 
     CHECK_EQUAL(10, nsteps.first);
@@ -114,16 +114,16 @@ SUITE(PKS_MPC)
   //   // check B soln - same as B_RK4
   //   CHECK_CLOSE(std::exp(1),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-5);
   //   // check C soln - same as C_FORWARD_EULER
   //   CHECK_CLOSE(std::exp(1),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.4);
   //   CHECK_CLOSE(2.33463,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   CHECK_EQUAL(10, nsteps.first);
@@ -151,21 +151,21 @@ SUITE(PKS_MPC)
   //   // check B soln - same as B_FORWARD_EULER
   //   CHECK_CLOSE(std::exp(1),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.15);
   //   CHECK_CLOSE(2.59374,
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   // check C soln - same as C_BACKWARD_EULER
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.6);
   //   CHECK_CLOSE(3.27476584420779,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-8);
 
   //   CHECK_EQUAL(10, nsteps.first);
@@ -196,21 +196,21 @@ SUITE(PKS_MPC)
   //   // check B soln - no analogue
   //   CHECK_CLOSE(std::exp(1),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.15);
   //   CHECK_CLOSE(2.71826,
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   // check C soln
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.6);
   //   CHECK_CLOSE(3.02734,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
   //   CHECK_EQUAL(69, nsteps.first);
   //   CHECK_EQUAL(2, nsteps.second);
@@ -240,18 +240,18 @@ SUITE(PKS_MPC)
   //   // check B soln - note this is the same as pks_ode:B_RK4
   //   CHECK_CLOSE(std::exp(1),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-5);
 
   //   // check C soln - note this is the same as
   //   // pks_ode:C_BACKWARD_EULER_SUBCYCLED_MULTIPLE
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.1);
   //   CHECK_CLOSE(2.79649,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   CHECK_EQUAL(10, nsteps.first);
@@ -278,21 +278,21 @@ SUITE(PKS_MPC)
   //   // check B soln, same as B_BACKWARD_EULER
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.15);
   //   CHECK_CLOSE(2.867971990790009,
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-8);
 
   //   // check C soln, same as C_BACKWARD_EULER
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.6);
   //   CHECK_CLOSE(3.27476584420779,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-8);
 
   //   CHECK_EQUAL(10, nsteps.first);
@@ -321,21 +321,21 @@ SUITE(PKS_MPC)
   //   // check B soln
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.04);
   //   CHECK_CLOSE(2.74863,
   //               run->S->Get<CompositeVector>("primaryB")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   // check C soln
   //   CHECK_CLOSE(std::exp(1.0),
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               0.08);
   //   CHECK_CLOSE(2.79308,
   //               run->S->Get<CompositeVector>("primaryC")
-  //                     .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+  //                     .ViewComponent<DefaultHost>("cell", false)(0,0),
   //               1.e-4);
 
   //   CHECK_EQUAL(96, nsteps.first);

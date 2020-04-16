@@ -238,27 +238,27 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
  protected:
   // accessors for things that may or may not be constant
-  cMultiVectorView_type_<AmanziDefaultDevice,double>
+  cMultiVectorView_type_<DefaultDevice,double>
   ScalarCoefficientFaces(bool scatter) const {
     if (k_ != Teuchos::null) {
       if (scatter) k_->ScatterMasterToGhosted("face");
       if (k_->HasComponent("face")) {
-        return k_->ViewComponent<AmanziDefaultDevice>("face", true);
+        return k_->ViewComponent<DefaultDevice>("face", true);
       }
     }
-    MultiVectorView_type_<AmanziDefaultDevice,double> k_face("k_face", nfaces_wghost, 1);
+    MultiVectorView_type_<DefaultDevice,double> k_face("k_face", nfaces_wghost, 1);
     Kokkos::deep_copy(k_face, 1.0);
     return k_face;
   }
 
-  cMultiVectorView_type_<AmanziDefaultDevice,double>
+  cMultiVectorView_type_<DefaultDevice,double>
   DensityCells(bool scatter) const {
     if (!is_scalar_) {
       if (scatter) rho_cv_->ScatterMasterToGhosted("cell");
       AMANZI_ASSERT(rho_cv_->HasComponent("cell"));
       return rho_cv_->ViewComponent("cell", true);
     }
-    MultiVectorView_type_<AmanziDefaultDevice,double> rho_c("rho_cell", ncells_wghost, 1);
+    MultiVectorView_type_<DefaultDevice,double> rho_c("rho_cell", ncells_wghost, 1);
     Kokkos::deep_copy(rho_c, rho_);
     return rho_c;
   }

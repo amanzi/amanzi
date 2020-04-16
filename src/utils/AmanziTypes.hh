@@ -39,24 +39,24 @@
 #include "Kokkos_Core.hpp"
 
 
-#ifdef KOKKOS_ENABLE_CUDA
-using AmanziDeviceSpace = Kokkos::CudaSpace; 
-using AmanziSharedSpace = Kokkos::CudaUVMSpace;
-using AmanziHostSpace = Kokkos::HostSpace; 
-#else // KOKKOS_ENABLE_CUDA
-using AmanziDeviceSpace = Kokkos::HostSpace; 
-using AmanziSharedSpace = Kokkos::HostSpace; 
-using AmanziHostSpace = Kokkos::HostSpace; 
-#endif // KOKKOS_ENABLE_CUDA
+namespace Amanzi {
 
+using DefaultExecutionSpace = Kokkos::DefaultExecutionSpace;
+using DefaultHostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 
-using AmanziDefaultDevice =
-  Kokkos::Device<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::memory_space>;
-using AmanziDefaultHost =
-  Kokkos::Device<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::memory_space>;
+using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
+using DefaultHostMemorySpace = DefaultHostExecutionSpace::memory_space;
+using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
 
+#ifdef KOKKOS_ENABLE_CUDA_UVM
+using DeviceOnlyMemorySpace = Kokkos::CudaSpace;
+#endif
+
+using DefaultDevice =
+    Kokkos::Device<DefaultExecutionSpace, DeviceOnlyMemorySpace>;
+
+using DefaultHost =
+    Kokkos::Device<DefaultHostExecutionSpace, DefaultHostMemorySpace>;
 
 #else  // TRILINOS_TPETRA_STACK
 

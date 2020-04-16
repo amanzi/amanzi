@@ -72,17 +72,17 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     x->putScalar(2.0);
 
     {
-      auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto v_c = x->ViewComponent<DefaultHost>("cell", false);
       CHECK_CLOSE(2., v_c(0, 0), 0.00001);
       CHECK_CLOSE(2., v_c(0, 1), 0.00001);
 
-      auto v_f = x->ViewComponent<AmanziDefaultHost>("face", 0, false);
+      auto v_f = x->ViewComponent<DefaultHost>("face", 0, false);
       CHECK_CLOSE(2.0, v_f(0), 0.00001);
     }
 
     {
       auto v_bf =
-        x->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
+        x->ViewComponent<DefaultHost>("boundary_face", 0, false);
       CHECK_CLOSE(2.0, v_bf(0), 0.00001);
     }
   }

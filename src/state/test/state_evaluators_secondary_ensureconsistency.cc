@@ -212,12 +212,12 @@ SUITE(EVALUATORS_CV)
     // check the value and derivative
     CHECK_CLOSE(
       6.0,
-      S.Get<CompositeVector>("fa", "").ViewComponent<AmanziDefaultHost>(
+      S.Get<CompositeVector>("fa", "").ViewComponent<DefaultHost>(
         "cell", false)(0, 0),
       1.e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", "", "fb", "")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 1.e-10);
 
     // second call should not be changed
@@ -231,12 +231,12 @@ SUITE(EVALUATORS_CV)
     // check the value and derivative are still the same
     CHECK_CLOSE(
       6.0,
-      S.Get<CompositeVector>("fa", "").ViewComponent<AmanziDefaultHost>(
+      S.Get<CompositeVector>("fa", "").ViewComponent<DefaultHost>(
         "cell", false)(0, 0),
       1.e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", "", "fb", "")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 1.e-10);
 
     // change the primary and mark as changed
@@ -254,12 +254,12 @@ SUITE(EVALUATORS_CV)
     // check the values
     CHECK_CLOSE(
       28.0,
-      S.Get<CompositeVector>("fa", "").ViewComponent<AmanziDefaultHost>(
+      S.Get<CompositeVector>("fa", "").ViewComponent<DefaultHost>(
         "cell", false)(0, 0),
       1.e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", "", "fb", "")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
                 1.e-10);
   }
 

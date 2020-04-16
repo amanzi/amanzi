@@ -22,7 +22,7 @@ namespace Amanzi {
  * @param D Dimension = number of dimensions allocated in sizes
  * This is used to reconstruct the Matrix/Tensor on the device
  */
-template<typename T, int D, class MEMSPACE = AmanziSharedSpace> 
+template<typename T, int D, class MEMSPACE = DefaultMemorySpace> 
 class CSR{
 
 static constexpr int dim = D;

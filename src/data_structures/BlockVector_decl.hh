@@ -81,13 +81,13 @@ class BlockVector {
   //
   // Accessors to data.
   // ---------------------------------------------
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   using cMultiVectorView_type = cMultiVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   using MultiVectorView_type = MultiVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   using cVectorView_type = cVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   using VectorView_type = VectorView_type_<DeviceType, Scalar>;
 
   // -- Access a component vector
@@ -97,19 +97,19 @@ class BlockVector {
   GetComponent(const std::string& name, bool ghosted = false);
 
   // -- View a component vector
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   cMultiVectorView_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted = false) const;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   MultiVectorView_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted = false);
 
   // -- SubView of a component vector
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   cVectorView_type<DeviceType>
   ViewComponent(const std::string& name, std::size_t dof,
                 bool ghosted = false) const;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   VectorView_type<DeviceType>
   ViewComponent(const std::string& name, std::size_t dof, bool ghosted = false);
 

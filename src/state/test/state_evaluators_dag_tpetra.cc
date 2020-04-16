@@ -431,7 +431,7 @@ class make_state {
       "fa", "", "fb", "");
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", "", "fg", "");
-    fa_eval = Teuchos::rcp(new AEvaluator<AmanziDefaultDevice>(es_list));
+    fa_eval = Teuchos::rcp(new AEvaluator<DefaultDevice>(es_list));
     S.SetEvaluator("fa", fa_eval);
 
     // Setup fields initialize
@@ -445,7 +445,7 @@ class make_state {
 
  public:
   State S;
-  Teuchos::RCP<AEvaluator<AmanziDefaultDevice>> fa_eval;
+  Teuchos::RCP<AEvaluator<DefaultDevice>> fa_eval;
   Teuchos::RCP<CEvaluator> fc_eval;
   Teuchos::RCP<DEvaluator> fd_eval;
   Teuchos::RCP<EEvaluator> fe_eval;
@@ -461,11 +461,11 @@ SUITE(DAG)
   {
     // check initialized properly
     CHECK_CLOSE(2.0,
-                (S.Get<CompositeVector>("fb").ViewComponent<AmanziDefaultHost>(
+                (S.Get<CompositeVector>("fb").ViewComponent<DefaultHost>(
                   "cell", false))(0, 0),
                 1e-12);
     CHECK_CLOSE(3.0,
-                (S.Get<CompositeVector>("fg").ViewComponent<AmanziDefaultHost>(
+                (S.Get<CompositeVector>("fg").ViewComponent<DefaultHost>(
                   "cell", false))(0, 0),
                 1e-12);
 
@@ -473,7 +473,7 @@ SUITE(DAG)
     std::cout << "Calculate field A:" << std::endl;
     bool changed = fa_eval->Update(S, "main");
     CHECK_CLOSE(6484.0,
-                (S.Get<CompositeVector>("fa").ViewComponent<AmanziDefaultHost>(
+                (S.Get<CompositeVector>("fa").ViewComponent<DefaultHost>(
                   "cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
@@ -481,7 +481,7 @@ SUITE(DAG)
 
     // check intermediate steps got updated too
     CHECK_CLOSE(6.0,
-                (S.Get<CompositeVector>("fd").ViewComponent<AmanziDefaultHost>(
+                (S.Get<CompositeVector>("fd").ViewComponent<DefaultHost>(
                   "cell", false))(0, 0),
                 1e-12);
 
@@ -490,7 +490,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
     CHECK_CLOSE(2.0,
                 (S.GetDerivative<CompositeVector>("fa", "", "fb", "")
-                   .ViewComponent<AmanziDefaultHost>("cell", false))(0, 0),
+                   .ViewComponent<DefaultHost>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -499,7 +499,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", "", "fg", "")
-                   .ViewComponent<AmanziDefaultHost>("cell", false))(0, 0),
+                   .ViewComponent<DefaultHost>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -508,7 +508,7 @@ SUITE(DAG)
     changed = fe_eval->UpdateDerivative(S, "fe", "fg", "");
     CHECK_CLOSE(24.0,
                 (S.GetDerivative<CompositeVector>("fe", "", "fg", "")
-                   .ViewComponent<AmanziDefaultHost>("cell", false))(0, 0),
+                   .ViewComponent<DefaultHost>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -519,7 +519,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", "", "fg", "")
-                   .ViewComponent<AmanziDefaultHost>("cell", false))(0, 0),
+                   .ViewComponent<DefaultHost>("cell", false))(0, 0),
                 1e-12);
     CHECK(!changed);
 
@@ -528,7 +528,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", "", "fg", "")
-                   .ViewComponent<AmanziDefaultHost>("cell", false))(0, 0),
+                   .ViewComponent<DefaultHost>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
   }

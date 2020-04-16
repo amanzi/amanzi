@@ -62,9 +62,9 @@ getMesh(const Comm_ptr_type& comm)
 
 
 void
-CHECK_OWNED_SUBSET_GHOST(cVectorView_type_<AmanziDefaultHost, int> owned,
+CHECK_OWNED_SUBSET_GHOST(cVectorView_type_<DefaultHost, int> owned,
                          int n_owned,
-                         cVectorView_type_<AmanziDefaultHost, int> ghost,
+                         cVectorView_type_<DefaultHost, int> ghost,
                          int n_ghost)
 {
   CHECK_EQUAL(n_owned, owned.size());
@@ -73,7 +73,7 @@ CHECK_OWNED_SUBSET_GHOST(cVectorView_type_<AmanziDefaultHost, int> owned,
 }
 
 void
-CHECK_UNIQUE(std::vector<cVectorView_type_<AmanziDefaultHost, int>> index_lists,
+CHECK_UNIQUE(std::vector<cVectorView_type_<DefaultHost, int>> index_lists,
              int total)
 {
   std::set<int> all;
@@ -88,8 +88,8 @@ CHECK_UNIQUE(std::vector<cVectorView_type_<AmanziDefaultHost, int>> index_lists,
 }
 
 void
-CHECK_SAME(cVectorView_type_<AmanziDefaultHost, int> one,
-           cVectorView_type_<AmanziDefaultHost, int> two)
+CHECK_SAME(cVectorView_type_<DefaultHost, int> one,
+           cVectorView_type_<DefaultHost, int> two)
 {
   CHECK_EQUAL(one.extent(0), two.extent(0));
   for (std::size_t i = 0; i != one.extent(0); ++i) {
@@ -212,19 +212,19 @@ TEST(SUPERMAP_MANUAL)
 
   // check the indices
   {
-    auto inds_m1_d0 = map.Indices<AmanziDefaultHost>("map1", 0);
+    auto inds_m1_d0 = map.Indices<DefaultHost>("map1", 0);
     CHECK_EQUAL(3, inds_m1_d0.size());
     CHECK_EQUAL(0, inds_m1_d0[0]);
     CHECK_EQUAL(2, inds_m1_d0[1]);
     CHECK_EQUAL(4, inds_m1_d0[2]);
 
-    auto inds_m1_d1 = map.Indices<AmanziDefaultHost>("map1", 1);
+    auto inds_m1_d1 = map.Indices<DefaultHost>("map1", 1);
     CHECK_EQUAL(3, inds_m1_d1.size());
     CHECK_EQUAL(1, inds_m1_d1[0]);
     CHECK_EQUAL(3, inds_m1_d1[1]);
     CHECK_EQUAL(5, inds_m1_d1[2]);
 
-    auto inds_m2_d0 = map.Indices<AmanziDefaultHost>("map2", 0);
+    auto inds_m2_d0 = map.Indices<DefaultHost>("map2", 0);
     CHECK_EQUAL(5, inds_m2_d0.size());
     CHECK_EQUAL(6, inds_m2_d0[0]);
     CHECK_EQUAL(8, inds_m2_d0[1]);
@@ -232,7 +232,7 @@ TEST(SUPERMAP_MANUAL)
     CHECK_EQUAL(12, inds_m2_d0[3]);
     CHECK_EQUAL(14, inds_m2_d0[4]);
 
-    auto inds_m2_d1 = map.Indices<AmanziDefaultHost>("map2", 1);
+    auto inds_m2_d1 = map.Indices<DefaultHost>("map2", 1);
     CHECK(inds_m2_d1.size() == 5);
     CHECK_EQUAL(7, inds_m2_d1[0]);
     CHECK_EQUAL(9, inds_m2_d1[1]);
@@ -242,24 +242,24 @@ TEST(SUPERMAP_MANUAL)
   }
 
   {
-    auto inds_m1_d0 = map.GhostIndices<AmanziDefaultHost>("map1", 0);
+    auto inds_m1_d0 = map.GhostIndices<DefaultHost>("map1", 0);
     CHECK_EQUAL(0, inds_m1_d0[0]);
     CHECK_EQUAL(2, inds_m1_d0[1]);
     CHECK_EQUAL(4, inds_m1_d0[2]);
 
-    auto inds_m1_d1 = map.GhostIndices<AmanziDefaultHost>("map1", 1);
+    auto inds_m1_d1 = map.GhostIndices<DefaultHost>("map1", 1);
     CHECK_EQUAL(1, inds_m1_d1[0]);
     CHECK_EQUAL(3, inds_m1_d1[1]);
     CHECK_EQUAL(5, inds_m1_d1[2]);
 
-    auto inds_m2_d0 = map.GhostIndices<AmanziDefaultHost>("map2", 0);
+    auto inds_m2_d0 = map.GhostIndices<DefaultHost>("map2", 0);
     CHECK_EQUAL(6, inds_m2_d0[0]);
     CHECK_EQUAL(8, inds_m2_d0[1]);
     CHECK_EQUAL(10, inds_m2_d0[2]);
     CHECK_EQUAL(12, inds_m2_d0[3]);
     CHECK_EQUAL(14, inds_m2_d0[4]);
 
-    auto inds_m2_d1 = map.GhostIndices<AmanziDefaultHost>("map2", 1);
+    auto inds_m2_d1 = map.GhostIndices<DefaultHost>("map2", 1);
     CHECK_EQUAL(7, inds_m2_d1[0]);
     CHECK_EQUAL(9, inds_m2_d1[1]);
     CHECK_EQUAL(11, inds_m2_d1[2]);
@@ -347,15 +347,15 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   CHECK(mesh->face_map(true)->isSameAs(*map->ComponentGhostedMap(0, "face")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->GhostIndices<AmanziDefaultHost>(0, "cell", 0);
-  const auto& inds_c1 = map->GhostIndices<AmanziDefaultHost>(0, "cell", 1);
-  const auto& inds_f0 = map->GhostIndices<AmanziDefaultHost>(0, "face", 0);
-  const auto& inds_f1 = map->GhostIndices<AmanziDefaultHost>(0, "face", 1);
+  const auto& inds_c0 = map->GhostIndices<DefaultHost>(0, "cell", 0);
+  const auto& inds_c1 = map->GhostIndices<DefaultHost>(0, "cell", 1);
+  const auto& inds_f0 = map->GhostIndices<DefaultHost>(0, "face", 0);
+  const auto& inds_f1 = map->GhostIndices<DefaultHost>(0, "face", 1);
 
-  const auto& inds_c0_owned = map->Indices<AmanziDefaultHost>(0, "cell", 0);
-  const auto& inds_c1_owned = map->Indices<AmanziDefaultHost>(0, "cell", 1);
-  const auto& inds_f0_owned = map->Indices<AmanziDefaultHost>(0, "face", 0);
-  const auto& inds_f1_owned = map->Indices<AmanziDefaultHost>(0, "face", 1);
+  const auto& inds_c0_owned = map->Indices<DefaultHost>(0, "cell", 0);
+  const auto& inds_c1_owned = map->Indices<DefaultHost>(0, "cell", 1);
+  const auto& inds_f0_owned = map->Indices<DefaultHost>(0, "face", 0);
+  const auto& inds_f1_owned = map->Indices<DefaultHost>(0, "face", 1);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
@@ -365,11 +365,11 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
 
   // check lists are non-overlapping and of sufficient size to cover all values
   CHECK_UNIQUE(
-    std::vector<cVectorView_type_<AmanziDefaultHost, int>>{
+    std::vector<cVectorView_type_<DefaultHost, int>>{
       inds_c0_owned, inds_c1_owned, inds_f0_owned, inds_f1_owned },
     2 * ncells_owned + 2 * nfaces_owned);
   CHECK_UNIQUE(
-    std::vector<cVectorView_type_<AmanziDefaultHost, int>>{
+    std::vector<cVectorView_type_<DefaultHost, int>>{
       inds_c0, inds_c1, inds_f0, inds_f1 },
     2 * ncells_used + 2 * nfaces_used);
 
@@ -450,11 +450,11 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   CHECK(mesh->cell_map(true)->isSameAs(*map->ComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->GhostIndices<AmanziDefaultHost>(0, "cellA", 0);
-  const auto& inds_c1 = map->GhostIndices<AmanziDefaultHost>(0, "cellB", 0);
+  const auto& inds_c0 = map->GhostIndices<DefaultHost>(0, "cellA", 0);
+  const auto& inds_c1 = map->GhostIndices<DefaultHost>(0, "cellB", 0);
 
-  const auto& inds_c0_owned = map->Indices<AmanziDefaultHost>(0, "cellA", 0);
-  const auto& inds_c1_owned = map->Indices<AmanziDefaultHost>(0, "cellB", 0);
+  const auto& inds_c0_owned = map->Indices<DefaultHost>(0, "cellA", 0);
+  const auto& inds_c1_owned = map->Indices<DefaultHost>(0, "cellB", 0);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
@@ -462,11 +462,11 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
 
   // check lists are non-overlapping and of sufficient size to cover all values
   CHECK_UNIQUE(
-    std::vector<cVectorView_type_<AmanziDefaultHost, int>>{ inds_c0_owned,
+    std::vector<cVectorView_type_<DefaultHost, int>>{ inds_c0_owned,
                                                             inds_c1_owned },
     2 * ncells_owned);
   CHECK_UNIQUE(
-    std::vector<cVectorView_type_<AmanziDefaultHost, int>>{ inds_c0, inds_c1 },
+    std::vector<cVectorView_type_<DefaultHost, int>>{ inds_c0, inds_c1 },
     2 * ncells_used);
 
   // check owned maps interleave
@@ -536,14 +536,14 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
-             map2->Indices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(0, "cell", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(1, "cell", 0),
-             map2->Indices<AmanziDefaultHost>(0, "cell", 1));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(1, "cell", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "cell", 1));
+  CHECK_SAME(map->Indices<DefaultHost>(0, "cell", 0),
+             map2->Indices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(0, "cell", 0),
+             map2->GhostIndices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->Indices<DefaultHost>(1, "cell", 0),
+             map2->Indices<DefaultHost>(0, "cell", 1));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(1, "cell", 0),
+             map2->GhostIndices<DefaultHost>(0, "cell", 1));
 }
 
 
@@ -592,14 +592,14 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
-             map2->Indices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(0, "cell", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(1, "face", 0),
-             map2->Indices<AmanziDefaultHost>(0, "face", 0));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(1, "face", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "face", 0));
+  CHECK_SAME(map->Indices<DefaultHost>(0, "cell", 0),
+             map2->Indices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(0, "cell", 0),
+             map2->GhostIndices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->Indices<DefaultHost>(1, "face", 0),
+             map2->Indices<DefaultHost>(0, "face", 0));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(1, "face", 0),
+             map2->GhostIndices<DefaultHost>(0, "face", 0));
 }
 
 
@@ -648,14 +648,14 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(0, "cell", 0),
-             map2->Indices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(0, "cell", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "cell", 0));
-  CHECK_SAME(map->Indices<AmanziDefaultHost>(1, "cell", 0),
-             map2->Indices<AmanziDefaultHost>(0, "face", 0));
-  CHECK_SAME(map->GhostIndices<AmanziDefaultHost>(1, "cell", 0),
-             map2->GhostIndices<AmanziDefaultHost>(0, "face", 0));
+  CHECK_SAME(map->Indices<DefaultHost>(0, "cell", 0),
+             map2->Indices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(0, "cell", 0),
+             map2->GhostIndices<DefaultHost>(0, "cell", 0));
+  CHECK_SAME(map->Indices<DefaultHost>(1, "cell", 0),
+             map2->Indices<DefaultHost>(0, "face", 0));
+  CHECK_SAME(map->GhostIndices<DefaultHost>(1, "cell", 0),
+             map2->GhostIndices<DefaultHost>(0, "face", 0));
 }
 
 
@@ -715,20 +715,20 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
 //   {cvA.CreateSpace().ptr(), cvB.CreateSpace().ptr()}));
 
 //   // not the same map!
-//   CHECK(map->Indices<AmanziDefaultHost>(0, "cell", 0).size() == ncells);
-//   CHECK(map->Indices<AmanziDefaultHost>(1, "cell", 0).size() ==
+//   CHECK(map->Indices<DefaultHost>(0, "cell", 0).size() == ncells);
+//   CHECK(map->Indices<DefaultHost>(1, "cell", 0).size() ==
 //   block_cell_map->NumMyPoints()); CHECK_EQUAL(1 + ncells,
 //   block_cell_map->NumMyPoints());
 
-//   const auto& inds1 = map->Indices<AmanziDefaultHost>(0, "cell", 0);
-//   const auto& inds2 = map->Indices<AmanziDefaultHost>(1, "cell", 0);
+//   const auto& inds1 = map->Indices<DefaultHost>(0, "cell", 0);
+//   const auto& inds2 = map->Indices<DefaultHost>(1, "cell", 0);
 //   CHECK_EQUAL(0, inds1[0]);
 //   CHECK_EQUAL(1, inds1[1]);
 
 //   CHECK_EQUAL(ncells, inds2[0]);
 //   CHECK_EQUAL(ncells+1, inds2[1]);
 
-//   CHECK_UNIQUE(std::vector<cVectorView_type_<AmanziDefaultHost,int> >{ inds1,
+//   CHECK_UNIQUE(std::vector<cVectorView_type_<DefaultHost,int> >{ inds1,
 //   inds2 }, 2*ncells + 1);
 
 // }

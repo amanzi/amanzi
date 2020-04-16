@@ -77,7 +77,7 @@ class Op_Face_CellBndFace : public Op {
         });
 
     auto import_permute_face = mesh->exterior_face_importer()
-        ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+        ->getPermuteFromLIDs_dv().view<DefaultDevice>();
     Kokkos::parallel_for(
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 3",
         import_permute_face.extent(0),
@@ -143,7 +143,7 @@ class Op_Face_CellBndFace : public Op {
         auto import_same_face = mesh->exterior_face_importer()->getNumSameIDs();
         auto import_permute_face =
             mesh->exterior_face_importer()
-            ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+            ->getPermuteFromLIDs_dv().view<DefaultDevice>();
       
         Kokkos::parallel_for(
           "Op_Face_CellBndFace::Rescale loop 2",

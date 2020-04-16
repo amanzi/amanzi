@@ -84,9 +84,9 @@ SUITE(RESTART)
 
     // Compare
     auto s0p = S0.Get<Amanzi::CompositeVector>("celldata")
-                 .ViewComponent<AmanziDefaultHost>("cell", false);
+                 .ViewComponent<DefaultHost>("cell", false);
     auto s1p = S1.Get<Amanzi::CompositeVector>("celldata")
-                 .ViewComponent<AmanziDefaultHost>("cell", false);
+                 .ViewComponent<DefaultHost>("cell", false);
 
     // and compare with the original
     CHECK_EQUAL(S0.time(), S1.time());

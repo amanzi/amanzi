@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template<class MEMSPACE = AmanziSharedSpace>
+template<class MEMSPACE = DefaultMemorySpace>
 class DenseVector {
  public:
   KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0) {};

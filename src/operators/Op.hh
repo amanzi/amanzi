@@ -129,8 +129,8 @@ class Op {
   // collection of local matrices
   CSR_Matrix csr;
 
-  mutable CSR<double,1,AmanziDeviceSpace> csr_v_;
-  mutable CSR<double,1,AmanziDeviceSpace> csr_Av_;
+  mutable CSR<double,1,DeviceOnlyMemorySpace> csr_v_;
+  mutable CSR<double,1,DeviceOnlyMemorySpace> csr_Av_;
 
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;

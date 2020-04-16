@@ -67,10 +67,10 @@ class SuperMapLumped {
   }
 
   // index accessors
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   cVectorView_type_<DeviceType, LO>
   Indices(const std::string& compname, int dofnum) const;
-  template <class DeviceType = AmanziDefaultDevice>
+  template <class DeviceType = DefaultDevice>
   cVectorView_type_<DeviceType, LO>
   GhostIndices(const std::string& compname, int dofnum) const;
 

@@ -349,8 +349,8 @@ TEST(IMPORTERS_BOUNDARY_FACES)
   IntVector_type vec(boundary_face_map);
   {
     auto vec_view = vec.getLocalViewDevice();
-    auto import_view = importer.getPermuteFromLIDs_dv().view<AmanziDefaultHost>();
-    auto import_to_view = importer.getPermuteToLIDs_dv().view<AmanziDefaultHost>();
+    auto import_view = importer.getPermuteFromLIDs_dv().view<DefaultHost>();
+    auto import_to_view = importer.getPermuteToLIDs_dv().view<DefaultHost>();
 
     std::stringstream stream;
     stream << "Rank " << rank << ": len=" << import_view.extent(0) << "," << import_view.extent(1) << ": ";

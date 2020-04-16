@@ -79,7 +79,7 @@ SUITE(PKS_PDE)
   //   int ncells =
   //     m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   //   {
-  //     auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
+  //     auto u = run->S->Get<CompositeVector>("u").ViewComponent<DefaultHost>("cell", false);
   //     for (int c = 0; c != ncells; ++c) {
   //       auto p = m->cell_centroid(c);
   //       double val = std::cos(PI_2 * p[0]);
@@ -110,7 +110,7 @@ SUITE(PKS_PDE)
     int ncells =
       m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     {
-      auto u = run->S->Get<CompositeVector>("u").ViewComponent<AmanziDefaultHost>("cell", false);
+      auto u = run->S->Get<CompositeVector>("u").ViewComponent<DefaultHost>("cell", false);
       for (int c = 0; c != ncells; ++c) {
         auto p = m->cell_centroid(c);
         double val = std::cos(PI_2 * p[0]);
