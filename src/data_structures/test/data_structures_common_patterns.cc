@@ -77,10 +77,10 @@ SUITE(COMMON_MESH_OPERATIONS)
 
     // compute on device
     {
-      auto sl_view = sl_c->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
+      auto sl_view = sl_c->ViewComponent<DefaultDevice>("cell", 0, false);
       auto poro_view =
-        poro_c->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
-      auto wc_view = wc->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
+        poro_c->ViewComponent<DefaultDevice>("cell", 0, false);
+      auto wc_view = wc->ViewComponent<DefaultDevice>("cell", 0, false);
       auto cv_view = mesh->cell_volumes();
       Mesh* m = mesh.get();
 
@@ -88,7 +88,7 @@ SUITE(COMMON_MESH_OPERATIONS)
                 << std::endl;
       assert(cv_view.extent(0) >= sl_view.extent(0));
 
-      // typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
+      // typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(
         "data_structures_common_patterns::FOR_EACH_CELL_VOLUME_LAMBDA",
         sl_view.extent(0), KOKKOS_LAMBDA(const LO i) {
@@ -100,7 +100,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     // test on the host
     {
       Teuchos::RCP<const CompositeVector> wc_c(wc);
-      auto wc_view = wc_c->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      auto wc_view = wc_c->ViewComponent<MirrorHost>("cell", 0, false);
       for (LO i = 0; i != wc_view.extent(0); ++i) {
         CHECK_CLOSE(0.5 * 0.25 * 8.0, wc_view(i), 1.e-10);
       }
@@ -114,10 +114,10 @@ SUITE(COMMON_MESH_OPERATIONS)
     auto trans = CreateVec("face", Entity_kind::FACE, 1);
     {
       auto trans_view =
-        trans->ViewComponent<AmanziDefaultDevice>("face", 0, false);
+        trans->ViewComponent<DefaultDevice>("face", 0, false);
       Mesh* m = mesh.get();
 
-      typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
+      typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(
         "data_structures_common_patterns::CALC_TRANSMISSIBILITY",
         trans_view.extent(0), KOKKOS_LAMBDA(const LO& f) {

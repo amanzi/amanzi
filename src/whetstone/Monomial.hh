@@ -45,7 +45,7 @@ class Monomial : public PolynomialBase {
   // -- polynomial values
   virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- get all polynomial coefficients
-  virtual DenseVector ExpandCoefficients() const override; 
+  virtual DenseVector<> ExpandCoefficients() const override; 
 
   // access
   const int* multi_index() const { return multi_index_; }
@@ -59,10 +59,10 @@ class Monomial : public PolynomialBase {
 * Return ordered list of all polynomial coefficients of monomial.
 ****************************************************************** */
 inline
-DenseVector Monomial::ExpandCoefficients() const
+DenseVector<> Monomial::ExpandCoefficients() const
 {
   int size = PolynomialSpaceDimension(d_, order_);
-  DenseVector coefs(size);
+  DenseVector<> coefs(size);
   coefs.putScalar(0.0);
 
   int l = PolynomialPosition(d_, multi_index_);

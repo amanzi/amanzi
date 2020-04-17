@@ -179,8 +179,9 @@ class DenseMatrix {
    * Matrix-vector product. The matrix is ordered by columns.
   ****************************************************************** */
   // calculates B = *this * A
+  template<class DV_MEMSPACE>
   KOKKOS_INLINE_FUNCTION 
-  int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const
+  int Multiply(const DenseVector<DV_MEMSPACE>& A, DenseVector<DV_MEMSPACE>& B, bool transpose) const
   {
     //Kokkos::View<double*> dataA = A.Values(); 
     //Kokkos::View<double*> dataB = B.Values();

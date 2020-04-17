@@ -10,10 +10,11 @@
 
 //!
 
+#include "UnitTest++.h"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "TestReporterStdout.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "UnitTest++.h"
 
 #include "errors.hh"
 
@@ -29,6 +30,7 @@ using namespace Amanzi;
 int
 main(int argc, char* argv[])
 {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Kokkos::initialize();
   auto status = UnitTest::RunAllTests();
   Kokkos::finalize();

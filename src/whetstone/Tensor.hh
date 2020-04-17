@@ -36,7 +36,7 @@ const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
                                          {1, 2, 0, 3},
                                          {1, 3, 0, 6 }};
 
-template<class MEMSPACE = AmanziDefaultDevice::memory_space> 
+template<class MEMSPACE = DefaultDevice::memory_space> 
 class Tensor {
  public:
 
@@ -516,10 +516,10 @@ operator*(const Tensor<MEMSPACE>& T, const AmanziGeometry::Point& p)
 // -- expanding tensor to a constant size vector and reverse.
 template<class MEMSPACE>
 void
-TensorToVector(const Tensor<MEMSPACE>& T, DenseVector& v);
+TensorToVector(const Tensor<MEMSPACE>& T, DenseVector<MEMSPACE>& v);
 template<class MEMSPACE>
 void
-VectorToTensor(const DenseVector& v, Tensor<MEMSPACE>& T);
+VectorToTensor(const DenseVector<MEMSPACE>& v, Tensor<MEMSPACE>& T);
 
 // identity is used frequently
 template<class MEMSPACE>

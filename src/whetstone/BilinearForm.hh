@@ -117,7 +117,7 @@ class BilinearForm : public virtual InnerProductL2,
     Exceptions::amanzi_throw(msg);
   }
 
-  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+  virtual void L2Cell(int c, const DenseVector<>& dofs, Polynomial& vc) {
     Errors::Message msg("L2 projector (from DOFs) is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
@@ -135,7 +135,7 @@ class BilinearForm : public virtual InnerProductL2,
     Exceptions::amanzi_throw(msg);
   }
 
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+  virtual void H1Cell(int c, const DenseVector<>& dofs, Polynomial& vc) {
     Errors::Message msg("H1 cell projector (from DOFs) is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }

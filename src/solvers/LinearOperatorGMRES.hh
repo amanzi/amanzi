@@ -316,7 +316,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
-  WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
+  WhetStone::DenseVector<> d(krylov_dim_ + 1), g(krylov_dim_);
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
 
   double fnorm;
@@ -404,7 +404,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   WhetStone::DenseMatrix Ttmp(T);
   int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
   int lwork(m * n);
-  WhetStone::DenseVector work(lwork);
+  WhetStone::DenseVector<> work(lwork);
 
   WhetStone::DGELS_F77("N",
                        &m,
@@ -443,7 +443,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
 
   double Vl[1];
-  WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
+  WhetStone::DenseVector<> wr(krylov_dim_), wi(krylov_dim_);
   WhetStone::DGEEV_F77("N",
                        "V",
                        &n,

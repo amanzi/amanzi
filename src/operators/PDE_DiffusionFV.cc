@@ -265,8 +265,8 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     auto local_op = local_op_.get(); 
     // prep views
     auto k_face = ScalarCoefficientFaces(false);
-    const auto rhs_cell = global_op_->rhs()->ViewComponent<AmanziDefaultDevice>("cell", true);
-    auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
+    const auto rhs_cell = global_op_->rhs()->ViewComponent<DefaultDevice>("cell", true);
+    auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ApplyBCs",
@@ -310,16 +310,16 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
                                  const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
   // prep views
-  auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
+  auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
 
   const auto k_face = ScalarCoefficientFaces(true);
-  auto flux = darcy_mass_flux->ViewComponent<AmanziDefaultDevice>("face", false);
+  auto flux = darcy_mass_flux->ViewComponent<DefaultDevice>("face", false);
 
   solution->ScatterMasterToGhosted("cell");
-  const auto p = solution->ViewComponent<AmanziDefaultDevice>("cell", true);
+  const auto p = solution->ViewComponent<DefaultDevice>("cell", true);
   const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
 
   Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
@@ -493,7 +493,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   }
 
   {
-    auto trans_face = transmissibility_->ViewComponent<AmanziDefaultDevice>("face", true);
+    auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->space_dimension(); 
 

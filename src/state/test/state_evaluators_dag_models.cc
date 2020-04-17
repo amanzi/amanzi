@@ -176,7 +176,7 @@ class make_state {
   void check_close(double val1, double val2, const std::string& name)
   {
     auto cvv =
-      S.Get<CompositeVector>(name, "").ViewComponent<AmanziDefaultHost>(
+      S.Get<CompositeVector>(name, "").ViewComponent<MirrorHost>(
         "cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
@@ -186,7 +186,7 @@ class make_state {
                          const std::string& wrt)
   {
     auto cvv = S.GetDerivative<CompositeVector>(name, "", wrt, "")
-                 .ViewComponent<AmanziDefaultHost>("cell", 0, false);
+                 .ViewComponent<MirrorHost>("cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }

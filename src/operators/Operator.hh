@@ -433,7 +433,7 @@ class Operator {
   // ExtractVectorCellOp(int c, const Schema& schema, WhetStone::DenseVector& v,
   //                     const CompositeVector& X) const;
   virtual void AssembleVectorCellOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v,
+                                    const WhetStone::DenseVector<>& v,
                                     CompositeVector& X) const;
 
   // virtual void

@@ -105,7 +105,7 @@ class MatrixObjects {
 
   // -- matrix-vector products
   void Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose);
-  void Multiply(const DenseVector& v, VectorObjects<T>& av, bool transpose);
+  void Multiply(const DenseVector<>& v, VectorObjects<T>& av, bool transpose);
   void Multiply(const AmanziGeometry::Point& p, VectorObjects<T>& av, bool transpose) const;
 
   // output 
@@ -220,7 +220,7 @@ void MatrixObjects<T>::Multiply(const VectorObjects<T>& v,
 
 
 template<class T>
-void MatrixObjects<T>::Multiply(const DenseVector& v,
+void MatrixObjects<T>::Multiply(const DenseVector<>& v,
                                 VectorObjects<T>& av, bool transpose)
 {
   if (!transpose) {

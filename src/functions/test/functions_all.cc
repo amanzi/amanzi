@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "UnitTest++.h"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "TestReporterStdout.h"
 
 #include "FunctionConstant.hh"
@@ -31,6 +32,7 @@ using namespace Amanzi;
 int
 main(int argc, char* argv[])
 {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Kokkos::initialize();
   int status = UnitTest::RunAllTests();
   Kokkos::finalize();

@@ -23,11 +23,14 @@
 #include "Teuchos_RCP.hpp"
 #include "lapack.hh"
 
+#include "AmanziTypes.hh"
+
 #include <Kokkos_Core.hpp>
 
 namespace Amanzi {
 namespace WhetStone {
 
+template<class MEMSPACE = DefaultMemorySpace>
 class DenseVector {
  public:
   KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0) {};
@@ -38,7 +41,7 @@ class DenseVector {
   }
 
   KOKKOS_INLINE_FUNCTION 
-  DenseVector(Kokkos::View<double*> base)
+  DenseVector(Kokkos::View<double*,MEMSPACE> base)
       : m_(base.extent(0)),
         mem_(base.extent(0)),
         data_(base) {}
@@ -62,7 +65,7 @@ class DenseVector {
   }
 
   KOKKOS_INLINE_FUNCTION
-  DenseVector(Kokkos::View<double*> data, const int& mrow){
+  DenseVector(Kokkos::View<double*,MEMSPACE> data, const int& mrow){
     m_ = mrow;
     mem_ = m_;
     data_ = data; 
@@ -81,9 +84,23 @@ class DenseVector {
   }
 #endif 
 
-  // primary members
-  // -- smart memory management: preserves data only for vector reduction
-  void reshape(int mrow);
+  /* ******************************************************************
+  * Smart memory management: preserves data only for vector reduction
+  ****************************************************************** */
+  void reshape(int mrow){
+    Kokkos::View<double*,MEMSPACE> data_tmp; 
+    m_ = mrow;
+    //if (mem_ < m_) {
+    Kokkos::resize(data_tmp,m_); 
+      //double* data_tmp = new double[m_];
+      //if (data_ != NULL) {
+    for (int i = 0; i < mem_; i++) data_tmp[i] = data_[i];
+      //  delete[] data_;
+      //}
+    //  data_ = data_tmp;
+    mem_ = m_;
+    data_ = data_tmp; 
+  }
 
   // -- initialization
   KOKKOS_INLINE_FUNCTION
@@ -110,7 +127,7 @@ class DenseVector {
   {
     if (m_ != B.m_) return -1;
 
-    const Kokkos::View<double*> b = B.Values();
+    const Kokkos::View<double*,MEMSPACE> b = B.Values();
     *result = 0.0;
     for (int i = 0; i < m_; i++) *result += data_[i] * b[i];
 
@@ -166,14 +183,14 @@ class DenseVector {
   // -- vector type behaviour (no checks for compatiility)
   KOKKOS_INLINE_FUNCTION DenseVector& operator+=(const DenseVector& v)
   {
-    const Kokkos::View<double*> datav = v.Values();
+    const Kokkos::View<double*,MEMSPACE> datav = v.Values();
     for (int i = 0; i < m_; ++i) data_[i] += datav[i];
     return *this;
   }
 
   KOKKOS_INLINE_FUNCTION DenseVector& operator-=(const DenseVector& A)
   {
-    const Kokkos::View<double*> dataA = A.Values();
+    const Kokkos::View<double*,MEMSPACE> dataA = A.Values();
     for (int i = 0; i < m_; ++i) data_[i] -= dataA[i];
     return *this;
   }
@@ -182,7 +199,7 @@ class DenseVector {
   // -- for nonlinear solvers: this = sa * A + sthis * this
   KOKKOS_INLINE_FUNCTION DenseVector& update(double sa, const DenseVector& A, double sthis)
   {
-    const Kokkos::View<double*> dataA = A.Values();
+    const Kokkos::View<double*,MEMSPACE> dataA = A.Values();
     for (int i = 0; i < m_; ++i) data_[i] = sa * dataA[i] + sthis * data_[i];
     return *this;
   }
@@ -191,8 +208,8 @@ class DenseVector {
   KOKKOS_INLINE_FUNCTION DenseVector& update(double sa, const DenseVector& A, double sb,
                       const DenseVector& B, double sthis)
   {
-    const Kokkos::View<double*> dataA = A.Values();
-    const Kokkos::View<double*> dataB = B.Values();
+    const Kokkos::View<double*,MEMSPACE> dataA = A.Values();
+    const Kokkos::View<double*,MEMSPACE> dataB = B.Values();
     for (int i = 0; i < m_; ++i) {
       data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
     }
@@ -207,8 +224,8 @@ class DenseVector {
 
   // access to private data
   KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*> Values() { return data_; }
-  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*> Values() const { return data_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*,MEMSPACE> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*,MEMSPACE> Values() const { return data_; }
   KOKKOS_INLINE_FUNCTION double* Values_ptr() {return &data_[0];}
   KOKKOS_INLINE_FUNCTION const double* Values_ptr() const { return &data_[0];}
   // output
@@ -256,7 +273,7 @@ class DenseVector {
  private:
 
   int m_, mem_;
-  Kokkos::View<double*> data_;
+  Kokkos::View<double*,MEMSPACE> data_;
 };
 
 } // namespace WhetStone

@@ -26,7 +26,7 @@ namespace Impl {
 // Given a global object, get its default memory space (both the
 // type and the default instance thereof).
 template <class GlobalObjectType>
-struct DefaultMemorySpace {
+struct DeviceOnlyMemorySpace {
   using type = typename GlobalObjectType::device_type::memory_space;
 
   // Given a global object, get its (default) memory space instance.
@@ -115,7 +115,7 @@ class LocalAccessFunctionArgument {
 // data in read-only mode.
 template <class GlobalObjectType>
 Impl::LocalAccess<GlobalObjectType,
-                  typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                  typename Impl::DeviceOnlyMemorySpace<GlobalObjectType>::type,
                   ReadOnly>
 readOnly(GlobalObjectType&);
 
@@ -123,7 +123,7 @@ readOnly(GlobalObjectType&);
 // data in write-only mode.
 template <class GlobalObjectType>
 Impl::LocalAccess<GlobalObjectType,
-                  typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                  typename Impl::DeviceOnlyMemorySpace<GlobalObjectType>::type,
                   WriteOnly>
 writeOnly(GlobalObjectType&);
 
@@ -131,7 +131,7 @@ writeOnly(GlobalObjectType&);
 // data in read-and-write mode.
 template <class GlobalObjectType>
 Impl::LocalAccess<GlobalObjectType,
-                  typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                  typename Impl::DeviceOnlyMemorySpace<GlobalObjectType>::type,
                   ReadWrite>
 readWrite(GlobalObjectType&);
 
@@ -219,42 +219,42 @@ class LocalAccess {
   // friends, because they are the only ways that users are supposed
   // to construct LocalAccess instances.
   template <class GOT>
-  friend LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+  friend LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type,
                      ReadOnly>
   readOnly(GOT&);
   template <class GOT>
-  friend LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+  friend LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type,
                      WriteOnly>
   writeOnly(GOT&);
   template <class GOT>
-  friend LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+  friend LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type,
                      ReadWrite>
   readWrite(GOT&);
 };
 } // namespace Impl
 
 template <class GOT>
-Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly>
+Impl::LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type, ReadOnly>
 readOnly(GOT& G)
 {
   // std::cout << "readOnly" << std::endl;
-  return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
+  return { G, Impl::DeviceOnlyMemorySpace<GOT>::space(G), true };
 }
 
 template <class GOT>
-Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly>
+Impl::LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type, WriteOnly>
 writeOnly(GOT& G)
 {
   // std::cout << "writeOnly" << std::endl;
-  return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
+  return { G, Impl::DeviceOnlyMemorySpace<GOT>::space(G), true };
 }
 
 template <class GOT>
-Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadWrite>
+Impl::LocalAccess<GOT, typename Impl::DeviceOnlyMemorySpace<GOT>::type, ReadWrite>
 readWrite(GOT& G)
 {
   // std::cout << "readWrite" << std::endl;
-  return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
+  return { G, Impl::DeviceOnlyMemorySpace<GOT>::space(G), true };
 }
 
 
