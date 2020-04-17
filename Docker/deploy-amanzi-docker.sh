@@ -19,5 +19,5 @@ echo $AMANZI_VER
 
 docker build --build-arg amanzi_branch=${AMANZI_BRANCH} --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-Amanzi -t metsi/amanzi:${AMANZI_VER} .
 
-docker tag metsi/amanzi:${AMANZI_VER} metsi/amanzi-tpls:latest
+docker tag metsi/amanzi:${AMANZI_VER} metsi/amanzi:latest
 

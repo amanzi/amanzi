@@ -24,6 +24,7 @@ RUN git branch --list
 # Checkout the branch and update it
 RUN git checkout $amanzi_branch
 RUN git pull
+RUN git rev-parse --short HEAD
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
@@ -35,8 +36,15 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --with-mpi=/usr \
    --enable-shared \
    && cd /home/amanzi_user/amanzi_builddir/amanzi \
-   && make test \
+   && make test 2>&1 > ~/install/unit-tests-output.log \
    && rm -r /home/amanzi_user/amanzi_builddir/
+
+# Set path to make it easier to run amanzi
+ENV PATH=/home/amanzi_user/install/bin:${PATH}
+RUN echo $PATH
+
+# Create mount point for work on the host
+RUN mkdir /home/amanzi_user/work
 
 # Unset proxy
 ENV https_proxy= \
