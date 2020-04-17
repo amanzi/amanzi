@@ -77,7 +77,7 @@ struct DiffusionFixture {
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
-    std::vector<WhetStone::Tensor<Kokkos::HostSpace>> host_tensors(K->size()); 
+    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size()); 
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
@@ -107,7 +107,7 @@ struct DiffusionFixture {
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
-    std::vector<WhetStone::Tensor<Kokkos::HostSpace>> host_tensors(K->size()); 
+    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size()); 
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
@@ -128,7 +128,7 @@ struct DiffusionFixture {
     if (kind == AmanziMesh::CELL) {
       space.SetComponent("cell", AmanziMesh::CELL, 1);
       kr = space.Create();
-      auto vec = kr->ViewComponent<AmanziDefaultHost>("cell", true);
+      auto vec = kr->ViewComponent<MirrorHost>("cell", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
         vec(i,0) = ana->ScalarDiffusivity(mesh->cell_centroid(i), 0.0);
       }
@@ -136,7 +136,7 @@ struct DiffusionFixture {
     } else if (kind == AmanziMesh::FACE) {
       space.SetComponent("face", AmanziMesh::FACE, 1);
       kr = space.Create();
-      auto vec = kr->ViewComponent<AmanziDefaultHost>("face", true);
+      auto vec = kr->ViewComponent<MirrorHost>("face", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
         vec(i,0) = ana->ScalarDiffusivity(mesh->face_centroid(i), 0.0);
       }
@@ -227,7 +227,7 @@ struct DiffusionFixture {
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
     CompositeVector& rhs = *global_op->rhs();
-    auto rhs_c = rhs.ViewComponent<AmanziDefaultHost>("cell", false);
+    auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
     for (int c=0; c!=mesh->num_entities(AmanziMesh::Entity_kind::CELL,
             AmanziMesh::Parallel_type::OWNED); ++c) {
       const auto& xc = mesh->cell_centroid(c);
@@ -262,7 +262,7 @@ struct DiffusionFixture {
       
       op->UpdateFlux(solution.ptr(), flux.ptr());
       {
-        auto fv = flux->ViewComponent<AmanziDefaultHost>("face", false);
+        auto fv = flux->ViewComponent<MirrorHost>("face", false);
       }
 
       

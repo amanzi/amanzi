@@ -205,10 +205,10 @@ Debugger::WriteVector(const std::string& name,
                       const CompositeVector& vec,
                       bool include_faces)
 {
-  CompositeVector::cMultiVectorView_type<DefaultHost> vec_c;
+  CompositeVector::cMultiVectorView_type<MirrorHost> vec_c;
   if (vec.HasComponent("cell")) vec_c = vec.ViewComponent("cell", false);
 
-  CompositeVector::cMultiVectorView_type<DefaultHost> vec_f;
+  CompositeVector::cMultiVectorView_type<MirrorHost> vec_f;
   if (vec.HasComponent("face")) vec_f = vec.ViewComponent("face", true);
 
   for (int i = 0; i != dc_.size(); ++i) {
@@ -258,11 +258,11 @@ Debugger::WriteVectors(
         std::string name = names[lcv];
         Teuchos::Ptr<const CompositeVector> vec = vecs[lcv];
 
-        CompositeVector::cMultiVectorView_type<DefaultHost> vec_c;
+        CompositeVector::cMultiVectorView_type<MirrorHost> vec_c;
         if (vec->HasComponent("cell"))
           vec_c = vec->ViewComponent("cell", false);
 
-        CompositeVector::cMultiVectorView_type<DefaultHost> vec_f;
+        CompositeVector::cMultiVectorView_type<MirrorHost> vec_f;
         if (vec->HasComponent("face")) vec_f = vec->ViewComponent("face", true);
 
         *dcvo_[i]->os() << FormatHeader_(name, c0_gid);

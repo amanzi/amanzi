@@ -198,7 +198,7 @@ patchToCompositeVector(const Patch& p,
 
   Kokkos::View<int*> ids("ids", ids_list.size());
   {
-    Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
+    Kokkos::View<int*, MirrorHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
     Kokkos::deep_copy(ids, ids_host);
   }
 
@@ -240,7 +240,7 @@ patchToCompositeVector(const Patch& p,
 
   Kokkos::View<int*> ids("ids", ids_list.size());
   {
-    Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
+    Kokkos::View<int*, MirrorHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
     Kokkos::deep_copy(ids, ids_host);
   }
 

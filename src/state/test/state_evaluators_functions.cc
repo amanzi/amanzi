@@ -77,7 +77,7 @@ struct tester {
       S->set_time(times[i]);
       S->GetEvaluator(fname).Update(*S, "test");
 
-      auto fv = S->Get<CompositeVector>(fname).ViewComponent<DefaultHost>(
+      auto fv = S->Get<CompositeVector>(fname).ViewComponent<MirrorHost>(
         "cell", false);
       CHECK_CLOSE(results[i][0], fv(0, 0), 1.e-10);
       CHECK_CLOSE(results[i][1], fv(1, 0), 1.e-10);

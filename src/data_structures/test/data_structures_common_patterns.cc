@@ -100,7 +100,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     // test on the host
     {
       Teuchos::RCP<const CompositeVector> wc_c(wc);
-      auto wc_view = wc_c->ViewComponent<DefaultHost>("cell", 0, false);
+      auto wc_view = wc_c->ViewComponent<MirrorHost>("cell", 0, false);
       for (LO i = 0; i != wc_view.extent(0); ++i) {
         CHECK_CLOSE(0.5 * 0.25 * 8.0, wc_view(i), 1.e-10);
       }

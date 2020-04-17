@@ -137,27 +137,27 @@ SUITE(PKS_MPC_THREE)
     // check A soln -- same as A_FORWARD_EULER
     CHECK_CLOSE(2.0,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-10);
 
     // check B soln -- same as B_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.59374,
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
 
     // check C soln -- same as C_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.4);
     CHECK_CLOSE(2.33463,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
 
     CHECK_EQUAL(10, nsteps.first);
@@ -198,7 +198,7 @@ SUITE(PKS_MPC_THREE)
     {
       CHECK_CLOSE(2.0,
                   run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                   1.e-10);
     }
 
@@ -206,13 +206,13 @@ SUITE(PKS_MPC_THREE)
     {
       CHECK_CLOSE(std::exp(1.0),
                   run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                   0.04);
     }
     {
       CHECK_CLOSE(2.74863,
                   run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                   1.e-4);
     }
 
@@ -220,13 +220,13 @@ SUITE(PKS_MPC_THREE)
     {
       CHECK_CLOSE(std::exp(1.0),
                   run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                   0.08);
     }
     {
       CHECK_CLOSE(2.79308,
                   run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                   1.e-4);
     }
 
@@ -265,27 +265,27 @@ SUITE(PKS_MPC_THREE)
     // check A soln
     CHECK_CLOSE(2.0,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-10);
 
     // check B soln -- same as IMPLICIT_BC_VARIABLE_TS
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.04);
     CHECK_CLOSE(2.74863,
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
 
     // check C soln -- same as IMPLICIT_BC_VARIABLE_TS
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.08);
     CHECK_CLOSE(2.79308,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<DefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
 
     CHECK_EQUAL(96, nsteps.first);

@@ -80,7 +80,7 @@ TEST(FIELD_INITIALIZATION)
   int ncells =
     mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto phi =
-    S.Get<CompositeVector>("field1").ViewComponent<DefaultHost>("cell");
+    S.Get<CompositeVector>("field1").ViewComponent<MirrorHost>("cell");
   for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi(c, 0)); }
 
   // from exo currently not supported in new state

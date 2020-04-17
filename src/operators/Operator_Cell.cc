@@ -12,6 +12,7 @@
   Operator whose unknowns are CELLs.
 */
 
+#include "AmanziTypes.hh"
 #include "DenseMatrix.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_Cell.hh"
@@ -84,8 +85,8 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   // Allocate for first time 
   if(op.csr_v_.size() != local_csr.size()){
 
-    op.csr_v_ = CSR<double,1,AmanziDeviceSpace>(local_csr.size());
-    op.csr_Av_ = CSR<double,1,AmanziDeviceSpace>(local_csr.size()); 
+    op.csr_v_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size());
+    op.csr_Av_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size()); 
 
     int total1 = 0; 
     int total2 = 0; 
@@ -110,8 +111,8 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
     op.csr_Av_.prefix_sum_device(total2); 
   }
 
-  CSR<double,1,AmanziDeviceSpace> csr_v = op.csr_v_;
-  CSR<double,1,AmanziDeviceSpace> csr_Av = op.csr_Av_;
+  CSR<double,1,DeviceOnlyMemorySpace> csr_v = op.csr_v_;
+  CSR<double,1,DeviceOnlyMemorySpace> csr_Av = op.csr_Av_;
 
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
@@ -122,9 +123,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
         int ncells = cells.extent(0);
 
-        WhetStone::DenseVector<AmanziDeviceSpace> vv(
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> vv(
           csr_v.at(f),csr_v.size(f));
-        WhetStone::DenseVector<AmanziDeviceSpace> Avv(
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv(
           csr_Av.at(f), csr_Av.size(f));
 
         for (int n = 0; n != ncells; ++n) {

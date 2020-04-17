@@ -166,7 +166,7 @@ void ComputeCellError(const AnalyticBase& ana,
   inf_err = 0.0;
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto p = p_vec.ViewComponent<AmanziDefaultHost>("cell", false);
+  auto p = p_vec.ViewComponent<MirrorHost>("cell", false);
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double tmp = ana.pressure_exact(xc, t);
@@ -201,7 +201,7 @@ void ComputeFaceError(const AnalyticBase& ana,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  auto u = u_vec.ViewComponent<AmanziDefaultHost>("face", false);
+  auto u = u_vec.ViewComponent<MirrorHost>("face", false);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh->face_area(f);
@@ -252,7 +252,7 @@ void ComputeNodeError(const AnalyticBase& ana,
   AmanziMesh::Entity_ID_List nodes;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.ViewComponent<AmanziDefaultHost>("node", false);
+  auto p = p_vec.ViewComponent<MirrorHost>("node", false);
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
@@ -324,7 +324,7 @@ void ComputeEdgeError(const AnalyticBase& ana,
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.ViewComponent<AmanziDefaultHost>("edge", false);
+  auto p = p_vec.ViewComponent<MirrorHost>("edge", false);
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 
@@ -374,7 +374,7 @@ void ComputeEdgeMomentsError(const AnalyticBase& ana,
   WhetStone::MFD3D_Diffusion mfd(mesh);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto p = p_vec.ViewComponent<AmanziDefaultHost>("edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
+  auto p = p_vec.ViewComponent<MirrorHost>("edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->cell_volume(c);
 

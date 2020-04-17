@@ -152,7 +152,7 @@ SUITE(DIFFUSION) {
 
     CompositeVector& rhs = *fix.global_op->rhs();
     {
-      auto rhs_c = rhs.ViewComponent<DefaultHost>("cell", false);
+      auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
         const auto& xc = fix.mesh->cell_centroid(c);
@@ -163,7 +163,7 @@ SUITE(DIFFUSION) {
     fix.op->ApplyBCs(true, true, true);
 
     {
-      auto soln_c = fix.solution->ViewComponent<DefaultHost>("cell", false);
+      auto soln_c = fix.solution->ViewComponent<MirrorHost>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
         const auto& xc = fix.mesh->cell_centroid(c);

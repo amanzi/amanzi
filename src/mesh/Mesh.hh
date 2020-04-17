@@ -846,7 +846,7 @@ class Mesh {
     get_set_entities(setid, kind, ptype, ids_list);
     Kokkos::resize(entids, ids_list.size());
     {
-      Kokkos::View<int*, AmanziDefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
+      Kokkos::View<int*, DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
       Kokkos::deep_copy(entids, ids_host);
     }
   }

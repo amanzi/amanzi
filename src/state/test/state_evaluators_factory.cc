@@ -61,7 +61,7 @@ TEST(EVALUATOR_FACTORY) {    // create a mesh
   S.GetEvaluator("water_content").Update(S, "test_request");
   {
     auto cvv =
-        S.Get<CompositeVector>("water_content", "").ViewComponent<DefaultHost>(
+        S.Get<CompositeVector>("water_content", "").ViewComponent<MirrorHost>(
             "cell", 0, false);
     std::cout << "deriv = " << cvv(0) << "," << cvv(1) << std::endl;
     CHECK_CLOSE(1212.946, cvv(0), 1.e-3);
@@ -72,7 +72,7 @@ TEST(EVALUATOR_FACTORY) {    // create a mesh
   S.GetEvaluator("water_content").UpdateDerivative(S, "test_request", "pressure", "");
   {
     auto cvv = S.GetDerivative<CompositeVector>("water_content", "", "pressure", "")
-               .ViewComponent<DefaultHost>("cell", 0, false);
+               .ViewComponent<MirrorHost>("cell", 0, false);
     std::cout << "deriv = " << cvv(0) << "," << cvv(1) << std::endl;
     CHECK_CLOSE(0.10689, cvv(0), 1.e-5);
     CHECK_CLOSE(0.292203, cvv(1), 1.e-5);
