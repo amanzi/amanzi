@@ -79,7 +79,7 @@ double
 get_value(const CompositeVector& cv, const std::string& cname, int dof_num,
           int lid)
 {
-  auto vec = cv.ViewComponent<AmanziDefaultHost>(cname, true);
+  auto vec = cv.ViewComponent<MirrorHost>(cname, true);
   return vec(lid, dof_num);
 }
 

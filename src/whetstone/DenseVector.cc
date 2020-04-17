@@ -17,32 +17,13 @@
 namespace Amanzi {
 namespace WhetStone {
 
-/* ******************************************************************
- * Smart memory management: preserves data only for vector reduction
- ****************************************************************** */
-void
-DenseVector::reshape(int mrow)
-{
-  Kokkos::View<double*> data_tmp; 
-  m_ = mrow;
-  //if (mem_ < m_) {
-  Kokkos::resize(data_tmp,m_); 
-    //double* data_tmp = new double[m_];
-    //if (data_ != NULL) {
-  for (int i = 0; i < mem_; i++) data_tmp[i] = data_[i];
-    //  delete[] data_;
-    //}
-  //  data_ = data_tmp;
-  mem_ = m_;
-  data_ = data_tmp; 
-}
-
 #if 0 
 /* ******************************************************************
  * Assignment operator
  ****************************************************************** */
-DenseVector&
-DenseVector::operator=(const DenseVector& B)
+template<class MEMSPACE> 
+DenseVector<MEMSPACE>&
+DenseVector<MEMSPACE>::operator=(const DenseVector<MEMSPACE>& B)
 {
   if (this != &B) {
     if (mem_ < B.m_) {

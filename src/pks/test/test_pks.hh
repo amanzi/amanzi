@@ -212,8 +212,8 @@ class PK_ODE_Explicit : public Base_t {
     *f.Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
     std::cout << std::setprecision(16) << "  At time t = " << t
-              << ": u = " << (u.Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
-              << ", du/dt = " << (f.Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
+              << ": u = " << (u.Data()->ViewComponent<MirrorHost>("cell", false))(0, 0)
+              << ", du/dt = " << (f.Data()->ViewComponent<MirrorHost>("cell", false))(0, 0)
               << std::endl;
   }
 
@@ -288,15 +288,15 @@ class PK_ODE_Implicit : public Base_t {
     f->Data()->assign(this->S_->template Get<CompositeVector>(dudt_key_, tag_new_));
 
     std::cout << "  At time t = " << t_new
-              << ": u = " << (u_new->Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
-              << ", du/dt = " << (f->Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
+              << ": u = " << (u_new->Data()->ViewComponent<MirrorHost>("cell", false))(0, 0)
+              << ", du/dt = " << (f->Data()->ViewComponent<MirrorHost>("cell", false))(0, 0)
               << std::endl;
 
     double dt = t_new - t_old;
     f->update(1.0 / dt, *u_new, -1.0 / dt, *u_old, -1.0);
 #if DEBUG
     {
-      auto hv = f->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = f->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "R: res: " << hv(0,0)  << std::endl;
     }
 #endif    
@@ -309,12 +309,12 @@ class PK_ODE_Implicit : public Base_t {
         this->dudt_key_, tag_new_, this->key_, tag_new_));
 #if DEBUG
     {
-      auto hv = r->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = r->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "PC: r: " << hv(0,0)  << std::endl;
     }
 
     {
-      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = Pr->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "PC: dRHS/du: " << hv(0,0)  << std::endl;
     }
 #endif
@@ -325,7 +325,7 @@ class PK_ODE_Implicit : public Base_t {
 
 #if DEBUG
     {
-      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = Pr->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "PC: Jac: " << hv(0,0)  << std::endl;
     }
 #endif
@@ -335,7 +335,7 @@ class PK_ODE_Implicit : public Base_t {
 
 #if DEBUG
     {
-      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = Pr->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "PC: 1/Jac: " << hv(0,0)  << std::endl;
     }
 #endif
@@ -344,7 +344,7 @@ class PK_ODE_Implicit : public Base_t {
 
 #if DEBUG
     {
-      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      auto hv = Pr->Data()->ViewComponent<MirrorHost>("cell", false);
       std::cout << "PC: du: " << hv(0,0)  << std::endl;
     }
 #endif

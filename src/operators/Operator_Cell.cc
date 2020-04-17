@@ -12,6 +12,7 @@
   Operator whose unknowns are CELLs.
 */
 
+#include "AmanziTypes.hh"
 #include "DenseMatrix.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_Cell.hh"
@@ -65,7 +66,6 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
   return 0;
 }
 
-
 /* ******************************************************************
 * Apply the local matrices directly as schema is a subset of
 * assembled schema
@@ -73,26 +73,49 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
+
   AMANZI_ASSERT(op.csr.size() == nfaces_owned);
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
 
-  const AmanziMesh::Mesh* mesh = mesh_.get();
-  CSR_Vector csr_v(op.csr.size());
-  CSR_Vector csr_Av(op.csr.size()); 
-  // CSR version 
-  // 1. Compute size  
-  for (int i=0; i!=op.csr.size(); ++i) {
-    csr_v.set_shape(i, {op.csr.size(i,0)});
-    csr_Av.set_shape(i, {op.csr.size(i,1)});
-  }    
-  csr_v.prefix_sum(); 
-  csr_Av.prefix_sum(); 
-
   CSR_Matrix local_csr = op.csr; 
 
+  const AmanziMesh::Mesh* mesh = mesh_.get();
+
+  // Allocate for first time 
+  if(op.csr_v_.size() != local_csr.size()){
+
+    op.csr_v_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size());
+    op.csr_Av_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size()); 
+
+    int total1 = 0; 
+    int total2 = 0; 
+    // CSR version 
+    // 1. Compute size 
+    for (int i=0; i!=local_csr.size(); ++i) {
+      total1 += local_csr.size(i,0);
+      total2 += local_csr.size(i,1);
+    }
+
+    Kokkos::parallel_for(
+      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COPY",
+      local_csr.size(),
+      KOKKOS_LAMBDA(const int& i){      
+        op.csr_v_.sizes_(i,0) = local_csr.size(i,0);
+        op.csr_v_.row_map_(i) = local_csr.size(i,0);
+        op.csr_Av_.sizes_(i,0) = local_csr.size(i,1);
+        op.csr_Av_.row_map_(i) = local_csr.size(i,1);
+      });
+
+    op.csr_v_.prefix_sum_device(total1); 
+    op.csr_Av_.prefix_sum_device(total2); 
+  }
+
+  CSR<double,1,DeviceOnlyMemorySpace> csr_v = op.csr_v_;
+  CSR<double,1,DeviceOnlyMemorySpace> csr_Av = op.csr_Av_;
+
   Kokkos::parallel_for(
-      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell",
+      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
       op.csr.size(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
@@ -100,9 +123,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
         int ncells = cells.extent(0);
 
-        WhetStone::DenseVector vv(
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> vv(
           csr_v.at(f),csr_v.size(f));
-        WhetStone::DenseVector Avv(
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv(
           csr_Av.at(f), csr_Av.size(f));
 
         for (int n = 0; n != ncells; ++n) {
@@ -117,6 +140,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
           Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
         }
       });
+
   return 0;
 }
 

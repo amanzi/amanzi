@@ -11,10 +11,10 @@
 
 #include "Kokkos_Core.hpp"
 
-namespace Amanzi {
+#include "AmanziTypes.hh"
 
-template<typename T, int D> 
-class CSR_Factory;
+
+namespace Amanzi {
 
 /**
  * @brief CSR data structure 
@@ -22,7 +22,7 @@ class CSR_Factory;
  * @param D Dimension = number of dimensions allocated in sizes
  * This is used to reconstruct the Matrix/Tensor on the device
  */
-template<typename T, int D> 
+template<typename T, int D, class MEMSPACE = DefaultMemorySpace> 
 class CSR{
 
 static constexpr int dim = D;
@@ -60,6 +60,25 @@ public:
       Kokkos::resize(entries_, row_map_(row_map_.extent(0)-1));
   }
 
+  void prefix_sum_device(const int& total = -1){
+    Kokkos::parallel_scan ("CSR:prefix_sum_device",row_map_.size(), KOKKOS_LAMBDA (
+      const int& i, int& upd, const bool& final) {
+        // Load old value in case we update it before accumulating
+        const float val_i = row_map_(i); 
+        if (final) {
+          row_map_(i) = upd; // only update array on final pass
+        }
+        // For exclusive scan, change the update value after
+        // updating array, like we do here. For inclusive scan,
+        // change the update value before updating array.
+        upd += val_i;
+    });
+    //if (entries_.extent(0) < row_map_(row_map_.extent(0)-1))
+    if(total != -1){
+      Kokkos::resize(entries_, total);
+    }
+  }
+
   // /**
   //  * @brief Compute the prefix sum of the row_map_ 
   //  * and resize the entries based on row_map_
@@ -82,7 +101,8 @@ public:
    * @param shape shape of the ith entry
    * @param size storage for the ith entry
    */ 
-  void set_shape(const int& i, const std::array<int,D>& shape, int size=-1) {
+  KOKKOS_INLINE_FUNCTION
+  void set_shape(const int& i, const int* shape, int size=-1) {
     int total = 1;
     for (int d=0; d!=D; ++d) {
       sizes_(i,d) = shape[d];
@@ -104,18 +124,22 @@ public:
       Kokkos::resize(sizes_,row_map_size,D);   
   }
 
+  KOKKOS_INLINE_FUNCTION
   void set_row_map(const int& i, const int& v){
     row_map_[i] = v; 
   }
 
+  KOKKOS_INLINE_FUNCTION
   void set_entries(const int& i, const double& v){
     entries_[i] = v; 
   }
 
+  KOKKOS_INLINE_FUNCTION
   void set_sizes(const int& i, const int& j, const int& v){
     sizes_(i,j) = v; 
   }
 
+  KOKKOS_INLINE_FUNCTION
   int row_map(const int& i ){
     return row_map_[i]; 
   }
@@ -124,8 +148,8 @@ public:
    * @brief Return subview corresponding to element i
    * @param i index of the element in row_map_
    */
-  KOKKOS_INLINE_FUNCTION 
-  Kokkos::View<T*> at(const int& i) const {
+  KOKKOS_INLINE_FUNCTION
+  Kokkos::View<T*,MEMSPACE> at(const int& i) const {
     return Kokkos::subview(
       entries_,Kokkos::make_pair(row_map_(i),row_map_(i+1))); 
   }
@@ -166,13 +190,11 @@ public:
     return *this; 
   }
 
-  
- protected:
-  Kokkos::View<int*> row_map_; // Indices: number of element +1 
-  Kokkos::View<T*> entries_; // Values for all entries 
-  Kokkos::View<int**> sizes_; // Represent the sizes for matrices/tensors
+public: 
+  Kokkos::View<int*,MEMSPACE> row_map_; // Indices: number of element +1 
+  Kokkos::View<T*,MEMSPACE> entries_; // Values for all entries 
+  Kokkos::View<int**,MEMSPACE> sizes_; // Represent the sizes for matrices/tensors
 
-  friend class CSR_Factory<T,D>;
 };
 
 // Definitions 

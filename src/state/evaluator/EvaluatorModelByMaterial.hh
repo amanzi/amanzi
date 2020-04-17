@@ -51,7 +51,7 @@ namespace Amanzi {
 // A generic evaluator for acting on regions
 //
 template <template <class, class> class Model,
-          class Device_type = AmanziDefaultDevice>
+          class Device_type = DefaultDevice>
 class EvaluatorModelByMaterial
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:

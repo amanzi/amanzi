@@ -39,14 +39,41 @@
 #include "Kokkos_Core.hpp"
 
 
-using AmanziDefaultDevice =
-  Kokkos::Device<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::memory_space>;
-using AmanziDefaultHost =
-  Kokkos::Device<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::memory_space>;
+namespace Amanzi {
 
+using DefaultExecutionSpace = Kokkos::DefaultExecutionSpace;
+using DefaultHostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 
+using DefaultMemorySpace = DefaultExecutionSpace::memory_space;
+using DefaultHostMemorySpace = DefaultHostExecutionSpace::memory_space;
+
+using DefaultDevice =
+  Kokkos::Device<DefaultExecutionSpace, DefaultExecutionSpace::memory_space>;
+
+using DefaultHost =
+  Kokkos::Device<DefaultHostExecutionSpace, DefaultHostMemorySpace>;
+
+  
+#ifdef KOKKOS_ENABLE_CUDA_UVM
+// If we are using UVM, we sometimes prefer to turn it off to avoid unnecessary
+// syncing when we want to stay fully on the device and never come back to the
+// host.
+using DeviceOnlyMemorySpace = Kokkos::CudaSpace;
+
+// If we are using UVM, dual views are not synced to DefaultHostMemorySpace,
+// but to CudaUVMSpace even on the host_mirror
+using MirrorHost =
+  Kokkos::Device<DefaultExecutionSpace, Kokkos::CudaUVMSpace>;
+
+#else // KOKKOS_ENABLE_CUDA_UVM
+  
+using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
+using MirrorHost = DefaultHost;
+
+#endif
+
+} // namespace Amanzi
+  
 #else  // TRILINOS_TPETRA_STACK
 
 class Epetra_Comm;

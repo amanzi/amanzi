@@ -244,7 +244,7 @@ FileHDF5::WriteView(const std::string& var_path,
                     Tpetra::global_size_t global_length_raw,
                     const view_type vec)
 {
-  Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost>
+  Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost>
     check_layout_right = vec;
   int localdims[] = { static_cast<int>(vec.extent(0)),
                       static_cast<int>(vec.extent(1)) };
@@ -280,7 +280,7 @@ FileHDF5::WriteView(const std::string& var_path,
 // {
 //   IODetails::DangerousString full_h5path(var_name);
 
-//   Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost>
+//   Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost>
 //   check_layout_right = vec; int localdims[] = {
 //   static_cast<int>(vec.extent(0)), static_cast<int>(vec.extent(1)) };
 

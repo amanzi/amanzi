@@ -29,7 +29,7 @@ using Entity_ID_View = Kokkos::View<LO*>;
 
 // Execute over continuous range, no tag.
 template <template <typename> class Model,
-          class DeviceType = AmanziDefaultDevice>
+          class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
              const int beg, const int end, DeviceType /* dev */ = DeviceType())
@@ -43,7 +43,7 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 
 // Execute over a continuous range, with tag.
 template <template <typename> class Model, class TagType,
-          class DeviceType = AmanziDefaultDevice>
+          class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
              TagType /* tag */, const int beg, const int end,
@@ -59,7 +59,7 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 
 // Execute over a random range, no tag.
 template <template <typename> class Model,
-          class DeviceType = AmanziDefaultDevice>
+          class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
              const Entity_ID_View& entities,
@@ -76,7 +76,7 @@ ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
 
 // Execute over a random range, with tag.
 template <template <typename> class Model, class TagType,
-          class DeviceType = AmanziDefaultDevice>
+          class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
              TagType /* tag */, const Entity_ID_View& entities,

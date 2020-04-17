@@ -41,7 +41,8 @@ class Op_Face_CellBndFace : public Op {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     csr = std::move(CSR_Matrix(nfaces_owned));
     for (int f=0; f!=nfaces_owned; ++f) {
-      csr.set_shape(f, {2,2});
+      int loc[2] = {2,2};
+      csr.set_shape(f, loc);
     }
     csr.prefix_sum(); 
   }
@@ -76,7 +77,7 @@ class Op_Face_CellBndFace : public Op {
         });
 
     auto import_permute_face = mesh->exterior_face_importer()
-        ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+        ->getPermuteFromLIDs_dv().view<DefaultDevice>();
     Kokkos::parallel_for(
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 3",
         import_permute_face.extent(0),
@@ -142,7 +143,7 @@ class Op_Face_CellBndFace : public Op {
         auto import_same_face = mesh->exterior_face_importer()->getNumSameIDs();
         auto import_permute_face =
             mesh->exterior_face_importer()
-            ->getPermuteFromLIDs_dv().view<AmanziDefaultDevice>();
+            ->getPermuteFromLIDs_dv().view<DefaultDevice>();
       
         Kokkos::parallel_for(
           "Op_Face_CellBndFace::Rescale loop 2",

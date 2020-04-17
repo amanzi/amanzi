@@ -160,7 +160,7 @@ OutputXDMF::WriteMesh_(int cycle)
 
   // Get and write coordinates and coordinate map
   // -- create and store a vector of coordinates
-  Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost> coords(
+  Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost> coords(
     "coordinates", node_map->getNodeNumElements(), 3);
   AmanziGeometry::Point p;
   for (AmanziMesh::Entity_ID i = 0; i != coords.extent(0); ++i) {

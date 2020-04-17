@@ -115,7 +115,7 @@ TEST_FIXTURE(reference_mesh, into_vector)
   computeMeshFunction(funcs, 0.0, mps, cv);
 
   {  
-    auto cv_v = cv.ViewComponent<AmanziDefaultHost>("face", true);
+    auto cv_v = cv.ViewComponent<MirrorHost>("face", true);
     Entity_ID_List face_list;
 
     mesh->get_set_entities("RIGHT", FACE, Parallel_type::ALL, face_list);

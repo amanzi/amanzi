@@ -36,7 +36,7 @@ Polynomial::Polynomial(int d, int order) : PolynomialBase(d, order)
 /* ******************************************************************
 * Constructor from a given vector.
 ****************************************************************** */
-Polynomial::Polynomial(int d, int order, const DenseVector& coefs)
+Polynomial::Polynomial(int d, int order, const DenseVector<>& coefs)
   : PolynomialBase(d, order)
 {
   size_ = PolynomialSpaceDimension(d_, order_);
@@ -101,7 +101,7 @@ Polynomial::Polynomial(const Monomial& mono)
 ****************************************************************** */
 Polynomial::Polynomial(int d, int order,
                        const std::vector<AmanziGeometry::Point>& xyz, 
-                       const DenseVector& values)
+                       const DenseVector<>& values)
   : PolynomialBase(d, order)
 {
   d_ = d;
@@ -134,7 +134,7 @@ Polynomial::Polynomial(int d, int order,
       
     // form linear system
     DenseMatrix A(size_, size_);
-    DenseVector b(size_);
+    DenseVector<> b(size_);
 
     //A.Multiply(psi, psi, true);
     //psi.Multiply(values, b, true);
@@ -239,13 +239,13 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
     // create powers (x_i - o_i)^k
     // FIXME: cost could be reduced using split Cnk * a^k
-    std::vector<std::vector<DenseVector> > powers(d_);
+    std::vector<std::vector<DenseVector<>> > powers(d_);
 
     for (int i = 0; i < d_; ++i) {
       powers[i].resize(order_ + 1);
 
       for (int k = 0; k <= order_; ++k) {
-        DenseVector& dv = powers[i][k];
+        DenseVector<>& dv = powers[i][k];
         dv.reshape(k + 1);
 
         int cnk(1);
@@ -322,7 +322,7 @@ Polynomial Polynomial::ChangeOrigin(
     const int* index = mono.multi_index();
 
     // create powers (x_i - o_i)^k
-    std::vector<DenseVector> powers(d);
+    std::vector<DenseVector<>> powers(d);
 
     for (int i = 0; i < d; ++i) {
       powers[i].reshape(index[i] + 1);

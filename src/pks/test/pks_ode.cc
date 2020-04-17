@@ -251,7 +251,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2.0,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-10);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -263,11 +263,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.59374, // calculated via test.py
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -279,11 +279,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.4);
     CHECK_CLOSE(2.33463, // calculated via test.py
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -296,7 +296,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-5);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -308,7 +308,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-5);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -320,7 +320,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -335,7 +335,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2.0,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-10);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -347,11 +347,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.59374,
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -363,11 +363,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.4);
     CHECK_CLOSE(2.33463,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -379,7 +379,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2.0,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-10);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -391,7 +391,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-5);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -403,7 +403,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -416,7 +416,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -428,11 +428,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.867971990790009,
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -444,11 +444,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.6);
     CHECK_CLOSE(3.27476584420779,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -460,11 +460,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.6);
     CHECK_CLOSE(3.02734,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(69, nsteps.first);
     CHECK_EQUAL(2, nsteps.second);
@@ -477,7 +477,7 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(2,
                 run->S->Get<CompositeVector>("primaryA")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-8);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -489,11 +489,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.86608,
                 run->S->Get<CompositeVector>("primaryB")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -506,11 +506,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.6);
     CHECK_CLOSE(3.02734,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -526,11 +526,11 @@ SUITE(PKS_ODE)
     auto nsteps = run_test(run->S, run->pk);
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.6);
     CHECK_CLOSE(2.79649,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -557,11 +557,11 @@ SUITE(PKS_ODE)
     // linear extrapolation
     CHECK_CLOSE(std::exp(1.0),
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 0.6);
     CHECK_CLOSE(3.02976,
                 run->S->Get<CompositeVector>("primaryC")
-                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
+                  .ViewComponent<MirrorHost>("cell", false)(0, 0),
                 1.e-4);
     CHECK_EQUAL(65, nsteps.first);
     CHECK_EQUAL(2, nsteps.second);

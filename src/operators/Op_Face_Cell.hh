@@ -35,7 +35,8 @@ class Op_Face_Cell : public Op {
       AmanziMesh::Entity_ID_View cells;
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
-      csr.set_shape(f, {ncells, ncells});
+      int loc[2] = {ncells,ncells}; 
+      csr.set_shape(f, loc);
     }
     csr.prefix_sum();
   }

@@ -78,7 +78,7 @@ class SuperMap {
   }
 
   // index accessors
-  template <class DeviceType=AmanziDefaultDevice>
+  template <class DeviceType=DefaultDevice>
   cVectorView_type_<DeviceType, LO>
   Indices(std::size_t block_num, const std::string& compname,
           std::size_t dof_num) const
@@ -93,7 +93,7 @@ class SuperMap {
     return smap_->Indices<DeviceType>(bi->second.first, bi->second.second);
   }
 
-  template <class DeviceType=AmanziDefaultDevice>
+  template <class DeviceType=DefaultDevice>
   cVectorView_type_<DeviceType, LO>
   GhostIndices(std::size_t block_num, const std::string& compname,
                std::size_t dof_num) const

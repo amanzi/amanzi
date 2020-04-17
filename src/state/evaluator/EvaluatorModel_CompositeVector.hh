@@ -62,7 +62,7 @@ namespace Amanzi {
 // The actual generic Evaluator class.
 //
 template <template <class, class> class Model,
-          class Device_type = AmanziDefaultDevice>
+          class Device_type = DefaultDevice>
 class EvaluatorModel_CompositeVector
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:

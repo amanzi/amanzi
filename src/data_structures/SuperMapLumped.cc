@@ -82,9 +82,9 @@ SuperMapLumped::CreateIndexing_()
     LO nentities = nentities_owned + ghosted_counts_.at(compname);
 
     auto index_view =
-      indices_->ViewComponent<AmanziDefaultHost>(compname, false);
+      indices_->ViewComponent<MirrorHost>(compname, false);
     auto global_index_view =
-      gids_comp.ViewComponent<AmanziDefaultHost>(compname, false);
+      gids_comp.ViewComponent<MirrorHost>(compname, false);
 
     int offset = offsets_.at(compname);
     int n_dofs = comp_maps_->getNumVectors(compname);
@@ -108,9 +108,9 @@ SuperMapLumped::CreateIndexing_()
     LO nentities = nentities_owned + ghosted_counts_.at(compname);
 
     auto index_view =
-      indices_->ViewComponent<AmanziDefaultHost>(compname, true);
+      indices_->ViewComponent<MirrorHost>(compname, true);
     auto global_index_view =
-      gids_comp.ViewComponent<AmanziDefaultHost>(compname, true);
+      gids_comp.ViewComponent<MirrorHost>(compname, true);
 
     int ghosted_offset = ghosted_offsets_.at(compname);
     int n_dofs = comp_maps_->getNumVectors(compname);
