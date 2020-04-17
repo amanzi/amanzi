@@ -54,7 +54,6 @@
     </numerical_controls>
     <mesh framework="mstk">
       <dimension>2</dimension>
-      <comments />
       <read>
         <format>exodus ii</format>
         <file>porflow4_4.exo</file>

@@ -1,5 +1,5 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input file_name="oldspec.xml" format="v1" />
+    <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
     <model_description name="unconfined_head_head_recharge_2d">
       <comments>Steady-State Richards: recharge_2d</comments>
       <model_id>??</model_id>
@@ -70,13 +70,12 @@
           <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
           <max_divergent_iterations>3</max_divergent_iterations>
           <unstr_initialization>
-            <initialize_with_darcy>true</initialize_with_darcy>
             <clipping_saturation>0.9</clipping_saturation>
             <clipping_pressure>90000.0</clipping_pressure>
             <method>picard</method>
             <preconditioner>hypre_amg</preconditioner>
             <linear_solver>aztec00</linear_solver>
-            <control_options>pressure</control_options>
+            <error_control_options>pressure</error_control_options>
             <convergence_tolerance>1.0e-8</convergence_tolerance>
             <max_iterations>10</max_iterations>
           </unstr_initialization>
@@ -85,16 +84,6 @@
           <algorithm>none</algorithm>
           <cfl>1</cfl>
         </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">
@@ -112,16 +101,13 @@
         <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0" />
       </region>
       <region name="Left">
-        <box high_coordinates="0.0, 49.9872" low_coordinates="0.0, 0.0" name="-X_Boundary" />
-        <comments>Left boundary</comments>
+        <box high_coordinates="0.0, 49.9872" low_coordinates="0.0, 0.0" />
       </region>
       <region name="Right">
-        <box high_coordinates="499.872, 73.152" low_coordinates="499.872, 0.0" name="+X_Boundary" />
-        <comments>Right boundary</comments>
+        <box high_coordinates="499.872, 73.152" low_coordinates="499.872, 0.0" />
       </region>
       <region name="Top">
-        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 73.152" name="+Y_Boundary" />
-        <comments>Top boundary</comments>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 73.152"/>
       </region>
       <point coordinate="1.5240, 0.3048" name="Point5ft" />
       <point coordinate="32.0040, 0.3048" name="Point105ft" />
@@ -152,8 +138,7 @@
         <cap_pressure model="van_genuchten">
           <parameters alpha="1.46e-3" m="0.314" optional_krel_smoothing_interval="100.0" sr="0.052" />
         </cap_pressure>
-        <rel_perm model="mualem">
-			</rel_perm>
+        <rel_perm model="mualem"/>
         <assigned_regions>Aquifer</assigned_regions>
       </material>
     </materials>
@@ -163,7 +148,7 @@
         <assigned_regions>Aquifer</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <uniform_pressure function="uniform" value="101325.0" />
+            <uniform_pressure value="101325.0" />
           </liquid_component>
         </liquid_phase>
       </initial_condition>
