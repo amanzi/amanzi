@@ -600,7 +600,7 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
         .set<std::string>("mesh entity", "cell")
-        .set<int>("number of DoFs", 1)
+        .set<int>("number of dofs", 1)
         .set<bool>("constant in time", true);
   } else {
     double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
