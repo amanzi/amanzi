@@ -123,9 +123,17 @@ Changes by TDS June 2013:
 </xs:simpleType>	
 	
 <xs:simpleType name="typedef_unit_conc">
+     <xs:annotation>
+            <xs:documentation xml:lang="en">
+               Unit molar equals mol/L. Keyword SI means mol/m^3 which is
+               probably not the best solution and needs a ticket.
+            </xs:documentation>
+     </xs:annotation>
      <xs:restriction base="xs:string">
             <xs:enumeration value="molar" />
-	    <xs:enumeration value="mol/m^3" />
+	    <xs:enumeration value="SI" />
+	    <xs:enumeration value="ppb" />
+	    <xs:enumeration value="ppm" />
      </xs:restriction>
 </xs:simpleType>		
 
@@ -654,7 +662,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_chemistry_controls">
   <xs:all minOccurs = "0" maxOccurs = "1">
-    <xs:element name="process_model" type="xs:string"/>
+    <xs:element name="process_model" type="xs:string" minOccurs="0" maxOccurs="1"/>
     <!-- Amanzi native chemistry -->
     <xs:element name="activity_model" type="xs:string" default="unit" minOccurs="0" maxOccurs="1"/>
     <xs:element name="tolerance" type="typedef_exponential" default="1e-12" minOccurs="0" maxOccurs="1"/>
@@ -1564,6 +1572,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all minOccurs = "0" maxOccurs = "1">
 		<xs:element name="minerals" type="typedef_minerals" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
+	<xs:attribute name="name" type="xs:string"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_minerals">
@@ -1978,6 +1987,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="time_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="cycle_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="write_regions" type="typedef_write_regions" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="whitelist" type="xs:string" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="blacklist" type="xs:string" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
 

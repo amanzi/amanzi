@@ -80,13 +80,11 @@
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
-	<bdf1_integration_method>
-	    <min_iterations>10</min_iterations>
-	    <max_iterations>15</max_iterations> 
-	    <limit_iterations>20</limit_iterations>
-	    <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
-	    <nonlinear_tolerance>1e-12</nonlinear_tolerance>
-	</bdf1_integration_method>
+	<min_iterations>10</min_iterations>
+	<max_iterations>15</max_iterations> 
+	<limit_iterations>20</limit_iterations>
+          <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+	<nonlinear_tolerance>1e-12</nonlinear_tolerance>
 	<preconditioner>hypre_amg</preconditioner>
       </unstr_transient_controls>
 

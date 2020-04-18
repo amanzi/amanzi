@@ -80,7 +80,7 @@
                     <secondary>UO2OSi(OH)3+</secondary>
                 </secondaries>
                 <redox>
-                    <redox>Fe+++</redox>
+                    <primary>Fe+++</primary>
                 </redox>
             </dissolved_components>
         </liquid_phase>

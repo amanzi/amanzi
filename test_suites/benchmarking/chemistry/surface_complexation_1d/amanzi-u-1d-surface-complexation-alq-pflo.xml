@@ -74,7 +74,7 @@
       </unstr_transport_controls>
 
       <unstr_chemistry_controls>
-	  <auxiliary_data> pH </auxiliary_data>
+	  <auxiliary_data>pH</auxiliary_data>
       </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>
@@ -131,19 +131,19 @@
       <constraint name="initial">
         <primary name="Zn++" type="total" value="1.0e-7"/>
         <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="ph" value="5"/>
+        <primary name="H+" type="pH" value="5"/>
         <primary name="Na+" type="charge" value="1.0e-5"/>
       </constraint>
       <constraint name="west">
         <primary name="Zn++" type="total" value="1.0e-6"/>
         <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="ph" value="6"/>
+        <primary name="H+" type="pH" value="6"/>
         <primary name="Na+" type="charge" value="1.0e-5"/>
       </constraint>
       <constraint name="east">
         <primary name="Zn++" type="total" value="1.0e-7"/>
         <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="ph" value="5"/>
+        <primary name="H+" type="pH" value="5"/>
         <primary name="Na+" type="charge" value="1.0e-5"/>
       </constraint>
     </constraints>
