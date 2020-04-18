@@ -1,5 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+    <misc>
+      <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+    </misc>
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
       <model_id>Single-Phase Saturated</model_id>

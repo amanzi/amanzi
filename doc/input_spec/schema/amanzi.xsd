@@ -472,7 +472,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="boundary_conditions" type="typedef_boundary_conditions" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="sources" type="typedef_sources" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="output" type="typedef_outputs" minOccurs="0" maxOccurs="1"/>
-		<xs:element name="echo_translated_input" type="typedef_translated_input" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="misc" type="typedef_misc" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="version" type="typedef_version" use="required"/>
 	<xs:attribute name="type" type="xs:string" use="required"/>
@@ -501,17 +501,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     </xs:complexContent>
 </xs:complexType>
 	
-<xs:complexType name="typedef_translated_input">
-    <xs:attribute type="typedef_native_format" name="format"/>
-    <xs:attribute type="xs:string" name="file_name"/>
-</xs:complexType>
-
-<xs:simpleType name="typedef_native_format">
-	<xs:restriction base="xs:string">
-		<xs:enumeration value="unstructured_native"/>
-		<xs:enumeration value="structured_native"/>
-	</xs:restriction>
-    </xs:simpleType>
 
 <!-- ========================================== General Description ========================================== -->
 <xs:complexType name="typedef_model_description">
@@ -2069,4 +2058,26 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
         <xs:attribute name="primary"/>
         <xs:assert  test="not(exists(functional)) or functional = ('point', 'integral')"/>
 </xs:complexType>
+
+
+<!-- ============================================ Mics ============================================== -->
+<xs:complexType name="typedef_misc">
+    <xs:all minOccurs = "0" maxOccurs = "1">
+        <xs:element name="echo_translated_input" type="typedef_translated_input" minOccurs="0" maxOccurs="1"/>
+    </xs:all>
+</xs:complexType>
+
+<xs:complexType name="typedef_translated_input">
+    <xs:attribute type="typedef_native_format" name="format"/>
+    <xs:attribute type="xs:string" name="file_name"/>
+    <xs:attribute type="xs:nonNegativeInteger" name="output_precision"/>
+</xs:complexType>
+
+<xs:simpleType name="typedef_native_format">
+    <xs:restriction base="xs:string">
+         <xs:enumeration value="unstructured_native"/>
+         <xs:enumeration value="structured_native"/>
+    </xs:restriction>
+</xs:simpleType>
+
 </xs:schema>

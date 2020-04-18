@@ -1,5 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+  <misc>
+    <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+  </misc>
   <model_description name="SR Test Problem">
     <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
     <model_id>Theis</model_id>

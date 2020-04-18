@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input format="unstructured_native"/>
     <model_description name="farea_1d">
         <comments>farea_1d	Thu Jun 23 15:00:31 PDT 2016</comments>
     </model_description>

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input format="unstructured_native"/>
+    <misc>
+        <echo_translated_input format="unstructured_native"/>
+    </misc>
     <model_description name="infiltration_dry_sand-unstr">
         <comments>infiltration_dry_sand-unstr	Tue Sep 22 14:24:43 PDT 2015</comments>
     </model_description>

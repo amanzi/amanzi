@@ -1,5 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+    <misc>
+      <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+    </misc>
     <model_description name="unconfined_head_head_recharge_2d">
       <comments>Steady-State Richards: recharge_2d</comments>
       <model_id>??</model_id>
