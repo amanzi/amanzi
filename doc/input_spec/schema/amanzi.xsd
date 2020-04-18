@@ -360,6 +360,19 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:complexContent>
 </xs:complexType>
 
+<xs:complexType name="typedef_line_segment">
+	<xs:attribute name="end_coordinates" type="typedef_coordinate"/>
+	<xs:attribute name="opposite_end_coordinates" type="typedef_coordinate"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_labeled_line_segment">
+	<xs:complexContent>
+		<xs:extension base="typedef_line_segment">
+			<xs:attribute name="name" type="xs:string"/>
+		</xs:extension>
+	</xs:complexContent>
+</xs:complexType>
+
 <xs:complexType name="typedef_region_file">
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="type" type="typedef_region_file_types"/>
@@ -987,6 +1000,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="point" type="typedef_labeled_point" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="plane" type="typedef_labeled_plane" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="logical" type="typedef_logical" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="line_segment" type="typedef_labeled_line_segment" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:choice>
 	</xs:sequence>
 </xs:complexType>
@@ -1002,6 +1016,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="region_file" type="typedef_region_file"/>
 			<xs:element name="box" type="typedef_box"/>
 			<xs:element name="plane" type="typedef_plane"/>
+			<xs:element name="line_segment" type="typedef_line_segment"/>
 		</xs:choice>
 	</xs:sequence>
 	<xs:attribute name="name" type="xs:string"/>

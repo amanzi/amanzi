@@ -199,6 +199,11 @@
     <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="100.0, 0.0, 0.0" name="+X_Boundary"/>
     <box high_coordinates="0.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="-X_Boundary"/>
     <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="All"/>
+
+    <line_segment name="LS1" end_coordinates="0.0, 0.0, 0.0" opposite_end_coordinates="100.0, 1.0, 1.0"/>
+    <region name="LS2">
+      <line_segment end_coordinates="0.0, 0.0, 0.0" opposite_end_coordinates="100.0, 1.0, 1.0"/>
+    </region>
   </regions>
 
   <materials>
