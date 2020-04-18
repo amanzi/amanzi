@@ -1,5 +1,8 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input format="unstructured_native"/>
+  <misc>
+    <echo_translated_input format="unstructured_native"/>
+  </misc>
+
   <model_description name="F-Area">
      <comments>Test for chemistry</comments>
   </model_description>
@@ -81,7 +84,7 @@
           <secondary>UO2OSi(OH)3+</secondary>
         </secondaries>
         <redox>
-          <redox>Fe+++</redox>
+          <primary>Fe+++</primary>
         </redox>
       </dissolved_components>
     </liquid_phase>
