@@ -28,8 +28,8 @@
     </phases>
     <execution_controls>
         <verbosity level="medium"/>
-        <execution_control_defaults increase_factor="1.2" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
-        <execution_control end="8.64E4 s" increase_factor="1.25" init_dt="2.0E-3 s" max_dt="8.64E3 s" method="bdf1" mode="transient" reduction_factor="0.8" start="0 y"/>
+        <execution_control_defaults increase_factor="1.1" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
+        <execution_control end="8.64E4 s" increase_factor="1.1" init_dt="2.0E-3 s" max_dt="8.64E3 s" method="bdf1" mode="transient" reduction_factor="0.8" start="0 y"/>
     </execution_controls>
     <numerical_controls>
         <common_controls/>
@@ -49,7 +49,10 @@
                 <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
                 <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                 <max_divergent_iterations>3</max_divergent_iterations>
-                <initialize_with_darcy>true</initialize_with_darcy>
+                <unstr_initialization>
+                   <method>darcy_solver</method>
+                   <linear_solver>aztecoo</linear_solver>
+                </unstr_initialization>
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
@@ -65,7 +68,6 @@
                     <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                     <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
-                <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
             <unstr_preconditioners>
                 <hypre_amg>

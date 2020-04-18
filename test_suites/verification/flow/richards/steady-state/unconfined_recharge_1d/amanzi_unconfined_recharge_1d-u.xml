@@ -60,7 +60,6 @@
           </hypre_amg>
         </unstr_preconditioners>
         <unstr_steady-state_controls>
-          <initialize_with_darcy>true</initialize_with_darcy>
           <restart_tolerance_relaxation_factor>1000.0</restart_tolerance_relaxation_factor>
           <restart_tolerance_relaxation_factor_damping>0.95</restart_tolerance_relaxation_factor_damping>
           <min_iterations>10</min_iterations>

@@ -305,8 +305,7 @@
         <cap_pressure model="van_genuchten">
           <parameters alpha="1.46e-3" m="0.314" sr="0.052" />
         </cap_pressure>
-        <rel_perm model="mualem">
-	</rel_perm>
+        <rel_perm model="mualem"/>
         <assigned_regions>Confined Aquifer</assigned_regions>
       </material>
       <material name="Unconfined Aquifer">
@@ -318,8 +317,7 @@
         <cap_pressure model="van_genuchten">
           <parameters alpha="1.46e-3" m="0.314" sr="0.052" />
         </cap_pressure>
-        <rel_perm model="mualem">
-	</rel_perm>
+        <rel_perm model="mualem"/>
         <assigned_regions>Unconfined Aquifer</assigned_regions>
       </material>
       <material name="Confining Unit">
@@ -331,8 +329,7 @@
         <cap_pressure model="van_genuchten">
           <parameters alpha="1.46e-3" m="0.314" sr="0.052" />
         </cap_pressure>
-        <rel_perm model="mualem">
-	</rel_perm>
+        <rel_perm model="mualem"/>
         <assigned_regions>Confining Unit</assigned_regions>
       </material>
     </materials>
@@ -343,7 +340,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <pressure function="uniform" value="101325.0" />
+            <uniform_pressure value="101325.0" />
           </liquid_component>
         </liquid_phase>
       </initial_condition>
@@ -1558,7 +1555,7 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <cycle_macro>Every_20</cycle_macro>
+        <cycle_macros>Every_20</cycle_macros>
       </vis>
     </output>
 </amanzi_input>
