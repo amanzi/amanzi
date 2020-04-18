@@ -86,6 +86,16 @@
         <Parameter name="opposite end coordinate" type="Array(double)" value="{100.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Side">
+      <ParameterList name="region: polygon">
+        <Parameter name="number of points" type="int" value="4"/>
+        <Parameter name="points" type="Array(double)" value="{100.0, 0.0, 0.0, 
+                                                              100.0, 0.0, 1.0, 
+                                                              100.0, 1.0, 1.0, 
+                                                              100.0, 1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="state">

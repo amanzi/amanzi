@@ -204,6 +204,13 @@
     <region name="LS2">
       <line_segment end_coordinates="0.0, 0.0, 0.0" opposite_end_coordinates="100.0, 1.0, 1.0"/>
     </region>
+
+    <polygonal_surface name="Side" num_points="4">
+      <point>100.0, 0.0, 0.0</point>
+      <point>100.0, 0.0, 1.0</point>
+      <point>100.0, 1.0, 1.0</point>
+      <point>100.0, 1.0, 0.0</point>
+    </polygonal_surface>
   </regions>
 
   <materials>
