@@ -21,7 +21,7 @@
       </time_macro>
       <time_macro name="EveryMonth">
         <start>1956,y</start>
-        <timestep_interval>1,m</timestep_interval>
+        <timestep_interval>1</timestep_interval>
         <stop>1988,y</stop>
       </time_macro>
       <cycle_macro name="Every100Cycles">
