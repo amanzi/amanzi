@@ -54,6 +54,8 @@ class EvaluatorSecondaryMonotypeAdditive
 
  protected:
   std::map<Key, double> coefs_;
+  using EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::dependencies_;
+  using EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::my_keys_;
 
  private:
   static Utils::RegisteredFactory<
@@ -66,8 +68,14 @@ template <typename Data_t, typename DataFactory_t>
 EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
 {
-  AMANZI_ASSERT(this->my_keys_.size() == 1);
-  for (const auto& dep : this->dependencies_) {
+  AMANZI_ASSERT(my_keys_.size() == 1);
+
+  if (dependencies_.size() == 0) {
+    Errors::Message msg("EvaluatorSecondaryMonotypeMultiplicative: empty or nonexistent \"dependencies\" list.");
+    throw(msg);
+  }
+
+  for (const auto& dep : dependencies_) {
     Key coef_name = dep.first + ":" + dep.second;
     Key pname = dep.first + " coefficient";
     Key pname_full = coef_name + " coefficient";
@@ -93,7 +101,7 @@ void
 EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::Evaluate_(const State& S, const std::vector<Data_t*>& results)
 {
   results[0]->putScalar(0.);
-  for (const auto& dep : this->dependencies_) {
+  for (const auto& dep : dependencies_) {
     const auto& term = S.Get<Data_t>(dep.first, dep.second);
     std::string coef_name = dep.first + ":" + dep.second;
     double coef = coefs_.at(coef_name);

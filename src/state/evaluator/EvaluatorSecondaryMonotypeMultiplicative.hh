@@ -39,10 +39,15 @@ class EvaluatorSecondaryMonotypeMultiplicative
   EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
   {
-    coef_ = this->plist_.template get<double>("coefficient", 1.0);
+    if (dependencies_.size() == 0) {
+      Errors::Message msg("EvaluatorSecondaryMonotypeMultiplicative: empty or nonexistent \"dependencies\" list.");
+      throw(msg);
+    }
+
+    coef_ = plist_.template get<double>("coefficient", 1.0);
 
     // if true, the last dependency is "divided by"
-    reciprocal_ = this->plist_.template get<bool>("reciprocal", false);
+    reciprocal_ = plist_.template get<bool>("reciprocal", false);
     if (reciprocal_) {
       Errors::Message msg(
         "EvaluatorSecondaryMonotypeMultiplicative: reciprocalMultiply() not "
@@ -68,9 +73,9 @@ class EvaluatorSecondaryMonotypeMultiplicative
     AMANZI_ASSERT(results.size() == 1);
     int i = 0;
     results[0]->putScalar(coef_);
-    for (const auto& dep : this->dependencies_) {
+    for (const auto& dep : dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
-      if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+      if (reciprocal_ && dependencies_.size() - 1 == i) {
         // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
       } else {
         results[0]->elementWiseMultiply(1., term, *results[0], 0.);
@@ -86,18 +91,18 @@ class EvaluatorSecondaryMonotypeMultiplicative
   {
     int i = 0;
     results[0]->putScalar(coef_);
-    for (const auto& dep : this->dependencies_) {
+    for (const auto& dep : dependencies_) {
       if (dep.first != wrt_key || dep.second != wrt_tag) {
         // not WRT
         const auto& term = S.Get<Data_t>(dep.first, dep.second);
-        if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+        if (reciprocal_ && dependencies_.size() - 1 == i) {
           // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         } else {
           results[0]->elementWiseMultiply(1., term, *results[0], 0.);
         }
       } else {
         // IS WRT
-        if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+        if (reciprocal_ && dependencies_.size() - 1 == i) {
           //  - term ^ -2
           // const auto& term = S.Get<Data_t>(dep.first, dep.second);
           // results[0]->ReciprocalMultiply(-1., term, *results[0], 0.);
@@ -111,6 +116,8 @@ class EvaluatorSecondaryMonotypeMultiplicative
  protected:
   double coef_;
   bool reciprocal_;
+  using EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::plist_;
+  using EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::dependencies_;
 
  private:
   static Utils::RegisteredFactory<

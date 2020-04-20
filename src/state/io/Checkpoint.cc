@@ -62,7 +62,7 @@ Checkpoint::FinalizeFile(bool final)
     std::string filename = output_->Filename();
     std::string filename_extension = boost::filesystem::extension(filename);
     std::string filename_final =
-      filename_base_ + "_finale" + filename_extension;
+      filename_base_ + "_final" + filename_extension;
     boost::filesystem::remove(filename_extension);
     boost::filesystem::create_hard_link(filename.data(), filename_final.data());
   }

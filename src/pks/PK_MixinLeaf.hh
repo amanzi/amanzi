@@ -53,6 +53,7 @@ class PK_MixinLeaf : public Base_t {
 
   // require data
   void Setup();
+  void Initialize();
 
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
@@ -116,6 +117,15 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Setup()
   // elsewhere
   S_->template Require<Data_t, DataFactory_t>(key_, "", key_);
 }
+
+template <class Base_t, class Data_t, class DataFactory_t>
+void
+PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Initialize()
+{
+  Teuchos::ParameterList attrs(key_);
+  S_->GetRecordW(key_, "", key_).Initialize(plist_->sublist("initial conditions"), attrs);
+}
+
 
 // Mark, as changed, any primary variable evaluator owned by this PK
 template <class Base_t, class Data_t, class DataFactory_t>
