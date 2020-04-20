@@ -52,7 +52,8 @@ TrappingRateEvaluator ::TrappingRateEvaluator (const TrappingRateEvaluator & oth
   d_p_ = other.d_p_;
   alpha_ = other.alpha_;
   gamma_ = other.gamma_;
-  beta_  = other.beta_; 
+  beta_  = other.beta_;
+  sediment_density_ = other.sediment_density_;
 } 
 
 

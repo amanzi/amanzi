@@ -50,6 +50,7 @@ SettlementRateEvaluator ::SettlementRateEvaluator (const SettlementRateEvaluator
   ws_ = other.ws_;
   gamma_ = other.gamma_;
   lambda_ = other.lambda_;
+  sediment_density_ = other.sediment_density_;
 } 
 
 
@@ -67,6 +68,7 @@ void SettlementRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   
   for (int c=0; c<result_c.MyLength(); c++){
     double tau_0 = gamma_ * lambda_ * (sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]));
+    
     if (tau_0 < tau_d_){
       result_c[0][c] = sediment_density_ * ws_ * std::min(tcc[0][c], 0.5) * (1 - tau_0 / tau_d_);
     }else{
