@@ -77,68 +77,68 @@ Changes by TDS June 2013:
 
 <!-- =====================================Simple Type Global Definitions ==================================== -->
 <xs:simpleType name="typedef_version">
-  <xs:restriction base="xs:token">
+	<xs:restriction base="xs:token">
 	<!-- 2.3.0 -->
-    <xs:pattern value="[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}"/>
-  </xs:restriction>
+		<xs:pattern value="[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}"/>
+	</xs:restriction>
 </xs:simpleType>
 
 <!-- http://www.regular-expressions.info/floatingpoint.html -->
 <xs:simpleType name="typedef_exponential">
-  <xs:restriction base="xs:token">
-    <xs:pattern value="[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?"/>
-  </xs:restriction>
+	<xs:restriction base="xs:token">
+		<xs:pattern value="[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?"/>
+	</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_labeled_time">
-  <xs:restriction base="xs:token">
-    <!-- <xs:pattern value="[+-]?[0-9]*\.?[0-9]+(;[s|h|d|y]?)?"/> -->
-    <!-- <xs:pattern value="[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?(;[s|h|d|y]?)?)"/> -->
-    <!--<xs:pattern value="[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?([\s|;]?[s|h|d|y]?)?)"/>-->
-    <xs:pattern value="[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?([\s;,]?[s|h|d|y]?)?)"/>
-  </xs:restriction>
+	<xs:restriction base="xs:token">
+ 		<!-- <xs:pattern value="[+-]?[0-9]*\.?[0-9]+(;[s|h|d|y]?)?"/> -->
+		<!-- <xs:pattern value="[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?(;[s|h|d|y]?)?)"/> -->
+		<!--<xs:pattern value="[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?([\s|;]?[s|h|d|y]?)?)"/>-->
+		<xs:pattern value="[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?([\s;,]?[s|h|d|y]?)?)"/>
+	</xs:restriction>
 </xs:simpleType>
 
 <!-- Units -->
 <xs:simpleType name="typedef_unit_length">
-     <xs:restriction base="xs:string">
-            <xs:enumeration value="km" />
-            <xs:enumeration value="m" />
-            <xs:enumeration value="ft" />
-            <xs:enumeration value="cm" />
-     </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="km" />
+		<xs:enumeration value="m" />
+		<xs:enumeration value="ft" />
+		<xs:enumeration value="cm" />
+	</xs:restriction>
 </xs:simpleType>		
 
 <xs:simpleType name="typedef_unit_time">
-     <xs:restriction base="xs:string">
-            <xs:enumeration value="y" />
-            <xs:enumeration value="d" />
-            <xs:enumeration value="h" />
-            <xs:enumeration value="s" />
-     </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="y" />
+		<xs:enumeration value="d" />
+		<xs:enumeration value="h" />
+		<xs:enumeration value="s" />
+	</xs:restriction>
 </xs:simpleType>	
 	
 <xs:simpleType name="typedef_unit_mass">
-     <xs:restriction base="xs:string">
-            <xs:enumeration value="kg" />
-            <xs:enumeration value="lb" />
-            <xs:enumeration value="g" />
-     </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="kg" />
+		<xs:enumeration value="lb" />
+		<xs:enumeration value="g" />
+	</xs:restriction>
 </xs:simpleType>	
 	
 <xs:simpleType name="typedef_unit_conc">
-     <xs:annotation>
-            <xs:documentation xml:lang="en">
-               Unit molar equals mol/L. Keyword SI means mol/m^3 which is
-               probably not the best solution and needs a ticket.
-            </xs:documentation>
-     </xs:annotation>
-     <xs:restriction base="xs:string">
-            <xs:enumeration value="molar" />
-	    <xs:enumeration value="SI" />
-	    <xs:enumeration value="ppb" />
-	    <xs:enumeration value="ppm" />
-     </xs:restriction>
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
+          Unit molar equals mol/L. Keyword SI means mol/m^3 which is
+          probably not the best solution and needs a ticket.
+	</xs:documentation>
+	</xs:annotation>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="molar" />
+		<xs:enumeration value="SI" />
+		<xs:enumeration value="ppb" />
+		<xs:enumeration value="ppm" />
+	</xs:restriction>
 </xs:simpleType>		
 
 <xs:simpleType name="typedef_dimension">
@@ -149,75 +149,75 @@ Changes by TDS June 2013:
 </xs:simpleType>	
 
 <xs:simpleType name="typedef_coordinate">
-  <xs:annotation>
-      <xs:documentation xml:lang="en">
-         Coordinates are tuples of the following form number,number,number where
-         each number is potentially optional for 2d or 1d systems.
-      </xs:documentation>
-  </xs:annotation>
-  <xs:restriction base="xs:token">
-      <xs:pattern value="[(]?( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?)( *,( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))?( *,( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))? *[)]?"/> 
-  </xs:restriction>
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
+          Coordinates are tuples of the following form number,number,number where
+          each number is potentially optional for 2d or 1d systems.
+	</xs:documentation>
+	</xs:annotation>
+	<xs:restriction base="xs:token">
+		<xs:pattern value="[(]?( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?)( *,( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))?( *,( *[-+]?([0-9]+\.?[0-9]*|[0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))? *[)]?"/> 
+	</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_int_list">
-  <xs:annotation>
-    <xs:documentation xml:lang="en">
-      Integer lists are space separated lists of integer values.
-    </xs:documentation>
-  </xs:annotation>
-  <xs:restriction base="xs:token">
-    <xs:pattern value="([0-9]+ *)+"/>
-  </xs:restriction>
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
+          Integer lists are space separated lists of integer values.
+	</xs:documentation>
+	</xs:annotation>
+	<xs:restriction base="xs:token">
+		<xs:pattern value="([0-9]+ *)+"/>
+	</xs:restriction>
 </xs:simpleType>
 
-<!-- Numerical Control Options -->
 
+<!-- ===================================== Numerical Control Options ==================================== -->
 <xs:simpleType name="typedef_discretization_method">
-  <xs:restriction base="xs:string">
-    <xs:enumeration value="fv-default" />
-    <xs:enumeration value="fv-monotone" />
-    <xs:enumeration value="fv-multi_point_flux_approximation" />
-    <xs:enumeration value="fv-extended_to_boundary_edges" />
-    <xs:enumeration value="mfd-default" />
-    <xs:enumeration value="mfd-optimized_for_sparsity" />
-    <xs:enumeration value="mfd-support_operator" />
-    <xs:enumeration value="mfd-optimized_for_monotonicity" />
-    <xs:enumeration value="mfd-two_point_flux_approximation" />
-  </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="fv-default" />
+		<xs:enumeration value="fv-monotone" />
+		<xs:enumeration value="fv-multi_point_flux_approximation" />
+		<xs:enumeration value="fv-extended_to_boundary_edges" />
+		<xs:enumeration value="mfd-default" />
+		<xs:enumeration value="mfd-optimized_for_sparsity" />
+		<xs:enumeration value="mfd-support_operator" />
+		<xs:enumeration value="mfd-optimized_for_monotonicity" />
+		<xs:enumeration value="mfd-two_point_flux_approximation" />
+	</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_rel_perm_method">
-  <xs:restriction base="xs:string">
-    <xs:enumeration value="upwind-darcy_velocity" />
-    <xs:enumeration value="upwind-gravity" />
-    <xs:enumeration value="upwind-amanzi" />
-    <xs:enumeration value="other-arithmetic_average" />
-    <xs:enumeration value="other-harmonic_average" />
-  </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="upwind-darcy_velocity" />
+		<xs:enumeration value="upwind-gravity" />
+		<xs:enumeration value="upwind-amanzi" />
+		<xs:enumeration value="other-arithmetic_average" />
+		<xs:enumeration value="other-harmonic_average" />
+	</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_preconditioning_strategy">
-  <xs:restriction base="xs:string">
-    <xs:enumeration value="diffusion_operator" />
-    <xs:enumeration value="linearized_operator" />
-  </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="diffusion_operator" />
+		<xs:enumeration value="linearized_operator" />
+		</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_algorithm">
-  <xs:restriction base="xs:string">
-    <xs:enumeration value="explicit first-order" />
-    <xs:enumeration value="explicit second-order" />
-    <xs:enumeration value="implicit upwind" />
-    <xs:enumeration value="none" />
-  </xs:restriction>
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="explicit first-order" />
+		<xs:enumeration value="explicit second-order" />
+		<xs:enumeration value="implicit upwind" />
+		<xs:enumeration value="none" />
+	</xs:restriction>
 </xs:simpleType>
 
 
 <!-- =========================================== Macro Types ========================================== -->
 <xs:complexType name="typedef_variable_macro">
-    <xs:annotation>
-      <xs:documentation xml:lang="en">
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
 * Volumetric water content [volume water / bulk volume]
 * Aqueous saturation [volume water / volume pore space]
 * Aqueous pressure [Pa]
@@ -231,42 +231,42 @@ TODO do we want to convert all of these name to lower case?
          also perhaps we cannot validate since we don't know the list of solutes a priori nor the 
          material ids. 
 TODO Can we do validation on known names plus allow unrecognised ones.  Well I think we can but should we?
-      </xs:documentation>
-    </xs:annotation>
-    <xs:all minOccurs="0" maxOccurs="1">
-       <xs:element name="variable" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
-    </xs:all>
-    <xs:attribute type="xs:string" name="name"/>
+	</xs:documentation>
+	</xs:annotation>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="variable" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+	</xs:all>
+	<xs:attribute type="xs:string" name="name"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_time_macro">
-    <xs:annotation>
-      <xs:documentation xml:lang="en">
-        Time macros can be a set of specific times or a time interval.
-      </xs:documentation>
-    </xs:annotation>
-	 <xs:choice minOccurs="1" maxOccurs="1">
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
+          Time macros can be a set of specific times or a time interval.
+	</xs:documentation>
+	</xs:annotation>
+	<xs:choice minOccurs="1" maxOccurs="1">
 		<xs:element name="time" type="typedef_labeled_time" minOccurs="1" maxOccurs="unbounded"/>
-         <xs:sequence>
-           <xs:element type="typedef_labeled_time" name="start" minOccurs="1"/>
-           <xs:element type="typedef_labeled_time" name="timestep_interval" minOccurs="0" />
-           <xs:element type="typedef_labeled_time" name="stop" minOccurs="0" default="-1"/>
-         </xs:sequence>
-		</xs:choice>
-    <xs:attribute type="xs:string" name="name"/>
+		<xs:sequence>
+			<xs:element type="typedef_labeled_time" name="start" minOccurs="1"/>
+			<xs:element type="typedef_labeled_time" name="timestep_interval" minOccurs="0" />
+			<xs:element type="typedef_labeled_time" name="stop" minOccurs="0" default="-1"/>
+		</xs:sequence>
+	</xs:choice>
+	<xs:attribute type="xs:string" name="name"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_cycle_macro">
-    <xs:annotation>
-      <xs:documentation xml:lang="en">
-      </xs:documentation>
-    </xs:annotation>
-    <xs:all minOccurs="0" maxOccurs="1">
-      <xs:element type="xs:integer" name="start" minOccurs="1"/>
-      <xs:element type="xs:integer" name="timestep_interval" minOccurs="0" />
-      <xs:element type="xs:integer" name="stop" minOccurs="0" default="-1"/>
-    </xs:all>
-    <xs:attribute type="xs:string" name="name"/>
+	<xs:annotation>
+	<xs:documentation xml:lang="en">
+	</xs:documentation>
+	</xs:annotation>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element type="xs:integer" name="start" minOccurs="1"/>
+		<xs:element type="xs:integer" name="timestep_interval" minOccurs="0" />
+		<xs:element type="xs:integer" name="stop" minOccurs="0" default="-1"/>
+	</xs:all>
+	<xs:attribute type="xs:string" name="name"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_macros">
@@ -292,7 +292,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:simpleContent>
 	<xs:extension base="xs:string">
 		<xs:attribute type="xs:string" name="name"/>
-                <xs:attribute type="xs:string" name="value"/>
+		<xs:attribute type="xs:string" name="value"/>
 		<xs:attribute type="xs:string" name="type"/>
 	</xs:extension>
 	</xs:simpleContent>
@@ -302,7 +302,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:simpleContent>
 	<xs:extension base="xs:string">
 		<xs:attribute type="xs:string" name="name"/>
-                <xs:attribute type="typedef_exponential" name="value"/>
+		<xs:attribute type="typedef_exponential" name="value"/>
 	</xs:extension>
 	</xs:simpleContent>
 </xs:complexType>
@@ -311,7 +311,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:simpleContent>
 	<xs:extension base="xs:string">
 		<xs:attribute type="xs:string" name="name"/>
-                <xs:attribute type="typedef_exponential" name="value"/>
+		<xs:attribute type="typedef_exponential" name="value"/>
 	</xs:extension>
 	</xs:simpleContent>
 </xs:complexType>
@@ -387,17 +387,15 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_property_file">
 	<xs:attribute name="filename" type="xs:string"/>
-        <xs:attribute name="type" use="required" type="typedef_property_file_formats"/>
-        <xs:attribute name="attribute" type="xs:string"/>
+	<xs:attribute name="type" use="required" type="typedef_property_file_formats"/>
+	<xs:attribute name="attribute" type="xs:string"/>
 </xs:complexType>
 
 <xs:simpleType name="typedef_property_file_formats">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="file"/> <!-- TODO: what type should property files be? -->
-                <!--
-                <xs:enumeration value="color"/>
-                <xs:enumeration value="exodus ii"/>
-                -->
+		<!--xs:enumeration value="color"/>
+		<xs:enumeration value="exodus ii"/-->
 	</xs:restriction>
 </xs:simpleType>
 
@@ -439,12 +437,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:simpleType>
 
 <xs:complexType name="typedef_default_units">
-   <xs:all minOccurs="0" maxOccurs="1">
-	   <xs:element name="length_unit" type="typedef_unit_length" maxOccurs="1"/>
-	   <xs:element name="time_unit" type="typedef_unit_time" maxOccurs="1"/>
-	   <xs:element name="mass_unit" type="typedef_unit_mass" maxOccurs="1"/>
-	   <xs:element name="conc_unit" type="typedef_unit_conc" maxOccurs="1"/>
-   </xs:all>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="length_unit" type="typedef_unit_length" maxOccurs="1"/>
+		<xs:element name="time_unit" type="typedef_unit_time" maxOccurs="1"/>
+		<xs:element name="mass_unit" type="typedef_unit_mass" maxOccurs="1"/>
+		<xs:element name="conc_unit" type="typedef_unit_conc" maxOccurs="1"/>
+	</xs:all>
 </xs:complexType>
 
 <!-- The time type with various unit options -->
@@ -493,29 +491,29 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:all>
 	<xs:attribute name="version" type="typedef_version" use="required"/>
 	<xs:attribute name="type" type="xs:string" use="required"/>
-	<xs:assert  test="@type = ('structured','unstructured')"/>
+	<xs:assert test="@type = ('structured','unstructured')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstructured">
-    <xs:complexContent>
+	<xs:complexContent>
 	<xs:extension base="typedef_amanzi_input">
-	    <xs:all minOccurs="0" maxOccurs="1">
-		<xs:element name="mesh" type="typedef_mesh_unstructured" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="regions" type="typedef_regions_unstructured" minOccurs="1" maxOccurs="1"/>
-	    </xs:all>
+		<xs:all minOccurs="0" maxOccurs="1">
+			<xs:element name="mesh" type="typedef_mesh_unstructured" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="regions" type="typedef_regions_unstructured" minOccurs="1" maxOccurs="1"/>
+		</xs:all>
 	</xs:extension>
-    </xs:complexContent>
+	</xs:complexContent>
 </xs:complexType>
 
 <xs:complexType name="typedef_structured">
-    <xs:complexContent>
-	<xs:extension base="typedef_amanzi_input">
-	    <xs:all minOccurs="0" maxOccurs="1">
-		<xs:element name="mesh" type="typedef_mesh_structured" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="regions" type="typedef_regions_structured" minOccurs="1" maxOccurs="1"/>
-	    </xs:all>
-	</xs:extension>
-    </xs:complexContent>
+	<xs:complexContent>
+		<xs:extension base="typedef_amanzi_input">
+			<xs:all minOccurs="0" maxOccurs="1">
+				<xs:element name="mesh" type="typedef_mesh_structured" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="regions" type="typedef_regions_structured" minOccurs="1" maxOccurs="1"/>
+			</xs:all>
+		</xs:extension>
+	</xs:complexContent>
 </xs:complexType>
 	
 
@@ -535,7 +533,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element type="xs:string" name="description" minOccurs="0"/>
 		<xs:element type="xs:string" name="purpose" minOccurs="0"/>
 		<xs:element type="typedef_default_units" name="units" minOccurs="0"/>
-	        <xs:element type="typedef_coordinate_system" name="coordinate_system" minOccurs="0"/>
+		<xs:element type="typedef_coordinate_system" name="coordinate_system" minOccurs="0"/>
 	</xs:all>
 	<xs:attribute type="xs:string" name="name"/>
 </xs:complexType>
@@ -561,7 +559,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all minOccurs="0" maxOccurs="1">
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="verbosity" type="typedef_verbosity" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="restart" type="xs:string" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="restart" type="xs:string" minOccurs="0" maxOccurs="1"/>
 <!--		<xs:element name="simulation_start" type="typedef_exponential" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="simulation_end" type="typedef_exponential" minOccurs="1" maxOccurs="1"/> -->
 		<xs:element name="execution_control_defaults" type="typedef_execution_control_defaults" minOccurs="1" maxOccurs="1"/>
@@ -608,7 +606,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:simpleType name="typedef_mode">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="steady"/>
-        <xs:enumeration value="transient"/>
+		<xs:enumeration value="transient"/>
 	</xs:restriction>
 </xs:simpleType>
 
@@ -625,7 +623,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:sequence>
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="common_controls" type="typedef_common_controls" minOccurs="0" maxOccurs="1"/>
-        <xs:choice minOccurs="1" maxOccurs="1">
+		<xs:choice minOccurs="1" maxOccurs="1">
 			<xs:element name="unstructured_controls" type="typedef_unstructured_controls"/>
 			<xs:element name="structured_controls" type="typedef_structured_controls"/>
 		</xs:choice>
@@ -653,12 +651,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_flow_controls">
-    <xs:all minOccurs="0" maxOccurs="1">
-        <xs:element name="discretization_method" type="typedef_discretization_method" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="rel_perm_method" type="typedef_rel_perm_method" default="upwind-darcy_velocity" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="preconditioning_strategy" type="typedef_preconditioning_strategy" default="linearized_operator" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="atmospheric_pressure" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-    </xs:all>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="discretization_method" type="typedef_discretization_method" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="rel_perm_method" type="typedef_rel_perm_method" default="upwind-darcy_velocity" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="preconditioning_strategy" type="typedef_preconditioning_strategy" default="linearized_operator" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="atmospheric_pressure" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_transport_controls">
@@ -700,12 +698,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="read_chemistry_engine_inputfile" type="xs:string" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 
-	<xs:assert  test="not(exists(process_model)) or process_model = ('implicit operator split','none')"/>	
-	<xs:assert  test="not(exists(activity_model)) or activity_model = ('unit','debye-huckel')"/>	
-	<xs:assert  test="not(exists(auxiliary_data)) or auxiliary_data = ('pH')"/>
-	<xs:assert  test="not(exists(activity_coefficients)) or activity_coefficients = ('timestep','off')"/>
-	<xs:assert  test="not(exists(time_step_control_method)) or time_step_control_method = ('fixed','simple')"/>	
-	<xs:assert  test="not(exists(log_formulation)) or log_formulation = ('on','off')"/>
+	<xs:assert test="not(exists(process_model)) or process_model = ('implicit operator split','none')"/>	
+	<xs:assert test="not(exists(activity_model)) or activity_model = ('unit','debye-huckel')"/>	
+	<xs:assert test="not(exists(auxiliary_data)) or auxiliary_data = ('pH')"/>
+	<xs:assert test="not(exists(activity_coefficients)) or activity_coefficients = ('timestep','off')"/>
+	<xs:assert test="not(exists(time_step_control_method)) or time_step_control_method = ('fixed','simple')"/>	
+	<xs:assert test="not(exists(log_formulation)) or log_formulation = ('on','off')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_steady-state_controls">
@@ -725,8 +723,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="preconditioner" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="nonlinear_iteration_initial_guess_extrapolation_order" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
-	<xs:assert  test="not(exists(error_control_options)) or error_control_options = ('pressure','residual')"/>
-	<xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
+	<xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure','residual')"/>
+	<xs:assert test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_initialization">
@@ -738,10 +736,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="linear_solver" type="typedef_unstr_pseudo_time_linear_solver" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="error_control_options" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="convergence_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:assert  test="not(exists(error_control_options)) or error_control_options = ('pressure')"/>
-        <xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
+		<xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+	</xs:all>
+	<xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure')"/>
+	<xs:assert test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
 </xs:complexType>
 
 <xs:simpleType name="typedef_unstr_initialization_method">
@@ -769,23 +767,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_transient_controls">
 	<xs:all minOccurs="0" maxOccurs="1">
-	        <xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1"/>   
-                <xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="nonlinear_tolerance" type="typedef_exponential" default="1.0e-5" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" default="1.0" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="max_preconditioner_lag_iterations" type="xs:integer" default="5" minOccurs="0" maxOccurs="1"/> 
-	        <xs:element name="max_divergent_iterations" type="xs:integer" default="3" minOccurs="0" maxOccurs="1"/>   
-	        <xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" default="1000.0" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="restart_tolerance_relaxation_factor_damping" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="error_control_options" type="xs:string" default="'pressure,residual'" minOccurs="0" maxOccurs="1"/>
-	        <xs:element name="unstr_initialization" type="typedef_unstr_initialization" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="preconditioner" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="nonlinear_iteration_initial_guess_extrapolation_order" type="xs:integer" default="1" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
-        <xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure,residual')" />
+		<xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1"/>   
+		<xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="nonlinear_tolerance" type="typedef_exponential" default="1.0e-5" minOccurs="0" maxOccurs="1"/>
+	 	<xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" default="1.0" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="max_preconditioner_lag_iterations" type="xs:integer" default="5" minOccurs="0" maxOccurs="1"/> 
+		<xs:element name="max_divergent_iterations" type="xs:integer" default="3" minOccurs="0" maxOccurs="1"/>   
+		<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" default="1000.0" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="restart_tolerance_relaxation_factor_damping" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="error_control_options" type="xs:string" default="'pressure,residual'" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="unstr_initialization" type="typedef_unstr_initialization" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="preconditioner" type="xs:string" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="nonlinear_iteration_initial_guess_extrapolation_order" type="xs:integer" default="1" minOccurs="0" maxOccurs="1"/>
+	</xs:all>
+	<xs:assert test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
+	<xs:assert test="not(exists(error_control_options)) or error_control_options = ('pressure,residual')" />
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_nonlinear_solver">
@@ -795,7 +793,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:all>	
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:assert test="@name = ('nka','newton','jfnk','newton_picard')"/>	 
-        <xs:assert test="not(exists(update_upwind_frequency)) or update_upwind_frequency = ('every_timestep','every_nonlinear_iteration')"/>
+	<xs:assert test="not(exists(update_upwind_frequency)) or update_upwind_frequency = ('every_timestep','every_nonlinear_iteration')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_linear_solver">
@@ -804,9 +802,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
         	<xs:element name="preconditioner" type="xs:string" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:assert  test="not(exists(method)) or method = ('gmres','pcg')"/>
-        <xs:assert  test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
+	</xs:all>
+	<xs:assert test="not(exists(method)) or method = ('gmres','pcg')"/>
+	<xs:assert test="not(exists(preconditioner)) or preconditioner = ('hypre_amg','trilinos_ml','block_ilu')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_preconditioners">
@@ -818,35 +816,35 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_hypre_amg">
-        <xs:all minOccurs="0" maxOccurs="1">
-                <xs:element name="hypre_cycle_applications" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="hypre_smoother_sweeps" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="hypre_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="hypre_strong_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="hypre_cycle_applications" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="hypre_smoother_sweeps" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="hypre_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="hypre_strong_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_trilinos_ml">
-        <xs:all minOccurs="0" maxOccurs="1">
-                <xs:element name="trilinos_smoother_type" minOccurs="0" maxOccurs="1">
-                        <xs:alternative test="@type eq 'jacobi'" type="xs:string"/>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="trilinos_smoother_type" minOccurs="0" maxOccurs="1">
+			<xs:alternative test="@type eq 'jacobi'" type="xs:string"/>
 			<xs:alternative test="@type eq 'gauss_seidel'" type="xs:string"/>
 			<xs:alternative test="@type eq 'ilu'" type="xs:string"/>
 		</xs:element>
 		<xs:element name="trilinos_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="trilinos_smoother_sweeps" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="trilinos_cycle_applications" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
+	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_block_ilu">
-        <xs:all minOccurs="0" maxOccurs="1">
-                <xs:element name="ilu_overlap" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+	<xs:all minOccurs="0" maxOccurs="1">
+		<xs:element name="ilu_overlap" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="ilu_relax" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="ilu_rel_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="ilu_abs_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="ilu_level_of_fill" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
+	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_structured_controls">
@@ -956,9 +954,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		</xs:choice>
 	</xs:sequence>
 	<xs:attribute name="framework" type="xs:string" use="required"/>
-	<xs:assert  test="@framework = ('mstk','stk::mesh','simple')"/>	 
-            <!-- EIB: moab current doesn't work, exodus is a file format, boxlib in the future -->
-            <!-- EIB: translator default is mstk -->
+	<xs:assert test="@framework = ('mstk','stk::mesh','simple')"/>	 
+	<!-- EIB: moab current doesn't work, exodus is a file format, boxlib in the future -->
+	<!-- EIB: translator default is mstk -->
 </xs:complexType>
 
 <xs:complexType name="typedef_mesh_structured">
@@ -1005,8 +1003,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="box" type="typedef_labeled_box" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="point" type="typedef_labeled_point" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="plane" type="typedef_labeled_plane" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="logical" type="typedef_logical" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="line_segment" type="typedef_labeled_line_segment" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="logical" type="typedef_logical" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="line_segment" type="typedef_labeled_line_segment" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:choice>
 	</xs:sequence>
 </xs:complexType>
@@ -1205,10 +1203,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="mechanical_properties" type="typedef_mechanical_properties" minOccurs="1" maxOccurs="1"/>
 		<!-- We need either permeability or hydraulic conductivity, need to add a check with a choice? -->
-                <xs:element name="permeability" minOccurs="0" maxOccurs="1">
+		<xs:element name="permeability" minOccurs="0" maxOccurs="1">
                 	<xs:alternative test="exists(@type)" type="typedef_property_file"/>
                 	<xs:alternative type="typedef_permeability"/>
-                </xs:element>
+		</xs:element>
 		<xs:element name="hydraulic_conductivity" type="typedef_hydraulic_conductivity" minOccurs="0" maxOccurs="1"/>
 		<!-- cap_pressure and rel_perm are not needed if flow model = "saturated"; can we validate this? -->
 		<xs:element name="cap_pressure" minOccurs="0" maxOccurs="1">
@@ -1236,33 +1234,33 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_mechanical_properties">
 	<xs:all minOccurs="0" maxOccurs="1">
 		<xs:element name="porosity" minOccurs="1" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_porosity"/>
 		</xs:element>
 		<xs:element name="particle_density" minOccurs="0" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_particle_density"/>
 		</xs:element>
 		<xs:element name="specific_storage" minOccurs="0" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_specific_storage"/>
 		</xs:element>
 		<xs:element name="specific_yield" minOccurs="0" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_specific_yield"/>
 		</xs:element>
 		<xs:element name="dispersion_tensor" minOccurs="0" maxOccurs="1">			
-                        <xs:alternative test="@type='file'" type="typedef_property_file"/>
-                        <xs:alternative test="@type='uniform_isotropic'" type="typedef_dispersion_tensor_uniform_isotropic"/>
-                        <xs:alternative test="@type='burnett_frind'" type="typedef_dispersion_tensor_burnett_frind"/>
-                        <xs:alternative test="@type='lichtner_kelkar_robinson'" type="typedef_dispersion_tensor_lichtner_kelkar_robinson"/>
+			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+			<xs:alternative test="@type='uniform_isotropic'" type="typedef_dispersion_tensor_uniform_isotropic"/>
+			<xs:alternative test="@type='burnett_frind'" type="typedef_dispersion_tensor_burnett_frind"/>
+			<xs:alternative test="@type='lichtner_kelkar_robinson'" type="typedef_dispersion_tensor_lichtner_kelkar_robinson"/>
 		</xs:element>
 		<xs:element name="tortuosity" minOccurs="0" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
 			<xs:alternative type="typedef_tortuosity"/>
 		</xs:element>
@@ -1292,16 +1290,16 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 <xs:complexType name="typedef_dispersion_tensor_burnett_frind">
-        <xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
-        <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
-        <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
 	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 <xs:complexType name="typedef_dispersion_tensor_lichtner_kelkar_robinson">
-        <xs:attribute name="alpha_lh" use="required" type="typedef_exponential"/>
-        <xs:attribute name="alpha_lv" use="required" type="typedef_exponential"/>
-        <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
-        <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_lh" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_lv" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
 	<xs:attribute name="type" use="required" type="xs:string" />
 </xs:complexType>
 
@@ -1407,12 +1405,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_isotherms">
 	<xs:all minOccurs="0" maxOccurs="1">
-                <!-- EIB: TODO - this has moved, should be removed-->
+		<!-- EIB: TODO - this has moved, should be removed-->
         	<xs:element name="molecular_diffusion" minOccurs="0" maxOccurs="1">			
-		        <!-- EIB: may change value of type, therefore test for existance not value-->
+			<!-- EIB: may change value of type, therefore test for existance not value-->
 			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
-		        <xs:alternative type="typedef_molecular_diffusion"/>
-	        </xs:element>
+			<xs:alternative type="typedef_molecular_diffusion"/>
+		</xs:element>
 		<xs:element name="kd_model" type="typedef_kd_model" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string" use="required"/>
@@ -1448,9 +1446,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_surface_complexation">
 	<!--xs:attribute name="model" type="xs:string"/--> <!-- EIB: only model option is equilibrium, hardcoded -->
-        <!-- need site and density -->
+	<!-- need site and density -->
 	<xs:all minOccurs="0" maxOccurs="1">
-	        <xs:element name="site" type="typedef_surface_sites"/>
+		<xs:element name="site" type="typedef_surface_sites"/>
 	</xs:all>
 </xs:complexType>
 
@@ -1494,25 +1492,25 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_flow">
 	<xs:attribute name="state" type="xs:string"/>
 	<xs:attribute name="model" type="xs:string"/>
-	<xs:assert  test="@state = ('on','off')"/>
-	<xs:assert  test="@model = ('richards','saturated','constant','none')"/>
-        <xs:assert  test="(@state = 'off' or (@state = 'on' and not(@model = 'none')))"/>
+	<xs:assert test="@state = ('on','off')"/>
+	<xs:assert test="@model = ('richards','saturated','constant','none')"/>
+	<xs:assert test="(@state = 'off' or (@state = 'on' and not(@model = 'none')))"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_transport">
 	<xs:attribute name="state" type="xs:string"/>
-	<xs:assert  test="@state = ('on','off')"/>	
+	<xs:assert test="@state = ('on','off')"/>	
 </xs:complexType>
 
 
 <xs:complexType name="typedef_chemistry">
 	<xs:attribute name="state" type="xs:string"/>
-        <xs:attribute name="engine" type="xs:string"/>
-        <xs:attribute name="input_filename" type="xs:string"/>
-        <xs:attribute name="database" type="xs:string"/>
-	<xs:assert  test="@state = ('on','off')"/>	
-	<xs:assert  test="@engine = ('amanzi','pflotran','none')"/>	
-        <xs:assert  test="(@state = 'off' or (@state = 'on' and not(@engine = 'none')))"/>
+	<xs:attribute name="engine" type="xs:string"/>
+	<xs:attribute name="input_filename" type="xs:string"/>
+	<xs:attribute name="database" type="xs:string"/>
+	<xs:assert test="@state = ('on','off')"/>	
+	<xs:assert test="@engine = ('amanzi','pflotran','none')"/>	
+	<xs:assert test="(@state = 'off' or (@state = 'on' and not(@engine = 'none')))"/>
 </xs:complexType>
 
 
@@ -1530,20 +1528,20 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all minOccurs="0" maxOccurs="1">
 		<xs:element name="eos" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="viscosity" minOccurs="1" maxOccurs="1">
-		    <!-- EIB: if attributes exist this is a file read, else get value from element text -->
-		    <xs:alternative test="exists(@type)" type="typedef_property_file"/>
-		    <xs:alternative type="typedef_exponential"/>
-                </xs:element>
+			<!-- EIB: if attributes exist this is a file read, else get value from element text -->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
+			<xs:alternative type="typedef_exponential"/>
+		</xs:element>
 		<xs:element name="density" minOccurs="1" maxOccurs="1">
-		    <!-- EIB: if attributes exist this is a file read, else get value from element text -->
-		    <xs:alternative test="exists(@type)" type="typedef_property_file"/>
-		    <xs:alternative type="typedef_exponential"/>
-                </xs:element>
+			<!-- EIB: if attributes exist this is a file read, else get value from element text -->
+			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
+			<xs:alternative type="typedef_exponential"/>
+		</xs:element>
 		<xs:element name="dissolved_components" type="typedef_dissolved_components" minOccurs="0" maxOccurs="1"/>
 		<!-- Dissolved components should only be required if transport is on - is there a way to validate this? -->
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:assert  test="@name = ('water')"/>	<!--This will change later for multiphase -->
+	<xs:assert test="@name = ('water')"/>	<!--This will change later for multiphase -->
 </xs:complexType>
 
 <xs:complexType name="typedef_dissolved_components">
@@ -1636,7 +1634,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="geochemistry_component" type="typedef_ic_geochemistry" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:assert  test="@name = ('water')"/>	
+	<xs:assert test="@name = ('water')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_ic_solid_phase">
@@ -1740,7 +1738,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="geochemistry_component" type="typedef_bc_geochemistry" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:assert  test="@name = ('water')"/>	
+	<xs:assert test="@name = ('water')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_liquid_component">
@@ -1778,7 +1776,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
          -->
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_inward_mass_flux">
@@ -1788,7 +1786,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_inward_volumetric_flux">
@@ -1797,7 +1795,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_outward_mass_flux">
@@ -1806,7 +1804,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_outward_volumetric_flux">
@@ -1815,7 +1813,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_seepage_face">
@@ -1824,7 +1822,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="inward_mass_flux" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_uniform_pressure">
@@ -1832,7 +1830,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_linear_pressure">
@@ -1844,23 +1842,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_bc_hydrostatic">
 	<xs:attribute name="name" type="xs:string"/>
-        <xs:attribute name="coordinate_system" type="xs:string"/>
-        <xs:attribute name="submodel" type="xs:string"/>
+	<xs:attribute name="coordinate_system" type="xs:string"/>
+	<xs:attribute name="submodel" type="xs:string"/>
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
-	<xs:assert  test="not(exists(@coordinate_system)) or @coordinate_system = ('absolute','relative to mesh top')"/>
-        <xs:assert  test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
+	<xs:assert test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="not(exists(@coordinate_system)) or @coordinate_system = ('absolute','relative to mesh top')"/>
+	<xs:assert test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_linear_hydrostatic">
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
 	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
-        <xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
-        <xs:attribute name="submodel" type="xs:string"/>
-        <xs:assert  test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
+	<xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
+	<xs:attribute name="submodel" type="xs:string"/>
+	<xs:assert test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
 </xs:complexType>
 
 
@@ -1871,7 +1869,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="name" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 
@@ -1898,7 +1896,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="geochemistry_component" type="typedef_src_geochemistry" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:assert  test="@name = ('water')"/>	
+	<xs:assert test="@name = ('water')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_liquid_component">
@@ -1913,14 +1911,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="not(exists(@function)) or @function = ('linear', 'constant')"/>	
+	<xs:assert test="not(exists(@function)) or @function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_perm_weighted">
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <!--
@@ -1941,7 +1939,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_aqueous_conc">
@@ -1949,7 +1947,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_release_model">
@@ -1971,7 +1969,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 
@@ -2050,7 +2048,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="drawdown" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 	<xs:attribute name="name"/>
-	<xs:assert  test="@name = ('water')"/>	
+	<xs:assert test="@name = ('water')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_observation">
@@ -2059,8 +2057,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="assigned_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="functional" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
-        </xs:all>
-        <xs:assert  test="not(exists(functional)) or functional = ('point', 'integral')"/>
+	</xs:all>
+	<xs:assert test="not(exists(functional)) or functional = ('point', 'integral')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_primary_observation">
@@ -2070,9 +2068,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="assigned_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="functional" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
-        </xs:all>
-        <xs:attribute name="primary"/>
-        <xs:assert test="not(exists(functional)) or functional = ('point', 'integral')"/>
+	</xs:all>
+	<xs:attribute name="primary"/>
+	<xs:assert test="not(exists(functional)) or functional = ('point', 'integral')"/>
 </xs:complexType>
 
 
@@ -2098,7 +2096,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:simpleType name="typedef_coordinate_system">
 	<xs:restriction base="xs:string">	
-		      <xs:pattern value="[xyz](,y|,z|,y,z)"/>
+		<xs:pattern value="[xyz](,y|,z|,y,z)"/>
 	</xs:restriction>
 </xs:simpleType>
 
