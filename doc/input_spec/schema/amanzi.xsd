@@ -75,10 +75,10 @@ Changes by TDS June 2013:
 </xs:annotation>
 
 
-<!-- =====================================Simple Type Global Definitions ==================================== -->
+<!-- ==================================== Simple Type Global Definitions ==================================== -->
 <xs:simpleType name="typedef_version">
 	<xs:restriction base="xs:token">
-	<!-- 2.3.0 -->
+		<!-- 2.3.0 -->
 		<xs:pattern value="[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}"/>
 	</xs:restriction>
 </xs:simpleType>
@@ -171,6 +171,15 @@ Changes by TDS June 2013:
 	</xs:restriction>
 </xs:simpleType>
 
+<xs:simpleType name="typedef_mesh_entities">
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="cell"/>
+		<xs:enumeration value="face"/>
+		<xs:enumeration value="edge"/>
+		<xs:enumeration value="node"/>
+	</xs:restriction>
+</xs:simpleType>
+
 
 <!-- ===================================== Numerical Control Options ==================================== -->
 <xs:simpleType name="typedef_discretization_method">
@@ -201,7 +210,7 @@ Changes by TDS June 2013:
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="diffusion_operator" />
 		<xs:enumeration value="linearized_operator" />
-		</xs:restriction>
+	</xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="typedef_algorithm">
@@ -372,6 +381,18 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_labeled_line_segment">
 	<xs:complexContent>
 	<xs:extension base="typedef_line_segment">
+		<xs:attribute name="name" type="xs:string"/>
+	</xs:extension>
+	</xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="typedef_boundary">
+	<xs:attribute name="entity" type="typedef_mesh_entities" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_labeled_boundary">
+	<xs:complexContent>
+	<xs:extension base="typedef_boundary">
 		<xs:attribute name="name" type="xs:string"/>
 	</xs:extension>
 	</xs:complexContent>
@@ -1005,6 +1026,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="plane" type="typedef_labeled_plane" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="logical" type="typedef_logical" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="line_segment" type="typedef_labeled_line_segment" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="boundary" type="typedef_labeled_boundary" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:choice>
 	</xs:sequence>
 </xs:complexType>
@@ -1021,6 +1043,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="box" type="typedef_box"/>
 			<xs:element name="plane" type="typedef_plane"/>
 			<xs:element name="line_segment" type="typedef_line_segment"/>
+			<xs:element name="boundary" type="typedef_boundary"/>
 		</xs:choice>
 	</xs:sequence>
 	<xs:attribute name="name" type="xs:string"/>
