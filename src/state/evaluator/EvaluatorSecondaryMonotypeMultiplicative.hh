@@ -48,12 +48,6 @@ class EvaluatorSecondaryMonotypeMultiplicative
 
     // if true, the last dependency is "divided by"
     reciprocal_ = plist_.template get<bool>("reciprocal", false);
-    if (reciprocal_) {
-      Errors::Message msg(
-        "EvaluatorSecondaryMonotypeMultiplicative: reciprocalMultiply() not "
-        "currently implemented.  FIXME");
-      throw(msg);
-    }
   }
 
 
@@ -71,16 +65,21 @@ class EvaluatorSecondaryMonotypeMultiplicative
   Evaluate_(const State& S, const std::vector<Data_t*>& results) override
   {
     AMANZI_ASSERT(results.size() == 1);
-    int i = 0;
-    results[0]->putScalar(coef_);
-    for (const auto& dep : dependencies_) {
+    AMANZI_ASSERT(dependencies_.size() >= 1);
+
+    const auto& dep_last = dependencies_.back();
+    const auto& term_last = S.Get<Data_t>(dep_last.first, dep_last.second);
+    if (reciprocal_) {
+      results[0]->reciprocal(term_last);
+      if (coef_ != 1.0) results[0]->scale(coef_);
+    } else {
+      results[0]->update(coef_, term_last, 0.);
+    }
+
+    for (int lcv=0; lcv!=dependencies_.size()-1; ++lcv) {
+      const auto& dep = dependencies_[lcv];
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
-      if (reciprocal_ && dependencies_.size() - 1 == i) {
-        // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
-      } else {
-        results[0]->elementWiseMultiply(1., term, *results[0], 0.);
-      }
-      ++i;
+      results[0]->elementWiseMultiply(1., term, *results[0], 0.);
     }
   }
 
@@ -89,27 +88,32 @@ class EvaluatorSecondaryMonotypeMultiplicative
                              const Key& wrt_tag,
                              const std::vector<Data_t*>& results) override
   {
-    int i = 0;
-    results[0]->putScalar(coef_);
-    for (const auto& dep : dependencies_) {
-      if (dep.first != wrt_key || dep.second != wrt_tag) {
-        // not WRT
-        const auto& term = S.Get<Data_t>(dep.first, dep.second);
-        if (reciprocal_ && dependencies_.size() - 1 == i) {
-          // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
-        } else {
-          results[0]->elementWiseMultiply(1., term, *results[0], 0.);
-        }
+    auto wrt = std::make_pair(wrt_key, wrt_tag);
+    
+    const auto& dep_last = dependencies_.back();
+    const auto& term_last = S.Get<Data_t>(dep_last.first, dep_last.second);
+    if (reciprocal_) {
+      if (dep_last != wrt) {
+        results[0]->reciprocal(term_last);
+        if (coef_ != 1.0) results[0]->scale(coef_);
       } else {
-        // IS WRT
-        if (reciprocal_ && dependencies_.size() - 1 == i) {
-          //  - term ^ -2
-          // const auto& term = S.Get<Data_t>(dep.first, dep.second);
-          // results[0]->ReciprocalMultiply(-1., term, *results[0], 0.);
-          // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
-        }
+        results[0]->elementWiseMultiply(-1/coef_, term_last, term_last, 0.);
+        results[0]->reciprocal(*results[0]);
       }
-      ++i;
+    } else {
+      if (dep_last != wrt) {
+        results[0]->update(coef_, term_last, 0.);
+      } else {
+        results[0]->putScalar(coef_);
+      }
+    }
+
+    for (int lcv=0; lcv!=dependencies_.size()-1; ++lcv) {
+      const auto& dep = dependencies_[lcv];
+      if (dep != wrt) {
+        const auto& term = S.Get<Data_t>(dep.first, dep.second);
+        results[0]->elementWiseMultiply(1., term, *results[0], 0.);
+      }
     }
   }
 

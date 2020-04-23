@@ -63,10 +63,11 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
  protected:
   Key my_tag_;
   Key rhs_key_, local_op_key_, jac_op_key_;
-  Key tensor_coef_key_, scalar_coef_key_;
+  Key tensor_coef_key_, scalar_coef_key_, rho_key_;
   Key bcs_key_;
   Key u_key_;
-
+  bool gravity_;
+  
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Diffusion> fac_;
 };

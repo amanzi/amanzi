@@ -85,6 +85,7 @@ class EvaluatorSecondary : public Evaluator {
   KeyTripleSet deriv_requests_;
   KeyPairVector dependencies_;
   bool computed_once_;
+  //  bool compatible_; // flag for whether EnsureCompatibility was checked
 
   VerboseObject vo_;
   Teuchos::ParameterList plist_;

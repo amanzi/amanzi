@@ -16,6 +16,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "State.hh"
 #include "Debugger.hh"
 
 namespace Amanzi {
@@ -83,6 +84,24 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
           dcvo_.push_back(Teuchos::rcp(
             new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
+      }
+    }
+  }
+
+  if (plist.isParameter("debug variables")) {
+    auto varnames = plist.get<Teuchos::Array<std::string>>("debug variables");
+    if (plist.isParameter("debug variables short")) {
+      auto varnames_short = plist.get<Teuchos::Array<std::string>>("debug variables");
+      if (varnames.size() != varnames_short.size()) {
+        Errors::Message message("Debugger: provided \"debug variables\" of different length as \"debug variables short\"");
+        throw(message);
+      }
+      for (int i=0; i!=varnames.size(); ++i) {
+        vars_.emplace_back(std::make_pair(varnames[i], varnames_short[i]));
+      }
+    } else {
+      for (const auto& v : varnames) {
+        vars_.emplace_back(std::make_pair(v, v));
       }
     }
   }
@@ -324,6 +343,16 @@ Debugger::WriteDivider()
     *vo_->os() << "------------------------------------------------------------"
                   "------------"
                << std::endl;
+}
+
+void
+Debugger::WriteState(const State& S, const std::string& tag) {
+  for (const auto& var : vars_) {
+    if (S.HasData(var.first, tag)) {
+      WriteVector(var.second, S.Get<CompositeVector>(var.first, tag));
+    }
+  }
+  WriteDivider();
 }
 
 // Reverse order... get the VerboseObject for Entity_

@@ -51,6 +51,8 @@ class PK_MixinImplicit : public Base_t {
   void CommitStep(const Key& tag_old, const Key& tag_new);
 
   double get_dt() { return dt_; }
+  bool is_implicit() const { return true; }
+  bool is_explicit() const { return false; }
 
  protected:
   // timestep size
@@ -60,9 +62,6 @@ class PK_MixinImplicit : public Base_t {
   // integrated time integration is to a PK/dag.  If time integrators worked
   // with tags we would not need these.
   Key tag_old_, tag_new_;
-
-  // the tag at which evaluators are required
-  Key tag_inter_;
 
   // timestep algorithm
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> time_stepper_;
@@ -92,7 +91,6 @@ PK_MixinImplicit<Base_t>::Setup()
   // set up tags
   tag_old_ = "";
   tag_new_ = "next";
-  tag_inter_ = tag_new_;
 
   // require data at the new and old times
   this->SolutionToState(tag_new_, "");

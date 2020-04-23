@@ -53,6 +53,9 @@ class PK_MixinExplicit : public Base_t {
 
   double get_dt() { return dt_; }
 
+  bool is_implicit() const { return false; }
+  bool is_explicit() const { return true; }
+  
  protected:
   // timestep size
   double dt_;

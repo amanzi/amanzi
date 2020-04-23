@@ -113,7 +113,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatorModelByMaterial(
   }
 
   if (models_.size() == 0) {
-    Errors::Message msg("EvaluatorModelByMaterial: \"regions\" sublist was "
+    Errors::Message msg("EvaluatorModelByMaterial: \"model parameters\" sublist was "
                         "empty, must have at least one model.");
     throw(msg);
   }

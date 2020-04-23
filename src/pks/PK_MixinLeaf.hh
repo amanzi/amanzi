@@ -106,7 +106,11 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::PK_MixinLeaf(
   S->FEList().sublist(key_).set("evaluator type", "primary variable");
 
   // create a debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(), *plist_));
+  auto db_plist = Teuchos::sublist(plist_, "debugger");
+  if (!db_plist->isSublist("verbose object")) {
+    db_plist->set("verbose object", plist_->sublist("verbose object"));
+  }
+  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(),db_plist));
 };
 
 template <class Base_t, class Data_t, class DataFactory_t>
@@ -122,8 +126,7 @@ template <class Base_t, class Data_t, class DataFactory_t>
 void
 PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Initialize()
 {
-  Teuchos::ParameterList attrs(key_);
-  S_->GetRecordW(key_, "", key_).Initialize(plist_->sublist("initial conditions"), attrs);
+  S_->GetRecordSet(key_).Initialize(plist_->sublist("initial conditions"));
 }
 
 

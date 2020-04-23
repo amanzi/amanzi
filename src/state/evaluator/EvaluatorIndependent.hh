@@ -123,6 +123,7 @@ class EvaluatorIndependent : public EvaluatorIndependent_ {
             my_key_, my_tag_, wrt.first, wrt.second, my_key_);
       }
     }
+    EvaluatorIndependent_::EnsureCompatibility(S);
   }
 };
 

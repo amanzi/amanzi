@@ -280,3 +280,7 @@ Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume>
   EvaluatorCellVolume::fac_("cell volume");
 
 } // namespace Amanzi
+#include "evaluator/EvaluatorCellToFace.hh"
+
+Amanzi::Utils::RegisteredFactory<Amanzi::Evaluator, Amanzi::EvaluatorCellToFace>
+Amanzi::EvaluatorCellToFace::reg_("cell-to-face");

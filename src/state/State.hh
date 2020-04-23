@@ -93,8 +93,7 @@ class State {
   // Print state info for debugging
   void Print() const;
   
-  // deprecated, remove me!
-  void Initialize() {}
+  void Initialize();
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -224,6 +223,12 @@ class State {
     return data_.at(fieldname)->GetRecord(tag);
   }
 
+  // Record accessor.
+  RecordSet& GetRecordSet(const Key& fieldname)
+  {
+    return *data_.at(fieldname);
+  }
+  
   // Iterate over Records.
   typedef RecordSetMap::const_iterator data_iterator;
   data_iterator data_begin() const { return data_.begin(); }

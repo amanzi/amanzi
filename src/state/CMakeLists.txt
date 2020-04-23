@@ -68,6 +68,7 @@ set(state_inc_files
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
+  evaluator/EvaluatorCellToFace.hh
   evaluator/Evaluator_OperatorApply.hh
   evaluator/Evaluator_PDE_Diffusion.hh
   evaluator/Evaluator_PDE_Accumulation.hh
@@ -104,6 +105,7 @@ set(state_src_files
   evaluator/EvaluatorSecondary.cc
   evaluator/EvaluatorSecondaryMonotype.cc
   evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
+  evaluator/EvaluatorCellToFace.cc
   evaluator/Evaluator_OperatorApply.cc
   evaluator/Evaluator_PDE_Diffusion.cc
   evaluator/Evaluator_PDE_Accumulation.cc
@@ -162,12 +164,13 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeA
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeMultiplicative_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellToFace_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
-if (REGENERATE_REGISTRATIONS)
+#if (REGENERATE_REGISTRATIONS)
   generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
-endif()
+#endif()
 
 #
 # Build tests

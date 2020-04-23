@@ -25,11 +25,6 @@
 
 namespace Amanzi {
 
-//
-// Dummy class, does everything but know the type, which is required to
-// EnsureCompatibility.  This is never used, instead the below templated one
-// is.
-//
 class EvaluatorCellVolume
   : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
  public:
