@@ -209,10 +209,12 @@
       </mechanical_properties>
       <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
-      <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0260E-03 Pa^-1" m="0.2136" sr="0.0"/>
+      <cap_pressure model="brooks_corey">
+        <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
       </cap_pressure>
-      <rel_perm model="mualem"/>
+      <rel_perm model="mualem">
+        <exp>0.5</exp>
+      </rel_perm>
       <assigned_regions>RegionBottom</assigned_regions>
     </material>
 

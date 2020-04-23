@@ -1092,7 +1092,7 @@ It has the following requirements.
       The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
       For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.
       For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``.
-      For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.i
+      For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.
 
     * ``tortuosity`` is defined in-line using attributes. Either it is specified as a value using ``value`` or it specified 
       through a file using ``filename`` and ``type``.  The file initializtion is not implemented yet.
@@ -1114,7 +1114,8 @@ It has the following requirements.
 Assigned_regions
 ----------------
 
-* ``assigned_regions`` is a comma separated list of region names for which this material is to be assigned.  Region names must be from the regions defined in the ``regions`` sections.  Region names can contain spaces.
+The ``assigned_regions`` is a comma separated list of region names for which this material is to be assigned.
+Region names must be from the regions defined in the ``regions`` sections.  Region names can contain spaces.
 
 .. code-block:: xml
 
@@ -1123,51 +1124,59 @@ Assigned_regions
 Permeability
 ------------
 
-Permeability or hydraulic_conductivity must be specified but not both. If specified as constant values, permeability has the attributes ``x``, ``y``, and ``z``.  Permeability may also be extracted from the attributes of an Exodus II file, or generated as a gslib file.
+Permeability or hydraulic_conductivity must be specified but not both. If specified as constant values, permeability has the attributes ``x``, ``y``, and ``z``.  Permeability may also be extracted from the attributes of an Exodus II file.
 
 .. code-block:: xml
 
   <permeability x="double" y="double" z="double" />
   or
   <permeability type="file" filename="file name" attribute="attribute name"/>
-  or
-  <permeability type="gslib" parameter_file="file name" value="double" data_file="file name"/>
 
 Hydraulic_conductivity
 ----------------------
 
-* ``hydraulic_conductivity`` is the hydraulic conductivity and has the attributes ``x``, ``y``, and ``z``. Permeability or hydraulic_conductivity must be specified but not both.
+The ``hydraulic_conductivity`` is the hydraulic conductivity and has the attributes ``x``, ``y``, and ``z``.
+Permeability or hydraulic_conductivity must be specified but not both.
 
 .. code-block:: xml
 
   <hydraulic_conductivity x="double" y="double" z="double" />
-  or
-  <hydraulic_conductivity type="gslib" parameter_file="file name" value="double" data_file="file name"/>
 
 Cap_pressure
 ------------
 
-*  ``cap_pressure`` is an optional element.  The available models are ``van_genuchten``, ``brooks_corey``, and ``none``.  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+The ``cap_pressure`` is an optional element.
+The available models are ``van_genuchten`` and ``brooks_corey``
+The model name is specified in an attribute and parameters are specified in a subelement.
+Model parameters are listed as attributes to the parameter element.
 
-* ``van_genuchten`` parameters include ``alpha``, ``sr``, ``m``, and ``optional_krel_smoothing_interval``.  ``brooks_corey`` parameters include ``alpha``, ``sr``, ``m``, and ``optional_krel_smoothing_interval``.
+* ``van_genuchten`` parameters include ``alpha``, ``sr``, ``m``, and ``optional_krel_smoothing_interval``.
+
+* ``brooks_corey`` parameters include ``alpha``, ``sr``, ``lambda``, and ``optional_krel_smoothing_interval``.
 
 .. code-block:: xml
 
-  <cap_pressure model="van_genuchten | brooks_corey | none" >
-      Required Elements: alpha, Sr, m (van_genuchten and brooks_corey only)
+  <cap_pressure model="van_genuchten | brooks_corey" >
+      Required Elements: alpha, sr, m (van_genuchten)
+      Required Elements: alpha, sr, lambda (brooks_corey)
       Optional Elements: optional_krel_smoothing_interval (van_genuchten and brooks_corey only)
   </cap_pressure>
 
 Rel_perm
 --------
 
-*  ``rel_perm`` is an optional element.  The available models are ``mualem``, ``burdine``, and ``none``.  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+The  ``rel_perm`` is an optional element.
+The available models are ``mualem`` and ``burdine``.
+The model name is specified in an attribute and parameters are specified in a subelement.
+Model parameters are listed as attributes to the parameter element.
 
-* ``mualem`` has no parameters.  ``burdine`` parameters include ``exp``.
+* ``mualem`` has no parameters.
+
+* ``burdine`` parameters include ``exp``.
 
 .. code-block:: xml
 
-  <rel_perm model="mualem | burdine | none )" >
+  <rel_perm model="mualem | burdine" >
       Required Elements: none 
       Optional Elements: exp (burdine only)
   </rel_perm>
@@ -1185,8 +1194,8 @@ Sorption_isotherms
             Optional Elements: kd_model
     </sorption_isotherms>
 
-.
-    * ``kd_model`` takes the following form:
+
+* ``kd_model`` takes the following form:
 
 .. code-block:: xml
  
