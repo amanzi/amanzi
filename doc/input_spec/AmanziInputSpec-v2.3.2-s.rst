@@ -913,7 +913,7 @@ For each process kernel the element ``state`` indicates whether the solution is 
 Flow
 ----
 
-* ``flow`` has the following attributes, 
+The ``flow`` has the following attributes, 
       
       * ``state`` = "on | off"
 
@@ -921,23 +921,21 @@ Flow
 
 Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-Note:  Unstructured options ``discretization_method``,  ``rel_perm_method``, and ``preconditioning_strategy`` have been moved to the ``unstr_flow_controls`` section under ``numerical_controls``/
 
 Transport
 ---------
 
-* ``transport`` has the following attributes,
+The ``transport`` has the following attributes,
       
       * ``state`` = "on | off"
 
 For ``transport`` the ``state`` must be specified.  
 
-Note:  Unstructured options ``algorithm`` and ``sub_cycling`` have been moved to the ``unstr_transport_controls`` section under ``numerical_controls``/
 
 Chemistry
 ---------
 
-* ``chemistry`` has the following attributes,
+The ``chemistry`` has the following attributes,
       
       * ``state`` = "on | off"
       
@@ -948,6 +946,7 @@ Chemistry
       * ``database`` is the name of the chemistry reaction database file (filename.dat).   
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
+
 
 Phases
 ======
@@ -964,13 +963,13 @@ Some general discussion of the ``Phases`` section goes here.
 Liquid_phase
 ------------
 
-* ``liquid_phase`` has the following elements
+The ``liquid_phase`` has the following elements
 
 .. code-block:: xml
 
   <liquid_phase>
       Required Elements: viscosity, density
-      Optional Elements: dissolved_components, eos [S]
+      Optional Elements: dissolved_components, eos
   </liquid_phase>
 
 Here is more info on the ``liquid_phase`` elements:
@@ -999,24 +998,6 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
 The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
 
-
-Solid_phase
------------
-
-* ``solid_phase`` has the following elements
-
-.. code-block:: xml
-
-  <solid_phase>
-      Required Elements: minerals
-      Optional Elements: NONE
-  </solid_phase>
-
-Here is more info on the ``solid_phase`` elements:
-
-    * ``minerals`` has the element 
-
-        * ``mineral`` which contains the name of the mineral. Note, the name of the mineral must match a species in the database file.
 
 Initial Conditions
 ==================

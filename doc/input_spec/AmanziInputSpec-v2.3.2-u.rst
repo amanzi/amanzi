@@ -47,7 +47,7 @@ This allows the users to provide a name and general description of model being d
 
   <model_description name="NAME of MODEL" >
       Required Elements: NONE
-      Optional Elements: comment, author, created, modified, model_id, description, purpose, units
+      Optional Elements: comment, author, created, modified, model_id, description, purpose, units, coordinate_system
   </model_description>
 
 
@@ -107,6 +107,12 @@ Here is an overall example for the model description element.
       <conc_unit>molar</conc_unit>
     </units>
   </model_description>
+
+Coordinate_system
+-----------------
+
+The ``coordinate_system`` element defines the coordinate system via a comma-separqted list of names of coordinate axes.
+The admissible values are x, y, and z. If this element is not specified, the natual default values are used.
 
 
 Definitions
@@ -1262,34 +1268,46 @@ The ``process_kernels`` block specifies which PKs are active.  This block is req
 
 For each process kernel the element ``state`` indicates whether the solution is being calculated or not.  
 
+.. code-block:: xml
+
+    <process_kernels>
+        <flow model="saturated" state="on"/>
+        <transport state="on"/>
+	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+    </process_kernels>
+
 Flow
 ----
 
-* ``flow`` has the following attributes, 
+The ``flow`` has the following attributes, 
       
       * ``state`` = "on | off"
 
       *  ``model`` = " richards | saturated | constant" 
 
-Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.
 
-Note:  Unstructured options ``discretization_method``,  ``rel_perm_method``, and ``preconditioning_strategy`` have been moved to the ``unstr_flow_controls`` section under ``numerical_controls``/
+*  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.
+
+*  ``saturated`` is a single phase, fully saturated flow.
+
+*  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure and flux) field are used to solve for the Darcy velocity.
+
 
 Transport
 ---------
 
-* ``transport`` has the following attributes,
+The ``transport`` has the following attributes,
       
       * ``state`` = "on | off"
 
 For ``transport`` the ``state`` must be specified.  
 
-Note:  Unstructured options ``algorithm`` and ``sub_cycling`` have been moved to the ``unstr_transport_controls`` section under ``numerical_controls``/
 
 Chemistry
 ---------
 
-* ``chemistry`` has the following attributes,
+The ``chemistry`` has the following attributes,
       
       * ``state`` = "on | off"
       
@@ -1301,6 +1319,7 @@ Chemistry
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
 
+
 Phases
 ======
 
@@ -1310,35 +1329,34 @@ Some general discussion of the ``Phases`` section goes here.
 
   <Phases>
       Required Elements: liquid_phase 
-      Optional Elements: solid_phase
-      Optional Elements: gas_phase
+      Optional Elements: solid_phase, gas_phase
   </Phases>
 
 Liquid_phase
 ------------
 
-* ``liquid_phase`` has the following elements
+The ``liquid_phase`` has the following elements
 
 .. code-block:: xml
 
   <liquid_phase>
       Required Elements: viscosity, density
-      Optional Elements: dissolved_components, eos [S]
+      Optional Elements: dissolved_components
   </liquid_phase>
 
 Here is more info on the ``liquid_phase`` elements:
-
-    * ``eos`` = "string" 
 
     * ``viscosity`` = "double"
 
     * ``density`` = "double"
 
-    * ``dissolved_components`` has the elements
+    * ``dissolved_components`` has the following elements
 
         * ``primaries`` 
           
         * ``secondaries``
+
+        * ``redox``
 
 The subelement ``primaries`` is used for specifying reactive and non-reactive primary species.  An unbounded number of subelements ``primary`` can be specified.  The text body of the element lists the name of the primary.  Note, the name of the primary must match a species in the database file.  The ``primary`` element has the following attributes:
 
@@ -1352,11 +1370,16 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
 The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
 
+The subelement ``redox`` is used for specifying chemical reactions in which the oxidation 
+states of atoms are changed.
+An unbounded number of sublements ``primary`` can be specified.
+The body of the element lists the name of the secondary species.
+Note, the name of the primary must match a species in the database file.
 
 Solid_phase
 -----------
 
-* ``solid_phase`` has the following elements
+The ``solid_phase`` has the following elements
 
 .. code-block:: xml
 
@@ -1371,48 +1394,54 @@ Here is more info on the ``solid_phase`` elements:
 
         * ``mineral`` which contains the name of the mineral. Note, the name of the mineral must match a species in the database file.
 
+
 Initial Conditions
 ==================
 
-Some general discussion of the ``initial_condition`` section goes here.
-
-The ``initial_conditions`` section requires at least 1 and up to an unbounded number of ``initial_condition`` elements.  Each ``initial_condition`` element defines a single initial condition that is applied to one or more region.  The following is a description of the ``initial_condition`` element.
+The ``initial_condition`` section is used to provide available field values at the beginning of a simulation.
+This section requires at least 1 and up to an unbounded number of ``initial_condition`` elements.  Each ``initial_condition`` element defines a single initial condition that is applied to one or more region.  The following is a description of the ``initial_condition`` element.
 
 .. code-block:: xml
 
   <initial_condition>
       Required Elements: assigned_regions
-      Optional Elements: liquid_phase (, comments, solid_phase - SKIPPED)
+      Optional Elements: liquid_phase, gas_phase, uniform_temperature
   </initial_condition>
+
+The ``uniform_temperature`` element is placed here temporaty and can be relocated in the future.
 
 Assigned_regions
 ----------------
 
-* ``assigned_regions`` is a comma separated list of regions to apply the initial condition to.
+The ``assigned_regions`` is a comma separated list of regions to apply the initial condition to.
 
 Liquid_phase
 ------------
 
-* ``liquid_phase`` has the following elements
+The ``liquid_phase`` has the following elements
 
 .. code-block:: xml
 
   <liquid_phase>
       Required Elements: liquid_component
-      Optional Elements: geochemistry_component
+      Optional Elements: geochemistry_component, solute_component
   </liquid_phase>
 
-*  Here is more info on the ``liquid_component`` block:
+Here is the list of elements of the ``liquid_component`` block:
 
     * ``uniform_pressure`` is defined in-line using attributes.  Uniform specifies that the initial condition is uniform in space.  Value specifies the value of the pressure.  
       
-    * ``linear_pressure`` is defined in-line using attributes.  Linear specifies that the initial condition is linear in space.  Gradient specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_coord specifies a reference location as a coordinate.  Value specifies the value of the pressure.
+    * ``linear_pressure`` is defined in-line using attributes.  Linear specifies that the initial condition is linear in space.
+      The ``gradient`` specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  
+      The ``reference_coord`` specifies a location of known pressure value.
+      The ``value`` specifies the known pressure value.
       
     * ``uniform_saturation`` is defined in-line using attributes.  See ``uniform_pressure`` for details.
       
     * ``linear_saturation`` is defined in-line using attributes. See ``linear_pressure`` for details.
       
-    * ``velocity`` is defined in-line using attributes.  Specify the velocity is each direction using the appropriate attributes x, y, and z.
+    * ``velocity`` is defined in-line using attributes. Specify the velocity is each direction using the appropriate 
+      attributes x, y, and z. The same attributes should appear in the optional ``coordinate_system`` element.
 
 .. code-block:: xml
 
@@ -1422,21 +1451,23 @@ Liquid_phase
     <linear_saturation name="some name" value="double" reference_coord="coordinate" gradient="coordinate"/>
     <velocity name="some name" x="double" y="double" z="double"/>
 
-*  Here is more info on the ``geochemistry_component`` block:
+Here is more info on the ``geochemistry_component`` block:
 
     * ``geochemistry_component`` appears once.  An unbounded number of subelements ``constraint`` are used specify geochemical constraints to be applied at the beginning of the simulation.  Each ``constraint`` has an attribute ``name``.  The specified constraint must be defined in the external geochemistry file and the name must match.
 
 .. code-block:: xml
 
      <geochemistry>
-         <constraint name = "initial"/>
+         <constraint name="initial"/>
      </geochemistry>
 
+The ``solute_component`` is used currently by Amanzi's native chemistry. 
+It will be re-structured and potentially elliminated.
 
 Solid_phase
 -----------
 
-* ``solid_phase`` has the following elements - Reminder this element has been SKIPPED
+The ``solid_phase`` has the following elements. This element is NOT IMPLEMENTED YET.
 
 .. code-block:: xml
 
@@ -1445,15 +1476,16 @@ Solid_phase
       Optional Elements: mineral, geochemistry - BOTH SKIPPED 
   </solid_phase>
 
-Here is more info on the ``solid_phase`` elements: - NOT IMPLEMENTED YET
+Here is more info on the ``solid_phase`` elements:
 
-    * ``mineral`` has the element - SKIPPED 
+    * ``mineral`` has the element
 
         * ``mineral`` which contains the name of the mineral
 
-    * ``geochemistry`` is an element with the following subelement: NOT IMPLEMENTED YET
+    * ``geochemistry`` is an element with the following subelement:
 
-        * ``constraint`` is an element with the following attributes: ONLY UNIFORM, for now
+        * ``constraint`` is an element with the following attributes: ``uniform``.
+
 
 Boundary Conditions
 ===================
