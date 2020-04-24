@@ -78,7 +78,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   // post-processing (some may go away)
   FinalizeMPC_PKs_(out_list);
-  MergeInitialConditionsLists_(out_list);
+  MergeInitialConditionsLists_(out_list, "chemistry");
+  MergeInitialConditionsLists_(out_list, "chemistry matrix");
+  MergeInitialConditionsLists_(out_list, "chemistry fracture");
 
   // miscalleneous cross-list information
   // -- initialization file name
@@ -412,19 +414,26 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 /* ******************************************************************
 * Filters out empty sublists starting with node "parent".
 ****************************************************************** */
-void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist)
+void InputConverterU::MergeInitialConditionsLists_(
+   Teuchos::ParameterList& plist, const std::string& chemistry)
 {
-  if (plist.sublist("PKs").isSublist("chemistry")) {
+  std::string domain, key;
+
+  if (plist.sublist("PKs").isSublist(chemistry)) {
+    domain = plist.sublist("PKs").sublist(chemistry).get<std::string>("domain name");
+
     Teuchos::ParameterList& ics = plist.sublist("state")
                                        .sublist("initial conditions");
-    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("chemistry")
+    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist(chemistry)
                                        .sublist("initial conditions");
 
     for (auto it = icc.begin(); it != icc.end(); ++it) {
+      key = Keys::getKey(domain, it->first);
+
       if (icc.isSublist(it->first)) {
         Teuchos::ParameterList& slist = icc.sublist(it->first);
         if (slist.isSublist("function")) {
-          ics.sublist(it->first) = slist;
+          ics.sublist(key) = slist;
           slist.set<std::string>("function", "list was moved to state");
         }
       }

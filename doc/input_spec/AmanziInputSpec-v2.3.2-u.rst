@@ -1184,18 +1184,18 @@ Model parameters are listed as attributes to the parameter element.
 Sorption_isotherms
 ------------------
 
-*  ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="string" />
+	<primary name="string" />
             Required Elements: none
             Optional Elements: kd_model
+        </primary>
     </sorption_isotherms>
 
-
-* ``kd_model`` takes the following form:
+The ``kd_model`` element takes the following form:
 
 .. code-block:: xml
  
@@ -1208,18 +1208,18 @@ Sorption_isotherms
 Minerals
 --------
 
-* For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
+For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
 
 .. code-block:: xml
 
        <minerals>
-           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area="1.0"/>
        </minerals>
 
 Ion_exchange
 ------------
 
-* The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
+The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
 
 .. code-block:: xml
 
@@ -1234,7 +1234,7 @@ Ion_exchange
 Surface_complexation
 --------------------
 
-* The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
+The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
 
 .. code-block:: xml
 
@@ -1247,6 +1247,7 @@ Surface_complexation
             </site>
         </surface_complexation>
     
+
 Process Kernels
 ===============
 
