@@ -17,4 +17,4 @@ HOST_MNT=/Volumes/data/$PWD
 CONT_MNT=/home/amanzi_usr/work
 CONT_PWD=/home/amanzi_usr/work
 
-docker run --rm -v $HOST_MNT:$CONT_MNT -w $CONT_PWD metsi/amanzi:latest amanzi --xml_file=$1
+docker run --rm -v $HOST_MNT:$CONT_MNT:delegated -w $CONT_PWD metsi/amanzi:latest mpirun -n 4 amanzi --xml_file=$1

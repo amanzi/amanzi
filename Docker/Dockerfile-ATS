@@ -36,8 +36,8 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --disable-amanzi_physics --enable-ats_physics \
    --with-mpi=/usr \
    --enable-shared \
-   && cd /home/amanzi_user/amanzi_builddir/amanzi \
-   && rm -r /home/amanzi_user/amanzi_builddir/
+   && cd /home/amanzi_user/amanzi_builddir/amanzi 
+#   && rm -r /home/amanzi_user/amanzi_builddir/
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}
