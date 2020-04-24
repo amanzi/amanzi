@@ -139,8 +139,8 @@ namespace ShallowWater {
 				 double h_rec = Reconstruction(xcf[0],xcf[1],c);
 //				 double h_rec = h_vec_c[0][c];
 
-				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
-				 std::cout << "xcf = " << xcf << std::endl;
+//				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
+//				 std::cout << "xcf = " << xcf << std::endl;
 
 				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
 				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
@@ -166,6 +166,8 @@ namespace ShallowWater {
 
  					 double h_rec = Reconstruction(xcf[0],xcf[1],cn);
  	//				 double h_rec = h_vec_c[0][cn];
+
+// 					std::cout << "cn = " << cn << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 
 					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
 					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
@@ -499,7 +501,7 @@ namespace ShallowWater {
 
 		 for (int f = 0; f < cfaces.size(); f++) {
 
-			 std::cout << "f = " << f << std::endl;
+//			 std::cout << "f = " << f << std::endl;
 
 			 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
@@ -507,52 +509,52 @@ namespace ShallowWater {
 
 			 AmanziGeometry::Point xcn = mesh_->cell_centroid(cn);
 
-			 std::cout << "xc = " << xc << ", xcn = " << xcn << std::endl;
+//			 std::cout << "xc = " << xc << ", xcn = " << xcn << std::endl;
 
 			 A(f,0) = xcn[0] - xc[0];
 			 A(f,1) = xcn[1] - xc[1];
 
-			 std::cout << "A(f,0) = " << A(f,0) << ",  A(f,1) = " <<  A(f,1) << std::endl;
+//			 std::cout << "A(f,0) = " << A(f,0) << ",  A(f,1) = " <<  A(f,1) << std::endl;
 
 			 b(f,0) = h_vec_c[0][cn] -  h_vec_c[0][c];
 
-			 std::cout << "b(f,0) = " << b(f,0) << std::endl;
+//			 std::cout << "b(f,0) = " << b(f,0) << std::endl;
 
 		 }
 
 		 At.Transpose(A);
 
-		 for (int f = 0; f < cfaces.size(); f++) {
-			 std::cout << "At(0,f) = " << At(0,f) << ",  At(1,f) = " <<  At(1,f) << std::endl;
-		 }
+//		 for (int f = 0; f < cfaces.size(); f++) {
+//			 std::cout << "At(0,f) = " << At(0,f) << ",  At(1,f) = " <<  At(1,f) << std::endl;
+//		 }
 
 		 AtA.Multiply(At,A,false);
 
-		 for (int f = 0; f < 2; f++) {
-			 std::cout << "AtA(0,f) = " << AtA(0,f) << ",  AtA(1,f) = " <<  AtA(1,f) << std::endl;
-		 }
+//		 for (int f = 0; f < 2; f++) {
+//			 std::cout << "AtA(0,f) = " << AtA(0,f) << ",  AtA(1,f) = " <<  AtA(1,f) << std::endl;
+//		 }
 
 		 Atb.Multiply(At,b,false);
 
-		 for (int f = 0; f < 2; f++) {
-			 std::cout << "Atb(f,0) = " << Atb(f,0) << std::endl;
-		 }
+//		 for (int f = 0; f < 2; f++) {
+//			 std::cout << "Atb(f,0) = " << Atb(f,0) << std::endl;
+//		 }
 
 		 AtA.Inverse();
 
 		 InvAtA = AtA;
 
-		 for (int f = 0; f < 2; f++) {
-			 std::cout << "InvAtA(0,f) = " << InvAtA(0,f) << ",  InvAtA(1,f) = " <<  InvAtA(1,f) << std::endl;
-		 }
+//		 for (int f = 0; f < 2; f++) {
+//			 std::cout << "InvAtA(0,f) = " << InvAtA(0,f) << ",  InvAtA(1,f) = " <<  InvAtA(1,f) << std::endl;
+//		 }
 
 		 dudx.Multiply(InvAtA,Atb,false);
 
-		 std::cout << "dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
+//		 std::cout << "dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
 
 		 BJ_lim(dudx,dudx_lim,c);
 
-		 std::cout << "dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
+//		 std::cout << "dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
 
 		 double h_rec = h_vec_c[0][c] + dudx_lim(0,0)*(x-xc[0]) + dudx_lim(1,0)*(y-xc[1]);
 
@@ -640,8 +642,8 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR) {
 
-//        return NumFlux_x_Rus(UL,UR);
-    	return NumFlux_x_central_upwind(UL,UR);
+        return NumFlux_x_Rus(UL,UR);
+//    	return NumFlux_x_central_upwind(UL,UR);
 
     }
 

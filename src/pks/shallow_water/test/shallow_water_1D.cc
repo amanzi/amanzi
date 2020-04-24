@@ -137,6 +137,7 @@ TEST(SHALLOW_WATER_1D) {
         iter++;
 
     }
+
     if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
     
     std::cout << "MyPID = " << MyPID << ", iter = " << iter << std::endl;
