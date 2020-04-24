@@ -21,20 +21,13 @@ namespace Amanzi {
  * Create parameter list with the given verbosity.
  ****************************************************************** */
 VerboseObject::VerboseObject(const std::string& name,
-                             const std::string& verbosity)
+                             const std::string& verbosity,
+                             const Comm_ptr_type& comm)
+    : comm_(comm)
 {
-  setDefaultVerbLevel(global_default_level);
-  set_name(name);
-
-  // Override from ParameterList.
   Teuchos::ParameterList plist;
-  plist.sublist("VerboseObject").set("Verbosity Level", verbosity);
-
-  Teuchos::readVerboseObjectSublist(&plist, this);
-
-  // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(global_hide_line_prefix);
+  plist.sublist("verbose object").set("verbosity level", verbosity);
+  Init_(name, plist);
 }
 
 
@@ -42,7 +35,28 @@ VerboseObject::VerboseObject(const std::string& name,
  * Read verbosity from a parameter list
  ****************************************************************** */
 VerboseObject::VerboseObject(const std::string& name,
-                             Teuchos::ParameterList plist)
+                             Teuchos::ParameterList& plist,
+                             const Comm_ptr_type& comm)
+    : comm_(comm)
+{
+  Init_(name, plist);
+}
+
+/* ******************************************************************
+ * Read verbosity from a parameter list
+ ****************************************************************** */
+VerboseObject::VerboseObject(const std::string& name,
+                             const Teuchos::ParameterList& plist,
+                             const Comm_ptr_type& comm)
+    : comm_(comm)
+{
+  Teuchos::ParameterList new_plist(plist);
+  Init_(name, new_plist);
+}
+
+
+void
+VerboseObject::Init_(const std::string& name, Teuchos::ParameterList& plist)
 {
   // Options from ParameterList
   // Set up the default level.
@@ -72,76 +86,41 @@ VerboseObject::VerboseObject(const std::string& name,
   // out, tab
   out_ = getOStream();
   out_->setShowLinePrefix(!no_pre);
-}
 
+  if (comm_.get()) {
+   // Options from ParameterList
+   int root = -1;
+   // Check if we are in the mode of writing only a specific rank.
+   if (plist.sublist("verbose object").isParameter("write on rank")) {
+     root = plist.sublist("verbose object").get<int>("write on rank");
+   }
 
-VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
-                             Teuchos::ParameterList plist)
-  : comm_(comm)
-{
-  // Options from ParameterList
-  int root = -1;
-  // Check if we are in the mode of writing only a specific rank.
-  if (plist.sublist("verbose object").isParameter("write on rank")) {
-    root = plist.sublist("verbose object").get<int>("write on rank");
+   // Set up a local FancyOStream
+   if (root >= 0) {
+     int size = comm_->getSize();
+     int pid = comm_->getRank();
+     Teuchos::RCP<Teuchos::FancyOStream> newout =
+       Teuchos::rcp(new Teuchos::FancyOStream(out_->getOStream()));
+     newout->setProcRankAndSize(pid, size);
+     newout->setOutputToRootOnly(root);
+     setOStream(newout);
+
+     std::stringstream headerstream;
+     headerstream << pid << ": " << getLinePrefix();
+     std::string header = headerstream.str();
+     if (header.size() > global_line_prefix_size) {
+       header.erase(global_line_prefix_size);
+     } else if (header.size() < global_line_prefix_size) {
+       header.append(global_line_prefix_size - header.size(), ' ');
+     }
+
+     setLinePrefix(header);
+     out_ = getOStream();
+     out_->setShowLinePrefix(!no_pre);
+   }
   }
+}    
 
-  // Init the basics
-  // Set up the default level.
-  setDefaultVerbLevel(global_default_level);
-
-  // Options from ParameterList
-
-  // -- Set up the VerboseObject header.
-  std::string headername(name);
-  if (plist.sublist("verbose object").isParameter("name")) {
-    std::string headername =
-      plist.sublist("verbose object").get<std::string>("name");
-  }
-  set_name(headername);
-
-  // -- Show the line prefix
-  bool no_pre = plist.sublist("verbose object")
-                  .get<bool>("hide line prefix", global_hide_line_prefix);
-
-  // Override from ParameterList.
-  Teuchos::ParameterList plist_out;
-  if (plist.sublist("verbose object").isParameter("verbosity level")) {
-    plist_out.sublist("VerboseObject")
-      .set("Verbosity Level",
-           plist.sublist("verbose object").get<std::string>("verbosity level"));
-  }
-
-  Teuchos::readVerboseObjectSublist(&plist_out, this);
-
-  // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(!no_pre);
-
-  // Set up a local FancyOStream
-  if (root >= 0) {
-    int size = comm_->getSize();
-    int pid = comm_->getRank();
-    Teuchos::RCP<Teuchos::FancyOStream> newout =
-      Teuchos::rcp(new Teuchos::FancyOStream(out_->getOStream()));
-    newout->setProcRankAndSize(pid, size);
-    newout->setOutputToRootOnly(root);
-    setOStream(newout);
-
-    std::stringstream headerstream;
-    headerstream << pid << ": " << getLinePrefix();
-    std::string header = headerstream.str();
-    if (header.size() > global_line_prefix_size) {
-      header.erase(global_line_prefix_size);
-    } else if (header.size() < global_line_prefix_size) {
-      header.append(global_line_prefix_size - header.size(), ' ');
-    }
-
-    setLinePrefix(header);
-    out_ = getOStream();
-    out_->setShowLinePrefix(!no_pre);
-  }
-}
 
 
 void

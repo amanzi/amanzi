@@ -345,8 +345,17 @@ State::Setup()
   for (auto& f : data_) { f.second->CreateData(); }
   for (auto& deriv : derivs_) { deriv.second->CreateData(); }
 
-
   Print();
+
+  // NOTE: this is done now so that they can be overriden prior to initializing
+  // other things which may be time dependent.
+  //
+  // initialize time constants
+  Set("time", "", "time", 0.0);
+  Set("time", "next", "time", 0.0);
+  Set("cycle", "", "cycle", 0);
+  Set("cycle", "next", "cycle", 0);
+  Set("dt", "", "dt", 0.0);
 };
 
 
@@ -358,13 +367,6 @@ State::Setup()
 void
 State::Initialize()
 {
-  // initialize time constants
-  Set("time", "", "time", 0.0);
-  Set("time", "next", "time", 0.0);
-  Set("cycle", "", "cycle", 0);
-  Set("cycle", "next", "cycle", 0);
-  Set("dt", "", "dt", 0.0);
-
   // initialize constants
   Teuchos::ParameterList& consts_list = state_plist_->sublist("constants");
   for (auto& p : consts_list) {

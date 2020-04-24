@@ -110,7 +110,7 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::PK_MixinLeaf(
   if (!db_plist->isSublist("verbose object")) {
     db_plist->set("verbose object", plist_->sublist("verbose object"));
   }
-  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(),db_plist));
+  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(), *db_plist));
 };
 
 template <class Base_t, class Data_t, class DataFactory_t>

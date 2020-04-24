@@ -122,7 +122,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(
 
   // update the verbose options
   vo_ = Teuchos::rcp(
-    new VerboseObject(initvector->getMap()->getComm(), "TI::BDF1", *plist_));
+      new VerboseObject("TI::BDF1", *plist_, initvector->getMap()->getComm()));
   db_ = Teuchos::rcp(
       new AmanziSolvers::ResidualDebugger(Teuchos::sublist(plist_, "residual debugger")));
 

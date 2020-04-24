@@ -98,8 +98,8 @@ Mesh::Mesh(const Comm_ptr_type& comm,
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
   }
-  vo_ = Teuchos::rcp(
-    new VerboseObject(comm_, Keys::cleanPListName(plist_->name()), *plist_));
+  vo_ = Teuchos::rcp(new VerboseObject(
+      Keys::cleanPListName(plist_->name()), *plist_, comm_));
 };
 
 
