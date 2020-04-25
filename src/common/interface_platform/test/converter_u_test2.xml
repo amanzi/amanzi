@@ -222,7 +222,7 @@
         <solute_component/>
       </liquid_phase>
       <thermal_component>
-        <uniform_temperature function="uniform" start="0.0" value="298.0 K"/>
+        <uniform_temperature function="constant" start="0.0" value="298.0 K"/>
       </thermal_component>
     </boundary_condition>
 

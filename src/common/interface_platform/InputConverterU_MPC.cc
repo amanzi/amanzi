@@ -701,7 +701,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
       "inward_volumetric_flux", "outward_volumetric_flux",
       "seepage_face", "aqueous_conc",
       "uniform_conc", "constraint",
-      "uniform_temperature"};
+      "uniform_temperature", "no_flow"};
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() > 0) {

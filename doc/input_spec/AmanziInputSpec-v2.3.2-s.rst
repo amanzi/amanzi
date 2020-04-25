@@ -1094,7 +1094,7 @@ The ``boundary_conditions`` section contains an unbounded number of ``boundary_c
 
   <boundary_condition>
       Required Elements: assigned_regions, liquid_phase
-      Optional Elements: comments - SKIPPED
+      Optional Elements: comments
   </boundary_condition>
 
 Assigned_regions
@@ -1361,10 +1361,6 @@ This section includes a collection of miscellaneous global options, specified as
 
   <echo_translated_input file_name="some name"/>
 
-* Write the input data after internal translation. If this parameter is missing, the default XML
-  file `"XXX_native_v7.xml`" is written, where `"XXX.xml`" is the name of the original Amanzi input file.
-  If this parameter is present but attribute ``file_name`` is either omitted of empty string, no 
-  translated file is written.
 
 
 
