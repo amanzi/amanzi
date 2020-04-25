@@ -81,7 +81,7 @@ class TransientTheis(object):
         return drawdown_t
  
 def createFromXML(filename):
-        
+
     #-- grab parameters from input XML file.
     import amanzi_xml.observations.ObservationXMLv2 as Obs_xml
     observations = Obs_xml.ObservationXMLv2(filename)
@@ -91,7 +91,7 @@ def createFromXML(filename):
     params = dict()
 
     params["r"] = []
-    for (coord) in coords.itervalues():
+    for (coord) in coords.values():
         params["r"].append(coord[0]) 
     
     params["times"] = []

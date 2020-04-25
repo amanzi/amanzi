@@ -1,6 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
-
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -10,49 +7,57 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
 */
+//! HYPRE's algebraic multigrid preconditioner.
 
 /*!
-Internal parameters for Boomer AMG include
 
-* `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic 
-  and approximate the inverse matrix with the prescribed tolerance (in
-  the energy norm ???).
+Boomer AMG is a HYPRE product consisting of a variety of Algebraic Multigrid
+methods.  It is accessed through Ifpack.
 
-* `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops. Default is 3.
+This is provided when using the `"preconditioner type`"=`"boomer amg`" in the
+`Preconditioner`_ spec.
 
-* `"cycle applications`" ``[int]`` **5** defines the number of V-cycles.
+.. _preconditioner-typed-boomer-amg-spec:
+.. admonition:: preconditioner-typed-boomer-amg-spec:
 
-* `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles. Default is 5.
+    * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is dynamic 
+      and approximate the inverse matrix with the prescribed tolerance (in
+      the energy norm ???).
 
-* `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6 
-  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!
+    * `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops. Default is 3.
 
-* `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0 
-  which specifies a Falgout method. TODO: add others!
+    * `"cycle applications`" ``[int]`` **5** defines the number of V-cycles.
 
-* `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
+    * `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles. Default is 5.
 
-* `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
-    PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
-    type.
+    * `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6 
+      which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!
 
-* `"number of functions`" ``[int]`` **1** Any value > 1 tells Boomer AMG to
-  use the `"systems of PDEs`" code with strided block type.  Note that, to use
-  this approach, unknowns must be ordered with DoF fastest varying (i.e. not
-  the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
-  approach in which each equation is coarsened and interpolated independently.
-  
-* `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
-    that each variable has the same coarse grid - sometimes this is more
-    "physical" for a particular problem. The value chosen here for nodal
-    determines how strength of connection is determined between the
-    coupled system.  I suggest setting nodal = 1, which uses a Frobenius
-    norm.  This does NOT tell AMG to use nodal relaxation.
-    Default is 0.
+    * `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0 
+      which specifies a Falgout method. TODO: add others!
 
-* `"verbosity`" ``[int]`` **0** prints a summary of run time settings and
-  timing information to stdout.  `"1`" prints coarsening info, `"2`" prints
-  smoothing info, and `"3`'" prints both.
+    * `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
+
+    * `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
+      PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
+      type.
+
+    * `"number of functions`" ``[int]`` **1** Any value > 1 tells Boomer AMG to
+      use the `"systems of PDEs`" code with strided block type.  Note that, to use
+      this approach, unknowns must be ordered with DoF fastest varying (i.e. not
+      the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
+      approach in which each equation is coarsened and interpolated independently.
+
+    * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
+      that each variable has the same coarse grid - sometimes this is more
+      "physical" for a particular problem. The value chosen here for nodal
+      determines how strength of connection is determined between the coupled
+      system.  I suggest setting nodal = 1, which uses a Frobenius norm.  This
+      does NOT tell AMG to use nodal relaxation.  Default is 0.
+
+    * `"verbosity`" ``[int]`` **0** prints a summary of run time settings and
+      timing information to stdout.  `"1`" prints coarsening info, `"2`" prints
+      smoothing info, and `"3`'" prints both.
 
 Example:
   

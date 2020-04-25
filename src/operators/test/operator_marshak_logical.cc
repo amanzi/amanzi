@@ -84,7 +84,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -158,9 +157,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
     PDE_DiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
-    int schema_dofs = op.schema_dofs();
-    int schema_prec_dofs = op.schema_prec_dofs();
-
     op.Setup(K, knc->values(), knc->derivatives());
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
@@ -193,7 +189,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     CompositeVector rhs = *global_op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    solver->ApplyInverse(rhs, solution);
 
     step++;
     T += dT;
@@ -209,7 +205,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 
-    double ds_max, ds_rel(0.0);
+    double ds_rel(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }
@@ -238,7 +234,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
-  CHECK_CLOSE(0., pl2_err, 0.1);
+  CHECK_CLOSE(0.0, pl2_err, 0.1);
 }
 
 

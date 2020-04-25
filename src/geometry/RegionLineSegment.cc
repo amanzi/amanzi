@@ -222,7 +222,7 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
         }
       }
     }
-    double len;
+
     if (num_int == 0) {
       res_point = 0.5*(p1_ + p0_);
       return;

@@ -378,7 +378,6 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    int n1, n2;
     double xi, xj, yj;
     double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell); 
     AmanziGeometry::Point v1(3);

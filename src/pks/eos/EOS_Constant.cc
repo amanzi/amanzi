@@ -9,13 +9,13 @@
   Author: Ethan Coon (ecoon@lanl.gov)
 
   Constant density/viscosity EOS. It defaults to reasonable values 
-  for water.
+  for water at 25C.
 */
 
 #include "EOS_Constant.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 EOS_Constant::EOS_Constant(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist) {
@@ -25,18 +25,14 @@ EOS_Constant::EOS_Constant(Teuchos::ParameterList& eos_plist) :
 
 void EOS_Constant::InitializeFromPlist_() {
   // defaults to water
-  if (eos_plist_.isParameter("molar mass [kg/mol]")) {
-    M_ = eos_plist_.get<double>("molar mass [kg/mol]");
-  } else {
-    M_ = eos_plist_.get<double>("molar mass [g/mol]", 18.0153) * 1.e-3;
-  }
+  M_ = eos_plist_.get<double>("molar mass", 18.0153e-03);
 
-  if (eos_plist_.isParameter("density [mol/m^3]")) {
-    rho_ = eos_plist_.get<double>("density [mol/m^3]") * M_;
+  if (eos_plist_.isParameter("molar density")) {
+    rho_ = eos_plist_.get<double>("molar density") * M_;
   } else {
-    rho_ = eos_plist_.get<double>("density [kg/m^3]", 1000.0);
+    rho_ = eos_plist_.get<double>("density", 997.07);
   }
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

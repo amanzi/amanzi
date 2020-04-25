@@ -186,8 +186,6 @@ MeshFactory::create(const double x0, const double y0,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  int nproc = comm_->NumProc();
-
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {

@@ -18,63 +18,6 @@ project(EOS)
 include_directories(${ATK_SOURCE_DIR})
 
 #
-# EOS registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE EOSEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EffectivePressureEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_Constant_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE Viscosity_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE Viscosity_Constant_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE ViscosityEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_IdealGas_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE MolarFractionGasEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE IsobaricEOSEvaluator_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE EOS_VaporInGas_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE VaporPressure_Water_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-generate_evaluators_registration_header(
-  HEADERFILE eos_registration.hh
-  LISTNAME   EOS_EVALUATORS
-  INSTALL    True
-  )
-
-#
 # Library: eos
 #
 set(eos_src_files 
@@ -107,7 +50,6 @@ endif()
 # Install Targets
 #
 set(eos_inc_files 
-    EffectivePressureEvaluator.cc
     EOS.hh
     EOSEvaluator.hh
     EOSFactory.hh
@@ -129,7 +71,8 @@ set(eos_inc_files
     ViscosityBaseFactory.hh
     ViscosityEvaluator.hh)
 
-add_install_include_file(${eos_inc_files})
+# install headers into a subdirectory
+install(FILES ${eos_inc_files} DESTINATION include/amanzi)
 
 if (BUILD_TESTS) 
 endif()

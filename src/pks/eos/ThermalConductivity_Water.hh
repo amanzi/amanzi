@@ -17,7 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class ThermalConductivity_Water {
@@ -39,7 +39,7 @@ class ThermalConductivity_Water {
   double kref_, Tref_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

@@ -1,14 +1,33 @@
-% =========================================================================
 % -------------------------------------------------------------------------
-% Testing:
-% -------------------------------------------
-%
-%  This is a good place to outline key objectives of this section.
-%
+%  This is a good place to outline testing strategiesx in Amanzi
 % -------------------------------------------------------------------------
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Code development cycle}
+Development of a new capability consists of several steps that are summarized below.
+Some steps can be skipped during a casual work cycle of code support, bug fixes, and minor improvements. 
+
+\begin{itemize}
+\item Create a new github development branch.
+\item Create github ticket or multiple tickets that summarize and stage the development process.
+\item Implement numerical algorithms and add them to an Amanzi library.
+\item Write unit tests for the new code.
+\item Integrate new functionality into other algorithms.
+\item Write integrated unit tests as needed.
+\item If implemented algorithms take control parameters from an XML file, 
+      document these parameters.
+\item Test new capability and add a benchmark or verification test to the
+      user guide.
+\item Create a pull request to inform team members about the new capability and 
+      to collect miscallenous feedback.
+\item Merge the development branch into the master branch.
+\end{itemize}
+\clearpage
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Testing}
-
 Testing is a cornerstone of modern software development. In the form of Test-Driven
 Development, it is useful for providing feedback in the design process. In other 
 forms, it is essential for preventing the project from descending into chaos, and 
@@ -18,8 +37,8 @@ increasing scope.
 
 % Describe testing layout in directories?
 
-\subsection{Unit Testing}
 
+\subsection{Unit Testing}
 Each individual software component should have a defined set of assumptions under 
 which it operates, and a set of behaviors and corresponding certifications on 
 what it produces. These assumptions and behaviors are ideally articulated in the 
@@ -28,10 +47,14 @@ of the implementation process. A test of an individual component's assumptions a
 behaviors is called a {\em unit test}. A unit test provides a set of PASS/FAIL tests for 
 each function, method, and attribute in a software component.
 
+Some Amanzi's tests are integrated tests that fill a huge gap between short unit tests
+and long benchmark tests.
+At the moment they are also called unit tests. 
+
 % Talk about Amanzi's unit testing here.
 
-\subsection{Verification and Benchmark Testing}
 
+\subsection{Verification and Benchmark Testing}
 The various algorithms we use in Amanzi have to be tested on the basic subsurface 
 problems that are relevant to our charter, and compared against other codes to 
 weigh the costs and benefits of our choices against existing approaches. 
@@ -52,8 +75,8 @@ expert for evaluation, so the former are preferred where practical.
 
 % Describe benchmark testing here.
 
-\subsection{Regression Testing}
 
+\subsection{Regression Testing}
 A {\em regression test} is a simulation-based PASS/FAIL test similar to a 
 verification test, and is typically part of a large suite of tests that are run 
 automatically and periodically to ensure that bugs and errors have not been 
@@ -63,20 +86,19 @@ particular, we support two types of regression tests: {\em smoke tests} and
 {\em comparison tests}.
 
 \subsubsection{Smoke tests}
-
 A smoke test simply runs an Amanzi simulation with a given input, PASSes if 
 the simulation runs to completion, and FAILs otherwise. A smoke test can be created
 (and added to Amanzi's regression test suite) by calling the following CMake command 
 inside of a CMakeLists.txt file in a testing directory:
 
-\begin{verbatim}
+\begin{lstlisting}
 ADD_AMANZI_SMOKE_TEST(<test_name> 
                       INPUT file.xml
                       [FILES file1;file2;...;fileN]
                       [PARALLEL] 
                       [NPROCS procs1 ... ]
                       [MPI_EXEC_ARGS arg1 ... ])
-\end{verbatim}
+\end{lstlisting}
 
 Arguments:
 \begin{itemize}
@@ -103,18 +125,19 @@ values falls below the given tolerance. One can add a comparison test to the
 Amanzi regression test suite by calling the following CMake command inside of a 
 CMakeLists.txt file within a testing directory:
 
-\begin{verbatim}
+\begin{lstlisting}
 ADD_AMANZI_COMPARISON_TEST(<test_name> 
                            INPUT file.xml
                            REFERENCE reference
-                           TOLERANCE tolerance
                            [FILES file1;file2;...;fileN]
+                           ABSOLUTE_TOLERANCE tolerance
+                           RELATIVE_TOLERANCE tolerance
                            [FIELD field_name]
                            [OBSERVATION observation_name]
                            [PARALLEL] 
                            [NPROCS procs1 ... ]
                            [MPI_EXEC_ARGS arg1 ... ])
-\end{verbatim}
+\end{lstlisting}
 
 Arguments:
 \begin{itemize}

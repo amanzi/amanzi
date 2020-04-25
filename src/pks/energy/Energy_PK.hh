@@ -103,17 +103,13 @@ class Energy_PK : public PK_PhysicalBDF {
   int nfaces_owned, nfaces_wghost;
 
  protected:
-  Key domain_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
-  // state and primary field
-  Teuchos::RCP<State> S_;
+  // primary field
   std::string passwd_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 
@@ -139,9 +135,6 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   bool prec_include_enthalpy_;
-
- protected:
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Energy

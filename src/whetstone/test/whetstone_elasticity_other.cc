@@ -141,7 +141,6 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   int nnodes = nodes.size();
 
   mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
-  int nfaces = faces.size();
 
   // setup velocity
   std::vector<AmanziGeometry::Point> u(nnodes);

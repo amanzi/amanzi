@@ -37,7 +37,7 @@ class TCMEvaluator_OnePhase : public SecondaryVariableFieldEvaluator {
 
  protected:
   // We have one model so far; hence, no factory is needed.
-  Teuchos::RCP<EOS::ThermalConductivity_Water> tc_;
+  Teuchos::RCP<AmanziEOS::ThermalConductivity_Water> tc_;
   double k_rock_;
 
   // Keys for fields dependencies

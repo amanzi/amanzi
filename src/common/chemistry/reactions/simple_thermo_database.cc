@@ -754,13 +754,13 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
       // grab the next progeny group
       begin = progeny_string.find_first_not_of(progeny_seperator);
       end = progeny_string.find(progeny_seperator, begin);
-      std::string data = progeny_string.substr(begin, end);
+      std::string data_tmp = progeny_string.substr(begin, end);
       // remove the data we just grabbed
       progeny_string.erase(begin, end);
 
       // process the progeny group
-      utilities::RemoveLeadingAndTrailingWhitespace(&data);
-      StringTokenizer progeny_group(data, " ");
+      utilities::RemoveLeadingAndTrailingWhitespace(&data_tmp);
+      StringTokenizer progeny_group(data_tmp, " ");
       std::string name;
       double coeff;
       if (progeny_group.size() == 1) {
@@ -937,8 +937,8 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
 
-  double mol_wt = 0.0;  // not used in ion exchange sites
-  double size = 0.0;  // not used in ion exchange sites
+  // double mol_wt = 0.0;  // not used in ion exchange sites
+  // double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
   std::string space(" \t");
@@ -1050,8 +1050,8 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
 
-  double mol_wt = 0.0;  // not used in ion exchange sites
-  double size = 0.0;  // not used in ion exchange sites
+  // double mol_wt = 0.0;  // not used in ion exchange sites
+  // double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
   std::string space(" \t");

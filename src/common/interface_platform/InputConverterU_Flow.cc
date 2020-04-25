@@ -66,14 +66,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
   if (pk_model_["flow"] == "darcy") {
-    Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
-    darcy_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
-    if (darcy_list.sublist("fracture permeability models").numParams() > 0) {
-      darcy_list.sublist("physical models and assumptions")
+    out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
+    if (out_list.sublist("fracture permeability models").numParams() > 0) {
+      out_list.sublist("physical models and assumptions")
           .set<bool>("flow in fractures", true);
     }
 
-    flow_list = &darcy_list;
+    flow_list = &out_list;
     flow_single_phase_ = true;
 
     DOMNodeList* tmp = doc_->getElementsByTagName(mm.transcode("multiscale_model"));
@@ -84,23 +83,22 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
     }
 
   } else if (pk_model_["flow"] == "richards") {
-    Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
-    Teuchos::ParameterList& upw_list = richards_list.sublist("relative permeability");
+    Teuchos::ParameterList& upw_list = out_list.sublist("relative permeability");
     upw_list.set<std::string>("upwind method", rel_perm_out);
     upw_list.set<std::string>("upwind frequency", update_upwind);
     upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12)
         .set<std::string>("method", "cell-based").set<int>("polynomial order", 1)
         .set<std::string>("limiter", "Barth-Jespersen");
-    flow_list = &richards_list;
+    flow_list = &out_list;
 
-    richards_list.sublist("water retention models") = TranslateWRM_();
-    richards_list.sublist("porosity models") = TranslatePOM_();
-    if (richards_list.sublist("porosity models").numParams() > 0) {
+    out_list.sublist("water retention models") = TranslateWRM_();
+    out_list.sublist("porosity models") = TranslatePOM_();
+    if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
           .set<std::string>("porosity model", "compressible: pressure function");
     }
-    richards_list.sublist("multiscale models") = TranslateFlowMSM_();
-    if (richards_list.sublist("multiscale models").numParams() > 0) {
+    out_list.sublist("multiscale models") = TranslateFlowMSM_();
+    if (out_list.sublist("multiscale models").numParams() > 0) {
       msm = "dual continuum discontinuous matrix";
       flow_list->sublist("physical models and assumptions")
           .set<std::string>("multiscale model", msm);
@@ -135,7 +133,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
     modify_correction = true;
-    out_list.sublist("Richards problem").sublist("relative permeability")
+    out_list.sublist("relative permeability")
         .set<std::string>("upwind frequency", "every nonlinear iteration");
 
     if (disc_method != "fv-default" ||
@@ -151,7 +149,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 
   // Newton-Picard method requires to overwrite some parameters.
   if (nonlinear_solver == "newton-picard") {
-    out_list.sublist("Richards problem").sublist("relative permeability")
+    out_list.sublist("relative permeability")
         .set<std::string>("upwind frequency", "every nonlinear iteration");
   }
 
@@ -282,7 +280,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
         *vo_->os() << "water retention curve file: wrm_" << name << std::endl;
       }
-    } else if (strcmp(model.c_str(), "brooks_corey")) {
+    } else if (strcmp(model.c_str(), "brooks_corey") == 0) {
       double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
@@ -485,7 +483,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
+    ell = GetTextContentD_(element_rp, "", false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
@@ -529,8 +527,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
   MemoryManager mm;
 
-  char *text, *tagname;
-  DOMNodeList *node_list, *children;
+  char *text;
+  DOMNodeList *node_list;
   DOMNode *node;
   DOMElement *element;
 
@@ -554,7 +552,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       inode = inode->getNextSibling();
       continue;
     }
-    tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
@@ -564,7 +561,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
-    if (!flag) continue;
+    if (!flag) {
+      inode = inode->getNextSibling();
+      continue;
+    }
 
     // process a group of similar elements defined by the first element
     // -- get BC type 
@@ -772,7 +772,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
   MemoryManager mm;
 
-  char *text, *tagname;
+  char *text;
   DOMNodeList *node_list, *children;
   DOMNode *node, *phase;
   DOMElement* element;
@@ -785,7 +785,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
     // read the assigned regions
@@ -913,23 +912,27 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
     DOMNode* inode = children->item(i); 
  
     // get assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     if (domain == "fracture") {
-      for (int i = 0; i < regions.size(); i++) fracture_regions_.push_back(regions[i]);
+      for (int n = 0; n < regions.size(); ++n)
+          fracture_regions_.push_back(regions[n]);
       fracture_regions_.erase(SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
                               fracture_regions_.end());
     }
 
-    // get optional complessibility
+    // get permeability
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      double aperture(0.0);
+      std::string type, model;
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+      if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "FPM for " << *it;
  

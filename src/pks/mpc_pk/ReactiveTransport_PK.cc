@@ -19,23 +19,23 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                                          const Teuchos::RCP<State>& S,
-                                          const Teuchos::RCP<TreeVector>& soln) :
+                                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                           const Teuchos::RCP<State>& S,
+                                           const Teuchos::RCP<TreeVector>& soln) :
   Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln) { 
 
   storage_created = false;
   chem_step_succeeded = true;
 
-  tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
-  AMANZI_ASSERT(tranport_pk_ != Teuchos::null);
+  transport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
+  AMANZI_ASSERT(transport_pk_ != Teuchos::null);
 
   chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
   AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
-  tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
+  transport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
                               chemistry_pk_->chem_engine());
 #endif
 
@@ -64,7 +64,7 @@ void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 double ReactiveTransport_PK::get_dt() {
 
-  dTtran_ = tranport_pk_->get_dt();
+  dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
 
   if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
@@ -87,7 +87,7 @@ void ReactiveTransport_PK::set_dt(double dt) {
   //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
   //if (dTtran_ > dTchem_) dTtran_= dTchem_; 
   chemistry_pk_->set_dt(dTchem_);
-  tranport_pk_->set_dt(dTtran_);
+  transport_pk_->set_dt(dTtran_);
 }
 
 
@@ -99,11 +99,11 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
   chem_step_succeeded = false;
 
   // First we do a transport step.
-  bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
+  bool pk_fail = transport_pk_->AdvanceStep(t_old, t_new, reinit);
 
   // Right now transport step is always succeeded.
   if (!pk_fail) {
-    *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
+    *total_component_concentration_stor = *transport_pk_->total_component_concentration()->ViewComponent("cell", true);
   } else {
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);

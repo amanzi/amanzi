@@ -47,7 +47,7 @@ void PK_Physical::Solution_to_State(const TreeVector& solution,
 // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
 // stay current for ChangedSolution()
 // -----------------------------------------------------------------------------
-void PK_Physical::set_states(const Teuchos::RCP<const State>& S,
+void PK_Physical::set_states(const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<State>& S_inter,
                              const Teuchos::RCP<State>& S_next) {
   S_ = S;

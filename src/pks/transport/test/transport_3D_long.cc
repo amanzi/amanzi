@@ -98,7 +98,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   TPK.Initialize(S.ptr());
 
   /* advance the transport state */
-  int iter, k;
+  int iter;
   double t_old(0.0), t_new(0.0), dt;
 
   Teuchos::RCP<Epetra_MultiVector> 

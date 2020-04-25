@@ -15,7 +15,7 @@
 #define AMANZI_EOS_HH_
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class EOS {
  public:
@@ -37,7 +37,7 @@ class EOS {
   virtual double MolarMass() = 0;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

@@ -16,7 +16,7 @@
 #include "Viscosity_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 Viscosity_Water::Viscosity_Water(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),
@@ -49,13 +49,10 @@ double Viscosity_Water::Viscosity(double T) {
 
 
 double Viscosity_Water::DViscosityDT(double T) {
-  double dT = kT1_ - T;
-  double xi;
-
   Errors::Message message("EOS viscoty of water: derivative not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

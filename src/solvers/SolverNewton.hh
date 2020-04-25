@@ -1,15 +1,65 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Interface to Newton solver.
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Straightforward Newton/Inexact Newton solver.
+
+/*!
+
+The classical Newton method works well for cases where Jacobian is available
+and corresponds to a stable (e.g. upwind) discretization.  The inexact Newton
+methods work for cases where the discrete Jacobian is either not available, or
+not stable, or computationally expensive. The discrete Jacobian is replaced by
+a stable approximation of the continuum Jacobian. The choice between exact and
+inexact is not made by the Solver, but instead by the PK.  Both use the
+ApplyPreconditioner() method -- if this applies the true Jacobian, then the
+method is Newton.  If it applies an appoximation, it is inexact Newton.
+
+.. _solver-typed-newton-spec:
+.. admonition:: solver-typed-newton-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
+      tolerance. The error is calculated by a PK.
+    
+    * `"monitor`" ``[string]`` **monitor update** specifies control of the
+      nonlinear residual. The available options are `"monitor update`" and
+      `"monitor residual`".
+
+    * `"limit iterations`" ``[int]`` **50** defines the maximum allowed number
+      of iterations.
+
+    * `"diverged tolerance`" ``[double]`` **1.e10** defines the error level
+      indicating divergence of the solver. The error is calculated by a PK.
+
+    * `"max du growth factor`" ``[double]`` **1.e5** allows the solver to
+      identify divergence pattern on earlier iterations. If the maximum norm of
+      the solution increment changes drastically on two consecutive iterations,
+      the solver is terminated.
+
+    * `"max error growth factor`" ``[double]`` **1.e5** defines another way to
+      identify divergence pattern on earlier iterations. If the PK-specific
+      error changes drastically on two consecutive iterations, the solver is
+      terminated.
+
+    * `"max divergent iterations`" ``[int]`` **3** defines another way to
+      identify divergence pattern on earlier iterations. If the maximum norm of
+      the solution increment grows on too many consecutive iterations, the
+      solver is terminated.
+
+    * `"modify correction`" ``[bool]`` **true** allows a PK to modify the
+      solution increment. One example is a physics-based clipping of extreme
+      solution values.
+
+    * `"stagnation iteration check`" ``[int]`` **8** determines the number of
+      iterations before the stagnation check is turned on. The stagnation
+      happens when the current L2-error exceeds the initial L2-error.
+
+ */
+
 
 #ifndef AMANZI_NEWTON_SOLVER_
 #define AMANZI_NEWTON_SOLVER_
@@ -77,7 +127,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
-  int max_error_growth_factor_, max_du_growth_factor_;
+  double max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
 
   int modify_correction_;
@@ -226,7 +276,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     if (modify_correction_) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "Modifying correction" << std::endl;
-      bool hacked = fn_->ModifyCorrection(r, u, du);
+      fn_->ModifyCorrection(r, u, du);
     }
 
     // Make sure that we do not diverge and cause numerical overflow.

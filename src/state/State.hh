@@ -281,8 +281,10 @@ class State {
   // like the Phalanx approach.  A directed acyclic graph of dependencies are
   // managed in State, where each node is a FieldEvaluator.
   //
-  // Access to the FEList -- this allows PKs to add to this list for custom evaluators.
+  // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
+  // -- allows PKs to add to this list to initial conditions
+  Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Require FieldEvaluators.
   Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key);
@@ -366,7 +368,7 @@ class State {
 
   // Position accessor and mutators.
   int position() const { return position_in_tp_; }
-  void set_position(int pos ) { position_in_tp_ = pos;}
+  void set_position(int pos ) { position_in_tp_ = pos; }
 
  private:
 

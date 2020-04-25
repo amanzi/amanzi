@@ -68,7 +68,7 @@ def run_amanzi(input_file, directory=None, parameters=None, mesh_file=None, over
     except KeyError:
         raise RuntimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
     executable = os.path.join(path, "amanzi")
-    print executable
+    print(executable)
 
     if not os.path.isfile(executable):
         raise RuntimeError("Missing Amanzi installation, please build and install Amanzi.")

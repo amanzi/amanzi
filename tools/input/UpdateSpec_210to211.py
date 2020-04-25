@@ -35,16 +35,16 @@ import sys
 
 def usage():
 
-    print >> sys.stdout, ''
-    print >> sys.stdout, '  UpdateSpec_210-211 Usage:'
-    print >> sys.stdout, '    python update210.py oldfile.xml (newfile.xml)'
-    print >> sys.stdout, ''
-    print >> sys.stdout, '  UpdateSpec_210-211:'
-    print >> sys.stdout, '    - reads a 2.1.0 amanzi input file and updates it to comform to the 2.1.1 input schema'
-    print >> sys.stdout, '    - if the optional argument newfile.xml is not specified, the updated xml will be written out to the oldfile.xml specified'
-    print >> sys.stdout, '    - it is recommended not to overwrite the oldfile.xml so that updates can be compared'
-    print >> sys.stdout, '    - to compare the old and new files use: diff -Eb or diff -w '
-    print >> sys.stdout, ''
+    print('')
+    print('  UpdateSpec_210-211 Usage:')
+    print('    python update210.py oldfile.xml (newfile.xml)')
+    print('')
+    print('  UpdateSpec_210-211:')
+    print('    - reads a 2.1.0 amanzi input file and updates it to comform to the 2.1.1 input schema')
+    print('    - if the optional argument newfile.xml is not specified, the updated xml will be written out to the oldfile.xml specified')
+    print('    - it is recommended not to overwrite the oldfile.xml so that updates can be compared')
+    print('    - to compare the old and new files use: diff -Eb or diff -w ')
+    print('')
 
 def indent(elem, level=0):
     i = "\n" + level*"  "
@@ -66,7 +66,7 @@ def read_input_tree(inputfile):
     try:
       tree = ET.parse(inputfile)
     except:
-      print >> sys.stderr, "Error reading inputfile - ", inputfile
+      sys.stderr.write("Error reading inputfile - %s\n" % str(inputfile))
       usage()
       sys.exit("   exiting...")
 
@@ -84,7 +84,7 @@ def v210_update(tree):
     try:
       root = tree.getroot()
     except:
-      print >> sys.stderr, "Error getting xml tree root"
+      sys.stderr.write("Error getting xml tree root\n")
       usage()
       sys.exit("   exiting...")
 
@@ -92,19 +92,19 @@ def v210_update(tree):
     version = root.get('version')
     if version == '2.0.0':
       #call v200_to_210 before continuing
-      print >> sys.stderr, "Error reading input file, can not currently update from 2.0.0 input format"
+      sys.stderr.write("Error reading input file, can not currently update from 2.0.0 input format\n")
       sys.exit("  exiting...")
     elif (version == '1.2.3' or version == '1.2.2'):
-      print >> sys.stderr, "Error reading input file, can not currently update from 1.2.x input format"
+      sys.stderr.write("Error reading input file, can not currently update from 1.2.x input format\n")
       sys.exit("  exiting...")
 
     # update version number
     ### EIB >> update this
     root.set('version','2.1.1')
 
-    print >> sys.stdout, ""
-    print >> sys.stdout, "  Beginning update from old 2.1.0 to 2.1.1"
-    print >> sys.stdout, ""
+    print("")
+    print("  Beginning update from old 2.1.0 to 2.1.1")
+    print("")
 
     # continue to updating format
 
@@ -112,22 +112,22 @@ def v210_update(tree):
     # check for dispersion_tensor and update 
     mats = root.find('./materials')
     for child in mats:
-	disp = child.find('mechanical_properties/dispersion_tensor')
-	if (disp is not None):
-	    type = disp.get("type")
-	    if (type is None):
-		print >> sys.stdout, "    Adding attribute 'type' for dispersion_tensor, material ",child.get("name")
-		type = "uniform_isotropic"
-	        alpha = disp.get("alpha_lh")
-	        if (alpha is not None):
-		    type = "burnett_frind"
-	        alpha = disp.get("alpha_th")
-	        if (alpha is not None):
-		    type = "burnett_frind"
-	        alpha = disp.get("alpha_lh")
-	        if (alpha is not None):
-		    type = "lichtner_kelkar_robinson"
-		disp.set("type",type)
+        disp = child.find('mechanical_properties/dispersion_tensor')
+        if (disp is not None):
+            type = disp.get("type")
+            if (type is None):
+                print("    Adding attribute 'type' for dispersion_tensor, material ",child.get("name"))
+                type = "uniform_isotropic"
+                alpha = disp.get("alpha_lh")
+                if (alpha is not None):
+                    type = "burnett_frind"
+                alpha = disp.get("alpha_th")
+                if (alpha is not None):
+                    type = "burnett_frind"
+                alpha = disp.get("alpha_lh")
+                if (alpha is not None):
+                    type = "lichtner_kelkar_robinson"
+                disp.set("type",type)
 
     ### Process Kernel numerical controls
 
@@ -141,7 +141,7 @@ def v210_update(tree):
         unstr = root.find('numerical_controls/unstructured_controls')
         if (unstr is None):
             # add unstructured_controls elements
-	    print >> sys.stdout, "    Grouping unstructured numerical controls under 'unstructured_controls' element tag"
+            print("    Grouping unstructured numerical controls under 'unstructured_controls' element tag")
             unstr = ET.Element('unstructured_controls')
             # move control elements under new unstructured_controls element
             skip_names = ['comments','common_controls']
@@ -159,7 +159,7 @@ def v210_update(tree):
         # check subelements for unstr_
         for child in unstr:
             if ('unstr' not in child.tag and child.tag != 'comments'):
-	        print >> sys.stdout, "    Adding 'ustr_' prefix to unstructured_controls subelement ",child.tag
+                print("    Adding 'ustr_' prefix to unstructured_controls subelement ",child.tag)
                 child.tag = "unstr_"+child.tag
             if ("steady" in child.tag):
                 for gkid in child:
@@ -170,7 +170,7 @@ def v210_update(tree):
     elif (type == "structured"):
         struct = root.find('./numerical_controls/structured_controls')
         if (struct is None):
-	    print >> sys.stdout, "    Grouping structured numerical controls under 'structured_contorls' element tag"
+            print("    Grouping structured numerical controls under 'structured_contorls' element tag")
             # add unstructured_controls elements
             numctrls = (root.find('./numerical_controls'))
             struct = ET.SubElement(numctrls,'structured_controls')
@@ -182,13 +182,13 @@ def v210_update(tree):
         prefix_list = ['steady-state_controls','transient_controls','amr_controls']
         for child in struct:
             if ( child in prefix_list):
-	        print >> sys.stdout, "    Adding 'str_' prefix to unstructured_controls subelement ",child.tag
+                print("    Adding 'str_' prefix to unstructured_controls subelement ",child.tag)
                 child.tag = "str_"+child.tag
 
     else:
-        print >> sys.stderr, "  ERROR: root element 'amanzi_input' has attribute 'type'"
-        print >> sys.stderr, "         'type' value = ",type
-        print >> sys.stderr, "          validate values are 'unstructured' or 'structured'"
+        sys.stderr.write("  ERROR: root element 'amanzi_input' has attribute 'type'\n")
+        sys.stderr.write("         'type' value = %s\n" % str(type))
+        sys.stderr.write("          validate values are 'unstructured' or 'structured'\n")
         sys.exit("  exiting...")
 
     
@@ -208,11 +208,11 @@ def v210_update(tree):
             fc = ET.SubElement(unstr_cntl,'unstr_flow_controls')
           else:
             fc = unstr_cntl.find('unstr_flow_controls')
-	  moved_options.append(option)
+          moved_options.append(option)
           newoption = ET.SubElement(fc,option)
           newoption.text = value
       for option in moved_options:
-	  print >> sys.stdout, "    Moved flow option ",option," to new location un 'unstr_flow_controls'"
+          print("    Moved flow option ",option," to new location un 'unstr_flow_controls'")
           del flow.attrib[option]
 
       # check for algorithm and sub_cycling in old location and move
@@ -227,11 +227,11 @@ def v210_update(tree):
             tc = ET.SubElement(unstr_cntl,'unstr_transport_controls')
           else:
             tc = unstr_cntl.find('unstr_transport_controls')
-	  moved_options.append(option)
+          moved_options.append(option)
           newoption = ET.SubElement(tc,option)
           newoption.text = value
       for option in moved_options:
-	  print >> sys.stdout, "    Moved transport option ",option," to new location in 'unstr_transport_controls'"
+          print("    Moved transport option ",option," to new location in 'unstr_transport_controls'")
           del trans.attrib[option]
 
       # check for cfl in old location and move
@@ -243,7 +243,7 @@ def v210_update(tree):
               cfl = ET.SubElement(trans,'cfl')
               cfl.text = cfl_old.text
               linear.remove(cfl_old)
-	      print >> sys.stdout, "    Moved cfl to new location un 'unstr_transport_controls'"
+              print("    Moved cfl to new location un 'unstr_transport_controls'")
 
 
       ### Preconditioners
@@ -273,14 +273,14 @@ def v210_update(tree):
                   block.append(op)
               # remove existing preconditioner element
               unstr_cntl.remove(old_precon)
-	      print >> sys.stdout, "    Updating preconditioner formating/definition"
+              print("    Updating preconditioner formating/definition")
 
       steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
       if (steady is not None):
           pre = steady.find('preconditioner')
           if (pre is not None):
             if ( pre.get('name') in precon_names):
-	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_steady-state_controls'"
+              print("    Updating preconditioner formating/definition in 'unstr_steady-state_controls'")
               name = pre.get('name')
               # move any subelement options
               if (name == 'hypre_amg'):
@@ -308,7 +308,7 @@ def v210_update(tree):
           pre = pseudo.find('preconditioner')
           if (pre is not None):
             if ( pre.get('name') in precon_names):
-	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'pseudo_time_integrator'"
+              print("    Updating preconditioner formating/definition in 'pseudo_time_integrator'")
               name = pre.get('name')
               # move any subelement options
               if (name == 'hypre_amg'):
@@ -332,7 +332,7 @@ def v210_update(tree):
           if (pre is not None):
             if ( pre.get('name') in precon_names):
               name = pre.get('name')
-	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_transient_controls'"
+              print("    Updating preconditioner formating/definition in 'unstr_transient_controls'")
               # move any subelement options
               if (name == 'hypre_amg'):
                 for op in list(pre):
@@ -355,7 +355,7 @@ def v210_update(tree):
           if (pre is not None):
             if ( pre.get('name') in precon_names):
               name = pre.get('name')
-	      print >> sys.stdout, "    Updating preconditioner formating/definition in 'unstr_linear_solver'"
+              print("    Updating preconditioner formating/definition in 'unstr_linear_solver'")
               # move any subelement options
               if (name == 'hypre_amg'):
                 for op in list(pre):
@@ -378,7 +378,7 @@ def v210_update(tree):
       pseudo = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls/unstr_pseudo_time_integrator')
       if (pseudo is not None):
           pseudo.tag = 'unstr_initialization'
-	  print >> sys.stdout, "    Updating 'unstr_pseudo_time_integrator' to 'unstr_initialization'"
+          print("    Updating 'unstr_pseudo_time_integrator' to 'unstr_initialization'")
 
       ### Update BDF1 attributes to elements
       bdf1 =  root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
@@ -390,24 +390,24 @@ def v210_update(tree):
               new_elem = ET.SubElement(bdf1,name)
               new_elem.text = value
               moved_list.append(name)
-	  if (len(moved_list) > 0):
-	      print >> sys.stdout, "    Updating 'bdf1_integration_method' options from attributes to elements"
+          if (len(moved_list) > 0):
+              print("    Updating 'bdf1_integration_method' options from attributes to elements")
           for name in moved_list:
               del bdf1.attrib[name]
 
       ### Rename restart_tolerance_factor
       steady = root.find('./numerical_controls/unstructured_controls/unstr_steady-state_controls')
       if (steady is not None):
-	  for child in steady:
-	      if child.tag == 'restart_tolerance_factor':
-		  child.tag = 'restart_tolerance_relaxation_factor'
-		  print >> sys.stdout, "    Renaming (steady) 'restart_tolerance_factor' to ",child.tag
+          for child in steady:
+              if child.tag == 'restart_tolerance_factor':
+                  child.tag = 'restart_tolerance_relaxation_factor'
+                  print("    Renaming (steady) 'restart_tolerance_factor' to ",child.tag)
       bdf1 = root.find('./numerical_controls/unstructured_controls/unstr_transient_controls/bdf1_integration_method')
       if (bdf1 is not None):
-	  for child in bdf1:
-	      if child.tag == 'restart_tolerance_factor':
-		  child.tag = 'restart_tolerance_relaxation_factor'
-		  print >> sys.stdout, "    Renaming (transient) 'restart_tolerance_factor' to ",child.tag
+          for child in bdf1:
+              if child.tag == 'restart_tolerance_factor':
+                  child.tag = 'restart_tolerance_relaxation_factor'
+                  print("    Renaming (transient) 'restart_tolerance_factor' to ",child.tag)
 
 
     ### Output
@@ -418,13 +418,13 @@ def v210_update(tree):
     if (vis != None):
       tm = vis.find('time_macro')
       if tm is not None:
-	print >> sys.stdout, "    Updating 'vis' time_macro to time_macros"
+        print("    Updating 'vis' time_macro to time_macros")
         tms = ET.SubElement(vis,'time_macros')
         tms.text = tm.text
         vis.remove(tm)
       cm = vis.find('cycle_macro')
       if cm is not None:
-	print >> sys.stdout, "    Updating 'vis' cycle_macro to cycle_macros"
+        print("    Updating 'vis' cycle_macro to cycle_macros")
         cms = ET.SubElement(vis,'cycle_macros')
         cms.text = cm.text
         vis.remove(cm)
@@ -436,7 +436,7 @@ def v210_update(tree):
       for ob in obs:
         tm = ob.find('time_macro')
         if tm is not None:
-	  print >> sys.stdout, "    Updating 'observations' time_macro to time_macros"
+          print("    Updating 'observations' time_macro to time_macros")
           tms = ET.SubElement(ob,'time_macros')
           tms.text = tm.text
           ob.remove(tm)
@@ -446,7 +446,7 @@ def v210_update(tree):
     if (ckpt != None):
       cm = ckpt.find('cycle_macro')
       if cm is not None:
-	print >> sys.stdout, "    Updating 'checkpoint' cycle_macro to cycle_macros"
+        print("    Updating 'checkpoint' cycle_macro to cycle_macros")
         cms = ET.SubElement(ckpt,'cycle_macros')
         cms.text = cm.text
         ckpt.remove(cm)
@@ -456,7 +456,7 @@ def v210_update(tree):
     if (walk != None):
       cm = walk.find('cycle_macro')
       if cm is not None:
-	print >> sys.stdout, "    Updating 'walkabout' cycle_macro to cycle_macros"
+        print("    Updating 'walkabout' cycle_macro to cycle_macros")
         cms = ET.SubElement(walk,'cycle_macros')
         cms.text = cm.text
         walk.remove(cm)
@@ -473,9 +473,9 @@ if __name__=="__main__":
         outputfile = sys.argv[2]
       except:
         outputfile = inputfile
-        print >> sys.stdout, ">> no output filename specified, will overwrite inputfile"
+        print(">> no output filename specified, will overwrite inputfile")
     except:
-      print >> sys.stderr, "Error reading arguments"
+      sys.stderr.write("Error reading arguments\n")
       usage()
       sys.exit("   exiting...")
 
@@ -483,7 +483,7 @@ if __name__=="__main__":
     new_tree = v210_update(tree)
     report(new_tree, outputfile)
 
-    print >> sys.stdout, ""
-    print >> sys.stdout, "  Use 'diff -w' or 'diff -Eb' to compare xml files"
-    print >> sys.stdout, ""
+    print("")
+    print("  Use 'diff -w' or 'diff -Eb' to compare xml files")
+    print("")
    

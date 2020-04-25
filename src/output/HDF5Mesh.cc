@@ -6,8 +6,8 @@ namespace Amanzi {
 void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
 
   hid_t file, group, dataspace, dataset;
-  herr_t status;
   hsize_t dimsf[2];
+  herr_t status;
   std::string h5Filename, xmfFilename;
 
   // build h5 filename
@@ -115,7 +115,7 @@ void HDF5::createDataFile(std::string soln_filename) {
   }
 
   // close file
-  herr_t status = H5Fclose(file);
+  H5Fclose(file);
 
   // Store filenames
   setH5DataFilename(h5filename);
@@ -418,7 +418,7 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
                            std::string loc) {
   // write field data
   double *data;
-  int err = x.ExtractView(&data);
+  x.ExtractView(&data);
   int length = x.GlobalLength();
   hid_t file, group, dataspace, dataset;
   herr_t status;
@@ -476,18 +476,15 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
     
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
-  int ndims;
   hid_t file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-  int globaldims[2], localdims[2];
-  globaldims[0] = x.GlobalLength();
-  globaldims[1] = 1;
+  int localdims[2];
   localdims[0] = x.MyLength();
   localdims[1] = 1;
   std::vector<int> myidx(localdims[0],0);
   int start = 0;
   for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
   double *data;
-  int err = x.ExtractView(&data);
+  x.ExtractView(&data);
     
   hid_t dataset = H5Dopen(file, h5path, H5P_DEFAULT);
   herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL, H5P_DEFAULT, data);

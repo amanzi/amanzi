@@ -169,7 +169,7 @@
       <assigned_regions>West</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_mass_flux function="uniform" start="0.0" value="7.91317859e-6"/>
+          <inward_mass_flux function="constant" start="0.0" value="7.91317859e-6"/>
         </liquid_component>
         <solute_component name="solute">
           <aqueous_conc name="H+" value="9.6643E-04" function="constant" start="0.0"/>

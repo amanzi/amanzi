@@ -20,20 +20,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${MSTK_VERSION_MAJOR} ${MSTK_VERSION_MINOR} ${MSTK_VERSION_PATCH})
 
 # --- Patch the original code
-set(MSTK_patch_file mstk-cmake.patch)
-set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
-               ${MSTK_sh_patch}
-               @ONLY)
+#set(MSTK_patch_file mstk-cmake.patch)
+#set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
+#               ${MSTK_sh_patch}
+#               @ONLY)
 
 # configure the CMake patch step
-set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
-               ${MSTK_cmake_patch}
-               @ONLY)
+#set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
+#               ${MSTK_cmake_patch}
+#               @ONLY)
 
 # set the patch command
-set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
+#set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
 
 # --- Define the configure parameters
 # compile flags
@@ -55,31 +55,25 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMSTK_USE_MARKERS:BOOL=TRUE		    
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
-                    -DENABLE_EXODUSII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5
                     -DZOLTAN_NEEDS_ParMETIS:BOOL=TRUE
                     -DHDF5_DIR:PATH=${HDF5_DIR}
-                    -DHDF5_INCLUDE_DIRS:PATH=${HDF5_INCLUDE_DIRS}
-                    -DHDF5_LIBRARIES:LIST=${HDF5_LIBRARIES}
+                    -DHDF5_ROOT:PATH=${HDF5_DIR}
                     -DHDF5_NO_SYSTEM_PATHS:BOOL=TRUE
-                    -DNetCDF_DIR:PATH=${NetCDF_DIR} 
+                    -DnetCDF_DIR:PATH=${NetCDF_DIR} 
+                    -DnetCDF_ROOT:PATH=${NetCDF_DIR} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX}/SEACAS
-                    -DZOLTAN_DIR:PATH=${Zoltan_INSTALL_PREFIX}
-                    -DMetis_DIR:PATH=${METIS_DIR} 
+                    -DExodusII_ROOT:PATH=${TPL_INSTALL_PREFIX}/SEACAS
+                    -DZoltan_DIR:PATH=${Zoltan_INSTALL_PREFIX}
+                    -DZoltan_ROOT:PATH=${Zoltan_INSTALL_PREFIX}
                     -DMETIS_DIR:PATH=${METIS_DIR} 
-                    -DMetis_LIB_DIR:PATH=${METIS_DIR}/lib 
-                    -DMETIS_LIB_DIR:PATH=${METIS_DIR}/lib 
-                    -DMetis_LIBRARY:PATH=${METIS_LIBRARIES}
-                    -DMETIS_LIBRARY:PATH=${METIS_LIBRARIES}
-                    -DMetis_INCLUDE_DIR:PATH=${METIS_DIR}/include 
-                    -DMETIS_INCLUDE_DIR:PATH=${METIS_DIR}/include 
-                    -DMetis_INCLUDE_DIRS:PATH=${METIS_DIR}/include
-                    -DMETIS_INCLUDE_DIRS:PATH=${METIS_DIR}/include
+                    -DMETIS_ROOT:PATH=${METIS_DIR} 
                     -DParMETIS_DIR:PATH=${METIS_DIR}
+                    -DParMETIS_ROOT:PATH=${METIS_DIR}
                     -DENABLE_Tests:BOOL=FALSE
-                    -DINSTALL_DIR:PATH=${TPL_INSTALL_PREFIX}
+                    -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
 
 # --- Add external project build and tie to the MSTK build target
@@ -93,11 +87,11 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     URL_MD5       ${MSTK_MD5_SUM}                 # md5sum of the archive file
                     DOWNLOAD_NAME ${MSTK_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${MSTK_PATCH_COMMAND}
+                    # PATCH_COMMAND ${MSTK_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                      ${MSTK_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR       ${MSTK_build_dir}            # Build directory 

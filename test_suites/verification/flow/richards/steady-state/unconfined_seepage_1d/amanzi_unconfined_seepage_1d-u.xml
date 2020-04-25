@@ -42,7 +42,10 @@
           <tolerance>1.0e-18</tolerance>
         </unstr_linear_solver>
         <unstr_steady-state_controls>
-          <initialize_with_darcy>true</initialize_with_darcy>
+          <!--unstr_initialization>
+            <method>darcy_solver</method>
+            <linear_solver>aztecoo</linear_solver>
+          </unstr_initialization-->
         </unstr_steady-state_controls>
         <unstr_flow_controls>
           <rel_perm_method>upwind-darcy_velocity</rel_perm_method>
@@ -54,7 +57,6 @@
     </numerical_controls>
     <mesh framework="mstk">
       <dimension>2</dimension>
-      <comments />
       <read>
         <format>exodus ii</format>
         <file>porflow4_4.exo</file>

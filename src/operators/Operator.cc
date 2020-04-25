@@ -11,6 +11,7 @@
 */
 
 #include <sstream>
+#include <typeinfo>
 
 // TPLs
 #include "EpetraExt_RowMatrixOut.h"
@@ -434,7 +435,6 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
 
-  int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
     int ndofs = col_lids[n].size();
     AMANZI_ASSERT(ndofs == 1);
@@ -518,7 +518,8 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 void Operator::UpdatePreconditioner()
 {
   if (preconditioner_.get() == NULL) {
-    Errors::Message msg("Operator has no matrix or preconditioner for update.\n");
+    Errors::Message msg("Operator has no preconditioner, nothing to update.");
+    msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
   preconditioner_->Update(A_);

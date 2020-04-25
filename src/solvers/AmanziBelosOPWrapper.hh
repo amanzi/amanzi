@@ -1,10 +1,14 @@
 /*
-  This tells Belos how to work with the Amanzi operators.
-  License: BSD
-  Authors: Alicia Klinvex (amklinv@sandia.gov)
+  Solvers
 
-  Amanzi Belos operator wrapper
-  Usage:
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Alicia Klinvex (amklinv@sandia.gov)
+
+  This tells Belos how to work with the Amanzi operators.
 */
 
 #ifndef AMANZI_BELOS_OP_WRAPPER_HH_
@@ -39,7 +43,7 @@ public:
     {
       Teuchos::RCP<Vector> singleX = cmx->getVector(i);
       Teuchos::RCP<Vector> singleY = cmy->getVector(i);
-      if(applyInverse_)
+      if (applyInverse_)
         op_->ApplyInverse(*singleX,*singleY);
       else
         op_->Apply(*singleX,*singleY);

@@ -893,7 +893,7 @@ void State::Setup() {
       Exceptions::amanzi_throw(message);
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
@@ -913,7 +913,7 @@ void State::Setup() {
       f_it->second->CreateData();
     }
     // std::cout<<"Field "<<f_it->first<<": ";
-    // if ( f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
     //   auto com_vec = f_it->second->GetFieldData();
     //     for (CompositeVector::name_iterator comp=com_vec->begin();
     //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
@@ -954,7 +954,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
 
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "processing field \"" << f_it->first << "\"\n";
     }
     
@@ -1334,7 +1334,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
 double ReadCheckpoint(const Comm_ptr_type& comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
   checkpoint->open_h5file();
 
   // load the attributes
@@ -1370,7 +1370,7 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      bool read_complete = field->second->ReadCheckpoint(checkpoint);
+      bool read_complete = field->second->ReadCheckpoint(checkpoint.ptr());
       if (read_complete) field->second->set_initialized();
     }
   }
@@ -1382,7 +1382,7 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
                                  std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
 
   // load the attributes
   double time(0.);
@@ -1395,7 +1395,7 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 // Non-member function for checkpointing position.
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
                            std::string filename) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
 
   // load the attributes
   int pos = 0;
@@ -1409,7 +1409,7 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data) {
-  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(comm, filename));
+  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
   checkpoint->open_h5file();
 
   // read observations

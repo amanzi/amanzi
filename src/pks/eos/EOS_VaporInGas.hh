@@ -24,7 +24,7 @@
 #include "EOS.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class EOS_VaporInGas : public EOS {
@@ -52,7 +52,7 @@ protected:
   static Utils::RegisteredFactory<EOS, EOS_VaporInGas> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

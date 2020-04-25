@@ -100,7 +100,6 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
   data_ = new double[mem_];
 
   int mB = B.NumRows();
-  int nB = B.NumCols();
   const double* dataB = B.Values();
 
   for (int j = n1; j < n2; ++j) {
@@ -198,7 +197,7 @@ DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B)
   const double* dataA = A.Values();
   const double* dataB = B.Values();
 
-  int mrowsA = A.NumRows(), ncolsA = A.NumCols();
+  int mrowsA = A.NumRows();
   int mrowsB = B.NumRows(), ncolsB = B.NumCols();
 
   DenseMatrix AB(mrowsA, ncolsB);

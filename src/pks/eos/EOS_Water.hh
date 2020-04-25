@@ -20,7 +20,7 @@
 #include "EOS_ConstantMolarMass.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class EOS_Water : public EOS_ConstantMolarMass {
@@ -46,7 +46,7 @@ class EOS_Water : public EOS_ConstantMolarMass {
   static Utils::RegisteredFactory<EOS, EOS_Water> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

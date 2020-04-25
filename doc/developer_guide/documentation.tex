@@ -9,11 +9,35 @@
 
 \section{Documentation}
 
-\subsection{Developing Documentation for the Use Guide}
+\subsection{User Guide}
+The description of each test in the user guide uses the structured test format
+and consists of a few sections.
+
+\begin{enumerate}
+\item \underline{Introduction} describes purpose of the test.
+\item \underline{Problem Specification} describes the physical and mathematical model 
+      with the level of details sufficient to reproduce the results.
+\item \underline{Results and Comparison} summarizes numerical results in a form of plots
+      and tables (e.g., drawdown curves). Comparison with analytic data, data produced 
+      by other codes, or data published elsewhere is strongly encouraged.
+\item \underline{References}.
+\item \underline{About} collects technical information for developers that include 
+      location of the files, names of the developers, names of critical files (XML input,
+      Exodus mesh, analytic data, etc), names of output files.
+\item \underline{Status} describes status of the test and required future work.
+\end{enumerate}
+
+To build the user guide a few python modules have to be installed inluding ipython and
+sphixcontrib extensions such as bibtex and tikz. 
+Note that on OSX, the tikz extension is usually not available via MacPorts and has to
+be installed using pip.
 
 
 
-
+\subsection{Native Spec}
+This is a continuously evolving specification format used by the code developers. 
+Its main purpose is to develop and test new capabilities without disruption of end-users.
+The documentation is in the form of a structured text, see {\tt doc/input\_spec/AmanziNativeSpecV8.rst}.
 
 
 

@@ -29,11 +29,11 @@ Operator_Factory::Create() {
 
   // deduce the type
   // -- first choice: type is provided in the plist
-  std::string operator_type;
+  std::string pde_type;
   if (plist_->isParameter("operator type")) {
-    operator_type = plist_->get<std::string>("operator type");
+    pde_type = plist_->get<std::string>("operator type");
 
-    if (operator_type == "Operator_Cell") {
+    if (pde_type == "Operator_Cell") {
       // build the CVS from the global schema
       Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
       cvs->SetMesh(mesh_)->SetGhosted(true);

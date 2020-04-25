@@ -1,19 +1,67 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Interface for using Backtracking line search as a solver.
+//! Backtracking line search on the provided correction as a solver.
 
+/*
   From PETSc SNES type BT, which in turn is from Numerical Methods for
   Unconstrained Optimization and Nonlinear Equations by Dennis & Schnabel, pg
   325.
 */
+
+/*!
+
+Line Search accepts a correction from the Jacobian, then uses a
+process to attempt to minimize or at least ensure a reduction in the residual
+while searching *in that direction*, but not necessarily with the same
+magnitude, as the provided correction.  The scalar multiple of the search
+direction is given by :math:`\alpha`.
+
+This globalization recognizes that a true inverse Jacobian is a local
+measurement of the steepest descent direction, and so while the direction is
+guaranteed to be the direction which best reduces the residual, it may not
+provide the correct magnitude.
+
+Note, this always monitors the residual.
+
+.. _solver-typed-backtracking-spec:
+.. admonition:: solver-typed-backtracking-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
+      tolerance. The error is calculated by a PK.
+    
+    * `"limit iterations`" ``[int]`` **50** defines the maximum allowed number
+      of iterations.
+
+    * `"diverged tolerance`" ``[double]`` **1.e10** defines the error level
+      indicating divergence of the solver. The error is calculated by a PK.
+
+    * `"max error growth factor`" ``[double]`` **1.e5** defines another way to
+      identify divergence pattern on earlier iterations. If the PK-specific
+      error changes drastically on two consecutive iterations, the solver is
+      terminated.
+
+    * `"modify correction`" ``[bool]`` **false** allows a PK to modify the
+      solution increment. One example is a physics-based clipping of extreme
+      solution values.
+
+    * `"accuracy of line search minimum [bits]`" ``[int]`` **10**
+
+    * `"min valid alpha`" ``[double]`` **0** 
+
+    * `"max valid alpha`" ``[double]`` **10.**
+
+    * `"max line search iterations`" ``[int]`` **10** 
+
+  
+ */
+
 
 #ifndef AMANZI_BT_SOLVER_
 #define AMANZI_BT_SOLVER_
@@ -127,7 +175,6 @@ class SolverBT : public Solver<Vector,VectorSpace> {
   
   bool modify_correction_;
   double residual_;  // defined by convergence criterion
-  ConvergenceMonitor monitor_;
 };
 
 
@@ -180,7 +227,6 @@ template<class Vector, class VectorSpace>
 int
 SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
-  
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(*u));
@@ -190,9 +236,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), du_norm_initial(0.), previous_du_norm(0.0), r_norm_initial;
-  int divergence_count(0);
-  int prec_error;
+  double du_norm(0.0), previous_du_norm(0.0), r_norm_initial;
   int db_write_iter = 0;
 
   num_itrs_ = 0;
@@ -235,7 +279,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    prec_error = fn_->ApplyPreconditioner(r, du);
+    fn_->ApplyPreconditioner(r, du);
 
     // Hack the correction
     if (modify_correction_) fn_->ModifyCorrection(r, u, du);

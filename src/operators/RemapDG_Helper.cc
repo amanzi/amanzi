@@ -185,7 +185,7 @@ void RemapDG_Helper::StaticFaceCoVelocity()
     const auto& origin = velf_vec_[f][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
-      map[i][0].Reshape(dim_, order_, true);
+      map[i][0].Reshape(dim_, std::max(1, order_), true);
       map[i][0](1, i) = 1.0;        // map = x
       map[i][0].set_origin(origin);
       map[i][1] = velf_vec_[f][i];  // map = x + t * u

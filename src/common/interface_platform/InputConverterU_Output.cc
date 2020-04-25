@@ -51,8 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   char *tagname, *text;
   std::string unit;
 
-  DOMNamedNodeMap* attr_map;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *node_list;
   DOMNode* node;
 
   // get definitions node - this node MAY exist ONCE
@@ -90,7 +89,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
           node = list->item(0);
 
-          char* text = mm.transcode(node->getTextContent());
+          text = mm.transcode(node->getTextContent());
           Teuchos::Array<double> sps;
           sps.append(TimeCharToValue_(text));
 
@@ -233,6 +232,28 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     out_list.sublist("checkpoint data") = chkPL;
   }
 
+  // get output->mesh info - this node must exist ONCE
+  node = GetUniqueElementByTagsString_("output, mesh_info", flag);
+
+  if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
+    io_mesh_info_ = true;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << "Translating output: additional mesh information" << std::endl;
+
+    Teuchos::ParameterList chkPL;
+    DOMNodeList* children = node->getChildNodes();
+    for (int j = 0; j < children->getLength(); j++) {
+      DOMNode* jnode = children->item(j) ;
+      tagname = mm.transcode(jnode->getNodeName());
+      text = mm.transcode(jnode->getTextContent());
+
+      if (strcmp(tagname, "filename") == 0) {
+        chkPL.set<std::string>("filename", output_prefix_ + TrimString_(text));
+      }
+    }
+    out_list.sublist("mesh info") = chkPL;
+  }
+
   // get output->walkabout node - this node must exist ONCE
   node = GetUniqueElementByTagsString_("output, walkabout", flag);
 
@@ -278,7 +299,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       *vo_->os() << "Translating output: observations" << std::endl;
 
     Teuchos::ParameterList obsPL;
-    DOMNode* inode = node->getFirstChild();
+    inode = node->getFirstChild();
     while (inode != NULL) {
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) { 
         inode = inode->getNextSibling();
@@ -291,7 +312,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         obsPL.set<std::string>("observation output filename", output_prefix_ + TrimString_(text));
 
       } else if (strcmp(tagname, "units") == 0) {
-        std::string unit;
         unit = GetAttributeValueS_(inode, "time", TYPE_NONE, false, units_.system().time);
         obsPL.set<std::string>("time unit", unit);
 

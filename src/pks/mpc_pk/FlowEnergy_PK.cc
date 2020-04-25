@@ -27,6 +27,14 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
+  std::string pk_name = pk_tree.name();
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
+
+  // we will use a few parameter lists
+  auto pk_list = Teuchos::sublist(glist, "PKs", true);
+  my_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
 }
@@ -38,10 +46,14 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_ = S->GetMesh();
-  int dim = mesh_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
 
+  // Our decision can be affected by the list of models
+  auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
+  bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
+
+  // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
   if (!S->HasField("particle_density")) {
@@ -77,7 +89,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("eos type", "vapor in gas");
     elist.sublist("molar_density_gas").sublist("EOS parameters")
          .sublist("gas EOS parameters")
-         .set<std::string>("eos type", "ideal gas");
+         .set<std::string>("eos type", "ideal gas")
+         .set<double>("molar mass of gas", 28.9647e-03);  // dry air
   }
 
   // -- molar fraction
@@ -117,6 +130,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator("mass_density_liquid");
   }
 
   // -- viscosity model
@@ -147,21 +161,33 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
+  std::string model = (vapor_diff) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
-                                        .sublist("Richards problem")
                                         .sublist("physical models and assumptions");
-  flow.set("vapor diffusion", true);
-  flow.set<std::string>("water content model", "generic");
+  flow.set<bool>("vapor diffusion", vapor_diff);
+  flow.set<std::string>("water content model", model);
 
   // -- energy
   Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
                                           .sublist("physical models and assumptions");
-  energy.set("vapor diffusion", true);
+  energy.set<bool>("vapor diffusion", vapor_diff);
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);
 }
 
+
+/* ******************************************************************* 
+* Initialization of copies requires fileds to exists
+******************************************************************* */
+void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
+  if (S_->HasField("water_content")) {
+    S->RequireFieldCopy("prev_water_content", "wc_copy", "state");
+  }
+  Amanzi::PK_MPCStrong<PK_BDF>::Initialize(S);
+}
+  
 
 /* ******************************************************************* 
 * Performs one time step.
@@ -178,12 +204,14 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sat_prev = sat;
 
   // -- swap water_contents (current and previous)
-  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
-  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+  if (S_->HasField("water_content")) {
+    S_->CopyField("prev_water_content", "wc_copy", "state");
 
-  CompositeVector wc_prev_copy(wc_prev);
-  wc_prev = wc;
+    S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
+    CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
+    CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", "flow");
+    wc_prev = wc;
+  }
 
   // energy
   // -- swap conserved energies (current and previous)
@@ -194,14 +222,17 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector e_prev_copy(e_prev);
   e_prev = e;
  
-  // try a step
+  // try time step
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     // revover the original conserved quantaties
     *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
-    *S_->GetFieldData("prev_water_content", "flow") = wc_prev_copy;
     *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
+    if (S_->HasField("water_content")) {
+      *S_->GetFieldData("prev_water_content", "flow") =
+          *S_->GetFieldCopyData("prev_water_content", "wc_copy", "state");
+    }
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed. Restored prev_saturation_liquid, prev_water_content, prev_energy" << std::endl;

@@ -15,7 +15,7 @@
 #include "VaporPressureBaseFactory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
@@ -100,6 +100,6 @@ void MolarFractionGasEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 

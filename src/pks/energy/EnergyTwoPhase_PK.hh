@@ -67,7 +67,7 @@ public:
 
  protected:
   // models for evaluating total energy
-  Teuchos::RCP<EOS::EOS> eos_liquid_;
+  Teuchos::RCP<AmanziEOS::EOS> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
  private:

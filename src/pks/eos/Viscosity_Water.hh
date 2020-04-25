@@ -22,7 +22,7 @@
 #include "Viscosity_Base.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // Equation of State model
 class Viscosity_Water : public Viscosity_Base {
@@ -44,7 +44,7 @@ class Viscosity_Water : public Viscosity_Base {
   static Utils::RegisteredFactory<Viscosity_Base, Viscosity_Water> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

@@ -28,15 +28,10 @@
 
 TEST(COLUMN_MESH_3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
 
   int nx = 4, ny = 4, nz = 4;
   double lx = 4, ly = 4, lz = 4;
-  int dx = 1.0, dy = 1.0, dz = 1.0;
 
   // create a geometric model with regions
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -195,22 +190,15 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
-
 }
-
 
 
 TEST(COLUMN_MESH_3D_FROM_SURFACE)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
 
   int nx = 4, ny = 4, nz = 4;
   double lx = 4, ly = 4, lz = 4;
-  int dx = 1.0, dy = 1.0, dz = 1.0;
 
   // create a geometric model with regions
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =

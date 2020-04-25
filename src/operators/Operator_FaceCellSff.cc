@@ -72,7 +72,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+  // const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
   // Temporary cell and face vectors.
   CompositeVector T(X);

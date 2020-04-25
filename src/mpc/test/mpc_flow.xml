@@ -280,7 +280,6 @@
 
   <ParameterList name="PKs">
     <ParameterList name="flow">
-      <ParameterList name="Richards problem">
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
         <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -452,7 +451,6 @@
       	</ParameterList>
       </ParameterList>
     </ParameterList>
-   </ParameterList>
   </ParameterList>
 
   <ParameterList name="preconditioners">

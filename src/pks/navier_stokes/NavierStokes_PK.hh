@@ -152,9 +152,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   std::string solver_name_;
  
  private:
-  Key domain_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   int dim;
 

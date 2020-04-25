@@ -377,11 +377,11 @@ void ReadInputFile(const std::string& file_name,
       raw_line.resize(raw_line.size() - 1);
     }
 
-    char first = '\0';
-    if (raw_line.length() > 0) first = raw_line[0];
-    if (first == '#' || first == '\0') {
+    char sym_first = '\0';
+    if (raw_line.length() > 0) sym_first = raw_line[0];
+    if (sym_first == '#' || sym_first == '\0') {
       line_type = kCommentLine;
-    } else if (first == '[') {
+    } else if (sym_first == '[') {
       line_type = kSection;
     } else {
       line_type = kParameter;

@@ -1,16 +1,19 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  num_itrs_accumulated_ = 0;
-
   Authors: Alicia Klinvex (amklinv@sandia.gov)
+*/
+//! Trilinos/Belos implementation of GMRES
 
-  Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
+/*!
+
+Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
+
+.. warning:: undocumented
+    
 */
 
 #ifndef  AMANZI_BELOS_GMRES_OPERATOR_HH_

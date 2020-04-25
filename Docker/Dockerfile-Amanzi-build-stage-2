@@ -17,6 +17,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --parallel=4 --opt \
    --disable-structured \
+   --disable-build_user_guide \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \

@@ -15,7 +15,7 @@
 #define AMANZI_EOS_VAPOR_PRESSURE_BASE_HH_
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class VaporPressure_Base {
  public:
@@ -25,7 +25,7 @@ class VaporPressure_Base {
   virtual double DSaturatedVaporPressureDT(double T) = 0;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

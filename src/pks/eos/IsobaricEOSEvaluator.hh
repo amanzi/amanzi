@@ -20,7 +20,7 @@
 #include "EOS.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
@@ -56,7 +56,7 @@ class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

@@ -39,6 +39,7 @@
 #include "TreeVector.hh"
 #include "State.hh"
 #include "Visualization.hh"
+#include "MeshInfo.hh"
 
 // MPC
 #include "CycleDriver.hh"
@@ -213,6 +214,16 @@ void CycleDriver::Setup() {
         failed_visualization_.push_back(fail_vis);
       }
     }
+    std::string plist_name = "mesh info " + mesh->first;
+    // in the case of just a domain mesh, we want to allow no name.
+    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
+      plist_name = "mesh info";
+    }
+    if (glist_->isSublist(plist_name)) {
+      auto& mesh_info_list = glist_->sublist(plist_name);
+      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm_));
+      mesh_info->WriteMeshCentroids(*(mesh->second.first));
+    }
   }
 
 
@@ -221,8 +232,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("cycle driver")));
-  //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
+  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times
@@ -438,12 +448,14 @@ void CycleDriver::ReadParameterList_() {
     Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
     AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
-    Teuchos::Array<double>::const_iterator it_tim;
-    Teuchos::Array<double>::const_iterator it_dt;
-    for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
-         it_tim != reset_times.end();
+    {
+      Teuchos::Array<double>::const_iterator it_tim;
+      Teuchos::Array<double>::const_iterator it_dt;
+      for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
+           it_tim != reset_times.end();
          ++it_tim, ++it_dt) {
-      reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
+        reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
+      }
     }  
 
     if (tpc_list.isParameter("maximum time step")) {
@@ -919,8 +931,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   Teuchos::ParameterList state_plist = glist_->sublist("state");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
-  for (auto mesh = S_old_->mesh_begin(); mesh != S_old_->mesh_end(); ++mesh) {
-    S_->RegisterMesh(mesh->first, mesh->second.first);
+  for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
+    S_->RegisterMesh(it->first, it->second.first);
   }    
   
   //  S_->RegisterMesh("domain", mesh);

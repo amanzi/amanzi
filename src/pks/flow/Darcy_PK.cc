@@ -17,6 +17,7 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
@@ -56,8 +57,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
-  fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+  fp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -65,7 +65,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
   // computational domain
-  domain_ = flow_list->template get<std::string>("domain name", "domain");
+  domain_ = fp_list_->template get<std::string>("domain name", "domain");
 }
 
 
@@ -83,8 +83,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
-  fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -92,7 +91,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
   // domain name
-  domain_ = flow_list->template get<std::string>("domain name", "domain");
+  domain_ = fp_list_->template get<std::string>("domain name", "domain");
 }
 
 
@@ -175,6 +174,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", pressure_key_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(pressure_key_, eval);
   }
 
   // require additional fields for this PK
@@ -189,8 +193,13 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField(saturation_liquid_key_)) {
-    S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(saturation_liquid_key_, saturation_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", saturation_liquid_key_);
+    auto eval = Teuchos::rcp(new ConstantVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(saturation_liquid_key_, eval);
   }
 
   if (!S->HasField(prev_saturation_liquid_key_)) {

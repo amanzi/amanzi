@@ -15,7 +15,7 @@ ARG amanzi_pr=false
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
-# Make sure we have updatee branch information
+# Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
 RUN git pull
 RUN git branch --list
@@ -28,6 +28,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --parallel=4 --opt \
    --disable-structured \
+   --disable-build_user_guide \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \

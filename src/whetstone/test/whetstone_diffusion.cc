@@ -73,7 +73,7 @@ TEST(DARCY_MASS_2D) {
     std::vector<int> dirs;
     mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
-    double xi, yi, xj, yj;
+    double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];

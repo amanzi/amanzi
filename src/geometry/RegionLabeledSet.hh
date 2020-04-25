@@ -12,6 +12,7 @@
 */
 
 /*!
+
 The list *region: labeled set* defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
@@ -28,13 +29,13 @@ requires *cell*, *face* or *node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
-* `"label`" ``[string]`` Set per label defined in the mesh file.
+.. _region-labeled-set-spec:
+.. admonition:: region-labeled-set-spec
 
-* `"file`" ``[string]`` File name.
-
-* `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
-
-* `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
+    * `"label`" ``[string]`` Set per label defined in the mesh file.
+    * `"file`" ``[string]`` File name.
+    * `"format`" ``[string]`` Currently, we only support mesh files in the "Exodus II" format.
+    * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
 
 Example:
 

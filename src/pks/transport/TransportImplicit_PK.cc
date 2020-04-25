@@ -29,9 +29,7 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_AdvectionUpwindFracturedMatrix.hh"
-#include "PDE_AdvectionUpwindDFN.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
@@ -112,12 +110,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
                                             .sublist("advection operator")
                                             .sublist("matrix");
 
-  if (oplist.isParameter("fracture"))
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindFracturedMatrix(oplist, mesh_));
-  else if (oplist.isParameter("single domain"))
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
-  else
-    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindDFN(oplist, mesh_));
+  Operators::PDE_AdvectionUpwindFactory adv_factory;
+  op_adv_ = adv_factory.Create(oplist, mesh_);
 
   op_ = op_adv_->global_operator();
   op_adv_->SetBCs(op_bc_, op_bc_);
@@ -142,10 +136,10 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // generic linear solver
   if (ti_list_ != Teuchos::null) {
+    // preconditioner
     if (ti_list_->isParameter("linear solver"))
       solver_name_ = ti_list_->get<std::string>("linear solver");
 
-    // preconditioner
     if (ti_list_->isParameter("preconditioner")) {
       std::string name = ti_list_->get<std::string>("preconditioner");
       Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
@@ -169,7 +163,6 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool fail = false;
   dt_ = t_new - t_old;
-  double dt_MPC(dt_);
   
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");

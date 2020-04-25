@@ -96,7 +96,7 @@ void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const Amanzi
   Teuchos::RCP<const AmanziGeometry::RegionLineSegment> line_segment_ptr = 
       Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLineSegment>(reg_ptr);
 
-  double sum = 0.0;
+  // double sum = 0.0;
 
   for (int k = 0; k < entity_ids_.size(); k++) {
     int c = entity_ids_[k];
@@ -128,12 +128,9 @@ void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const Amanzi
       }
         
       line_segment_ptr->ComputeInterLinePoints(polytope_nodes, polytope_faces, line_points_[k]);
-      // std::cout<<"seg: "<<lofs_[k]<<" line_pnt "<<line_points_[k]<<"\n";
       // sum += lofs_[k];
     }
   }
-
-  // std::cout<<"Total Length "<<sum<<"\n";
 }
 
 }  // namespace Amanzi

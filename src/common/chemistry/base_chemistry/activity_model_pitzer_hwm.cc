@@ -438,14 +438,12 @@ void ActivityModelPitzerHWM::ComputeBetaFunctions() {
   for (int j = 0; j < number_b_functions; j++) {
     double x1(alpha1.at(j)*sqrt(I_));
     double x1q(x1 * x1);
-    double x1c(x1q * x1);
     f_function.at(j).at(0) = exp(-x1);
     g_function.at(j).at(0) = 2.0 * (1.0 - (1.0 + x1) * exp(-x1)) / x1q;
     g_pri_function.at(j).at(0) = -2.0 * (1.0 - (1.0 + x1 + (x1q / 2.0)) * exp(-x1)) / x1q;
     if (alpha2.at(j) != 0.0) {
       double x2(alpha2.at(j)*sqrt(I_));
       double x2q(x2 * x2);
-      double x2c(x2q * x2);
       f_function.at(j).at(1) = exp(-x2);
       g_function.at(j).at(1) = 2.0 * (1.0 - (1.0 + x2) * exp(-x2)) / x2q;
       g_pri_function.at(j).at(1) = -2.0 * (1.0 - (1.0 + x2 + (x2q / 2.0)) * exp(-x2)) / x2q;
@@ -462,8 +460,7 @@ void ActivityModelPitzerHWM::ComputeBetaFunctions() {
   @details Compute the J's functions.
 */
 void ActivityModelPitzerHWM::ComputeJFunctions() {
-  const double e1(4.581), e2(0.7237),
-      e3(0.012), e4(0.528), e12(7.8963);
+  const double e1(4.581), e2(0.7237), e3(0.012), e4(0.528), e12(7.8963);
 
   if (jfunction_approach == "pitzer1975") {
 
@@ -472,8 +469,6 @@ void ActivityModelPitzerHWM::ComputeJFunctions() {
       double zizj(charge_product.at(i));
       double x(2.352 * sqrt(I_)*zizj);
       double x2(x * x);
-      double x3(x2 * x);
-      double x4(x3 * x);
       if (x <= 0.03) {
         double s1(const_j_functions.at(5) / x);
         double s3(6.0 * s1);
@@ -835,7 +830,6 @@ void ActivityModelPitzerHWM::ParseBeta0VirialCoefficient(const std::string& data
   @details Parse Beta1 virial coefficients
 */
 void ActivityModelPitzerHWM::ParseBeta1VirialCoefficient(const std::string& data) {
-  bool isdebug(false);
   std::string semicolon(";");
   std::string space(" ");
   StringTokenizer b1(data, space);

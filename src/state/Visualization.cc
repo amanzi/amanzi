@@ -110,8 +110,8 @@ void Visualization::WriteRegions() {
           AmanziMesh::Entity_ID_List ids;
           mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &ids);
 
-          for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
-            reg[0][*it] = reg_index;
+          for (auto jt = ids.begin(); jt != ids.end(); ++jt) {
+            reg[0][*jt] = reg_index;
           }
         }
       }

@@ -53,6 +53,7 @@ END
 Condition initial
 units     mol/kg
 temperature      25.0
+SolidDensity     2700.0
 pH               8.0184               
 HCO3-            CO2(g)  0.00101325
 Ca++             Calcite

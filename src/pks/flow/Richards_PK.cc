@@ -65,8 +65,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
-  fp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
+  fp_list_ = Teuchos::sublist(pk_list, pk_name, true);
   
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -74,7 +73,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
   // domain name
-  domain_ = flow_list->template get<std::string>("domain name", "domain");
+  domain_ = fp_list_->template get<std::string>("domain name", "domain");
 
   vo_ = Teuchos::null;
 }
@@ -95,8 +94,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
-  fp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
+  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
  
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -104,7 +102,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
   // domain name
-  domain_ = flow_list->template get<std::string>("domain name", "domain");
+  domain_ = fp_list_->template get<std::string>("domain name", "domain");
 
   ms_itrs_ = 0;
   ms_calls_ = 0;
@@ -285,8 +283,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::RCP<Teuchos::ParameterList> physical_models = 
-        Teuchos::sublist(fp_list_, "physical models and assumptions");
     std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
 
     if (pom_name == "compressible: pressure function") {
@@ -615,7 +611,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
  
     std::string ini_method_name = ini_list.get<std::string>("method", "none");
     if (ini_method_name == "saturated solver") {
-      std::string name = ini_list.get<std::string>("linear solver");
+      name = ini_list.get<std::string>("linear solver");
       SolveFullySaturatedProblem(t_ini, *solution, name);
 
       bool clip(false);

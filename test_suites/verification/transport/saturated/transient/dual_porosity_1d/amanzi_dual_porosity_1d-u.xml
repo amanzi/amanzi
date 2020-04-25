@@ -28,7 +28,7 @@
   <process_kernels>
     <flow model="constant" state="off" />
     <transport state="on" />
-    <chemistry engine="none" process_model="none" state="off" />
+    <chemistry engine="none" state="off" />
   </process_kernels>
 
   <phases>
@@ -37,9 +37,9 @@
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="2.65e-9">Tc-99</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="2.65e-9">Tc-99</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
   </phases>
@@ -139,7 +139,7 @@
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="101325.0" />
           <uniform_saturation name="IC2" value="1.0" />
-          <velocity name="IC3" x="7.922e-9" y="0.0" />
+          <velocity x="7.922e-9" y="0.0" />
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" />

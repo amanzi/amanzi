@@ -81,7 +81,7 @@ add_install_include_file(${pks_inc_files})
 if (BUILD_TESTS) 
 endif()
 
-if (ENABLE_Physics)
+if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(eos)
   add_subdirectory(flow)
   add_subdirectory(navier_stokes)
@@ -93,7 +93,7 @@ add_subdirectory(chemistry)
 # ok, transport is physics but oh well...
 add_subdirectory(transport)
 
-if (ENABLE_Physics)
+if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(dummy)
 endif()

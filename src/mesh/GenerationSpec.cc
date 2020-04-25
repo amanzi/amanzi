@@ -41,11 +41,7 @@ GenerationSpec::~GenerationSpec(void)
 void
 GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
 {
-  double x0, y0, z0;
-  double x1, y1, z1;
-
   // read the parameters from the parameter list
-
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
   Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("domain low coordinate");
   Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("domain high coordinate");
@@ -72,7 +68,6 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   }
   
   domain_ = Teuchos::rcp(new AmanziGeometry::RegionBox("GenDomain", 0, p0, p1));
-
 }
 
 } // end namespace AmanziMesh

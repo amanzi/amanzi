@@ -59,6 +59,7 @@ Condition initial
 units                  mol/kg
 temperature      25.0
 !equilibrate_surface
+SolidDensity     2700.0 
 pH                      5.0
 Na+                   charge
 NO3-                  1.00293346236581d-01

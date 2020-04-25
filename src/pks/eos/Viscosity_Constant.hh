@@ -22,7 +22,7 @@
 #include "Viscosity_Base.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class Viscosity_Constant : public Viscosity_Base {
  public:
@@ -42,7 +42,7 @@ class Viscosity_Constant : public Viscosity_Base {
   static Utils::RegisteredFactory<Viscosity_Base, Viscosity_Constant> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

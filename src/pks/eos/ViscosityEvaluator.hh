@@ -18,7 +18,7 @@
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
@@ -47,7 +47,7 @@ class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

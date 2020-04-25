@@ -112,7 +112,6 @@ TEST(MSTK_EDGES_2D)
       CHECK_EQUAL(elen,norm(evec));
     }
   }
-
 }
 
 
@@ -121,9 +120,7 @@ TEST(MSTK_EDGES_2D)
 
 TEST(MSTK_EDGES_3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
   int size = comm->NumProc();
   CHECK_EQUAL(4,size);
 

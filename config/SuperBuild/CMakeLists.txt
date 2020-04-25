@@ -8,7 +8,7 @@
 # Set minimum required version of CMake
 # NB: Must go before project() call.
 # KL: Version used to build Amanzi must be the same!
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.11.4)
 
 #
 # Language standard
@@ -417,39 +417,6 @@ message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}")
 # Set common build compiler flags, build types and directories
 # ############################################################################ #
 
-# CMake compiler settings for any package built with CMake
-
-# C language flags
-set(Amanzi_CMAKE_C_COMPILER_ARGS
-     -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
-     -DCMAKE_C_FLAGS_DEBUG:STRING=${CMAKE_C_FLAGS_DEBUG}
-     -DCMAKE_C_FLAGS_MINSIZEREL:STRING=${CMAKE_C_FLAGS_MINSIZEREL}
-     -DCMAKE_C_FLAGS_RELEASE:STRING=${CMAKE_C_FLAGS_RELEASE}
-     -DCMAKE_C_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_C_FLAGS_RELWITHDEBINFO})
-
-# C++ language flags 
-set(Amanzi_CMAKE_CXX_COMPILER_ARGS
-     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
-     -DCMAKE_CXX_FLAGS_DEBUG:STRING=${CMAKE_CXX_FLAGS_DEBUG}
-     -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
-     -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
-     -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-
-# Fortran language flags    
-set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
-     -DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS}
-     -DCMAKE_Fortran_FLAGS_DEBUG:STRING=${CMAKE_Fortran_FLAGS_DEBUG}
-     -DCMAKE_Fortran_FLAGS_MINSIZEREL:STRING=${CMAKE_Fortran_FLAGS_MINSIZEREL}
-     -DCMAKE_Fortran_FLAGS_RELEASE:STRING=${CMAKE_Fortran_FLAGS_RELEASE}
-     -DCMAKE_Fortran_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_Fortran_FLAGS_RELWITHDEBINFO})
-
-# Link flags
-set(Amanzi_CMAKE_LINKER_ARGS
-     -DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}
-     -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
-
-message(STATUS "Amanzi_CMAKE_LINKER_ARGS=${Amanzi_CMAKE_LINKER_ARGS}")
-
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uc)
@@ -467,10 +434,14 @@ if (CMAKE_EXE_LINK_FLAGS)
   build_whitespace_string(Amanzi_COMMON_LDFLAGS ${CMAKE_EXE_LINK_FLAGS})
 endif()
 
+# Common CMake controls
+list(APPEND AMANZI_CMAKE_CACHE_ARGS "-DCMAKE_PREFIX_PATH:PATH=${TPL_INSTALL_PREFIX}")
+
 message(STATUS "\tcommon C flags\t\t${Amanzi_COMMON_CFLAGS}")
 message(STATUS "\tcommon C++ flags\t${Amanzi_COMMON_CXXFLAGS}")
 message(STATUS "\tcommon Fortran flags\t${Amanzi_COMMON_FCFLAGS}")
 message(STATUS "\tcommon Linker flags\t${Amanzi_COMMON_LDFLAGS}")
+message(STATUS "\tcommon arguments\t${AMANZI_CMAKE_CACHE_ARGS}")
 
 
 # ############################################################################ #
@@ -729,6 +700,11 @@ if (ENABLE_Silo)
              -DENABLE_Silo:BOOL=${ENABLE_Silo}
              -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
              -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
+endif()
+
+# CLM
+if (ENABLE_CLM)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
 endif()
 
 # Alquimia and chemical engines (PFloTran and CrunchTope)

@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml,directory):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     return Obs_data
@@ -48,7 +48,7 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
             slice_dep = 1
             slice_indep = 0
 
-        for obs in Obs_data.observations.itervalues():
+        for obs in Obs_data.observations.values():
             if (obs.coordinate[slice_dep] == Obs_lines[key]['slice'][1] * obs.coordinate[slice_indep]):
                 if (Obs_lines[key]['vary'] is 'x' or Obs_lines[key]['vary'] is 'y'):
                     Obs_scatter[key]['distance'].append(obs.coordinate[slice_indep])
@@ -137,7 +137,7 @@ def MakeTableCols(table_layout,slice,
 
             t.add_column(col_key, analytic_data)
             t.float_format[col_key]=".5e"
-            print "Maximal deviation at point distance was ", vmin_max
+            print("Maximal deviation at point distance was ", vmin_max)
 
     # We could insert columns for particular error / differences here.
 
@@ -251,7 +251,7 @@ def PlotAnalyticSoln(solution, analytic, slice, obs_slices, axes1):
     # Convert horizontal axis to float and shift to align the source
     hv = [float(i) - float(soln['source'][coord]) for i in soln[coord]]
     vv = [float(i) for i in soln['c']]
-    axes1.plot(hv,vv)
+    axes1.plot(hv,vv,label=analytic[slice]['plot_props']['label'])
 
 
 def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):

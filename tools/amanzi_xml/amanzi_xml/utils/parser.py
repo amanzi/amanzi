@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as etree
-import errors as aerrors
-import io as aio
+from . import errors as aerrors
+from . import io as aio
 
 objects = dict()
 
@@ -30,9 +30,9 @@ def _listObjectFromElement(elem):
         try:
             obj = objects[cname]
         except KeyError:
-            print "Error interpreting list:"
-            print elem, cname
-            print objects.keys()
+            print("Error interpreting list:")
+            print((elem, cname))
+            print((list(objects.keys())))
             raise aerrors.NotNativeSpecError()
         else:
             return obj.from_Element(elem)
@@ -55,6 +55,6 @@ def fromElement(elem):
     elif elem.tag == 'ParameterList':
         return _listObjectFromElement(elem)
     else:
-        raise RuntimeError('Invalid element with tag %s'%elem.tag)
+        raise RuntimeError('Invalid element with tag %s' % elem.tag)
 
 

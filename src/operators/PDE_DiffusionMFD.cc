@@ -78,7 +78,8 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("cell"));
     }
 
-    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+    if (little_k_ != OPERATOR_LITTLE_K_STANDARD &&
+        little_k_ != OPERATOR_LITTLE_K_NONE) {
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
@@ -1118,9 +1119,6 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
   flux_data.PutScalar(0.0);
-
-  int ndofs_owned = flux->ViewComponent("face")->MyLength();
-  int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

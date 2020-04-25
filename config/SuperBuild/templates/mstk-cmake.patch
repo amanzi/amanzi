@@ -1,12 +1,15 @@
-diff -uNbB mstk-3.1.0-orig/CMakeLists.txt mstk-3.1.0-source/CMakeLists.txt
---- mstk-3.1.0-orig/CMakeLists.txt	2019-02-22 13:00:08.000000000 -0700
-+++ mstk-3.1.0-source/CMakeLists.txt	2019-02-22 13:00:19.000000000 -0700
-@@ -91,7 +91,7 @@
- 
-  set(HDF5_ROOT ${HDF5_DIR})
-  find_package(HDF5 REQUIRED 
--              COMPONENTS C CXX HL)
-+              COMPONENTS C HL)
- 
-  if(NOT HDF5_FOUND)
-     message(FATAL_ERROR "Error: could not find hdf5 library\n"
+diff -ruNbB MSTK-3_2_1/cmake/modules/FindExodusII.cmake mstk-3.2.1-source/cmake/modules/FindExodusII.cmake
+--- MSTK-3_2_1/cmake/modules/FindExodusII.cmake	2019-11-24 21:15:24.000000000 -0700
++++ mstk-3.2.1-source/cmake/modules/FindExodusII.cmake	2019-12-29 16:13:13.000000000 -0700
+@@ -108,7 +108,10 @@
+   endif ()
+   
+   # Add netCDF as a dependency of ExodusII
+-  target_link_libraries(${ExodusII_LIBRARIES} INTERFACE ${netCDF_LIBRARIES})
++  # target_link_libraries(${ExodusII_LIBRARIES} INTERFACE ${netCDF_LIBRARIES})
++  foreach(lib_ ${netCDF_LIBRARIES})
++    target_link_libraries(${ExodusII_LIBRARIES} INTERFACE netCDF::${lib_})
++  endforeach()
+ endif()
+   
+ # Hide these variables from the cache

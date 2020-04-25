@@ -46,7 +46,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
       Kf_(NULL)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_DIFFUSION_DG;
+    pde_type_ = PDE_DIFFUSION_DG;
     Init_(plist);
   }
 

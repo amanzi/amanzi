@@ -27,7 +27,7 @@ IndependentVariableFieldEvaluatorFromFile::IndependentVariableFieldEvaluatorFrom
   varname_ = plist.get<std::string>("variable name");
   compname_ = plist.get<std::string>("component name", "cell");
   locname_ = plist.get<std::string>("mesh entity", "cell");
-  ndofs_ = plist.get<int>("number of DoFs", 1);
+  ndofs_ = plist.get<int>("number of dofs", 1);
 
   if (plist.isSublist("time function")) {
     FunctionFactory fac;
@@ -85,8 +85,21 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   }
 
   // load times, ensure file is valid
+  // if there exists no times, default value is set to +infinity
   HDF5Reader reader(filename_);
-  reader.ReadData("/time", times_);
+  if (temporally_variable_) {
+    try {
+      reader.ReadData("/time", times_);
+    } catch (...) {
+      std::stringstream messagestream;
+      messagestream << "Variable "<< my_key_ << " is defined as a field changing in time.\n"
+                    << " Dataset /time is not provided in file " << filename_<<"\n";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  } else{
+    times_.push_back(1e+99);
+  }
 
   // check for increasing times
   for (int j = 1; j < times_.size(); ++j) {
@@ -98,7 +111,7 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   }
 
   current_interval_ = -1;
-  t_before_ = -1;
+  t_before_ = -1e+99;
   t_after_ = times_[0];
 }
 
@@ -124,7 +137,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     // this should only be the case if we are somehow composing this function
     // with a time function that is not monotonic, i.e. doing a cyclic steady
     // state to repeat a year, and we have gone past the cycle.  Restart the interval.
-    t_before_ = -1;
+    t_before_ = -1e+99;
     t_after_ = times_[0];
     current_interval_ = -1;
     LoadFile_(0);
@@ -140,7 +153,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     *cv = *val_before_;
 
   } else if (t < t_after_) {
-    if (t_before_ == -1) {
+    if (t_before_ == -1e+99) {
       // to the left of the first point
       AMANZI_ASSERT(val_after_ != Teuchos::null);
       *cv = *val_after_;
@@ -193,10 +206,11 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
   if (locname_ == "cell" &&
       (cv->HasComponent("boundary_face") || cv->HasComponent("face"))) 
     DeriveFaceValuesFromCellValues(*cv);
-
 }
 
-
+// ---------------------------------------------------------------------------
+// Verify existence of a field and load it 
+// ---------------------------------------------------------------------------
 void
 IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   // allocate data
@@ -215,14 +229,18 @@ IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   for (int j=0; j!=ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    file_input->readData(*vec(j), varname.str());
+    if (!file_input->readData(*vec(j), varname.str())) {
+      Exceptions::amanzi_throw(Errors::Message("Read ERROR! Variable is not found"));
+    }
   }
 
   // close file
   file_input->close_h5file();
 }
 
-
+// ---------------------------------------------------------------------------
+// Linear interpolation on interval (t_after_ - t_before_)
+// ---------------------------------------------------------------------------
 void
 IndependentVariableFieldEvaluatorFromFile::Interpolate_(double time,
         const Teuchos::Ptr<CompositeVector>& v) {
@@ -236,7 +254,7 @@ IndependentVariableFieldEvaluatorFromFile::Interpolate_(double time,
 
   double coef = (time - t_before_)/(t_after_ - t_before_);
   *v = *val_before_;
-  v->Update(coef, *val_after_, 1-coef);
+  v->Update(coef, *val_after_, 1.-coef);
 }
 
 

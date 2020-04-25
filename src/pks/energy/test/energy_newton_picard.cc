@@ -153,10 +153,10 @@ void HeatConduction::Init(
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = 0.0;
-    } else if(fabs(xf[0]) < 1e-6) {
+    } else if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = TemperatureSource;
-    } else if(fabs(xf[0] - 3.0) < 1e-6) {
+    } else if (fabs(xf[0] - 3.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = TemperatureFloor;
     }
@@ -297,7 +297,7 @@ int HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector
 double HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
                                  const Teuchos::RCP<const CompositeVector>& du)
 {
-  double norm_du, norm_u;
+  double norm_du;
   du->NormInf(&norm_du);
   return norm_du;
 }
@@ -314,9 +314,9 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    double u = uc[0][c];
-    kc[0][c] = Conduction(c, u);
-    dkdT_c[0][c] = ConductionDerivative(c, u);
+    double temp = uc[0][c];
+    kc[0][c] = Conduction(c, temp);
+    dkdT_c[0][c] = ConductionDerivative(c, temp);
   }
 
   std::vector<int>& bc_model = bc_->bc_model();

@@ -1,4 +1,11 @@
-//#include <Teuchos_RCP.hpp>
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, others
+*/
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -8,12 +15,8 @@
 
 using namespace std;
 
-
-namespace Amanzi
-{
-
-namespace AmanziMesh
-{
+namespace Amanzi {
+namespace AmanziMesh {
 
 // Some constants to be used by routines in this file only
 
@@ -78,7 +81,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   for (Entity_ID_List::const_iterator v=fixed_nodes.begin();
        v!=fixed_nodes.end(); ++v) {
     if (*v < nv) {
-      MVertex_ptr mv = vtx_id_to_handle[*v];
+      mv = vtx_id_to_handle[*v];
       if (!MEnt_IsMarked(mv,fixedmk)) {
         List_Add(fixed_verts,mv);
         MEnt_Mark(mv,fixedmk);
@@ -140,7 +143,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     int nvcells = List_Num_Entries(vcells);
     for (int i = 0; i < nvcells; i++) {
       MEntity_ptr ent = List_Entry(vcells,i);
-      int id = MEnt_ID(ent); 
+      id = MEnt_ID(ent); 
 
       if (target_cell_volumes_[id-1] > 0.0) {
         // At least one cell connected to node/vertex needs to meet
@@ -173,8 +176,6 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     idx = 0;
     while ((mv = List_Next_Entry(driven_verts,&idx))) {
-      int gtype = MV_GEntDim(mv);
-      
       id = MV_ID(mv);
 
       // Get an estimate of the mesh size around this vertex to 
@@ -472,8 +473,8 @@ double Tet_Volume(double *xyz0, double *xyz1, double *xyz2, double *xyz3) {
 
 
 double Poly_Area(int n, double (*xyz)[3]) {
-  int i, j;
-  double pcen[3], txyz[3][3], area = 0.0;
+  int i;
+  double area = 0.0;
   
   if (n < 3)
     return 0;
@@ -488,8 +489,7 @@ double Poly_Area(int n, double (*xyz)[3]) {
      result in roundoff error. To improve accuracy, we will make
      all coordinates relative to x0,y0. But what if xi is very close 
      to x0? Then xi-x0 will also generate high error. Which is better?
-
-*/
+  */
 
   if (fabs(xyz[0][0]) > 1000.0 || fabs(xyz[0][1]) > 1000.0) { 
     for (i = 0; i < n; i++)
@@ -544,16 +544,16 @@ double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
 double Mesh_MSTK::deform_function(const int nodeid, 
                                   double const * const nodexyz) const {
 
-  double func = 0.0, func1 = 0.0, func2 = 0.0, delta=1.0e-3;
+  double func = 0.0, delta=1.0e-3;
   MVertex_ptr v = vtx_id_to_handle[nodeid];
   double *xyz[MAXPV3], L10_sqr, L20_sqr, L21_sqr, A;
   double val=0.0, *xyz1[4];
   double evec0[3], evec1[3], evec2[3], a, b, cpvec[3], vol6;
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
-  int i, j, k, m, id, jr, jf, nf0, found;
-  int vind=-1, ind[4], nbrs[4][3];
+  int i, j, k, m, id, jr, jf, found;
   MVertex_ptr fv, rv;
+  int vind=-1, ind[4];
   List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
   static MVertex_ptr (*fverts)[MAXPV2], (*rverts)[MAXPV3];
@@ -689,8 +689,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
           List_ptr rfvlist = MF_Vertices(rf,!rfdir,0);
           nrfv[jr][jf] = List_Num_Entries(rfvlist);
             
-          int nfv = nrfv[jr][jf];
-          for (j = 0; j < nfv; j++) {
+          int nfv2 = nrfv[jr][jf];
+          for (j = 0; j < nfv2; j++) {
             int rvidx;
             rv = List_Entry(rfvlist,j);
               
@@ -711,8 +711,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
             /* if this vertex is a neighbor of v, add it to neighbor list */
 
-            if (v == List_Entry(rfvlist,(j+1)%nfv) || 
-                v == List_Entry(rfvlist,(j-1+nfv)%nfv)) { 
+            if (v == List_Entry(rfvlist,(j+1)%nfv2) || 
+                v == List_Entry(rfvlist,(j-1+nfv2)%nfv2)) { 
               for (k = 0, found = 0; !found && k < nnbrsgen; k++)
                 found = (rverts[vnbrsgen[k]] == rv) ? 1 : 0;
               if (!found)
@@ -932,25 +932,25 @@ double Mesh_MSTK::deform_function(const int nodeid,
       
         for (jf = 0; jf < nrf[jr]; jf++) {
 
-          int nfv = nrfv[jr][jf];
+          int nfv2 = nrfv[jr][jf];
 
           double fcen[3] = {0.0,0.0,0.0};
           if (use_face_centers) {
-            for (j = 0; j < nfv; j++) {
+            for (j = 0; j < nfv2; j++) {
               int rvlid = rfvlocid[jr][jf][j];
               for (k = 0; k < 3; k++)
                 fcen[k] += xyz[rvlid][k];
             }
-            for (k = 0; k < 3; k++) fcen[k] /= nfv;        
+            for (k = 0; k < 3; k++) fcen[k] /= nfv2;        
           }
           
-          for (j = 0; j < nfv; j++) {
+          for (j = 0; j < nfv2; j++) {
             int rvlid = rfvlocid[jr][jf][j];
             int rvlid1;
           
             /* Volume of this tet */
 
-            rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
+            rvlid1 = rfvlocid[jr][jf][(j+1)%nfv2];
             double tet_volume = Tet_Volume(xyz[rvlid],xyz[rvlid1],fcen,rcen);
             negvol_factor =  (tet_volume < 0.0) ? -1 : negvol_factor;
             region_volume += tet_volume;
@@ -976,21 +976,21 @@ double Mesh_MSTK::deform_function(const int nodeid,
             //      have computed them at if we were not using a virtual
             //      decomposition of the element */
             
-            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];            
+            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv2)%nfv2];            
             //   condfunc += func_modcn_corner3d(xyz[rvlid],fcen,xyz[rvlid1],rcen);
 
-            //   rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
+            //   rvlid1 = rfvlocid[jr][jf][(j+1)%nfv2];
             //   condfunc += func_modcn_corner3d(xyz[rvlid],xyz[rvlid1],fcen,rcen);
             // }
             // else {            
             //   int rvlid1;
-            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];
-            //   int rvlid2 = rfvlocid[jr][jf][(j+1)%nfv];
+            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv2)%nfv2];
+            //   int rvlid2 = rfvlocid[jr][jf][(j+1)%nfv2];
             //   condfunc += func_modcn_corner3d(xyz[rvlid], xyz[rvlid2], 
             //                                    xyz[rvlid1], rcen);
             // }
           
-          } // nfv
+          } // nfv2
         } // jf
       } // else
 
@@ -1331,7 +1331,7 @@ double Mesh_MSTK::mineigenvalue(const double A[3][3]) const {
       r = r/2.0;
       if ( r <= -1)
         phi = pi/3.0;
-      else if  ( r>=1)
+      else if (r>=1)
         phi = 0;
       else
         phi = acos(r)/3.0;
@@ -1587,6 +1587,5 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 // }
 
 
-
-} // close namespace AmanziMesh
-} // close namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi

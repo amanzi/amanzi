@@ -87,8 +87,6 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
 void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                               const Teuchos::Ptr<CompositeVector>& flux) 
 {
-  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-
   // Map field u for the local system. For Richards's equation, this
   // is equivalent to calculating the hydraulic head.
   Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));

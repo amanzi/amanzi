@@ -16,6 +16,7 @@
 // TPLs
 #include "Teuchos_ParameterList.hpp"
 
+#include "amanzi_version.hh"
 #include "InputConverterU.hh"
 #include "XMLParameterListWriter.hh"
 
@@ -36,7 +37,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();
   Teuchos::ParameterList tmp_list(verb_list_);
-  vo_ = new VerboseObject("InputConverter", tmp_list);
+  vo_ = new VerboseObject("InputConverter2.3", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // checks that input XML is structurally sound
@@ -78,12 +79,34 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   // post-processing (some may go away)
   FinalizeMPC_PKs_(out_list);
-  MergeInitialConditionsLists_(out_list);
+  MergeInitialConditionsLists_(out_list, "chemistry");
+  MergeInitialConditionsLists_(out_list, "chemistry matrix");
+  MergeInitialConditionsLists_(out_list, "chemistry fracture");
 
   // miscalleneous cross-list information
   // -- initialization file name
   if (init_filename_.size() > 0) {
     out_list.sublist("state").set<std::string>("initialization filename", init_filename_);
+  }
+
+  // -- additional saturated flow fields
+  if (pk_model_["flow"] == "darcy") {
+    Teuchos::Array<std::string> regions(1, "All");
+    out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid")
+        .sublist("function").sublist("ALL")
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", 1.0);
+
+    if (fracture_regions_.size() > 0) {
+      out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid")
+        .sublist("function").sublist("ALL")
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", 1.0);
+    }
   }
 
   // -- additional transport diagnostics
@@ -115,6 +138,12 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
       out_list.sublist("visualization data fracture")
           .set<std::string>("file name base", name + "_fracture");
     }
+
+    if (io_mesh_info_) {
+      out_list.sublist("mesh info fracture") = out_list.sublist("mesh info");
+      std::string filename = out_list.sublist("mesh info").get<std::string>("filename");
+      out_list.sublist("mesh info fracture").set<std::string>("filename", filename + "_fracture");
+    }
   }
 
   // -- final I/O
@@ -135,6 +164,13 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 ****************************************************************** */
 void InputConverterU::VerifyXMLStructure_()
 {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+#define XSTR(s) STR(s)
+#define STR(s) #s
+    *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
+               << "Verify high-level XML structure" << std::endl;
+  }
+
   MemoryManager mm;
 
   std::vector<std::string> names;
@@ -164,7 +200,6 @@ void InputConverterU::ParseSolutes_()
 
   DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
-  DOMElement* element;
 
   // liquid phase (try solutes, then primaries)
   std::string species("solute");
@@ -197,8 +232,8 @@ void InputConverterU::ParseSolutes_()
   // gas phase
   node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
   if (flag) {
-    DOMNodeList* children = node->getChildNodes();
-    int nchildren = children->getLength();
+    children = node->getChildNodes();
+    nchildren = children->getLength();
 
     for (int i = 0; i < nchildren; ++i) {
       DOMNode* inode = children->item(i);
@@ -387,19 +422,26 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 /* ******************************************************************
 * Filters out empty sublists starting with node "parent".
 ****************************************************************** */
-void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist)
+void InputConverterU::MergeInitialConditionsLists_(
+   Teuchos::ParameterList& plist, const std::string& chemistry)
 {
-  if (plist.sublist("PKs").isSublist("chemistry")) {
+  std::string domain, key;
+
+  if (plist.sublist("PKs").isSublist(chemistry)) {
+    domain = plist.sublist("PKs").sublist(chemistry).get<std::string>("domain name");
+
     Teuchos::ParameterList& ics = plist.sublist("state")
                                        .sublist("initial conditions");
-    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("chemistry")
+    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist(chemistry)
                                        .sublist("initial conditions");
 
     for (auto it = icc.begin(); it != icc.end(); ++it) {
+      key = Keys::getKey(domain, it->first);
+
       if (icc.isSublist(it->first)) {
         Teuchos::ParameterList& slist = icc.sublist(it->first);
         if (slist.isSublist("function")) {
-          ics.sublist(it->first) = slist;
+          ics.sublist(key) = slist;
           slist.set<std::string>("function", "list was moved to state");
         }
       }

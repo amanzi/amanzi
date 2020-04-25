@@ -172,12 +172,13 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
       cvs.SetComponent("face", AmanziMesh::FACE, dim);
       Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
 
-      // Evaluate the velocity function 
+      // evaluate the full xD velocity function 
       Teuchos::RCP<Functions::CompositeVectorFunction> func = 
           Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map()); 
       func->Compute(0.0, vel_vec.ptr()); 
  
-      // Dot the velocity with the normal 
+      // CV's map may differ from the regular mesh face map 
+      const auto& fmap = *data_->Map().Map("face", true);
       unsigned int nfaces_owned = data_->Mesh() 
           ->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED); 
  
@@ -187,14 +188,12 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
       AmanziGeometry::Point vel(dim); 
       for (unsigned int f=0; f!=nfaces_owned; ++f) { 
         AmanziGeometry::Point normal = data_->Mesh()->face_normal(f); 
-        if (dim == 2) { 
-          vel.set(vel_f[0][f], vel_f[1][f]); 
-        } else if (dim == 3) { 
-          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]); 
-        } else { 
-          AMANZI_ASSERT(0); 
-        } 
-        dat_f[0][f] = vel * normal; 
+        for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f]; 
+
+        int g = fmap.FirstPointInElement(f);
+        for (int i = 0; i < fmap.ElementSize(f); ++i) {
+          dat_f[0][g + i] = vel * normal; 
+        }
       } 
       set_initialized(); 
  
@@ -460,14 +459,31 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
       ++i;
     }
   } else {
-    for (int i=0; i!=subfield_names_.size(); ++i) {
+
+    if (subfield_names_.size() != data_->NumComponents()) {
+      subfield_names_.resize(data_->NumComponents());
+    }
+
+    unsigned int i = 0;
+    for (CompositeVector::name_iterator compname=data_->begin();
+         compname!=data_->end(); ++compname) {
+      
+      if (subfield_names_[i].size() == 0) {
+        subfield_names_[i].resize(data_->NumVectors(*compname));
+      }
+
       for (int j=0; j!=subfield_names_[i].size(); ++j) {
         if (subfield_names_[i][j].length() == 0) {
-          std::stringstream s;
-          s << j;
-          subfield_names_[i][j] = s.str();
+          if (i==0) {
+            std::stringstream s;
+            s << j;
+            subfield_names_[i][j] = s.str();
+          }else{
+            subfield_names_[i][j] = subfield_names_[0][j];
+          }
         }
       }
+      i++;      
     }
   }
 };

@@ -122,7 +122,7 @@ code development and its daily usage in reasearch.
 
   * Proper names such as an individual person, place, or organization, including their derivatives
     *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
-    *Jacobian matrix*, *Newton correction*, *Richards problem*
+    *Jacobian matrix*, and *Newton correction*.
 
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
 
@@ -429,16 +429,18 @@ Field evaluators
 
 There are three different types of field evaluators.
 
-Independent field evaluator
-...........................
+Independent variable field evaluator
+....................................
 
-An independent field evaluator has no dependencies and is specified by a function.
+An independent ivariable field evaluator has no dependencies and is specified by a function.
 Typically, it is evaluated once per simulation.
-The evaluator has the following fields.
+The evaluator has the following control parameters.
 
 * `"field evaluator type`" [string] The value of this parameter is used by the factory
   of evaluators. The available option are `"independent variable`", `"primary variable`",
   and `"secondary variable`".
+
+* `"constant in time`" [bool] specifies time-dependence nature of the field.
 
 * `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
   In may contain multiple sublists `"_DOMAIN`" with identical structure.
@@ -461,6 +463,7 @@ The evaluator has the following fields.
   <ParameterList name="field_evaluators">  <!-- parent list -->
   <ParameterList name="saturation_liquid">
     <Parameter name="field evaluator type" type="string" value="independent variable"/>
+    <Parameter name="constant in time" type="bool" value="true"/>
     <ParameterList name="function">
       <ParameterList name="_DOMAIN">
         <Parameter name="region" type="string" value="_ALL DOMAIN"/>
@@ -482,11 +485,11 @@ In this example field *saturation_liquid* is defined as a cell-based variable wi
 Note that the user-defined name for this field cannot have spaces.
 
 
-Independent field evaluator from file
-.....................................
+Independent variable field evaluator from file
+..............................................
 
-An independent field evaluator from file has no dependencies and is specified by 
-data at specific time moments. 
+An independent variable field evaluator from file has no dependencies and is specified by 
+data at specific time moments.
 
 * `"filename`" [string] defines name of a data file.
   
@@ -499,7 +502,7 @@ data at specific time moments.
 * `"mesh entity`" [string] specifies geometric object associated with the mesh function.
   Available options are `"cell`", `"face`", and `"node`".
 
-* `"number of DoFs`" [string] defines the number of degrees of freedom. Default is 1.
+* `"number of dofs`" [string] defines the number of degrees of freedom. Default is 1.
 
 * `"time function`" [list] defines a time function to interpolate data. This is the 
   optional parameter.
@@ -514,7 +517,7 @@ data at specific time moments.
     <Parameter name="variable name" type="string" value="porosity"/>
     <Parameter name="component name" type="string" value="cell"/>
     <Parameter name="mesh entity" type="string" value="cell"/>
-    <Parameter name="number of DoFs" type="int" value="1"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
 
     <ParameterList name="time function">  
       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
@@ -526,10 +529,10 @@ The field *porosity* is defined as a cell-based variable and
 interpolated between three time intervals.
 
 
-Constant field evaluator
-........................
+Constant variable field evaluator
+.................................
 
-Constant field evaluator as a simplified version of independent field evaluator from
+Constant variable field evaluator as a simplified version of independent field evaluator from
 file which allows one to define constant in time field. Initialization of the field 
 has to be done in the initial conditions sublist of state.
 
@@ -558,18 +561,18 @@ has to be done in the initial conditions sublist of state.
   </ParameterList>
 
 
-Primary field evaluator
-.......................
+Primary variable field evaluator
+................................
 
-The primary field evaluator has no dependencies solved for by a PK.
+The primary variable field evaluator has no dependencies solved for by a PK.
 Examples of independent field evaluators are primary variable of PDEs, such as
 pressure and temperature.
 Typically this evaluator is used internally to inform the dependency tree about 
 a new state of the primary variable.
 
 
-Secondary field evaluators
-..........................
+Secondary variable field evaluators
+...................................
 
 Secondary fields are derived either from primary fields or other secondary fields.
 There are two types of secondary fields evaluators.
@@ -1219,19 +1222,6 @@ Since hydraulic heads are needed for both regions, this equation requires
 retention curves for both regions and therefore is nonlinear.
  
 
-The flow sublist includes exactly one sublist, either 
-*Darcy problem* or *Richards problem*.
-Structure of both sublists is quite similar.
-
-.. code-block:: xml
-
-  <ParameterList name="_FLOW">  <!-- parent list -->
-  <ParameterList name="Richards problem">
-     ...
-  </ParameterList>
-  </ParameterList>
-
-
 Model specifications and assumptions
 ....................................
 
@@ -1269,7 +1259,7 @@ Combination of both approaches may lead to a more efficient code.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="physical models and assumptions">
     <Parameter name="vapor diffusion" type="bool" value="false"/>
     <Parameter name="water content model" type="string" value="constant density"/>
@@ -1293,7 +1283,7 @@ Water retention models
 
 User defines water retention models in sublist *water retention models*. 
 It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
-This list is required for *Richards problem* only.
+This list is required for the Richards problem only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
@@ -1331,7 +1321,7 @@ if the list *output* is provided. This list has two mandatory parameters:
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="water retention models">
     <ParameterList name="_SOIL_1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1383,7 +1373,7 @@ includes a few mandatory parameters: *regions names*, *model name*, and paramete
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="porosity models">
     <ParameterList name="_SOIL1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1444,7 +1434,7 @@ Generalized dual porosity model
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="multiscale models"> 
     <ParameterList name="_SOIL1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
@@ -1477,7 +1467,7 @@ Absolute permeability
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="absolute permeability">
     <Parameter name="coordinate system" type="string" value="cartesian"/>
     <Parameter name="off-diagonal components" type="int" value="0"/>
@@ -1522,7 +1512,7 @@ relative permeability, density and viscosity.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="relative permeability">
     <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
     <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -1548,19 +1538,19 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
     * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
       describing operators. 
-      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
     * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
       matrix that is used to create preconditioner. 
-      This sublist is ignored inside sublist `"Darcy problem`".
+      This sublist is ignored for the saturated problem.
       Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
       this sublist.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="operators">
     <ParameterList name="diffusion operator">
       <ParameterList name="matrix">
@@ -1667,7 +1657,7 @@ specified regions calculated using the folume fraction function.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="boundary conditions">
     <ParameterList name="pressure">
       <ParameterList name="_BC 0">
@@ -1775,7 +1765,7 @@ Again, constant functions can be replaced by any of the available functions.
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="source terms">
     <ParameterList name="_SRC 0">
       <Parameter name="regions" type="Array(string)" value="{_WELL_EAST}"/>
@@ -1905,7 +1895,7 @@ Initialization and constraints
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="time integrator">
     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
     <Parameter name="linear solver" type="string" value="_GMRES_WITH_AMG"/>
@@ -1947,7 +1937,7 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="time integrator">
     <Parameter name="time integration method" type="string" value="BDF1"/>
     <ParameterList name="BDF1">
@@ -2026,7 +2016,7 @@ The remaining *flow* parameters are
 
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="clipping parameters">
      <Parameter name="maximum saturation change" type="double" value="0.25"/>
      <Parameter name="pressure damping factor" type="double" value="0.5"/>
@@ -3211,9 +3201,6 @@ where
 :math:`c_r` is specific heat of rock,
 and :math:`T` is temperature.
 
-Energy sublist includes exactly one sublist, either `"Single-phase problem`" or `"Two-phase problem`".
-Structure of both sublists is quite similar. We make necessary comments on their differences.
-
 
 Physical models and assumptions
 ...............................
@@ -3636,8 +3623,8 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
   </ParameterList>
 
 
-Flow and energy PK
-------------------
+Thermal Richards PK
+-------------------
 
 The conceptual PDE model of the coupled flow and energy equations is
 
@@ -3699,6 +3686,7 @@ where
 and :math:`c_r` is specific heat of rock.
 
 
+
 Diffusion operator
 ..................
 
@@ -3719,6 +3707,13 @@ Diffusion operator
      </ParameterList>
    </ParameterList>
    </ParameterList>
+
+
+Saturated flow and energy PK
+----------------------------
+
+This is a simplication of the thermal Richards PK. The water remains in the liquid phase,
+i.e. :math:`X_g=0`. 
 
 
 Coupled matrix-fracture Darcy flow PK
@@ -4494,14 +4489,49 @@ that vary in time and the x dimension.
 .. code-block:: xml
 
   <ParameterList name="function-bilinear">
-    <Parameter name="file" type="string" value="_PRESSURE_FACE.h5"/>
+    <Parameter name="file" type="string" value="pressure.h5"/>
     <Parameter name="row header" type="string" value="/time"/>
     <Parameter name="row coordinate" type="string" value="time"/>
     <Parameter name="column header" type="string" value="/x"/>
     <Parameter name="column coordinate" type="string" value="x"/>
     <Parameter name="value header" type="string" value="/pressures"/>
   </ParameterList>
-  
+
+
+Bilinear-and-time function
+..........................
+
+The bilinear-and-time function does trilinear interpolation between
+two spatial dimensions and one temporal dimension, but does so with
+lazy loading of an HDF5 file for the temporal dimension.  This allows,
+for instance, efficient interpolation of precipitation data that is
+both temporally varying and provided as a raster.  By lazily loading
+the coefficients, long time series can be safely interpolated.
+
+.. code-block:: xml
+
+  <ParameterList name="function-bilinear-and-time">
+    <Parameter name="file" type="string" value="precipitation_rain.h5"/>
+    <Parameter name="time header" type="string" value="/time"/>
+    <Parameter name="x header" type="string" value="/x"/>
+    <Parameter name="y header" type="string" value="/y"/>
+    <Parameter name="value header" type="string" value="/values"/>
+  </ParameterList>
+
+Note this expects and HDF5 file laid out as:
+
+.. code-block:: text
+
+   precipitation_rain.h5
+   | time (NTIMES 1D array)
+   | x (NX 1D array)
+   | y (NY 1D array)
+   | values (group)
+   |  | 0 (NX x NY 2D array)
+   |  | 1 (NX x NY 2D array)
+   |  | ...
+   |  | NTIMES (NX x NY 2D array)
+
 
 Smooth step function
 ....................
@@ -5994,7 +6024,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 This example defines a degenerate box, a square on a surface *z=1*.
 
 Line Segment
-....................
+............
 
 List *region: line segment* desribes a region defined by a line
 segment. This region is a set of cells which intersect with a line
@@ -6019,7 +6049,7 @@ points.
 
 
 All
-....................
+...
 
 List *region: all* desribes a region which matches all entities in the
 mesh.  No parameters are required.
@@ -6458,6 +6488,28 @@ limited to file name generation and writing frequency, by numerical cycle number
 
 In this example, walkabout data files are written when the cycle number is 
 a multiple of 100.
+
+
+Mesh info
+---------
+
+A user may request to dump mesh information. Mesh information includes coordinates of cell centroids
+written is the order consistent with all output fields.
+
+
+* `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
+
+.. code-block:: xml
+                  
+  <ParameterList>  <!-- parent list -->                
+  <ParameterList name="mesh info">
+    <Parameter name="filename" type="string" value="centroids"/>
+  </ParameterList>
+
+  <ParameterList name="mesh info fracture">
+    <Parameter name="filename" type="string" value="centroids_fracture"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Input data

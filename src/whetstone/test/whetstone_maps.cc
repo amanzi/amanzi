@@ -291,7 +291,7 @@ TEST(DG_MAP_VELOCITY_CELL) {
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
   AmanziGeometry::Point xv(d), yv(d);
-  Entity_ID_List nodeids, faces;
+  Entity_ID_List nodeids, edges, faces;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   // -- deformation function
@@ -303,6 +303,7 @@ TEST(DG_MAP_VELOCITY_CELL) {
     u[i](1, 0) = 2.0 - i;
     u[i](1, 1) = 3.0;
     u[i](1, 2) = 4.0 + 2 * i;
+    u[i].set_origin(AmanziGeometry::Point(d));
   }
   u *= 0.05;
 
@@ -326,14 +327,16 @@ TEST(DG_MAP_VELOCITY_CELL) {
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   std::vector<VectorPolynomial> ve(nedges); 
+  mesh0->cell_get_edges(0, &edges);
   for (int n = 0; n < nedges; ++n) {
-    maps->VelocityEdge(n, ve[n]);
+    maps->VelocityEdge(edges[n], ve[n]);
   }
 
   // -- on faces
   std::vector<VectorPolynomial> vf(nfaces); 
+  mesh0->cell_get_faces(0, &faces);
   for (int n = 0; n < nfaces; ++n) {
-    maps->VelocityFace(n, vf[n]);
+    maps->VelocityFace(faces[n], vf[n]);
   }
 
   // -- in cell
@@ -342,7 +345,7 @@ TEST(DG_MAP_VELOCITY_CELL) {
   vc.ChangeOrigin(AmanziGeometry::Point(3));
 
   vc -= u;
-  CHECK_CLOSE(vc.NormInf(), 0.0, 1e-12);
+  CHECK_CLOSE(0.0, vc.NormInf(), 1e-12);
 }
 
 

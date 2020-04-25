@@ -15,11 +15,10 @@ TEST(MSTK_EXTNODE_MAP_4P)
 {
   using namespace Amanzi;
 
-  int i, j, k, err, nc, nf, nv, nbnd;
+  int nbnd;
   AmanziGeometry::Point xp(3);
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
   int size = comm->NumProc();
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh;

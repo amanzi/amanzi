@@ -46,10 +46,6 @@ class UpwindFlux : public Upwind<Model> {
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, CompositeVector& field);
-  void Compute2(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                CompositeVector& field,
-                double (Model::*Value)(int, double) const);
 
  private:
   using Upwind<Model>::mesh_;
@@ -142,78 +138,6 @@ void UpwindFlux<Model>::Compute(
       // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
       // }
-    }
-  }
-}
-
-
-template<class Model>
-void UpwindFlux<Model>::Compute2(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
-{
-  AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent(face_comp_));
-
-  field.ScatterMasterToGhosted("cell");
-  flux.ScatterMasterToGhosted("face");
-
-  const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
-
-  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
-  Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
-
-  double flxmin, flxmax, tol;
-  flx_face.MinValue(&flxmin);
-  flx_face.MaxValue(&flxmax);
-  tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
-
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  AmanziMesh::Entity_ID_List cells;
-
-  int c1, c2, dir;
-  double kc1, kc2;
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-
-    c1 = cells[0];
-    kc1 = fld_cell[0][c1];
-
-    mesh_->face_normal(f, false, c1, &dir);
-    bool flag = (flx_face[0][f] * dir <= -tol);  // upwind flag
-
-    if (ncells == 2) { 
-      c2 = cells[1];
-      kc2 = fld_cell[0][c2];
-
-      // We average field on almost vertical faces. 
-      if (fabs(flx_face[0][f]) <= tol) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
-
-        double tmp = v2 / (v1 + v2);
-        upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
-      } else {
-        upw_face[0][f] = (flag) ? kc2 : kc1; 
-      }
-
-    // We upwind only on inflow dirichlet faces.
-    } else {
-      upw_face[0][f] = kc1;
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c1, bc_value[f]);
-        std::cout << "Setting f(" << f << ") = " << upw_face[0][f] << std::endl;
-      }
-    // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
-    // }
     }
   }
 }
