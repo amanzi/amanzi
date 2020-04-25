@@ -178,13 +178,13 @@ void InputConverter::ParseVersion_()
 
     if ((major != AMANZI_SPEC_VERSION_MAJOR) ||
         (minor != AMANZI_SPEC_VERSION_MINOR) || 
-        (micro != AMANZI_SPEC_VERSION_MICRO)) {
+        (micro < AMANZI_SPEC_VERSION_MICRO)) {
       std::stringstream ss1;
       ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions: "<< ss1.str() << ".\n";
+          << "Supported versions: "<< ss1.str() << " and higher.\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {

@@ -16,6 +16,7 @@
 // TPLs
 #include "Teuchos_ParameterList.hpp"
 
+#include "amanzi_version.hh"
 #include "InputConverterU.hh"
 #include "XMLParameterListWriter.hh"
 
@@ -36,7 +37,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();
   Teuchos::ParameterList tmp_list(verb_list_);
-  vo_ = new VerboseObject("InputConverter", tmp_list);
+  vo_ = new VerboseObject("InputConverter2.3", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // checks that input XML is structurally sound
@@ -163,6 +164,13 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 ****************************************************************** */
 void InputConverterU::VerifyXMLStructure_()
 {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+#define XSTR(s) STR(s)
+#define STR(s) #s
+    *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
+               << "Verify high-level XML structure" << std::endl;
+  }
+
   MemoryManager mm;
 
   std::vector<std::string> names;
