@@ -126,7 +126,7 @@
         <Parameter name="domain name" type="string" value="fracture"/>
         <Parameter name="component name" type="string" value="cell"/>
         <Parameter name="mesh entity" type="string" value="cell"/>
-        <Parameter name="number of DoFs" type="int" value="1"/>
+        <Parameter name="number of dofs" type="int" value="1"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
