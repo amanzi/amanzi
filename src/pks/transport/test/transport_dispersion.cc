@@ -121,7 +121,7 @@ TEST(DISPERSION) {
   double dt0;
   dt0 = TPK.StableTimeStep();
 
-  int i, k, iter = 0;
+  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(), T1 - t_old);
@@ -220,7 +220,7 @@ TEST(DIFFUSION) {
   double dt0;
   dt0 = TPK.StableTimeStep();
 
-  int i, k, iter = 0;
+  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(), T1 - t_old);
@@ -325,7 +325,7 @@ TEST(GAS_DIFFUSION) {
   double dt0;
   dt0 = TPK.StableTimeStep();
 
-  int i, k, iter = 0;
+  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(), T1 - t_old);

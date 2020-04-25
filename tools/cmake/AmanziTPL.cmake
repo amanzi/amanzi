@@ -653,3 +653,19 @@ if (ENABLE_ALQUIMIA)
   endif()
 endif()
 
+##############################################################################
+# CLM LSM 
+##############################################################################
+if (ENABLE_CLM)
+     find_package(CLM)
+     if (CLM_FOUND)
+        message(STATUS "CLM Package information")
+        message(STATUS "\tCLM_INCLUDE_DIR  = ${CLM_INCLUDE_DIR}")
+        message(STATUS "\tCLM_INCLUDE_DIRS = ${CLM_INCLUDE_DIRS}")
+        message(STATUS "\tCLM_LIBRARY_DIR  = ${CLM_LIBRARY_DIR}")
+        message(STATUS "\tCLM_LIBRARY      = ${CLM_LIBRARY}")
+        message(STATUS "\tCLM_LIBRARIES    = ${CLM_LIBRARIES}")
+        print_link_libraries(${CLM_LIBRARY})
+        message(STATUS "")
+     endif()
+  endif()

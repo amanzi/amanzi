@@ -11,6 +11,7 @@ Capabilities tested include,
   * steady-state
   * saturated flow
   * heterogeneous porous medium
+  * exactness of the numerical scheme for piecewise linear head
 
 For details on this test, see :ref:`about_linear_materials_serial_1d`.
 
@@ -165,7 +166,10 @@ from Equation :eq:`domainDarcyVel_materials_serial`.
 Results and Comparison
 ----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
-Amanzi has reproduced the exact solution.
+Amanzi has reproduced the exact solution inside the materials.
+On the boundary, the observation value is taken from the nearby cell.
+On the material interface, the head is averaged of head in two neighboring cells.
+This will be fixed in the future.
 
 .. plot:: amanzi_linear_materials_serial_1d.py
 
@@ -216,10 +220,7 @@ About
     * steady-flow_data.h5
 
 
-Status
-~~~~~~
 .. todo:: 
 
-  * Documentation:
-    * keb: List what is expected out of Amanzi simulation output.
-    * keb: Put the x's in order in the table.
+  * keb: List what is expected out of Amanzi simulation output.
+  * fixed observation on the boundary and at the material interface.

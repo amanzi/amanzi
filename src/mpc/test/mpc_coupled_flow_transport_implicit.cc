@@ -79,6 +79,10 @@ using namespace Amanzi::AmanziGeometry;
   double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
   std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
   CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
+
+  // checking that we created only three PKs each time period
+  CHECK(PKFactory::num_pks == 6);
+  std::cout << PKFactory::list_pks << std::endl;
 }
 
 

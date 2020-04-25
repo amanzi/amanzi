@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,18 +7,48 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-//!  Base class for linear solvers.
+//! Iterative methods for determining the inverse of a linear operator.
 
 /*!
 
-``[linear-solver-typed-spec]``
+Linear solvers are iterative methods which wrap Operators/Matrices and provide
+a solution for the true inverse.  The provided Operator must implement a
+forward application (which may be an assembled Matrix-Vector product, or may be
+a matrix-free forward application) and an approximate inverse (the
+preconditioner).
 
-* `"iterative method type`" ``[string]`` Iterative method to be used.
-* `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
-  Parameters associated with the requested iterative method.
-  
- */
+Note that linear operators here differ from preconditioners not in their
+exactness of the solution, but in their interface.  A Preconditioner_ works with
+raw vectors and matrices, and may need assembled matrices.  LinearOperators
+work with the action of matrices only, and never need assembled matrices.  As
+such they are templated with an arbitrary Matrix and Vector type, whereas
+Preconditioners are not.
+
+.. _linear-solver-typed-spec:
+.. admonition:: linear-solver-typed-spec
+
+    * `"iterative method type`" ``[string]`` Iterative method to be used.
+    * `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
+      Parameters associated with the requested iterative method.
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="linear solver" type="ParameterList">
+      <Parameter name="iterative method" type="string" value="gmres" />
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="medium" />
+      </ParameterList>
+      <ParameterList name="gmres parameters" type="ParameterList">
+        <Parameter name="preconditioning strategy" type="string" value="left" />
+        <Parameter name="error tolerance" type="double" value="1e-06" />
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}" />
+        <Parameter name="maximum number of iteration" type="int" value="80" />
+      </ParameterList>
+    </ParameterList>
+
+*/
 
 
 #ifndef AMANZI_LINEAR_OPERATOR_HH_

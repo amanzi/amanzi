@@ -50,7 +50,7 @@ class DarcyProblem {
   Comm_ptr_type comm;
   int MyPID;
 
-  Framework framework[2];
+  Framework frameworks[2];
   std::vector<std::string> framework_name;
 
   DarcyProblem() {
@@ -58,8 +58,8 @@ class DarcyProblem {
     comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();    
 
-    framework[0] = Framework::MSTK;
-    framework[1] = Framework::STK;
+    frameworks[0] = Framework::MSTK;
+    frameworks[1] = Framework::STK;
     framework_name.push_back("MSTK");
     framework_name.push_back("stk:mesh");
   };
@@ -193,7 +193,6 @@ class DarcyProblem {
 
     double error_L2 = 0.0;
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells_owned; c++) {
       AmanziMesh::Entity_ID_List faces;
@@ -220,7 +219,7 @@ SUITE(Darcy_PK) {
 ****************************************************************** */
 TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", framework[i]);
+    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;
@@ -259,7 +258,7 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
 
 TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", framework[i]);
+    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;
@@ -282,7 +281,6 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
     velocity = -(pressure_gradient - rho * gravity) / mu;
-    double u0 = rho * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -297,7 +295,7 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
 
 TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", framework[i]);
+    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: StaticHead-Dirichlet"
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;
@@ -338,7 +336,7 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
 ****************************************************************** */
 TEST_FIXTURE(DarcyProblem, DDprisms) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/prisms.exo", framework[i]);
+    int ierr = Init("test/flow_darcy_misc.xml", "test/prisms.exo", frameworks[i]);
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;
@@ -380,7 +378,7 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
 ****************************************************************** */
 TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo", framework[i]);
+    int ierr = Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo", frameworks[i]);
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;
@@ -404,7 +402,6 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
     velocity = -(pressure_gradient - rho * gravity) / mu;
-    double u0 = rho * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -422,7 +419,7 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
 ****************************************************************** */
 TEST_FIXTURE(DarcyProblem, DDmixed) {
   for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/mixed.exo", framework[i]); 
+    int ierr = Init("test/flow_darcy_misc.xml", "test/mixed.exo", frameworks[i]); 
     if (MyPID == 0) std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet" 
                               << ", mesh framework: " << framework_name[i] << std::endl;
     if (ierr == 1) continue;

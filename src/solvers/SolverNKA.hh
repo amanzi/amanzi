@@ -1,15 +1,89 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Interface for using NKA as a solver.
 */
+//! Nonlinear Krylov Acceleration as a nonlinear solver.
+
+/*!
+
+Uses the Nonlinear Krylov acceleration method of Carlson and Miller to do
+effectively a multivariant secant method, accelerating the solution of a
+nonlinear solve.  This method can be significantly faster than Newton,
+especially with an approximate Jacobian.
+
+  Calef et al. "Nonlinear Krylov acceleration applied to a discrete ordinates
+  formulation of the k-eigenvalue problem." JCP 238 (2013): 188-209.
+
+  N. N. Carlson, K. Miller, Design and application of a gradient-weighted
+  moving finite element code II: In two dimensions, SIAM J. Sci.  Comput. 19
+  (3) (1998) 766–798.
+
+
+.. _solver-typed-nka-spec:
+.. admonition:: solver-typed-nka-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
+      tolerance. The error is calculated by a PK.
+
+    * `"monitor`" ``[string]`` **monitor update** Specifies control of the
+      nonlinear residual. The available options are `"monitor update`",
+      `"monitor residual`", `"monitor preconditioned residual`", `"monitor l2
+      residual`", and `"monitor preconditioned l2 residual`".
+
+    * `"limit iterations`" ``[int]`` **20** Defines the maximum allowed number
+      of iterations.
+
+    * `"diverged tolerance`" ``[double]`` **1.e10** Defines the error level
+      indicating divergence of the solver. The error is calculated by a PK.
+
+    * `"diverged l2 tolerance`" ``[double]`` **1.e10** Defines another way to
+      identify divergence of the solver. If the relative L2 norm of the
+      solution increment is above this value, the solver is terminated.
+
+    * `"diverged pc tolerance`" ``[double]`` **1e10** Defines another way to
+      identify divergence of the solver. If the relative maximum norm of the
+      solution increment (with respect to the initial increment) is above this
+      value, the solver is terminated.
+
+    * `"diverged residual tolerance`" ``[double]`` **1e10** Defines another way
+      to identify divergence of the solver. If the relative L2 norm of the
+      residual (with respect to the initial residual) is above this value, the
+      solver is terminated.
+
+    * `"max du growth factor`" ``[double]`` **1e5** Allows the solver to
+      identify divergence pattern on earlier iterations. If the maximum norm of
+      the solution increment changes drastically on two consecutive iterations,
+      the solver is terminated.
+
+    * `"max error growth factor`" ``[double]`` **1e5** Defines another way to
+      identify divergence pattern on earlier iterations. If the PK-specific
+      error changes drastically on two consecutive iterations, the solver is
+      terminated.
+
+    * `"max divergent iterations`" ``[int]`` **3** Defines another way to
+      identify divergence pattern on earlier iterations. If the maximum norm of
+      the solution increment grows on too many consecutive iterations, the
+      solver is terminated.
+
+    * `"modify correction`" ``[bool]`` **false** Allows a PK to modify the
+      solution increment. One example is a physics-based clipping of extreme
+      solution values.
+
+    * `"lag iterations`" ``[int]`` **0** Delays the NKA acceleration, but
+      updates the Krylov space.
+
+    * `"max nka vectors`" ``[int]`` **10** Defines the maximum number of
+      consecutive vectors used for a local space.
+
+    * `"nka vector tolerance`" ``[double]`` **0.05** Defines the minimum
+      allowed orthogonality between vectors in the local space. If a new vector
+      does not satisfy this requirement, the space is modified.
+
+ */
 
 #ifndef AMANZI_NKA_SOLVER_
 #define AMANZI_NKA_SOLVER_
@@ -195,7 +269,6 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
   int divergence_count(0);
-  int prec_error;
   int db_write_iter = 0;
 
   do {
@@ -263,7 +336,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+    fn_->ApplyPreconditioner(r, du_tmp);
 
     // Make sure that preconditioner does not cause numerical overflow.
     double du_tmp_norm;

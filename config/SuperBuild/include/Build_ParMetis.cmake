@@ -38,7 +38,7 @@ ExternalProject_Add(${ParMetis_BUILD_TARGET}
                     URL_MD5      ${ParMetis_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${ParMetis_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Ensure uniform build
                                      ${ParMetis_CMAKE_CACHE_ARGS}     
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

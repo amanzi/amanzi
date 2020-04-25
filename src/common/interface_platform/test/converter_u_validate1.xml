@@ -427,14 +427,13 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_1">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-          <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
-          <Parameter name="van Genuchten n" type="double" value="1.27161749745676511e+00"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.13600000000000012e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.02600000000000002e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_1.txt"/>
@@ -793,14 +792,22 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_1">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+<<<<<<< HEAD
           <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
           <Parameter name="van Genuchten n" type="double" value="1.27161749745676511e+00"/>
           <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
           <Parameter name="residual saturation liquid" type="double" value="0.0"/>
           <Parameter name="regularization interval" type="double" value="0.0"/>
+=======
+          <Parameter name="Brooks Corey lambda" type="double" value="2.13600000000000012e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.02600000000000002e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+>>>>>>> master
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_1.txt"/>

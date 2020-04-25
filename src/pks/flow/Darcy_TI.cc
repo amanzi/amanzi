@@ -90,9 +90,6 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
-  const Epetra_MultiVector& uf = *u->Data()->ViewComponent("face");
-  const Epetra_MultiVector& duf = *du->Data()->ViewComponent("face");
-
   double error(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -101,6 +98,9 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   }
 
   /*
+  const Epetra_MultiVector& uf = *u->Data()->ViewComponent("face");
+  const Epetra_MultiVector& duf = *du->Data()->ViewComponent("face");
+
   for (int f = 0; f < nfaces_owned; f++) {
     double tmp = fabs(duf[0][f]) / (fabs(uf[0][f] - atm_pressure_) + atm_pressure_);
     error = std::max(error, tmp);
@@ -122,8 +122,6 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 ****************************************************************** */
 double Darcy_PK::ErrorEstimate_(double* dt_factor)
 {
-  Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");
-
   double tol, atol(1.0), rtol(1e-5), error, error_max(0.0), p(101325.0);
   double dt_factor_cell;
 

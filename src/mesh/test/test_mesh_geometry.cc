@@ -26,9 +26,6 @@
 TEST(MESH_GEOMETRY_PLANAR)
 {
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -206,15 +203,10 @@ TEST(MESH_GEOMETRY_PLANAR)
 
 TEST(MESH_GEOMETRY_SURFACE)
 {
-
-// DISABLED FOR NOW
-
- return;
-
+  // DISABLED FOR NOW
+  return;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -276,8 +268,6 @@ TEST(MESH_GEOMETRY_SURFACE)
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
-
-    int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
@@ -383,18 +373,12 @@ TEST(MESH_GEOMETRY_SURFACE)
     }
 
   } // for each framework i
-
 }
-
-
 
 
 TEST(MESH_GEOMETRY_SOLID)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh

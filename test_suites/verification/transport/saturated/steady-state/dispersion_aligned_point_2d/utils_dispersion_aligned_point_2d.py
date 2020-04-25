@@ -104,7 +104,7 @@ def MakeTableCols(table_layout,slice,
             master_data=list(Obs_scatter[st][slice][var])
         master_data.sort()
         t.add_column(master_key, master_data)
-        t.float_format[master_key]="4.2f"
+        t.float_format[master_key]="5.1f"
     else:
         t.add_column(master_column[master_key], master_column[master_data])
 

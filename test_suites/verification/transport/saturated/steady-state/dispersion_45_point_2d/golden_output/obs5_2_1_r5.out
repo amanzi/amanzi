@@ -1,6 +1,6 @@
 Observation Name, Region, Functional, Variable, Time [s], Value [kg m SI]
 ============================================================================
-obl 1, Origin, observation data: point, Tc-99 aqueous concentration, 1.2096000000000000e+08, 4.4013182748507216e-03
+obl 1, Origin, observation data: point, Tc-99 aqueous concentration, 1.2096000000000000e+08, 4.4330701440138997e-03
 obl 2, Upwind210, observation data: point, Tc-99 aqueous concentration, 1.2096000000000000e+08, 3.5022575908086816e-09
 obl 3, Upwind150, observation data: point, Tc-99 aqueous concentration, 1.2096000000000000e+08, 7.0481703568715977e-08
 obl 4, Upwind090, observation data: point, Tc-99 aqueous concentration, 1.2096000000000000e+08, 1.4385469160538995e-06

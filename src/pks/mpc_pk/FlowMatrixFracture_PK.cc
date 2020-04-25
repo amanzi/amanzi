@@ -59,9 +59,6 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_domain_ = S->GetMesh();
   mesh_fracture_ = S->GetMesh("fracture");
-  int dim = mesh_domain_->space_dimension();
-
-  Teuchos::ParameterList& elist = S->FEList();
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
@@ -150,7 +147,6 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
-  double rho = *S->GetScalarData("const_fluid_density");
   double gravity;
   S->GetConstantVectorData("gravity")->Norm2(&gravity);
 

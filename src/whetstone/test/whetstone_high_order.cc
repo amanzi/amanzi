@@ -213,7 +213,6 @@ void HighOrderLagrange2D(std::string file_name) {
   MFD3D_Lagrange mfd_lo(plist, mesh);
   MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
 
-  int d = mesh->space_dimension();
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix G1, A1, Ak;
 

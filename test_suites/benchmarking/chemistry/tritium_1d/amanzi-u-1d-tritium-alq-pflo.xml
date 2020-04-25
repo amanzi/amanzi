@@ -79,11 +79,13 @@
                           -->
       </unstr_steady-state_controls>
       <unstr_transient_controls>
-        <comments>Comments section.</comments>
-        <bdf1_integration_method min_iterations="10" max_iterations="15" limit_iterations="20" max_preconditioner_lag_iterations="4" nonlinear_tolerance="1e-12" />
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1e-12</nonlinear_tolerance>
       </unstr_transient_controls>
       <unstr_linear_solver>
-        <comments>Comment section.</comments>
         <!--
         <method>gmres</method>
         <max_iterations>20</max_iterations>

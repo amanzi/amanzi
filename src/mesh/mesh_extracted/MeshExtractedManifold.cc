@@ -242,7 +242,7 @@ void MeshExtractedManifold::node_get_cell_faces(
 {
   Entity_ID_List edges, nodes;
 
-  int np = entid_to_parent_[NODE][n];
+  // int np = entid_to_parent_[NODE][n];
   // parent_mesh_->node_get_edges(np, ptype, &edges);
   AMANZI_ASSERT(false);
   int nedges = edges.size();
@@ -432,7 +432,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     const Teuchos::RCP<const AmanziGeometry::Region>& rgn, const Entity_kind kind) const
 {
   int manifold_dim = manifold_dimension();
-  int space_dim_ = space_dimension();
+  int space_dim = space_dimension();
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
   // modify rgn/set name by prefixing it with the type of entity requested
@@ -495,7 +495,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
               (rgn->type() == AmanziGeometry::POLYGON)) && 
              manifold_dim == 2) {
       for (int c = 0; c < ncells_wghost; ++c) {
-        std::vector<AmanziGeometry::Point> ccoords(space_dim_);
+        std::vector<AmanziGeometry::Point> ccoords(space_dim);
         cell_get_coordinates(c, &ccoords);
 
         bool on_plane(true);
@@ -527,7 +527,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     else if (rgn->type() == AmanziGeometry::PLANE ||
              rgn->type() == AmanziGeometry::POLYGON) {
       for (int f = 0; f < nfaces_wghost; ++f) {
-        std::vector<AmanziGeometry::Point> fcoords(space_dim_);
+        std::vector<AmanziGeometry::Point> fcoords(space_dim);
         face_get_coordinates(f, &fcoords);
             
         bool on_plane(true);
@@ -567,7 +567,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
         rgn->type() == AmanziGeometry::CYLINDER ||
         rgn->type() == AmanziGeometry::POINT) {
       for (int v = 0; v < nnodes_wghost; ++v) {
-        AmanziGeometry::Point xp(space_dim_);
+        AmanziGeometry::Point xp(space_dim);
         node_get_coordinates(v, &xp);
                   
         if (rgn->inside(xp)) {
@@ -873,8 +873,6 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
 
   // ghosts entities are defined by neighboor faces of master faces. New
   // entities are marked as ghosts. Old entities are marked as undefined.
-  Entity_ID n0, n1;
-
   nodeset = nodeset0;
   for (int n = 0; n < fullset.size(); ++n) {
     int f = fullset[n];

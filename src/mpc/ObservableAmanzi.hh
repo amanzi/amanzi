@@ -37,7 +37,6 @@ class Observable : public IOEvent {
     : variable_(variable),
       region_(region),
       functional_(functional),
-      plist_(plist),
       mesh_(mesh),
       IOEvent(plist)
   {
@@ -63,20 +62,19 @@ class Observable : public IOEvent {
 
   virtual int ComputeRegionSize() {return region_size_; }
 
- // protected:    
-  const Teuchos::ParameterList& plist_;
+ public:
+  std::string variable_;
+  std::string functional_;
+
+ protected:    
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   AmanziMesh::Entity_ID_List entity_ids_;
   int region_size_;
 
-  std::string variable_;
   std::string region_;
-  std::string functional_;
   double volume_;
   Key domain_;
-
-  Utils::Units units_;
 };
 
 } // namespace Amanzi

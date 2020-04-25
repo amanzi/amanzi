@@ -19,6 +19,7 @@ include(PrintVariable)
 project(PLATFORM_INTERFACE)
 
 # Amanzi include directories
+include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.hh
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})

@@ -1,21 +1,18 @@
-#include <UnitTest++.h>
-
 #include <iostream>
 
-#include "../Mesh_MOAB.hh"
-
-
 #include "Epetra_Map.h"
-#include "AmanziComm.hh"
-
 #include "mpi.h"
+#include "UnitTest++.h"
+
+#include "AmanziComm.hh"
+#include "../Mesh_MOAB.hh"
 
 
 TEST(MOAB_HEX_3x3x3_4P)
 {
   using namespace Amanzi;
 
-  int i, j, k, err, nc, nf, nv;
+  int j, nc, nf, nv;
   unsigned int faces[6], nodes[8];
   int facedirs[6];
   double ccoords[24], fcoords[12];

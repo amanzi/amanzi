@@ -414,7 +414,6 @@ Mesh::cell_get_edges(const Entity_ID cellid,
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
   *edgeids = cell_edge_ids_[cellid]; // copy operation
 
 #else  // Non-cached version
@@ -716,7 +715,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       for (int i = 0; i < cellids.size(); i++) {
         Entity_ID_List cellfaceids;
         std::vector<int> cellfacedirs;
-        int dir = 1;
 
         cell_get_faces_and_dirs(cellids[i], &cellfaceids, &cellfacedirs);
 
@@ -724,7 +722,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         for (int j = 0; j < cellfaceids.size(); j++) {
           if (cellfaceids[j] == faceid) {
             found = true;
-            dir = cellfacedirs[j];
             break;
           }
         }
@@ -1373,10 +1370,7 @@ Mesh::build_columns(const std::string& setname) const
 
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);
-  int nf = num_entities(FACE,Parallel_type::ALL);
-  int nf_owned = num_entities(FACE,Parallel_type::OWNED);
   int nc = num_entities(CELL,Parallel_type::ALL);
-  int nc_owned = num_entities(CELL,Parallel_type::OWNED);
 
   columnID_.resize(nc);
   cell_cellbelow_.resize(nc);
@@ -1446,7 +1440,6 @@ Mesh::build_columns() const
   int nf = num_entities(FACE,Parallel_type::ALL);
   int nf_owned = num_entities(FACE,Parallel_type::OWNED);
   int nc = num_entities(CELL,Parallel_type::ALL);
-  int nc_owned = num_entities(CELL, Parallel_type::OWNED);
 
   columnID_.resize(nc);
   cell_cellbelow_.resize(nc);

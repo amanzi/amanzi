@@ -40,7 +40,6 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   R.Reshape(nfaces, d_ - 1);
   Wc.Reshape(nfaces, nfaces);
 
-  int dir;
   double volume = mesh_->cell_volume(c);
 
   // calculate cell normal

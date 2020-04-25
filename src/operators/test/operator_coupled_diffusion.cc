@@ -643,10 +643,6 @@ Teuchos::RCP<Problem> getProblem(const std::string& discretization,
   Teuchos::RCP<Mesh> mesh =
       Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, comm));
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
   // create the analytic solution
   Teuchos::RCP<AnalyticNonlinearCoupledBase> ana =
       Teuchos::rcp(new AnalyticNonlinearCoupled00(mesh));

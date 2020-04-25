@@ -361,7 +361,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   std::string filename = "flow_darcy_well_peaceman_3D.gmv";
 
   // steady_state solution
-  double t_old(0.0), t_new(0.5), dt(0.5);
+  double t_old(0.0), t_new(0.5);
 
   DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"), true);
 

@@ -44,8 +44,9 @@ endif()
 set(ALQUIMIA_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DPETSC_DIR=${PETSC_DIR}"
-      "-DPETSC_ARCH=."
+      "-DPETSC_ARCH:PATH=."
       "-DXSDK_WITH_PFLOTRAN:BOOL=${ENABLE_PFLOTRAN}" 
       "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/lib/libpflotranchem.a" 
       "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
@@ -69,7 +70,7 @@ ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     PATCH_COMMAND ${ALQUIMIA_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${ALQUIMIA_source_dir}          # Source directory
-                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Global definitions from root CMakeList
+                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure uniform build
                                   ${ALQUIMIA_CMAKE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

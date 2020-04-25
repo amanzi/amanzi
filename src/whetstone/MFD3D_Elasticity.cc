@@ -43,8 +43,6 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
-
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 

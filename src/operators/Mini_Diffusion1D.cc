@@ -28,13 +28,10 @@ namespace Operators {
 void Mini_Diffusion1D::UpdateMatrices()
 {
   int ncells = mesh_->NumRows() - 1; 
-  double al, ar, hl, hr, x0, x1, Kc;
+  double al, ar, hl, hr, Kc;
 
   const auto& mesh = *mesh_;
 
-  x0 = mesh(0);
-  x1 = mesh(ncells);
-  
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
 
   hl = Kc / (mesh(1) - mesh(0));
@@ -77,15 +74,12 @@ void Mini_Diffusion1D::UpdateJacobian(
     double bcl, int type_l, double bcr, int type_r)
 {
   int ncells = mesh_->NumRows() - 1; 
-  double al, ar, bl, br, hl, hr, x0, x1, Kc, tmp0, tmp1;
+  double al, ar, bl, br, hl, hr, Kc, tmp0, tmp1;
 
   const auto& mesh = *mesh_;
   const auto& k = *k_;
   const auto& dkdp = *dkdp_;
 
-  x0 = mesh(0);
-  x1 = mesh(ncells);
-  
   // derivatives of A(k(p))
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
   hl = Kc / mesh_cell_volume(0);

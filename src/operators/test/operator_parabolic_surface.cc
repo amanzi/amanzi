@@ -75,14 +75,12 @@ void RunTest(std::string op_list_name) {
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -154,7 +152,7 @@ void RunTest(std::string op_list_name) {
 
   CompositeVector rhs = *global_op->rhs();
   solution.PutScalar(0.0);
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   // ver.CheckResidual(solution, 1.0e-12);
 
@@ -179,7 +177,7 @@ void RunTest(std::string op_list_name) {
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
-  ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 10);

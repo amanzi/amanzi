@@ -367,7 +367,7 @@ void LimiterCell::LimiterScalar_(
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
-  double u1, u2, u1f, umin, umax;
+  double u1, u1f, umin, umax;
   AmanziGeometry::Point gradient_c(dim);
   AmanziMesh::Entity_ID_List faces;
 
@@ -667,10 +667,8 @@ void LimiterCell::LimiterKuzmin_(
   auto& bounds_v = *bounds_->ViewComponent("node", true);
 
   // limit reconstructed gradients at cell nodes
-  double umin, umax, up, u1;
   AmanziGeometry::Point xp(dim);
 
-  double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List nodes;

@@ -135,7 +135,6 @@
       <mechanical_properties>
         <porosity value="0.35" />
         <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
-        <molecular_diffusion value="0.0" />
         <tortuosity value="0.0" />
       </mechanical_properties>
       <permeability x="1.0e-10" z="1.0e-10" />
@@ -148,7 +147,7 @@
       <assigned_regions>All domain</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <velocity function="uniform" x="1.3176e-06" z="1.3176e-06" />
+          <velocity x="1.3176e-06" z="1.3176e-06" />
           <uniform_pressure value="101325.0" />
         </liquid_component>
         <solute_component name="solute">

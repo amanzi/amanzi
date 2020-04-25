@@ -114,7 +114,6 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
   op->Init(olist);
   op->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -145,7 +144,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  solver->ApplyInverse(rhs, solution);
   if (diff_op == "diffusion operator") 
       ver.CheckResidual(solution, 1.0e-12);
 

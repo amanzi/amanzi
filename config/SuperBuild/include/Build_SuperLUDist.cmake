@@ -57,10 +57,12 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     # -- Configure
                     LIST_SEPARATOR |                           # Use the alternate list separator
                     SOURCE_DIR    ${SuperLUDist_source_dir}    # Source directory
-                    CMAKE_ARGS    ${SuperLUDist_CMAKE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                  ${SuperLUDist_CMAKE_ARGS}
                                   ${SuperLUDist_TPLS_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                                   -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}

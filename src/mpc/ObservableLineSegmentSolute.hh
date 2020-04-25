@@ -90,13 +90,12 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
                                                      std::string interpolation,
                                                      AmanziMesh::Entity_ID_List& ids,
                                                      std::vector<AmanziGeometry::Point>& line_pnts,
-                                                     std::vector<double>& values) {
-
+                                                     std::vector<double>& values)
+{
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
     
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");   
     
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasField("total_component_concentration")) {
@@ -104,7 +103,6 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
     cv = S.GetFieldData("total_component_concentration");
     vector = cv->ViewComponent("cell", true);
   } else {

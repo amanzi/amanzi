@@ -378,7 +378,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // reconstruction initialization
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
 

@@ -74,7 +74,6 @@ class PKFactory {
            const Teuchos::RCP<State>& state,
            const Teuchos::RCP<TreeVector>& soln);
 
-
   // typedef describing a map with string keys and PK constructor values, this
   // stores constructors for all known PK classes
   typedef std::map<std::string,
@@ -89,9 +88,12 @@ class PKFactory {
     return map_;
   }
 
+ public:
+  static int num_pks;
+  static std::string list_pks;
+
  private:
   static map_type* map_;
-  
 };
 
 

@@ -41,7 +41,6 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");

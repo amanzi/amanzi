@@ -1,15 +1,38 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Decorator for using a Solver with JFNK as the preconditioner.
 */
+//! Decorator for using a Solver with JFNK as the preconditioner.
+
+/*!
+
+Jacobian-Free Newton Krylov uses a finite difference scheme to approximate the
+action of the Jacobian matrix, then uses a Krylov method (which only needs the
+action of the Jacobian and not the Jacobian itself) to calculate the action of
+the inverse of the Jacobian, thereby providing a Newton-like update.  As the
+linear Krylov scheme converges to the inverse action, the nonlinear solution
+converges to the same solution as a true Newton method.
+
+This implementation simply replaces a SolverFnBase's ApplyPreconditioner() with
+a new ApplyPreconditioner() which uses the Krylov method with the action of the
+forward operator to (hopefully) improve, relative to the supplied approximate
+inverse, the estimate of the inverse.
+
+.. _solver-typed-jfnk-spec:
+.. admonition:: solver-typed-jfnk-spec
+
+    * `"nonlinear solver`" ``[solver-typed-spec]`` The outer nonlinear solver to use.
+
+    * `"linear operator`" ``[linear-operator-typed-spec]`` The Krylov method to use.
+
+    * `"JF matrix parameters`" ``[jf-matrix-spec]`` See jf-matrix-spec_
+    
+ */
+
 
 #ifndef AMANZI_JFNK_SOLVER_
 #define AMANZI_JFNK_SOLVER_
