@@ -338,7 +338,7 @@ void RunTestLocalStress(const std::string& filename) {
 
   if (MyPID == 0) {
     ul2_err /= unorm;
-    printf("L2(u)=%12.10f  Inf(u)=%12.10f  itr=%3d  DOFs=%6d\n", ul2_err, uinf_err, gmres.num_itrs(), ndofs);
+    printf("KL: L2(u)=%12.10f  Inf(u)=%12.10f  itr=%3d  DOFs=%6d\n", ul2_err, uinf_err, gmres.num_itrs(), ndofs);
 
     CHECK(ul2_err < 0.1);
     // CHECK(gmres.num_itrs() < 15);
@@ -347,24 +347,28 @@ void RunTestLocalStress(const std::string& filename) {
 
 TEST(OPERATOR_ELASTICITY_LOCAL_STRESS) {
   // RunTestLocalStress("test/triangular8.exo");
+  printf("\nKL: Triangular meshes\n");
   RunTestLocalStress("test/triangular8.exo");
   RunTestLocalStress("test/triangular16.exo");
   RunTestLocalStress("test/triangular32.exo");
   RunTestLocalStress("test/triangular64.exo");
   RunTestLocalStress("test/triangular128.exo");
 
+  printf("\nKL\nKL: Polygonal (quasi-uniform) meshes\n");
   RunTestLocalStress("test/mesh_poly20x20.exo");
   RunTestLocalStress("test/mesh_poly40x40.exo");
   RunTestLocalStress("test/mesh_poly80x80.exo");
   RunTestLocalStress("test/mesh_poly160x160.exo");
   RunTestLocalStress("test/mesh_poly320x320.exo");
 
+  printf("\nKL\nKL: Polygonal (median) meshes\n");
   RunTestLocalStress("test/median15x16.exo");
   RunTestLocalStress("test/median32x33.exo");
   RunTestLocalStress("test/median63x64.exo");
   RunTestLocalStress("test/median127x128.exo");
   RunTestLocalStress("test/median255x256.exo");
 
+  printf("\nKL\nKL: Quadrilateral (circle) meshes\n");
   RunTestLocalStress("test/circle_quad10.exo");
   RunTestLocalStress("test/circle_quad20.exo");
   RunTestLocalStress("test/circle_quad40.exo");

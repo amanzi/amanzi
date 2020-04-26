@@ -113,8 +113,8 @@ void MFD3D_Elasticity::LocalStressMatrices_(
   mesh_->node_get_coordinates(v, &xv);
 
   // volume of dual cell
-  double volume_dual(0.0);
-  std::vector<double> volume_corner(ncells, 0.0);
+  double utot, volume_dual(0.0);
+  std::vector<double> u(ncells, 0.0), volume_corner(ncells, 0.0);
 
   for (int n = 0; n < ncells; ++n) {
     int c = cells[n];
@@ -188,11 +188,10 @@ void MFD3D_Elasticity::LocalStressMatrices_(
     Ncorner.InverseMoorePenrose();
     Mcorner = Rcorner * Ncorner;
 
-    // mixed scheme (3 symmetric conditions, 1 non-symmetric)
-    for (int i = 0; i < nvc * d_; ++i) {
-      Rcorner(i, nx - 1) = Ycorner(i, nx - 1) * volume_corner[n];
-    }
-    Mcorner = Rcorner * Ncorner;
+    // scheme based on rescaling
+    for (int i = 0; i < mx; ++i)
+      for (int j = 0; j < nx; ++j) u[n] += Mcorner(i, j);
+    utot += u[n];
 
     // assemble mass matrices
     for (int i = 0; i < nvc; i++) {
@@ -218,26 +217,27 @@ void MFD3D_Elasticity::LocalStressMatrices_(
     }
 
     // assemble rotation matrices
-    double tmp = volume_corner[n];
     for (int m = 0; m < nk; ++m) {
       for (int i = 0; i < nvc; i++) {
         int k = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), vcfaces[i]));
         for (int s = 0; s < d_; ++s) { 
           // original scheme
+          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
           // S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m);
-          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
 
-          // non-symmetric scheme
-          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
-          // S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m) * tmp;
-
-          // mixed scheme
+          // mixed scheme (best one)
           S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
-          S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m);
+          S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
+
+          // scheme based on rescaling 
+          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
+          // S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m) * u[n];
         }
       }
     }
   }
+
+  S2 /= utot;  // only in 2D
 }
 
 }  // namespace WhetStone
