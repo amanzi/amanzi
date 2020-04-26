@@ -937,8 +937,8 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
 
-  double mol_wt = 0.0;  // not used in ion exchange sites
-  double size = 0.0;  // not used in ion exchange sites
+  // double mol_wt = 0.0;  // not used in ion exchange sites
+  // double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
   std::string space(" \t");
@@ -1050,8 +1050,8 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
 
-  double mol_wt = 0.0;  // not used in ion exchange sites
-  double size = 0.0;  // not used in ion exchange sites
+  // double mol_wt = 0.0;  // not used in ion exchange sites
+  // double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
   std::string space(" \t");

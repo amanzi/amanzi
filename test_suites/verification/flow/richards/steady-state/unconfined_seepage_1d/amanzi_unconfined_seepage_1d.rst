@@ -113,7 +113,7 @@ The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at
 Mesh
 ~~~~
 
-The mesh uses constant grid discretization in the x-direction (:math:`\Delta x = 25` ft) and variable discretization in the z-direction (:math:`2.5` ft :math:`\leqslant \Delta z \leqslant 5` ft).
+The mesh uses constant grid discretization in the x-direction (:math:`\Delta x = 25` ft) and variable discretization in the y-direction (:math:`2.5` ft :math:`\leqslant \Delta y \leqslant 5` ft).
 To conform to the physical domain depicted in the test problem
 schematic, a conformal grid is used for the *Amanzi* simulation:
 
@@ -131,7 +131,7 @@ With the Dupuit approximation the analytic solution given by Equation
 :eq:`unconfinedLeft` is one-dimensional in the horizontal coordinate
 and describes only the saturated zone. Because *Amanzi* does not
 directly solve a reduced governing equation set based on the Dupuit
-assumption, a two-dimensional :math:`(x,z)` simulation of the combined
+assumption, a two-dimensional :math:`(x,\,y)` simulation of the combined
 saturated and unsaturated zones using the :cite:`us-Richards_1931` equation is
 required. Thus a vertical hydraulic conductivity and parameters
 defining moisture characteristic curves for the unsaturated zone are
@@ -141,15 +141,15 @@ are summarized as:
 
 * Domain (2D)
       
-  * :math:`x_{min} = z_{min} = 0 \text{ [ft]}`
+  * :math:`x_{min} = y_{min} = 0 \text{ [ft]}`
   * :math:`x_{max} = L = 1000 \text{ [ft]}`
-  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L \text{ [ft]}`
+  * :math:`y_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L \text{ [ft]}`
 
 * Material properties
   
   * isotropic hydraulic conductivity:     :math:`K = 1 \text{ [ft/d]} =  3.528 \times 10^{-6} \text{ [m/s]}`
 
-    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 3.6098 \times 10^{-13} \text{ [m}^2\text{]}` (1 ft = 0.3048 ft)
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 3.6098 \times 10^{-13} \text{ [m}^2\text{]}` (1 ft = 0.3048 m)
 
   * porosity:    :math:`\phi = 0.3`
   * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
@@ -163,7 +163,7 @@ are summarized as:
 
 * Boundary conditions
 
-  * no-flow (Neumann) boundary condition prescribed at :math:`z_{min}`
+  * no-flow (Neumann) boundary condition prescribed at :math:`y_{min}`
   * prescribed hydraulic head (Dirichlet): :math:`h(0) = 80,\: h(L) = 50 \text{ [ft]}`
   * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
 
@@ -171,8 +171,8 @@ are summarized as:
 Results and Comparison
 ----------------------
 
- .. image:: figures/hydraulic_head.png
-    :width: 4in
+.. plot:: verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.py
+    :width: 6in
     :align: center
 
 .. include:: table_values.txt
@@ -189,6 +189,7 @@ References
 
 .. _about_unconfined_seepage:
 	
+
 About
 -----
 
@@ -200,19 +201,7 @@ About
 
 * Input Files:
 
-  * amanzi_unconfined_seepage_1d-u.xml
-
-    * Spec Version 2.3, unstructured mesh framework
-    * mesh:  porflow4_4.exo
-
-      * two-dimensional mesh with conformal (non-orthogonal) grid
-
-.. * Mesh Files:
-
-  .. * porflow4_4.exo
- 
-    * two-dimensional mesh with conformal grid
+  * amanzi_unconfined_seepage_1d-u.xml (Spec Version 2.3)
+  * mesh:  porflow4_4.exo (two-dimensional mesh with conformal (non-orthogonal) grid)
 
 
-.. Status
-.. ------

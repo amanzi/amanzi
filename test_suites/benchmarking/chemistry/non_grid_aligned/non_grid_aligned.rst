@@ -35,11 +35,11 @@ mass conservation equation with a Darcy approximation for volumetric fluxes:
 .. math::
   \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)
     \frac{\partial p}{\partial t} 
-  + \boldsymbol{\nabla}\cdot(\rho \boldsymbol{q}) = Q
+  + \boldsymbol{\nabla}\cdot(\rho \boldsymbol{q}) = Q.
 
 Solutes are advected with the velocity field given above, and are subject to diffusion fluxes arising 
 from the properties of the solutes in the fluid medium, as well as dispersion terms due to the 
-fluid flow field.  The following expresses conservation of the molar density of the ith solute 
+fluid flow field.  The following expresses conservation of the molar density of the i-th solute 
 
 .. math::
   \frac{\partial (\phi s_l C_i)}{\partial t} 
@@ -50,7 +50,9 @@ fluid flow field.  The following expresses conservation of the molar density of 
 where the transport flux has the form
 
 .. math::
-  \boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i
+  \boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i,
+
+with the dispersion tensor :math:`boldsymbol{D}` and liquid saturation :math:`s_l`.
 
 Calcite precipitation
 ~~~~~~~~~~~~~~~~~~~~~
@@ -61,7 +63,7 @@ Calcite precipitation can be described as
 
 The rate expression is 
 
-:math:`r = S \cdot k \cdot (1 - \frac{Q}{K_{sp}})`
+:math:`r = S \cdot k \cdot (1 - \displaystyle\frac{Q}{K_{sp}})`
 
 where 
 :math:`S`
@@ -100,7 +102,7 @@ The dispersion coefficients for longitudinal and transverse component (relative 
 
 * :math:`\alpha_{L} = \alpha_{T} = 0.0001 m`
 
-The molecular diffusivities all all species are zero.
+The molecular diffusivities for all species are zeros.
 
 Geochemistry
 ~~~~~~~~~~~~

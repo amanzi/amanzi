@@ -13,8 +13,7 @@ Capabilities tested include:
   * constant-rate pumping wells 
   * constant-head (Dirichlet) boundary conditions 
   * specified volumetric flux (Neumann) boundary conditions
-  * homogeneous porous medium
-  * isotropic porous medium
+  * homogeneous isotropic porous medium
   * uniform mesh
 
 For details on this test, see :ref:`about_bounded_domain`.
@@ -33,7 +32,7 @@ Transient flow in saturated uniform porous media can be represented by
 
 .. math:: \frac{\partial ^2 h}{\partial x^2} 
    + \frac{\partial ^2 h}{\partial y^2} 
-   + \sum_{i=1}^{N_w} \frac{Q_i}{T} \delta(x-x_i)\delta(y-y_i) H(t-t_i)
+   + \sum_{i=1}^{N_w} \frac{Q_i}{T} \delta(x-x_i,\,y-y_i) H(t-t_i)
    = \frac{S}{T} \frac{\partial h}{\partial t}
   :label: flow
 
@@ -44,7 +43,7 @@ where
 :math:`S` [-] is the storage coefficient,
 :math:`Q_i` [L\ :sup:`3`\/T] is the pumpage at a  well located at :math:`(x_i,y_i)` that starts pumping at :math:`t_i`,
 :math:`N_w` is the number of pumping wells,
-:math:`\delta(x)` is the Direc delta function, being 1 for :math:`x = 0` and 0 otherwise, and
+:math:`\delta(x,y)` is the Dirac delta function, being 1 for :math:`x = y = 0` and 0 otherwise, and
 :math:`H(x)` is the Heaviside function, being 1 for :math:`x \ge 0` and 0 otherwise.
 
 Initially the head is a constant everywhere in the domain:
@@ -58,7 +57,7 @@ The boundary conditions are:
 .. math::    T \nabla h({\bf x,t}) \cdot {\bf n}({\bf x})  = q({\bf x}, t)  \text{  for } {\bf x} \in \Gamma_N\\
   :label: bc_bounded_domain_2D
 
-where :math:`\Gamma_D` is the Dirichlet boundary and :math:`\Gamma_D` is the Neumann boundary.
+where :math:`\Gamma_D` is the Dirichlet boundary and :math:`\Gamma_N` is the Neumann boundary.
 
 The drawdown solution can be written as
 
@@ -173,10 +172,7 @@ About
 
 * Input Files: 
   
-  * amanzi_boundedDomain_2d.xml
- 
-    * Spec: Version 2.3, unstructured mesh framework
-    * Mesh: generated internally 
+  * amanzi_boundedDomain_2d.xml, Spec, Version 2.3, unstructured mesh framework
 
 * Analytical Solutions
 
@@ -186,14 +182,9 @@ About
 
   * Input Files:
 
-    * input
-
   * Output Files:
    
     * test_h_tr.dat,  drawdown as a function of time for all observation wells
 
-
-Status
-~~~~~~
 
 

@@ -1,19 +1,16 @@
-#include <UnitTest++.h>
-
 #include <iostream>
 
-#include "../Mesh_MOAB.hh"
-
-
 #include "Epetra_Map.h"
-#include "AmanziComm.hh"
-
 #include "mpi.h"
+#include "UnitTest++.h"
+
+#include "AmanziComm.hh"
+#include "../Mesh_MOAB.hh"
 
 
 TEST(MOAB_HEX_2x2x1)
 {
-  int i, j, k, err, nc, nf, nv;
+  int i, j, k, nc, nf, nv;
   Amanzi::AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> facedirs;
   std::vector<Amanzi::AmanziGeometry::Point> ccoords, fcoords;

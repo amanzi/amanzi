@@ -112,7 +112,6 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
-  double x_norm, y_norm;
 
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
 

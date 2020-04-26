@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! PreconditionerML: Trilinos ML multigrid.
+//! Trilinos ML smoothed aggregation multigrid.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -11,7 +11,13 @@
 */
 
 /*!
-Internal parameters of Trilinos ML includes
+
+This is provided when using the `"preconditioner type`"=`"ml`" in the
+`Preconditioner`_ spec.
+
+.. warning:: no input spec defined
+
+See also: https://trilinos.github.io/pdfs/mlguide5.pdf
 
 Example:
 

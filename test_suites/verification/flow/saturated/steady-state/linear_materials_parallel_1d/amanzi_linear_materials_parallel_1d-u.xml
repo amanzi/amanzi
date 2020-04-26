@@ -49,11 +49,6 @@
           <trilinos_ml />
           <block_ilu />
         </unstr_preconditioners>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">
@@ -161,22 +156,7 @@
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
-            <assigned_regions>RightBoundaryFront</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
-            <assigned_regions>MidpointFront</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
             <assigned_regions>LeftmostCellFront</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
-            <assigned_regions>RightmostCellFront</assigned_regions>
             <functional>point</functional>
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
@@ -186,22 +166,28 @@
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
+            <assigned_regions>MidpointFront</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
             <assigned_regions>RightMidpointCellFront</assigned_regions>
             <functional>point</functional>
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
+            <assigned_regions>RightmostCellFront</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>RightBoundaryFront</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+
+          <aqueous_pressure>
             <assigned_regions>LeftBoundaryBack</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
-            <assigned_regions>RightBoundaryBack</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
-            <assigned_regions>MidpointBack</assigned_regions>
             <functional>point</functional>
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
@@ -211,17 +197,27 @@
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
-            <assigned_regions>RightmostCellBack</assigned_regions>
-            <functional>point</functional>
-            <time_macros>Steady State</time_macros>
-          </aqueous_pressure>
-          <aqueous_pressure>
             <assigned_regions>LeftMidpointCellBack</assigned_regions>
             <functional>point</functional>
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>
           <aqueous_pressure>
+            <assigned_regions>MidpointBack</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>RightmostCellBack</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
             <assigned_regions>RightMidpointCellBack</assigned_regions>
+            <functional>point</functional>
+            <time_macros>Steady State</time_macros>
+          </aqueous_pressure>
+          <aqueous_pressure>
+            <assigned_regions>RightBoundaryBack</assigned_regions>
             <functional>point</functional>
             <time_macros>Steady State</time_macros>
           </aqueous_pressure>

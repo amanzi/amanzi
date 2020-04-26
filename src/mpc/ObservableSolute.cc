@@ -99,13 +99,11 @@ void ObservableSolute::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit)
 {
   Errors::Message msg;
-  int dim = mesh_->space_dimension();
 
   Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
   Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key darcy_key = Keys::getKey(domain_, "darcy_flux");
-
   
   if (!S.HasField(tcc_key)) {
     // bail out with default values if this field is not yet created

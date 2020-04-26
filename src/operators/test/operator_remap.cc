@@ -381,7 +381,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
 TEST(REMAP_DUAL_2D) {
   std::string maps = "VEM";
   double dT(0.1);
-  int deform = 1;
   RemapTestsDualRK("FEM", "", 10,10,0, dT);
   RemapTestsDualRK(maps, "test/median15x16.exo", 16,1,0, dT/2);
 }

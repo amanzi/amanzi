@@ -1,13 +1,35 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+//! A mesh and vector structure aware utility for printing info.
 
-Debugging object for writing debug cells using VerboseObject.
+/*!
 
-------------------------------------------------------------------------- */
+This is a utility that makes it easier for the user to control output written
+to the screen.  It allows the user to provide element IDs, and then provides
+functionality for a PK to write mesh geometry information and vector values of
+those elements to screen based upon verbosity levels.
 
+Note, most information is only written if the owning object's verbosity level
+from the `"Verbose Object`" spec is set to `"high`" or higher.
+
+.. debugger-spec:
+.. admonition:: debugger-spec
+
+    * `"debug cells`" ``[Array(int)]`` For each global ID of a cell provided
+      here, controls writing of vectors inside of the using PK.
+
+    * `"debug faces`" ``[Array(int)]`` For each global ID of a face provided
+      here, writes all adjoining cell information as if each cell was included
+      in `"debug cells`".
+
+*/
+      
 #ifndef AMANZI_DEBUGGER_HH_
 #define AMANZI_DEBUGGER_HH_
 

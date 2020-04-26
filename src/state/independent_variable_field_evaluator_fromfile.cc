@@ -27,7 +27,7 @@ IndependentVariableFieldEvaluatorFromFile::IndependentVariableFieldEvaluatorFrom
   varname_ = plist.get<std::string>("variable name");
   compname_ = plist.get<std::string>("component name", "cell");
   locname_ = plist.get<std::string>("mesh entity", "cell");
-  ndofs_ = plist.get<int>("number of DoFs", 1);
+  ndofs_ = plist.get<int>("number of dofs", 1);
 
   if (plist.isSublist("time function")) {
     FunctionFactory fac;

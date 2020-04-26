@@ -27,7 +27,6 @@ void EnergyTwoPhase_PK::FunctionalResidual(
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  double h = t_new - t_old;  // get timestep
 
   // update BCs and conductivity
   temperature_eval_->SetFieldAsChanged(S_.ptr());

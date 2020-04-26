@@ -12,8 +12,7 @@ Capabilities tested include:
   * saturated flow
   * constant-rate pumping well
   * constant-head (Dirichlet) boundary conditions
-  * heterogeneous porous medium
-  * isotropic porous medium
+  * heterogeneous isotropic porous medium
   * uniform mesh
 
 For details on this test, see :ref:`about_butler_pod_2d`.
@@ -43,7 +42,7 @@ where
 
 The initial conditions are the same for the disc and the matrix:
 
-.. math:: s_i(r, \theta,0) =0.,  0 \le r < \infty.
+.. math:: s_i(r, \theta,0) =0,\  0 \le r < \infty.
 
 The boundary condition at infinite distance is:
 
@@ -104,20 +103,12 @@ Variables
 
 * Material properties:
 
-  * transmissivity (all isotropic):
+  * transmissivity (all isotropic):  :math:`T_1 = 0.0011574 \text{ [m}^2 \text{/s]}`,
+    :math:`T_2 = 0.011574 \text{ [m}^2 \text{/s]}`, derived from :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
+    and intrinsic permeability is :math:`k_1 = 1.187 \times 10^{-10}, \: k_2 = 1.187 \times 10^{-9} \text{ [m}^2 \text{]}`
 
-    * :math:`T_1 = 0.0011574 \text{ [m}^2 \text{/s]}`
-    * :math:`T_2 = 0.011574 \text{ [m}^2 \text{/s]}`
-    
-      * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
-
-      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-10}, \: k_2 = 1.187 \times 10^{-9} \text{ [m}^2 \text{]}`
-
-  * storativity:   
-    
-    * :math:`S_1= S_2 = 2.0\times 10^{-4} \: \text{[-]}`
-
-      * derived from:    :math:`S=S_s b`, where :math:`b=1 \: \text{[m]}`
+  * storativity: :math:`S_1= S_2 = 2.0\times 10^{-4} \: \text{[-]}`, derived 
+    from  :math:`S=S_s b`, where :math:`b=1 \: \text{[m]}`
 
   * porosity:    :math:`\phi_{1,2} = 0.25`
   * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
@@ -127,15 +118,9 @@ Variables
 * Boundary and initial conditions:
 
   * initial condition:    :math:`s(r,\theta,0)=0`
-
-    * (in grid/cartesian coordinates):    :math:`s(x,y,z,0) = 0 \text{ [m]}`
-
-  * constant-head (Dirichlet) boundary conditions:    :math:`s(\infty,\theta,t) = 0` 
-
-    * (in grid/cartesian coordinates):    :math:`s(x_{min,max},y_{min,max},z,t) = 0 \text{ [m]}`
-
+  * constant-head (Dirichlet) boundary conditions:  :math:`s(x_{min,max},y_{min,max},z_{min,max},t) = 0 \text{ [m]}`
   * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
-  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
+  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [y]}`
 
 .. Radius of the disc: :math:`\;\; d = 18 \;m`;
 
@@ -179,10 +164,8 @@ About
 
 * Input Files:
 
-  * amanzi_butler_pod_2d-u.xml
-
-    * Spec: Version 2.3, unstructured mesh framework
-    * Mesh: mesh_cylinder.exo
+  * amanzi_butler_pod_2d-u.xml, Spec, Version 2.3, unstructured mesh framework
+  * mesh_cylinder.exo
 
 * Analytical Solutions
 
@@ -200,11 +183,10 @@ About
     * drdn.res,  drawdown as a function of time for all observation wells.
 
 
-Status
-~~~~~~
+.. todo::
 
-The analytical solution was solved using a FORTRAN code modified from the original code from Greg Ruskauf.
-We may need to implement the algorithm by ourselves or get permission from Greg Ruskauf for using the code.
-As the flow problem was solved analytically in the Laplace transformed space, one needs to implement
-numerical inversion from the Laplace transformed space back to the real space.
+  * The analytical solution was solved using a FORTRAN code modified from the original code from Greg Ruskauf.
+    We may need to implement the algorithm by ourselves or get permission from Greg Ruskauf for using the code.
+    As the flow problem was solved analytically in the Laplace transformed space, one needs to implement
+    numerical inversion from the Laplace transformed space back to the real space.
 

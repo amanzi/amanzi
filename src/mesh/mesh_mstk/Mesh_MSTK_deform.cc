@@ -176,8 +176,6 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     idx = 0;
     while ((mv = List_Next_Entry(driven_verts,&idx))) {
-      int gtype = MV_GEntDim(mv);
-      
       id = MV_ID(mv);
 
       // Get an estimate of the mesh size around this vertex to 
@@ -475,8 +473,8 @@ double Tet_Volume(double *xyz0, double *xyz1, double *xyz2, double *xyz3) {
 
 
 double Poly_Area(int n, double (*xyz)[3]) {
-  int i, j;
-  double pcen[3], txyz[3][3], area = 0.0;
+  int i;
+  double area = 0.0;
   
   if (n < 3)
     return 0;
@@ -491,8 +489,7 @@ double Poly_Area(int n, double (*xyz)[3]) {
      result in roundoff error. To improve accuracy, we will make
      all coordinates relative to x0,y0. But what if xi is very close 
      to x0? Then xi-x0 will also generate high error. Which is better?
-
-*/
+  */
 
   if (fabs(xyz[0][0]) > 1000.0 || fabs(xyz[0][1]) > 1000.0) { 
     for (i = 0; i < n; i++)
@@ -547,16 +544,16 @@ double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
 double Mesh_MSTK::deform_function(const int nodeid, 
                                   double const * const nodexyz) const {
 
-  double func = 0.0, func1 = 0.0, func2 = 0.0, delta=1.0e-3;
+  double func = 0.0, delta=1.0e-3;
   MVertex_ptr v = vtx_id_to_handle[nodeid];
   double *xyz[MAXPV3], L10_sqr, L20_sqr, L21_sqr, A;
   double val=0.0, *xyz1[4];
   double evec0[3], evec1[3], evec2[3], a, b, cpvec[3], vol6;
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
-  int i, j, k, m, id, jr, jf, nf0, found;
-  int vind=-1, ind[4], nbrs[4][3];
+  int i, j, k, m, id, jr, jf, found;
   MVertex_ptr fv, rv;
+  int vind=-1, ind[4];
   List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
   static MVertex_ptr (*fverts)[MAXPV2], (*rverts)[MAXPV3];

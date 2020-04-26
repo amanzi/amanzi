@@ -483,7 +483,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
+    ell = GetTextContentD_(element_rp, "", false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
@@ -527,8 +527,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
   MemoryManager mm;
 
-  char *text, *tagname;
-  DOMNodeList *node_list, *children;
+  char *text;
+  DOMNodeList *node_list;
   DOMNode *node;
   DOMElement *element;
 
@@ -552,7 +552,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       inode = inode->getNextSibling();
       continue;
     }
-    tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
@@ -773,7 +772,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
   MemoryManager mm;
 
-  char *text, *tagname;
+  char *text;
   DOMNodeList *node_list, *children;
   DOMNode *node, *phase;
   DOMElement* element;
@@ -786,7 +785,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
     // read the assigned regions

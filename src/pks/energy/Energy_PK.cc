@@ -248,8 +248,6 @@ void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Compo
 ****************************************************************** */
 void Energy_PK::ComputeBCs(const CompositeVector& u)
 {
-  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
   std::vector<double>& bc_mixed = op_bc_->bc_mixed();

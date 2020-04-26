@@ -40,9 +40,6 @@ void Mesh::get_set_entities_box_vofs_(
   setents->clear();
   volume_fractions->clear();
 
-  int sdim = space_dimension();
-  int mdim = region->manifold_dimension();
-
   switch (kind) {      
   case CELL:
   {

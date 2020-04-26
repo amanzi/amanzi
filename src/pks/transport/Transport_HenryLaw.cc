@@ -60,7 +60,7 @@ void Transport_PK::MakeAirWaterPartitioning_()
   const Epetra_MultiVector& sat_l = *ws;
 
   int ig, il;
-  double sl, sg, total;
+  double sl, total;
   for (int i = 0; i < num_gaseous; ++i) {
     ig = num_aqueous + i;
     il = air_water_map_[i];

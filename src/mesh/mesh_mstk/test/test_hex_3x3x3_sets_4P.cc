@@ -17,22 +17,17 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                                  "Bottom+Middle Box", "Top Box",
         "Bottom ColFunc", "Middle ColFunc", "Top ColFunc", "Entire Mesh"};
 
-  int csetsize;
-  
   int expcsetcells[4][8][9];
 
-
   std::vector<std::string> expfsetnames{"Face 101",  
-				  "Face 30004",
-                                  "ZLO FACE Plane", 
-        "YLO FACE Box", "Entire Mesh"};
-
-  int fsetsize;
+                                        "Face 30004",
+                                        "ZLO FACE Plane", 
+                                        "YLO FACE Box", "Entire Mesh"};
 
   auto comm = Amanzi::getDefaultComm();
   int rank = comm->MyPID();
-  int size = comm->NumProc();
-  //  CHECK_EQUAL(4,size);
+  // int size = comm->NumProc();
+  // CHECK_EQUAL(4,size);
 
   // if (size != 4) {
   //   std::cerr << "Test must be run with 4 processors" << std::endl;

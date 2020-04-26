@@ -156,7 +156,7 @@ if (CMAKE_BUILD_TYPE)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
 
-  if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
   endif()
@@ -223,7 +223,8 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS} 
+                    CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                      ${Trilinos_CMAKE_ARGS} 
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                       -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}

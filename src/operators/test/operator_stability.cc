@@ -86,7 +86,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   Point xv(2);
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -159,7 +158,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    solver->ApplyInverse(rhs, *solution);
 
     // calculate pressure errors
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -228,7 +227,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   Analytic01 ana(mesh);

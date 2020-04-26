@@ -68,12 +68,7 @@ HDF5_MPI::~HDF5_MPI()
 
 void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string filename)
 {
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
-  int globaldims[2], localdims[2];
-  int *ids;
 
   // store the mesh
   mesh_maps_ = mesh;
@@ -111,9 +106,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     return;
   }
 
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
   int globaldims[2], localdims[2];
   int *ids;
@@ -132,7 +124,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   const Epetra_Map &cmap = mesh_maps_->vis_mesh().cell_map(false);
   int ncells_local = cmap.NumMyElements();
-  int ncells_global = cmap.NumGlobalElements();
 
   // get space dimension
   int space_dim = mesh_maps_->vis_mesh().space_dimension();
@@ -434,9 +425,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
 void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 {
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
   int globaldims[2], localdims[2];
   int *ids;
@@ -531,7 +519,6 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   const Epetra_Map &fmap = mesh_maps_->vis_mesh().face_map(false);
   int nfaces_local = fmap.NumMyElements();
-  int nfaces_global = fmap.NumGlobalElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
     AmanziMesh::Entity_ID_List cells;
@@ -661,7 +648,6 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 void HDF5_MPI::createDataFile(std::string soln_filename)
 {
   std::string h5filename, PVfilename, Vfilename;
-  herr_t status;
 
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
@@ -1117,9 +1103,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 {
   // write field data
   double *data;
-  int err = x.ExtractView(&data);
-  hid_t  group, dataspace, dataset;
-  herr_t status;
+  x.ExtractView(&data);
 
   int globaldims[2];
   int localdims[2];

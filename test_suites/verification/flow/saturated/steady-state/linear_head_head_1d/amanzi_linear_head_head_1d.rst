@@ -15,6 +15,7 @@ Capabilties tested include:
   * saturated flow conditions
   * constant-head (Dirichlet) boundary conditions
   * mass conservation
+  * exactness of numerical scheme for linear head
   * homogeneous porous medium
 
 For details on this test, see :ref:`about_linear_head_head_1d`.
@@ -110,7 +111,7 @@ To generate numerical results, the following specifications are considered:
 
   * no-flow prescribed at the :math:`y_{min}, \: y_{max}, \: z_{min}, \: z_{max}` boundaries
   * prescribed hydraulic head at the x-coordinate boundaries: 
-          :math:`h(0) = 20 \: \text{[m]}, \: h(L) = 19 \: \text{[m]}`
+    :math:`h(0) = 20 \: \text{[m]}, \: h(L) = 19 \: \text{[m]}`
 
 * Material properties:
 
@@ -118,7 +119,7 @@ To generate numerical results, the following specifications are considered:
   * :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
   * :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
   * :math:`K = 1.0 \: \text{[m/d]}` 
-          (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
+    (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
@@ -137,6 +138,8 @@ Results and Comparison
 ----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
 Amanzi has reproduced the exact solution. 
+On the boundary *Amanzi* takes the head value from a nearby cell. 
+This could be fixed in the future.
 
 .. plot:: amanzi_linear_head_head_1d.py
    :align: center
@@ -160,7 +163,7 @@ References
 
 About
 -----
-* Directory:  testing/verification/flow/saturated/steady-state/linear_head_head_1d
+* Directory:  test_suites/verification/flow/saturated/steady-state/linear_head_head_1d
 
 * Authors:  Greg Flach, Konstantin Lipnikov
 
@@ -190,12 +193,8 @@ About
   
     * steady-flow_data.h5
 
-Status
-~~~~~~
+
 .. todo:: 
 
-  * Documentation:
-
-    * Probably do not want the points on the boundary. keb: I think this is fine.
-    * We may want to plot flux. keb: I think this is uncessary but we can add a second plot if necessary.
-    * Values in the table need to be sorted. keb: These are sorted already.
+  * Implement new point observation, e.g. using linear reconstruction.
+  * We may want to plot flux. keb: I think this is uncessary but we can add a second plot if necessary.

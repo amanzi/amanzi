@@ -185,25 +185,13 @@ verification['infiltration'] = {
   'index_entry': 'infiltration/index.rst',
   'index' : {'index_title' : 'Infiltration Flow Tests',
              'index_file'  : 'doc/user_guide/verification/infiltration/index.rst',
-             'index_list'  : [ 'infiltration_clay_sand_1d', 
-                               'infiltration_loam_sand_1d',
-                               'infiltration_sand_loam_1d',
+             'index_list'  : [ 'infiltration_1d', 
                              ], 
             },
-  'infiltration_clay_sand_1d': {
-    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_clay_sand_1d',
-    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_clay_sand_1d',
-    'index_entry' : 'infiltration_clay_sand_1d/amanzi_infiltration_clay_sand_1d.rst',
-  },
-  'infiltration_loam_sand_1d': {
-    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_loam_sand_1d',
-    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_loam_sand_1d',
-    'index_entry' : 'infiltration_loam_sand_1d/amanzi_infiltration_loam_sand_1d.rst',
-  },
-  'infiltration_sand_loam_1d': {
-    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_sand_loam_1d',
-    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_sand_loam_1d',
-    'index_entry' : 'infiltration_sand_loam_1d/amanzi_infiltration_sand_loam_1d.rst',
+  'infiltration_1d': {
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_1d',
+    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_1d',
+    'index_entry' : 'infiltration_1d/amanzi_infiltration_1d.rst',
   },
 }
 

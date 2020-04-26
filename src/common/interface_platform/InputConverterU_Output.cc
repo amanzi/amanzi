@@ -51,7 +51,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   char *tagname, *text;
   std::string unit;
 
-  DOMNamedNodeMap* attr_map;
   DOMNodeList *node_list;
   DOMNode* node;
 

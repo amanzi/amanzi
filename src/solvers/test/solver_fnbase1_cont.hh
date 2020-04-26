@@ -44,7 +44,6 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
       }
     } else {
       for (int c = 0; c != up->MyLength(); ++c) {
-        double x = (*up)[c];
         (*h_)[c] = 1.0;
       }
     }

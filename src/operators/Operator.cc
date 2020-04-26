@@ -435,7 +435,6 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
 
-  int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
     int ndofs = col_lids[n].size();
     AMANZI_ASSERT(ndofs == 1);

@@ -116,9 +116,6 @@ void Basis_Orthonormalized<MyMesh>::BilinearFormNaturalToMy(DenseMatrix& A) cons
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
@@ -154,9 +151,6 @@ void Basis_Orthonormalized<MyMesh>::BilinearFormNaturalToMy(
     std::shared_ptr<Basis<MyMesh> > bl,
     std::shared_ptr<Basis<MyMesh> > br, DenseMatrix& A) const
 {
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
   int m(nrows / 2);
   std::vector<double> a1(m), a2(m), b1(m), b2(m);
@@ -211,9 +205,6 @@ void Basis_Orthonormalized<MyMesh>::BilinearFormNaturalToMy(
 template<class MyMesh>
 void Basis_Orthonormalized<MyMesh>::LinearFormNaturalToMy(DenseVector& f) const
 {
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = f.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
@@ -265,7 +256,6 @@ void Basis_Orthonormalized<MyMesh>::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
  
-  double v0 = v(0);
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
@@ -288,7 +278,6 @@ Polynomial Basis_Orthonormalized<MyMesh>::CalculatePolynomial(
     const Teuchos::RCP<const MyMesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {
-  int d = mesh->space_dimension();
   Polynomial poly(monomial_scales_);
   poly.set_origin(mesh->cell_centroid(c));
 

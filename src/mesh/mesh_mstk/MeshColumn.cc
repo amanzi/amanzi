@@ -120,10 +120,10 @@ void MeshColumn::compute_special_node_coordinates_() {
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
-  int space_dim_ = space_dimension(); // from parent mesh
+  int space_dim = space_dimension(); // from parent mesh
   int nfaces = column_faces_.size();
   int nnodes = nfaces*nfnodes_;
-  AmanziGeometry::Point p(space_dim_);
+  AmanziGeometry::Point p(space_dim);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
   
   for (int j=0; j!=nfaces; ++j) {
@@ -138,14 +138,14 @@ void MeshColumn::compute_special_node_coordinates_() {
     AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_[j]);
     
     for (int i=0; i!=nfnodes_; ++i) {
-      AmanziGeometry::Point coords(space_dim_);
+      AmanziGeometry::Point coords(space_dim);
 
       // last coordinate is z-coordinate of face centroid
-      coords[space_dim_-1] = fcen[space_dim_-1];
+      coords[space_dim-1] = fcen[space_dim-1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=space_dim_-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d=0; d!=space_dim-1; ++d) coords[d] = face_coordinates[i][d];
         
       node_coordinates[face_nodes[i]] = coords;
     }

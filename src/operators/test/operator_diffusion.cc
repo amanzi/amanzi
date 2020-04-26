@@ -77,8 +77,6 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh, gravity);
 
@@ -92,7 +90,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
-  std::vector<double>& bc_mixed = bc->bc_mixed();
+  // std::vector<double>& bc_mixed = bc->bc_mixed();
 
   const auto& fmap = mesh->face_map(true);
   const auto& bmap = mesh->exterior_face_map(true);
@@ -131,7 +129,6 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->Init(op_list);
   op->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -166,7 +163,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -259,7 +256,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
-    double area = mesh->face_area(f);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -284,7 +280,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator cell");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // set up the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -312,7 +307,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

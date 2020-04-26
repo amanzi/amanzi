@@ -62,7 +62,6 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
@@ -232,7 +231,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
   // -- execute GMRES solver
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   // op->AssembleMatrix();
   // ver1.CheckResidual(solution, rhs, 1.0e-12);

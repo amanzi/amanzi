@@ -294,24 +294,14 @@ template<class Vector, class VectorSpace>
 void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         const Teuchos::Ptr<const Vector>& u_old)
 {
-  int k, nvec, new_f;
-  double s, hkk, hkj, cj;
-  double  *hk, *hj, *c;
-
   Teuchos::RCP<Vector> vp, wp;
   Teuchos::RCP<Vector> ff = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> fun = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> tmp = Teuchos::rcp(new Vector(f));
 
-
-  // std::cout<<"F\n"; ff->Print(std::cout);
-  // std::cout<<"u\n"; u_old->Print(std::cout);
-
   // double norm_u, norm_f;
   // ff->Norm2(&norm_f);
   // u_old->Norm2(&norm_u);
-
-  // std::cout<<"norm_f "<<norm_f<<" norm_u "<<norm_u<<"\n";
 
   assert(new_f_ >= 0);
   // Save the accelerated correction for the next_f_ call.
@@ -328,23 +318,15 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
   if (last_f_ >= 0) {
-    k = last_f_;
     dF_[last_f_]->Update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
     dG_[last_f_]->Update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
   }
-
-  // std::cout<<"new_f "<<new_f_<<"\n";
-  // dF_[new_f_]->Print(std::cout);
-
-  double alp;
-  double eps = 1e-12;
 
   if (num_vec_ == 1) {
     if (last_f_ == 0) {
       double norm2;
       *Q_[last_f_] = *dF_[last_f_];
       Q_[last_f_]->Norm2(&norm2);
-      //std::cout<<"norm2 "<<norm2<<"\n";
       Q_[last_f_]->Scale(1./norm2);
       R_[0] = norm2;
     }
@@ -419,7 +401,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     th[i] = th[i]/R_[diag_id];
   }
   
-
+  // double alp;
   // alp = 1.;// - 0.001*num_vec_;
 
   // std::cout<<"theta\n";

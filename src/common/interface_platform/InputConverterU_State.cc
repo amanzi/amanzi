@@ -115,7 +115,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // -- porosity: skip if compressibility model was already provided.
       if (!compressibility_) {
-        double porosity;
         node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
         if (flag) {
           TranslateFieldEvaluator_(node, "porosity", "-", reg_str, regions, out_ic, out_ev);
@@ -136,7 +135,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- permeability. We parse matrix and fractures together.
-      double perm_x, perm_y, perm_z;
       bool perm_err(false), perm_init_from_file(false), conductivity(false);
       std::string perm_file, perm_format, unit("m^2");
 
@@ -602,7 +600,7 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
         .set<std::string>("mesh entity", "cell")
-        .set<int>("number of DoFs", 1)
+        .set<int>("number of dofs", 1)
         .set<bool>("constant in time", true);
   } else {
     double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
@@ -663,8 +661,6 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      DOMNamedNodeMap* attr_map = inode->getAttributes();
-
       DOMNode* node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       if (flag) {
         char* text_content = mm.transcode(node->getTextContent());

@@ -122,7 +122,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   TPK.Initialize(S.ptr());
 
   // advance the transport state 
-  int iter, k;
+  int iter;
   double t_old(0.0), t_new(0.0), dt;
   Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", "state")
                               ->ViewComponent("cell", false);

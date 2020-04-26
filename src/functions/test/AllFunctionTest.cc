@@ -57,7 +57,7 @@ TEST(smooth_step_test)
   x[0] = 2.0;
   CHECK_EQUAL((*g)(x), 0.5);
   delete g;
-  CHECK_THROW(FunctionSmoothStep f(3.0, 1.0, 3.0, 0.0), Errors::Message);
+  CHECK_THROW(FunctionSmoothStep fun(3.0, 1.0, 3.0, 0.0), Errors::Message);
 }
       
 TEST(tabular_test)

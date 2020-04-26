@@ -12,9 +12,8 @@ The Amanzi code is built using several required and optional Third Party Librari
 The following pacakges are required before executing ``bootstrap.sh``
 
     * A recent and stable GCC or Intel compiler. We have successfully built with
-      GNU versions 4.4, 4.5 and 4.6, and Intel versions 11 and 12. There
-      are known issues with GCC 4.7.
-    * Mercurial version 0.98 or higher.
+      GNU versions 4.x to 9.x,Apple LLVM version 10.0.1 and Intel versions 11 to 17.
+    * Git version 1.8 or higher.
     * OpenSSL (required to build CURL) installation. This is available on
       most UNIX flavored systems and Macs.
     * BLAS/LAPACK built and tuned to the target architecture. See the 
@@ -23,10 +22,11 @@ The following pacakges are required before executing ``bootstrap.sh``
       will be installed in directories rooted to this directory. Since the
       download--patch-build-install cycle for each TPL is tied to a single  
       target, the user must have read and write permission for this location.
-    * The build directory will need approximately 2.1 Gb of space and the 
-      install directory tree requires 300 Mb.
+    * The build directory will need approximately 2.1 Gb of space (for staticlly linked build)
+      and the install directory tree requires 300 Mb.
 
-The Amanzi build system utilizes CMake (version 2.8.8 or higher).  If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 2.8.8.
+The Amanzi build system utilizes CMake (version 3.11.4 or higher). 
+If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 3.11.4.
 
 Amanzi is a parallel project; therefore, a working MPI installation is required.  MPI installation directory and compiler wrapper locations can be specified through ``bootstrap.sh`` options.  If the MPI location is not specified the script will search common locations.  If working mpi wrappers are not found, the script will download and install OpenMPI 1.4.4.  See the :ref:`MPI` section on how to obtain and install other mpi implementations.
 
@@ -68,7 +68,6 @@ Enable/Disable capabilities, mesh toolkits, and the test suite::
 
     --enable-structured or disable-structured
     --enable-unstructured or disable-unstructured
-    --enable-stk_mesh 
 
 Disabling the test suite is recommended on HPC clusters.  The test suite can be manually run on commute nodes using ``make test`` in the ``amanzi-build`` directory.::
 
@@ -94,5 +93,5 @@ The following example command line is from a Mac OS X system using openmpi insta
                                               --with-cmake=/usr/bin/cmake \
                                               --with-mpi=/opt/local \
                                               --enable-test_suite \
-                                              --enable-petsc
+                                              --enable-geochemistry
 
