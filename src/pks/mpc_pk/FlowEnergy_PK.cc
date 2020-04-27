@@ -48,7 +48,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 ******************************************************************* */
 void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
 
   Teuchos::ParameterList& elist = S->FEList();
 
@@ -231,7 +231,7 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl << vo_->color("green")
-               << "Initialization of TP is complete: dT=" << get_dt() 
+               << "Initialization of PK is complete: my dT=" << get_dt() 
                << vo_->reset() << std::endl << std::endl;
   }
 }

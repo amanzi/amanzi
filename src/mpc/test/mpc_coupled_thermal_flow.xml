@@ -630,6 +630,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
+	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -639,6 +640,7 @@
 	    <Parameter name="gravity" type="bool" value="false"/>
 	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="advection operator">

@@ -897,7 +897,7 @@ void State::Setup() {
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
+      *vo->os() << "Ensure compatibility for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
