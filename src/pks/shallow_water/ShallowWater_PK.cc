@@ -216,7 +216,7 @@ namespace ShallowWater {
              U[0] = h_vec_c[0][c];
 			 U[1] = h_vec_c[0][c]*vx_vec_c[0][c];
 			 U[2] = h_vec_c[0][c]*vy_vec_c[0][c];
-             S = NumSrc(U);
+             S = NumSrc(U,c);
 
              for (int i = 0; i < 3; i++) {
             	 U_new[i] = U[i] - dt/vol*FS[i] + dt*S[i];
@@ -642,8 +642,8 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR) {
 
-        return NumFlux_x_Rus(UL,UR);
-//    	return NumFlux_x_central_upwind(UL,UR);
+//        return NumFlux_x_Rus(UL,UR);
+    	return NumFlux_x_central_upwind(UL,UR);
 
     }
 
@@ -773,7 +773,7 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     // discretization of the source term (not well-balanced)
     //--------------------------------------------------------------
-    std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U) {
+    std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c) {
         std::vector<double> S;
 
         double g = 9.81;
@@ -784,14 +784,14 @@ namespace ShallowWater {
 
         S.resize(3);
 
-        S = PhysSrc(U);
+//        S = PhysSrc(U);
 
         BRx = 0.;
         BLx = 0.;
         BRy = 0.;
         BLy = 0.;
 
-        int c = 1; // for now
+//        BRx = Bathymetry();
 
         double h = h_vec_c[0][c];
 
@@ -808,6 +808,8 @@ namespace ShallowWater {
         return S;
 
     }
+
+
 
     //--------------------------------------------------------------
     // calculation of time step from CFL condition
@@ -844,9 +846,9 @@ namespace ShallowWater {
 
 		mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
-		dt_min = 0.0005;
+//		dt_min = 0.0005;
 
-//		std::cout << "dt = " << dt << ", dt_min = " << dt_min << std::endl;
+		std::cout << "dt = " << dt << ", dt_min = " << dt_min << std::endl;
 
     	return CFL*dt_min;
     }
