@@ -402,7 +402,7 @@ namespace ShallowWater {
     // bottom topography
     //--------------------------------------------------------------
     double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 0.;
+        return 1.-0.01*x;
     }
 
     //--------------------------------------------------------------
