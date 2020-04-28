@@ -44,10 +44,14 @@ Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
 
   // dependencies
   tensor_coef_key_ = plist.get<std::string>("tensor coefficient key");
-  dependencies_.emplace_back(std::make_pair(tensor_coef_key_, my_tag_));
+  if (tensor_coef_key_ == "none") tensor_coef_key_ = "";
+  if (!tensor_coef_key_.empty()) 
+    dependencies_.emplace_back(std::make_pair(tensor_coef_key_, my_tag_));
 
   scalar_coef_key_ = plist.get<std::string>("scalar coefficient key");
-  dependencies_.emplace_back(std::make_pair(scalar_coef_key_, my_tag_));
+  if (scalar_coef_key_ == "none") scalar_coef_key_ = "";
+  if (!scalar_coef_key_.empty())
+    dependencies_.emplace_back(std::make_pair(scalar_coef_key_, my_tag_));
 
   bcs_key_ = plist.get<std::string>("boundary conditions key");
   dependencies_.emplace_back(std::make_pair(bcs_key_, my_tag_));
@@ -97,9 +101,11 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 
     // require scalar coef on the space required by little_k option of
     // operator
-    S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, my_tag_)
-      .Update(diff->little_k_space());
-    S.RequireEvaluator(scalar_coef_key_, my_tag_).EnsureCompatibility(S);
+    if (!scalar_coef_key_.empty()) {
+      S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, my_tag_)
+          .Update(diff->little_k_space());
+      S.RequireEvaluator(scalar_coef_key_, my_tag_).EnsureCompatibility(S);
+    }
 
     // require bcs
     auto& bc_fac =
@@ -110,13 +116,15 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
     // require tensors on cells
-    auto& K_fac =
-      S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, my_tag_);
-    CompositeVectorSpace K_map;
-    K_map.SetMesh(rhs_fac.Mesh());
-    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
-    K_fac.set_map(K_map);
-    S.RequireEvaluator(tensor_coef_key_, my_tag_).EnsureCompatibility(S);
+    if (!tensor_coef_key_.empty()) {
+      auto& K_fac =
+          S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, my_tag_);
+      CompositeVectorSpace K_map;
+      K_map.SetMesh(rhs_fac.Mesh());
+      K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+      K_fac.set_map(K_map);
+      S.RequireEvaluator(tensor_coef_key_, my_tag_).EnsureCompatibility(S);
+    }
 
     // require density on cells
     if (gravity_) {
@@ -169,13 +177,16 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor,
   // -- must update if any of our dependencies' derivatives have changed
   // NOTE: some assumptions about what is and is not differentiable
   // -- abs perm not a function of p
-  AMANZI_ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_)
-                   .IsDifferentiableWRT(S, wrt_key, wrt_tag));
-  if (!jac_op_key_.empty() && S.GetEvaluator(scalar_coef_key_, my_tag_)
-                                .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
-    update |= S.GetEvaluator(scalar_coef_key_, my_tag_)
+  if (!tensor_coef_key_.empty()) {
+    AMANZI_ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_)
+                  .IsDifferentiableWRT(S, wrt_key, wrt_tag));
+    if (!jac_op_key_.empty() && S.GetEvaluator(scalar_coef_key_, my_tag_)
+        .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(scalar_coef_key_, my_tag_)
                 .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+    }
   }
+  
   if (!u_key_.empty() && !wrt_is_u &&
       S.GetEvaluator(u_key_, my_tag_)
         .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
@@ -241,12 +252,16 @@ Evaluator_PDE_Diffusion::Update_(State& S)
   auto bcs = S.GetPtr<Operators::BCs>(bcs_key_, my_tag_);
   pde->SetBCs(bcs, bcs);
 
-  auto K = S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
-  pde->SetTensorCoefficient(K);
+  if (!tensor_coef_key_.empty()) {
+    auto K = S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
+    pde->SetTensorCoefficient(K);
+  }
 
   // at least this is const!
-  auto kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);
-  pde->SetScalarCoefficient(kr, Teuchos::null);
+  if (!scalar_coef_key_.empty()) {
+    auto kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);
+    pde->SetScalarCoefficient(kr, Teuchos::null);
+  }
 
   if (gravity_) {
     auto rho = S.GetPtr<CompositeVector>(rho_key_, my_tag_);
@@ -299,8 +314,10 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key,
   pde->SetBCs(bcs, bcs);
 
   // set the tensor coef
-  auto K = S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
-  pde->SetTensorCoefficient(K);
+  if (!tensor_coef_key_.empty()) {
+    auto K = S.GetPtr<TensorVector>(tensor_coef_key_, my_tag_);
+    pde->SetTensorCoefficient(K);
+  }
 
   // set the scalar coef and derivatives
   auto kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);

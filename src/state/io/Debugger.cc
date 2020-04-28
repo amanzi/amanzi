@@ -93,7 +93,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   if (vo_plist.isParameter("debug variables")) {
     auto varnames = vo_plist.get<Teuchos::Array<std::string>>("debug variables");
     if (vo_plist.isParameter("debug variables short")) {
-      auto varnames_short = vo_plist.get<Teuchos::Array<std::string>>("debug variables");
+      auto varnames_short = vo_plist.get<Teuchos::Array<std::string>>("debug variables short");
       if (varnames.size() != varnames_short.size()) {
         Errors::Message message("Debugger: provided \"debug variables\" of different length as \"debug variables short\"");
         throw(message);

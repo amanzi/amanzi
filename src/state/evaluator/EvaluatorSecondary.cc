@@ -131,7 +131,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "SecondaryVariable " << my_keys_[0].first << " requested by "
-              << request << std::endl;
+              << request << "..." << std::endl;
   }
 
   // Check if we need to update ourselves, and potentially update our
@@ -146,7 +146,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
   if (update) {
     computed_once_ = true;
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "Updating " << my_keys_[0].first << " value... "
+      *vo_.os() << "... updating " << my_keys_[0].first << " value."
                 << std::endl;
     }
 
@@ -161,12 +161,12 @@ EvaluatorSecondary::Update(State& S, const Key& request)
       requests_.insert(request);
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
         *vo_.os() << my_keys_[0].first
-                  << " has changed, but no need to update... " << std::endl;
+                  << "... has changed, but no need to update. " << std::endl;
       }
       return true;
     } else {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << my_keys_[0].first << " has not changed... " << std::endl;
+        *vo_.os() << my_keys_[0].first << "... has not changed. " << std::endl;
       }
       return false;
     }
@@ -190,8 +190,8 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key
-              << " requested by " << requestor << std::endl;
+    *vo_.os() << "SecondaryVariable Derivative d" << my_keys_[0].first << "_d" << wrt_key
+              << " requested by " << requestor << "..." << std::endl;
   }
 
   // Check if we need to update ourselves, and potentially update our
@@ -203,10 +203,12 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   Key my_request = Key{ "d" } +
                    Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
                    "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
-  update |= Update(S, my_request);
+  //  update |= Update(S, my_request);
 
-  // -- must update if any of our dependencies' derivatives have changed
+  // -- must update if any of our dependencies or our dependencies' derivatives have changed
   for (auto& dep : dependencies_) {
+    update |= S.GetEvaluator(dep.first, dep.second).Update(S, my_request);
+    
     if (S.GetEvaluator(dep.first, dep.second)
           .IsDependency(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
@@ -218,7 +220,7 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  ... updating." << std::endl;
+      *vo_.os() << "... updating." << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -230,13 +232,13 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     // Otherwise, simply service the request
     if (deriv_requests_.find(request) == deriv_requests_.end()) {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << "  ... not updating but new to this request." << std::endl;
+        *vo_.os() << "... not updating but new to this request." << std::endl;
       }
       deriv_requests_.insert(request);
       return true;
     } else {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << "  ... has not changed." << std::endl;
+        *vo_.os() << "... has not changed." << std::endl;
       }
       return false;
     }

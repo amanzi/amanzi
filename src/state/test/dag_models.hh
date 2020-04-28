@@ -51,6 +51,10 @@
 
 using namespace Amanzi;
 
+namespace Amanzi {
+class State;
+}
+
 template <class cView_type, class View_type>
 class AModel {
  public:
@@ -62,7 +66,8 @@ class AModel {
   {}
 
   void SetViews(const std::vector<cView_type>& dependency_views,
-                const std::vector<View_type>& result_views)
+                const std::vector<View_type>& result_views,
+                const State& s)
   {
     AMANZI_ASSERT(dependency_views.size() == 4);
     AMANZI_ASSERT(result_views.size() == 1);
@@ -140,7 +145,8 @@ class CModel {
   CModel(Teuchos::ParameterList& plist) {}
 
   void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+                const std::vector<View_type>& res,
+                const State& s)
   {
     AMANZI_ASSERT(deps.size() == 2);
     AMANZI_ASSERT(res.size() == 1);
@@ -192,7 +198,8 @@ class DModel {
   DModel(Teuchos::ParameterList& plist) {}
 
   void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+                const std::vector<View_type>& res,
+                const State& s)
   {
     AMANZI_ASSERT(deps.size() == 1);
     AMANZI_ASSERT(res.size() == 1);
@@ -236,7 +243,8 @@ class EModel {
   EModel(Teuchos::ParameterList& plist) {}
 
   void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+                const std::vector<View_type>& res,
+                const State& s)
   {
     AMANZI_ASSERT(deps.size() == 2);
     AMANZI_ASSERT(res.size() == 1);
@@ -288,7 +296,8 @@ class FModel {
   FModel(Teuchos::ParameterList& plist) {}
 
   void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+                const std::vector<View_type>& res,
+                const State& s)
   {
     AMANZI_ASSERT(deps.size() == 1);
     AMANZI_ASSERT(res.size() == 1);
@@ -333,7 +342,8 @@ class HModel {
   HModel(Teuchos::ParameterList& plist) {}
 
   void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+                const std::vector<View_type>& res,
+                const State& s)
   {
     AMANZI_ASSERT(deps.size() == 1);
     AMANZI_ASSERT(res.size() == 1);

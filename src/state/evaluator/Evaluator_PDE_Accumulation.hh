@@ -8,17 +8,13 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! Wraps a PDE_Accumulation to be an Evaluator.
+//! Implements accumulation terms.
 
 /*!
 
-Lots of options here, document me!
-
 */
 
-#ifndef STATE_EVALUATOR_PDE_ACCUMULATION_HH_
-#define STATE_EVALUATOR_PDE_ACCUMULATION_HH_
-
+#pragma once
 #include "Teuchos_ParameterList.hpp"
 
 #include "Evaluator_Factory.hh"
@@ -60,5 +56,3 @@ class Evaluator_PDE_Accumulation
 };
 
 } // namespace Amanzi
-
-#endif

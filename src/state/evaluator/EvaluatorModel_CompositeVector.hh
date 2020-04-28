@@ -149,7 +149,7 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
     }
 
     // set up the model and range and then dispatch
-    model_->SetViews(dependency_views, result_views);
+    model_->SetViews(dependency_views, result_views, S);
     Kokkos::RangePolicy<typename Device_type::execution_space> range(
       0, result_views[0].extent(0));
     Kokkos::parallel_for(
@@ -187,7 +187,7 @@ EvaluatorModel_CompositeVector<Model, Device_type>::EvaluatePartialDerivative_(
     }
 
     // set up the model and range and then dispatch
-    model_->SetViews(dependency_views, result_views);
+    model_->SetViews(dependency_views, result_views, S);
     auto wrt = std::make_pair(wrt_key, wrt_tag);
 
     Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1,

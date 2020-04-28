@@ -76,8 +76,9 @@ set(state_inc_files
   evaluator/Evaluator_BCsFunction.hh
   evaluator/EvaluatorSecondaryMonotypeAdditive.hh
   evaluator/EvaluatorSecondaryMonotypeMultiplicative.hh
-  evaluator/EvaluatorCellVolume.hh
-#  evaluator/cell_volume_evaluator.hh
+  #  evaluator/EvaluatorCellVolume.hh
+  evaluator/EvaluatorSecondaryMeshedQuantity.hh
+  evaluator/EvaluatorPrimaryStaticMesh.hh
 #  evaluator/deforming_cell_volume_evaluator.hh
 #  evaluator/rank_evaluator.hh
   io/Checkpoint.hh
@@ -88,7 +89,6 @@ set(state_inc_files
   StateDefs.hh
   State.hh
 )
-
 
 set(state_src_files 
   data/Data_Initializers.cc
@@ -110,7 +110,7 @@ set(state_src_files
   evaluator/Evaluator_PDE_Diffusion.cc
   evaluator/Evaluator_PDE_Accumulation.cc
   evaluator/Evaluator_BCs.cc
-  evaluator/EvaluatorCellVolume.cc
+#  evaluator/EvaluatorCellVolume.cc
 #  evaluator/cell_volume_evaluator.cc
 #  evaluator/deforming_cell_volume_evaluator.cc
 #  evaluator/rank_evaluator.cc
@@ -121,6 +121,7 @@ set(state_src_files
   io/UnstructuredObservations.cc
   State.cc
   )
+
 
 set(state_link_libs
   error_handling
@@ -163,14 +164,17 @@ register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCsFunction_reg.h
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeAdditive_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeMultiplicative_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellToFace_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMeshedQuantity_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimaryStaticMesh_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
-#if (REGENERATE_REGISTRATIONS)
+
+if (REGENERATE_REGISTRATIONS)
   generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
-#endif()
+endif()
 
 #
 # Build tests

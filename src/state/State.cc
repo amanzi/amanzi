@@ -202,7 +202,7 @@ State::RequireEvaluator(const Key& key, const Key& tag)
 
   // cannot find the evaluator, error
   Errors::Message message;
-  message << "Model for field " << key << " cannot be created in State.";
+  message << "Model for field \"" << key << "\" cannot be created in State.";
   throw(message);
 }
 

@@ -27,7 +27,7 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 Visualization::Visualization(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                             const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : IOEvent(plist), output_(std::move(OutputFactory::CreateForVis(*plist, mesh)))
 {}
 

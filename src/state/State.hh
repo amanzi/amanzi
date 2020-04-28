@@ -42,7 +42,7 @@
 #  include "CompositeVectorSpace.hh"
 #endif
 
-#include "RecordSet.hh"
+#include "data/RecordSet.hh"
 
 namespace Amanzi {
 

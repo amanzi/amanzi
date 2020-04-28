@@ -138,6 +138,15 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
         for (int n = 0; n != ncells; ++n) {
           Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
+
+          // if (cells[n] == 0 || cells[n] == 9) {
+          //   std::cout << std::setprecision(16) << "Apply at f(" << f << "): v = " << vv(0);
+          //   if (csr_Av.size(f) > 1) std::cout << std::setprecision(16)  << "," << vv(1);
+          //   std::cout << std::setprecision(16)  << ", A = " << lm << ", Av = " << Avv(0);
+          //   if (csr_Av.size(f) > 1) std::cout << std::setprecision(16)  << "," << Avv(1);
+          //   std::cout << std::endl;
+          // }
+
         }
       });
 

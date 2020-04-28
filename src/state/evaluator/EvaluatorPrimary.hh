@@ -100,7 +100,7 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
  public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override final
+  virtual Teuchos::RCP<Evaluator> Clone() const override
   {
     return Teuchos::rcp(new EvaluatorPrimary<Data_t, DataFactory_t>(*this));
   }

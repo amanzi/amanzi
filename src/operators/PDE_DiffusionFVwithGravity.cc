@@ -235,6 +235,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor<> Kc = K->at(c);
+          //if (c == 0) std::cout << "Kc = " << Kc(0,0) << std::endl;
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
@@ -248,6 +249,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
             const double dxn = a * normal;
 
             Kokkos::atomic_add(&h_f(f,0), h_tmp);
+            //if (c == 0) std::cout << "  1/trans_f(" << f << ") += " << dxn << "/" << perm << " = " << fabs(dxn/perm) << std::endl;
             Kokkos::atomic_add(&beta_f(f,0), fabs(dxn / perm));
           }
         });
@@ -272,6 +274,8 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           int ncells = cells.size();
 
+          //if (f == 0) std::cout << "rho = " << rho_c(0,0) << std::endl;
+          //if (f == 0) std::cout << "g = " << g_ << std::endl;
           AmanziGeometry::Point a_dist;
           if (ncells == 2) {
             a_dist = m->cell_centroid(cells[1]) - m->cell_centroid(cells[0]);
@@ -284,6 +288,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           double dir = std::copysign(1.0, normal * a_dist);
 
           double rho = ncells == 1 ? rho_c(cells(0),0) : (rho_c(cells(0),0) + rho_c(cells(1),0))/2.;
+          //if (f == 0) std::cout << "grav_f = " << trans_f(f,0) << " * " << h_f(f,0) << " * g * " << a_dist << " * " << rho << std::endl;
           grav_f(f,0) = trans_f(f,0) * h_f(f,0) * (g_ * a_dist) * rho * dir;
         });
 
