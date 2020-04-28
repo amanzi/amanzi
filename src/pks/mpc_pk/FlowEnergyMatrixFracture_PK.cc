@@ -285,7 +285,7 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-  // op_tree_->InitPreconditioner(pc_list);
+  op_tree_->InitPreconditioner(pc_list);
 }
 
 
