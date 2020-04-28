@@ -143,7 +143,7 @@ void MFD3D_Elasticity::LocalStressMatrices_(
 
     // -- generate auxiliary corner matrix for one component
     int mx = nvc * d_, nx = d_ * d_;
-    DenseMatrix Mcorner(mx, nx), Ncorner(mx, nx), Rcorner(mx, nx), Tcorner(mx, nx);
+    DenseMatrix Mcorner(mx, mx), Ncorner(mx, nx), Rcorner(mx, nx), Tcorner(mx, nx);
     DenseVector Dcorner(nvc);
 
     Tcorner.PutScalar(0.0);
@@ -168,8 +168,8 @@ void MFD3D_Elasticity::LocalStressMatrices_(
       for (int j = 0; j < d_ * d_; ++j) {
         auto conormal = (T[n] * vE[j]) * (normal / area);
         // auto dx = vE[j] * ((2 * xf + xv) / 3 - xc);
-        // auto dx = vE[j] * (xf - xc);
-        auto dx = vE[j] * ((xf + xv) / 2 - xc);
+        auto dx = vE[j] * (xf - xc);
+        // auto dx = vE[j] * ((xf + xv) / 2 - xc);
 
         for (int k = 0; k < d_; ++k) {
           Ncorner(nvc * k + i, j) = conormal[k];
@@ -185,13 +185,22 @@ void MFD3D_Elasticity::LocalStressMatrices_(
     auto Ycorner = Tcorner * TcornerT * Ncorner;
 
     // original scheme
+    DenseMatrix Ncorner_copy(Ncorner);
     Ncorner.InverseMoorePenrose();
     Mcorner = Rcorner * Ncorner;
 
     // scheme based on rescaling
+    DenseVector one(mx);
+    one.PutScalar(0.0);
+    for (int r = 0; r < mx; ++r)
+      for (int j = 0; j < 1; ++j) one(r) += Ncorner_copy(r, j);
+
     for (int i = 0; i < mx; ++i)
-      for (int j = 0; j < nx; ++j) u[n] += Mcorner(i, j);
+      for (int j = 0; j < mx; ++j) u[n] += Mcorner(i, j) * one(i) * one(j);
     utot += u[n];
+
+    // support-operator scheme
+    // Mcorner = (Tcorner * TcornerT) * volume_corner[n];
 
     // assemble mass matrices
     for (int i = 0; i < nvc; i++) {
@@ -226,18 +235,22 @@ void MFD3D_Elasticity::LocalStressMatrices_(
           // S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m);
 
           // mixed scheme (best one)
-          S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
-          S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
+          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
+          // S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
 
           // scheme based on rescaling 
-          // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
-          // S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m) * u[n];
+          S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m) * volume_corner[n] / u[n];
+          S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m) * volume_corner[n] / u[n];
+
+          // support-operator
+          // S1(d_ * k + s, m) += Ycorner(nvc * s + i, nd + m);
+          // S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
         }
       }
     }
   }
 
-  S2 /= utot;  // only in 2D
+  S2 *= utot;  // only in 2D
 }
 
 }  // namespace WhetStone
