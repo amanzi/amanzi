@@ -55,6 +55,9 @@ namespace ShallowWater {
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
     	Epetra_MultiVector h_vec_c_tmp(h_vec_c);
+
+    	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
+    	Epetra_MultiVector ht_vec_c_tmp(h_vec_c);
         
         Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
         Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
@@ -234,11 +237,16 @@ namespace ShallowWater {
              h_vec_c_tmp[0][c]  = U_new[0];
              vx_vec_c_tmp[0][c] = U_new[1]/U_new[0];
              vy_vec_c_tmp[0][c] = U_new[2]/U_new[0];
+
+          	 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+
+          	 ht_vec_c[0][c] = h_vec_c_tmp[0][c] + Bathymetry(xc[0],xc[1]);
+
       	 }
 
-      	h_vec_c  = h_vec_c_tmp;
-      	vx_vec_c = vx_vec_c_tmp;
-      	vy_vec_c = vy_vec_c_tmp;
+      	 h_vec_c  = h_vec_c_tmp;
+      	 vx_vec_c = vx_vec_c_tmp;
+      	 vy_vec_c = vy_vec_c_tmp;
 
     	 return failed;
 
@@ -260,6 +268,7 @@ namespace ShallowWater {
         velocity_x_key_     = Keys::getKey(domain_, "velocity-x");
         velocity_y_key_     = Keys::getKey(domain_, "velocity-y");
         ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
+        total_depth_key_    = Keys::getKey(domain_, "total_depth");
         myPID_  		    = Keys::getKey(domain_, "PID");
 
         // primary fields
@@ -282,6 +291,12 @@ namespace ShallowWater {
             ->SetComponent("cell", AmanziMesh::CELL, 1);
         }
         
+        // total_depth_key_
+		if (!S->HasField(total_depth_key_)) {
+			S->RequireField(total_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+			->SetComponent("cell", AmanziMesh::CELL, 1);
+		}
+
         // x velocity
         if (!S->HasField(velocity_x_key_)) {
             S->RequireField(velocity_x_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -311,6 +326,7 @@ namespace ShallowWater {
 //            S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(2.0);
 
         	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+        	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
 
         	for (int c = 0; c < ncells_owned; c++) {
         		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
@@ -320,6 +336,7 @@ namespace ShallowWater {
 			    else {
 			       h_vec_c[0][c] = 1.;
 			    }
+        		ht_vec_c[0][c] = h_vec_c[0][c] + Bathymetry(xc[0],xc[1]);
         	}
 
         	S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
@@ -384,7 +401,7 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     // bottom topography
     //--------------------------------------------------------------
-    double Bathymetry(double x, double y) {
+    double ShallowWater_PK::Bathymetry(double x, double y) {
         return 0.;
     }
 
@@ -770,9 +787,23 @@ namespace ShallowWater {
         return F;
     }
 
-    //--------------------------------------------------------------
-    // discretization of the source term (not well-balanced)
-    //--------------------------------------------------------------
+//    //--------------------------------------------------------------
+//    // discretization of the source term (not well-balanced)
+//    //--------------------------------------------------------------
+//    std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c) {
+//        std::vector<double> S;
+//
+//        S.resize(3);
+//
+//        S = PhysSrc(U);
+//
+//        return S;
+//
+//    }
+
+    //--------------------------------------------------------------------
+	// discretization of the source term (well-balanced for lake at rest)
+	//--------------------------------------------------------------------
     std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c) {
         std::vector<double> S;
 
@@ -780,30 +811,46 @@ namespace ShallowWater {
 
         Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
 
-        double BRx, BLx, BRy, BLy;
+//        double BRx, BLx, BRy, BLy;
 
         S.resize(3);
 
-//        S = PhysSrc(U);
-
-        BRx = 0.;
-        BLx = 0.;
-        BRy = 0.;
-        BLy = 0.;
-
-//        BRx = Bathymetry();
-
         double h = h_vec_c[0][c];
 
-        Amanzi::AmanziMesh::Entity_ID_List cedges;
+        Amanzi::AmanziMesh::Entity_ID_List cfaces;
 
-        mesh_->cell_get_edges(c,&cedges);
-        double dx = mesh_->edge_length(0);
-        double dy = mesh_->edge_length(1);
+        mesh_->cell_get_faces(c,&cfaces,true);
+
+        // cell volume
+        double vol = mesh_->cell_volume(c);
+
+        double S1, S2;
+
+        S1 = 0.;
+        S2 = 0.;
+
+        for (int f = 0; f < cfaces.size(); f++) {
+
+        	// face area
+		    double farea = mesh_->face_area(cfaces[f]);
+
+		    // normal
+		    Amanzi::AmanziGeometry::Point normal(2);
+		    int orientation;
+        	normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+
+        	// face centroid
+        	Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+
+        	double B = Bathymetry(xcf[0],xcf[1]);
+
+        	S1 += (-2.*B*h - B*B)*normal[0]*farea;
+        	S2 += (-2.*B*h - B*B)*normal[1]*farea;
+        }
 
         S[0] = 0.;
-        S[1] = -g*h*(BRx - BLx)/dx;
-        S[2] = -g*h*(BRy - BLy)/dy;
+        S[1] = 0.5*g/vol*S1;
+        S[2] = 0.5*g/vol*S2;
 
         return S;
 

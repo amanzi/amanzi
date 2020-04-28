@@ -96,6 +96,8 @@ class ShallowWater_PK : public PK_Physical,
     void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int);
 
     double Reconstruction(double,double,int);
+
+    double Bathymetry(double,double);
                             
   protected:
     
@@ -114,6 +116,7 @@ class ShallowWater_PK : public PK_Physical,
     Key velocity_x_key_;
     Key velocity_y_key_;
     Key ponded_depth_key_;
+    Key total_depth_key_;
     Key myPID_;
                             
     std::string passwd_;

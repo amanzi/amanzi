@@ -110,12 +110,14 @@ TEST(SHALLOW_WATER_1D) {
         double t_out = t_new;
 
         const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+        const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
         const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
         const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
         const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
         io.InitializeCycle(t_out, 1);
         io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+        io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
         io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
         io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
         io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
@@ -161,12 +163,14 @@ TEST(SHALLOW_WATER_1D) {
     double t_out = t_new;
 
     const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
     io.InitializeCycle(t_out, 1);
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+    io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
     io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
     io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
