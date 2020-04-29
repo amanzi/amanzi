@@ -186,7 +186,6 @@ class Transport_PK : public PK_Physical {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
     
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
