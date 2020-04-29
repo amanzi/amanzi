@@ -31,6 +31,7 @@ integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
 
 #include "BDF1_TI.hh"
 #include "Key.hh"
+#include "State.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -50,6 +51,8 @@ class PK_MixinImplicit : public Base_t {
   void CommitStep(const Key& tag_old, const Key& tag_new);
 
   double get_dt() { return dt_; }
+  bool is_implicit() const { return true; }
+  bool is_explicit() const { return false; }
 
  protected:
   // timestep size
@@ -130,8 +133,8 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
   // create the time integrator if first call
   if (!time_stepper_.get()) {
     // -- instantiate time stepper
-    Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
-    bdf_plist.set("initial time", S_->time(tag_old));
+    auto bdf_plist = Teuchos::sublist(plist_, "time integrator");
+    bdf_plist->set("initial time", S_->time(tag_old));
 
     auto this_as_bdf_p = dynamic_cast<BDFFnBase<TreeVector>*>(this);
     AMANZI_ASSERT(this_as_bdf_p);

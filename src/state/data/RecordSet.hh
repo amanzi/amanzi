@@ -68,6 +68,13 @@ class RecordSet {
   {
     subfieldnames_ = std::move(subfieldnames);
   }
+  void set_io_checkpoint(bool io_checkpoint = true) {
+    for (auto& e : records_) e.second->set_io_checkpoint(io_checkpoint);
+  }
+  void set_io_vis(bool io_vis = true) {
+    for (auto& e : records_) e.second->set_io_vis(io_vis);
+  }
+
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis) const;

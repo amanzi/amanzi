@@ -26,6 +26,7 @@ namespace Amanzi {
 template <typename Scalar>
 class CompositeVector_;
 using CompositeVector = CompositeVector_<double>;
+class State;
 
 class Debugger {
  public:
@@ -46,6 +47,8 @@ class Debugger {
                    bool include_faces = false) {
     WriteVector(name, *vec, include_faces);
   }
+
+  void WriteState(const State& S, const std::string& tag);
 
   // Write boundary condition data.
   // void WriteBoundaryConditions(const std::vector<int> &flag,
@@ -80,6 +83,8 @@ class Debugger {
   std::vector<AmanziMesh::Entity_ID> dc_;
   std::vector<AmanziMesh::Entity_ID> dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
+
+  std::vector<std::pair<std::string,std::string>> vars_;
 
   int width_;
   int header_width_;

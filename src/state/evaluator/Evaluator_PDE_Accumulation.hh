@@ -8,17 +8,13 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! Wraps a PDE_Accumulation to be an Evaluator.
+//! Implements accumulation terms.
 
 /*!
 
-Lots of options here, document me!
-
 */
 
-#ifndef STATE_EVALUATOR_PDE_ACCUMULATION_HH_
-#define STATE_EVALUATOR_PDE_ACCUMULATION_HH_
-
+#pragma once
 #include "Teuchos_ParameterList.hpp"
 
 #include "Evaluator_Factory.hh"
@@ -40,6 +36,8 @@ class Evaluator_PDE_Accumulation
 
   virtual void EnsureCompatibility(State& S) override;
 
+  virtual std::string name() const override { return "accumulation operator"; }
+  
  protected:
   virtual void EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Key& wrt_tag,
@@ -58,5 +56,3 @@ class Evaluator_PDE_Accumulation
 };
 
 } // namespace Amanzi
-
-#endif

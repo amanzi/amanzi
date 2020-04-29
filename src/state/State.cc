@@ -202,7 +202,7 @@ State::RequireEvaluator(const Key& key, const Key& tag)
 
   // cannot find the evaluator, error
   Errors::Message message;
-  message << "Model for field " << key << " cannot be created in State.";
+  message << "Model for field \"" << key << "\" cannot be created in State.";
   throw(message);
 }
 
@@ -291,16 +291,32 @@ State::GetModelParameters(std::string modelname)
 void
 State::Setup()
 {
+  // require constants
   Require<double>("time", "", "time");
   Require<double>("time", "next", "time");
   Require<int>("cycle", "", "cycle");
   Require<int>("cycle", "next", "cycle");
   Require<double>("dt", "", "dt");
 
+  Teuchos::ParameterList& consts_list = state_plist_->sublist("constants");
+  for (auto& p : consts_list) {
+    if (consts_list.isType<double>(p.first)) {
+      Require<double>(p.first, "", "state");
+    } else if (consts_list.isType<int>(p.first)) {
+      Require<int>(p.first, "", "state");
+    } else if (consts_list.isType<Teuchos::Array<double>>(p.first)) {
+      Require<AmanziGeometry::Point>(p.first, "", "state");
+    }
+  }
+
+  
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
   for (auto& e : evaluators_) {
     for (auto& r : e.second) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_->os() << "EnsureCompatibility: " << e.first << "," << r.first << std::endl;
+      }
       if (!r.second->ProvidesKey(e.first, r.first)) {
         AMANZI_ASSERT(r.second->ProvidesKey(e.first, r.first));
         Errors::Message message;
@@ -324,20 +340,50 @@ State::Setup()
 
   // Alias evaluators: multiple fields may share an evaluator
   AliasEvaluators();
-  
+
   // -- Create the data for all fields.
   for (auto& f : data_) { f.second->CreateData(); }
   for (auto& deriv : derivs_) { deriv.second->CreateData(); }
 
+  Print();
+
+  // NOTE: this is done now so that they can be overriden prior to initializing
+  // other things which may be time dependent.
+  //
+  // initialize time constants
   Set("time", "", "time", 0.0);
   Set("time", "next", "time", 0.0);
   Set("cycle", "", "cycle", 0);
   Set("cycle", "next", "cycle", 0);
   Set("dt", "", "dt", 0.0);
-
-  Print();
 };
 
+
+//
+// This should _ONLY_ be used for "magic constants" and other shared data.
+// Think, gravity, molecular mass, atmospheric pressure, etc.  Don't put
+// vectors, PK initial conditions, etc, in here.
+//
+void
+State::Initialize()
+{
+  // initialize constants
+  Teuchos::ParameterList& consts_list = state_plist_->sublist("constants");
+  for (auto& p : consts_list) {
+    if (consts_list.isType<double>(p.first)) {
+      Set(p.first, "", "state", consts_list.get<double>(p.first));
+    } else if (consts_list.isType<int>(p.first)) {
+      Set(p.first, "", "state", consts_list.get<int>(p.first));
+    } else if (consts_list.isType<Teuchos::Array<double>>(p.first)) {
+      auto val = consts_list.get<Teuchos::Array<double>>(p.first);
+      AmanziGeometry::Point point(val.size());
+      for (int i=0; i!=val.size(); ++i) {
+        point[i] = val[i];
+      }    
+      Set(p.first, "", "state", point);
+    }
+  }
+}
 
 // Some fields share evaluators, these must be aliased by pointer.
 void
@@ -392,7 +438,7 @@ State::Print() const
     for (const auto& f : data_) {
       *vo_->os() << f.first << ":" << std::endl;
       for (const auto& el : *f.second) {
-        *vo_->os() << "  " << el.first << std::endl;
+        *vo_->os() << "  " << (el.first.empty() ? "< >" : el.first) << std::endl;
       }
     }
   }
@@ -453,9 +499,9 @@ WriteCheckpoint(Checkpoint& chkp, const State& S, bool final)
 void
 ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename)
 {
-  Teuchos::ParameterList plist;
-  plist.set("file name", filename);
-  plist.set("file type", "HDF5");
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->set("file name", filename);
+  plist->set("file type", "HDF5");
   Checkpoint chkp(plist, comm, true);
 
   // Load the number of processes and ensure they are the same.

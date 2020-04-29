@@ -52,7 +52,9 @@ class BDF1_TI {
  public:
   // Create the BDF Dae solver object, the nonlinear problem must be
   // defined in a class that derives from the virtual base class FnBase.
-  BDF1_TI(BDFFnBase<Vector>& fn, Teuchos::ParameterList& plist,
+        
+  BDF1_TI(BDFFnBase<Vector>& fn,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<const Vector>& initvector);
 
   // initializes the state
@@ -95,7 +97,7 @@ class BDF1_TI {
   Teuchos::RCP<BDF1_SolverFnBase<Vector>> solver_fn_;
   Teuchos::RCP<BDFFnBase<Vector>> fn_;
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<AmanziSolvers::ResidualDebugger> db_;
 
@@ -111,28 +113,29 @@ class BDF1_TI {
  ****************************************************************** */
 template <class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(
-  BDFFnBase<Vector>& fn, Teuchos::ParameterList& plist,
-  const Teuchos::RCP<const Vector>& initvector)
+    BDFFnBase<Vector>& fn,
+    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    const Teuchos::RCP<const Vector>& initvector)
   : plist_(plist)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
   vo_ = Teuchos::rcp(
-    new VerboseObject(initvector->getMap()->getComm(), "TI::BDF1", plist_));
+      new VerboseObject("TI::BDF1", *plist_, initvector->getMap()->getComm()));
   db_ = Teuchos::rcp(
-    new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
+      new AmanziSolvers::ResidualDebugger(Teuchos::sublist(plist_, "residual debugger")));
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
-  state_->InitializeFromPlist(plist_, initvector);
+  state_->InitializeFromPlist(*plist_, initvector);
 
   // Set up the nonlinear solver
   // -- initialized the SolverFnBase interface
   solver_fn_ = Teuchos::rcp(new BDF1_SolverFnBase<Vector>(plist_, fn_));
 
   AmanziSolvers::SolverFactory<Vector, VectorSpace> factory;
-  solver_ = factory.Create(plist_);
+  solver_ = factory.Create(*plist_);
   solver_->set_db(db_);
   solver_->Init(solver_fn_, initvector->getMap());
 
@@ -142,7 +145,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control_ = fac.Create(plist, udot_, udot_prev_);
+  ts_control_ = fac.Create(*plist, udot_, udot_prev_);
 
   // misc internal parameters
   tol_solver_ = solver_->tolerance();

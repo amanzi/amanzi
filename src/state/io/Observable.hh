@@ -45,7 +45,8 @@ ObservableMax(double a, double b);
 
 class Observable : public IOEvent {
  public:
-  Observable(Teuchos::ParameterList& plist, Epetra_MpiComm* comm);
+  Observable(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Comm_ptr_type& comm);
 
   std::string name() { return name_; }
   std::string variable() { return variable_; }

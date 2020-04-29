@@ -45,7 +45,8 @@ class ModelCompressiblePorosity {
   }
 
   void SetViews(const std::vector<cView_type>& dependency_views,
-                const std::vector<View_type>& result_views)
+                const std::vector<View_type>& result_views,
+                const State& s)
   {
     AMANZI_ASSERT(dependency_views.size() == 2);
     AMANZI_ASSERT(result_views.size() == 1);
@@ -155,7 +156,8 @@ class ModelWaterRetentionVanGenuchten {
   }
 
   void SetViews(const std::vector<cView_type>& dependency_views,
-                const std::vector<View_type>& result_views)
+                const std::vector<View_type>& result_views,
+                const State& s)
   {
     AMANZI_ASSERT(dependency_views.size() == 1);
     AMANZI_ASSERT(result_views.size() == 1);

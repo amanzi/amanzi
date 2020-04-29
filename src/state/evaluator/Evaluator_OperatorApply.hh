@@ -81,6 +81,8 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key,
   //  const Key& wrt_tag) override {}
 
+  virtual std::string name() const override { return "operator application"; }
+  
  protected:
   // These do the actual work
   virtual void Update_(State& S) override;

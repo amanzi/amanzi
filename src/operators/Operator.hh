@@ -257,6 +257,8 @@ class Operator {
   op_iterator end() { return ops_.end(); }
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
+  Teuchos::RCP<Op> getOp(int index) { return ops_[index]; }
+
   // block mutate
   void OpPushBack(const Teuchos::RCP<Op>& block, int properties = 0);
   void OpExtend(op_iterator begin, op_iterator end);

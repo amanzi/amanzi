@@ -62,6 +62,10 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
 
   virtual void
   Evaluate_(const State& S, const std::vector<Data_t*>& results) = 0;
+
+ protected:
+  bool inited_;
+  
 };
 
 // template<typename Data_t, typename DataFactory_t>

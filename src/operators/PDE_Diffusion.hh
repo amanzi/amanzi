@@ -253,6 +253,10 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   cMultiVectorView_type_<DefaultDevice,double>
   DensityCells(bool scatter) const {
+    if (!is_scalar_ && !rho_cv_.get()) {
+      Errors::Message msg("Diffusion: density was not set.");
+      Exceptions::amanzi_throw(msg);
+    }
     if (!is_scalar_) {
       if (scatter) rho_cv_->ScatterMasterToGhosted("cell");
       AMANZI_ASSERT(rho_cv_->HasComponent("cell"));

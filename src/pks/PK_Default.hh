@@ -86,6 +86,9 @@ class PK_Default {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
+  void UpdateContinuationParameter(double lambda) {}
+
+  
   // Return PK's name
   std::string name() { return name_; }
 

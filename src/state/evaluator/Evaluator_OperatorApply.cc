@@ -81,7 +81,7 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
     // strip the domain from x_key
     Key x_key_suffix = Keys::getVarName(x_key);
     op_keys_.emplace_back(Keys::readKeys(
-      plist_, domain, x_key_suffix + " local operators", &empty));
+      plist_, domain, x_key_suffix + " local operators"));
 
     Teuchos::Array<Key> defaults(op_keys_[j].size());
     int i = 0;
@@ -398,15 +398,10 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
           // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
           CompositeVector drhs = S.GetDerivativeW<CompositeVector>(
             rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);
-          // std::cout << "Adding source op to operator";
-          // drhs.Print(std::cout);
           for (const auto& comp : drhs) {
             if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
               auto op_cell =
                 Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
-              // clobber the diag
-              op_cell->diag->assign(*drhs.GetComponent(comp, false));
-              op_cell->diag->scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {
               AMANZI_ASSERT(0);
@@ -423,6 +418,47 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     // symbolic assemble the first time
     //    global_op->SymbolicAssembleMatrix();
     global_op->InitializePreconditioner(plist_.sublist("preconditioner"));
+  }
+
+  // push values
+  if (wrt_key == x0_key_) {
+    // count following the above OpPushBack calls to find my Op
+    int i = 0;
+    for (const auto& op_key : op0_keys_) {
+      i++;
+      if (S.GetEvaluator(op_key, my_keys_[0].second)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        i++;
+      }
+    }
+    int j = 0;
+    for (const auto& rhs_key : rhs_keys_) {
+      if (S.GetEvaluator(rhs_key, my_keys_[0].second)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
+        CompositeVector drhs = S.GetDerivativeW<CompositeVector>(
+            rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);
+        // std::cout << "Adding source " << rhs_key << " op to operator";
+        // drhs.Print(std::cout);
+
+        for (const auto& comp : drhs) {
+          if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
+            auto op_cell = global_op->getOp(i);
+            op_cell->diag->assign(*drhs.GetComponent(comp, false));
+            op_cell->diag->scale(rhs_scalars_[j]);
+            i++;
+            
+          } else {
+            AMANZI_ASSERT(0);
+          }
+        }
+      }
+      j++;
+    }
+    
+  } else {
+    // off diagonal
+    throw("OperatorApply not implemented yet for offdiagonals!");
   }
 
   // assemble

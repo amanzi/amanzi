@@ -23,13 +23,14 @@
 #include "IOEvent.hh"
 #include "Output.hh"
 #include "Input.hh"
-#include "Data_Initializers.hh"
+#include "Data_IO.hh"
 
 namespace Amanzi {
 
 class Checkpoint : public IOEvent {
  public:
-  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+  Checkpoint(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Comm_ptr_type& comm,
              bool read = false);
 
   // start/finish checkpoint writing

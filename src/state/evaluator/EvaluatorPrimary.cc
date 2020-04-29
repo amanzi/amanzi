@@ -169,7 +169,8 @@ std::string
 EvaluatorPrimary_::WriteToString() const
 {
   std::stringstream result;
-  result << my_key_ << std::endl << "  Type: primary" << std::endl << std::endl;
+  result << my_key_ << ":" << (my_tag_.empty() ? "< >" : my_tag_)
+         << std::endl << "  Type: " << name() << std::endl << std::endl;
   return result.str();
 }
 

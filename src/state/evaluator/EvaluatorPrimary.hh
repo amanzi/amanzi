@@ -74,6 +74,7 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   void SetChanged();
 
+  virtual std::string name() const override { return "primary variable"; }
   virtual std::string WriteToString() const override;
 
  protected:
@@ -99,7 +100,7 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
  public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override final
+  virtual Teuchos::RCP<Evaluator> Clone() const override
   {
     return Teuchos::rcp(new EvaluatorPrimary<Data_t, DataFactory_t>(*this));
   }

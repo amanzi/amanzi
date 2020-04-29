@@ -81,9 +81,9 @@ TEST(STATE_EXTENSIBILITY_CREATION)
   s.GetRecordW("my_points", "my_points").set_io_vis();
   s.Setup();
 
-  Visualization vis(plist->sublist("visualization"), m);
+  Visualization vis(Teuchos::sublist(plist, "visualization"), m);
   WriteVis(vis, s);
 
-  Checkpoint chkp(plist->sublist("checkpoint"), comm);
+  Checkpoint chkp(Teuchos::sublist(plist, "checkpoint"), comm);
   WriteCheckpoint(chkp, s);
 }

@@ -39,6 +39,12 @@ typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 
+inline bool
+startsWith(const std::string& input, const std::string& start)
+{
+  return input.substr(0, start.size()) == start;
+}
+
 // parameter list names take their parent history?
 inline Key
 cleanPListName(std::string name)

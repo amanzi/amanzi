@@ -16,13 +16,15 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "State.hh"
 #include "Debugger.hh"
 
 namespace Amanzi {
 
 // Constructor
 Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                   std::string name, Teuchos::ParameterList& plist,
+                   std::string name,
+                   Teuchos::ParameterList& plist,
                    Teuchos::EVerbosityLevel verb_level)
   : mesh_(mesh),
     verb_level_(verb_level),
@@ -33,10 +35,11 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     decimal_width_(7)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
+  Teuchos::ParameterList& vo_plist = plist.sublist("verbose object");
 
   // cells to debug
-  if (plist.isParameter("debug cells")) {
-    Teuchos::Array<int> dcs = plist.get<Teuchos::Array<int>>("debug cells");
+  if (vo_plist.isParameter("debug cells")) {
+    Teuchos::Array<int> dcs = vo_plist.get<Teuchos::Array<int>>("debug cells");
     for (Teuchos::Array<int>::const_iterator c = dcs.begin(); c != dcs.end();
          ++c) {
       AmanziMesh::Entity_ID lc = mesh->cell_map(false)->getLocalElement(*c);
@@ -46,20 +49,20 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         dc_gid_.push_back(*c);
 
         // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("verbose object");
-        vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-        vo_plist.sublist("verbose object")
+        Teuchos::ParameterList local_vo_plist;
+        local_vo_plist.sublist("verbose object");
+        local_vo_plist.sublist("verbose object") = plist.sublist("verbose object");
+        local_vo_plist.sublist("verbose object")
           .set("write on rank", mesh->get_comm()->getRank());
         dcvo_.push_back(
-          Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
+            Teuchos::rcp(new VerboseObject(name, local_vo_plist, mesh_->get_comm())));
       }
     }
   }
 
   // faces to debug
-  if (plist.isParameter("debug faces")) {
-    Teuchos::Array<int> dfs = plist.get<Teuchos::Array<int>>("debug faces");
+  if (vo_plist.isParameter("debug faces")) {
+    Teuchos::Array<int> dfs = vo_plist.get<Teuchos::Array<int>>("debug faces");
     for (Teuchos::Array<int>::const_iterator f = dfs.begin(); f != dfs.end();
          ++f) {
       AmanziMesh::Entity_ID lf = mesh->face_map(true)->getLocalElement(*f);
@@ -75,24 +78,42 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
           dc_gid_.push_back(mesh->cell_map(false)->getGlobalElement(lc));
 
           // make a verbose object for each case
-          Teuchos::ParameterList vo_plist;
-          vo_plist.sublist("verbose object");
-          vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-          vo_plist.sublist("verbose object")
+          Teuchos::ParameterList local_vo_plist;
+          local_vo_plist.sublist("verbose object");
+          local_vo_plist.sublist("verbose object") = plist.sublist("verbose object");
+          local_vo_plist.sublist("verbose object")
             .set("write on rank", mesh->get_comm()->getRank());
           dcvo_.push_back(Teuchos::rcp(
-            new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
+              new VerboseObject(name, local_vo_plist, mesh_->get_comm())));
         }
       }
     }
   }
 
+  if (vo_plist.isParameter("debug variables")) {
+    auto varnames = vo_plist.get<Teuchos::Array<std::string>>("debug variables");
+    if (vo_plist.isParameter("debug variables short")) {
+      auto varnames_short = vo_plist.get<Teuchos::Array<std::string>>("debug variables short");
+      if (varnames.size() != varnames_short.size()) {
+        Errors::Message message("Debugger: provided \"debug variables\" of different length as \"debug variables short\"");
+        throw(message);
+      }
+      for (int i=0; i!=varnames.size(); ++i) {
+        vars_.emplace_back(std::make_pair(varnames[i], varnames_short[i]));
+      }
+    } else {
+      for (const auto& v : varnames) {
+        vars_.emplace_back(std::make_pair(v, v));
+      }
+    }
+  }
+
   // formatting
-  cellnum_width_ = plist.get<int>("cell number width", cellnum_width_);
-  decimal_width_ = plist.get<int>("decimal width", decimal_width_);
-  header_width_ = plist.get<int>("header width", header_width_);
-  width_ = plist.get<int>("column width", width_);
-  precision_ = plist.get<int>("precision", precision_);
+  cellnum_width_ = vo_plist.get<int>("cell number width", cellnum_width_);
+  decimal_width_ = vo_plist.get<int>("decimal width", decimal_width_);
+  header_width_ = vo_plist.get<int>("header width", header_width_);
+  width_ = vo_plist.get<int>("column width", width_);
+  precision_ = vo_plist.get<int>("precision", precision_);
 }
 
 std::string
@@ -324,6 +345,16 @@ Debugger::WriteDivider()
     *vo_->os() << "------------------------------------------------------------"
                   "------------"
                << std::endl;
+}
+
+void
+Debugger::WriteState(const State& S, const std::string& tag) {
+  for (const auto& var : vars_) {
+    if (S.HasData(var.first, tag)) {
+      WriteVector(var.second, S.Get<CompositeVector>(var.first, tag), true);
+    }
+  }
+  if (vars_.size() > 0) WriteDivider();
 }
 
 // Reverse order... get the VerboseObject for Entity_

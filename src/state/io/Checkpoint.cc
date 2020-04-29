@@ -28,18 +28,19 @@
 namespace Amanzi {
 
 // standard constructor
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+Checkpoint::Checkpoint(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       const Comm_ptr_type& comm,
                        bool read)
   : IOEvent(plist),
     filename_base_(
-      plist.template get<std::string>("file name base", "checkpoint")),
+      plist->template get<std::string>("file name base", "checkpoint")),
     comm_(comm)
 
 {
   if (read)
-    input_ = std::move(InputFactory::CreateForCheckpoint(plist, comm));
+    input_ = std::move(InputFactory::CreateForCheckpoint(*plist, comm));
   else
-    output_ = std::move(OutputFactory::CreateForCheckpoint(plist, comm));
+    output_ = std::move(OutputFactory::CreateForCheckpoint(*plist, comm));
 }
 
 void
@@ -61,7 +62,7 @@ Checkpoint::FinalizeFile(bool final)
     std::string filename = output_->Filename();
     std::string filename_extension = boost::filesystem::extension(filename);
     std::string filename_final =
-      filename_base_ + "_finale" + filename_extension;
+      filename_base_ + "_final" + filename_extension;
     boost::filesystem::remove(filename_extension);
     boost::filesystem::create_hard_link(filename.data(), filename_final.data());
   }

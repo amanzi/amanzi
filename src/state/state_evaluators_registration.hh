@@ -261,22 +261,25 @@ Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
     "secondary variable from function");
 
 } // namespace Amanzi
-/*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
+#include "evaluator/EvaluatorCellToFace.hh"
 
-  Authors:
+Amanzi::Utils::RegisteredFactory<Amanzi::Evaluator, Amanzi::EvaluatorCellToFace>
+Amanzi::EvaluatorCellToFace::reg_("cell-to-face");
+#include "evaluator/EvaluatorSecondaryMeshedQuantity.hh"
 
-*/
-
-//!
-
-#include "evaluator/EvaluatorCellVolume.hh"
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume>
-  EvaluatorCellVolume::fac_("cell volume");
+template<>
+Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> EvaluatorCellVolume::fac_("cell volume");
+template<>
+Utils::RegisteredFactory<Evaluator, EvaluatorFaceArea> EvaluatorFaceArea::fac_("face area");
+template<>
+Utils::RegisteredFactory<Evaluator, EvaluatorMeshElevation> EvaluatorMeshElevation::fac_("meshed elevation");
+template<>
+Utils::RegisteredFactory<Evaluator, EvaluatorMeshSlopeMagnitude> EvaluatorMeshSlopeMagnitude::fac_("meshed slope magnitude");
+}
+#include "evaluator/EvaluatorPrimaryStaticMesh.hh"
 
-} // namespace Amanzi
+namespace Amanzi {
+Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryStaticMesh> EvaluatorPrimaryStaticMesh::fac_("static mesh");
+} 

@@ -21,7 +21,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Standard constructor.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(Teuchos::ParameterList& plist)
+IOEvent::IOEvent(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : plist_(plist), disabled_(false), units_()
 {
   ReadParameters_();
@@ -53,15 +53,15 @@ IOEvent::disable(bool disabled)
 // Place vis times in the manager.
 // -----------------------------------------------------------------------------
 void
-IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) const
+IOEvent::RegisterWithTimeStepManager(TimeStepManager& tsm) const
 {
-  if (times_.size() != 0) { tsm->RegisterTimeEvent(times_.toVector(), false); }
+  if (times_.size() != 0) { tsm.RegisterTimeEvent(times_.toVector(), false); }
   if (times_sps_.size() != 0) {
     for (Teuchos::Array<Teuchos::Array<double>>::const_iterator sps =
            times_sps_.begin();
          sps != times_sps_.end();
          ++sps) {
-      tsm->RegisterTimeEvent((*sps)[0], (*sps)[1], (*sps)[2], false);
+      tsm.RegisterTimeEvent((*sps)[0], (*sps)[1], (*sps)[2], false);
     }
   }
 }
@@ -148,9 +148,9 @@ IOEvent::DumpRequested(double time) const
 void
 IOEvent::ReadParameters_()
 {
-  if (plist_.isParameter("cycles start period stop")) {
+  if (plist_->isParameter("cycles start period stop")) {
     cycles_sps_.push_back(
-      plist_.get<Teuchos::Array<int>>("cycles start period stop"));
+      plist_->get<Teuchos::Array<int>>("cycles start period stop"));
   }
 
   bool done(false);
@@ -158,25 +158,25 @@ IOEvent::ReadParameters_()
   while (!done) {
     std::stringstream pname;
     pname << "cycles start period stop " << count;
-    if (plist_.isParameter(pname.str())) {
-      cycles_sps_.push_back(plist_.get<Teuchos::Array<int>>(pname.str()));
+    if (plist_->isParameter(pname.str())) {
+      cycles_sps_.push_back(plist_->get<Teuchos::Array<int>>(pname.str()));
       count++;
     } else {
       done = true;
     }
   }
 
-  if (plist_.isParameter("cycles")) {
-    cycles_ = plist_.get<Teuchos::Array<int>>("cycles");
+  if (plist_->isParameter("cycles")) {
+    cycles_ = plist_->get<Teuchos::Array<int>>("cycles");
   }
 
-  if (plist_.isParameter("times start period stop")) {
+  if (plist_->isParameter("times start period stop")) {
     auto times_sps =
-      plist_.get<Teuchos::Array<double>>("times start period stop");
+      plist_->get<Teuchos::Array<double>>("times start period stop");
 
     // convert units
     auto my_units =
-      plist_.get<std::string>("times start period stop units", "s");
+      plist_->get<std::string>("times start period stop units", "s");
     ValidUnitOrThrow_(my_units);
     bool success;
     for (auto& time : times_sps)
@@ -192,12 +192,12 @@ IOEvent::ReadParameters_()
   while (!done) {
     std::stringstream pname;
     pname << "times start period stop " << count;
-    if (plist_.isParameter(pname.str())) {
-      auto times_sps = plist_.get<Teuchos::Array<double>>(pname.str());
+    if (plist_->isParameter(pname.str())) {
+      auto times_sps = plist_->get<Teuchos::Array<double>>(pname.str());
 
       // convert units
       pname << " units";
-      auto my_units = plist_.get<std::string>(pname.str(), "s");
+      auto my_units = plist_->get<std::string>(pname.str(), "s");
       ValidUnitOrThrow_(my_units);
       bool success;
       for (auto& time : times_sps)
@@ -212,11 +212,11 @@ IOEvent::ReadParameters_()
     }
   }
 
-  if (plist_.isParameter("times")) {
-    times_ = plist_.get<Teuchos::Array<double>>("times");
+  if (plist_->isParameter("times")) {
+    times_ = plist_->get<Teuchos::Array<double>>("times");
 
     // convert units
-    auto my_units = plist_.get<std::string>("times units", "s");
+    auto my_units = plist_->get<std::string>("times units", "s");
     ValidUnitOrThrow_(my_units);
     bool success;
     for (auto& time : times_)

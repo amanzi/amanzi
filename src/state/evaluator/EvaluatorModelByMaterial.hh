@@ -113,7 +113,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatorModelByMaterial(
   }
 
   if (models_.size() == 0) {
-    Errors::Message msg("EvaluatorModelByMaterial: \"regions\" sublist was "
+    Errors::Message msg("EvaluatorModelByMaterial: \"model parameters\" sublist was "
                         "empty, must have at least one model.");
     throw(msg);
   }
@@ -186,7 +186,7 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
       }
 
       // set up the model and range and then dispatch
-      region_model.second->SetViews(dependency_views, result_views);
+      region_model.second->SetViews(dependency_views, result_views, S);
 
       Kokkos::RangePolicy<typename Device_type::execution_space> range(
         0, material_ids_v.size());
@@ -252,7 +252,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
       }
 
       // set up the model and range and then dispatch
-      region_model.second->SetViews(dependency_views, result_views);
+      region_model.second->SetViews(dependency_views, result_views, S);
 
       Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1,
                                    Model_type,

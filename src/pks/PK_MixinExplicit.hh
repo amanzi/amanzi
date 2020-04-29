@@ -33,6 +33,7 @@ integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
 #include "Explicit_TI_RK.hh"
 #include "Key.hh"
 #include "TreeVector.hh"
+#include "State.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -52,17 +53,19 @@ class PK_MixinExplicit : public Base_t {
 
   double get_dt() { return dt_; }
 
+  bool is_implicit() const { return false; }
+  bool is_explicit() const { return true; }
+  
  protected:
   // timestep size
   double dt_;
-
-  Key tag_old_, tag_new_;
 
   // timestep algorithm
   Teuchos::RCP<Explicit_TI::RK<TreeVector>> time_stepper_;
 
   // tag at which evaluators are needed
   Key tag_inter_;
+  Key tag_old_, tag_new_;
 
   using Base_t::S_;
   using Base_t::plist_;

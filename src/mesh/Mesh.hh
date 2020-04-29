@@ -141,7 +141,7 @@ class Mesh {
     plist_ = plist;
     if (vo_ == Teuchos::null)
       vo_ = Teuchos::rcp(
-        new VerboseObject(comm_, Keys::cleanPListName(plist->name()), *plist));
+          new VerboseObject(Keys::cleanPListName(plist->name()), *plist, comm_));
   }
   Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const
   {

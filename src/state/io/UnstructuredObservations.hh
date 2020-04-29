@@ -27,19 +27,16 @@ namespace Amanzi {
 class UnstructuredObservations {
  public:
   UnstructuredObservations(
-    Teuchos::ParameterList& observations_plist,
-    const Teuchos::RCP<ObservationData>& observation_data,
-    Epetra_MpiComm* comm);
+      const Teuchos::RCP<Teuchos::ParameterList>& observations_plist,
+      const Comm_ptr_type& comm);
 
   bool DumpRequested(int cycle, double time) const;
   void MakeObservations(const State& state);
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void RegisterWithTimeStepManager(TimeStepManager& tsm);
   void Flush();
 
  private:
   typedef std::map<std::string, Teuchos::RCP<Observable>> ObservableMap;
-
-  Teuchos::RCP<Amanzi::ObservationData> observation_data_;
   ObservableMap observations_;
 };
 

@@ -46,6 +46,8 @@ class EvaluatorIndependentFromFile
 
   virtual void EnsureCompatibility(State& S) override;
 
+  virtual std::string name() const override { return "independent variable from file"; }
+  
  protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.

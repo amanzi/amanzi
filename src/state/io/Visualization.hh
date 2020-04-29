@@ -28,7 +28,7 @@
 
 #include "IOEvent.hh"
 #include "Output.hh"
-#include "Data_Initializers.hh"
+#include "Data_IO.hh"
 
 namespace Amanzi {
 
@@ -38,8 +38,8 @@ class Mesh;
 
 class Visualization : public IOEvent {
  public:
-  Visualization(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
+  Visualization(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   void CreateFile(const double& time, const int& cycle);
   void FinalizeFile();

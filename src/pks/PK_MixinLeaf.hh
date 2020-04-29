@@ -53,6 +53,7 @@ class PK_MixinLeaf : public Base_t {
 
   // require data
   void Setup();
+  void Initialize();
 
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
@@ -105,7 +106,11 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::PK_MixinLeaf(
   S->FEList().sublist(key_).set("evaluator type", "primary variable");
 
   // create a debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(), *plist_));
+  auto db_plist = Teuchos::sublist(plist_, "debugger");
+  if (!db_plist->isSublist("verbose object")) {
+    db_plist->set("verbose object", plist_->sublist("verbose object"));
+  }
+  db_ = Teuchos::rcp(new Debugger(mesh_, this->name(), *db_plist));
 };
 
 template <class Base_t, class Data_t, class DataFactory_t>
@@ -116,6 +121,14 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Setup()
   // elsewhere
   S_->template Require<Data_t, DataFactory_t>(key_, "", key_);
 }
+
+template <class Base_t, class Data_t, class DataFactory_t>
+void
+PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Initialize()
+{
+  S_->GetRecordSet(key_).Initialize(plist_->sublist("initial conditions"));
+}
+
 
 // Mark, as changed, any primary variable evaluator owned by this PK
 template <class Base_t, class Data_t, class DataFactory_t>

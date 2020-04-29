@@ -49,6 +49,9 @@ class PK_MixinPredictorCorrector
   bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
                        Teuchos::RCP<TreeVector> u);
 
+  bool is_implicit() const { return true; }
+  bool is_explicit() const { return true; }
+
  protected:
   using Base_t::plist_;
 };

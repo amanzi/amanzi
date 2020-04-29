@@ -31,34 +31,41 @@ RecordSet::attributes() const
 void
 RecordSet::WriteVis(const Visualization& vis) const
 {
-  auto attrs = attributes();
-  for (auto& e : records_) { e.second->WriteVis(vis, attrs); }
+  if (HasRecord("")) {
+    auto attrs = attributes();
+    records_.at("")->WriteVis(vis, attrs);
+  }
 }
 void
 RecordSet::WriteCheckpoint(const Checkpoint& chkp) const
 {
-  auto attrs = attributes();
-  for (auto& e : records_) { e.second->WriteCheckpoint(chkp, attrs); }
+  if (HasRecord("")) {
+    auto attrs = attributes();
+    records_.at("")->WriteCheckpoint(chkp, attrs);
+  }
 }
 void
 RecordSet::ReadCheckpoint(const Checkpoint& chkp)
 {
-  auto attrs = attributes();
-  for (auto& e : records_) { e.second->ReadCheckpoint(chkp, attrs); }
+  if (HasRecord("")) {
+    auto attrs = attributes();
+    records_.at("")->ReadCheckpoint(chkp, attrs);
+  }
 }
 bool
 RecordSet::Initialize(Teuchos::ParameterList& plist)
 {
-  bool init = false;
-
   if (plist.isParameter("units")) set_units(plist.get<std::string>("units"));
   if (plist.isParameter("location"))
     set_location(AmanziMesh::entity_kind(plist.get<std::string>("location")));
   if (plist.isParameter("subfieldnames"))
     set_subfieldnames(plist.get<Teuchos::Array<std::string>>("subfieldnames"));
 
-  auto attrs = attributes();
-  for (auto& e : records_) { init |= e.second->Initialize(plist, attrs); }
+  bool init = false;
+  if (HasRecord("")) {
+    auto attrs = attributes();
+    init = records_.at("")->Initialize(plist, attrs);
+  }
   return init;
 }
 

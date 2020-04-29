@@ -93,18 +93,20 @@ namespace Amanzi {
 class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // Constructors
-  VerboseObject(const std::string& name, const std::string& verbosity);
-  VerboseObject(const std::string& name, Teuchos::ParameterList plist);
-  VerboseObject(const Comm_ptr_type& comm, const std::string& name,
-                Teuchos::ParameterList plist);
+  VerboseObject(const std::string& name,
+                const std::string& verbosity,
+                const Comm_ptr_type& comm=Teuchos::null);
 
-  // this constructor is fragile and should be frowned upon, but is useful for
-  // maintaining backward compatibility with the Epetra stack
-  VerboseObject(const Comm_type& comm, const std::string& name,
-                Teuchos::ParameterList plist)
-    : VerboseObject(Teuchos::rcpFromRef(comm), name, plist)
-  {}
+  VerboseObject(const std::string& name,
+                Teuchos::ParameterList& plist,
+                const Comm_ptr_type& comm=Teuchos::null);
 
+  VerboseObject(const std::string& name,
+                const Teuchos::ParameterList& plist,
+                const Comm_ptr_type& comm=Teuchos::null);
+
+  void Init_(const std::string& name,
+             Teuchos::ParameterList& plist);
 
   // NOTE: Default destructor, copy construct should be ok.
 

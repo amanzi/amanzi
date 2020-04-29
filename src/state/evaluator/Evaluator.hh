@@ -28,6 +28,8 @@ class Evaluator {
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;
 
+  virtual std::string name() const = 0;
+  
   // ---------------------------------------------------------------------------
   // Set/get the time tag of this evaluator's metadata.
   // ---------------------------------------------------------------------------

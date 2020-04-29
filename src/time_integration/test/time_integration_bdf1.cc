@@ -41,12 +41,14 @@ SUITE(ODEIntegrationTests)
   struct test_data {
     Comm_ptr_type comm;
     Vector_ptr_type init, u, u_dot, u_ex;
-    Teuchos::ParameterList plist;
+    Teuchos::RCP<Teuchos::ParameterList> plist;
 
     test_data()
     {
       // comm and mesh for maps
       comm = getDefaultComm();
+      plist = Teuchos::rcp(new Teuchos::ParameterList());
+      
       auto map = Teuchos::rcp(new Map_type(2, 0, comm));
 
       init = Teuchos::rcp(new Vector_type(map));
@@ -65,28 +67,28 @@ SUITE(ODEIntegrationTests)
     // set the parameter list for BDF1
     // set the parameter list for BDF1
     // set up solver params
-    plist.set("solver type", "nka");
-    plist.sublist("nka parameters").set("limit iterations", 20);
-    plist.sublist("nka parameters").set("nonlinear tolerance", 1e-10);
-    plist.sublist("nka parameters").set("diverged tolerance", 1.0e4);
-    plist.sublist("nka parameters")
+    plist->set("solver type", "nka");
+    plist->sublist("nka parameters").set("limit iterations", 20);
+    plist->sublist("nka parameters").set("nonlinear tolerance", 1e-10);
+    plist->sublist("nka parameters").set("diverged tolerance", 1.0e4);
+    plist->sublist("nka parameters")
       .set("convergence monitor", "monitor update");
 
     // set up time integrator params
-    plist.set("timestep controller type", "standard");
-    plist.sublist("timestep controller standard parameters")
+    plist->set("timestep controller type", "standard");
+    plist->sublist("timestep controller standard parameters")
       .set("time step reduction factor", 0.9);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("time step increase factor", 1.1);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("max time step", 5e-3);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("min time step", 1e-20);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("min iterations", 5);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("max iterations", 10);
-    plist.sublist("timestep controller standard parameters")
+    plist->sublist("timestep controller standard parameters")
       .set("preconditioner lag iterations", 2);
 
     // create the PDE problem
@@ -155,24 +157,24 @@ SUITE(ODEIntegrationTests)
 
   //   // set the parameter list for BDF1
   //   // set up solver params
-  //   plist.set("solver type", "nka");
-  //   plist.sublist("nka parameters").set("limit iterations", 20);
-  //   plist.sublist("nka parameters").set("nonlinear tolerance",1e-10);
-  //   plist.sublist("nka parameters").set("diverged tolerance",1.0e4);
-  //   plist.sublist("nka parameters").set("convergence monitor","monitor
+  //   plist->set("solver type", "nka");
+  //   plist->sublist("nka parameters").set("limit iterations", 20);
+  //   plist->sublist("nka parameters").set("nonlinear tolerance",1e-10);
+  //   plist->sublist("nka parameters").set("diverged tolerance",1.0e4);
+  //   plist->sublist("nka parameters").set("convergence monitor","monitor
   //   update");
 
   //   // set up time integrator params
-  //   plist.set("timestep controller type", "standard");
-  //   plist.sublist("timestep controller standard parameters").set("time step
-  //   reduction factor",0.9); plist.sublist("timestep controller standard
+  //   plist->set("timestep controller type", "standard");
+  //   plist->sublist("timestep controller standard parameters").set("time step
+  //   reduction factor",0.9); plist->sublist("timestep controller standard
   //   parameters").set("time step increase factor",1.1);
-  //   plist.sublist("timestep controller standard parameters").set("max time
-  //   step",5e-3); plist.sublist("timestep controller standard
-  //   parameters").set("min time step",1e-20); plist.sublist("timestep
+  //   plist->sublist("timestep controller standard parameters").set("max time
+  //   step",5e-3); plist->sublist("timestep controller standard
+  //   parameters").set("min time step",1e-20); plist->sublist("timestep
   //   controller standard parameters").set("min iterations", 5);
-  //   plist.sublist("timestep controller standard parameters").set("max
-  //   iterations",10); plist.sublist("timestep controller standard
+  //   plist->sublist("timestep controller standard parameters").set("max
+  //   iterations",10); plist->sublist("timestep controller standard
   //   parameters").set("preconditioner lag iterations",2);
 
   //   // create the PDE problem

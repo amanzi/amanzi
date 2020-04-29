@@ -45,6 +45,8 @@ class Evaluator_BCs : public EvaluatorSecondary {
     AMANZI_ASSERT(false); // never called
   }
 
+  virtual std::string name() const override { return "boundary condition aggregrator"; }
+  
  protected:
   std::vector<int> bc_types_;
   bool inited_;

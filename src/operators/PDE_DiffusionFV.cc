@@ -189,6 +189,9 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
             local_csr.at(f),local_csr.size(f,0),local_csr.size(f,1)); 
 
           double tij = trans_face(f,0) * k_face(f,0);
+          // if (f==0) {
+          //   std::cout << "tij = " << trans_face(f,0) << " * " << k_face(f,0) << " = " << tij << std::endl;
+          // }
 
           for (int i = 0; i != Aface.NumRows(); ++i) {
             Aface(i, i) = tij;
@@ -197,6 +200,11 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
               Aface(j, i) = -tij;
             }
           }
+
+          // if (f==0) {
+          //   std::cout << "A = " << Aface << std::endl;
+          // }
+
         });
   }
 }
@@ -487,8 +495,13 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     auto K = Teuchos::rcp(new TensorVector(cvs,false));
     for (int c=0; c!=ncells_owned; ++c) {
       K->set_shape(c, mesh_->space_dimension(), 1);
-      K->Init();
     }
+    K->Init();
+    for (int c=0; c!=ncells_owned; ++c) {
+      K->at(c)(0,0) = 1.;
+    }
+
+    
     K_ = K;
   }
 
