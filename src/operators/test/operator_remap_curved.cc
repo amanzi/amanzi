@@ -478,9 +478,6 @@ void RemapTestsCurved(std::string file_name,
   Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
-    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
-
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
 

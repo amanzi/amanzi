@@ -499,7 +499,6 @@ void LimiterCell::LimiterScalarDG_(
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
@@ -587,7 +586,6 @@ void LimiterCell::LimiterHierarchicalDG_(
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 

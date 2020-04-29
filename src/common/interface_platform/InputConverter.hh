@@ -120,7 +120,7 @@ class InputConverter {
 
   // auto-generated input files
   // -- native chemistry
-  std::string CreateBGDFile_(std::string& filename, int rank, int status);
+  std::string CreateBGDFile_(std::string& filename, int rank, int& status);
   // -- Pflotran input file
   std::string CreateINFile_(std::string& filename, int rank);
 

@@ -620,7 +620,7 @@ SUITE(distance_factory) {
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList& sublist = list.sublist("function-double");
+    list.sublist("function-double");
     FunctionFactory fact;
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
   }

@@ -47,8 +47,8 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tvs) {
     auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
     std::vector<CompositeVectorSpace> cvss;
-    for (auto tvs : tvss) {
-      cvss.push_back(*tvs->Data());
+    for (auto tvs_tmp : tvss) {
+      cvss.push_back(*tvs_tmp->Data());
     }
     return Teuchos::rcp(new SuperMap(cvss));
   }
