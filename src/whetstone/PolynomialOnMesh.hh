@@ -27,7 +27,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-struct PolynomialOnMesh {
+class PolynomialOnMesh {
  public:
   PolynomialOnMesh() : id_(-1), kind_((Entity_kind)WhetStone::CELL) {};
 

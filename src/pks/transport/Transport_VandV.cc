@@ -135,7 +135,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
           mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
           int dir, c = cells[0];
 
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          mesh_->face_normal(f, false, c, &dir);
           double u = darcy_flux[0][f] * dir;
           if (u > 0) solute_flux += u * tcc_next[i][c];
         }
