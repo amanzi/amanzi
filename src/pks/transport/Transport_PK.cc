@@ -153,7 +153,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "molar_density_liquid");
   tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
   solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
-
+  mass_src_key_ = Keys::readKey(*tp_list_, domain_name_, "mass source", "mass_source");  
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
 
   water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-6);
@@ -213,6 +213,12 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(molar_density_key_);
+  }
+
+  if (!S->HasField(mass_src_key_) && tp_list_->sublist("source terms").isSublist("geochemical")){
+    S->RequireField(mass_src_key_, mass_src_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(mass_src_key_);
   }
   
   // require state fields when Transport PK is on
@@ -525,10 +531,11 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
-      
-      Key mass_src_key=Keys::readKey(*tp_list_, domain_name_, "mass source", "mass_source");
+
       src->set_mol_dens_data_(mol_dens_.ptr());
-      src->set_liquid_src_data_(S->GetFieldData(mass_src_key) -> ViewComponent("cell", false).ptr());
+
+      mass_src_ = S->GetFieldData(mass_src_key_)->ViewComponent("cell",false);
+      src->set_liquid_src_data_(mass_src_.ptr());
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();

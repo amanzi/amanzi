@@ -250,7 +250,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key molar_density_key_;
     Key solid_residue_mass_key_;
     Key water_content_key_;
-  
+    Key mass_src_key_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -267,7 +267,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux_;
-  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_;
+  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_,mass_src_;
   Teuchos::RCP<Epetra_MultiVector> flux_copy_;
     
 #ifdef ALQUIMIA_ENABLED
