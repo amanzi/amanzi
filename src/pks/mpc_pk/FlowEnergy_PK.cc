@@ -219,9 +219,9 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
   tvs->PushBack(CreateTVSwithOneLeaf(op0->DomainMap()));
   tvs->PushBack(CreateTVSwithOneLeaf(op1->DomainMap()));
 
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_->SetOperatorBlock(0, 0, op0);
-  op_tree_->SetOperatorBlock(1, 1, op1);
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_matrix_->SetOperatorBlock(0, 0, op0);
+  op_tree_matrix_->SetOperatorBlock(1, 1, op1);
 
   op_tree_rhs_ = Teuchos::rcp(new TreeVector(tvs));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));

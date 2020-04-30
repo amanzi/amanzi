@@ -22,44 +22,32 @@
     </ParameterList>
     <ParameterList name="fracture">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,60.0}"/>
+        <Parameter name="point" type="Array(double)" value="{ 0.0,0.0,3.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="SurfaceLeft">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0,  0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,10.0,120.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="SurfaceRight">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 216.0, 0.0,  0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceTop">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,120.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,0.0,6.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2.0,6.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,60.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2.0,3.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0, 60.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{  0.0,0.0,3.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2,6.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="ALL">
@@ -73,9 +61,9 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{9, 2, 20}"/>
-        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{10, 2, 6}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{  0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 2.0, 6.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>

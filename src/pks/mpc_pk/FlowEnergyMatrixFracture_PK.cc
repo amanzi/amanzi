@@ -142,10 +142,10 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto pk_fracture = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[1]);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
 
-  op_tree_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree());
-  op_tree_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree());
+  op_tree_matrix_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree_matrix());
+  op_tree_matrix_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree_matrix());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -227,7 +227,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create a global problem
   // pk_matrix->op_diff()->ApplyBCs(true, true, true);
 
-  op_tree_->SymbolicAssembleMatrix();
+  op_tree_matrix_->SymbolicAssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -264,8 +264,8 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
-  op_tree_->AssembleMatrix();
-  int ierr = op_tree_->ApplyAssembled(*u_new, *f);
+  op_tree_matrix_->AssembleMatrix();
+  int ierr = op_tree_matrix_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
   // // diagonal blocks in tree operator and the Darcy PKs
@@ -285,7 +285,7 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-  op_tree_->InitPreconditioner(pc_list);
+  op_tree_matrix_->InitPreconditioner(pc_list);
 }
 
 
@@ -296,7 +296,7 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
                                                      Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_tree_->ApplyInverse(*X, *Y);
+  return op_tree_matrix_->ApplyInverse(*X, *Y);
 }
 
 }  // namespace Amanzi

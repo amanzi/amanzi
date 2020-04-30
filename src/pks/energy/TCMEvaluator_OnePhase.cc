@@ -71,7 +71,14 @@ void TCMEvaluator_OnePhase::EvaluateField_(
   int ncomp = result->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
     double phi = poro_c[0][i];
+std::cout << i << " " << ncomp << " " 
+<< temp_c[0][i] << " " 
+<< temp_c[0][1] << " " 
+<< temp_c[0][8] << " " 
+<< temp_c[0][9] << " " 
+<< temp_c[0][17] << " " << std::endl;
     double k_liq = tc_->ThermalConductivity(temp_c[0][i]);
+std::cout << i << " " << ncomp << " " << k_liq << " --- " << std::endl;
     result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_;
   }
 }

@@ -96,7 +96,8 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-  Teuchos::RCP<Operators::TreeOperator> op_tree() { return op_tree_; }
+  Teuchos::RCP<Operators::TreeOperator> op_tree_matrix() { return op_tree_matrix_; }
+  Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_tree_pc_; }
   Teuchos::RCP<TreeVector> op_tree_rhs() { return op_tree_rhs_; }
   
  protected:
@@ -113,7 +114,7 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   double dt_;
   Teuchos::RCP<Amanzi::BDF1_TI<TreeVector, TreeVectorSpace> > time_stepper_;
 
-  Teuchos::RCP<Operators::TreeOperator> op_tree_;
+  Teuchos::RCP<Operators::TreeOperator> op_tree_matrix_, op_tree_pc_;
   Teuchos::RCP<TreeVector> op_tree_rhs_;
   
  private:
