@@ -72,17 +72,11 @@ class PK_MPC : virtual public PK {
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
                                  TreeVector& soln) {};
 
-  // -- identifier accessor
-  virtual std::string name() const { return name_; }
-
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator begin() { return sub_pks_.begin(); }
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator end() { return sub_pks_.end(); }
     
  protected:
-  // identifier
-  std::string name_;
-
   // list of the PKs coupled by this MPC
   typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
   SubPKList sub_pks_;
