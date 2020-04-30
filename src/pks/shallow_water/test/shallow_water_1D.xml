@@ -1,182 +1,110 @@
-<amanzi_input type="unstructured" version="2.3.0">
-    <model_description name="shallow water">
-        <author>Svetlana Tokareva</author>
-        <units>
-            <length_unit>m</length_unit>
-            <time_unit>s</time_unit>
-            <mass_unit>kg</mass_unit>
-            <conc_unit>molar</conc_unit>
-        </units>
-    </model_description>
-    
-    <definitions>
-        <macros>
-            <time_macro name="Observation Times">
-                <time>1.2096E+10</time>
-            </time_macro>
-            <cycle_macro name="Every10000Cycles">
-                <start>0</start>
-                <timestep_interval>10000</timestep_interval>
-            </cycle_macro>
-            <time_macro name="TimeFrequency">
-                <start>0</start>
-                <timestep_interval>2 y</timestep_interval>
-            </time_macro>
-        </macros>
-    </definitions>
-    
-    <process_kernels>
-        <flow model="shallow water" state="on" />
-        <transport state="off" />
-        <chemistry engine="none" process_model="none" state="off" />
-    </process_kernels>
-    
-    <phases>
-        <liquid_phase name="water">
-            <eos>false</eos>
-            <viscosity>1.002E-03</viscosity>
-            <density>998.2</density>
-            <dissolved_components>
-                <solutes>
-                    <solute coefficient_of_diffusion="2.65e-9">Tc-99</solute>
-                </solutes>
-            </dissolved_components>
-        </liquid_phase>
-    </phases>
-    
-    <execution_controls>
-        <verbosity level="high" />
-        <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-        <execution_control end="200,y" init_dt="10" max_dt="1 d" increase_factor="1.2" mode="transient" start="0,y" />
-    </execution_controls>
-    
-    <numerical_controls>
-        <unstructured_controls>
-            <unstr_flow_controls>
-                <preconditioning_strategy>linearized_operator</preconditioning_strategy>
-            </unstr_flow_controls>
-            <unstr_transport_controls>
-                <algorithm>explicit first-order</algorithm>
-                <sub_cycling>on</sub_cycling>
-                <cfl>1.0</cfl>
-            </unstr_transport_controls>
-            
-            <unstr_transient_controls>
-                <min_iterations>10</min_iterations>
-                <max_iterations>15</max_iterations>
-                <limit_iterations>20</limit_iterations>
-                <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-                <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-                <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
-                <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-                <max_divergent_iterations>3</max_divergent_iterations>
-                <!--unstr_initialization>
-                 <method>darcy_solver</method>
-                 <linear_solver>aztec00</linear_solver>
-                 </unstr_initialization-->
-            </unstr_transient_controls>
-            
-            <unstr_linear_solver>
-                <method>pcg</method>
-                <max_iterations>100</max_iterations>
-                <tolerance>1e-14</tolerance>
-            </unstr_linear_solver>
-            <unstr_preconditioners>
-                <hypre_amg />
-                <trilinos_ml />
-                <block_ilu />
-            </unstr_preconditioners>
-        </unstructured_controls>
-    </numerical_controls>
-    
-    <mesh framework="mstk">
-        <dimension>2</dimension>
-        <generate>
-            <number_of_cells nx="100" ny="1" />
-            <box high_coordinates="100.0, 1.0" low_coordinates="0.0, 0.0" />
-        </generate>
-    </mesh>
-    
-    <regions>
-        <region name="All">
-            <box high_coordinates="100.0, 1.0" low_coordinates="0.0, 0.0" />
-        </region>
-        <region name="Left Surface">
-            <box high_coordinates="0.0, 1.0" low_coordinates="0.0, 0.0" />
-        </region>
-        <point coordinate="99.5,0.5" name="Right Cell" />
-    </regions>
-    
-    <materials>
-        <material name="Material">
-            <assigned_regions>All</assigned_regions>
-            <permeability x="6.65e-16" y="6.65e-16" />
-            <mechanical_properties>
-                <porosity value="0.0001"/>
-                <dispersion_tensor alpha_l="1.0" alpha_t="2.65e-12" type="uniform_isotropic" />
-            </mechanical_properties>
-        </material>
-    </materials>
-    
-    <materials_secondary_continuum>
-        <material name="Material">
-            <assigned_regions>All</assigned_regions>
-            <volume_fraction>0.9999</volume_fraction>
-            <mechanical_properties>
-                <porosity value="0.25"/>
-                <tortuosity value="1.0"/>
-            </mechanical_properties>
-            <multiscale_model name="generalized dual porosity">
-                <matrix depth="0.8 m" number_of_nodes="7" tortuosity="1.0"/>
-            </multiscale_model>
-        </material>
-    </materials_secondary_continuum>
-    
-    <initial_conditions>
-        <initial_condition name="All">
-            <assigned_regions>All</assigned_regions>
-            <liquid_phase name="water">
-                <liquid_component name="water">
-                    <uniform_pressure name="IC1" value="101325.0" />
-                    <uniform_saturation name="IC2" value="1.0" />
-                    <velocity name="IC3" x="7.922e-9" y="0.0" />
-                </liquid_component>
-                <solute_component>
-                    <aqueous_conc name="Tc-99" value="0.0" />
-                </solute_component>
-            </liquid_phase>
-        </initial_condition>
-    </initial_conditions>
-    
-    <boundary_conditions>
-        <boundary_condition name="Left BC">
-            <assigned_regions>Left Surface</assigned_regions>
-            <liquid_phase name="water">
-                <solute_component>
-                    <aqueous_conc name="Tc-99" value="1.0" function="constant" start="0.0"/>
-                </solute_component>
-            </liquid_phase>
-        </boundary_condition>
-    </boundary_conditions>
-    
-    <output>
-        <vis>
-            <base_filename>plot</base_filename>
-            <num_digits>5</num_digits>
-            <cycle_macros>Every10000Cycles</cycle_macros>
-        </vis>
-        <observations>
-            <filename>observation.out</filename>
-            <units time="y" />
-            <liquid_phase name="water">
-                <aqueous_conc solute="Tc-99">
-                    <assigned_regions>Right Cell</assigned_regions>
-                    <functional>point</functional>
-                    <time_macro>TimeFrequency</time_macro>
-                </aqueous_conc>
-            </liquid_phase>
-        </observations>
-    </output>
-</amanzi_input>
+<ParameterList name="main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!-- REGIONS -->
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- FLOW -->
+  <ParameterList name="PKs">
+    <ParameterList name="shallow water">
+      <Parameter name="domain name" type="string" value="surface"/>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="mass flux">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Left, Right, Front, Back}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-tabular">
+                <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                <Parameter name="x values" type="Array(double)" value="{0, 7.884e+06}"/>
+                <Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  STATE  -->
+  <ParameterList name="state">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.001"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+      </ParameterList>
+
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0."/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+
+
 
 
