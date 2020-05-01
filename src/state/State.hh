@@ -110,18 +110,18 @@ class State {
                     bool deformable = false);
 
   // Alias a mesh to an existing mesh
-  void AliasMesh(const Key& target, Key alias);
+  void AliasMesh(Key target, Key alias);
 
   // Remove a mesh.
   void RemoveMesh(const Key& key);
 
   // Ensure a mesh exists.
-  bool HasMesh(const Key& key) const;
-  bool IsDeformableMesh(const Key& key) const;
+  bool HasMesh(Key key) const;
+  bool IsDeformableMesh(Key key) const;
 
   // Mesh accessor.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key& key = "domain") const;
-  Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(const Key& key = "domain");
+  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(Key key="domain") const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(Key key="domain");
 
   // Iterate over meshes.
   using mesh_iterator = MeshMap::const_iterator;

@@ -59,7 +59,7 @@ class EvaluatorSecondaryMeshedQuantity
         ->SetComponent(AmanziMesh::entity_kind_string(Function_type::component),
                       Function_type::component, 1)
         ->SetGhosted(true);
-    S.RequireEvaluator(Keys::getDomain(my_keys_[0].first)+" mesh");
+    S.RequireEvaluator(Keys::getKey(domain, "mesh"));
   }
   
  protected:

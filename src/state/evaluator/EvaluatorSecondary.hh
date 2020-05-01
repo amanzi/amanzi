@@ -82,9 +82,9 @@ class EvaluatorSecondary : public Evaluator {
   KeyPairVector my_keys_;
 
   KeySet requests_;
-  KeyTripleSet deriv_requests_;
+  std::map<Key,KeySet> deriv_requests_;
+
   KeyPairVector dependencies_;
-  bool computed_once_;
   //  bool compatible_; // flag for whether EnsureCompatibility was checked
 
   VerboseObject vo_;

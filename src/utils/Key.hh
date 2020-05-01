@@ -15,9 +15,7 @@
   specific to Amanzi style keys, domains, etc.
 */
 
-
-#ifndef UTILS_KEY_HH_
-#define UTILS_KEY_HH_
+#pragma once
 
 #include <set>
 #include "boost/algorithm/string.hpp"
@@ -39,23 +37,34 @@ typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 
+//
+// A few helper string manipulation functions
+//
 inline bool
 startsWith(const std::string& input, const std::string& start)
 {
   return input.substr(0, start.size()) == start;
 }
 
-// parameter list names take their parent history?
-inline Key
-cleanPListName(std::string name)
+inline KeyPair
+split(const std::string& input, const char& divider, const std::string& def, bool null_first)
 {
-  auto res = boost::algorithm::find_last(name, "->");
-  if (res.end() - name.end() != 0)
-    boost::algorithm::erase_head(name, res.end() - name.begin());
-  return name;
+  std::size_t pos = input.find(divider);
+  if (pos == std::string::npos) {
+    if (null_first) {
+      return std::make_pair(def, input);
+    } else {
+      return std::make_pair(input, def);
+    }
+  } else {
+    return std::make_pair(input.substr(0, pos), input.substr(pos+1, input.size()));
+  }
 }
 
+
+//
 // A fully resolved key is of the form  "DOMAIN-VARNAME:VARTAG"
+//
 
 // Generate a DOMAIN-VARNAME key.
 inline Key
@@ -68,14 +77,9 @@ getKey(const Key& domain, const Key& name)
 
 // Split a DOMAIN-VARNAME key.
 inline KeyPair
-splitKey(const Key& name)
+splitKey(const Key& name, const Key& def="domain")
 {
-  std::size_t pos = name.find('-');
-  if (pos == std::string::npos)
-    return std::make_pair(Key(""), name);
-  else
-    return std::make_pair(name.substr(0, pos),
-                          name.substr(pos + 1, name.size()));
+  return split(name, '-', def, true);
 }
 
 // Grab the domain prefix of a DOMAIN-VARNAME key.
@@ -89,8 +93,7 @@ getDomain(const Key& name)
 inline Key
 getDomainPrefix(const Key& name)
 {
-  std::size_t pos = name.find('-');
-  return pos == std::string::npos ? Key("") : name.substr(0, pos + 1);
+  return getDomain(name)+"-";
 }
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
@@ -121,32 +124,27 @@ matchesDomainSet(const Key& domain_set, const Key& name)
 inline Key
 getKeyTag(const Key& var, const Key& tag)
 {
-  return tag.empty() ? var : var + ":" + tag;
+  return var + ":" + tag;
 }
 
 // Split a DOMAIN-VARNAME key.
 inline KeyPair
 splitKeyTag(const Key& name)
 {
-  std::size_t pos = name.find(':');
-  if (pos == std::string::npos)
-    return std::make_pair(name, Key(""));
-  else
-    return std::make_pair(name.substr(0, pos),
-                          name.substr(pos + 1, name.size()));
+  return split(name, ':', "", false);
 }
 
 
 // Convenience function for requesting the name of a Key from an input spec.
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-        const Key& default_name = "");
+        const Key& default_name="");
 
 // Convenience function for requesting a list of names of Keys from an input
 // spec.
 Teuchos::Array<Key>
 readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-         Teuchos::Array<Key> const* const default_names = nullptr);
+         Teuchos::Array<Key> const* const default_names=nullptr);
 
 
 // Convenience function to see if a map (or map-like) object has a key.
@@ -157,8 +155,16 @@ hasKey(const T& container, const K& key)
   return container.count(key) > 0;
 }
 
+// parameter list names take their parent history?
+inline Key
+cleanPListName(std::string name)
+{
+  auto res = boost::algorithm::find_last(name, "->");
+  if (res.end() - name.end() != 0)
+    boost::algorithm::erase_head(name, res.end() - name.begin());
+  return name;
+}
+
 
 } // namespace Keys
 } // namespace Amanzi
-
-#endif
