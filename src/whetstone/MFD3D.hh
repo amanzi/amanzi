@@ -57,14 +57,14 @@ class MFD3D : public BilinearForm {
  protected:
   // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
-  int StabilityMonotoneHex(int c, const Tensor<>& T, DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityMonotoneHex(int c, const Tensor<>& T, DenseMatrix<>& Mc, DenseMatrix<>& M);
 
-  int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, 
+  int StabilityMMatrix_(int c, DenseMatrix<>& N, DenseMatrix<>& M, 
                         int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
 
-  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
-  void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
-  void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
+  int SimplexFindFeasibleSolution_(DenseMatrix<>& T, int m1, int m2, int m3, int* izrow, int* iypos);
+  void SimplexPivotElement_(DenseMatrix<>& T, int kp, int* ip);
+  void SimplexExchangeVariables_(DenseMatrix<>& T, int kp, int ip);
 
  protected:
   double simplex_functional_;
@@ -73,7 +73,7 @@ class MFD3D : public BilinearForm {
 
 
 // non-member functions
-void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix<>& N);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

@@ -128,6 +128,8 @@ struct Patch {
       space(space_) {
     Kokkos::resize(data, space.size(), space.n_dofs);
   }
+
+  KOKKOS_INLINE_FUNCTION ~Patch(){}; 
   
   PatchSpace space;
   // note, this layout is required to ensure that function is slowest-varying,
@@ -196,7 +198,7 @@ patchToCompositeVector(const Patch& p,
                          p.space.ghosted ? AmanziMesh::Parallel_type::ALL : AmanziMesh::Parallel_type::OWNED,
                          ids_list);
 
-  Kokkos::View<int*> ids("ids", ids_list.size());
+  Kokkos::View<int*,DeviceOnlyMemorySpace> ids("ids", ids_list.size());
   {
     Kokkos::View<int*, MirrorHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
     Kokkos::deep_copy(ids, ids_host);
@@ -238,7 +240,7 @@ patchToCompositeVector(const Patch& p,
                          p.space.ghosted ? AmanziMesh::Parallel_type::ALL : AmanziMesh::Parallel_type::OWNED,
                          ids_list);
 
-  Kokkos::View<int*> ids("ids", ids_list.size());
+  Kokkos::View<int*,DeviceOnlyMemorySpace> ids("ids", ids_list.size());
   {
     Kokkos::View<int*, MirrorHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
     Kokkos::deep_copy(ids, ids_host);

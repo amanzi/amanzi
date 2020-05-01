@@ -24,7 +24,7 @@ namespace WhetStone {
 * Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int DeRham_Face::L2consistency(
-    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+    int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -72,9 +72,9 @@ int DeRham_Face::L2consistency(
 /* ******************************************************************
 * Mass matrix: adding stability matrix to the consistency matrix.
 ****************************************************************** */
-int DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix& M)
+int DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   Tensor<> Kinv(K);
   Kinv.Inverse();
@@ -92,7 +92,7 @@ int DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix& M)
 * Only the upper triangular part of Wc is calculated.
 ****************************************************************** */
 int DeRham_Face::L2consistencyInverse(
-    int c, const Tensor<>& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+    int c, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -155,9 +155,9 @@ int DeRham_Face::L2consistencyInverse(
 /* ******************************************************************
 * Inverse mass matrix: adding stability to the consistency
 ****************************************************************** */
-int DeRham_Face::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix& W)
+int DeRham_Face::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  DenseMatrix R;
+  DenseMatrix<> R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;

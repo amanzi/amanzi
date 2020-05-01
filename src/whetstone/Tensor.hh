@@ -36,7 +36,7 @@ const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
                                          {1, 2, 0, 3},
                                          {1, 3, 0, 6 }};
 
-template<class MEMSPACE = DefaultDevice::memory_space> 
+template<class MEMSPACE = DefaultHostMemorySpace> 
 class Tensor {
  public:
 

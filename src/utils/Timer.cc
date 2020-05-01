@@ -162,6 +162,7 @@ Timer::getTicks()
       break;
     }
   }
+  return 0; 
 }
 
 
@@ -214,6 +215,7 @@ Timer::getTime()
       break;
     }
   }
+  return 0; 
 }
 
 

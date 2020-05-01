@@ -101,7 +101,7 @@ class Analytic00 : public AnalyticBase {
 
  private:
   Amanzi::AmanziGeometry::Point v_;
-  Amanzi::WhetStone::Polynomial poly_, rhs_;
+  Amanzi::WhetStone::Polynomial<> poly_, rhs_;
   Amanzi::WhetStone::VectorPolynomial grad_, grav_;
   double gravity_;
   int order_;

@@ -44,7 +44,7 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
 int MFD3D_Lagrange::H1consistency(
-    int c, const Tensor<>& K, DenseMatrix& N, DenseMatrix& Ac)
+    int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -129,9 +129,9 @@ int MFD3D_Lagrange::H1consistency(
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int MFD3D_Lagrange::StiffnessMatrix(
-    int c, const Tensor<>& K, DenseMatrix& A)
+    int c, const Tensor<>& K, DenseMatrix<>& A)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -145,8 +145,8 @@ int MFD3D_Lagrange::StiffnessMatrix(
 * N and R are used. Here we use simplified versions.
 ***************************************************************** */
 void MFD3D_Lagrange::ProjectorCell_(
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf, Polynomial& uc)
+    int c, const std::vector<Polynomial<>>& ve,
+    const std::vector<Polynomial<>>& vf, Polynomial<>& uc)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -158,7 +158,7 @@ void MFD3D_Lagrange::ProjectorCell_(
   int num_faces = faces.size();
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)
-  DenseMatrix R(nnodes, d_);
+  DenseMatrix<> R(nnodes, d_);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   R.PutScalar(0.0);

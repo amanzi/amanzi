@@ -183,20 +183,20 @@ class VectorObjects {
 
 
 // used types
-typedef VectorObjects<Polynomial> VectorPolynomial;
+typedef VectorObjects<Polynomial<>> VectorPolynomial;
 typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;
 
 
 // non-member functions
-VectorPolynomial Gradient(const Polynomial& p);
+VectorPolynomial Gradient(const Polynomial<>& p);
 VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p);
 
-Polynomial Divergence(const VectorObjects<Polynomial>& vp);
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+Polynomial<> Divergence(const VectorObjects<Polynomial<>>& vp);
+VectorPolynomial GradientOnUnitSphere(const Polynomial<>& poly, int k);
 
 // project gradient of the given polynomial on unit sphere using
 // the Taylor expansion with k terms
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+VectorPolynomial GradientOnUnitSphere(const Polynomial<>& poly, int k);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

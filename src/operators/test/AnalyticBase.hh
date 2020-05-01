@@ -248,7 +248,7 @@ void ComputeNodeError(const AnalyticBase& ana,
   plist.set<int>("method order", 1);
   WhetStone::MFD3D_Lagrange mfd(plist, mesh);
 
-  WhetStone::Polynomial poly(ana.dimension(), 1);
+  WhetStone::Polynomial<> poly(ana.dimension(), 1);
   AmanziMesh::Entity_ID_List nodes;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -258,8 +258,8 @@ void ComputeNodeError(const AnalyticBase& ana,
 
     mesh->cell_get_nodes(c, nodes);
     int nnodes = nodes.size();
-    std::vector<WhetStone::Polynomial> cell_solution(nnodes);
-    std::vector<WhetStone::Polynomial> vf_solutions(nnodes);
+    std::vector<WhetStone::Polynomial<>> cell_solution(nnodes);
+    std::vector<WhetStone::Polynomial<>> vf_solutions(nnodes);
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];

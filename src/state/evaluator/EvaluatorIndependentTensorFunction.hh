@@ -31,7 +31,7 @@ namespace Impl {
         "TensorFunctionUpdate",
         v.extent(0),
         KOKKOS_LAMBDA(const int& i) {
-          WhetStone::Tensor<> Ti = tv.at(j+i);
+          WhetStone::Tensor<DeviceOnlyMemorySpace> Ti = tv.at(j+i);
           Ti(0,0) = v(i,0);
         });
   }

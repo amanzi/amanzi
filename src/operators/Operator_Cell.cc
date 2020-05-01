@@ -82,41 +82,41 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
-  // Allocate for first time 
-  if(op.csr_v_.size() != local_csr.size()){
+  CSR<double,1,DeviceOnlyMemorySpace> csr_v = op.csr_v_;
+  CSR<double,1,DeviceOnlyMemorySpace> csr_Av = op.csr_Av_;
 
-    op.csr_v_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size());
-    op.csr_Av_ = CSR<double,1,DeviceOnlyMemorySpace>(local_csr.size()); 
+  // Allocate for first time 
+  if(csr_v.size_host() != local_csr.size_host()){
+
+    csr_v.set_size(local_csr.size_host());
+    csr_Av.set_size(local_csr.size_host());  
 
     int total1 = 0; 
     int total2 = 0; 
     // CSR version 
     // 1. Compute size 
-    for (int i=0; i!=local_csr.size(); ++i) {
-      total1 += local_csr.size(i,0);
-      total2 += local_csr.size(i,1);
+    for (int i=0; i!=local_csr.size_host(); ++i) {
+      total1 += local_csr.size_host(i,0);
+      total2 += local_csr.size_host(i,1);
     }
 
     Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COPY",
-      local_csr.size(),
+      local_csr.size_host(),
       KOKKOS_LAMBDA(const int& i){      
-        op.csr_v_.sizes_(i,0) = local_csr.size(i,0);
-        op.csr_v_.row_map_(i) = local_csr.size(i,0);
-        op.csr_Av_.sizes_(i,0) = local_csr.size(i,1);
-        op.csr_Av_.row_map_(i) = local_csr.size(i,1);
+        csr_v.sizes_.view_device()(i,0) = local_csr.size(i,0);
+        csr_v.row_map_.view_device()(i) = local_csr.size(i,0);
+        csr_Av.sizes_.view_device()(i,0) = local_csr.size(i,1);
+        csr_Av.row_map_.view_device()(i) = local_csr.size(i,1);
       });
 
-    op.csr_v_.prefix_sum_device(total1); 
-    op.csr_Av_.prefix_sum_device(total2); 
+    csr_v.prefix_sum_device(total1); 
+    csr_Av.prefix_sum_device(total2); 
   }
-
-  CSR<double,1,DeviceOnlyMemorySpace> csr_v = op.csr_v_;
-  CSR<double,1,DeviceOnlyMemorySpace> csr_Av = op.csr_Av_;
 
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-      op.csr.size(),
+      op.csr.size_host(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -131,22 +131,13 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
         for (int n = 0; n != ncells; ++n) {
           vv(n) = Xc(cells[n],0);
         }
-        WhetStone::DenseMatrix lm(
+        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
           local_csr.at(f),
           local_csr.size(f,0),local_csr.size(f,1)); 
         lm.Multiply(vv,Avv,false);
 
         for (int n = 0; n != ncells; ++n) {
           Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
-
-          // if (cells[n] == 0 || cells[n] == 9) {
-          //   std::cout << std::setprecision(16) << "Apply at f(" << f << "): v = " << vv(0);
-          //   if (csr_Av.size(f) > 1) std::cout << std::setprecision(16)  << "," << vv(1);
-          //   std::cout << std::setprecision(16)  << ", A = " << lm << ", Av = " << Avv(0);
-          //   if (csr_Av.size(f) > 1) std::cout << std::setprecision(16)  << "," << Avv(1);
-          //   std::cout << std::endl;
-          // }
-
         }
       });
 
