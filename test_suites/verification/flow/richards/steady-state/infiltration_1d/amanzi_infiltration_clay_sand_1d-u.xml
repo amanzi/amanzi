@@ -59,11 +59,6 @@
         <unstr_transport_controls>
           <algorithm>explicit first-order</algorithm>
         </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">

@@ -349,8 +349,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // pointers to state variables (move in subroutines for consistency)
   S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
-  darcy_flux = S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-
   ws = S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
   ws_prev = S->GetFieldData(prev_saturation_liquid_key_)->ViewComponent("cell", false);
   phi = S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
@@ -896,6 +894,7 @@ bool Transport_PK::ComputeBCs_(
 void Transport_PK::IdentifyUpwindCells()
 {
   S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
   const auto& map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
 
   upwind_cells_.clear();

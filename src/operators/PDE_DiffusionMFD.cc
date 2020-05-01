@@ -936,7 +936,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     // define the upwind cell, index i in this case
     int i, dir, c1;
     c1 = cells[0];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
 
     if (ncells == 2) {
@@ -993,7 +993,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     // define the upwind cell, index i in this case
     int i, dir, c1;
     c1 = cells[0];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
 
     if (ncells == 2) {

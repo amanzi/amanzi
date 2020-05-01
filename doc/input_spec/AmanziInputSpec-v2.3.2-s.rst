@@ -481,70 +481,41 @@ The user may define 1 or more refinement indicators.  Each refinement indicator 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  The ``mesh`` element varies slightly depending on whether the simulation type is ``structured`` or ``unstructured`` but is required for both.  For `"unstructured`", the ``mesh`` element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial). For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
-
-To internally generate a mesh the ``mesh`` element takes the following form.  The mesh framework attribute only applies to the `"unstructured`" and therefore is skipped for `"structured`" simulations.
-
-Also, for parallel unstructured meshes, it is possible to choose a Partitioner from the available options, `"metis"`, `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"` and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which can lead to better partitioning in meshes that are thin in a particular direction. Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to detect columns of elements in a mesh and adjust the partitioning such that no column is split over multiple partitions. If no partitioner is specified, a default method is used (`"metis"`).
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag ``amanzi_input``.  
+For `"structured`", the ``mesh`` element, specifies how the mesh is to be internally generated.
 
 .. code-block:: xml
 
-   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
-      <comments> May be included in the Mesh element </comments>
-      <dimension>3</dimension>
-      <partitioner>"some partitioner keyword"</partitioner>
+   <mesh>
+      <comments> This is a box mesh in a unit square </comments>
+      <dimension>2</dimension>
+      <partitioner>metis</partitioner>
       <generate>
-         <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
-         <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
+         <number_of_cells nx="10"  ny="12"/>
+         <box low_coordinates="0.0,0.0"  high_coordinates="1.0,1.0"/>
       </generate>
    </mesh>
 
-For example:
-
-.. code-block:: xml
-
-  <mesh framework="mstk">
-    <dimension>2</dimension>
-    <partitioner>"zoltan_rcb"</partitioner>
-    <generate>
-      <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
-    </generate>
-  </mesh>
-
-Currently Amanzi only read Exodus II mesh files for `"unstructured`" simulations.  An example ``mesh`` element would look as the following.
-
-.. code-block:: xml
-
-  <mesh framework="mstk"> 
-    <comments> May be included in the Mesh element </comments>
-    <dimension>3</dimension>
-    <read>
-      <file>mesh.exo</file>
-      <format>exodus ii</format>
-    </read>
-  </mesh>
-
-Note that the ``format`` content is case-sensitive and compared against a set of known and acceptable formats.  That set is [`"exodus ii`",`"exodus II`",`"Exodus II`",`"Exodus ii`"].  The set of all such limited options can always be verified by checking the Amanzi schema file.
 
 Regions
 =======
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. 
+Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`".
 
 The ``regions`` block is required.  Within the region block at least one regions is required to be defined.  Most users define at least one region the encompasses the entire domain.  The optional elements valid for both structured and unstructured include `"region`", `"box`", `"point`", and `"plane`".  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  Below are further descriptions of these elements.
-
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a `"box`" or `"plane`" region or specify a region file.  
+Additional regions include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
+Below are further descriptions of these elements.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
+      Optional Elements: comments, box, point, region, polygon, ellipse, rotated_polygon, swept_polygon
   </regions>
 
 The elements box and point allow for in-line description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
@@ -599,20 +570,8 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the ``mesh`` element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
-
-Logical
+Polygon
 -------
-
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
-
-.. code-block:: xml
-
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
-
-
-Polygon [S]
------------
 
 A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
 
@@ -624,8 +583,8 @@ A polygon region is used to define a bounded planar region and is specified by t
       <point> X, Y </point>
     </polygon>
 
-Ellipse [S]
------------
+Ellipse
+-------
 
 An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
 
@@ -636,8 +595,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
       <radius> radiusX, radiusY </radius>
     </ellipse>
 
-Rotated Polygon [S]
--------------------
+Rotated Polygon
+---------------
 
 A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -652,8 +611,8 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
         <reference_point> X, Y </reference_point>
     </rotated_polygon>
 
-Swept Polygon [S]
------------------
+Swept Polygon
+-------------
 
 A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
 
@@ -667,6 +626,7 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
         <extent_min> exponential </extent_min>
         <extent_max> exponential </extent_max>
     </swept_polygon>
+
 
 Geochemistry
 ============
@@ -873,7 +833,7 @@ Rel_perm
 Sorption_isotherms
 ------------------
 
-*  ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
@@ -883,8 +843,8 @@ Sorption_isotherms
             Optional Elements: kd_model
     </sorption_isotherms>
 
-.
-    * ``kd_model`` takes the following form:
+
+The ``kd_model`` element takes the following form:
 
 .. code-block:: xml
  
@@ -897,18 +857,18 @@ Sorption_isotherms
 Minerals
 --------
 
-* For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
+For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
 
 .. code-block:: xml
 
        <minerals>
-           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area="1.0"/>
        </minerals>
 
 Ion_exchange
 ------------
 
-* The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
+The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
 
 .. code-block:: xml
 
@@ -923,7 +883,7 @@ Ion_exchange
 Surface_complexation
 --------------------
 
-* The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
+The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
 
 .. code-block:: xml
 
@@ -953,7 +913,7 @@ For each process kernel the element ``state`` indicates whether the solution is 
 Flow
 ----
 
-* ``flow`` has the following attributes, 
+The ``flow`` has the following attributes, 
       
       * ``state`` = "on | off"
 
@@ -961,23 +921,21 @@ Flow
 
 Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-Note:  Unstructured options ``discretization_method``,  ``rel_perm_method``, and ``preconditioning_strategy`` have been moved to the ``unstr_flow_controls`` section under ``numerical_controls``/
 
 Transport
 ---------
 
-* ``transport`` has the following attributes,
+The ``transport`` has the following attributes,
       
       * ``state`` = "on | off"
 
 For ``transport`` the ``state`` must be specified.  
 
-Note:  Unstructured options ``algorithm`` and ``sub_cycling`` have been moved to the ``unstr_transport_controls`` section under ``numerical_controls``/
 
 Chemistry
 ---------
 
-* ``chemistry`` has the following attributes,
+The ``chemistry`` has the following attributes,
       
       * ``state`` = "on | off"
       
@@ -988,6 +946,7 @@ Chemistry
       * ``database`` is the name of the chemistry reaction database file (filename.dat).   
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
+
 
 Phases
 ======
@@ -1004,13 +963,13 @@ Some general discussion of the ``Phases`` section goes here.
 Liquid_phase
 ------------
 
-* ``liquid_phase`` has the following elements
+The ``liquid_phase`` has the following elements
 
 .. code-block:: xml
 
   <liquid_phase>
       Required Elements: viscosity, density
-      Optional Elements: dissolved_components, eos [S]
+      Optional Elements: dissolved_components, eos
   </liquid_phase>
 
 Here is more info on the ``liquid_phase`` elements:
@@ -1039,24 +998,6 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
 The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
 
-
-Solid_phase
------------
-
-* ``solid_phase`` has the following elements
-
-.. code-block:: xml
-
-  <solid_phase>
-      Required Elements: minerals
-      Optional Elements: NONE
-  </solid_phase>
-
-Here is more info on the ``solid_phase`` elements:
-
-    * ``minerals`` has the element 
-
-        * ``mineral`` which contains the name of the mineral. Note, the name of the mineral must match a species in the database file.
 
 Initial Conditions
 ==================
@@ -1153,7 +1094,7 @@ The ``boundary_conditions`` section contains an unbounded number of ``boundary_c
 
   <boundary_condition>
       Required Elements: assigned_regions, liquid_phase
-      Optional Elements: comments - SKIPPED
+      Optional Elements: comments
   </boundary_condition>
 
 Assigned_regions
@@ -1420,10 +1361,6 @@ This section includes a collection of miscellaneous global options, specified as
 
   <echo_translated_input file_name="some name"/>
 
-* Write the input data after internal translation. If this parameter is missing, the default XML
-  file `"XXX_native_v7.xml`" is written, where `"XXX.xml`" is the name of the original Amanzi input file.
-  If this parameter is present but attribute ``file_name`` is either omitted of empty string, no 
-  translated file is written.
 
 
 

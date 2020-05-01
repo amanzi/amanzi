@@ -639,7 +639,6 @@ int DG_Modal::FluxMatrixGaussPoints(
   int dir; 
   double area = mesh_->face_area(f);
   mesh_->face_normal(f, false, cells[0], &dir);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   // Calculate integrals needed for scaling
   int c1, c2, pos0, pos1;
@@ -760,7 +759,6 @@ int DG_Modal::FluxMatrixRusanov(
   // identify index of downwind cell (id)
   int dir; 
   AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells[0], &dir);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];

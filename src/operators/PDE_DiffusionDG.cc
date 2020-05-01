@@ -151,7 +151,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   AmanziMesh::Entity_ID_List cells;
 
-  int dir, d = mesh_->space_dimension();
+  int d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
@@ -164,7 +164,6 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
       // set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
