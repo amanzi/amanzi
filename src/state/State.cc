@@ -32,6 +32,7 @@
 
 #include "State.hh"
 #include "evaluator/Evaluator_Factory.hh"
+#include "evaluator/EvaluatorPrimaryStaticMesh.hh"
 
 namespace Amanzi {
 
@@ -61,27 +62,37 @@ void
 State::RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
                     bool deformable)
 {
+  if (key.empty()) key = "domain";
   meshes_.emplace(std::piecewise_construct,
                   std::forward_as_tuple<Key>(std::move(key)),
                   std::forward_as_tuple<Teuchos::RCP<AmanziMesh::Mesh>, bool>(
                     std::move(mesh), std::move(deformable)));
+
+  if (deformable) {
+    //    RequireEvaluator(key, "");
+    // Broken for now
+  } else {
+    auto eval_name = Keys::getKey(key, "mesh");
+    Teuchos::ParameterList plist(eval_name);
+    plist.set("mesh name", key);
+    SetEvaluator(eval_name, "", Teuchos::rcp(new EvaluatorPrimaryStaticMesh(plist)));
+  }
 };
 
 void
-State::AliasMesh(const Key& target, Key alias)
+State::AliasMesh(Key target, Key alias)
 {
+  if (target.empty()) target = "domain";
   bool deformable = IsDeformableMesh(target);
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh; // note non-const
   try {
     mesh = meshes_.at(target).first;
   } catch (const std::out_of_range& e) {
-    std::stringstream messagestream;
-    messagestream << "Mesh \"" << target << "\" does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    throw(message);
+    Errors::Message msg;
+    msg << "Mesh \"" << target << "\" does not exist in the state.";
+    throw(msg);
   }
-
   RegisterMesh(alias, mesh, deformable);
 };
 
@@ -92,14 +103,16 @@ State::RemoveMesh(const Key& key)
 };
 
 bool
-State::HasMesh(const Key& key) const
+State::HasMesh(Key key) const
 {
+  if (key.empty()) key = "domain";
   return Keys::hasKey(meshes_, key);
 }
 
 Teuchos::RCP<const AmanziMesh::Mesh>
-State::GetMesh(const Key& key) const
+State::GetMesh(Key key) const
 {
+  if (key.empty()) key = "domain";
   try {
     return meshes_.at(key).first;
   } catch (const std::out_of_range& e) {
@@ -111,31 +124,29 @@ State::GetMesh(const Key& key) const
 };
 
 Teuchos::RCP<AmanziMesh::Mesh>
-State::GetDeformableMesh(const Key& key)
+State::GetDeformableMesh(Key key)
 {
-  std::pair<Teuchos::RCP<AmanziMesh::Mesh>, bool> m;
+  if (key.empty()) key = "domain";
+  if (!IsDeformableMesh(key)) {
+    Errors::Message msg;
+    msg << "Mesh \"" << key << "\" is not deformable.";
+    throw(msg);
+  }
+
   try {
-    m = meshes_.at(key);
+    return meshes_.at(key).first;
   } catch (const std::out_of_range& e) {
     std::stringstream messagestream;
     messagestream << "Mesh \"" << key << "\" does not exist in the state.";
     Errors::Message message(messagestream.str());
     throw(message);
   }
-
-  if (m.second) {
-    return m.first;
-  } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh \"" << key << "\" is not deformable.";
-    Errors::Message message(messagestream.str());
-    throw(message);
-  }
 };
 
 bool
-State::IsDeformableMesh(const Key& key) const
+State::IsDeformableMesh(Key key) const
 {
+  if (key.empty()) key = "domain";
   try {
     return meshes_.at(key).second;
   } catch (const std::out_of_range& e) {

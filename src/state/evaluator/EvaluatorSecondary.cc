@@ -18,8 +18,7 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-    : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist),
-      computed_once_(false)
+    : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist)
 {
   // process the plist for names and tags of the things this evaluator
   // calculates
@@ -136,7 +135,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
 
   // Check if we need to update ourselves, and potentially update our
   // dependencies.
-  bool update = !computed_once_;
+  bool update = requests_.empty(); // if empty, never before been calculated
   for (auto& dep : dependencies_) {
     update |=
       S.GetEvaluator(dep.first, dep.second)
@@ -144,7 +143,6 @@ EvaluatorSecondary::Update(State& S, const Key& request)
   }
 
   if (update) {
-    computed_once_ = true;
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "... updating " << my_keys_[0].first << " value."
                 << std::endl;
@@ -188,6 +186,9 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     throw(msg);
   }
 
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
+  auto& deriv_request_set = deriv_requests_[wrt];
+  
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "SecondaryVariable Derivative d" << my_keys_[0].first << "_d" << wrt_key
@@ -196,19 +197,24 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
 
   // Check if we need to update ourselves, and potentially update our
   // dependencies.
-  bool update = false;
+  bool update = deriv_request_set.empty(); // not done once
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
   Key my_request = Key{ "d" } +
                    Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
                    "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
+
+  // I don't believe this should be required.  It may be a lot of extra work to
+  //  compute ourselves (e.g. what if this is assembling local matrices).
   //  update |= Update(S, my_request);
 
   // -- must update if any of our dependencies or our dependencies' derivatives have changed
   for (auto& dep : dependencies_) {
+    // but we must update our dependencies as we will use them to compute our derivative
     update |= S.GetEvaluator(dep.first, dep.second).Update(S, my_request);
-    
+
+    // and we must update our dependencies derivatives to apply the chain rule
     if (S.GetEvaluator(dep.first, dep.second)
           .IsDependency(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
@@ -217,7 +223,6 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   }
 
   // Do the update
-  auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "... updating." << std::endl;
@@ -225,16 +230,16 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
-    deriv_requests_.clear();
-    deriv_requests_.insert(request);
+    deriv_request_set.clear();
+    deriv_request_set.insert(requestor);
     return true;
   } else {
     // Otherwise, simply service the request
-    if (deriv_requests_.find(request) == deriv_requests_.end()) {
+    if (deriv_request_set.find(requestor) == deriv_request_set.end()) {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
         *vo_.os() << "... not updating but new to this request." << std::endl;
       }
-      deriv_requests_.insert(request);
+      deriv_request_set.insert(requestor);
       return true;
     } else {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {

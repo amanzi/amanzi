@@ -25,6 +25,7 @@ struct Run {
 
   Teuchos::RCP<State> S;
   Teuchos::RCP<PK> pk;
+  Teuchos::RCP<Amanzi::EvaluatorPrimary<double>> t0_eval_, t1_eval_;
 };
 
 //
@@ -34,6 +35,21 @@ std::pair<double, double>
 run_test(const Teuchos::RCP<State>& S, const Teuchos::RCP<PK>& pk,
          double end_time = 1.0)
 {
+  // get primary variable evaluators for time
+  Teuchos::ParameterList time_eval_plist("time");
+  time_eval_plist.set("evaluator type", "primary variable double");
+  S->FEList().set("time", time_eval_plist);
+
+  S->RequireEvaluator("time", "");
+  auto t0_eval_ = S->GetEvaluatorPtr("time", "");
+  auto t0_eval = Teuchos::rcp_dynamic_cast<Amanzi::EvaluatorPrimary<double>>(t0_eval_);
+  AMANZI_ASSERT(t0_eval.get());
+
+  S->RequireEvaluator("time", "next");
+  auto t1_eval_ = S->GetEvaluatorPtr("time", "next");
+  auto t1_eval = Teuchos::rcp_dynamic_cast<Amanzi::EvaluatorPrimary<double>>(t1_eval_);
+  AMANZI_ASSERT(t1_eval.get());
+
   pk->Setup();
   S->Setup();
 
@@ -48,6 +64,7 @@ run_test(const Teuchos::RCP<State>& S, const Teuchos::RCP<PK>& pk,
   while (!done) {
     double dt = std::min(pk->get_dt(), 1.0);
     S->set_time("next", S->time() + dt);
+    t1_eval->SetChanged();
     S->set_cycle("next", S->cycle() + 1);
     bool fail = pk->AdvanceStep("", "next");
     if (fail) {
@@ -56,6 +73,7 @@ run_test(const Teuchos::RCP<State>& S, const Teuchos::RCP<PK>& pk,
     } else {
       pk->CommitStep("", "next");
       S->set_time("", S->time("next"));
+      t0_eval->SetChanged();
       S->set_cycle("", S->cycle("next"));
       nsteps_good++;
     }

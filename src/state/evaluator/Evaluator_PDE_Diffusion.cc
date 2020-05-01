@@ -165,14 +165,18 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor,
 
   // Check if we need to update ourselves, and potentially update our
   // dependencies.
-  bool update = false;
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
+  auto& deriv_request_set = deriv_requests_[wrt];
+  bool update = deriv_request_set.empty(); // has not been done once
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
   Key my_request = Key{ "d" } +
                    Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
                    "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
-  update |= Update(S, my_request);
+  // I don't believe this should be required.  It may be a lot of extra work to
+  //  compute ourselves (this is assembling local matrices)
+  //  update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   // NOTE: some assumptions about what is and is not differentiable
@@ -195,7 +199,6 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor,
   }
 
   // Do the update
-  auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "  ... updating." << std::endl;
@@ -203,16 +206,16 @@ Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor,
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
-    deriv_requests_.clear();
-    deriv_requests_.insert(request);
+    deriv_request_set.clear();
+    deriv_request_set.insert(requestor);
     return true;
   } else {
     // Otherwise, simply service the request
-    if (deriv_requests_.find(request) == deriv_requests_.end()) {
+    if (deriv_request_set.find(requestor) == deriv_request_set.end()) {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
         *vo_.os() << "  ... not updating but new to this request." << std::endl;
       }
-      deriv_requests_.insert(request);
+      deriv_request_set.insert(requestor);
       return true;
     } else {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
