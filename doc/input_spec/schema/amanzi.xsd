@@ -415,8 +415,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:simpleType name="typedef_property_file_formats">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="file"/> <!-- TODO: what type should property files be? -->
-		<!--xs:enumeration value="color"/>
-		<xs:enumeration value="exodus ii"/-->
+		<xs:enumeration value="h5file"/>
 	</xs:restriction>
 </xs:simpleType>
 
@@ -685,8 +684,13 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="algorithm" type="typedef_algorithm" default="explicit first-order" minOccurs="0"  maxOccurs="1"/>
 		<xs:element name="sub_cycling" type="xs:string" default="off" minOccurs="0"  maxOccurs="1"/>
 		<xs:element name="cfl" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="limiter" type="xs:string" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="limiter_stencil" type="xs:string" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="dispersion_linear_solver" type="typedef_unstr_linear_solver" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:assert test="not(exists(sub_cycling)) or sub_cycling = ('on','off')"/>
+	<xs:assert test="not(exists(limiter)) or limiter = ('tensorial','Barth-Jespersen','Kuzmin')"/>
+	<xs:assert test="not(exists(limiter_stencil)) or limiter_stencil = ('node-to-cells','face-to-cells','cell-to-closest-cells')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_chemistry_controls">
@@ -842,6 +846,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="hypre_smoother_sweeps" type="xs:integer" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="hypre_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="hypre_strong_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="use_block_indices" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
 
@@ -1227,7 +1232,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="mechanical_properties" type="typedef_mechanical_properties" minOccurs="1" maxOccurs="1"/>
 		<!-- We need either permeability or hydraulic conductivity, need to add a check with a choice? -->
 		<xs:element name="permeability" minOccurs="0" maxOccurs="1">
-                	<xs:alternative test="exists(@type)" type="typedef_property_file"/>
+			<xs:alternative test="@type = ('file', 'h5file')" type="typedef_property_file"/>
                 	<xs:alternative type="typedef_permeability"/>
 		</xs:element>
 		<xs:element name="hydraulic_conductivity" type="typedef_hydraulic_conductivity" minOccurs="0" maxOccurs="1"/>
@@ -1260,8 +1265,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:alternative type="typedef_porosity"/>
 		</xs:element>
 		<xs:element name="particle_density" minOccurs="0" maxOccurs="1">			
-			<!-- EIB: may change value of type, therefore test for existance not value-->
-			<xs:alternative test="exists(@type)" type="typedef_property_file"/>
+			<!-- KL: exists does not work -->
+			<xs:alternative test="@type = ('file', 'h5file')" type="typedef_property_file"/>
 			<xs:alternative type="typedef_particle_density"/>
 		</xs:element>
 		<xs:element name="specific_storage" minOccurs="0" maxOccurs="1">			
@@ -1585,6 +1590,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:attribute name="first_order_decay_constant" type="typedef_exponential"/>	
 		<xs:attribute name="forward_rate" type="typedef_exponential" />
 		<xs:attribute name="backward_rate" type="typedef_exponential" />
+		<xs:attribute name="molar_mass" type="typedef_exponential" />
 	</xs:extension>
 	</xs:simpleContent>
 </xs:complexType>
@@ -1855,9 +1861,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_bc_linear_pressure">
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
-	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
-	<xs:attribute name="reference_value" type="xs:string" use="required"/>
+	<xs:attribute name="gradient" type="xs:string" use="required"/>
+	<xs:attribute name="reference_coord" type="typedef_coordinate" use="required"/>
+	<xs:attribute name="value" type="xs:string" use="required"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_hydrostatic">
@@ -1874,8 +1880,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_bc_linear_hydrostatic">
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
-	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
+	<xs:attribute name="gradient" type="xs:string" use="required"/>
+	<xs:attribute name="reference_coord" type="typedef_coordinate" use="required"/>
 	<xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
 	<xs:attribute name="submodel" type="xs:string"/>
 	<xs:assert test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
@@ -2028,6 +2034,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="time_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="cycle_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="write_regions" type="typedef_write_regions" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="write_partition" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="whitelist" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="blacklist" type="xs:string" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
@@ -2084,6 +2091,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="aqueous_saturation" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="primary_volumetric_flow_rate" type="typedef_primary_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="drawdown" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="solute_volumetric_flow_rate" type="typedef_primary_observation" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 	<xs:attribute name="name"/>
 	<xs:assert test="@name = ('water')"/>	
@@ -2091,7 +2099,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_observation">
 	<xs:all>
-		<xs:element name="filename" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="assigned_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="functional" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
@@ -2101,13 +2108,11 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_primary_observation">
 	<xs:all>
-		<xs:element name="filename" type="xs:string" minOccurs="0" maxOccurs="1"/>
-		<xs:element name="primary" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="assigned_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="functional" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="time_macros" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
 	</xs:all>
-	<xs:attribute name="primary"/>
+	<xs:attribute name="solute"/>
 	<xs:assert test="not(exists(functional)) or functional = ('point', 'integral')"/>
 </xs:complexType>
 
