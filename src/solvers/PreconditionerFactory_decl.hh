@@ -27,10 +27,10 @@ class PreconditionerFactory {
   ~PreconditionerFactory(){};
 
   Teuchos::RCP<Preconditioner<Matrix, Vector>>
-  Create(const std::string& name, const Teuchos::ParameterList& prec_list);
+  Create(const std::string& name, const ParameterList_ptr_type& prec_list);
 
   Teuchos::RCP<Preconditioner<Matrix, Vector>>
-  Create(Teuchos::ParameterList& prec_list);
+  Create(const ParameterList_ptr_type& prec_list);
 };
 
 
@@ -43,10 +43,10 @@ class PreconditionerFactory<Matrix_type,Vector_type> {
   ~PreconditionerFactory(){};
 
   Teuchos::RCP<Preconditioner<Matrix_type,Vector_type>>
-  Create(const std::string& name, const Teuchos::ParameterList& prec_list);
+  Create(const std::string& name, const ParameterList_ptr_type& prec_list);
 
   Teuchos::RCP<Preconditioner<Matrix_type, Vector_type>>
-  Create(Teuchos::ParameterList& prec_list);
+  Create(const ParameterList_ptr_type& prec_list);
 };
 
 

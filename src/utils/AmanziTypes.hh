@@ -105,11 +105,13 @@ typedef Teuchos::Comm<int> Comm_type;
 typedef Teuchos::MpiComm<int> MpiComm_type;
 #  endif
 
+using ParameterList_ptr_type = Teuchos::RCP<Teuchos::ParameterList>;
+
 // Tpetra maps and importers
-typedef Tpetra::Map<LO,GO> Map_type;
-typedef Tpetra::Map<LO,GO> BlockMap_type; // is there a Tpetra block map?
-typedef Tpetra::Import<LO,GO> Import_type;
-typedef Tpetra::Export<LO,GO> Export_type;
+using Map_type = Tpetra::Map<LO,GO>;
+using BlockMap_type = Tpetra::Map<LO,GO>; // is there a Tpetra block map?
+using Import_type = Tpetra::Import<LO,GO>;
+using Export_type = Tpetra::Export<LO,GO>;
 
 // Tpetra vectors
 // -- alias

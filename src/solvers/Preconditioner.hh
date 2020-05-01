@@ -37,7 +37,8 @@ class Preconditioner {
   // Initializes the solver with provided parameters.
   // This need not be called by preconditioners created using the factory.
   virtual void
-  Init(const std::string& name, const Teuchos::ParameterList& list) = 0;
+  Init(const std::string& name,
+       const Teuchos::RCP<Teuchos::ParameterList>& list) = 0;
 
   // Rebuild the preconditioner using the given matrix A.
   virtual void Update(const Teuchos::RCP<Matrix>& A) = 0;
