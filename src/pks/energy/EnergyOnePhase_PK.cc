@@ -160,9 +160,15 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
     bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
 
+  // initialize boundary conditions
+  double t_ini = S->time(); 
+  auto temperature = *S->GetFieldData(temperature_key_, passwd_);
+  UpdateSourceBoundaryData(t_ini, t_ini, temperature);
+
   // output of initialization header
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
     *vo_->os() << std::endl << vo_->color("green")
                << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;

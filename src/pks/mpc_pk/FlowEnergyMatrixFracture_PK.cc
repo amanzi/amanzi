@@ -143,9 +143,13 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
+  op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
 
   op_tree_matrix_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree_matrix());
   op_tree_matrix_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree_matrix());
+
+  op_tree_pc_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree_pc());
+  op_tree_pc_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree_pc());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -228,6 +232,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // pk_matrix->op_diff()->ApplyBCs(true, true, true);
 
   op_tree_matrix_->SymbolicAssembleMatrix();
+  op_tree_pc_->SymbolicAssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -282,10 +287,14 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
     double t, Teuchos::RCP<const TreeVector> up, double h)
 {
+  // generate local matrices and apply boundary conditions
+  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, h);
+
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-  op_tree_matrix_->InitPreconditioner(pc_list);
+  op_tree_pc_->AssembleMatrix();
+  op_tree_pc_->InitPreconditioner(pc_list);
 }
 
 
@@ -296,7 +305,7 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
                                                      Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_tree_matrix_->ApplyInverse(*X, *Y);
+  return op_tree_pc_->ApplyInverse(*X, *Y);
 }
 
 }  // namespace Amanzi
