@@ -105,7 +105,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
     }
 
     ierr |=
-      graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
+      graph->insertLocalIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
     CHECK(!ierr);
   }
 
@@ -221,7 +221,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
     for (int n = 0; n != neighbor_cells.size(); ++n)
       neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
 
-    ierr |= graph->InsertGlobalIndices(
+    ierr |= graph->insertGlobalIndices(
       cell_map_ghosted->GID(c), neighbor_cells.size(), &neighbor_cell_gids[0]);
     CHECK(!ierr);
   }
@@ -337,7 +337,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
     }
 
     ierr |=
-      graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
+      graph->insertLocalIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
     CHECK(!ierr);
   }
 
@@ -364,7 +364,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
       }
 
       std::vector<double> vals(neighbor_cells.size(), 1);
-      ierr |= matrix.SumIntoMyValues(
+      ierr |= matrix.sumIntoLocalValues(
         c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
       AMANZI_ASSERT(!ierr);
     }
@@ -434,7 +434,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
 //     mesh->cell_get_faces(c, &faces);
 
 //     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+//       ierr |= graph->insertLocalIndices(faces[n], faces.size(), &faces[0]);
 //       CHECK(!ierr);
 //     }
 //   }
@@ -525,7 +525,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
 //     for (int n=0; n!=faces.size(); ++n)
 //       face_gids[n] = face_map_ghosted->GID(faces[n]);
 //     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertGlobalIndices(face_gids[n], face_gids.size(),
+//       ierr |= graph->insertGlobalIndices(face_gids[n], face_gids.size(),
 //       &face_gids[0]); AMANZI_ASSERT(!ierr);
 //     }
 //   }
@@ -616,7 +616,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
 //     mesh->cell_get_faces(c, &faces);
 
 //     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+//       ierr |= graph->insertLocalIndices(faces[n], faces.size(), &faces[0]);
 //       CHECK(!ierr);
 //     }
 //   }
@@ -637,7 +637,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
 //       std::vector<double> vals(faces.size(), -1.);
 //       vals[n] = faces.size()-1;
 
-//       ierr |= matrix.SumIntoMyValues(faces[n], faces.size(), &vals[0],
+//       ierr |= matrix.sumIntoLocalValues(faces[n], faces.size(), &vals[0],
 //       &faces[0]);
 //     }
 //   }
@@ -703,7 +703,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
     mesh->cell_get_faces(c, &faces);
 
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph->insertLocalIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
   }
@@ -789,7 +789,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
     for (int n = 0; n != faces.size(); ++n)
       face_gids[n] = face_map_ghosted->GID(faces[n]);
 
-    ierr |= graph->InsertGlobalIndices(
+    ierr |= graph->insertGlobalIndices(
       face_gids.size(), &face_gids[0], face_gids.size(), &face_gids[0]);
     AMANZI_ASSERT(!ierr);
   }
@@ -874,7 +874,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
     mesh->cell_get_faces(c, &faces);
 
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph->insertLocalIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
   }
@@ -892,7 +892,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
       mesh->cell_get_faces(c, &faces);
 
       Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
-      ierr |= matrix.SumIntoMyValues(&faces[0], vals);
+      ierr |= matrix.sumIntoLocalValues(&faces[0], vals);
     }
 
     ierr |= matrix.FillComplete();

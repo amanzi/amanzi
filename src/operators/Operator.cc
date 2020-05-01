@@ -171,7 +171,7 @@ void Operator::SymbolicAssembleMatrix()
 //       lid_r.push_back(row_gids[row_lids[n][i]]);
 //       lid_c.push_back(col_gids[col_lids[n][i]]);
 //     }
-//     ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+//     ierr |= graph.insertLocalIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -244,7 +244,7 @@ void Operator::AssembleMatrix()
 //       lid_c.push_back(col_gids[col_lids[n][i]]);
 //     }
 
-//     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
+//     ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[n]);
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -391,33 +391,6 @@ int Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
 //   return 0;
 // }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name,
-                                  const Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  UpdatePreconditioner();
-}
-
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  preconditioner_ = factory.Create(plist);
-  UpdatePreconditioner();
-}
-
 /* ******************************************************************
 * Init owned local operators.
 ****************************************************************** */
@@ -448,7 +421,7 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
 * Create the preconditioner and set options. Symbolic assemble of 
 * operator's matrix must have been called.
 ****************************************************************** */
-void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void Operator::InitializePreconditioner(const ParameterList_ptr_type& plist)
 {
   if (smap_.get() == nullptr) {
     smap_ = createSuperMap(getDomainMap().ptr());

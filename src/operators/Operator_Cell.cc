@@ -170,7 +170,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    ierr |= graph.InsertMyIndices(row, 1, &col);
+    ierr |= graph.insertLocalIndices(row, 1, &col);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -204,7 +204,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    ierr |= graph.InsertMyIndices(ncells, lid_r.data(), ncells, lid_c.data());
+    ierr |= graph.insertLocalIndices(ncells, lid_r.data(), ncells, lid_c.data());
   }
 
   AMANZI_ASSERT(!ierr);
@@ -230,7 +230,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &dv(0,c), &col);
+    ierr |= mat.sumIntoLocalValues(row, 1, &dv(0,c), &col);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -262,7 +262,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
    
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[f]);
     AMANZI_ASSERT(ierr>=0);
   }
   AMANZI_ASSERT(ierr>=0);

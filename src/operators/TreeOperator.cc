@@ -239,52 +239,13 @@ void TreeOperator::AssembleMatrix() {
 
 
 /* ******************************************************************
-* Create preconditioner using name and a factory.
-****************************************************************** */
-void TreeOperator::InitPreconditioner(
-    const std::string& prec_name, const Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  UpdatePreconditioner();
-}
-
-
-/* ******************************************************************
-* Create preconditioner using name and a factory.
-****************************************************************** */
-void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  // // provide block ids for block strategies.
-  // if (plist.isParameter("preconditioner type") &&
-  //     plist.get<std::string>("preconditioner type") == "boomer amg" &&
-  //     plist.isSublist("boomer amg parameters")) {
-
-  //   auto block_ids = smap_->BlockIndices();
-  //   plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-  //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
-  // }
-
-  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
-  preconditioner_ = factory.Create(plist);
-  UpdatePreconditioner();
-}
-
-
-/* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
 * Create the PC and set options.  SymbolicAssemble() must have been called.
 ****************************************************************** */
-void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void TreeOperator::InitializePreconditioner(const ParameterList_ptr_type& plist)
 {
   if (smap_.get() == nullptr) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = createSuperMap(*getDomainMap());
-    } else {
-      Errors::Message msg("TreeOperator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
+    smap_ = createSuperMap(*getDomainMap());
   }
 
   // // provide block ids for block strategies.

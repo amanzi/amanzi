@@ -417,7 +417,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
 
     // symbolic assemble the first time
     //    global_op->SymbolicAssembleMatrix();
-    global_op->InitializePreconditioner(plist_.sublist("preconditioner"));
+    
+    global_op->InitializePreconditioner(Teuchos::parameterList(plist_.sublist("preconditioner")));
   }
 
   // push values

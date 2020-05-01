@@ -217,10 +217,7 @@ class Operator {
                               bool zero = true);
 
   // preconditioner
-  void InitPreconditioner(const std::string& prec_name,
-                          const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void InitializePreconditioner(const ParameterList_ptr_type& plist);
   void UpdatePreconditioner();
 
   // access

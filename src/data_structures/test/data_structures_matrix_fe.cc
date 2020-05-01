@@ -45,7 +45,6 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
   int getRank = comm->getRank();
@@ -82,7 +81,6 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   auto cell_map_ghosted = mesh->cell_map(true);
 
   // create the graph
-  int ierr(0);
   auto graph = Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
   
   Entity_ID_View faces;
@@ -102,19 +100,16 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
       }
     }
 
-    ierr |=
-      graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
-    CHECK(!ierr);
+    graph->insertLocalIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
   }
 
-  ierr |= graph->FillComplete(cell_map, cell_map);
-  CHECK(!ierr);
+  graph->fillComplete(cell_map, cell_map);
 
   // create the test matrix
   MatrixFE matrix(graph);
 
   // and the control matrix
-  Matrix_type control(graph->Graph());
+  Matrix_type control(graph->getGraph());
 
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
@@ -133,9 +128,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     Teuchos::SerialDenseMatrix<int,double> vals(neighbor_cells.size(), 1);
     vals.random();
     
-    ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals(0,0), neighbor_cells.data());
-    AMANZI_ASSERT(!ierr);
-    CHECK(!ierr);
+    matrix.sumIntoLocalValues(c, neighbor_cells.size(), &vals(0,0), neighbor_cells.data());
 
     std::vector<int> neighbor_cell_gids(neighbor_cells.size());
     for (int n=0; n!=neighbor_cells.size(); ++n) {
@@ -144,19 +137,16 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     }
     AMANZI_ASSERT(cell_map_ghosted->getGlobalElement(c) >= 0);
     control.sumIntoGlobalValues(cell_map_ghosted->getGlobalElement(c), neighbor_cells.size(), &vals(0,0), neighbor_cell_gids.data());
-    CHECK(!ierr);
   }
 
-  ierr |= matrix.FillComplete();
-  CHECK(!ierr);
+  matrix.fillComplete();
 
-  control.fillComplete(graph->DomainMap(), graph->RangeMap());
+  control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
 
   auto os = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  matrix.Matrix()->describe(*os, Teuchos::VERB_EXTREME);
+  matrix.getMatrix()->describe(*os, Teuchos::VERB_EXTREME);
   control.describe(*os, Teuchos::VERB_EXTREME);
   
-  CHECK(!ierr);
 
   // check matrix equality
   for (int c=0; c!=ncells; ++c) {
@@ -164,11 +154,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     const int *ctrl_inds, *mat_inds;
     int ctrl_nentries, mat_nentries;
 
-    ierr |= matrix.ExtractMyRowCopy(c, mat_nentries, mat_vals, mat_inds);
-    CHECK(!ierr);
+    matrix.getLocalRowView(c, mat_nentries, mat_vals, mat_inds);
 
-    ierr |= control.getLocalRowView(c, ctrl_nentries, ctrl_vals, ctrl_inds);
-    CHECK(!ierr);
+    control.getLocalRowView(c, ctrl_nentries, ctrl_vals, ctrl_inds);
 
     CHECK_EQUAL(ctrl_nentries, mat_nentries);
     for (int i=0; i!=std::min(ctrl_nentries, mat_nentries); ++i) {
@@ -187,7 +175,6 @@ TEST(FE_MATRIX_FACE_FACE)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
   int getRank = comm->getRank();
@@ -208,15 +195,9 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::RCP<GeometricModel> gm =
     Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
+  meshfactory.set_preference({Framework::MSTK});
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  //  Teuchos::RCP<const Mesh> mesh =
-  //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -224,7 +205,6 @@ TEST(FE_MATRIX_FACE_FACE)
   auto face_map_ghosted = mesh->face_map(true);
 
   // create the graph
-  int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
@@ -232,21 +212,18 @@ TEST(FE_MATRIX_FACE_FACE)
   Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, faces);
-
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
-      CHECK(!ierr);
+      graph->insertLocalIndices(faces[n], faces.size(), &faces[0]);
     }
   }
 
-  ierr |= graph->FillComplete(face_map, face_map);
-  CHECK(!ierr);
+  graph->fillComplete(face_map, face_map);
 
   // create the test matrix
   MatrixFE matrix(graph);
 
   // and the control matrix
-  Matrix_type control(graph->Graph());
+  Matrix_type control(graph->getGraph());
 
   for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, faces);
@@ -259,18 +236,15 @@ TEST(FE_MATRIX_FACE_FACE)
 
     Teuchos::SerialDenseMatrix<int,double> vals(faces.size(), faces.size());
     vals.random();
-
-    ierr |= matrix.SumIntoMyValues_Transposed(faces.data(), faces.data(), vals);
-    CHECK(!ierr);
+    matrix.sumIntoLocalValuesTransposed(faces.data(), faces.data(), vals);
 
     for (int i=0; i!=faces.size(); ++i) {
       control.sumIntoGlobalValues(face_gids[i], faces.size(), &vals(0,i), &face_gids[0]);
     }
   }
 
-  ierr |= matrix.FillComplete();
-  control.fillComplete(graph->DomainMap(), graph->RangeMap());
-
+  matrix.fillComplete();
+  control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
 
   // check matrix equality
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -279,11 +253,8 @@ TEST(FE_MATRIX_FACE_FACE)
     const int *ctrl_inds, *mat_inds;
     int ctrl_nentries, mat_nentries;
 
-    ierr |= matrix.ExtractMyRowCopy(f, mat_nentries, mat_vals, mat_inds);
-    CHECK(!ierr);
-
-    ierr |= control.getLocalRowView(f, ctrl_nentries, ctrl_vals, ctrl_inds);
-    CHECK(!ierr);
+    matrix.getLocalRowView(f, mat_nentries, mat_vals, mat_inds);
+    control.getLocalRowView(f, ctrl_nentries, ctrl_vals, ctrl_inds);
 
     CHECK_EQUAL(ctrl_nentries, mat_nentries);
     for (int i=0; i!=std::min(ctrl_nentries, mat_nentries); ++i) {

@@ -37,7 +37,6 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
   int getRank = comm->getRank();
@@ -74,7 +73,6 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   auto cell_map_ghosted = mesh->cell_map(true);
 
   // create the graphs, one to test local, the other to test global insertion
-  int ierr(0);
   GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
 
@@ -100,18 +98,13 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
     for (int n=0; n!=neighbor_cells.size(); ++n)
       global_neighbors[n] = cell_map_ghosted->getGlobalElement(neighbor_cells[n]);
 
-    ierr |=
-      graph_local.InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
-    CHECK(!ierr);
-    ierr |= graph_global.InsertGlobalIndices(
+    graph_local.insertLocalIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
+    graph_global.insertGlobalIndices(
       global_c, neighbor_cells.size(), &global_neighbors[0]);
-    CHECK(!ierr);
   }
 
-  ierr |= graph_local.FillComplete(cell_map, cell_map);
-  CHECK(!ierr);
-  ierr |= graph_global.FillComplete(cell_map, cell_map);
-  CHECK(!ierr);
+  graph_local.fillComplete(cell_map, cell_map);
+  graph_global.fillComplete(cell_map, cell_map);
 }
 
 
@@ -123,7 +116,6 @@ TEST(FE_GRAPH_FACE_FACE)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
   int getRank = comm->getRank();
@@ -160,7 +152,6 @@ TEST(FE_GRAPH_FACE_FACE)
   auto face_map_ghosted = mesh->face_map(true);
 
   // create the graph
-  int ierr(0);
   GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
   GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
 
@@ -174,17 +165,13 @@ TEST(FE_GRAPH_FACE_FACE)
       global_faces[n] = face_map_ghosted->getGlobalElement(faces[n]);
     
     for (int n=0; n!=faces.size(); ++n) {
-      ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);
-      CHECK(!ierr);
+      graph_local.insertLocalIndices(faces[n], faces.size(), &faces[0]);
       AMANZI_ASSERT(global_faces[n] >= 0);
-      ierr |= graph_global.InsertGlobalIndices(
+      graph_global.insertGlobalIndices(
         global_faces[n], global_faces.size(), &global_faces[0]);
-      CHECK(!ierr);
     }
   }
 
-  ierr |= graph_local.FillComplete(face_map, face_map);
-  CHECK(!ierr);
-  ierr |= graph_global.FillComplete(face_map, face_map);
-  CHECK(!ierr);
+  graph_local.fillComplete(face_map, face_map);
+  graph_global.fillComplete(face_map, face_map);
 }

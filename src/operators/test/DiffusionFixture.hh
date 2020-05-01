@@ -23,7 +23,7 @@
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListCoreHelpers.hpp"
 
 // Amanzi
 #include "AmanziTypes.hh"
@@ -45,12 +45,10 @@ struct DiffusionFixture {
       : comm(Amanzi::getDefaultComm()),
         ana(ana_)
   {
-    std::string xmlFileName = "test/operator_diffusion_discretizations.xml";
-    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    plist = xmlreader.getParameters();
+    plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_discretizations.xml");
 
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(ana->dimension(),
-            plist.sublist("regions"), *comm));
+            plist->sublist("regions"), *comm));
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     if (mesh_file == "Generate1D") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
@@ -68,7 +66,7 @@ struct DiffusionFixture {
   template<class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>
   void discretize(const std::string& name) {
     // construct the operator
-    op = Teuchos::rcp(new PDE_Diffusion_type(plist.sublist("PK operator").sublist(name), mesh));
+    op = Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh));
     op->Init();
 
     // modify diffusion coefficient
@@ -94,7 +92,7 @@ struct DiffusionFixture {
   void discretizeWithGravity(const std::string& name, double gravity) {
     AmanziGeometry::Point g(mesh->space_dimension());
     g[mesh->space_dimension()-1] = -gravity;
-    Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(name);
+    Teuchos::ParameterList op_list = plist->sublist("PK operator").sublist(name);
     op_list.set("gravity", true);
     op = Teuchos::rcp(new PDE_Diffusion_type(op_list, mesh));
     op->SetDensity(1.0);
@@ -202,16 +200,16 @@ struct DiffusionFixture {
     // }
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
+    auto slist = Teuchos::sublist(Teuchos::sublist(plist, "preconditioners"), pc_name);
     global_op->InitializePreconditioner(slist);
 
     if (symmetric) {
-      Teuchos::ParameterList lop_list = plist.sublist("solvers")
+      Teuchos::ParameterList lop_list = plist->sublist("solvers")
                                .sublist("AztecOO CG").sublist("pcg parameters");
       solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
       solver->Init(lop_list);
     } else {
-      Teuchos::ParameterList lop_list = plist.sublist("solvers")
+      Teuchos::ParameterList lop_list = plist->sublist("solvers")
                                .sublist("GMRES").sublist("GMRES parameters");
       solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
       solver->Init(lop_list);
@@ -283,7 +281,7 @@ struct DiffusionFixture {
   }
   
   Comm_ptr_type comm;
-  Teuchos::ParameterList plist;
+  ParameterList_ptr_type plist;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
   bool symmetric;

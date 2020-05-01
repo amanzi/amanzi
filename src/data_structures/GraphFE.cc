@@ -21,7 +21,6 @@ map, not the true row map.
 #include "AmanziMatrix.hh"
 
 namespace Amanzi {
-namespace Operators {
 
 // Constructor
 GraphFE::GraphFE(const Map_ptr_type& row_map,
@@ -100,22 +99,18 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
 
 
 // fill graph using local indices
-int
-GraphFE::InsertMyIndices(LO row, std::size_t count, LO *indices) {
-  int ierr(0);
+void
+GraphFE::insertLocalIndices(LO row, std::size_t count, LO *indices) {
   if (row < n_owned_) {
     graph_->insertLocalIndices(row, count, indices);
   } else {
     offproc_graph_->insertLocalIndices(row-n_owned_, count, indices);
   }
-  return ierr;
 }
 
 // fill graph using global indices
-int
-GraphFE::InsertGlobalIndices(GO row, std::size_t count, GO *indices) {
-  int ierr(0);
-
+void
+GraphFE::insertGlobalIndices(GO row, std::size_t count, GO *indices) {
   LO local_row = ghosted_row_map_->getLocalElement(row);
   AMANZI_ASSERT(local_row >= 0);
   if (local_row < n_owned_) {
@@ -123,43 +118,34 @@ GraphFE::InsertGlobalIndices(GO row, std::size_t count, GO *indices) {
   } else {
     offproc_graph_->insertGlobalIndices(row, count, indices);
   }
-  return ierr;
 }
 
 // fill graph using local indices
-int
-GraphFE::InsertMyIndices(std::size_t row_count, LO *row_inds, std::size_t count, LO *indices) {
-  int ierr(0);
-
+void
+GraphFE::insertLocalIndices(std::size_t row_count, LO *row_inds, std::size_t count, LO *indices) {
   for (std::size_t n=0; n!=row_count; ++n)
-    ierr |= InsertMyIndices(row_inds[n], count, indices);
-  return ierr;
+    insertLocalIndices(row_inds[n], count, indices);
 }
 
 // fill graph using global indices
-int
-GraphFE::InsertGlobalIndices(std::size_t row_count, GO *row_inds, std::size_t count, GO *indices) {
-  int ierr(0);
-
+void
+GraphFE::insertGlobalIndices(std::size_t row_count, GO *row_inds, std::size_t count, GO *indices) {
   for (std::size_t n=0; n!=row_count; ++n)
-    ierr |= InsertGlobalIndices(row_inds[n], count, indices);
-  return ierr;
+    insertGlobalIndices(row_inds[n], count, indices);
 }
 
 // start fill
-int
-GraphFE::ResumeFill() {
+void
+GraphFE::resumeFill() {
   offproc_graph_->resumeFill();
   graph_->resumeFill();
-  return 0;
 }
 
 
 // finish fill
-int
-GraphFE::FillComplete(const Map_ptr_type& domain_map,
+void
+GraphFE::fillComplete(const Map_ptr_type& domain_map,
 		      const Map_ptr_type& range_map) {
-  int ierr = 0;
   domain_map_ = domain_map;
   range_map_ = range_map;
 
@@ -173,8 +159,6 @@ GraphFE::FillComplete(const Map_ptr_type& domain_map,
 
   // fillcomplete the final graph
   graph_->fillComplete(domain_map_, range_map_);
-  return ierr;    
 }
   
-} // namespace Operators
 } // namespace Amanzi
