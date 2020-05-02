@@ -139,6 +139,7 @@
 #   0.97.2       - update MSTK to 3.3.5
 #   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
 #   0.97.4       - added CLM
+#   0.97.5       - added exprtk
 
 include(CMakeParseArguments)
 
@@ -191,7 +192,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 4)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -548,3 +549,15 @@ set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
 set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
 set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
 
+#
+# TPL: exprtk
+#
+set(EXPRTK_VERSION_MAJOR 0)
+set(EXPRTK_VERSION_MINOR 0)
+set(EXPRTK_VERSION_PATCH 15b77a6)
+set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
+set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk")
+set(EXPRTK_ARCHIVE_FILE  exptk-${EXPTK_VERSION}.tar.gz)
+set(EXPRTK_SAVEAS_FILE   ${EXPTK_ARCHIVE_FILE})
+set(EXPRTK_GIT_REPOSITORY "https://github.com/ArashPartow/exprtk")
+set(EXPRTK_GIT_TAG       "15b77a667b06d5bd82db01e0f4c773dd7cce9a97")
