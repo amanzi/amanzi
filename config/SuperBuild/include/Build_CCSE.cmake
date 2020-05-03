@@ -57,7 +57,8 @@ set(CCSE_CMAKE_CACHE_ARGS
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-1.3.4-tools-plot1d.patch
-                    ccse-1.3.5-cmake.patch)
+                    ccse-1.3.5-cmake.patch
+                    ccse-1.3.5-rvalue.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
