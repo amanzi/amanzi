@@ -3914,7 +3914,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
+    `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
