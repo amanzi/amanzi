@@ -84,13 +84,8 @@ class Mineral : public SecondarySpecies {
   void UpdateVolumeFraction(const double rate,
                             const double delta_time);
 
-
-  void set_verbosity(const Verbosity verbosity) {
-    this->verbosity_ = verbosity;
-  };
-  Verbosity verbosity(void) const {
-    return this->verbosity_;
-  };
+  void set_verbosity(const Verbosity verbosity) { this->verbosity_ = verbosity; };
+  Verbosity verbosity(void) const { return this->verbosity_; };
 
  private:
   Verbosity verbosity_;

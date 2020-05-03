@@ -13,7 +13,6 @@
 #include <string>
 
 #include "species.hh"
-#include "chemistry_verbosity.hh"
 #include "string_tokenizer.hh"
 
 namespace Amanzi {

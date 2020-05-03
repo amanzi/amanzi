@@ -32,7 +32,6 @@
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 
 namespace Amanzi {

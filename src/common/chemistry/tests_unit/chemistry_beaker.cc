@@ -13,7 +13,6 @@
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
 SUITE(BeakerTests) {

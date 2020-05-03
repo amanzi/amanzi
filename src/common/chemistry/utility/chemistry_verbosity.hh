@@ -8,11 +8,7 @@
 
   Authors: Ben Andre
 
-  General description of the verbosity functionality is:
-
-  VerbosityFlags is an an array that controls whether a particular
-  verbosity level is enabled.
-  Verbosity is an enumeration of indicies into the VerbosityFlags array
+  Verbosity keywords.
 */
 
 #ifndef AMANZI_CHEMISTRY_VERBOSITY_HH_
@@ -49,10 +45,6 @@ enum Verbosity {
   kDebugIonExchange,
   kDebugNever  // always last!
 };
-
-typedef std::map<std::string, Verbosity> VerbosityMap;
-
-typedef std::bitset<32> VerbosityFlags;
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

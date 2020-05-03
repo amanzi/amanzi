@@ -76,7 +76,6 @@
 #include "secondary_species.hh"
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 
