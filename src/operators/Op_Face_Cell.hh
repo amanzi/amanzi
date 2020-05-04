@@ -36,8 +36,9 @@ class Op_Face_Cell : public Op {
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
       int loc[2] = {ncells,ncells}; 
-      csr.set_shape(f, loc);
+      csr.set_shape_host(f, loc);
     }
+    csr.update_sizes_device(); 
     csr.prefix_sum();
   }
 
@@ -49,10 +50,10 @@ class Op_Face_Cell : public Op {
     AmanziMesh::Mesh const * mesh_ = mesh.get();
     Kokkos::parallel_for(
         "Op_Face_Cell::GetLocalDiagCopy",
-        csr.size(),
+        csr.size_host(),
         KOKKOS_LAMBDA(const int f) {
           // Extract matrix 
-          WhetStone::DenseMatrix lm(
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
             csr.at(f),csr.size(f,0),csr.size(f,1)); 
 
           AmanziMesh::Entity_ID_View cells;
@@ -88,11 +89,11 @@ class Op_Face_Cell : public Op {
       const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
       Kokkos::parallel_for(
           "Op_Face_Cell::Rescale",
-          csr.size(), 
+          csr.size_host(), 
           KOKKOS_LAMBDA(const int& f) {
             AmanziMesh::Entity_ID_View cells;
             m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-            WhetStone::DenseMatrix lm(
+            WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
               csr.at(f),csr.size(f,0),csr.size(f,1)); 
             lm(0,0) *= s_c(0, cells(0));
             if (cells.size() > 1) {

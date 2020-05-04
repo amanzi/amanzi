@@ -28,13 +28,11 @@ map, not the true row map.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+#include "DenseMatrix.hh"
 #include "GraphFE.hh"
 
-namespace Amanzi {
 
-namespace WhetStone {
-class DenseMatrix;
-}
+namespace Amanzi {
 
 class MatrixFE {
  public:
@@ -73,29 +71,10 @@ class MatrixFE {
   void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
           const Teuchos::SerialDenseMatrix<int,double>& vals);
 
-  // local matrix sum
-  void sumIntoLocalValues(const int *row_inds, const int *col_inds,
-                      const WhetStone::DenseMatrix& vals);
-  void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
-          const WhetStone::DenseMatrix& vals);
-
-  // template<class ViewInds_type, class ViewVals_type>
-  // KOKKOS_INLINE_FUNCTION
-  // void sumIntoLocalValuesTransposed(const ViewInds_type& row_inds, const ViewInds_type& col_inds,
-  //                         const WhetStone::DenseMatrix& vals) {
-
-  //   for (int i=0; i < row_inds.extent(0); ++i) {
-  //     auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
-  //     // Force atomics on sums
-  //     for (int col_idx = 0; col_idx < nperel; ++col_idx) {
-  //       localMatrix.sumIntoValues (local_row_id, &element_lcids(col_idx), 1,
-  //               &(element_matrix(element_node_idx,col_idx)),
-  //               true, true);
-  //     }
-  //     Kokkos::atomic_add (&(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
-  //   }
-    
-  // }
+  int SumIntoMyValues(const int *row_inds, const int *col_inds,
+                      const WhetStone::DenseMatrix<>& vals);
+  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
+          const WhetStone::DenseMatrix<>& vals);
   
   // hack the diagonal
   void diagonalShift(double shift);

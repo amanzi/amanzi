@@ -29,7 +29,7 @@ SpaceTimePolynomial::SpaceTimePolynomial(int d, int order)
   order_ = order;
   size_ = order + 1;
 
-  Polynomial tmp(d, 0);
+  Polynomial<> tmp(d, 0);
   coefs_.resize(size_, tmp);
 }
 
@@ -59,7 +59,7 @@ void SpaceTimePolynomial::reshape(int d, int order, bool reset)
     order_ = order;
     size_ = order + 1;
 
-    Polynomial tmp(d, 0);
+    Polynomial<> tmp(d, 0);
     coefs_.resize(size_, tmp);
   } else if (order_ != order) {
     int size = size_;
@@ -69,14 +69,14 @@ void SpaceTimePolynomial::reshape(int d, int order, bool reset)
     coefs_.resize(size_);
 
     if (reset) { 
-      Polynomial tmp(d, 0);
+      Polynomial<> tmp(d, 0);
       for (int i = 0; i < size_; ++i) coefs_[i] = tmp;
     } else {
-      Polynomial tmp(d, 0);
+      Polynomial<> tmp(d, 0);
       for (int i = size; i < size_; ++i) coefs_[i] = tmp;
     }
   } else if (reset) {
-    Polynomial tmp(d, 0);
+    Polynomial<> tmp(d, 0);
     for (int i = 0; i < size_; ++i) coefs_[i] = tmp;
   }
 }
@@ -153,7 +153,7 @@ double SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) con
 /* ******************************************************************
 * Calculate polynomial value at a given time point.
 ****************************************************************** */
-Polynomial SpaceTimePolynomial::Value(double t) const
+Polynomial<> SpaceTimePolynomial::Value(double t) const
 {
   double tmp(t);
   auto poly = coefs_[0];

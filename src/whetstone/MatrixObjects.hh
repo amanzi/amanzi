@@ -101,7 +101,7 @@ class MatrixObjects {
 
   // simple operations with vector polynomials
   // -- value
-  DenseMatrix Value(const AmanziGeometry::Point& xp) const;
+  DenseMatrix<> Value(const AmanziGeometry::Point& xp) const;
 
   // -- matrix-vector products
   void Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose);
@@ -124,7 +124,7 @@ class MatrixObjects {
 
 
 // used types
-typedef MatrixObjects<Polynomial> MatrixPolynomial;
+typedef MatrixObjects<Polynomial<>> MatrixPolynomial;
 typedef MatrixObjects<SpaceTimePolynomial> MatrixSpaceTimePolynomial;
 
 
@@ -152,9 +152,9 @@ void MatrixObjects<T>::reshape(int d, int m, int n, int order, bool reset)
 * Calculate value at a point 
 ****************************************************************** */
 template<class T>
-DenseMatrix MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
+DenseMatrix<> MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
 {
-  DenseMatrix val(m_, n_);
+  DenseMatrix<> val(m_, n_);
 
   for (int i = 0; i < m_; ++i) 
     for (int j = 0; j < n_; ++j)

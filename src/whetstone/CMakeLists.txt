@@ -51,10 +51,7 @@ set(whetstone_inc_files
 )
 
 set(whetstone_src_files
-  DenseVector.cc
-  DenseMatrix.cc
   Tensor.cc
-  Polynomial.cc
   SpaceTimePolynomial.cc
   VectorObjects.cc
 )

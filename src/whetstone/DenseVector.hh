@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template<class MEMSPACE = DefaultMemorySpace>
+template<class MEMSPACE = DefaultHostMemorySpace>
 class DenseVector {
  public:
   KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0) {};
@@ -261,6 +261,27 @@ class DenseVector {
     data_[m2] = data_[m1];
     data_[m1] = tmp;
   }
+
+
+#if 0 
+/* ******************************************************************
+ * Assignment operator
+ ****************************************************************** */
+DenseVector& operator=(const DenseVector& B)
+{
+  if (this != &B) {
+    if (mem_ < B.m_) {
+      if (data_ != NULL) { delete[] data_; }
+      data_ = new double[B.m_];
+      mem_ = B.m_;
+    }
+    m_ = B.m_;
+    const double* b = B.Values();
+    for (int i = 0; i < m_; ++i) data_[i] = b[i];
+  }
+  return (*this);
+}
+#endif 
 
   //const Teuchos::RCP<const int>& getMap() const {
     //return Teuchos::rcp(new int(mem_));

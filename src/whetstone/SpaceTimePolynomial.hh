@@ -24,12 +24,10 @@
 #include <vector>
 
 #include "Point.hh"
+#include "Polynomial.hh"
 
 namespace Amanzi {
 namespace WhetStone {
-
-// formard declarations
-class Polynomial;
 
 class SpaceTimePolynomial {
  public:
@@ -53,7 +51,7 @@ class SpaceTimePolynomial {
   // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp, double t) const;
-  Polynomial Value(double t) const;
+  Polynomial<> Value(double t) const;
 
   // -- operators (extended ring algebra)
   SpaceTimePolynomial& operator+=(const SpaceTimePolynomial& poly);
@@ -103,8 +101,8 @@ class SpaceTimePolynomial {
   int size() const { return size_; }
 
   // -- one-index access
-  Polynomial& operator[](int i) { return coefs_[i]; }
-  const Polynomial& operator[](int i) const { return coefs_[i]; }
+  Polynomial<>& operator[](int i) { return coefs_[i]; }
+  const Polynomial<>& operator[](int i) const { return coefs_[i]; }
 
   // norms
   double normInf() const {
@@ -118,7 +116,7 @@ class SpaceTimePolynomial {
 
  protected:
   int d_, order_, size_;
-  std::vector<Polynomial> coefs_;
+  std::vector<Polynomial<>> coefs_;
 };
 
 }  // namespace WhetStone

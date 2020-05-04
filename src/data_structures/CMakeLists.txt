@@ -86,6 +86,7 @@ set(data_structures_link_libs mesh
   error_handling 
   ${Teuchos_Libraries}
   ${Tpetra_Libraries}
+  ${Kokkos_Libraries}
   #${Thyra_Libraries}
   #${NOX_LIBRARIES}
   )
@@ -172,6 +173,12 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_common_patterns.cc
                     LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(data_structures_CSR, data_structures_CSR
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_CSR.cc
+                    LINK_LIBS data_structures ${UnitTest_LIBRARIES})
+
 
     add_amanzi_test(data_structures_patch, data_structures_patch
                     KIND unit

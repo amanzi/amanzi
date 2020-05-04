@@ -52,7 +52,7 @@ struct TensorVector {
   void set_shape(const int& i, const int& d, const int& rank) {
     int tsize = WhetStone::WHETSTONE_TENSOR_SIZE[d-1][rank-1];
     int loc[3] = {d, rank, tsize};
-    data.set_shape(i, loc, tsize*tsize);
+    data.set_shape_host(i, loc, tsize*tsize);
   }
 
   /**
@@ -65,19 +65,22 @@ struct TensorVector {
     data.set_size(row_map_size); 
     // Fill row map  and size
     for(int i = 0 ; i < ht.size(); ++i){
-      data.set_row_map(i,ht[i].mem());
-      data.set_sizes(i,0,ht[i].dimension());
-      data.set_sizes(i,1,ht[i].rank()); 
-      data.set_sizes(i,2,ht[i].size());
+      data.set_row_map_host(i,ht[i].mem());
+      data.set_sizes_host(i,0,ht[i].dimension());
+      data.set_sizes_host(i,1,ht[i].rank()); 
+      data.set_sizes_host(i,2,ht[i].size());
     }
     data.prefix_sum(); 
     // Fill entries 
     for(int i = 0 ; i < ht.size(); ++i){
-      int idx = data.row_map(i);
+      int idx = data.row_map_host(i);
       for(int j = 0 ; j < ht[i].data().extent(0); ++j){
-        data.set_entries(idx+j,ht[i].data()(j)); 
+        data.set_entries_host(idx+j,ht[i].data()(j)); 
       }
     }
+    data.update_entries_device(); 
+    data.update_sizes_device(); 
+    data.update_row_map_device(); 
   }
 
   void Init() {
@@ -85,17 +88,27 @@ struct TensorVector {
     data.prefix_sum();
   }
   
+  // The operator[] return the value on device 
   KOKKOS_INLINE_FUNCTION
-  WhetStone::Tensor<> operator[](const int& i) {
+  WhetStone::Tensor<DeviceOnlyMemorySpace> operator[](const int& i) {
     assert(inited);
-    return std::move(WhetStone::Tensor<>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+    return std::move(WhetStone::Tensor<DeviceOnlyMemorySpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
 
   KOKKOS_INLINE_FUNCTION
-  WhetStone::Tensor<> at(const int& i) const {
+  WhetStone::Tensor<Kokkos::HostSpace> at_host(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
-    return std::move(WhetStone::Tensor<>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
+    return std::move(WhetStone::Tensor<Kokkos::HostSpace>(
+        data.at_host(i), data.size_host(i,0), data.size_host(i,1), data.size_host(i,2)));
+  }
+  
+
+  KOKKOS_INLINE_FUNCTION
+  WhetStone::Tensor<DeviceOnlyMemorySpace> at(const int& i) const {
+    // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
+    // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
+    return std::move(WhetStone::Tensor<DeviceOnlyMemorySpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
   
   CSR_Tensor data;

@@ -24,7 +24,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Gradient for polynomials
 ****************************************************************** */
-VectorPolynomial Gradient(const Polynomial& p)
+VectorPolynomial Gradient(const Polynomial<>& p)
 {
   int d = p.dimension();
   int order = std::max(0, p.order() - 1);
@@ -78,7 +78,7 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 /* ******************************************************************
 * Divergence
 ****************************************************************** */
-Polynomial Divergence(const VectorPolynomial& vp) 
+Polynomial<> Divergence(const VectorPolynomial& vp) 
 {
   int d = vp[0].dimension();
   AMANZI_ASSERT(d == vp.size());
@@ -86,7 +86,7 @@ Polynomial Divergence(const VectorPolynomial& vp)
   int order = vp[0].order();
   order = std::max(0, order - 1);
 
-  Polynomial div(d, order);
+  Polynomial<> div(d, order);
   div.set_origin(vp[0].origin());
 
   int index[3];
@@ -116,7 +116,7 @@ Polynomial Divergence(const VectorPolynomial& vp)
 /* ******************************************************************
 * Projecton of gradient using Taylor expansion with k terms
 ****************************************************************** */
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
+VectorPolynomial GradientOnUnitSphere(const Polynomial<>& poly, int k)
 {
   int d = poly.dimension();
   AMANZI_ASSERT(d == 2);

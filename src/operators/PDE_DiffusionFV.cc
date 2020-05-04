@@ -185,7 +185,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          WhetStone::DenseMatrix Aface(
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Aface(
             local_csr.at(f),local_csr.size(f,0),local_csr.size(f,1)); 
 
           double tij = trans_face(f,0) * k_face(f,0);
@@ -403,7 +403,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     int mcells = cells.size();
 
-    WhetStone::DenseMatrix Aface(mcells, mcells);
+    WhetStone::DenseMatrix<> Aface(mcells, mcells);
 
     for (int n = 0; n < mcells; n++) {
       int c1 = cells[n];
@@ -435,7 +435,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 ****************************************************************** */
 void PDE_DiffusionFV::ComputeJacobianLocal_(
     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix<>& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   double dKrel_dp[2];
@@ -500,8 +500,6 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     for (int c=0; c!=ncells_owned; ++c) {
       K->at(c)(0,0) = 1.;
     }
-
-    
     K_ = K;
   }
 
@@ -521,7 +519,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor<> Kc = K->at(c);
+          WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

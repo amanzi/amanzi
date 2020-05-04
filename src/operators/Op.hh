@@ -80,7 +80,7 @@ class Op {
 
   KOKKOS_INLINE_FUNCTION
   void Zero(const int i) {
-    WhetStone::DenseMatrix lm(
+    WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
       csr.at(i),csr.size(i,0),csr.size(i,1)); 
     lm.putScalar(0.); 
     // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
