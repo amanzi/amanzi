@@ -152,8 +152,8 @@ TEST(FE_GRAPH_FACE_FACE)
   auto face_map_ghosted = mesh->face_map(true);
 
   // create the graph
-  GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
-  GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
+  GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 7);
+  GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 7);
 
   Entity_ID_View faces;
   Entity_ID_View face_cells;

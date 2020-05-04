@@ -206,7 +206,7 @@ TEST(FE_MATRIX_FACE_FACE)
 
   // create the graph
   Teuchos::RCP<GraphFE> graph =
-    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
+    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 7));
 
   Entity_ID_View faces;
   Entity_ID_View face_cells;

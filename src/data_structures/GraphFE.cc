@@ -81,7 +81,7 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
   includes_ghosted_ = (tmp2 > 0);
 
   // create the graphs
-  graph_ = Teuchos::rcp(new Graph_type(row_map_, col_map_, max_nnz_per_row));
+  graph_ = Teuchos::rcp(new Graph_type(row_map_, col_map_, max_nnz_per_row.view(0, n_owned_)));
 
   if (includes_ghosted_) {
     std::vector<int> offproc_gids(n_used_ - n_owned_);
@@ -90,7 +90,7 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
 
     offproc_row_map_ = Teuchos::rcp(new Map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), 
             offproc_gids.data(), n_used_-n_owned_, 0, ghosted_row_map_->getComm()));
-    offproc_graph_ = Teuchos::rcp(new Graph_type(offproc_row_map_, col_map_, Teuchos::arcpClone(max_nnz_per_row.view(n_owned_, n_used_-n_owned_))));
+    offproc_graph_ = Teuchos::rcp(new Graph_type(offproc_row_map_, col_map_, max_nnz_per_row.view(n_owned_, n_used_-n_owned_)));
 
     // create the exporter from offproc to onproc
     exporter_ = Teuchos::rcp(new Export_type(offproc_row_map_, row_map_));

@@ -242,9 +242,9 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
-   
-    mat.sumIntoLocalValues(lid_r.data(), lid_c.data(),
-                           WhetStone::DenseMatrix<>(op.csr.at(f), op.csr.size(f,0), op.csr.size(f,1)));
+
+    WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> m(op.csr.at(f), op.csr.size(f,0), op.csr.size(f,1));
+    mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), m);
   }
 }
 
