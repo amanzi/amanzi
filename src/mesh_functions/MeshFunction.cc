@@ -36,7 +36,7 @@ computeMeshFunction(const MultiFunction& f, double time, Patch& p)
     if (ids_list.size() == 0) return;
 
     // note this is a workaround until we have a way of getting the view on device through the mesh interface
-    Kokkos::View<int*> ids("ids", ids_list.size());
+    Kokkos::View<int*, DeviceOnlyMemorySpace> ids("ids", ids_list.size());
     {
       Kokkos::View<int*, DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
       Kokkos::deep_copy(ids, ids_host);

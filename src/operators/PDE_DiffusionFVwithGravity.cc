@@ -216,8 +216,8 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
       auto K = Teuchos::rcp(new TensorVector(cvs,false));
       for (int c=0; c!=ncells_owned; ++c) {
         K->set_shape(c, mesh_->space_dimension(), 1);
-        K->Init();
       }
+      K->Init();
       K_ = K;
     }
     const TensorVector* K = K_.get();    
@@ -234,7 +234,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
           Kokkos::View<AmanziGeometry::Point*> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
-          WhetStone::Tensor<> Kc = K->at(c);
+          WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);
           //if (c == 0) std::cout << "Kc = " << Kc(0,0) << std::endl;
 
           for (int i = 0; i < faces.extent(0); i++) {

@@ -80,7 +80,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs,
                       int criteria) const;
 
-  void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
+  void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix<>& T, double* s,
                         Vector& p, Vector& r) const;
   void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
 
@@ -99,7 +99,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   mutable std::vector<Teuchos::RCP<Vector>> v_;
-  mutable WhetStone::DenseMatrix Hu_; // upper Hessenberg matrix
+  mutable WhetStone::DenseMatrix<> Hu_; // upper Hessenberg matrix
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
@@ -186,7 +186,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(const Vector& f,
   Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
-  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_ = 0;
 
   double fnorm;
@@ -317,7 +317,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
 {
   Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
   WhetStone::DenseVector<> d(krylov_dim_ + 1), g(krylov_dim_);
-  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
 
   double fnorm;
   fnorm = f.norm2();
@@ -401,7 +401,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   }
 
   // Solve the least-square problem min_d ||T d - c||.
-  WhetStone::DenseMatrix Ttmp(T);
+  WhetStone::DenseMatrix<> Ttmp(T);
   int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
   int lwork(m * n);
   WhetStone::DenseVector<> work(lwork);
@@ -431,9 +431,9 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
 
   // Compute Schur vectors
   // -- allocate memory: Tm, Hm, and Vm
-  WhetStone::DenseMatrix Tm(T, 0, krylov_dim_, 0, krylov_dim_);
-  WhetStone::DenseMatrix Sm(Tm);
-  WhetStone::DenseMatrix Vr(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> Tm(T, 0, krylov_dim_, 0, krylov_dim_);
+  WhetStone::DenseMatrix<> Sm(Tm);
+  WhetStone::DenseMatrix<> Vr(krylov_dim_ + 1, krylov_dim_);
 
   // -- auxiliary vector g = Tm^{-T} e_m
   Tm.Inverse();
@@ -500,11 +500,11 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   for (int i = 0; i <= num_ritz_; ++i) { *(v_[i]) = *(vv[i]); }
 
   // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
-  WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
-  WhetStone::DenseMatrix VTVr(num_ritz_ + 1, num_ritz_);
+  WhetStone::DenseMatrix<> TVr(krylov_dim_ + 1, num_ritz_);
+  WhetStone::DenseMatrix<> VTVr(num_ritz_ + 1, num_ritz_);
 
-  WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
-  WhetStone::DenseMatrix Vr2(krylov_dim_ + 1,
+  WhetStone::DenseMatrix<> Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
+  WhetStone::DenseMatrix<> Vr2(krylov_dim_ + 1,
                              num_ritz_ + 1,
                              Vr.Values_ptr());
 
@@ -618,7 +618,7 @@ LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ApplyGivensRotation_(
 template <class Matrix, class Vector, class VectorSpace>
 void
 LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
-  Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector& p,
+  Vector& x, int k, WhetStone::DenseMatrix<>& T, double* s, Vector& p,
   Vector& r) const
 {
   for (int i = k; i >= 0; i--) {

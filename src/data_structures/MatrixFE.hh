@@ -29,13 +29,11 @@ map, not the true row map.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+#include "DenseMatrix.hh"
 #include "GraphFE.hh"
 
-namespace Amanzi {
 
-namespace WhetStone {
-class DenseMatrix;
-}
+namespace Amanzi {
 
 namespace Operators {
 
@@ -78,9 +76,9 @@ class MatrixFE {
 
   // local matrix sum
   int SumIntoMyValues(const int *row_inds, const int *col_inds,
-                      const WhetStone::DenseMatrix& vals);
+                      const WhetStone::DenseMatrix<>& vals);
   int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
-          const WhetStone::DenseMatrix& vals);
+          const WhetStone::DenseMatrix<>& vals);
   
   // hack the diagonal
   int DiagonalShift(double shift);

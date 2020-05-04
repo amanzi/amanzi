@@ -23,13 +23,13 @@
 
 #include "lapack.hh"
 #include "DenseVector.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-//const int WHETSTONE_DATA_ACCESS_COPY = 1;
-//const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 
+template<class MEMSPACE = DefaultHostMemorySpace>
 class DenseMatrix {
  public:
   KOKKOS_INLINE_FUNCTION DenseMatrix()
@@ -46,12 +46,8 @@ class DenseMatrix {
     Kokkos::resize(data_,mem_); 
   } // memory is not initialized
 
-  DenseMatrix(int mrow, int ncol, double* data
-              );//, int data_access = WHETSTONE_DATA_ACCESS_COPY);
-  DenseMatrix(int mrow, int ncol, const Kokkos::View<double*>& data);
-
   KOKKOS_INLINE_FUNCTION
-  DenseMatrix(Kokkos::View<double*> data, const int& mrow, const int& ncol){
+  DenseMatrix(Kokkos::View<double*,MEMSPACE> data, const int& mrow, const int& ncol){
     m_ = mrow;
     n_ = ncol;
     mem_ = m_ * n_;
@@ -69,12 +65,67 @@ class DenseMatrix {
     }
   }
 
-  DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
-  
-  // primary members
-  // -- reshape can be applied only to a matrix that owns data
-  // -- data are not remapped to the new matrix shape
-  void reshape(int mrow, int ncol);
+  /* ******************************************************************
+  * No memory check is performed: invalid read is possible.
+  ****************************************************************** */
+  DenseMatrix(int mrow, int ncol, double* data)
+  {
+    m_ = mrow;
+    n_ = ncol;
+    mem_ = m_ * n_;
+    Kokkos::resize(data_,mem_); 
+    for (int i = 0; i < mem_; i++) data_[i] = data[i];
+  }
+
+  DenseMatrix(int mrow, int ncol,
+    const Kokkos::View<double*, MEMSPACE>& data)
+  {
+    m_ = mrow;
+    n_ = ncol;
+    mem_ = m_ * n_;
+    Kokkos::resize(data_,mem_); 
+    Kokkos::deep_copy(data_,data); 
+  }
+
+  /* ******************************************************************
+  * Copy constructor creates a new matrix from the submatrix of B in
+  * rows m1 to m2-1 and columns n1 to n2-1.
+  ****************************************************************** */
+  DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
+  {
+    m_ = m2 - m1;
+    n_ = n2 - n1;
+    //access_ = WHETSTONE_DATA_ACCESS_COPY;
+
+    mem_ = m_ * n_;
+    Kokkos::resize(data_,mem_); 
+    //data_ = new double[mem_];
+
+    int mB = B.NumRows();
+    int nB = B.NumCols();
+    //const double* dataB = B.Values();
+
+    for (int j = n1; j < n2; ++j) {
+      //const double* tmpB = dataB + j * mB + m1;
+      //double* tmpA = data_ + (j - n1) * m_;
+      for (int i = 0; i < m_; ++i) {
+        data_((j-n1)*m_+i) = j*mB+m1+i;
+        //*tmpA = *tmpB;
+        //tmpA++;
+        //tmpB++;
+      }
+    }
+  }
+  /* ******************************************************************
+  * Smart memory management. Data destroyed in general.
+  ****************************************************************** */
+  void reshape(int mrow, int ncol)
+  {
+    m_ = mrow;
+    n_ = ncol;
+    mem_ = m_ * n_;
+    Kokkos::resize(data_,mem_); 
+  }
   
   KOKKOS_INLINE_FUNCTION 
   void assign(const DenseMatrix& other) {
@@ -128,8 +179,8 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION int Multiply(
     const DenseMatrix& A, const DenseMatrix& B, bool transposeA)
   {
-    Kokkos::View<double*> dataA = A.Values(); 
-    Kokkos::View<double*> dataB = B.Values(); 
+    Kokkos::View<double*,MEMSPACE> dataA = A.Values(); 
+    Kokkos::View<double*,MEMSPACE> dataB = B.Values(); 
     //const double* dataA = A.Values();
     //const double* dataB = B.Values();
 
@@ -183,8 +234,6 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION 
   int Multiply(const DenseVector<DV_MEMSPACE>& A, DenseVector<DV_MEMSPACE>& B, bool transpose) const
   {
-    //Kokkos::View<double*> dataA = A.Values(); 
-    //Kokkos::View<double*> dataB = B.Values();
     auto dataA = A.Values();
     auto dataB = B.Values();
 
@@ -231,9 +280,9 @@ class DenseMatrix {
   KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
   KOKKOS_INLINE_FUNCTION int NumCols() const { return n_; }
 
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*,MEMSPACE> Values() { return data_; }
   KOKKOS_INLINE_FUNCTION double& Value(int i, int j) { return data_(j * m_ + i); }
-  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*> Values() const { return data_; }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*,MEMSPACE> Values() const { return data_; }
   KOKKOS_INLINE_FUNCTION const double& Value(int i, int j) const { return data_(j * m_ + i); }
   KOKKOS_INLINE_FUNCTION double* Values_ptr() { return &data_(0);}
   KOKKOS_INLINE_FUNCTION const double* Values_ptr() const {return &data_(0); }
@@ -337,18 +386,6 @@ class DenseMatrix {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= value;
   }
 
-  // Second level routines
-  // -- submatrix in rows [ib, ie) and colums [jb, je)
-  DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
-  // -- transpose creates new matrix
-  void Transpose(const DenseMatrix& A);
-  // -- transpose modifies square matrix
-  int Transpose();
-
-  // -- inversion is applicable for square matrices only
-  int Inverse();
-  int InverseSPD();
-  int NullSpace(DenseMatrix& D);
   /* ******************************************************************
   * Optimized linear algebra: determinant for matrices of size<=3.
   ****************************************************************** */
@@ -415,6 +452,126 @@ class DenseMatrix {
     }
   }
 
+  /* ******************************************************************
+  * Second level routine: submatrix in rows [ib,ie) and columns [jb,je)
+  ****************************************************************** */
+  DenseMatrix SubMatrix(int ib, int ie, int jb, int je)
+  {
+    int mrows(ie - ib), ncols(je - jb);
+    DenseMatrix tmp(mrows, ncols);
+    Kokkos::View<double*,MEMSPACE> dataB = tmp.Values(); 
+    for (int j = jb; j < je; ++j) {
+      for (int i = ib; i < ie; ++i) {
+        dataB(j*ie+i) = data_(j*m_+ib+i); 
+      }
+    }
+    return tmp;
+  }
+
+  /* ******************************************************************
+  * Second level routine: transpose
+  ****************************************************************** */
+  void Transpose(const DenseMatrix& A)
+  {
+    const Kokkos::View<double*,MEMSPACE> dataA = A.Values(); 
+    int mrowsA = A.NumRows(), ncolsA = A.NumCols();
+
+    reshape(ncolsA, mrowsA);
+
+    for (int j = 0; j < ncolsA; ++j) {
+      for (int i = 0; i < mrowsA; ++i) {
+        data_(i*ncolsA+j) = dataA(j*mrowsA+i); 
+      }
+    }
+  }
+
+  int Transpose()
+  {
+    if (m_ != n_) return 1;
+
+    for (int i = 0; i < m_; ++i) {
+      for (int j = i + 1; j < n_; ++j) {
+        double& aij = data_(i * n_ + j);
+        double& aji = data_(j * n_ + i);
+
+        double tmp = aij;
+        aij = aji;
+        aji = tmp;
+      }
+    }
+    return 0;
+  }
+
+  /* ******************************************************************
+  * Second level routine: inversion
+  ****************************************************************** */
+  int Inverse()
+  {
+    if (n_ != m_) return 911;
+
+    int ierr;
+    int iwork[n_];
+    DGETRF_F77(&n_, &n_, &data_(0), &n_, iwork, &ierr);
+    if (ierr) return ierr;
+
+    int lwork = n_ * n_;
+    double dwork[lwork];
+    DGETRI_F77(&n_, &data_(0), &n_, iwork, dwork, &lwork, &ierr);
+    return ierr;
+  }
+
+
+  /* ******************************************************************
+  * Second level routine: inversion of symmetric poitive definite
+  ****************************************************************** */
+  int InverseSPD()
+  {
+    if (n_ != m_) return 911;
+
+    int ierr;
+    DPOTRF_F77("U", &n_, &data_(0), &n_, &ierr);
+    if (ierr) return ierr;
+
+    DPOTRI_F77("U", &n_, &data_(0), &n_, &ierr);
+    for (int i = 0; i < n_; i++)
+      for (int j = i + 1; j < n_; j++) data_[i * n_ + j] = data_[j * n_ + i];
+    return ierr;
+  }
+
+
+  /* ******************************************************************
+  * Second level routine: calculates matrix D such that (*this)^T D = 0.
+  * The matrix (*this) must have a full rank and have more rows than
+  * columns.
+  ****************************************************************** */
+  int NullSpace(DenseMatrix& D)
+  {
+    // We can treat only one type of rectangular matrix.
+    if (m_ <= n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    // D must have proper size.
+    int m = D.NumRows(), n = D.NumCols();
+    if (m != m_ || n != m_ - n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    // Allocate memory for Lapack routine.
+    int ldv(1), lwork, info;
+    lwork = std::max(m_ + 3 * n_, 5 * n_);
+    double U[m_ * m_], V, S[n_], work[lwork];
+
+    DGESVD_F77(
+      "A", "N", &m_, &n_, &data_(0), &m_, S, U, &m, &V, &ldv, work, &lwork, &info);
+
+    if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    Kokkos::View<double*,MEMSPACE> data = D.Values();
+    int offset = m_ * n_;
+    for (int i = 0; i < m * n; i++) data[i] = U[offset + i];
+
+    return 0;
+  }
+
+
+
   // Default assigment implies view semantics
   DenseMatrix& operator=(const DenseMatrix& B) = default;
 
@@ -422,13 +579,14 @@ class DenseMatrix {
 
   int m_, n_, mem_; 
   //access_;
-  Kokkos::View<double*> data_; 
+  Kokkos::View<double*,MEMSPACE> data_; 
   //double* data_;
 };
 
 // non-member functions
+template<typename MEMSPACE> 
 KOKKOS_INLINE_FUNCTION bool
-operator==(const DenseMatrix& A, const DenseMatrix& B)
+operator==(const DenseMatrix<MEMSPACE>& A, const DenseMatrix<MEMSPACE>& B)
 {
   if (A.NumRows() != B.NumRows()) return false;
   if (A.NumCols() != B.NumCols()) return false;
@@ -438,15 +596,16 @@ operator==(const DenseMatrix& A, const DenseMatrix& B)
 }
 
 
+template<typename MEMSPACE> 
 KOKKOS_INLINE_FUNCTION bool
-operator!=(const DenseMatrix& A, const DenseMatrix& B)
+operator!=(const DenseMatrix<MEMSPACE>& A, const DenseMatrix<MEMSPACE>& B)
 {
   return !(A == B);
 }
 
-
+template<typename MEMSPACE> 
 KOKKOS_INLINE_FUNCTION void
-PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f")
+PrintMatrix(const DenseMatrix<MEMSPACE>& A, const char* format = "%12.5f")
 {
   int m = A.NumRows();
   int n = A.NumCols();

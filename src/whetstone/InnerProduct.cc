@@ -22,7 +22,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void InnerProduct::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
+void InnerProduct::StabilityScalar_(DenseMatrix<>& N, DenseMatrix<>& M)
 {
   GrammSchmidt_(N);
   CalculateStabilityScalar_(M);
@@ -51,7 +51,7 @@ void InnerProduct::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 ****************************************************************** */
-int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMatrix& M)
+int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& M)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();
@@ -62,7 +62,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
   for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, M(k, k));
 
   // find null space of N^T
-  DenseMatrix U(nrows, nrows);
+  DenseMatrix<> U(nrows, nrows);
   int info, ldv = 1, size = 5 * ncols + 3 * nrows;
   double V, S[nrows], work[size];
 
@@ -75,8 +75,8 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
   int mrows = nrows * (nrows - 1) / 2;
   int mcols = nrows - ncols;
   int nparam = (mcols + 1) * mcols / 2;
-  DenseMatrix C(mrows, nparam);
-  DenseVector F(mrows);
+  DenseMatrix<> C(mrows, nparam);
+  DenseVector<> F(mrows);
 
   int m, n = 0;
   for (int k = ncols; k < nrows; k++) {
@@ -105,8 +105,8 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
   }
 
   // Form a linear system for parameters
-  DenseMatrix A(nparam, nparam);
-  DenseVector G(nparam);
+  DenseMatrix<> A(nparam, nparam);
+  DenseVector<> G(nparam);
 
   A.Multiply(C, C, true);  // A = C^T C
   C.Multiply(F, G, true);
@@ -117,7 +117,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // project solution on the positive quadrant and convert to matrix
-  DenseMatrix P(mcols, mcols);
+  DenseMatrix<> P(mcols, mcols);
   P.PutScalar(0.0);
 
   for (int loop = 0; loop < 3; loop++) {
@@ -140,7 +140,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
     }
 
     // check SPD property (we use allocated memory)
-    DenseMatrix Ptmp(P);
+    DenseMatrix<> Ptmp(P);
     DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info); 
     if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
@@ -152,7 +152,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
   }
 
   // add stability term U G U^T
-  DenseMatrix UP(nrows, mcols);
+  DenseMatrix<> UP(nrows, mcols);
   UP.PutScalar(0.0);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < mcols; j++) {
@@ -177,7 +177,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix& N, DenseMa
 /* ******************************************************************
 * Simple stability term for nonsymmetric tensors.
 ****************************************************************** */
-void InnerProduct::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
+void InnerProduct::StabilityScalarNonSymmetric_(DenseMatrix<>& N, DenseMatrix<>& M)
 {
   GrammSchmidt_(N);
   CalculateStabilityScalar_(M);
@@ -204,7 +204,7 @@ void InnerProduct::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
 /* ******************************************************************
 * Calculate stability factor using matrix and optional scaling.
 ****************************************************************** */
-double InnerProduct::CalculateStabilityScalar_(DenseMatrix& Mc)
+double InnerProduct::CalculateStabilityScalar_(DenseMatrix<>& Mc)
 {
   int nrows = Mc.NumRows();
 
@@ -223,7 +223,7 @@ double InnerProduct::CalculateStabilityScalar_(DenseMatrix& Mc)
 /* ******************************************************************
 * Conventional Gramm-Schmidt orthogonalization of colums of matrix N. 
 ****************************************************************** */
-void InnerProduct::GrammSchmidt_(DenseMatrix& N)
+void InnerProduct::GrammSchmidt_(DenseMatrix<>& N)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();
