@@ -139,18 +139,27 @@ namespace ShallowWater {
 
 				 Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-				 double h_rec = Reconstruction(xcf[0],xcf[1],c);
+				 double h_rec = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
 //				 double h_rec = h_vec_c[0][c];
+
+				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
+//				 double vx_rec = vx_vec_c[0][c];
+
+				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
+//				 double vy_rec = vy_vec_c[0][c];
 
 //				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 //				 std::cout << "xcf = " << xcf << std::endl;
 
-				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
-				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
+//				 vn =  vx_vec_c[0][c]*normal[0] + vy_vec_c[0][c]*normal[1];
+//				 vt = -vx_vec_c[0][c]*normal[1] + vy_vec_c[0][c]*normal[0];
 
 //				 UL[0] = h_vec_c[0][c];
 //				 UL[1] = h_vec_c[0][c]*vn;
 //				 UL[2] = h_vec_c[0][c]*vt;
+
+				 vn =  vx_rec*normal[0] + vy_rec*normal[1];
+				 vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
 				 UL[0] = h_rec;
 				 UL[1] = h_rec*vn;
@@ -167,17 +176,26 @@ namespace ShallowWater {
 					 int c_GID = mesh_->GID(c, AmanziMesh::CELL);
  			         int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
 
- 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn);
+ 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
  	//				 double h_rec = h_vec_c[0][cn];
+
+ 					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
+// 					 double vx_rec = vx_vec_c[0][cn];
+
+ 					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
+// 					 double vy_rec = vy_vec_c[0][cn];
 
 // 					std::cout << "cn = " << cn << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 
-					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
-					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
+//					 vn =  vx_vec_c[0][cn]*normal[0] + vy_vec_c[0][cn]*normal[1];
+//					 vt = -vx_vec_c[0][cn]*normal[1] + vy_vec_c[0][cn]*normal[0];
 
 // 					 UR[0] = h_vec_c[0][cn];
 // 					 UR[1] = h_vec_c[0][cn]*vn;
 // 					 UR[2] = h_vec_c[0][cn]*vt;
+
+					 vn =  vx_rec*normal[0] + vy_rec*normal[1];
+					 vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
  					 UR[0] = h_rec;
 				     UR[1] = h_rec*vn;
@@ -402,13 +420,13 @@ namespace ShallowWater {
     // bottom topography
     //--------------------------------------------------------------
     double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 1.-0.01*x;
+        return 0.; //1.-0.01*x;
     }
 
     //--------------------------------------------------------------
     // Barth-Jespersen limiter of the gradient
     //--------------------------------------------------------------
-    void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix& grad_lim, int c) {
+    void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix& grad_lim, int c, Key field_key_) {
 
     	std::vector<double> Phi_k;
     	std::vector<double> u_av;
@@ -425,7 +443,7 @@ namespace ShallowWater {
 		mesh_->cell_get_faces(c,&cfaces,true);
 		mesh_->cell_get_nodes(c,&cnodes);
 
-		Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+		Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell");
 
 		u_av0 = h_vec_c[0][c];
 
@@ -477,7 +495,7 @@ namespace ShallowWater {
     //--------------------------------------------------------------
 	// piecewise-linear reconstruction of the function
 	//--------------------------------------------------------------
-    double ShallowWater_PK::Reconstruction(double x, double y, int c) {
+    double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_) {
 
     	// for Cartesian grids
 
@@ -514,7 +532,7 @@ namespace ShallowWater {
 
 		 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
-		 Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+		 Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell");
 
 		 for (int f = 0; f < cfaces.size(); f++) {
 
@@ -569,7 +587,7 @@ namespace ShallowWater {
 
 //		 std::cout << "dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
 
-		 BJ_lim(dudx,dudx_lim,c);
+		 BJ_lim(dudx,dudx_lim,c,field_key_);
 
 //		 std::cout << "dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
 

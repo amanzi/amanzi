@@ -93,9 +93,9 @@ class ShallowWater_PK : public PK_Physical,
 
     std::vector<double> NumSrc(std::vector<double>,int);
 
-    void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int);
+    void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int,Key);
 
-    double Reconstruction(double,double,int);
+    double Reconstruction(double,double,int,Key);
 
     double Bathymetry(double,double);
                             
