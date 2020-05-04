@@ -47,7 +47,7 @@ IonExchangeSite::IonExchangeSite(const IonxSiteName name,
 }
 
 
-void IonExchangeSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(20) << mineral_name()
@@ -58,7 +58,7 @@ void IonExchangeSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void IonExchangeSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "CEC"
@@ -67,7 +67,7 @@ void IonExchangeSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo
 }
 
 
-void IonExchangeSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << cation_exchange_capacity()

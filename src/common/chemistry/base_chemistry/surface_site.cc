@@ -84,7 +84,7 @@ void SurfaceSite::display(void) const {
 }
 
 
-void SurfaceSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << std::scientific << molar_density()
@@ -93,7 +93,7 @@ void SurfaceSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void SurfaceSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Site Name"
           << std::setw(15) << "Free Conc."
@@ -105,7 +105,7 @@ void SurfaceSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) co
 }
 
 
-void SurfaceSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

@@ -87,7 +87,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }
 
 
-void AqueousEquilibriumComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   // TODO(bandre): uncomment and update test output
@@ -112,7 +112,7 @@ void AqueousEquilibriumComplex::display(const Teuchos::RCP<VerboseObject>& vo) c
 }
 
 
-void AqueousEquilibriumComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
             << std::fixed << std::setprecision(3);
@@ -141,7 +141,7 @@ void AqueousEquilibriumComplex::Display(const Teuchos::RCP<VerboseObject>& vo) c
 }
 
 
-void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
@@ -152,7 +152,7 @@ void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseO
 }
 
 
-void AqueousEquilibriumComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void AqueousEquilibriumComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

@@ -71,10 +71,8 @@ class MatrixBlock {
   void Zero(void);
   void SetDiagonal(double d);
 
-  void Print(const std::string& name, const Teuchos::RCP<VerboseObject>& vo) const;
-  void Print(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Print_ij(const Teuchos::RCP<VerboseObject>& vo) const;
-
+  void Print(const std::string& name, const Teuchos::Ptr<VerboseObject> vo) const;
+  void Print(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
   void AllocateMemory(void);

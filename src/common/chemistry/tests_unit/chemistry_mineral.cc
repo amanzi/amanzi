@@ -255,10 +255,6 @@ SUITE(GeochemistryTestsMineral) {
   }
 */
 
-  TEST_FIXTURE(MineralTest, Mineral_verbosity) {
-    mineral_->set_verbosity(ac::kDebugMineralKinetics);
-    CHECK_EQUAL(mineral_->verbosity(), ac::kDebugMineralKinetics);
-  }
   //---------------------------------------------------------------
   // Test the log10(IAP/K) for Alunogen
   //---------------------------------------------------------------

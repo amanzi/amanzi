@@ -372,7 +372,7 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 }
 
 
-void KineticRateTST::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
   this->DisplayReaction(vo);
   std::stringstream message;

@@ -17,8 +17,10 @@
 #include <vector>
 #include <string>
 
+// Amanzi
+#include "VerboseObject.hh"
+
 #include "aqueous_equilibrium_complex.hh"
-#include "chemistry_verbosity.hh"
 #include "species.hh"
 
 namespace Amanzi {
@@ -30,7 +32,6 @@ class ActivityModel {
   virtual ~ActivityModel() {};
 
   struct ActivityModelParameters {
-    Verbosity verbosity;
     // if the activity model requires a database put the name here
     std::string database_filename;
     // This the name of the approach for the J's function in the Pitzer model
@@ -61,54 +62,34 @@ class ActivityModel {
       std::vector<double>* gamma,
       double* actw) = 0;
 
-  double ionic_strength(void) const {
-    return this->I_;
-  }
-
-  int num_species(void) const {
-    return num_species_;
-  }
+  double ionic_strength(void) const { return this->I_; }
+  int num_species(void) const { return num_species_; }
 
   virtual void Display(void) const = 0;
 
-  void name(const std::string name) {
-    this->name_ = name;
-  }
-  std::string name(void) {
-    return this->name_;
-  }
+  void name(const std::string name) { this->name_ = name; }
+  std::string name(void) { return this->name_; }
 
-  virtual void set_verbosity(const Verbosity verbosity) {
-    this->verbosity_ = verbosity;
-  };
-  virtual Verbosity verbosity(void) const {
-    return this->verbosity_;
-  };
+  void set_verbosity(Teuchos::Ptr<VerboseObject> vo) { vo_ = vo; } 
+  Teuchos::Ptr<VerboseObject> verbosity() { return vo_; } 
 
  protected:
   void ResizeGamma(const int size);
 
-  double log_to_ln(double d) {
-    return d * 2.30258509299;
-  }
-  double ln_to_log(double d) {
-    return d * 0.434294481904;
-  }
+  double log_to_ln(double d) { return d * 2.30258509299; }
+  double ln_to_log(double d) { return d * 0.434294481904; }
 
-  void ionic_strength(double d) {
-    this->I_ = d;
-  }
+  void ionic_strength(double d) { this->I_ = d; }
 
   double I_;  // ionic strength
   double Z_;  // sum ( m_i * abs(z_i) )
   double M_;  // sum ( m_i )
 
- private:
-  void set_num_species(const int value) {
-    this->num_species_ = value;
-  }
+  Teuchos::Ptr<VerboseObject> vo_;
 
-  Verbosity verbosity_;
+ private:
+  void set_num_species(const int value) { this->num_species_ = value; }
+
   std::string name_;
   int num_species_;
   std::vector<double> gamma_;

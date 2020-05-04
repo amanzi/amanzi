@@ -6,12 +6,9 @@
 #include <vector>
 
 #include "beaker.hh"
-#include "chemistry_verbosity.hh"
 
 struct SimulationParameters {
   std::string description;
-  std::vector<std::string> verbosity_names;
-  Amanzi::AmanziChemistry::Verbosity verbosity;
   std::string text_output;
   std::string text_time_units;
   std::string comparison_model;
@@ -35,8 +32,6 @@ struct SimulationParameters {
 
   SimulationParameters()
       : description(""),
-        verbosity_names(),
-        verbosity(Amanzi::AmanziChemistry::kVerbose), 
         text_output(""),
         text_time_units("s"),
         comparison_model("pflotran"),

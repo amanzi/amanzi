@@ -217,7 +217,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
 }
 
 
-void SurfaceComplexationRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const {
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin(); site != surface_site_.end(); site++) {
     site->Display(vo);
@@ -225,7 +225,7 @@ void SurfaceComplexationRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) 
 }
 
 
-void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const {
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();
        complex != surface_complexes_.end(); complex++) {
@@ -234,26 +234,26 @@ void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>&
 }
 
 
-void SurfaceComplexationRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplaySite(vo);
   DisplayComplexes(vo);
 }
 
 
-void SurfaceComplexationRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplaySite(vo);
   DisplayComplexes(vo);
 }
 
 
-void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(7) << "---" << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void SurfaceComplexationRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplexationRxn::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   surface_site_[0].DisplayResultsHeader(vo);
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin();

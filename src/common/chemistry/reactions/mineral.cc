@@ -26,7 +26,6 @@ namespace AmanziChemistry {
 
 Mineral::Mineral()
     : SecondarySpecies(),
-      verbosity_(kSilent),
       molar_volume_(0.0),
       specific_surface_area_(0.0),
       volume_fraction_(0.0) {
@@ -46,7 +45,6 @@ Mineral::Mineral(const SpeciesName in_name,
     : SecondarySpecies(in_name, in_id,
                        in_species, in_stoichiometries, in_species_ids,
                        in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
-      verbosity_(kSilent),
       molar_volume_(molar_volume),
       specific_surface_area_(specific_surface_area),
       volume_fraction_(0.0) {
@@ -110,7 +108,7 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 /*
 **  Display functions
 */
-void Mineral::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
@@ -135,7 +133,7 @@ void Mineral::Display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void Mineral::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void Mineral::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Q/K"
@@ -145,7 +143,7 @@ void Mineral::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const 
 }
 
 
-void Mineral::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void Mineral::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

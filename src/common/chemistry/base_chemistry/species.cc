@@ -105,7 +105,7 @@ void Species::display(void) const {
 }
 
 
-void Species::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed
           << std::setprecision(2) << std::setw(10) << charge()
@@ -116,7 +116,7 @@ void Species::Display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void Species::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
@@ -127,7 +127,7 @@ void Species::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const 
 }
 
 
-void Species::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
