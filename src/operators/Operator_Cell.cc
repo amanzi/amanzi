@@ -153,7 +153,6 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   return 0;
 }
 
-#if 0 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
 * Insert cell-based diagonal matrix.
@@ -165,14 +164,12 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
-  int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    ierr |= graph.insertLocalIndices(row, 1, &col);
+    graph.insertLocalIndices(row, 1, &col);
   }
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -183,7 +180,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.csr.size() == nfaces_owned);
 
   std::vector<int> lid_r;
   std::vector<int> lid_c;
@@ -191,7 +188,6 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
-  int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_View cells; 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -204,10 +200,8 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    ierr |= graph.insertLocalIndices(ncells, lid_r.data(), ncells, lid_c.data());
+    graph.insertLocalIndices(ncells, lid_r.data(), ncells, lid_c.data());
   }
-
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -219,20 +213,17 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag.getNumVectors() == 1);
+  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
   const auto dv = op.diag->getLocalViewDevice(); 
 
-  int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
-
-    ierr |= mat.sumIntoLocalValues(row, 1, &dv(0,c), &col);
+    mat.sumIntoLocalValues(row, 1, &dv(0,c), &col);
   }
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -240,7 +231,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.csr.size() == nfaces_owned);
   
   // ELEMENT: face, DOF: cell
   std::vector<int> lid_r;
@@ -249,7 +240,6 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
-  int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_View cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -262,12 +252,10 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
    
-    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[f]);
-    AMANZI_ASSERT(ierr>=0);
+    mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.csr.at(f));
   }
-  AMANZI_ASSERT(ierr>=0);
 }
-#endif 
+
 
 }  // namespace Operators
 }  // namespace Amanzi

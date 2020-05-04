@@ -42,11 +42,12 @@ namespace AmanziMesh {
 class Mesh;
 }
 
+class GraphFE;
+class MatrixFE;
+
 namespace Operators {
 
 class SuperMap;
-class GraphFE;
-class MatrixFE;
 class Operator;
 
 class Op {
@@ -101,14 +102,14 @@ class Op {
   //                                        const CompositeVector& X,
   //                                        CompositeVector& Y) const = 0;
 
-  //virtual void
-  //SymbolicAssembleMatrixOp(const Operator* assembler, const SuperMap& map,
-  //                         GraphFE& graph, int my_block_row,
-  //                         int my_block_col) const = 0;
+  virtual void
+  SymbolicAssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+                          GraphFE& graph, int my_block_row,
+                          int my_block_col) const = 0;
 
-  //virtual void
-  //AssembleMatrixOp(const Operator* assembler, const SuperMap& map,
-  //                 MatrixFE& mat, int my_block_row, int my_block_col) const = 0;
+  virtual void
+  AssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+                  MatrixFE& mat, int my_block_row, int my_block_col) const = 0;
 
   // Mutators of local matrices.
   // -- rescale local matrices in the container using a CV
