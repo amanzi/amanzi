@@ -40,12 +40,21 @@ if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED})
   message(WARNING "TPL version does not match the required version.")
 endif()
 
+# List of directories for step 1 in CMAKe's search path for command find_library(). 
+# By default it is empty. We set it to non-standard location of MPI. 
+# Probably, it would be appropriate to add also the path to TPL libraties
+set(CMAKE_LIBRARY_PATH ${MPI_PREFIX}/lib)
+
 
 # Amanzi CMake modules see <root source>/tools/cmake
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
 include(PrintVariable)
 include(AddImportedLibrary)
+
+message(STATUS "CMAKE information")
+message(STATUS "\tCMAKE_SYSTEM_LIBRARY_PATH = ${CMAKE_SYSTEM_LIBRARY_PATH}")
+message(STATUS "\tCMAKE_LIBRARY_PATH = ${CMAKE_LIBRARY_PATH}")
 
 
 ##############################################################################
@@ -62,24 +71,6 @@ if ( NOT MPI_WRAPPERS_IN_USE )
                   " Build will likely fail. Please define CMAKE_*_COMPILER"
 		  " parameters as MPI compiler wrappers and re-run cmake.")
 endif()
-
-##############################################################################
-# CUDA
-##############################################################################
-if("${AMANZI_ARCH}" STREQUAL "Summit")
-  find_package(CUDA REQUIRED)
-
-  message(STATUS "CUDA Package information")
-  message(STATUS "\tCUDA_DIR          = ${CUDA_DIR}")
-  message(STATUS "\tCUDA_INCLUDE_DIR  = ${CUDA_INCLUDE_DIR}")
-  message(STATUS "\tCUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
-  message(STATUS "\tCUDA_LIBRARY_DIR  = ${CUDA_LIBRARY_DIR}")
-  message(STATUS "\tCUDA_LIBRARY      = ${CUDA_LIBRARY}")
-  message(STATUS "\tCUDA_LIBRARIES    = ${CUDA_LIBRARIES}")
-  message(STATUS "")
-
-endif()
-
 
 ##############################################################################
 # ZLIB
@@ -143,8 +134,14 @@ endif()
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
+if (BUILD_SHARED_LIBS)
+  set(HDF5_USE_STATIC_LIBRARIES OFF)
+else()    
+  set(HDF5_USE_STATIC_LIBRARIES ON)
+endif()
+  
+find_package(HDF5 1.10.0 REQUIRED COMPONENTS C HL)
 
-find_package(HDF5 1.8.18 REQUIRED COMPONENTS C HL)
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "
@@ -167,6 +164,7 @@ message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
 message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
+message(STATUS "\tHDF5_HL_LIBRARIES = ${HDF5_HL_LIBRARIES}")
 message(STATUS "")
 
 ##############################################################################
@@ -215,10 +213,7 @@ if (Trilinos_FOUND)
   # Epetra  - distributed data objects
   # NOX     - nonlinear solver (Unstructured ONLY)
   # ML      - multilevel preconditioner (Unstructured ONLY)
-  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra)
-  if(AMANZI_ARCH STREQUAL "Summit")
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Kokkos)
-  endif() 
+  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
   if (ENABLE_Unstructured)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
@@ -237,30 +232,9 @@ if (Trilinos_FOUND)
 
     # Update the <PACKAGE>_INCLUDE_DIRS variable 
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
-      message(STATUS "\t${tri_package}_INCLUDE_DIRS ${_inc}")
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
   endforeach()
-
-  # Now check optional Trilinos packages
-
-  # STK - mesh 
-  if (ENABLE_STK_Mesh)
-    find_package(STK
-                 NO_MODULE
-                 HINTS ${Trilinos_INSTALL_PREFIX}
-                 PATH_SUFFIXES include lib)
-    if (STK_FOUND)
-      message(STATUS "Located Trilinos package STK: ${STK_DIR}")
-      trilinos_package_enabled_tpls(STK)
-      foreach( _inc "${STK_TPL_INCLUDE_DIRS}")
-        list(APPEND STK_INCLUDE_DIRS "${_inc}")
-      endforeach()
-    else()  
-      message(WARNING "Could not locate STK in ${Trilinos_DIR}. Will not enable STK_Mesh")
-      set(ENABLE_STK_Mesh OFF CACHE BOOL "Disable STK Mesh capability" FORCE)
-    endif()
-  endif()
 
   # Zoltan - required by MSTK mesh class 
   if (ENABLE_MSTK_Mesh)
@@ -449,7 +423,6 @@ endif()
 # Enable ALL possible mesh frameworks
 #option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
 #if(ENABLE_ALL_Mesh)
-#   set(ENABLE_STK_Mesh ON)
 #   set(ENABLE_MOAB_Mesh ON)
 #   set(ENABLE_MSTK_Mesh ON)
 #endif()    
@@ -457,26 +430,6 @@ endif()
 #                 ENABLE_ALL_Mesh
 #                 "Build all available mesh frameworks"
 #                )    
-
-
-##############################################################################
-# STK - Sierra Mesh Tool Kit part of Trilinos
-##############################################################################
-option(ENABLE_STK_Mesh "Build Amanzi with the STK mesh framework" OFF)
-add_feature_info(STK_Mesh
-                 ENABLE_STK_Mesh
-                 "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
-                 )
-
-if (STK_MESH_FOUND)
-  message(STATUS "STK_Mesh Package information")
-  message(STATUS "\tSTK_Mesh_INCLUDE_DIR  = ${STK_Mesh_INCLUDE_DIR}")
-  message(STATUS "\tSTK_Mesh_INCLUDE_DIRS = ${STK_Mesh_INCLUDE_DIRS}")
-  message(STATUS "\tSTK_Mesh_LIBRARY_DIR  = ${STK_Mesh_LIBRARY_DIR}")
-  message(STATUS "\tSTK_Mesh_LIBRARY      = ${STK_Mesh_LIBRARY}")
-  message(STATUS "\tSTK_Mesh_LIBRARIES    = ${STK_Mesh_LIBRARIES}")
-  message(STATUS "")
-endif()
 
 
 ##############################################################################
@@ -536,7 +489,7 @@ option(ENABLE_Silo "Build Amanzi with Silo output options" OFF)
 if (ENABLE_Silo)
   find_package(Silo REQUIRED)
 
-  if (SILO_FOUND)
+  if (Silo_FOUND)
     message(STATUS "Silo Package information")
     message(STATUS "\tSilo_INCLUDE_DIR  = ${Silo_INCLUDE_DIR}")
     message(STATUS "\tSilo_INCLUDE_DIRS = ${Silo_INCLUDE_DIRS}")
@@ -700,3 +653,19 @@ if (ENABLE_ALQUIMIA)
   endif()
 endif()
 
+##############################################################################
+# CLM LSM 
+##############################################################################
+if (ENABLE_CLM)
+     find_package(CLM)
+     if (CLM_FOUND)
+        message(STATUS "CLM Package information")
+        message(STATUS "\tCLM_INCLUDE_DIR  = ${CLM_INCLUDE_DIR}")
+        message(STATUS "\tCLM_INCLUDE_DIRS = ${CLM_INCLUDE_DIRS}")
+        message(STATUS "\tCLM_LIBRARY_DIR  = ${CLM_LIBRARY_DIR}")
+        message(STATUS "\tCLM_LIBRARY      = ${CLM_LIBRARY}")
+        message(STATUS "\tCLM_LIBRARIES    = ${CLM_LIBRARIES}")
+        print_link_libraries(${CLM_LIBRARY})
+        message(STATUS "")
+     endif()
+  endif()

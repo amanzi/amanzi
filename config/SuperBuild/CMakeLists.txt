@@ -8,7 +8,7 @@
 # Set minimum required version of CMake
 # NB: Must go before project() call.
 # KL: Version used to build Amanzi must be the same!
-cmake_minimum_required(VERSION 3.6.1)
+cmake_minimum_required(VERSION 3.11.4)
 
 #
 # Language standard
@@ -80,9 +80,9 @@ if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 endif()
 
-if (NOT SPACK_BINARY)
-  message(WARNING "Spack binary not defined. Disabling spack builds.")
-endif()
+#if (NOT SPACK_BINARY)
+#  message(WARNING "Spack binary not defined. Disabling spack builds.")
+#endif()
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -211,9 +211,6 @@ if (NOT ENABLE_Unstructured)
   set(ENABLE_MOAB_Mesh FALSE)
 endif()
 
-# optional arch flag
-option(AMANZI_ARCH "Set an optional arch (currently accepts only Summit)" "NONE")
-
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 
@@ -223,9 +220,6 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 # Use Spack package manager
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
 option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
-
-# Trilinos build type
-option(TRILINOS_BUILD_TYPE "Build type for Trilinos TPL" ${CMAKE_BUILD_TYPE})
 
 
 # ############################################################################ #
@@ -423,39 +417,6 @@ message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}")
 # Set common build compiler flags, build types and directories
 # ############################################################################ #
 
-# CMake compiler settings for any package built with CMake
-
-# C language flags
-set(Amanzi_CMAKE_C_COMPILER_ARGS
-     -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
-     -DCMAKE_C_FLAGS_DEBUG:STRING=${CMAKE_C_FLAGS_DEBUG}
-     -DCMAKE_C_FLAGS_MINSIZEREL:STRING=${CMAKE_C_FLAGS_MINSIZEREL}
-     -DCMAKE_C_FLAGS_RELEASE:STRING=${CMAKE_C_FLAGS_RELEASE}
-     -DCMAKE_C_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_C_FLAGS_RELWITHDEBINFO})
-
-# C++ language flags 
-set(Amanzi_CMAKE_CXX_COMPILER_ARGS
-     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
-     -DCMAKE_CXX_FLAGS_DEBUG:STRING=${CMAKE_CXX_FLAGS_DEBUG}
-     -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
-     -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
-     -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-
-# Fortran language flags    
-set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
-     -DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS}
-     -DCMAKE_Fortran_FLAGS_DEBUG:STRING=${CMAKE_Fortran_FLAGS_DEBUG}
-     -DCMAKE_Fortran_FLAGS_MINSIZEREL:STRING=${CMAKE_Fortran_FLAGS_MINSIZEREL}
-     -DCMAKE_Fortran_FLAGS_RELEASE:STRING=${CMAKE_Fortran_FLAGS_RELEASE}
-     -DCMAKE_Fortran_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_Fortran_FLAGS_RELWITHDEBINFO})
-
-# Link flags
-set(Amanzi_CMAKE_LINKER_ARGS
-     -DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}
-     -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
-
-message(STATUS "Amanzi_CMAKE_LINKER_ARGS=${Amanzi_CMAKE_LINKER_ARGS}")
-
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uc)
@@ -473,10 +434,14 @@ if (CMAKE_EXE_LINK_FLAGS)
   build_whitespace_string(Amanzi_COMMON_LDFLAGS ${CMAKE_EXE_LINK_FLAGS})
 endif()
 
+# Common CMake controls
+list(APPEND AMANZI_CMAKE_CACHE_ARGS "-DCMAKE_PREFIX_PATH:PATH=${TPL_INSTALL_PREFIX}")
+
 message(STATUS "\tcommon C flags\t\t${Amanzi_COMMON_CFLAGS}")
 message(STATUS "\tcommon C++ flags\t${Amanzi_COMMON_CXXFLAGS}")
 message(STATUS "\tcommon Fortran flags\t${Amanzi_COMMON_FCFLAGS}")
 message(STATUS "\tcommon Linker flags\t${Amanzi_COMMON_LDFLAGS}")
+message(STATUS "\tcommon arguments\t${AMANZI_CMAKE_CACHE_ARGS}")
 
 
 # ############################################################################ #
@@ -504,9 +469,9 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-if (BUILD_SPACK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
-endif()
+#if (BUILD_SPACK)
+#  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
+#endif()
 
 
 if (ENABLE_XSDK)    
@@ -728,20 +693,6 @@ if (ENABLE_MSTK_Mesh)
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
-# ############################################################################ #
-# CUDA 
-# ############################################################################ #
-if("${AMANZI_ARCH}" STREQUAL "Summit")
-  find_package(CUDA REQUIRED)
-  message(STATUS ">>> CUDA_INCLUDE   = ${CUDA_INCLUDE_DIRS}")
-  message(STATUS ">>> CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
-  include_directories(${CUDA_INCLUDE_DIRS})
-  append_set(Amanzi_TPL_CMAKE_ARGS
-           -DENABLE_CUDA:BOOL=ON
-           -DCUDA_INCLUDE_DIR:PATH=${CUDA_INCLUDE_DIRS}
-           -DCUDA_LIBRARY_DIR:PATH=${CUDA_LIBRARIES})
-endif()
-
 # Silo
 if (ENABLE_Silo)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
@@ -749,6 +700,11 @@ if (ENABLE_Silo)
              -DENABLE_Silo:BOOL=${ENABLE_Silo}
              -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
              -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
+endif()
+
+# CLM
+if (ENABLE_CLM)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
 endif()
 
 # Alquimia and chemical engines (PFloTran and CrunchTope)

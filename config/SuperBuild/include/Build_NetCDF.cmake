@@ -14,7 +14,10 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_VERSION_MAJOR} ${NetCDF_VERSION_MINOR} ${NetCDF_VERSION_PATCH})
 
 # --- Patch the original code
-set(NetCDF_patch_file netcdf-cmake.patch netcdf-cmake-rpath.patch netcdf-cmake-dl.patch)
+set(NetCDF_patch_file netcdf-cmake.patch
+                      netcdf-cmake-rpath.patch
+                      netcdf-cmake-dl.patch
+                      netcdf-cmake-namespace.patch)
 set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
                ${NetCDF_sh_patch}
@@ -40,9 +43,6 @@ list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_PARALLEL:BOOL=TRUE")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_C_LIBRARY:FILEPATH=${HDF5_C_LIBRARY}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_HL_LIBRARY:FILEPATH=${HDF5_HL_LIBRARY}")
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_INCLUDE_DIR:PATH=${HDF5_INCLUDE_DIRS}")
-
-# specify preferable search path 
-list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_PREFIX_PATH:PATH=${TPL_INSTALL_PREFIX}")
 
 # Default is to build with NetCDF4 which depends on HDF5
 option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
@@ -72,7 +72,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir}
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Ensure uniform build
                                      ${NetCDF_CMAKE_CACHE_ARGS}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

@@ -7,7 +7,7 @@
 if (ENABLE_XSDK)
     set(trilinos_depend_projects XSDK SEACAS)
 else()
-    set(trilinos_depend_projects NetCDF Boost SEACAS)
+    set(trilinos_depend_projects NetCDF Boost SEACAS SuperLUDist ParMetis)
 endif() 
 
 if (ENABLE_HYPRE AND NOT ENABLE_XSDK)
@@ -46,6 +46,7 @@ endif()
 if (ENABLE_Unstructured)
   list(APPEND Trilinos_PACKAGE_LIST ML)
 endif()
+
 
 # Generate the Trilinos Package CMake Arguments
 set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
@@ -129,29 +130,37 @@ if (ENABLE_HYPRE)
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
+# SuperLUDist
+list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_SuperLUDist:BOOL=ON"
+            "-DTPL_SuperLUDist_INCLUDE_DIRS:FILEPATH=${SuperLUDist_DIR}/include"
+            "-DTPL_SuperLUDist_LIBRARIES:STRING=${SuperLUDist_LIBRARY}")
+
+# ParMETIS
+list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_ParMETIS:BOOL=ON"
+            "-DTPL_ParMETIS_INCLUDE_DIRS:FILEPATH=${ParMetis_DIR}/include"
+            "-DTPL_ParMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
+
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
+    "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF"
     )
 
 if (TRILINOS_BUILD_TYPE)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DCMAKE_BUILD_TYPE:STRING=${TRILINOS_BUILD_TYPE}")
-  if ( ${TRILINOS_BUILD_TYPE} STREQUAL "Debug" )
+              "-DCMAKE_BUILD_TYPE:STRING=${TRILNOS_BUILD_TYPE}")
+
+  if (${TRILINOS_BUILD_TYPE} STREQUAL "Debug")
     list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
   endif()
-elseif(CMAKE_BUILD_TYPE)           
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-  if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
-    list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
-  endif()
+  #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -168,6 +177,7 @@ if (Trilinos_Build_Config_File)
     message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
     message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
+
 
 set(Trilinos_CMAKE_CXX_FLAGS ${Amanzi_COMMON_CXXFLAGS})
 
@@ -219,13 +229,14 @@ set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
 
+
 #  --- Define the Trilinos patch step
 #
 
 # Trilinos patches
-set(ENABLE_Trilinos_Patch OFF)
+set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
+  set(Trilinos_patch_file trilinos-duplicate-parameters.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)
@@ -245,18 +256,27 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-		                GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
-                    GIT_TAG ${Trilinos_GIT_TAG}      
+                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}                # Download directory
+                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+                    GIT_TAG        ${Trilinos_GIT_TAG}      
+                    # -- Update (one way to skip this step is use null command)
+                    UPDATE_COMMAND ""
+                    # -- Patch
+                    PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
-			                                -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
-				                              -DTpetraCore_ENABLE_TESTS:BOOL=ON
-                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
+                    CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                      ${Trilinos_CMAKE_ARGS} 
+			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
+				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
+                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
+                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
                                       -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
                                       -DTrilinos_ENABLE_SEACAS:BOOL=FALSE

@@ -1,0 +1,23 @@
+diff -ruNbB ascemio-2.2/src/parallelIO.c ascemio-2.2-source/src/parallelIO.c
+--- ascemio-2.2/src/parallelIO.c	2019-12-25 19:05:53.000000000 -0700
++++ ascemio-2.2-source/src/parallelIO.c	2019-12-25 19:01:17.000000000 -0700
+@@ -360,3 +360,7 @@
+ 
+ }
+ 
++ 
++bool parallelIO_name_exists(hid_t fid, const char* name) {
++	return (H5Aexists(fid, name) > 0) || (H5Lexists(fid, name, H5P_DEFAULT) > 0);
++}
+diff -ruNbB ascemio-2.2/src/parallelIO.h ascemio-2.2-source/src/parallelIO.h
+--- ascemio-2.2/src/parallelIO.h	2019-12-25 19:05:46.000000000 -0700
++++ ascemio-2.2-source/src/parallelIO.h	2019-12-25 19:01:42.000000000 -0700
+@@ -396,6 +396,8 @@
+ 	 * @return error code
+ 	 */
+ 	int parallelIO_close_dataset_group( int groupid, int fhandle, iogroup_t *myIOgroup);
++
++	bool parallelIO_name_exists(hid_t fid, const char* name);
+ #ifdef __cplusplus
+ }
+ #endif

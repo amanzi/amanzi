@@ -1,18 +1,18 @@
 diff -ruNbB netcdf-4.6.1/CMakeLists.txt netcdf-4.6.1-source/CMakeLists.txt
 --- netcdf-4.6.1/CMakeLists.txt	2018-03-15 15:22:52.000000000 -0600
 +++ netcdf-4.6.1-source/CMakeLists.txt	2018-06-23 19:37:39.000000000 -0600
-@@ -699,6 +699,7 @@
-     # Do that by checking for the targets H5Pget_fapl_mpiposx and
-     # H5Pget_fapl_mpio in ${HDF5_LIB}.
+@@ -710,6 +714,7 @@
+   # Use H5Pset_fapl_mpio and H5Pget_fapl_mpio, instead.
+   # CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpiposix "" HDF5_IS_PARALLEL_MPIPOSIX)
  
-+    SET(CMAKE_REQUIRED_LIBRARIES "dl;z;m")
-     CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpiposix "" HDF5_IS_PARALLEL_MPIPOSIX)
-     CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpio "" HDF5_IS_PARALLEL_MPIO)
-     IF(HDF5_IS_PARALLEL_MPIPOSIX OR HDF5_IS_PARALLEL_MPIO)
++  SET(CMAKE_REQUIRED_LIBRARIES "dl;${ZLIB_LIBRARY};m")
+   CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpio "" HDF5_IS_PARALLEL_MPIO)
+   IF(HDF5_IS_PARALLEL_MPIO)
+     SET(HDF5_PARALLEL ON)
 diff -ruNbB netcdf-4.6.1/include/netcdf.h netcdf-4.6.1-source/include/netcdf.h
---- netcdf-4.6.1/include/netcdf.h	2018-03-15 15:22:57.000000000 -0600
-+++ netcdf-4.6.1-source/include/netcdf.h	2018-06-23 19:39:22.000000000 -0600
-@@ -259,11 +259,11 @@
+--- netcdf-4.7.0/include/netcdf.h	2018-03-15 15:22:57.000000000 -0600
++++ netcdf-4.7.0-source/include/netcdf.h	2018-06-23 19:39:22.000000000 -0600
+@@ -269,11 +269,11 @@
        are *not* enforced after version 4.5.0
  */
  /**@{*/

@@ -33,9 +33,6 @@ list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_LIBDIR:PATH=${TPL_INSTALL_PREFIX}
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_DOCDIR:PATH=${TPL_INSTALL_PREFIX}/doc/xerces")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_INCLUDEDIR:PATH=${TPL_INSTALL_PREFIX}/include")
 list(APPEND XERCES_CMAKE_ARGS "-Dnetwork:BOOL=FALSE")
-
-set(XERCES_CXX_FLAGS "${Amanzi_COMMON_CXXFLAGS} -std=c++14")
-
 # Force OSX to use its CoreServices Framework
 if (APPLE)
   list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_HOST_APPLE:BOOL=TRUE")
@@ -54,11 +51,11 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     PATCH_COMMAND ${XERCES_PATCH_COMMAND} 
                     # -- Configure
                     SOURCE_DIR   ${XERCES_source_dir}          # Source directory
-                    CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # Ensure uniform build
                                  ${XERCES_CMAKE_ARGS}
                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                 -DCMAKE_CXX_FLAGS:STRING=${XERCES_CXX_FLAGS}
+                                 -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
                     BINARY_DIR       ${XERCES_build_dir}       # Build directory 

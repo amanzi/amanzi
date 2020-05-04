@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${HDF5_VERSION_MAJOR} ${HDF5_VERSION_MINOR} ${HDF5_VERSION_PATCH})
 
 # --- Patch the original code
-set(HDF5_patch_file hdf5-1.8.8-comment.patch hdf5-1.8.8-disable-getpwuid.patch)
+set(HDF5_patch_file hdf5-1.10.6-rpath.patch)
 set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
                ${HDF5_sh_patch}
@@ -29,6 +29,10 @@ set(HDF5_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HDF5_cmake_patch})
 
 # --- Define configure parameters
 set(HDF5_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+if ((DEFINED ENV{NERSC_HOST}) AND (NOT BUILD_SHARED_LIBS))
+   list(APPEND HDF5_CMAKE_CACHE_ARGS "-DBUILD_STATIC_EXECS:BOOL=ON")
+endif()
+
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_ENABLE_PARALLEL:BOOL=TRUE")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DMPI_HOME:PATH=${MPI_PREFIX}")
@@ -40,7 +44,6 @@ list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_BUILD_HL_LIB:BOOL=TRUE")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 #-D ZLIB_INCLUDE_DIR=${ZLIB_install_dir}/include
 #-D ZLIB_LIBRARY=${ZLIB_install_dir}/lib/libz.a
-list(APPEND HDF5_CMAKE_CACHE_ARGS "-DCMAKE_PREFIX_PATH:PATH=${TPL_INSTALL_PREFIX}")
 
 # --- Add external project build and tie to the HDF5 build target
 ExternalProject_Add(${HDF5_BUILD_TARGET}
@@ -52,11 +55,10 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     URL          ${HDF5_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${HDF5_MD5_SUM}                  # md5sum of the archive file
                     # -- Patch 
-                    # PATCH_COMMAND ${HDF5_PATCH_COMMAND}
-		    PATCH_COMMAND
+                    PATCH_COMMAND ${HDF5_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HDF5_source_dir} 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure unifom build
                                   ${HDF5_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
@@ -74,7 +76,6 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
 # --- Useful variables for packages that depend on HDF5 (NetCDF)
 include(BuildLibraryName)
 
-message(STATUS ">>> JDM: HDF5 build type CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
   build_library_name(hdf5_debug HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
   build_library_name(hdf5_hl_debug HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
@@ -87,9 +88,9 @@ set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m dl)
 set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
 list(REMOVE_DUPLICATES HDF5_INCLUDE_DIRS)
 
-message(STATUS ">>> JDM: HDF5 libraries - HDF5_HL_LIBRARY = ${HDF5_HL_LIBRARY}")
-message(STATUS ">>> JDM:                - HDF5_C_LIBRARY  = ${HDF5_C_LIBRARY}")
-message(STATUS ">>> JDM:                - ZLIB_LIBRARIES  = ${ZLIB_LIBRARIES}")
+message(STATUS "\t HDF5:  HDF5_HL_LIBRARY = ${HDF5_HL_LIBRARY}")
+message(STATUS "\t        HDF5_C_LIBRARY  = ${HDF5_C_LIBRARY}")
+message(STATUS "\t        ZLIB_LIBRARIES  = ${ZLIB_LIBRARIES}")
 
 set(HDF5_DIR ${TPL_INSTALL_PREFIX})
 

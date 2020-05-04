@@ -117,8 +117,28 @@
 #                - update OpenMPI to 3.1.1
 #   0.95.6       - added new package nanoflann 1.3.0
 #   0.95.7       - update MSTK to 3.1.0
+#   0.95.8       - update NetCDF-Fortran to 4.4.5
+#   0.95.9       - update NetCDF-C to 4.7.0
+#   0.95.10      - update OpenMPI to 3.1.4
 #
-#                - update Trilinos 12.14.1 
+#   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
+#   0.96.1       - update NetCDF-C to 4.7.1 
+#                - update MOAB to 5.1.0
+#   0.96.2       - update SuperLU_Dist to 3.4.0
+#                - update PETSc to 3.11.3
+#                - update PFloTran to b681066 (Sep 20, 2019)
+#                - update Alquimia to 1.0.6-rc
+#   0.96.3       - update HDF5 to 1.10.5
+#   0.96.4       - update MSTK to 3.2.1
+#   0.97.0       - update HDF5 to 1.10.6
+#                - update Nanoflann to 1.3.1
+#                - update Trilinos to 55a7599733 (Nov11, 2019, also 12.18.1)
+#                - update NetCDF-C to 4.7.3
+#                - update NetCDF-Fortran to 4.5.2
+#   0.97.1       - update MSTK to 3.3.1
+#   0.97.2       - update MSTK to 3.3.5
+#   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
+#   0.97.4       - added CLM
 
 include(CMakeParseArguments)
 
@@ -170,13 +190,12 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 7_tpetra)
+set(AMANZI_TPLS_VERSION_MINOR 97)
+set(AMANZI_TPLS_VERSION_PATCH 4)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
-set(XSDK_VERSION "0.2.0")
-set(XSDK_VERSION_NEW "0.3.0")
+set(XSDK_VERSION "0.3.0")
 
 #
 # Default location on GitHub
@@ -200,12 +219,12 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 set(OpenMPI_VERSION_MAJOR 3)
 set(OpenMPI_VERSION_MINOR 1)
-set(OpenMPI_VERSION_PATCH 1)
+set(OpenMPI_VERSION_PATCH 4)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
 set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        493f1db2f75afaab1c8ecba78d2f5aab)
+set(OpenMPI_MD5_SUM        29770c6efcbb4c41d820cb6b8eae90b8)
 
 #
 # TPL: MPICH
@@ -266,7 +285,7 @@ set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR}.${UnitT
 set(UnitTest_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.tgz)
 set(UnitTest_SAVEAS_FILE    ${UnitTest_ARCHIVE_FILE})
-set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d) 
+set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d) 
 
 #
 # TPL: Boost
@@ -277,7 +296,7 @@ set(Boost_VERSION_MINOR 67)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
+set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
 set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
@@ -286,75 +305,75 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 18)
+set(HDF5_VERSION_MINOR 10)
+set(HDF5_VERSION_PATCH 6)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
+set(HDF5_MD5_SUM        37f3089e7487daf0890baf3d3328e54a)
 
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 6)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_MINOR 7)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
+set(NetCDF_MD5_SUM        5ebcafd3fee1d48559687b5ace414fe8)
 
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 4)
-set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION_MINOR 5)
+set(NetCDF_Fortran_VERSION_PATCH 2)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
-set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
+set(NetCDF_Fortran_MD5_SUM        759402703585d12f84667716887c42df) 
 
 #
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 3)
+set(ASCEMIO_VERSION_MINOR 2)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
-set(ASCEMIO_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(ASCEMIO_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_SAVEAS_FILE    ${ASCEMIO_ARCHIVE_FILE})
-set(ASCEMIO_MD5_SUM       de556a774b4ef7dc223f4611a39c978c)
+set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
 
 #
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 3)
-set(MSTK_VERSION_MINOR 1)
-set(MSTK_VERSION_PATCH 0)
+set(MSTK_VERSION_MINOR 3)
+set(MSTK_VERSION_PATCH 5)
+
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
-set(MSTK_ARCHIVE_FILE   v${MSTK_VERSION_MAJOR}_${MSTK_VERSION_MINOR}_${MSTK_VERSION_PATCH}.tar.gz)
+set(MSTK_ARCHIVE_FILE   ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        bc9c39885d9dc41655f8b54c628e460b)
+set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
 
 #
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  0)
+set(MOAB_VERSION_MINOR  1)
 set(MOAB_VERSION_PATCH  0)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b) 
+set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
 
 #
 # TPL: HYPRE
@@ -381,7 +400,7 @@ set(ParMetis_SAVEAS_FILE    ${ParMetis_ARCHIVE_FILE})
 set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 
 #
-# TPL: SuperLU (Built by PETSc!)
+# TPL: SuperLU
 #
 set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
@@ -393,16 +412,16 @@ set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
 set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
-# TPL: SuperLU Distrib (Built by PETSc!)
+# TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  2)
-set(SuperLUDist_VERSION_PATCH  2)
+set(SuperLUDist_VERSION_MINOR  4)
+set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
+set(SuperLUDist_MD5_SUM        334cd350ae375be63ccf4d62900be3e4)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -420,28 +439,28 @@ set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  8)
-set(PETSc_VERSION_PATCH  2)
+set(PETSc_VERSION_MINOR  11)
+set(PETSc_VERSION_PATCH  3)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
-set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
+set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_VERSION}")
+set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
+set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
+set(PETSc_MD5_SUM        c5f8e3aa0bed20a8ab685fb809950fce)
+
 
 #
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 14)
-set(Trilinos_VERSION_PATCH 1_master)
+set(Trilinos_VERSION_MINOR 18)
+set(Trilinos_VERSION_PATCH 55a7599733-Nov11)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "master")
+set(Trilinos_GIT_TAG        "55a75997332636a28afc9db1aee4ae46fe8d93e7")
 
 #
 # TPL: SEACAS
@@ -459,25 +478,27 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_VERSION_MINOR 3)
-set(PFLOTRAN_VERSION_PATCH 0)
+set(PFLOTRAN_VERSION_MINOR 0)
+set(PFLOTRAN_VERSION_PATCH b681066)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
 set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
-set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}.tar.gz)
-set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        e8cf6f259fca1ebc403b950058be686e)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-b681066-20Sep2019.tar.gz)
+set(PFLOTRAN_SAVEAS_FILE    pflotran-b681066-20Sep2019.tar.gz)
+set(PFLOTRAN_MD5_SUM        486b0981a90aa662644b907f0a42e7fe)
+set(PFLOTRAN_GIT_REPOSITORY "https://bitbucket.org/pflotran/pflotran/src/master")
+set(PFLOTRAN_GIT_TAG        "b68106687fd4ea421468fda130ea053d44e0262e")
 
 #
 # TPL: Alquimia
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 5)
+set(ALQUIMIA_VERSION_PATCH 6-rc)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
 set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        58d8cbb2f68381477068836fba35d41c)
+set(ALQUIMIA_MD5_SUM        5bcf12c69c63cbd7912facc67b859af1)
 
 #
 # TPL: Silo
@@ -494,24 +515,36 @@ set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
 #
 # TPL: CrunchTope
 #
-set(CRUNCHTOPE_VERSION_MAJOR 160915)
-set(CRUNCHTOPE_VERSION_MINOR c31ecb9)
+set(CRUNCHTOPE_VERSION_MAJOR 020420)
+set(CRUNCHTOPE_VERSION_MINOR 906e164)
 set(CRUNCHTOPE_VERSION_PATCH 0)
 set(CRUNCHTOPE_VERSION  ${CRUNCHTOPE_VERSION_MAJOR}.${CRUNCHTOPE_VERSION_MINOR}.${CRUNCHTOPE_VERSION_PATCH})
 set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_160915-c31ecb9.tgz)
+set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_020420-906e164.0.tgz)
 set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
-set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
+set(CRUNCHTOPE_MD5_SUM       059766e149e2a47c754ecf9815641d71)
 
 #
 # TPL: Nanoflann
 #
 set(Nanoflann_VERSION_MAJOR 1)
 set(Nanoflann_VERSION_MINOR 3)
-set(Nanoflann_VERSION_PATCH 0)
+set(Nanoflann_VERSION_PATCH 1)
 set(Nanoflann_VERSION  ${Nanoflann_VERSION_MAJOR}.${Nanoflann_VERSION_MINOR}.${Nanoflann_VERSION_PATCH})
 set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
-set(Nanoflann_MD5_SUM       c9836578e97fca4f05335699b8394b4d)
+set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
+
+#
+# TPL: CLM
+#
+set(CLM_VERSION_MAJOR 0)
+set(CLM_VERSION_MINOR 1)
+set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
+set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
+set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
+set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
+set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
 

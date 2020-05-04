@@ -83,7 +83,7 @@ endif()
 if (BLAS_LIBRARIES) 
   if (NOT APPLE)
     build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-    set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
+    set(petsc_blas_option "--with-blas-lib=[${petsc_blas_libs}]")
   endif()
 else()
   set(petsc_blas_option)
@@ -93,7 +93,8 @@ endif()
 if ( LAPACK_LIBRARIES ) 
   if (NOT APPLE) # Macs are different.
     build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-    set(petsc_lapack_option --with-lapack-libs='${petsc_lapack_libs}')
+    string (REPLACE " " "," petsc_lapack_libs "${petsc_lapack_libs}")
+    set(petsc_lapack_option "--with-lapack-lib=[${petsc_lapack_libs}]")
   endif()
 else()
   set(petsc_lapack_option)
@@ -147,19 +148,19 @@ set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_f
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Set the name of the patch
-set(PETSC_patch_file petsc-3.8.2-hypre.patch)
+# set(PETSC_patch_file petsc-3.8.2-hypre.patch)
 # --- Configure the bash patch script
-set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
-               ${PETSC_sh_patch}
-               @ONLY)
+# set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
+#                ${PETSC_sh_patch}
+#                @ONLY)
 # --- Configure the CMake patch step
-set(PETSC_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
-               ${PETSC_cmake_patch}
-               @ONLY)
+# set(PETSC_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
+#                ${PETSC_cmake_patch}
+#                @ONLY)
 # --- Set the patch command
-set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})     
+# set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})     
 
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
@@ -172,7 +173,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     URL_MD5       ${PETSc_MD5_SUM}          # md5sum of the archive file
                     DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}      # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${PETSC_PATCH_COMMAND}
+                    # PATCH_COMMAND ${PETSC_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${PETSc_source_dir}       # Source directory
                     CONFIGURE_COMMAND
@@ -184,6 +185,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
 					  --with-ssl=0
                                           --with-debugging=${petsc_debug_flag}
                                           --without-valgrind
+                                          --with-cxx-dialect=C++11
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
                                           ${petsc_package_flags}
