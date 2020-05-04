@@ -125,23 +125,12 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   PKFactory pk_factory;
 
-  for (int i = 0; i < pk_name.size(); ++i) {
-    //const std::string& sub_name = sub->first;
-    const std::string& sub_name = pk_name[i];
-    if (!plist->isSublist(sub_name)) {
-      Errors::Message msg;
-      msg << "PK tree has no sublist \"" << sub_name << "\"";
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-
   // Create only one subvector for all PKs
   Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
   solution_->PushBack(pk_soln);
 
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
-    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
 
     // create the PK
     Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);

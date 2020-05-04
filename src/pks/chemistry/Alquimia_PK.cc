@@ -436,7 +436,7 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  Key geochemical_list_key = Keys::getKey(domain_,"geochemical conditions");
+  Key geochemical_list_key =  Keys::readKey(initial_conditions, domain_, "geochemical conditions","geochemical conditions");
   if (initial_conditions.isSublist(geochemical_list_key)) {
     Teuchos::ParameterList geochem_conditions = initial_conditions.sublist(geochemical_list_key);
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
