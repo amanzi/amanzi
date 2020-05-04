@@ -80,7 +80,7 @@ MatrixFE::sumIntoLocalValues(const int *row_indices, const int *col_indices,
 // WhetStone::DenseMatrices are column-major.
 void
 MatrixFE::sumIntoLocalValuesTransposed(const int *row_indices, const int *col_indices,
-        const WhetStone::DenseMatrix& vals) {
+        const WhetStone::DenseMatrix<>& vals) {
   for (int i=0; i!=vals.NumCols(); ++i)
     sumIntoLocalValues(row_indices[i], vals.NumRows(), &vals.Value(0,i), col_indices);
 }
@@ -88,7 +88,7 @@ MatrixFE::sumIntoLocalValuesTransposed(const int *row_indices, const int *col_in
 // WhetStone::DenseMatrix are column-major.
 void
 MatrixFE::sumIntoLocalValues(const int *row_indices, const int *col_indices,
-                          const WhetStone::DenseMatrix& vals) {
+                             const WhetStone::DenseMatrix<>& vals) {
   std::vector<double> row_vals(vals.NumCols());
   for (int i=0; i!=vals.NumRows(); ++i) {
     for (int j=0; j!=vals.NumCols(); ++j) row_vals[j] = vals(i,j);

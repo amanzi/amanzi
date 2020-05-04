@@ -71,9 +71,9 @@ class MatrixFE {
   void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
           const Teuchos::SerialDenseMatrix<int,double>& vals);
 
-  int SumIntoMyValues(const int *row_inds, const int *col_inds,
+  void sumIntoLocalValues(const int *row_inds, const int *col_inds,
                       const WhetStone::DenseMatrix<>& vals);
-  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
+  void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
           const WhetStone::DenseMatrix<>& vals);
   
   // hack the diagonal

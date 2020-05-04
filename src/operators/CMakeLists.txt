@@ -220,7 +220,9 @@ if (BUILD_TESTS)
     # Copy test directory files if an out of source build
     if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}))
         file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"
-                            "${OPERATORS_SOURCE_DIR}/test/*.exo")
+                            "${OPERATORS_SOURCE_DIR}/test/*.exo"
+                            "${OPERATORS_SOURCE_DIR}/test/*.gold"
+          )
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
@@ -243,7 +245,7 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 1
                     SOURCE test/Main.cc test/operator_marshak_assembly.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
     add_amanzi_test(operators_marshak_assembly_3pe operators_marshak_assembly NPROCS 3 KIND unit)
                   
     # add_amanzi_test(operators_marshak operators_marshak

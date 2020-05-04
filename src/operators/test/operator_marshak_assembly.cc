@@ -127,7 +127,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
     cvs->AddComponent("face", AmanziMesh::FACE, 1);
   }
 
-  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  auto solution = cvs->Create();
   {
     auto soln_c = solution->ViewComponent<DefaultHost>("cell", false);
     for (int c = 0; c < ncells_owned; ++c) {
@@ -208,7 +208,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   cvs_flux->SetMesh(mesh)
       ->SetComponent("face", AmanziMesh::FACE, 1)
       ->SetGhosted(true);
-  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_flux));
+  auto flux = cvs_flux->Create();
   op->UpdateFlux(solution.ptr(), flux.ptr());
   if (jac) op->UpdateMatricesNewtonCorrection(flux.ptr(), solution.ptr());
 
@@ -225,7 +225,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
 
   
   std::stringstream fname_stream;
-  fname_stream << "operator_marshak_assembly_";
+  fname_stream << "test/operator_marshak_assembly_";
   if (jac) fname_stream << "jac_";
   fname_stream << op_list_name << "_np" << size;
 

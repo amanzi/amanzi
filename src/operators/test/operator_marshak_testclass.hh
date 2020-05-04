@@ -23,8 +23,8 @@ class HeatConduction {
         ->AddComponent("face", AmanziMesh::FACE, 1)
         ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
-    values_ = Teuchos::rcp(new CompositeVector(cvs));
-    derivatives_ = Teuchos::rcp(new CompositeVector(cvs));
+    values_ = cvs->Create();
+    derivatives_ = cvs->Create();
   }
   ~HeatConduction() {};
 
