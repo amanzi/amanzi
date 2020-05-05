@@ -56,7 +56,6 @@ struct SimulationParameters {
 
 static const std::string kSimulationSection("simulation parameters");
 static const std::string kDescriptionParam("description");
-static const std::string kVerbosityParam("verbosity");
 static const std::string kTextOutputParam("text_output");
 static const std::string kTextTimeUnitsParam("text_time_units");
 static const std::string kComparisonModelParam("comparison_model");

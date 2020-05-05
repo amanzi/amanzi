@@ -551,7 +551,6 @@ void WriteTemplateFile(const std::string& file_name,
   template_file << "[" << kSimulationSection << "]" << std::endl;
   template_file << kDescriptionParam << " = " << std::endl;
   template_file << "# verbosity can be a comma seperated list." << std::endl;
-  template_file << kVerbosityParam << " = verbose" << std::endl;
   template_file << kComparisonModelParam << " = pflotran" << std::endl;
   template_file << kTextOutputParam << " = true" << std::endl;
   template_file << kTextTimeUnitsParam << " = days" << std::endl;

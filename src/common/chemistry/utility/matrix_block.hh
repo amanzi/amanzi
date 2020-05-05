@@ -71,9 +71,6 @@ class MatrixBlock {
   void Zero(void);
   void SetDiagonal(double d);
 
-  void Print(const std::string& name, const Teuchos::Ptr<VerboseObject> vo) const;
-  void Print(const Teuchos::Ptr<VerboseObject> vo) const;
-
  private:
   void AllocateMemory(void);
   void FreeMemory(void);
@@ -84,4 +81,5 @@ class MatrixBlock {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
+
+#endif
