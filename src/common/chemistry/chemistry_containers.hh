@@ -28,7 +28,6 @@
 #include <vector>
 #include <string>
 
-#include "chemistry_strings.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
