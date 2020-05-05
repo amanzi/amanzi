@@ -1479,7 +1479,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
  
   # Tools parameters
   # OpenMPI 3.x requires more slots to run Amanzi tests
-  if [ "${tools_mpi}" = "openmpi" ]; then
+  if [ "${tools_mpi}" -eq "openmpi" ]; then
     tools_mpi_exec_args="--oversubscribe"
   fi 
   
