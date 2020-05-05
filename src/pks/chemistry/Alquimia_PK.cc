@@ -186,7 +186,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
 
-    S->GetField(alquimia_aux_data_key_, passwd_)->set_io_vis(false);
+    S->GetField(alquimia_aux_data_key_, passwd_)->set_io_vis(true);
   }
 
 
@@ -284,7 +284,22 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
 
-  // S->WriteStatistics(vo_);
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
+  
+  Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+  if (num_rank==2){
+    if (rank==1) std::cout<<"x0 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+  }else{
+    std::cout<<"x0 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
+    std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+  }
+  
+  //S->WriteStatistics(vo_);
+
 }
 
 
@@ -620,6 +635,19 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
   CopyFromAlquimia(cell, mat_props, state, aux_data, aux_output, 
                    aqueous_components);
 
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
+  Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  if (num_rank==2) {
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  }
+
+
+  
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) {
     std::vector<std::string> mineralNames, primaryNames;
@@ -632,7 +660,6 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
       if (aux_names_.at(i) == "pH") {
         double* cell_aux_output = (*aux_output_)[i];
         cell_aux_output[cell] = aux_output.pH;
-        //std::cout<<domain_<<" cell "<<cell<<" pH "<< aux_output.pH<<"\n";
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
@@ -763,11 +790,33 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     }
   }
 
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
+  Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  if (num_rank==2) {
+    if (rank==1) {
+      std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+      if ((cell==0)||(cell==1)||(cell==2)){
+        std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
+      }
+    }    
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+    if ((cell==6)||(cell==7)||(cell==8)){
+      std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
+    }
+  }
+
+
   if (S_->HasField(alquimia_aux_data_key_)) {
-    aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", true);
+    aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
 
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
+
+    std::cout<<"test_aux6 num_aux_ints "<<num_aux_ints<<" num_aux_doubles  "<<num_aux_doubles <<"\n";
 
     for (int i = 0; i < num_aux_ints; i++) {
       double* cell_aux_ints = (*aux_data_)[i];
@@ -777,6 +826,12 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
       double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
       cell_aux_doubles[cell] = aux_data.aux_doubles.data[i];
     } 
+  }
+
+  if (num_rank==2) {
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
   }
 
   if (using_sorption_isotherms_) {
@@ -807,6 +862,25 @@ int Alquimia_PK::AdvanceSingleCell(
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
+  Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  if (num_rank==2) {
+    if (rank==1){
+      std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+      if ((cell==0)||(cell==1)||(cell==2)){
+        std::cout<<"test_aux7a look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+      }
+    }
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+    if ((cell==6)||(cell==7)||(cell==8)){
+      std::cout<<"test_aux7a look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+    }
+  }
+
   // Do the reaction.
   int num_iterations;
   bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
@@ -814,10 +888,29 @@ int Alquimia_PK::AdvanceSingleCell(
   if (not success) 
     return -1;
 
+  if (num_rank==2) {
+    if (rank==1){
+      std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+      if ((cell==0)||(cell==1)||(cell==2)){
+        std::cout<<"test_aux7b look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+      }
+    }
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+    if ((cell==6)||(cell==7)||(cell==8)){
+      std::cout<<"test_aux7b look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+    }    
+  }  
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cell, 
                             alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
                             aqueous_components);
+
+  if (num_rank==2) {
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  }
 
   return num_iterations;
 }
@@ -832,7 +925,7 @@ int Alquimia_PK::AdvanceSingleCell(
 bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool failed(false);
-
+  
   double dt = t_new - t_old;
   current_time_ = saved_time_ + dt;
 
@@ -843,13 +936,19 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     prev_time_step_ = dt;
   }
 
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
+  
   // Get the number of owned (non-ghost) cells for the mesh.
   unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   int max_itrs (0), min_itrs(10000000), avg_itrs(0);
   int imax(-1), imin(-1);
-
+  
   // Now loop through all the cells and advance the chemistry.
+  int ierr = 0;
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
     int num_itrs = AdvanceSingleCell(dt, aqueous_components_, cell);
@@ -869,6 +968,14 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       break;
     }
   }
+
+  const Epetra_MultiVector& test_aux = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  if (num_rank==2){
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+  }
+
 
   // Check for convergence failure and broadcast if needed. Also agree on the maximum number 
   // of Newton iterations and its location.
@@ -898,6 +1005,15 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
                << " Newton iterations in cell " << imax << std::endl;
   }
 
+
+  const Epetra_MultiVector& test_aux0 = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  if (num_rank==2){
+    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][0]<<" "<<test_aux0[0][1]<<" "<<test_aux0[0][2]<<"\n";
+  }else{
+    std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][6]<<" "<<test_aux0[0][7]<<" "<<test_aux0[0][8]<<"\n";
+  }
+
+  
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
@@ -963,6 +1079,10 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
     }
   }
 
+  auto mesh = S_->GetMesh();
+  int rank = mesh->get_comm()->MyPID();
+  int num_rank = mesh->get_comm()->NumProc();
+
   if (cp_list_->isParameter("auxiliary data")) {
     Teuchos::Array<std::string> names = 
       cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
@@ -979,6 +1099,16 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
   if (S_->HasField(alquimia_aux_data_key_) && S_next->HasField(alquimia_aux_data_key_)) {
     *S_next->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false) =
       *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+
+    Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+    if (num_rank==2){
+      if (rank==1) std::cout<<"x1 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
+      if (rank==1) std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+    }else{
+      std::cout<<"x1 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
+      std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+    }
+      
   }
 }
 

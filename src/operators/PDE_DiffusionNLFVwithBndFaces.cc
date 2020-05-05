@@ -297,6 +297,12 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       double ws[dim_];
 
       ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, ws, ids);
+      if (ierr != 0) {
+        std::cout<<"face center :"<<mesh_->face_centroid(face_itself)<<"\n";
+        std::cout<<"conormal " << conormal<<"\n";
+        for (auto it : tau)  std::cout<<"tau "<<it<<"\n";        
+        std::cout<<"\n";
+      }
       AMANZI_ASSERT(ierr == 0);
 
       weight[dim_][f] = ws[0];

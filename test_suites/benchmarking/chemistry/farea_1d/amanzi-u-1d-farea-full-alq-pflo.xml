@@ -97,9 +97,14 @@
             </minerals>
         </solid_phase>
         <gas_phase>
-            <gases>
-                <gas>CO2(g)</gas>
-            </gases>
+          <gases>
+            <gas>CO2(g)</gas>
+          </gases>
+          <dissolved_components>
+            <primaries>
+              <primary coefficient_of_diffusion="1.0E-9" kh="1e-5">CO2(g)</primary>
+            </primaries>                  
+          </dissolved_components>
         </gas_phase>
     </phases>
     <execution_controls>
