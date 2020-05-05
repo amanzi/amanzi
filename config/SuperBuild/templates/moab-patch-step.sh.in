@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# CMake generates this file 
+
+# Source and build locations
+moab_src_dir=@MOAB_source_dir@
+
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@MOAB_patch_file@
+
+if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+fi
+
+cd ${moab_src_dir}
+patch -p1 < ${patch_file}
+exit $?

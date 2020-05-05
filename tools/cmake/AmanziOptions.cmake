@@ -45,7 +45,7 @@ add_feature_info(DBC
                  ENABLE_DBC
                  "Toggle design by contract (DBC) checking")
 if (ENABLE_DBC)
-  add_definitions("-DENABLE_DBC")
+  add_definitions("-D ENABLE_DBC")
 endif()    
 
 # Trilinos error checking is defined in macros
@@ -91,5 +91,7 @@ include(RegisterEvaluators)
 option(ENABLE_NewTimeIntegrators "Build Amanzi with dev time integrators" FALSE)
 
 # Turn off physics, just build the framework
-option(ENABLE_Physics "Build Amanzi with physics libraries" TRUE)
+option(ENABLE_AmanziPhysicsModule "Build Amanzi with native physics libraries" TRUE)
+option(ENABLE_ATSPhysicsModule "Build Amanzi with ATS physics libraries" FALSE)
+
 

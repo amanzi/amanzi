@@ -1,15 +1,6 @@
---- netcdf-4.5.0-source/CMakeLists.txt	2017-12-15 10:55:57.935680000 -0800
-+++ netcdf-4.5.0-new/CMakeLists.txt	2017-12-15 12:33:35.334342840 -0800
-@@ -273,7 +273,7 @@
- # Configuration for post-install RPath
- # Adapted from http://www.cmake.org/Wiki/CMake_RPATH_handling
- ##
--IF(NOT MSVC)
-+IF((NOT MSVC) AND BUILD_SHARED_LIBS)
-   # use, i.e. don't skip the full RPATH for the build tree
-   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
- 
-@@ -296,8 +296,12 @@
+--- netcdf-4.7.0-source/CMakeLists.txt	2017-12-15 10:55:57.935680000 -0800
++++ netcdf-4.7.0-new/CMakeLists.txt	2017-12-15 12:33:35.334342840 -0800
+@@ -299,8 +299,12 @@
      SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
    ENDIF("${isSystemDir}" STREQUAL "-1")
  
@@ -23,11 +14,3 @@
  ##
  # End configuration for post-install RPath
  ##
-@@ -1931,6 +1935,7 @@
- # End export files
- ####
- 
-+message(STATUS ">>> JDM:  CMAKE_SKIP_INSTALL_RPATH = ${CMAKE_SKIP_INSTALL_RPATH}")
- 
- 
- # CPack inclusion must come last.

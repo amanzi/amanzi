@@ -137,7 +137,8 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${SEACAS_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${SEACAS_CMAKE_CACHE_ARGS}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
+                                     ${SEACAS_CMAKE_CACHE_ARGS}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}

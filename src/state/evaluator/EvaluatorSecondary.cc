@@ -250,7 +250,7 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   }
 }
 
-inline bool
+bool
 EvaluatorSecondary::IsDependency(const State& S, const Key& key,
                                  const Key& tag) const
 {
@@ -268,7 +268,7 @@ EvaluatorSecondary::IsDependency(const State& S, const Key& key,
   return false;
 }
 
-inline bool
+bool
 EvaluatorSecondary::ProvidesKey(const Key& key, const Key& tag) const
 {
   return std::find(my_keys_.begin(),

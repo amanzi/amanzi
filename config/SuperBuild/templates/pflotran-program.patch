@@ -1,12 +1,21 @@
-diff -ruNbB pflotran-0.3.0-orig/src/pflotran/pflotran_rxn.F90 pflotran-0.3.0-patched/src/pflotran/pflotran_rxn.F90
---- pflotran-0.3.0-orig/src/pflotran/pflotran_rxn.F90	2017-10-13 11:51:06.000000000 -0600
-+++ pflotran-0.3.0-patched/src/pflotran/pflotran_rxn.F90	2018-04-18 22:16:31.815651677 -0600
+diff -ruNbB pflotran-0.0.b681066-source/src/pflotran/pflotran_rxn.F90 pflotran-0.0.b681066-new/src/pflotran/pflotran_rxn.F90
+--- pflotran-0.0.b681066-source/src/pflotran/pflotran_rxn.F90  2019-09-27 12:49:34.000000000 -0600
++++ pflotran-0.0.b681066-new/src/pflotran/pflotran_rxn.F90     2019-09-27 12:50:29.000000000 -0600
+@@ -174,7 +174,7 @@
+         call InputReadWord(input, option, tran_constraint%name, PETSC_TRUE)
+         call InputErrorMsg(input, option, 'constraint', 'name') 
+         call PrintMsg(option, tran_constraint%name)
+-        call TranConstraintReadRT(tran_constraint, reaction, input, option)
++        call TranConstraintRead(tran_constraint, reaction, input, option)
+         call TranConstraintAddToList(tran_constraint, transport_constraints)
+         nullify(tran_constraint)
+ 
 @@ -304,7 +304,7 @@
    call InputGetCommandLineString(string, option%global_prefix, option_found, option)
  
    PETSC_COMM_WORLD = MPI_COMM_WORLD
 -  call PetscInitialize(PETSC_NULL_CHARACTER, ierr);CHKERRQ(ierr)
-+  call PetscInitialize(PETSC_NULL_CHARACTER, ierr)
++  call PetscInitialize(PETSC_NULL_CHARACTER, ierr);
  
    input => InputCreate(IN_UNIT, option%input_filename, option)
  
@@ -15,7 +24,7 @@ diff -ruNbB pflotran-0.3.0-orig/src/pflotran/pflotran_rxn.F90 pflotran-0.3.0-pat
    call InputDestroy(input)
    call OptionDestroy(option)
 -  call PetscFinalize(ierr);CHKERRQ(ierr)
-+  call PetscFinalize(ierr)
++  call PetscFinalize(ierr);
    call MPI_Finalize(ierr)
  
  end program pflotran_rxn

@@ -36,6 +36,7 @@ FileHDF5::FileHDF5(const Comm_ptr_type& comm, const std::string& filename,
 FileHDF5::~FileHDF5()
 {
   CloseFile();
+  parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
 
@@ -47,7 +48,7 @@ FileHDF5::OpenFile(file_mode_t mode)
     if (data_file_ < 0) {
       Errors::Message message;
       message << "FileHDF5: Unable to open file \"" << filename_
-              << "\" with HDF5 error code " << data_file_;
+              << "\" with HDF5 error code " << (int) data_file_;
       throw(message);
     }
   }
@@ -56,12 +57,18 @@ FileHDF5::OpenFile(file_mode_t mode)
 void
 FileHDF5::CloseFile()
 {
-  for (auto gid : open_groups_)
-    parallelIO_close_dataset_group(gid, data_file_, &IOgroup_);
+  if (open_groups_.size() > 0) {
+    AMANZI_ASSERT(data_file_ >= 0);
+  }
+  for (auto gid : open_groups_) {
+    int ierr = parallelIO_close_dataset_group(data_file_, &IOgroup_);
+    AMANZI_ASSERT(!ierr);
+  }
   open_groups_.clear();
 
   if (data_file_ >= 0) {
-    parallelIO_close_file(data_file_, &IOgroup_);
+    int ierr = parallelIO_close_file(data_file_, &IOgroup_);
+    AMANZI_ASSERT(!ierr);
     data_file_ = -1;
   }
 }
@@ -70,6 +77,15 @@ void
 FileHDF5::CreateGroup(const std::string& h5path_)
 {
   IODetails::DangerousString h5path(h5path_);
+  if (open_groups_.size() > 0) {
+    // NOTE: this is a fairly straightforward fix of ASCEMIO, whose data
+    // structures currently only store one groupid.  It would be
+    // straightforward to make that an array (much like file ids are an array),
+    // but it is not done. --etc
+    Errors::Message message;
+    message << "ASCEMIO currently limited to 1 open group per file at a time: \"" << filename_ << "\"";
+    throw(message);
+  }
   open_groups_.push_back(
     parallelIO_create_dataset_group(h5path.c_str(), data_file_, &IOgroup_));
 }

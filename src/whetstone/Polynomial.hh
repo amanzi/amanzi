@@ -359,7 +359,7 @@ class Polynomial : public PolynomialBase<MEMSPACE> {
   /* ******************************************************************
   * Calculate polynomial value at a given point. 
   ****************************************************************** */
-  double Value(const AmanziGeometry::Point& xp) const
+  double Value(const AmanziGeometry::Point& xp) const override
   {
     double sum(coefs_(0));
     AmanziGeometry::Point dx(xp - origin_);

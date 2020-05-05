@@ -39,20 +39,21 @@ set(ENABLE_MSTK_Mesh @ENABLE_MSTK_Mesh@ CACHE BOOL "Enable MSTK Unstructured Mes
 set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
 
 
+# Language standard
+set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "C++ standard")
+
+
 # TPL version
 set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
 set(CMAKE_PREFIX_PATH @TPL_INSTALL_PREFIX@ CACHE STRING "search path for TPLs")
 
-# Kokkos variables and flags 
-set(ENABLE_CUDA @ENABLE_CUDA@ CACHE BOOL "Enable CUDA library for GPU support") 
-set(ENABLE_KOKKOS @ENABLE_KOKKOS@ CACHE BOOL "Enable Kokkos library")
-set(NVCC_WRAPPER_DEFAULT_COMPILER @NVCC_WRAPPER_DEFAULT_COMPILER@ CACHE STRING "Default compiler used by nvcc_wrapper")
 
 # --------------------------------------------------------------------------- #
 # Third Party Libraries (TPL)
 # --------------------------------------------------------------------------- #
 
 # MPI Definitions
+set(MPI_PREFIX @MPI_PREFIX@ CACHE FILEPATH "MPI prefix")
 set(MPI_EXEC @MPI_EXEC@ CACHE FILEPATH "MPI executable to launch parallel tests")
 set(MPI_EXEC_NUMPROCS_FLAG @MPI_EXEC_NUMPROCS_FLAG@ CACHE STRING "MPI executable flag to set number of MPI ranks")
 set(MPI_EXEC_MAX_NUMPROCS @MPI_EXEC_MAX_NUMPROCS@ CACHE STRING "Maximum number of MPI ranks to run parallel tests")
@@ -140,3 +141,5 @@ set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation pref
 set(SuperLU_DIR @SuperLU_DIR@ CACHE PATH "SuperLU installation prefix")
 set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefix")
 
+# CLM
+set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
