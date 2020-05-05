@@ -77,14 +77,16 @@ TEST(WRITE_MESH)
     std::cout << "res = " << res << std::endl;
     CHECK(!res);
   }
-  CHECK(compareTextFiles("visdump_mesh.VisIt.xmf",
-                         "test/gold_visdump_mesh.VisIt.xmf"));
-  CHECK(compareTextFiles("visdump_data.VisIt.xmf",
-                         "test/gold_visdump_data.VisIt.xmf"));
-  CHECK(compareTextFiles("visdump_mesh.h5.0.xmf",
-                         "test/gold_visdump_mesh.h5.0.xmf"));
-  CHECK(compareTextFiles("visdump_data.h5.0.xmf",
-                         "test/gold_visdump_data.h5.0.xmf"));
-  CHECK(compareTextFiles("visdump_data.h5.104.xmf",
-                         "test/gold_visdump_data.h5.104.xmf"));
+  if (comm->getRank() == 0) {
+    CHECK(compareTextFiles("visdump_mesh.VisIt.xmf",
+                           "test/gold_visdump_mesh.VisIt.xmf"));
+    CHECK(compareTextFiles("visdump_data.VisIt.xmf",
+                           "test/gold_visdump_data.VisIt.xmf"));
+    CHECK(compareTextFiles("visdump_mesh.h5.0.xmf",
+                           "test/gold_visdump_mesh.h5.0.xmf"));
+    CHECK(compareTextFiles("visdump_data.h5.0.xmf",
+                           "test/gold_visdump_data.h5.0.xmf"));
+    CHECK(compareTextFiles("visdump_data.h5.104.xmf",
+                           "test/gold_visdump_data.h5.104.xmf"));
+  }
 }
