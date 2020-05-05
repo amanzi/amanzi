@@ -46,7 +46,7 @@ class PreconditionerIfpack2 : public Preconditioner<Matrix_type, Vector_type> {
     A_ = A;
     Ifpack2::Factory factory;
     pc_ = factory.create(name_, A_);
-    pc_->setParameters(*plist_);
+    pc_->setParameters(plist_->sublist(std::string("ifpack2: ")+name_+" parameters"));
     pc_->initialize();
     pc_->compute();
   }

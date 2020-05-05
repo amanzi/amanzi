@@ -177,10 +177,7 @@ void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
 ****************************************************************** */
 void Operator::AssembleMatrix()
 {
-  if (Amat_ == Teuchos::null) {
-    Errors::Message msg("Symbolic assembling was not performed.");
-    Exceptions::amanzi_throw(msg);
-  }
+  if (Amat_ == Teuchos::null) SymbolicAssembleMatrix();
 
   Amat_->zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);

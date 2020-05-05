@@ -34,7 +34,7 @@ class PreconditionerAssembled : public Preconditioner<Matrix, Vector> {
   Init(const std::string& name,
        const Teuchos::RCP<Teuchos::ParameterList>& plist) override {
     PreconditionerFactory<Matrix_type,Vector_type> fac;
-    pc_ = fac.Create(name, plist);    
+    pc_ = fac.Create(plist);
   };
 
   void Update(const Teuchos::RCP<Matrix>& mat) override

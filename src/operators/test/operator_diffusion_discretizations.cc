@@ -190,13 +190,14 @@ SUITE(DIFFUSION) {
         ana, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-
   TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionFVwithGravity>(
         ana, 1.1, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+
+
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
   // polynomial with coefficient=1
@@ -256,18 +257,19 @@ SUITE(DIFFUSION) {
   // change PC, change BCs
   //
   // Exact solution
-  // TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionFV>(
-  //       ana, "HypreAMG", "DirichletNeumannBox", "Generate2D",
-  //       "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionFVwithGravity>(
-  //       ana, 1.1, "HypreAMG", "DirichletNeumannBox", "Generate2D",
-  //       "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_ILU) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionFV>(
+        ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_FV_DirichletNeumannBox_Generate2D_ILU) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+
   // TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Generate2D_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
