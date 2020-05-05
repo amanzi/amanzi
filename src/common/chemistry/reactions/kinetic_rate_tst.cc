@@ -76,7 +76,6 @@
 #include "secondary_species.hh"
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 
@@ -373,7 +372,7 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 }
 
 
-void KineticRateTST::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
   this->DisplayReaction(vo);
   std::stringstream message;

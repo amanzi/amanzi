@@ -502,7 +502,7 @@ data at specific time moments.
 * `"mesh entity`" [string] specifies geometric object associated with the mesh function.
   Available options are `"cell`", `"face`", and `"node`".
 
-* `"number of DoFs`" [string] defines the number of degrees of freedom. Default is 1.
+* `"number of dofs`" [string] defines the number of degrees of freedom. Default is 1.
 
 * `"time function`" [list] defines a time function to interpolate data. This is the 
   optional parameter.
@@ -517,7 +517,7 @@ data at specific time moments.
     <Parameter name="variable name" type="string" value="porosity"/>
     <Parameter name="component name" type="string" value="cell"/>
     <Parameter name="mesh entity" type="string" value="cell"/>
-    <Parameter name="number of DoFs" type="int" value="1"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
 
     <ParameterList name="time function">  
       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
@@ -3914,7 +3914,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
+    `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector

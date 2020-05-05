@@ -14,7 +14,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "chemistry_verbosity.hh"
 #include "kinetic_rate.hh"
 #include "string_tokenizer.hh"
 
@@ -78,7 +77,7 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
 }
 
 
-void KineticRate::DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const {
+void KineticRate::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    Reaction: " << std::endl;
   message << "      ";

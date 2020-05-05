@@ -357,7 +357,7 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
     for (auto it = schema.begin(); it != schema.end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
 
-      int old_schema;
+      int old_schema(0);
       Teuchos::RCP<Op> op;
 
       if (kind == AmanziMesh::CELL) {

@@ -73,6 +73,29 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98, 9.99999999999999967e+98}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="LS1">
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{100.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="LS2">
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{100.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Side">
+      <ParameterList name="region: polygon">
+        <Parameter name="number of points" type="int" value="4"/>
+        <Parameter name="points" type="Array(double)" value="{100.0, 0.0, 0.0, 
+                                                              100.0, 0.0, 1.0, 
+                                                              100.0, 1.0, 1.0, 
+                                                              100.0, 1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="state">

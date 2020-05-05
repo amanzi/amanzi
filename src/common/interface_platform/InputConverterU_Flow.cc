@@ -483,7 +483,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
+    ell = GetTextContentD_(element_rp, "", false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');

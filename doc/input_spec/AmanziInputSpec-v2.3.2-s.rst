@@ -833,7 +833,7 @@ Rel_perm
 Sorption_isotherms
 ------------------
 
-*  ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
@@ -843,8 +843,8 @@ Sorption_isotherms
             Optional Elements: kd_model
     </sorption_isotherms>
 
-.
-    * ``kd_model`` takes the following form:
+
+The ``kd_model`` element takes the following form:
 
 .. code-block:: xml
  
@@ -857,18 +857,18 @@ Sorption_isotherms
 Minerals
 --------
 
-* For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
+For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
 
 .. code-block:: xml
 
        <minerals>
-           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area="1.0"/>
        </minerals>
 
 Ion_exchange
 ------------
 
-* The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
+The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
 
 .. code-block:: xml
 
@@ -883,7 +883,7 @@ Ion_exchange
 Surface_complexation
 --------------------
 
-* The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
+The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
 
 .. code-block:: xml
 
@@ -913,7 +913,7 @@ For each process kernel the element ``state`` indicates whether the solution is 
 Flow
 ----
 
-* ``flow`` has the following attributes, 
+The ``flow`` has the following attributes, 
       
       * ``state`` = "on | off"
 
@@ -921,23 +921,21 @@ Flow
 
 Currently three scenarios are available for calculated the flow field.  ``richards`` is a single phase, variably saturated flow assuming constant gas pressure.  ``saturated`` is a single phase, fully saturated flow.  ``constant`` is equivalent to a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-Note:  Unstructured options ``discretization_method``,  ``rel_perm_method``, and ``preconditioning_strategy`` have been moved to the ``unstr_flow_controls`` section under ``numerical_controls``/
 
 Transport
 ---------
 
-* ``transport`` has the following attributes,
+The ``transport`` has the following attributes,
       
       * ``state`` = "on | off"
 
 For ``transport`` the ``state`` must be specified.  
 
-Note:  Unstructured options ``algorithm`` and ``sub_cycling`` have been moved to the ``unstr_transport_controls`` section under ``numerical_controls``/
 
 Chemistry
 ---------
 
-* ``chemistry`` has the following attributes,
+The ``chemistry`` has the following attributes,
       
       * ``state`` = "on | off"
       
@@ -948,6 +946,7 @@ Chemistry
       * ``database`` is the name of the chemistry reaction database file (filename.dat).   
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
+
 
 Phases
 ======
@@ -964,13 +963,13 @@ Some general discussion of the ``Phases`` section goes here.
 Liquid_phase
 ------------
 
-* ``liquid_phase`` has the following elements
+The ``liquid_phase`` has the following elements
 
 .. code-block:: xml
 
   <liquid_phase>
       Required Elements: viscosity, density
-      Optional Elements: dissolved_components, eos [S]
+      Optional Elements: dissolved_components, eos
   </liquid_phase>
 
 Here is more info on the ``liquid_phase`` elements:
@@ -999,24 +998,6 @@ The subelement ``primaries`` is used for specifying reactive and non-reactive pr
 
 The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
 
-
-Solid_phase
------------
-
-* ``solid_phase`` has the following elements
-
-.. code-block:: xml
-
-  <solid_phase>
-      Required Elements: minerals
-      Optional Elements: NONE
-  </solid_phase>
-
-Here is more info on the ``solid_phase`` elements:
-
-    * ``minerals`` has the element 
-
-        * ``mineral`` which contains the name of the mineral. Note, the name of the mineral must match a species in the database file.
 
 Initial Conditions
 ==================
@@ -1113,7 +1094,7 @@ The ``boundary_conditions`` section contains an unbounded number of ``boundary_c
 
   <boundary_condition>
       Required Elements: assigned_regions, liquid_phase
-      Optional Elements: comments - SKIPPED
+      Optional Elements: comments
   </boundary_condition>
 
 Assigned_regions
@@ -1380,10 +1361,6 @@ This section includes a collection of miscellaneous global options, specified as
 
   <echo_translated_input file_name="some name"/>
 
-* Write the input data after internal translation. If this parameter is missing, the default XML
-  file `"XXX_native_v7.xml`" is written, where `"XXX.xml`" is the name of the original Amanzi input file.
-  If this parameter is present but attribute ``file_name`` is either omitted of empty string, no 
-  translated file is written.
 
 
 

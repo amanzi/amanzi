@@ -178,13 +178,13 @@ void InputConverter::ParseVersion_()
 
     if ((major != AMANZI_SPEC_VERSION_MAJOR) ||
         (minor != AMANZI_SPEC_VERSION_MINOR) || 
-        (micro != AMANZI_SPEC_VERSION_MICRO)) {
+        (micro < AMANZI_SPEC_VERSION_MICRO)) {
       std::stringstream ss1;
       ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions: "<< ss1.str() << ".\n";
+          << "Supported versions: "<< ss1.str() << " and higher.\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -603,7 +603,7 @@ int InputConverter::GetAttributeValueL_(
     DOMElement* elem, const char* attr_name, const std::string& type,
     int valmin, int valmax, bool exception, int default_val)
 {
-  int val;
+  int val(INT_MIN);
   MemoryManager mm;
 
   std::string text, parsed, found_type;
@@ -849,7 +849,7 @@ std::string InputConverter::GetAttributeValueS_(
 double InputConverter::GetTextContentD_(
     DOMNode* node, std::string unit, bool exception, double default_val)
 {
-  double val;
+  double val(DBL_MIN);
   std::string parsed_text, unit_in;
 
   MemoryManager mm;
@@ -1811,7 +1811,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 * Adds kd values to a bgd file (using the first material).
 * Returns the name of this file.  
 ****************************************************************** */
-std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int status)
+std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int& status)
 {
   DOMNode* node;
   DOMElement* element;

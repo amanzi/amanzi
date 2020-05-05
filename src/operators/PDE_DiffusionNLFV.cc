@@ -462,7 +462,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     // We use the upwind discretization of the generalized flux.
     int i, dir, c1;
     c1 = cells[0];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
 
     if (ncells == 2) {
@@ -525,7 +525,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     // We use the upwind discretization of the generalized flux.
     int i, dir, c1;
     c1 = cells[0];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
 
     if (ncells == 2) {
@@ -595,7 +595,7 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
+          mesh_->face_normal(f1, false, c, &dir);
           sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
@@ -734,14 +734,14 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
-      flux_data[0][f] = wgt_sideflux[0][f]*dir;     
+      mesh_->face_normal(f, false, cells[0], &dir);
+      flux_data[0][f] = wgt_sideflux[0][f] * dir;     
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+      mesh_->face_normal(f, false, c1, &dir);
 
       double wg1 = wgt_sideflux[0][f]; 
       double wg2 = wgt_sideflux[1][f];

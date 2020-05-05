@@ -80,9 +80,6 @@ void ActivityModelPitzerHWM::Setup(
   // initialize storage in the base class:
   ResizeGamma(primary_species.size() + aqueous_complexes.size());
 
-  // initialize the local stuff:
-  set_verbosity(parameters.verbosity);
-
   // Store the J's functions approach name
   jfunction_approach = parameters.pitzer_jfunction;
 
@@ -625,11 +622,10 @@ void ActivityModelPitzerHWM::Display(void) const {
 */
 void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
                                           const std::vector<Species>& primary_species,
-                                          const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
-  bool isdebug(false);
-  if (verbosity()) {
-    isdebug = true;
-  }
+                                          const std::vector<AqueousEquilibriumComplex>& aqueous_complexes)
+{
+  bool isdebug((vo_->getVerbLevel() >= Teuchos::VERB_HIGH));
+
   const int mxlines(10000);
   const int block_b0(0), block_b1(1), block_b2(2), block_cfi(3), block_theta(4), block_lamda(5), block_psi(7), block_exit(8);
   const std::string longspace("                  ");
@@ -654,8 +650,9 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
 
   // Open Pitzer virial coefficients database
   if (isdebug) {
-    std::cout << "=================> Opening Pitzer Data Base ==============> "
-              << namedatabase << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "=================> Opening Pitzer Data Base ==============> "
+               << namedatabase << std::endl;
   }
   std::ifstream database(namedatabase.c_str());
   if (!database) {
@@ -665,7 +662,8 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   } else {
     if (isdebug) {
-      std::cout << "Opening Pitzer virial coefficients database was successful: " << namedatabase << std::endl;
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Opening Pitzer virial coefficients database was successful: " << namedatabase << std::endl;
     }
   }
 
@@ -691,25 +689,32 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
     if (first == '>') {
       iblock++;
       if (iblock == block_b0 && isdebug) {
-        std::cout << "=================> Parse Beta0 ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Beta0 ==============>" << std::endl;
       }
       if (iblock == block_b1 && isdebug) {
-        std::cout << "=================> Parse Beta1 ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Beta1 ==============>" << std::endl;
       }
       if (iblock == block_b2 && isdebug) {
-        std::cout << "=================> Parse Beta2 ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Beta2 ==============>" << std::endl;
       }
       if (iblock == block_cfi && isdebug) {
-        std::cout << "=================> Parse Cphi ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Cphi ==============>" << std::endl;
       }
       if (iblock == block_theta && isdebug) {
-        std::cout << "=================> Parse Theta ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Theta ==============>" << std::endl;
       }
       if (iblock == block_lamda && isdebug) {
-        std::cout << "=================> Parse Lamda ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Lamda ==============>" << std::endl;
       }
       if (iblock == block_psi && isdebug) {
-        std::cout << "=================> Parse Psi ==============>" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "=================> Parse Psi ==============>" << std::endl;
       }
       getline(database, line);
     }
@@ -741,15 +746,18 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
 
   }
   if (isdebug) {
-    std::cout << "=================> Assign Beta's functions ==============>" << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "=================> Assign Beta's functions ==============>" << std::endl;
   }
   AssignIndexBetaFunctions();
   if (isdebug) {
-    std::cout << "=================> Assign F's functions ==============>" << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "=================> Assign F's functions ==============>" << std::endl;
   }
   AssignIndexJFunctions();
   if (isdebug) {
-    std::cout << "=================> Compute total number of non-zero terms ==============>" << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "=================> Compute total number of non-zero terms ==============>" << std::endl;
   }
   number_non_zero_q = number_non_zero_beta + number_non_zero_theta + number_non_zero_lamda;
   PushPrivateVectors();
@@ -770,16 +778,13 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
   }
   database.close();
   if (isdebug) {
-    std::cout << "=================> Closing Pitzer Data Base ==============>" << std::endl;
-  }
-  if (isdebug) {
-    std::cout << "=================> Print virial coefficients ==============>" << std::endl;
-  }
-  if (isdebug) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "=================> Closing Pitzer Data Base ==============>" << std::endl;
+    *vo_->os() << "=================> Print virial coefficients ==============>" << std::endl;
+
     Display();
-  }
-  if (isdebug) {
-    std::cout << "=================> End print virial coefficients ==============>" << std::endl;
+
+    *vo_->os() << "=================> End print virial coefficients ==============>" << std::endl;
   }
 }
 

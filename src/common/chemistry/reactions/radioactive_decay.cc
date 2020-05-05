@@ -165,7 +165,7 @@ void RadioactiveDecay::AddContributionToJacobian(
 }
 
 
-void RadioactiveDecay::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich

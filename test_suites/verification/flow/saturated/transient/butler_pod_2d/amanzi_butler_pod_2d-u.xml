@@ -1,5 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+  <misc>
+    <echo_translated_input file_name="oldspec.xml" format="unstructured_native" />
+  </misc>
   <model_description name="SR Test Problem">
     <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
     <model_id>Theis</model_id>
@@ -86,10 +88,10 @@
       <box high_coordinates="20200,20200,1.0" low_coordinates="0.0,0.0,0.0" />
     </region>
     <region name="cylinder">
-      <region_file entity="Cell" format="exodus ii" label="20000" name="mesh_cylinder.exo" type="labeled set" />
+      <region_file entity="cell" format="exodus ii" label="20000" name="mesh_cylinder.exo" type="labeled set" />
     </region>
     <region name="bg">
-      <region_file entity="Cell" format="exodus ii" label="10000" name="mesh_cylinder.exo" type="labeled set" />
+      <region_file entity="cell" format="exodus ii" label="10000" name="mesh_cylinder.exo" type="labeled set" />
     </region>
     <region name="Well">
       <box high_coordinates="1.0800000e+04, 1.010400e+04, 1.0e+00" low_coordinates="1.060000e+04, 1.009600e+04, 0.0e+00" />

@@ -152,7 +152,7 @@ void SurfaceComplex::AddContributionToDTotal(
 }
 
 
-void SurfaceComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -174,7 +174,7 @@ void SurfaceComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void SurfaceComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -194,7 +194,7 @@ void SurfaceComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void SurfaceComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Complex Name"
             << std::setw(15) << "Concentration"
@@ -206,7 +206,7 @@ void SurfaceComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo)
 }
 
 
-void SurfaceComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

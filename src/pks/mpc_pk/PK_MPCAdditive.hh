@@ -63,13 +63,6 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
   virtual double get_dt();
   virtual void set_dt(double dt);
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-
-  // -- identifier accessor
-  virtual std::string name() const { return name_; }
-
- protected:
-  // identifier
-  std::string name_;
 };
 
 

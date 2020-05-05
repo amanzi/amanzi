@@ -153,12 +153,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
       out.AddComponent("face", AmanziMesh::FACE, 1);
     }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
-        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       out.AddComponent("twin", AmanziMesh::FACE, 1);
-    }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-      out.AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     }
     return out;          
   }

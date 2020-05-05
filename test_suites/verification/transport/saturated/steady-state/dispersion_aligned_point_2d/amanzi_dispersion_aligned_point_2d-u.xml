@@ -1,5 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+    <misc>
+      <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+    </misc>
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
       <model_id>Single-Phase Saturated</model_id>
@@ -32,7 +34,7 @@
       <comments>Single phase flow only</comments>
       <flow model="constant" state="on" />
       <transport state="on" />
-      <chemistry engine="none" process_model="none" state="off" />
+      <chemistry engine="none" state="off" />
     </process_kernels>
     <phases>
       <liquid_phase name="water">
@@ -40,9 +42,9 @@
         <viscosity>1.002E-03</viscosity>
         <density>998.2</density>
         <dissolved_components>
-          <solutes>
-            <solute coefficient_of_diffusion="0.0">Tc-99</solute>
-          </solutes>
+          <primaries>
+            <primary coefficient_of_diffusion="0.0">Tc-99</primary>
+          </primaries>
         </dissolved_components>
       </liquid_phase>
     </phases>
@@ -62,11 +64,6 @@
           <sub_cycling>off</sub_cycling>
           <cfl>1</cfl>
         </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
         <unstr_preconditioners>
           <hypre_amg />
           <trilinos_ml />
@@ -133,7 +130,6 @@
         <mechanical_properties>
           <porosity value="0.35" />
           <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic" />
-          <molecular_diffusion value="0.0" />
           <tortuosity value="0.0" />
         </mechanical_properties>
         <permeability x="1.0e-10" z="1.0e-10" />
@@ -146,7 +142,7 @@
         <assigned_regions>All</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <velocity function="uniform" x="1.8634e-06" z="0.0" />
+            <velocity x="1.8634e-06" z="0.0" />
             <uniform_pressure value="101325" />
           </liquid_component>
           <solute_component name="solute">

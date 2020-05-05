@@ -18,6 +18,7 @@
 #include "Teuchos_Array.hpp"
 
 // Amanzi's
+#include "Key.hh"
 #include "VerboseObject.hh"
 
 #include "InputConverter.hh"
@@ -177,7 +178,7 @@ class InputConverterU : public InputConverter {
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
-  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
+  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
 
   // -- sort functions
   template<class Iterator>

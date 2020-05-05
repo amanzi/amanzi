@@ -305,9 +305,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
 
   // optional projection on the space of polynomials 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
-    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
-
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);

@@ -5,10 +5,8 @@
 #include <string>
 
 #include "beaker.hh"
-#include "chemistry_verbosity.hh"
 
-int CommandLineOptions(int argc, char** argv,
-                       Amanzi::AmanziChemistry::Verbosity* verbosity);
+int CommandLineOptions(int argc, char** argv);
 
 void fbasin_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
 void fbasin_aqueous_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);

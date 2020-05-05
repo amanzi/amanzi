@@ -1,5 +1,8 @@
 <amanzi_input version="2.3.0" type="unstructured">
-  <echo_translated_input file_name="alquimia"/>
+  <misc>
+    <echo_translated_input file_name="oldspec.xml"/>
+  </misc>
+
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
