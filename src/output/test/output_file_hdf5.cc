@@ -34,6 +34,37 @@ SUITE(FILE_HDF5)
 {
   using namespace Amanzi;
 
+  TEST(ASCEMIO)
+  {
+    auto comm = Amanzi::getDefaultComm();
+    auto mpi_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm);
+    AMANZI_ASSERT(mpi_comm.get());
+
+    iogroup_conf_t io_config;
+    io_config.numIOgroups = 1;
+    io_config.commIncoming = *mpi_comm->getRawMpiComm();
+
+    iogroup_t io_group;
+    int ierr = parallelIO_IOgroup_init(&io_config, &io_group);
+    CHECK(!ierr);
+
+    auto data_file = parallelIO_open_file("ascemio_test.h5", &io_group, FILE_CREATE);
+    CHECK(data_file >= 0);
+
+    std::string group_name = "/my_group/";
+    ierr = parallelIO_create_dataset_group(group_name.c_str(), data_file, &io_group);
+    CHECK(!ierr);
+
+    ierr = parallelIO_close_dataset_group(data_file, &io_group);
+    CHECK(!ierr);
+
+    ierr = parallelIO_close_file(data_file, &io_group);
+    CHECK(!ierr);
+
+    ierr = parallelIO_IOgroup_cleanup(&io_group);
+    CHECK(!ierr);
+  }
+  
   TEST(ATTR_WRITEREAD)
   {
     // write
@@ -59,7 +90,6 @@ SUITE(FILE_HDF5)
     }
   }
 
-
   TEST(ATTR_WRITEREAD_IN_GROUP)
   {
     // write
@@ -69,7 +99,7 @@ SUITE(FILE_HDF5)
     std::string name("hello");
 
     {
-      Amanzi::FileHDF5 out(Amanzi::getDefaultComm(), "test.h5", FILE_CREATE);
+      Amanzi::FileHDF5 out(Amanzi::getDefaultComm(), "test0.h5", FILE_CREATE);
       out.CreateGroup("/group/");
 
       out.WriteAttribute("six_one", "/group/", sixone);
@@ -80,7 +110,7 @@ SUITE(FILE_HDF5)
 
 
     {
-      Amanzi::FileHDF5 in(Amanzi::getDefaultComm(), "test.h5", FILE_READONLY);
+      Amanzi::FileHDF5 in(Amanzi::getDefaultComm(), "test0.h5", FILE_READONLY);
       CHECK_CLOSE(sixone,
                   in.template ReadAttribute<double>("six_one", "/group/"),
                   1.e-10);
@@ -194,7 +224,6 @@ SUITE(FILE_HDF5)
   }
 
   // THIS FAILS due to some issues with ASCEMIO
-
 #if 0
 
 TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
@@ -324,4 +353,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
     CHECK_CLOSE(0.0, norms[0], 1.e-10);
     CHECK_CLOSE(0.0, norms[1], 1.e-10);
   }
+
+
+
 }

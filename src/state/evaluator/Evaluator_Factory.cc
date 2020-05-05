@@ -15,11 +15,11 @@
 
 namespace Amanzi {
 
-namespace Utils {
-// explicity instantitate the static data of Factory<Evaluator>
-template <>
-Factory<Evaluator>::map_type* Factory<Evaluator>::map_;
-} // namespace Utils
+// namespace Utils {
+// // explicity instantitate the static data of Factory<Evaluator>
+// template <>
+// Factory<Evaluator>::map_type* Factory<Evaluator>::map_;
+// } // namespace Utils
 
 // method for instantiating Evaluator implementations
 Teuchos::RCP<Evaluator>

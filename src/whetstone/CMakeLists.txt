@@ -56,6 +56,12 @@ set(whetstone_src_files
   VectorObjects.cc
 )
 
+set(whetstone_link_libs
+  error_handling
+  ${Teuchos_LIBRARIES}
+  ${Kokkos_LIBRARIES}  
+  )
+
 #
 # Library: whetstone
 #

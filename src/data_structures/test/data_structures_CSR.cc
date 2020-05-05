@@ -34,7 +34,7 @@ SUITE(COMMON_CSR)
     const int nmatrices = 100000; 
     const int nrows = 10; 
     const int ncols = 10; 
-    CSR<double,2,Kokkos::CudaSpace> csr_mat(nmatrices); 
+    CSR<double,2,Amanzi::DeviceOnlyMemorySpace> csr_mat(nmatrices); 
 
     // Fill the matrices on the host 
     int total = 0; 
@@ -77,8 +77,8 @@ SUITE(COMMON_CSR)
       }
     }
     // Create vector CSR based on matrix sizes 
-    CSR<double,1,Kokkos::CudaSpace> csr_v = csr_mat.size();
-    CSR<double,1,Kokkos::CudaSpace> csr_Av =csr_mat.size(); 
+    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_v = csr_mat.size();
+    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_Av =csr_mat.size(); 
 
     int total1 = 0; 
     int total2 = 0; 

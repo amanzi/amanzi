@@ -24,7 +24,7 @@ namespace Amanzi {
 class Evaluator {
  public:
   // virtual destructor, copy constructors, operator=
-  virtual ~Evaluator() {}
+  virtual ~Evaluator() = default;
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;
 
