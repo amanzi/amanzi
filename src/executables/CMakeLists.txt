@@ -125,12 +125,12 @@ set(ats_link_libs
 # note, we can be inclusive here, because if they aren't enabled,
 # these won't be defined and will result in empty strings.
 set(tpl_link_libs
+  ${ALQUIMIA_LIBRARIES}
+  ${PFLOTRAN_LIBRARIES}
   ${Teuchos_LIBRARIES}
   ${Epetra_LIBRARIES}
   ${Boost_LIBRARIES}
   ${PETSC_LIBRARIES}
-  ${ALQUIMIA_LIBRARIES}
-  ${PFLOTRAN_LIBRARIES}
   ${MSTK_LIBRARIES}
   ${SILO_LIBRARIES}
   ${HYPRE_LIBRARIES}

@@ -91,7 +91,7 @@ void ReactiveTransport_PK_ATS::set_dt(double dt) {
   tranport_pk_->set_dt(dTtran_);
 }
 
-void ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
+void ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<State>& S,
                                           const Teuchos::RCP<State>& S_inter,
                                           const Teuchos::RCP<State>& S_next) {
   //  PKDefaultBase::set_states(S, S_inter, S_next);
