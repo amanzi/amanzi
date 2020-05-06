@@ -245,11 +245,32 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  // make copy of evaluators
+  std::vector<Key> names = { "saturation_liquid", "water_content", "energy" };
+  std::vector<std::string> passwds = { "flow", "flow", "thermal" };
+  Teuchos::RCP<CompositeVector> copies[6];
+
+  int k(0), nnames(names.size());
+  for (int i = 0; i < nnames; ++i) {
+    SwapEvaluatorField_(names[i], passwds[i], copies[k], copies[k + 1]);
+    k += 2;
+  }
+
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
+    k = 0;
+    for (int i = 0; i < nnames; ++i) {
+      if (S_->HasField(names[i])) {
+        *S_->GetFieldData("prev_" + names[i], passwds[i]) = *(copies[k]);
+        *S_->GetFieldData("fracture-prev_" + names[i], passwds[i]) = *(copies[k + 1]);
+      }
+      k += 2;
+    }
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed." << std::endl;
+    *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", " 
+               << names[1] << ", " << names[2] << " }" << std::endl;
   }
 
   return fail;
@@ -273,7 +294,7 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   int ierr = op_tree_matrix_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
-  // // diagonal blocks in tree operator and the Darcy PKs
+  // diagonal blocks in tree PKs
   for (int i = 0; i < 2; ++i) {
     auto pk = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i]);
     f->SubVector(i)->Update(-1.0, *pk->op_tree_rhs(), 1.0);
@@ -285,10 +306,10 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 * Preconditioner update
 ******************************************************************* */
 void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
-    double t, Teuchos::RCP<const TreeVector> up, double h)
+    double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   // generate local matrices and apply boundary conditions
-  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, h);
+  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
@@ -306,6 +327,44 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
 {
   Y->PutScalar(0.0);
   return op_tree_pc_->ApplyInverse(*X, *Y);
+}
+
+
+/* ******************************************************************* 
+* Copy: Evaluator (BASE) -> Field (prev_BASE)
+******************************************************************* */
+void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
+    const Key& key, const std::string& passwd,
+    Teuchos::RCP<CompositeVector>& fdm_copy,
+    Teuchos::RCP<CompositeVector>& fdf_copy)
+{
+  if (!S_->HasField(key)) return;
+
+  // matrix
+  Key ev_key, fd_key;
+  ev_key = key;
+  fd_key = "prev_" + key;
+
+  S_->GetFieldEvaluator(ev_key)->HasFieldChanged(S_.ptr(), passwd);
+  {
+    const CompositeVector& ev = *S_->GetFieldData(ev_key);
+    CompositeVector& fd = *S_->GetFieldData(fd_key, passwd);
+    fdm_copy = Teuchos::rcp(new CompositeVector(fd));
+    fd = ev;
+  }
+
+  // fracture
+  ev_key = "fracture-" + key;
+  fd_key = "fracture-prev_" + key;
+
+  S_->GetFieldEvaluator(ev_key)->HasFieldChanged(S_.ptr(), passwd);
+  {
+    const CompositeVector& ev = *S_->GetFieldData(ev_key);
+    CompositeVector& fd = *S_->GetFieldData(fd_key, passwd);
+
+    fdf_copy = Teuchos::rcp(new CompositeVector(fd));
+    fd = ev;
+  }
 }
 
 }  // namespace Amanzi
