@@ -51,9 +51,6 @@ SUITE(COMMON_CSR)
       csr_mat.size(),
       KOKKOS_LAMBDA(const int f) {
 
-        //WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-        //  csr_mat.at(f),
-        //  csr_mat.size(f,0),csr_mat.size(f,1)); 
         WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(csr_mat,f); 
         for(int i = 0 ; i < nrows; ++i){
           for(int j = 0 ; j < ncols; ++j){

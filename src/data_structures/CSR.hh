@@ -272,24 +272,9 @@ CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 3, DeviceOnlyMemorySpace
     return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0),csr.size_host(i,1),csr.size_host(i,2)));
 }
 
-//template<template<class> class Contained_type, class MEMSPACE>
-//KOKKOS_INLINE_FUNCTION Contained_type<MEMSPACE> getFromCSR(const CSR<double, 3, MEMSPACE>& csr,const int& i) {
-//    return std::move(Contained_type<MEMSPACE>(csr.at(i), csr.size(i,0),csr.size(i,1),csr.size(i,2)));
-//}
-
-
-
 using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>;
 using CSR_IntVector = CSR<int,1,DeviceOnlyMemorySpace>;
 using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>;
 using CSR_Tensor = CSR<double,3,DeviceOnlyMemorySpace>; 
-
-
-
-
-
-
-
-
 
 } // namespace Amanzi
