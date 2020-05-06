@@ -230,6 +230,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
 
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
+  // need to make this const
+  // op.csr.update_entries_host();
 
   for (int f = 0; f != nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_View cells;
@@ -243,8 +245,16 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> m(op.csr.at(f), op.csr.size(f,0), op.csr.size(f,1));
-    mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), m);
+    // what we would like to do...
+    //WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> m(op.csr.at(f), op.csr.size(f,0), op.csr.size(f,1));
+    //mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), m_host);
+
+    // what we can do
+    WhetStone::DenseMatrix<Amanzi::DefaultHostMemorySpace> lm(
+            op.csr.at_host(f),
+            op.csr.size_host(f,0),op.csr.size_host(f,1)); 
+    mat.sumIntoLocalValues((const int*) lid_r.data(), (const int*) lid_c.data(), lm);
+    std::cout << "OpCell add: " << lm(0,0) << std::endl;
   }
 }
 

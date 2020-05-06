@@ -171,7 +171,10 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
+  std::cout << "update matrices" << std::endl;
   if (local_op_.get()) {
+    std::cout << "local op" << std::endl;
+    
     auto local_op = local_op_.get(); 
     const auto trans_face = transmissibility_->ViewComponent("face", true);
 
@@ -206,6 +209,9 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
           // }
 
         });
+    local_csr.update_entries_host();
+    auto v = local_csr.at_host(0);
+    std::cout << "In UpdateMatrices: v = " << v(0) << std::endl;
   }
 }
 

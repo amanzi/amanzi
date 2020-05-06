@@ -31,9 +31,9 @@ class HeatConduction {
   // main members
   void UpdateValues(const CompositeVector& u,
                     Operators::BCs& bcs) {
-    auto uc = u.ViewComponent<DefaultHost>("cell", true); 
-    auto values_c = values_->ViewComponent<DefaultHost>("cell", true);
-    auto derivs_c = derivatives_->ViewComponent<DefaultHost>("cell", true);
+    const auto uc = u.ViewComponent<Amanzi::MirrorHost>("cell", true); 
+    auto values_c = values_->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto derivs_c = derivatives_->ViewComponent<Amanzi::MirrorHost>("cell", true);
     auto bc_value = bcs.bc_value();
     auto bc_model = bcs.bc_model();
 
@@ -44,8 +44,8 @@ class HeatConduction {
     }
 
     // add boundary face component
-    auto vbf = values_->ViewComponent<DefaultHost>("dirichlet_faces", true);
-    auto dbf = derivatives_->ViewComponent<DefaultHost>("dirichlet_faces", true);
+    auto vbf = values_->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", true);
+    auto dbf = derivatives_->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", true);
     auto ext_face_map = mesh_->exterior_face_map(true);
     auto face_map = mesh_->face_map(true);
     for (int f=0; f!=face_map->getNodeNumElements(); ++f) {

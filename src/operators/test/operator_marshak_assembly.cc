@@ -129,14 +129,14 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
 
   auto solution = cvs->Create();
   {
-    auto soln_c = solution->ViewComponent<DefaultHost>("cell", false);
+    auto soln_c = solution->ViewComponent<Amanzi::MirrorHost>("cell", false);
     for (int c = 0; c < ncells_owned; ++c) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       soln_c(c,0) = knc->exact(t, xc);
     }
   }
   if (solution->HasComponent("face")) {
-    auto soln_f = solution->ViewComponent<DefaultHost>("face", false);
+    auto soln_f = solution->ViewComponent<Amanzi::MirrorHost>("face", false);
     for (int f = 0; f < nfaces_owned; ++f) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       soln_f(f,0) = knc->exact(t, xf);
@@ -152,14 +152,14 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   knc->values()->ScatterMasterToGhosted();
   knc->derivatives()->ScatterMasterToGhosted();
   {
-    auto u_c = solution->ViewComponent<DefaultHost>("cell", true);
-    auto kf = knc->values()->ViewComponent<DefaultHost>("face", false);
-    auto kbf = knc->values()->ViewComponent<DefaultHost>("dirichlet_faces", false);
-    auto kc = knc->values()->ViewComponent<DefaultHost>("cell", false);
+    auto u_c = solution->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto kf = knc->values()->ViewComponent<Amanzi::MirrorHost>("face", false);
+    auto kbf = knc->values()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
+    auto kc = knc->values()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
-    auto dkf = knc->derivatives()->ViewComponent<DefaultHost>("face", false);
-    auto dkbf = knc->derivatives()->ViewComponent<DefaultHost>("dirichlet_faces", false);
-    auto dkc = knc->derivatives()->ViewComponent<DefaultHost>("cell", false);
+    auto dkf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("face", false);
+    auto dkbf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
+    auto dkc = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
