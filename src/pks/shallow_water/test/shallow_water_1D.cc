@@ -52,7 +52,7 @@ TEST(SHALLOW_WATER_1D) {
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 10, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1, request_faces, request_edges);
   if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
   // create a state
@@ -109,6 +109,7 @@ TEST(SHALLOW_WATER_1D) {
     const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+    const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
     io.InitializeCycle(t_out, iter);
@@ -116,6 +117,7 @@ TEST(SHALLOW_WATER_1D) {
     io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
     io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
     io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+    io.WriteVector(*B(0), "B", AmanziMesh::CELL);
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
     io.FinalizeCycle();
 
@@ -155,6 +157,7 @@ TEST(SHALLOW_WATER_1D) {
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
   const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
   const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+  const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
   const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
   io.InitializeCycle(t_out, iter);
@@ -162,6 +165,7 @@ TEST(SHALLOW_WATER_1D) {
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
   io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
   io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+  io.WriteVector(*B(0), "B", AmanziMesh::CELL);
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
   io.FinalizeCycle();
 }

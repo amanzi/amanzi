@@ -65,14 +65,24 @@ namespace ShallowWater {
         Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
         Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
 
+        Epetra_MultiVector& qx_vec_c = *S_->GetFieldData("surface-discharge-x",passwd_)->ViewComponent("cell");
+		Epetra_MultiVector qx_vec_c_tmp(qx_vec_c);
+
+		Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell");
+		Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
+
         // distribute data to ghost cells
         S_->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
         S_->GetFieldData("surface-velocity-x")->ScatterMasterToGhosted("cell");
         S_->GetFieldData("surface-velocity-y")->ScatterMasterToGhosted("cell");
+        S_->GetFieldData("surface-discharge-x")->ScatterMasterToGhosted("cell");
+        S_->GetFieldData("surface-discharge-y")->ScatterMasterToGhosted("cell");
 
         h_vec_c_tmp  = h_vec_c;
         vx_vec_c_tmp = vx_vec_c;
         vy_vec_c_tmp = vy_vec_c;
+        qx_vec_c_tmp = qx_vec_c;
+        qy_vec_c_tmp = qy_vec_c;
 
         // Shallow water equations have the form
         // U_t + F_x(U) + G_y(U) = S(U)
@@ -134,6 +144,10 @@ namespace ShallowWater {
 				 normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
 				 mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
 				 farea = mesh_->face_area(cfaces[f]);
+//				 normal *= orientation;
+				 normal /= farea;
+
+//				 std::cout << "|n| = " << normal[0]*normal[0] + normal[1]*normal[1] << orientation << std::endl;
 
 				 double vn, vt;
 
@@ -148,6 +162,12 @@ namespace ShallowWater {
 				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
 //				 double vy_rec = vy_vec_c[0][c];
 
+				 double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
+//				 double qx_rec = qx_vec_c[0][c];
+
+				 double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
+//				 double qy_rec = qy_vec_c[0][c];
+
 //				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 //				 std::cout << "xcf = " << xcf << std::endl;
 
@@ -157,6 +177,9 @@ namespace ShallowWater {
 //				 UL[0] = h_vec_c[0][c];
 //				 UL[1] = h_vec_c[0][c]*vn;
 //				 UL[2] = h_vec_c[0][c]*vt;
+
+			     vx_rec = qx_rec/h_rec;
+			     vy_rec = qy_rec/h_rec;
 
 				 vn =  vx_rec*normal[0] + vy_rec*normal[1];
 				 vt = -vx_rec*normal[1] + vy_rec*normal[0];
@@ -177,13 +200,19 @@ namespace ShallowWater {
  			         int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
 
  					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
- 	//				 double h_rec = h_vec_c[0][cn];
+// 					 double h_rec = h_vec_c[0][cn];
 
  					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
 // 					 double vx_rec = vx_vec_c[0][cn];
 
  					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
 // 					 double vy_rec = vy_vec_c[0][cn];
+
+				     double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
+//				     double qx_rec = qx_vec_c[0][cn];
+
+				     double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
+//				     double qy_rec = qy_vec_c[0][cn];
 
 // 					std::cout << "cn = " << cn << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 
@@ -194,6 +223,9 @@ namespace ShallowWater {
 // 					 UR[1] = h_vec_c[0][cn]*vn;
 // 					 UR[2] = h_vec_c[0][cn]*vt;
 
+				     vx_rec = qx_rec/h_rec;
+				     vy_rec = qy_rec/h_rec;
+
 					 vn =  vx_rec*normal[0] + vy_rec*normal[1];
 					 vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
@@ -203,7 +235,7 @@ namespace ShallowWater {
 
 				 }
 
-				 normal[0] /= farea; normal[1] /= farea;
+//				 normal[0] /= farea; normal[1] /= farea;
 
 				 // debug
 				 if (MyPID == 0) {
@@ -256,6 +288,9 @@ namespace ShallowWater {
              vx_vec_c_tmp[0][c] = U_new[1]/U_new[0];
              vy_vec_c_tmp[0][c] = U_new[2]/U_new[0];
 
+             qx_vec_c_tmp[0][c] = U_new[1];
+             qy_vec_c_tmp[0][c] = U_new[2];
+
           	 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
           	 ht_vec_c[0][c] = h_vec_c_tmp[0][c] + Bathymetry(xc[0],xc[1]);
@@ -265,6 +300,8 @@ namespace ShallowWater {
       	 h_vec_c  = h_vec_c_tmp;
       	 vx_vec_c = vx_vec_c_tmp;
       	 vy_vec_c = vy_vec_c_tmp;
+      	 qx_vec_c = qx_vec_c_tmp;
+      	 qy_vec_c = qy_vec_c_tmp;
 
     	 return failed;
 
@@ -285,8 +322,11 @@ namespace ShallowWater {
         pressure_key_       = Keys::getKey(domain_, "pressure");
         velocity_x_key_     = Keys::getKey(domain_, "velocity-x");
         velocity_y_key_     = Keys::getKey(domain_, "velocity-y");
+        discharge_x_key_     = Keys::getKey(domain_, "discharge-x");
+        discharge_y_key_     = Keys::getKey(domain_, "discharge-y");
         ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
         total_depth_key_    = Keys::getKey(domain_, "total_depth");
+        bathymetry_key_     = Keys::getKey(domain_, "bathymetry");
         myPID_  		    = Keys::getKey(domain_, "PID");
 
         // primary fields
@@ -327,6 +367,24 @@ namespace ShallowWater {
             ->SetComponent("cell", AmanziMesh::CELL, 1);
         }
 
+        // x discharge
+		if (!S->HasField(discharge_x_key_)) {
+			S->RequireField(discharge_x_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+			->SetComponent("cell", AmanziMesh::CELL, 1);
+		}
+
+		// y discharge
+		if (!S->HasField(discharge_y_key_)) {
+			S->RequireField(discharge_y_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+			->SetComponent("cell", AmanziMesh::CELL, 1);
+		}
+
+        // bathymetry
+		if (!S->HasField(bathymetry_key_)) {
+			S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+			->SetComponent("cell", AmanziMesh::CELL, 1);
+		}
+
         // PID
 	    if (!S->HasField(myPID_)) {
 		    S->RequireField(myPID_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -338,6 +396,20 @@ namespace ShallowWater {
     void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
     	int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+    	if (!S_->GetField("surface-bathymetry", passwd_)->initialized()) {
+
+			Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+
+			for (int c = 0; c < ncells_owned; c++) {
+				AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+				B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
+			}
+
+			S_->GetField("surface-bathymetry", passwd_)->set_initialized();
+		}
+
+
         
         if (!S_->GetField("surface-ponded_depth", passwd_)->initialized()) {
 
@@ -358,6 +430,7 @@ namespace ShallowWater {
         	}
 
         	S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
+        	S_->GetField("surface-total_depth", passwd_)->set_initialized();
         }
         
         if (!S_->GetField("surface-velocity-x", passwd_)->initialized()) {
@@ -370,6 +443,16 @@ namespace ShallowWater {
             S_->GetField("surface-velocity-y", passwd_)->set_initialized();
         }
         
+        if (!S_->GetField("surface-discharge-x", passwd_)->initialized()) {
+            S_->GetFieldData("surface-discharge-x", passwd_)->PutScalar(0.0);
+            S_->GetField("surface-discharge-x", passwd_)->set_initialized();
+        }
+
+        if (!S_->GetField("surface-discharge-y", passwd_)->initialized()) {
+            S_->GetFieldData("surface-discharge-y", passwd_)->PutScalar(0.0);
+            S_->GetField("surface-discharge-y", passwd_)->set_initialized();
+        }
+
         Comm_ptr_type comm = Amanzi::getDefaultComm();
         int MyPID = comm->MyPID();
 
@@ -420,7 +503,7 @@ namespace ShallowWater {
     // bottom topography
     //--------------------------------------------------------------
     double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 0.; //1.-0.01*x;
+        return 1.-0.01*x;
     }
 
     //--------------------------------------------------------------
@@ -540,9 +623,30 @@ namespace ShallowWater {
 
 			 int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
-			 if (cn == -1) cn = c;
-
+//			 if (cn == -1) cn = c;
+//
 			 AmanziGeometry::Point xcn = mesh_->cell_centroid(cn);
+
+			 if (cn == -1) {
+
+				 // face centroid
+				 Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+				 Amanzi::AmanziGeometry::Point dx = xcf-xcn;
+
+				 // face area
+				 double farea = mesh_->face_area(cfaces[f]);
+
+				 // normal
+				 Amanzi::AmanziGeometry::Point normal(2);
+				 int orientation;
+				 normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+				 normal /= farea;
+
+				 double l = dx[0]*normal[0] + dx[1]*normal[1];
+
+				 xcn = xc + 2.*l*normal;
+
+			 }
 
 //			 std::cout << "xc = " << xc << ", xcn = " << xcn << std::endl;
 
@@ -662,11 +766,11 @@ namespace ShallowWater {
 
             // Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
 
-            double dBathx = 0., dBathy = 0.;
+            double dBathx = -0.01, dBathy = 0.;
 
             S[0] = 0.;
-            S[1] = g*h*dBathx;
-            S[2] = g*h*dBathy;
+            S[1] = -g*h*dBathx;
+            S[2] = -g*h*dBathy;
 
             return S;
         }
@@ -856,19 +960,64 @@ namespace ShallowWater {
 		    Amanzi::AmanziGeometry::Point normal(2);
 		    int orientation;
         	normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+//        	normal *= orientation;
+        	normal /= farea;
 
         	// face centroid
         	Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
         	double B = Bathymetry(xcf[0],xcf[1]);
 
-        	S1 += (-2.*B*h - B*B)*normal[0]*farea;
-        	S2 += (-2.*B*h - B*B)*normal[1]*farea;
+        	double h_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
+        	double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
+        	double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
+
+//        	S1 += (-2.*B*h - B*B)*normal[0]*farea;
+//        	S2 += (-2.*B*h - B*B)*normal[1]*farea;
+
+        	S1 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[0]*farea;
+        	S2 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[1]*farea;
+
+//        	S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0]*farea;
+//        	S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1]*farea;
+
+//        	S1 += B*normal[0]*farea;
+//        	S2 += B*normal[1]*farea;
+
+//        	if (B != B_rec) {
+//        		std::cout << "B = " << B << ", B_rec = " << B_rec << ", c = " << c << std::endl;
+//        	}
+
+//        	S1 += B_rec*normal[0]*farea;
+//        	S2 += B_rec*normal[1]*farea;
+
+//        	S1 += h*h*normal[0]*farea;
+//        	S2 += h*h*normal[1]*farea;
+
+//        	h_rec = ht_rec - B_rec;
+
+//        	S1 += h_rec*h_rec*normal[0]*farea;
+//        	S2 += h_rec*h_rec*normal[1]*farea;
+
         }
 
         S[0] = 0.;
         S[1] = 0.5*g/vol*S1;
         S[2] = 0.5*g/vol*S2;
+
+//        S[0] = 0.;
+//        S[1] = -g*h/vol*S1;
+//        S[2] = -g*h/vol*S2;
+
+//        std::cout << "S = " << S[1] << " " << S[2] << std::endl;
+//
+//        std::vector<double> Sphys;
+//        Sphys.resize(3);
+//        Sphys = PhysSrc(U);
+//
+//        std::cout << "Sphys = " << Sphys[1] << " " << Sphys[2] << std::endl;
+
+//        S = PhysSrc(U);
 
         return S;
 
@@ -885,7 +1034,7 @@ namespace ShallowWater {
 		double S, Smax;
 		double vol, dx, dx_min;
 		double dt;
-		double CFL = 0.45;
+		double CFL = 0.25;
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
 		Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
