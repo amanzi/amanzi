@@ -13,6 +13,8 @@
 #include "Kokkos_DualView.hpp"
 #include "AmanziTypes.hh"
 
+#include "DenseMatrix.hh"
+#include "DenseVector.hh"
 
 namespace Amanzi {
 
@@ -28,7 +30,8 @@ class CSR{
 static constexpr int dim = D;
 
 public: 
-
+  using memory_space = MEMSPACE;
+  
   CSR() {}
 
   CSR(const int& row_map_size, const int& entries_size)
@@ -42,6 +45,14 @@ public:
   {
     row_map_.realloc(row_map_size+1); 
     sizes_.realloc(row_map_size,dim);
+  }
+
+  template<typename T2>
+  CSR(const CSR<T2,D,MEMSPACE>& other) :
+      row_map_(other.row_map_),
+      sizes_(other.sizes_)
+  {
+    entries_.realloc(other.entries_.extent(0));
   }
 
   // Update functions 
@@ -248,10 +259,33 @@ public:
 
 };
 
-// Definitions 
-using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>; 
-using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>; 
+
+template<class MEMSPACE=DefaultHostMemorySpace> 
+class CSR_DenseVector : public CSR<double,1,MEMSPACE> {
+ public:
+  KOKKOS_INLINE_FUNCTION
+  WhetStone::DenseVector<MEMSPACE>
+  at(const int& i) const {
+    return WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0));
+  }
+};
+
+template<class MEMSPACE=DefaultHostMemorySpace> 
+class CSR_DenseMatrix : public CSR<double,2,MEMSPACE> {
+ public:
+  KOKKOS_INLINE_FUNCTION
+  WhetStone::DenseMatrix<MEMSPACE>
+  at(const int& i) const {
+    return WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0), this->size(i,1));
+  }
+};
+
+using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>;
+using CSR_IntVector = CSR<int,1,DeviceOnlyMemorySpace>;
+using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>;
 using CSR_Tensor = CSR<double,3,DeviceOnlyMemorySpace>; 
+
+
 
 
 } // namespace Amanzi

@@ -27,34 +27,31 @@ class Op_Face_Cell : public Op {
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-    // CSR version 
-    csr = CSR_Matrix(nfaces_owned); 
+    A = CSR_Matrix(nfaces_owned); 
 
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
       int loc[2] = {ncells,ncells}; 
-      csr.set_shape_host(f, loc);
+      A.set_shape_host(f, loc);
     }
-    csr.update_sizes_device(); 
-    csr.prefix_sum();
+    A.update_sizes_device(); 
+    A.prefix_sum();
   }
 
   virtual void
   SumLocalDiag(CompositeVector& X) const
   {
-    auto Xv = X.ViewComponent("cell", true);
-
     AmanziMesh::Mesh const * mesh_ = mesh.get();
+    auto Xv = X.ViewComponent("cell", true);
     Kokkos::parallel_for(
         "Op_Face_Cell::GetLocalDiagCopy",
-        csr.size_host(),
+        A.size_host(),
         KOKKOS_LAMBDA(const int f) {
           // Extract matrix 
           WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-            csr.at(f),csr.size(f,0),csr.size(f,1)); 
+            A.at(f),A.size(f,0),A.size(f,1)); 
 
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -64,7 +61,6 @@ class Op_Face_Cell : public Op {
           }
         });
   }
-
   
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
@@ -89,12 +85,12 @@ class Op_Face_Cell : public Op {
       const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
       Kokkos::parallel_for(
           "Op_Face_Cell::Rescale",
-          csr.size_host(), 
+          A.size_host(), 
           KOKKOS_LAMBDA(const int& f) {
             AmanziMesh::Entity_ID_View cells;
             m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
             WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-              csr.at(f),csr.size(f,0),csr.size(f,1)); 
+              A.at(f),A.size(f,0),A.size(f,1)); 
             lm(0,0) *= s_c(0, cells(0));
             if (cells.size() > 1) {
               lm(0,1) *= s_c(0, cells(1));          

@@ -176,6 +176,7 @@ SUITE(DIFFUSION) {
     double norminf = res.normInf();
     std::cout << " Residual norm = " << norminf << std::endl;
     CHECK_CLOSE(0., norminf, 1.e-10);
+    if (norminf > 1.e-10) fix.solution->Print(std::cout);
     if (norminf > 1.e-10) res.Print(std::cout);
 
   }

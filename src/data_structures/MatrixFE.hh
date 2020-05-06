@@ -27,6 +27,7 @@ map, not the true row map.
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 #include "DenseMatrix.hh"
 #include "GraphFE.hh"
@@ -58,6 +59,13 @@ class MatrixFE {
   cMatrix_ptr_type getOffProcMatrix() const { return offproc_matrix_; }
   Matrix_ptr_type getOffProcMatrix() { return offproc_matrix_; }
 
+  // accessor to local matrices
+  using LocalMatrix_type = Matrix_type::local_matrix_type;
+  LocalMatrix_type getLocalMatrix() const { return matrix_->getLocalMatrix(); }
+  LocalMatrix_type getOffProcLocalMatrix() const {
+    return offproc_matrix_.get() ? offproc_matrix_->getLocalMatrix() : LocalMatrix_type();
+  }
+
   // zero to allow mation
   void zero();
 
@@ -71,11 +79,22 @@ class MatrixFE {
   void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
           const Teuchos::SerialDenseMatrix<int,double>& vals);
 
-  void sumIntoLocalValues(const int *row_inds, const int *col_inds,
-                      const WhetStone::DenseMatrix<>& vals);
-  void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
-          const WhetStone::DenseMatrix<>& vals);
+  void sumIntoLocalValues(const int* row_inds,
+                          const int* col_inds,
+                          const WhetStone::DenseMatrix<>& vals)
+  {
+    for (int i=0; i!=vals.NumRows(); ++i)
+      for (int j=0; j!=vals.NumCols(); ++j)
+        sumIntoLocalValues(row_inds[i], 1, &vals.Value(i,j), &col_inds[j]);
+  }
   
+  void sumIntoLocalValuesTransposed(const int* row_inds, const int* col_inds,
+          const WhetStone::DenseMatrix<>& vals)
+  {
+    for (int i=0; i!=vals.NumCols(); ++i)
+      sumIntoLocalValues(row_inds[i], vals.NumRows(), &vals.Value(0,i), col_inds);
+  }
+
   // hack the diagonal
   void diagonalShift(double shift);
 

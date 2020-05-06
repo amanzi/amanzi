@@ -81,7 +81,7 @@ class Op {
   KOKKOS_INLINE_FUNCTION
   void Zero(const int i) {
     WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-      csr.at(i),csr.size(i,0),csr.size(i,1)); 
+      A.at(i),A.size(i,0),A.size(i,1)); 
     lm.putScalar(0.); 
     // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
     //matrices(i).putScalar(0.);
@@ -98,6 +98,8 @@ class Op {
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const = 0;
 
+  void PreallocateWorkVectors() const;
+  
   //virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
   //                                        const CompositeVector& X,
   //                                        CompositeVector& Y) const = 0;
@@ -128,11 +130,11 @@ class Op {
   MultiVector_ptr_type diag;
 
   // collection of local matrices
-  CSR_Matrix csr;
+  CSR_Matrix A;
 
-  mutable CSR<double,1,DeviceOnlyMemorySpace> csr_v_;
-  mutable CSR<double,1,DeviceOnlyMemorySpace> csr_Av_;
-
+  // work space for local vectors, domain and range
+  mutable CSR_Vector v; // work vector in domain
+  mutable CSR_Vector Av; // work vector in range
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };
