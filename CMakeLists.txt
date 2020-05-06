@@ -62,13 +62,11 @@ include(AmanziVersion)
 # Addtional build options
 include(AmanziOptions)
 
+message("ETC: Trilinos = ${Trilinos_INSTALL_PREFIX}")
+
+
 # Find required Amanzi TPL
 include(AmanziTPL)
-# The following line allows us to link third-party libraries not explicitly 
-# found by the logic in AmanziTPL.cmake.
-#
-# ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
-#link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
 # shared libraries tweaks: enforcing absolute path
 if (BUILD_SHARED_LIBS)
@@ -90,9 +88,7 @@ endif()
 #endforeach()
 
 # Change CMAKE COMPILER if KOKKOS used
-if("${AMANZI_ARCH}" STREQUAL "Summit") 
-  set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} ${CXX_DEFAULT_COMPILER})
-  set(ENV{CMAKE_CXX_COMPILER} ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
+if(${ENABLE_CUDA})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -Wno-deprecated-declarations -lineinfo \
     -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
@@ -107,7 +103,7 @@ if("${AMANZI_ARCH}" STREQUAL "Summit")
     -Xcudafe --display_error_number \
     --expt-extended-lambda")
   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
-  message(STATUS "CMAKE_CXX_COMPILER $ENV{CMAKE_CXX_COMPILER}")
+  message(STATUS "CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER}")
 endif()
 
 # Check the mesh framework choice
