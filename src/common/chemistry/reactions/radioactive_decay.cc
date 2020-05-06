@@ -193,7 +193,8 @@ void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::setw(10) << half_life_user_ << " [" << half_life_units_ << "]    ";
   message << std::setw(10) << std::scientific << half_life_seconds_ << std::fixed << " [seconds]" << std::endl;
   message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
+
 }
 
 }  // namespace AmanziChemistry

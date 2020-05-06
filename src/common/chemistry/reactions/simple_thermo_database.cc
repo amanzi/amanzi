@@ -439,7 +439,7 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl
           << "  data: " << data << std::endl;
-  vo_->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message.str());
 
   std::string semicolon(";");
   std::string space(" ");
@@ -705,7 +705,7 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseRadioactiveDecay()....\n"
           << "  data: " << data << std::endl;
-  vo_->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message.str());
   
   std::string semicolon(";");
   std::string space(" ");
@@ -1226,28 +1226,6 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
       }
     }
   }  // end for(s)
-}
-
-
-/*******************************************************************************
- **
- **  parse ion exchange reaction, reaction products are single primary
- **  species and a single exchange site. The order of primary species
- **  and exchange species does not matter.
- **
- **  Fields:
- **
- **  SpeciesName = coeff PrimaryName coeff IonExchangeSite
- **
- *******************************************************************************/
-void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
-                                                    std::string* name,
-                                                    SpeciesName* primary_name,
-                                                    SpeciesId* primary_id) {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    *vo_->os() << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
-    *vo_->os() << "      data: " << reaction << std::endl;
-  }
 }
 
 

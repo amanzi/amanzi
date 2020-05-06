@@ -95,7 +95,7 @@ class Beaker {
       for (int i = 0; i < free_ion.size(); ++i) {
         message << names.at(i) << " = " << free_ion.at(i) << "\n";
       }
-      vo->Write(Teuchos::VERB_HIGH, message);
+      vo->Write(Teuchos::VERB_HIGH, message.str());
     }
   };
 

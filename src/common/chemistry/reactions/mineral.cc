@@ -129,7 +129,7 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::setw(13) << specific_surface_area()
           << std::setw(13) << std::fixed << volume_fraction()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -139,7 +139,7 @@ void Mineral::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::setw(15) << "Q/K"
           << std::setw(15) << "SI"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -151,7 +151,7 @@ void Mineral::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::fixed << std::setprecision(3)
           << std::setw(15) << saturation_index()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

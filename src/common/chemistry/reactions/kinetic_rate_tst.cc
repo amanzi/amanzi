@@ -388,7 +388,7 @@ void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
     message << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }
   message << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

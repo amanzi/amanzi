@@ -249,7 +249,7 @@ void SurfaceComplexationRxn::display(const Teuchos::Ptr<VerboseObject> vo) const
 void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(7) << "---" << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 

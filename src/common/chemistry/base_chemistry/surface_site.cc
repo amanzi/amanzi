@@ -89,7 +89,7 @@ void SurfaceSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::setw(15) << name()
           << std::setw(15) << std::scientific << molar_density()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -101,7 +101,7 @@ void SurfaceSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) con
   message << std::setw(15) << " "
           << std::setw(15) << "[mol/m^3 bulk]"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -111,7 +111,7 @@ void SurfaceSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::scientific << std::setprecision(5)
           << std::setw(15) << free_site_concentration()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

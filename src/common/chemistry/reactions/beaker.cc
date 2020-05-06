@@ -696,7 +696,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   }
   message << "------------------------------------------------- Input Components ---"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -730,7 +730,7 @@ void Beaker::DisplayResults(void) const {
           << std::endl;
 
   message << "---- Species " << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 
   primary_species().at(0).DisplayResultsHeader(vo_);
   for (int i = 0; i < ncomp(); i++) {
@@ -805,7 +805,7 @@ void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
     }
   }
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -834,7 +834,7 @@ void Beaker::DisplayTotalColumns(const double time,
     }
   }
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -1659,7 +1659,7 @@ void Beaker::DisplayParameters(void) const {
   message << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
   message << "    volume: " << volume() << " [m^3]" << std::endl;
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -1671,7 +1671,7 @@ void Beaker::DisplayPrimary(void) const {
           << std::setw(10) << "GMW"
           << std::setw(10) << "D-H a0"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
   for (std::vector<Species>::const_iterator primary = primary_species().begin();
        primary != primary_species().end(); primary++) {
     primary->Display(vo_);
@@ -1689,7 +1689,7 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
           << std::setw(10) << "GMW"
           << std::setw(8) << "D-H a0"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
   for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
        aec != aqComplexRxns_.end(); aec++) {
     aec->Display(vo_);
@@ -1703,7 +1703,7 @@ void Beaker::DisplayGeneralKinetics(void) const {
     std::stringstream message;
     message << "---- General Kinetics" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
          rxn != generalKineticRxns_.end(); rxn++) {
       rxn->Display(vo_);
@@ -1718,7 +1718,7 @@ void Beaker::DisplayRadioactiveDecayRxns(void) const {
     std::stringstream message;
     message << "---- Radioactive Decay" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<RadioactiveDecay>::const_iterator rxn;
     for (rxn = radioactive_decay_rxns_.begin();
          rxn != radioactive_decay_rxns_.end(); ++rxn) {
@@ -1747,7 +1747,7 @@ void Beaker::DisplayMinerals(void) const {
             << std::setw(13) << "[m^2/m^3 blk]"
             << std::setw(13) << "[-]"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     for (std::vector<Mineral>::const_iterator m = minerals_.begin();
          m != minerals_.end(); m++) {
       m->Display(vo_);
@@ -1779,7 +1779,7 @@ void Beaker::DisplayIonExchangeSites(void) const {
             << std::setw(10) << "Charge"
             << std::setw(10) << "CEC"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<IonExchangeRxn>::const_iterator rxn;
     for (rxn = ion_exchange_rxns_.begin();
          rxn != ion_exchange_rxns_.end(); rxn++) {
@@ -1797,7 +1797,7 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
     message << std::setw(12) << "Reaction"
             << std::setw(38) << "K"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<IonExchangeRxn>::const_iterator ier;
     for (ier = ion_exchange_rxns_.begin();
          ier != ion_exchange_rxns_.end(); ier++) {
@@ -1818,7 +1818,7 @@ void Beaker::DisplaySurfaceSites(void) const {
     message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
@@ -1837,7 +1837,7 @@ void Beaker::DisplaySurfaceComplexes(void) const {
             << std::setw(38) << "log Keq"
             << std::setw(10) << "charge"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
@@ -1856,7 +1856,7 @@ void Beaker::DisplaySorptionIsotherms(void) const {
             << std::setw(15) << "isotherm"
             << std::setw(15) << "parameters"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SorptionIsothermRxn>::const_iterator s;
     for (s = sorption_isotherm_rxns_.begin();
          s != sorption_isotherm_rxns_.end(); s++) {

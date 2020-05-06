@@ -93,7 +93,7 @@ void KineticRate::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
     }
   }
   message << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

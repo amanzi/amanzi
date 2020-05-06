@@ -92,7 +92,7 @@ IonExchangeComplex::IonExchangeComplex(
 */
 void IonExchangeComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplayReaction(vo);
-  std::cout << "      K: " << K() << std::endl;
+  *vo->os() << "      K: " << K() << std::endl;
 }
 
 
@@ -102,7 +102,7 @@ void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::setw(40) << " "
           << std::setw(10) << K()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -111,7 +111,7 @@ void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) c
   message << "    " << name() << " = "
           << primary_name()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -121,7 +121,7 @@ void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> 
           << std::setw(15) << "X"
           << std::setw(15) << "Concentration"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -132,7 +132,7 @@ void IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) co
           << std::setw(15) << X()
           << std::setw(15) << concentration()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

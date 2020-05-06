@@ -112,7 +112,7 @@ void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(10) << ion_size_parameter()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -123,7 +123,7 @@ void Species::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -135,7 +135,7 @@ void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

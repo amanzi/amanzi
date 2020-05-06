@@ -184,7 +184,7 @@ void GeneralRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::endl;
   message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -245,7 +245,7 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
       }
     }
   }
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

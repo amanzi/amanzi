@@ -54,7 +54,7 @@ void PrintVector(const std::string& name,
     }
   }
   output << " }\n";
-  vo->Write(Teuchos::VERB_HIGH, output);
+  vo->Write(Teuchos::VERB_HIGH, output.str());
 }
 
 }  // namespace utilities

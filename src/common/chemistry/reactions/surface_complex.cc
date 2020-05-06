@@ -170,7 +170,7 @@ void SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
             << std::setw(10) << logK_
             << std::setw(10) << charge()
             << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -190,7 +190,7 @@ void SurfaceComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::endl;
   message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -202,7 +202,7 @@ void SurfaceComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) 
   message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -212,7 +212,7 @@ void SurfaceComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const 
           << std::scientific << std::setprecision(5)
           << std::setw(15) << surface_concentration()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry
