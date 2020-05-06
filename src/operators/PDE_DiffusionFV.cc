@@ -181,7 +181,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     const auto k_face = ScalarCoefficientFaces(true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     CSR_Matrix& A = local_op_->A; 
-    
+
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
@@ -206,6 +206,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
           // }
 
         });
+    
   }
 }
 

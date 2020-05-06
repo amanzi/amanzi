@@ -215,7 +215,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto proc_mat = mat.getLocalMatrix();
   auto offproc_mat = mat.getOffProcLocalMatrix();
   int nrows_local = mat.getMatrix()->getNodeNumRows();
-  
+
   Kokkos::parallel_for(
       "Operator_Cell::AssembleMatrixOp::Face_Cell",
       nfaces_owned,
@@ -241,6 +241,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
           }
         }
       });
+
 }
 
 

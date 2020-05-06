@@ -19,7 +19,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
-#include "MFD3D_CrouzeixRaviart.hh"
+// #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
@@ -1179,20 +1179,23 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {
-      int nfaces = mesh_->cell_get_num_faces(c);
-      Wff.Reshape(nfaces, nfaces);
-      Wff.PutScalar(0.0);
-      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
+      AMANZI_ASSERT(0);
+      // int nfaces = mesh_->cell_get_num_faces(c);
+      // Wff.Reshape(nfaces, nfaces);
+      // Wff.PutScalar(0.0);
+      // ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
     } else if (surface_mesh) {
-      ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
+      AMANZI_ASSERT(0);
+      // ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
       int method = mfd_primary_;
       ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
       // try primary and then secondary discretization methods.
       if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
-        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
-        method = mfd_secondary_;
+        AMANZI_ASSERT(0);
+        // ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
+        // method = mfd_secondary_;
       } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
         ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
         method = mfd_secondary_;
@@ -1204,12 +1207,14 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
         } else if (method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
-          ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
+          AMANZI_ASSERT(0);
+          // ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverse(c, Kc, Wff);
           } else {
-            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
+            AMANZI_ASSERT(0);
+            // ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
           }
         }
       }
@@ -1249,38 +1254,46 @@ void PDE_DiffusionMFD::ParsePList_()
   K_symmetric_ = (plist_.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
-  if (primary == "mfd: monotone for hex") {
-    mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
-  } else if (primary == "mfd: optimized for monotonicity") {
-    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
-  } else if (primary == "mfd: two-point flux approximation") {
-    mfd_primary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (primary == "mfd: optimized for sparsity") {
-    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
-  } else if (primary == "mfd: support operator") {
-    mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd: default") {
-    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else {
-    Errors::Message msg;
-    msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
-    Exceptions::amanzi_throw(msg);
-  }
+  // if (primary == "mfd: monotone for hex") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
+  // } else if (primary == "mfd: optimized for monotonicity") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
+  // } else if (primary == "mfd: two-point flux approximation") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_TPFA;
+  // } else if (primary == "mfd: optimized for sparsity") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  // } else if (primary == "mfd: support operator") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  // } else if (primary == "mfd: default") {
+  //   mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  // } else {
+  //   Errors::Message msg;
+  //   msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
-  // Secondary discretization methods
-  if (secondary == "mfd: two-point flux approximation") {
-    mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (secondary == "mfd: optimized for sparsity") {
-    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
-  } else if (secondary == "mfd: support operator") {
-    mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (secondary == "mfd: default") {
-    mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  if (primary != "mfd: two-point flux approximation") {
+    AMANZI_ASSERT(false);
   } else {
-    Errors::Message msg;
-    msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
-    Exceptions::amanzi_throw(msg);
+    mfd_primary_ = WhetStone::DIFFUSION_TPFA;
+    mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
   }
+    
+  
+  // // Secondary discretization methods
+  // if (secondary == "mfd: two-point flux approximation") {
+  //   mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
+  // } else if (secondary == "mfd: optimized for sparsity") {
+  //   mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  // } else if (secondary == "mfd: support operator") {
+  //   mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  // } else if (secondary == "mfd: default") {
+  //   mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  // } else {
+  //   Errors::Message msg;
+  //   msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;

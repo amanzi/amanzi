@@ -36,7 +36,6 @@ class Op_Face_Cell : public Op {
       int loc[2] = {ncells,ncells}; 
       A.set_shape_host(f, loc);
     }
-    A.update_sizes_device(); 
     A.prefix_sum();
   }
 
@@ -47,7 +46,7 @@ class Op_Face_Cell : public Op {
     auto Xv = X.ViewComponent("cell", true);
     Kokkos::parallel_for(
         "Op_Face_Cell::GetLocalDiagCopy",
-        A.size_host(),
+        A.size(),
         KOKKOS_LAMBDA(const int f) {
           // Extract matrix 
           WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
@@ -85,7 +84,7 @@ class Op_Face_Cell : public Op {
       const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
       Kokkos::parallel_for(
           "Op_Face_Cell::Rescale",
-          A.size_host(), 
+          A.size(), 
           KOKKOS_LAMBDA(const int& f) {
             AmanziMesh::Entity_ID_View cells;
             m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);

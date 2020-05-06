@@ -55,25 +55,34 @@ public:
     entries_.realloc(other.entries_.extent(0));
   }
 
-  // Update functions 
-  void update_row_map_device(){
-    row_map_.modify_host(); row_map_.sync_device(); 
+  void update_entries_flag_device() {
+    entries_.modify_device(); 
   }
-  void update_sizes_device(){
-    sizes_.modify_host(); sizes_.sync_device(); 
-  }
-  void update_entries_device(){
-    entries_.modify_host(); entries_.sync_device(); 
+  void update_entries_flag_host() {
+    entries_.modify_host(); 
   }
 
-  void update_row_map_host(){
-    row_map_.modify_device(); row_map_.sync_host(); 
+  
+  // Update functions 
+  void update_row_map_device_(){
+    row_map_.modify_host(); row_map_.sync_device(); 
   }
-  void update_sizes_host(){
-    sizes_.modify_device(); sizes_.sync_host(); 
+  void update_sizes_device_(){
+    sizes_.modify_host(); sizes_.sync_device(); 
   }
+
+  void update_entries_device(){
+    entries_.sync_device(); 
+  }
+
+  // void update_row_map_host(){
+  //   row_map_.modify_device(); row_map_.sync_host(); 
+  // }
+  // void update_sizes_host(){
+  //   sizes_.modify_device(); sizes_.sync_host(); 
+  // }
   void update_entries_host(){
-    entries_.modify_device(); entries_.sync_host(); 
+    entries_.sync_host(); 
   }
 
   /**
@@ -93,23 +102,8 @@ public:
       entries_.realloc(row_map_.view_host()(row_map_.extent(0)-1));
     // Transfer to device 
     update_row_map_device(); 
+    update_sizes_device();
   }
-
-  void prefix_sum_device(const int& total = -1){
-    Kokkos::parallel_scan (
-      "CSR:prefix_sum_device",row_map_.view_device().size(), KOKKOS_LAMBDA (
-      const int& i, int& upd, const bool& final) {
-        const float val_i = row_map_.view_device()(i); 
-        if (final) {
-          row_map_.view_device()(i) = upd;
-        }
-        upd += val_i;
-    });
-    if(total != -1){
-      entries_.realloc(total);
-    }
-  }
-
 
 
   // Host side functions ------------------------------------------------------
@@ -141,9 +135,6 @@ public:
       sizes_.realloc(row_map_size,D);   
   }
 
-  int size_host() const{
-    return row_map_.view_host().extent(0)-1;
-  }
   int size_host(int idx, int d) const {
     return sizes_.view_host()(idx,d);  
   }
@@ -260,30 +251,33 @@ public:
 };
 
 
-template<class MEMSPACE=DefaultHostMemorySpace> 
-class CSR_DenseVector : public CSR<double,1,MEMSPACE> {
- public:
-  KOKKOS_INLINE_FUNCTION
-  WhetStone::DenseVector<MEMSPACE>
-  at(const int& i) const {
-    return WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0));
-  }
-};
 
-template<class MEMSPACE=DefaultHostMemorySpace> 
-class CSR_DenseMatrix : public CSR<double,2,MEMSPACE> {
- public:
-  KOKKOS_INLINE_FUNCTION
-  WhetStone::DenseMatrix<MEMSPACE>
-  at(const int& i) const {
-    return WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0), this->size(i,1));
-  }
-};
+template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
+Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
+    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+}
+
+template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
+Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
+    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+}
+
+template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
+Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
+    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+}
+
+
 
 using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>;
 using CSR_IntVector = CSR<int,1,DeviceOnlyMemorySpace>;
 using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>;
 using CSR_Tensor = CSR<double,3,DeviceOnlyMemorySpace>; 
+
+
+
+
+
 
 
 

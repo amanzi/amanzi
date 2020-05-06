@@ -26,10 +26,10 @@ namespace Operators {
 void
 Op::Zero()
 {
-  if (A.size_host()) {
+  if (A.size()) {
     Kokkos::parallel_for(
       "Op::Zero",
-      A.size_host(),
+      A.size(),
       KOKKOS_LAMBDA(const int i) {
         Zero(i);
       });
@@ -54,12 +54,17 @@ Op::Matches(int match_schema, int matching_rule)
 // -- rescale local matrices in the container using a double
 void Op::Rescale(double scaling)
 {
-  if (A.size_host())
-    for (int i = 0; i != A.size_host(); ++i){
+  AMANZI_ASSERT(0);
+  if (A.size()) {
+    A.update_entries_host();
+    for (int i = 0; i != A.size(); ++i){
       WhetStone::DenseMatrix<DefaultHostMemorySpace> lm(
         A.at_host(i),A.size_host(i,0),A.size_host(i,1)); 
       lm *= scaling; 
     }
+    A.update_entries_device();
+  }
+  
   if (diag.get()) diag->scale(scaling);
 }
 
@@ -68,30 +73,19 @@ void Op::Rescale(double scaling)
 void Op::PreallocateWorkVectors() const
 {
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  AMANZI_ASSERT(A.size_host() == nfaces_owned);
-  v = CSR_Vector(A.size_host());
-  Av = CSR_Vector(A.size_host());
-  
-  int total1 = 0; 
-  int total2 = 0; 
+  AMANZI_ASSERT(A.size() == nfaces_owned);
+  v = CSR_Vector(A.size());
+  Av = CSR_Vector(A.size());
 
-  for (int i=0; i!=A.size_host(); ++i) {
-    total1 += A.size_host(i,0);
-    total2 += A.size_host(i,1);
+  for (int i=0; i!=A.size(); ++i) {
+    v.sizes_.view_host()(i,0) = A.size_host(i,0);
+    v.row_map_.view_host()(i) = A.size_host(i,0);
+    Av.sizes_.view_host()(i,0) = A.size_host(i,1);
+    Av.row_map_.view_host()(i) = A.size_host(i,1);
   }
-
-  Kokkos::parallel_for(
-      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COPY",
-      A.size_host(),
-      KOKKOS_LAMBDA(const int& i){      
-        v.sizes_.view_device()(i,0) = A.size(i,0);
-        v.row_map_.view_device()(i) = A.size(i,0);
-        Av.sizes_.view_device()(i,0) = A.size(i,1);
-        Av.row_map_.view_device()(i) = A.size(i,1);
-      });
   
-  v.prefix_sum_device(total1); 
-  Av.prefix_sum_device(total2); 
+  v.prefix_sum(); 
+  Av.prefix_sum();
 }    
 
 
