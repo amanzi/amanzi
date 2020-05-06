@@ -72,6 +72,23 @@ class DenseVector {
   }
 
 
+  KOKKOS_INLINE_FUNCTION DenseVector(DenseVector&& other){
+    m_ = other.m_;
+    mem_ = other.mem_;
+    data_ = other.data_; 
+  }
+
+
+
+  // Default assigment implies view semantics
+  KOKKOS_INLINE_FUNCTION DenseVector& operator=(const DenseVector&& other){
+    m_ = other.m_;
+    mem_ = other.mem_;
+    data_ = other.data_; 
+    return *this; 
+  } 
+
+
 #if 0 
   DenseVector(const Teuchos::RCP<const int>& map){
     //map_ = map; 

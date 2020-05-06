@@ -54,14 +54,6 @@ public:
   {
     entries_.realloc(other.entries_.extent(0));
   }
-
-  void update_entries_flag_device() {
-    entries_.modify_device(); 
-  }
-  void update_entries_flag_host() {
-    entries_.modify_host(); 
-  }
-
   
   // Update functions 
   void update_row_map_device_(){
@@ -72,7 +64,7 @@ public:
   }
 
   void update_entries_device(){
-    entries_.sync_device(); 
+    entries_.modify_host(); entries_.sync_device(); 
   }
 
   // void update_row_map_host(){
@@ -82,7 +74,7 @@ public:
   //   sizes_.modify_device(); sizes_.sync_host(); 
   // }
   void update_entries_host(){
-    entries_.sync_host(); 
+    entries_.modify_device(); entries_.sync_host(); 
   }
 
   /**
@@ -101,8 +93,8 @@ public:
           row_map_.view_host()(row_map_.view_host().extent(0)-1))
       entries_.realloc(row_map_.view_host()(row_map_.extent(0)-1));
     // Transfer to device 
-    update_row_map_device(); 
-    update_sizes_device();
+    update_row_map_device_(); 
+    update_sizes_device_();
   }
 
 
@@ -250,22 +242,40 @@ public:
 
 };
 
-
-
-template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
-Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
-    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+// 1d 
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 1, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0)));
+}
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 1, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0)));
 }
 
-template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
-Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
-    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+// 2d
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 2, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0),csr.size(i,1)));
+}
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 2, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0),csr.size_host(i,1)));
 }
 
-template<template<class> Contained_type, class MEMSPACE=DefaultHostMemorySpace>
-Contained_type<MEMSPACE> getFromCSR(CSR<double, 1, MEMSPACE>& csr, int i) {
-    return std::move(WhetStone::DenseVector<MEMSPACE>(CSR<double,1,MEMSPACE>::at(i), this->size(i,0)));
+// 3d
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 3, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0),csr.size(i,1),csr.size(i,2)));
 }
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 3, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0),csr.size_host(i,1),csr.size_host(i,2)));
+}
+
+//template<template<class> class Contained_type, class MEMSPACE>
+//KOKKOS_INLINE_FUNCTION Contained_type<MEMSPACE> getFromCSR(const CSR<double, 3, MEMSPACE>& csr,const int& i) {
+//    return std::move(Contained_type<MEMSPACE>(csr.at(i), csr.size(i,0),csr.size(i,1),csr.size(i,2)));
+//}
 
 
 
