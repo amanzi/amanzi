@@ -47,10 +47,10 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
                                        MatrixBlock* dtotal);
 
   using SecondarySpecies::Display;
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 };
 
 }  // namespace AmanziChemistry

@@ -112,7 +112,6 @@ const int OPERATOR_LITTLE_K_UPWIND = 1;
 const int OPERATOR_LITTLE_K_DIVK_BASE = 2;  // base (only face component)
 const int OPERATOR_LITTLE_K_DIVK = 6;  // add cell component
 const int OPERATOR_LITTLE_K_DIVK_TWIN = 10;  // add twin component
-const int OPERATOR_LITTLE_K_DIVK_TWIN_GRAD = 18;  // add grad component 
 const int OPERATOR_LITTLE_K_STANDARD = 32;
 
 // method for gravity

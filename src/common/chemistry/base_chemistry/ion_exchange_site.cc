@@ -47,32 +47,32 @@ IonExchangeSite::IonExchangeSite(const IonxSiteName name,
 }
 
 
-void IonExchangeSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(20) << mineral_name()
           << std::setw(10) << std::fixed << charge()
           << std::setw(10) << std::scientific << cation_exchange_capacity()
           << std::fixed << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "CEC"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << cation_exchange_capacity()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry
