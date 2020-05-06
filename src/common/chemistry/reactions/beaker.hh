@@ -32,7 +32,6 @@
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 
 namespace Amanzi {
@@ -42,7 +41,7 @@ class KineticRate;
 
 class Beaker {
  public:
-  Beaker();
+  Beaker(const Teuchos::Ptr<VerboseObject> vo);
   virtual ~Beaker();
 
   struct BeakerComponents {
@@ -96,7 +95,7 @@ class Beaker {
       for (int i = 0; i < free_ion.size(); ++i) {
         message << names.at(i) << " = " << free_ion.at(i) << "\n";
       }
-      vo->Write(Teuchos::VERB_HIGH, message);
+      vo->Write(Teuchos::VERB_HIGH, message.str());
     }
   };
 
@@ -165,93 +164,34 @@ class Beaker {
 
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(const std::string& s, 
-                           const MatrixBlock& A, 
-                           const std::vector<double>& vector) const;
-  void print_linear_system(const std::string& s, 
-                           const std::vector<double>& vector) const;
 
-  int ncomp(void) const {
-    return this->ncomp_;
-  }
+  int ncomp(void) const { return this->ncomp_; }
+  double tolerance(void) const { return this->tolerance_; }
+  unsigned int max_iterations(void) const { return this->max_iterations_; }
 
-  double tolerance(void) const {
-    return this->tolerance_;
-  }
-  unsigned int max_iterations(void) const {
-    return this->max_iterations_;
-  }
-  double porosity(void) const {
-    return this->porosity_;
-  }
-  double saturation(void) const {
-    return this->saturation_;
-  }
-  double water_density_kg_m3(void) const {
-    return this->water_density_kg_m3_;
-  }
-  double water_density_kg_L(void) const {
-    return this->water_density_kg_L_;
-  }
-  double volume(void) const {
-    return this->volume_;
-  }
-  double dt(void) const {
-    return this->dt_;
-  }
+  double porosity(void) const { return this->porosity_; }
+  double saturation(void) const { return this->saturation_; }
 
-  double aqueous_accumulation_coef(void) const {
-    return this->aqueous_accumulation_coef_;
-  }
-  double sorbed_accumulation_coef(void) const {
-    return this->sorbed_accumulation_coef_;
-  }
-  double por_sat_den_vol(void) const {
-    return this->por_sat_den_vol_;
-  }
+  double water_density_kg_m3(void) const { return this->water_density_kg_m3_; }
+  double water_density_kg_L(void) const { return this->water_density_kg_L_; }
+  double volume(void) const { return this->volume_; }
+  double dt(void) const { return this->dt_; }
 
-  virtual void verbosity(const Verbosity s_verbosity) {
-    this->verbosity_ = s_verbosity;
-  };
-  virtual Verbosity verbosity(void) const {
-    return this->verbosity_;
-  };
+  double aqueous_accumulation_coef(void) const { return this->aqueous_accumulation_coef_; }
+  double sorbed_accumulation_coef(void) const { return this->sorbed_accumulation_coef_; }
+  double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
-  virtual void set_debug(const bool value) {
-    this->debug_ = value;
-  };
-  virtual bool debug(void) const {
-    return this->debug_;
-  };
+  SolverStatus status(void) const { return this->status_; }
 
-  SolverStatus status(void) const {
-    return this->status_;
-  };
+  const std::vector<Mineral>& minerals(void) const { return this->minerals_; }
+  const std::vector<Species>& primary_species(void) const { return this->primary_species_; }
+  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const { return this->ion_exchange_rxns_; }
 
-  const std::vector<Mineral>& minerals(void) const {
-    return this->minerals_;
-  };
+  const std::vector<double>& total(void) const { return this->total_; }
+  const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; }
 
-  const std::vector<Species>& primary_species(void) const {
-    return this->primary_species_;
-  };
-  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const {
-    return this->ion_exchange_rxns_;
-  };
-  const std::vector<double>& total(void) const {
-    return this->total_;
-  };
-  const std::vector<double>& total_sorbed(void) const {
-    return this->total_sorbed_;
-  };
-
-  const std::vector<double>& fixed_accumulation(void) const {
-    return this->fixed_accumulation_;
-  }
-
-  const std::vector<double>& prev_molal(void) const {
-    return this->prev_molal_;
-  }
+  const std::vector<double>& fixed_accumulation(void) const { return this->fixed_accumulation_; }
+  const std::vector<double>& prev_molal(void) const { return this->prev_molal_; }
 
  protected:
   // resizes matrix and vectors for nonlinear system
@@ -272,21 +212,13 @@ class Beaker {
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
-  void ncomp(int i) {
-    this->ncomp_ = i;
-  }
-  void tolerance(double value) {
-    this->tolerance_ = value;
-  }
-  void max_iterations(unsigned int value) {
-    this->max_iterations_ = value;
-  }
-  void porosity(double d) {
-    this->porosity_ = d;
-  }
-  void saturation(double d) {
-    this->saturation_ = d;
-  }
+  void ncomp(int i) { this->ncomp_ = i; }
+  void tolerance(double value) { this->tolerance_ = value; }
+  void max_iterations(unsigned int value) { this->max_iterations_ = value; }
+
+  void porosity(double d) { this->porosity_ = d; }
+  void saturation(double d) { this->saturation_ = d; }
+
   // updates both water density variables
   void water_density_kg_m3(double d) {
     this->water_density_kg_m3_ = d;
@@ -296,36 +228,23 @@ class Beaker {
     this->water_density_kg_m3_ = d * 1000.;
     this->water_density_kg_L_ = d;
   }
-  void volume(double d) {
-    this->volume_ = d;
-  }
-  void dt(double d) {
-    this->dt_ = d;
-  }
-  void aqueous_accumulation_coef(double d) {
-    this->aqueous_accumulation_coef_ = d;
-  }
-  void sorbed_accumulation_coef(double d) {
-    this->sorbed_accumulation_coef_ = d;
-  }
-  void por_sat_den_vol(double d) {
-    this->por_sat_den_vol_ = d;
-  }
+
+  void volume(double d) { this->volume_ = d; }
+  void dt(double d) { this->dt_ = d; }
+  void aqueous_accumulation_coef(double d) { this->aqueous_accumulation_coef_ = d; }
+  void sorbed_accumulation_coef(double d) { this->sorbed_accumulation_coef_ = d; }
+  void por_sat_den_vol(double d) { this->por_sat_den_vol_ = d; }
+
   // calculates the coefficient in aqueous portion of accumulation term
   void update_accumulation_coefficients(void);
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
   void update_por_sat_den_vol(void);
 
-  void set_use_log_formulation(const bool value) {
-    use_log_formulation_ = value;
-  }
-
-  bool use_log_formulation(void) const {
-    return use_log_formulation_;
-  }
+  void set_use_log_formulation(const bool value) { use_log_formulation_ = value; }
+  bool use_log_formulation(void) const { return use_log_formulation_; }
 
  protected:
-  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::Ptr<VerboseObject> vo_;
 
  private:
   void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
@@ -389,8 +308,6 @@ class Beaker {
   void DisplaySurfaceComplexes(void) const;
   void DisplaySorptionIsotherms(void) const;
 
-  bool debug_;
-  Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
@@ -464,4 +381,5 @@ class Beaker {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

@@ -36,6 +36,8 @@
 #include "UpwindFlux.hh"
 #include "UpwindSecondOrder.hh"
 
+#include "MyPDE_DiffusionMFD.hh"
+
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -45,7 +47,7 @@ using namespace Amanzi::Operators;
 * Tests DivK diffusion solver with full tensor and source term.
 * The model for kf is volime-weighted arithmetic average.
 ***************************************************************** */
-template<class UpwindClass>
+template<class PDE, class UpwindClass>
 void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list) {
   auto comm = Amanzi::getDefaultComm();
 
@@ -100,7 +102,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   }
 
   // create diffusion operator 
-  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE(op_list, mesh));
   op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -194,11 +196,11 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
-  RunTestDiffusionDivK2D<UpwindFlux<HeatConduction> >("diffusion operator divk", "upwind");
+  RunTestDiffusionDivK2D<PDE_DiffusionMFD, UpwindFlux<HeatConduction> >("diffusion operator divk", "upwind");
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
-  RunTestDiffusionDivK2D<UpwindSecondOrder<HeatConduction> >("diffusion operator second-order", "upwind second-order");
+  RunTestDiffusionDivK2D<MyPDE_DiffusionMFD, UpwindSecondOrder<HeatConduction> >("diffusion operator second-order", "upwind second-order");
 }
 
 

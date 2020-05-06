@@ -224,7 +224,7 @@ void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
 }
 
 
-void IonExchangeRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const {
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin(); site != ionx_site_.end(); site++) {
     site->Display(vo);
@@ -232,7 +232,7 @@ void IonExchangeRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
 }
 
 
-void IonExchangeRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const {
   std::vector<IonExchangeComplex>::const_iterator complex;
   for (complex = ionx_complexes_.begin();
        complex != ionx_complexes_.end(); complex++) {
@@ -241,13 +241,13 @@ void IonExchangeRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) con
 }
 
 
-void IonExchangeRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   //DisplaySite();
   DisplayComplexes(vo);
 }
 
 
-void IonExchangeRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplaySite(vo);
   DisplayComplexes(vo);
 }
@@ -258,7 +258,7 @@ void IonExchangeRxn::DisplayResultsHeader(void) const {
 }
 
 
-void IonExchangeRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeRxn::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   ionx_site_[0].DisplayResultsHeader(vo);
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin();

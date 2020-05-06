@@ -112,9 +112,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
   // Simple one-line wrapper
-  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
-  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
-
+  inline
+  void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
   void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
   void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
 
@@ -150,14 +149,6 @@ bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
 Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
   return out_;
 };
-
-
-void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const {
-  if (getVerbLevel() >= verbosity) {
-    Teuchos::OSTab tab = getOSTab();
-    *os() << data.str();
-  }
-}
 
 
 void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {

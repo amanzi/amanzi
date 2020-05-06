@@ -35,9 +35,9 @@ class IonExchangeSite {
   IonExchangeSite(const IonxSiteName in_name, const double charge, const std::string location);
   virtual ~IonExchangeSite() {};
 
-  virtual void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   // mutators
   void set_cation_exchange_capacity(const double in_value) {

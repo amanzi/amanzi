@@ -23,7 +23,6 @@
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
@@ -94,15 +93,6 @@ int main(int argc, char** argv) {
     abort();
   }
 
-  // if verbosity levels were specified in the input file, add the levels
-  std::vector<std::string>::const_iterator name;
-  for (name = simulation_params.verbosity_names.begin();
-       name != simulation_params.verbosity_names.end();
-       ++name) {
-    std::string data = *name;
-    ac::utilities::RemoveLeadingAndTrailingWhitespace(&data);
-  }
-
   if (debug_batch_driver) {
     PrintInput(simulation_params, components, vo);
   }
@@ -120,7 +110,6 @@ int main(int argc, char** argv) {
   try {
     if (simulation_params.database_file.size() != 0) {
       chem = new ac::SimpleThermoDatabase(vo);
-      chem->verbosity(simulation_params.verbosity);
 
       ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = simulation_params.database_file;
@@ -136,7 +125,7 @@ int main(int argc, char** argv) {
       }
       chem->Setup(components, parameters);
 
-      if (simulation_params.verbosity >= ac::kVerbose) {
+      if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
         chem->Display();
         chem->DisplayComponents(components);
       }
@@ -144,7 +133,7 @@ int main(int argc, char** argv) {
       // solve for free-ion concentrations
       chem->Speciate(&components, parameters);
       chem->CopyBeakerToComponents(&components);
-      if (simulation_params.verbosity >= ac::kTerse) {
+      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         chem->DisplayResults();
       }
       bool using_sorption = false;
@@ -154,7 +143,7 @@ int main(int argc, char** argv) {
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
-        vo->Write(Teuchos::VERB_HIGH, message);
+        vo->Write(Teuchos::VERB_HIGH, message.str());
 
         // write out the headers info and initial conditions
         chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
@@ -175,7 +164,7 @@ int main(int argc, char** argv) {
                                       simulation_params.display_free_columns);
             WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
-          if (simulation_params.verbosity >= ac::kDebugBeaker) {
+          if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
             message.str("");
             ac::Beaker::SolverStatus status = chem->status();
             message << "Timestep: " << time_step << std::endl;
@@ -183,12 +172,12 @@ int main(int argc, char** argv) {
             message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
             message << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
             message << "    solution converged: " << status.converged << std::endl;
-            vo->Write(Teuchos::VERB_HIGH, message);
+            vo->Write(Teuchos::VERB_HIGH, message.str());
           }
         }
         vo->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
         chem->Speciate(&components, parameters);
-        if (simulation_params.verbosity >= ac::kTerse) {
+        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
           chem->DisplayResults();
         }
       }
@@ -319,7 +308,7 @@ int CommandLineOptions(int argc, char** argv,
     message << "\tverbosity name: " << *verbosity_name << std::endl;
     message << "----------------------------------------------- Command Line Options -" << std::endl;
     message << std::endl << std::endl;
-    vo->Write(Teuchos::VERB_EXTREME, message);
+    vo->Write(Teuchos::VERB_EXTREME, message.str());
   }
   return error;
 }  // end commandLineOptions()
@@ -415,7 +404,7 @@ void ReadInputFile(const std::string& file_name,
         message << "batch_chem::ReadInputFile(): ";
         message << "unknown section found on line " << count << ":";
         message << "\'" << raw_line << "\'"<< std::endl;
-        vo->Write(Teuchos::VERB_LOW, message);
+        vo->Write(Teuchos::VERB_LOW, message.str());
       }
     } else if (line_type == kParameter) {
       // assume parameter line, but it may be empty (just spaces or missing an = )...
@@ -466,8 +455,6 @@ void ParseSimulationParameter(const std::string& raw_line,
       // the raw parameter value from param.at(1) rather than the
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
-    } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
-      params->verbosity_names.assign(values.begin(), values.end());
     } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
       params->text_output.assign(value) ;
     } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
@@ -564,7 +551,6 @@ void WriteTemplateFile(const std::string& file_name,
   template_file << "[" << kSimulationSection << "]" << std::endl;
   template_file << kDescriptionParam << " = " << std::endl;
   template_file << "# verbosity can be a comma seperated list." << std::endl;
-  template_file << kVerbosityParam << " = verbose" << std::endl;
   template_file << kComparisonModelParam << " = pflotran" << std::endl;
   template_file << kTextOutputParam << " = true" << std::endl;
   template_file << kTextTimeUnitsParam << " = days" << std::endl;
@@ -633,8 +619,8 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
     }
     *time_units_conversion = 1.0 / (*time_units_conversion);
   }
+}
 
-}  // end SetupTextOutput()
 
 void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
                            const std::vector<std::string>& names,
@@ -653,7 +639,8 @@ void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
     }
     *text_output << std::endl;
   }
-}  // end WriteTextOutputHeader()
+}
+
 
 void WriteTextOutput(std::fstream* text_output, const double time, 
                      const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components) {
@@ -668,7 +655,7 @@ void WriteTextOutput(std::fstream* text_output, const double time,
     }
     *text_output << std::endl;
   }
-}  // end WriteTextOutput()
+}
 
 
 void PrintInput(const SimulationParameters& params,
@@ -688,10 +675,8 @@ void PrintSimulationParameters(const SimulationParameters& params,
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
   message << "\tdescription: " << params.description << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
-  ac::utilities::PrintVector("\tverbosity names", params.verbosity_names, vo, true);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
   message.str("");
-  message << "\tverbosity enum: " << params.verbosity << std::endl;
   message << "\tcomparison model: " << params.comparison_model << std::endl;
   message << "\tdatabase type: " << params.database_type << std::endl;
   message << "\tdatabase file: " << params.database_file << std::endl;
@@ -704,7 +689,7 @@ void PrintSimulationParameters(const SimulationParameters& params,
   message << "\toutput interval: " << params.output_interval << std::endl;
   message << "\tmax iterations: " << params.max_iterations << std::endl;
   message << "\ttolerance: " << params.tolerance << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 

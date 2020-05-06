@@ -20,7 +20,6 @@
 
 #include "species.hh"
 #include "secondary_species.hh"
-#include "chemistry_verbosity.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -50,9 +49,9 @@ class Mineral : public SecondarySpecies {
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        MatrixBlock* dtotal);
 
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   double Q_over_K(void) const {
     return std::exp(this->lnQK_);
@@ -65,35 +64,17 @@ class Mineral : public SecondarySpecies {
     return this->molar_volume_;
   }
 
-  double specific_surface_area(void) const {
-    return this->specific_surface_area_;
-  }
-  void set_specific_surface_area(const double d) { 
-    this->specific_surface_area_ = d;
-  }
+  double specific_surface_area(void) const { return this->specific_surface_area_; }
+  void set_specific_surface_area(const double d) { this->specific_surface_area_ = d; }
 
   void UpdateSpecificSurfaceArea(void);
 
-  double volume_fraction(void) const {
-    return this->volume_fraction_;
-  }
-  void set_volume_fraction(const double d) {
-    this->volume_fraction_ = d;
-  }
+  double volume_fraction(void) const { return this->volume_fraction_; }
+  void set_volume_fraction(const double d) { this->volume_fraction_ = d; }
 
-  void UpdateVolumeFraction(const double rate,
-                            const double delta_time);
-
-
-  void set_verbosity(const Verbosity verbosity) {
-    this->verbosity_ = verbosity;
-  };
-  Verbosity verbosity(void) const {
-    return this->verbosity_;
-  };
+  void UpdateVolumeFraction(const double rate, const double delta_time);
 
  private:
-  Verbosity verbosity_;
   double molar_volume_;     // [m^3 / moles]
   double specific_surface_area_;  // [m^2 mineral / m^3 bulk]
   double volume_fraction_;   // [m^3 mineral / m^3 bulk]
