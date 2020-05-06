@@ -174,14 +174,15 @@ message(STATUS "")
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
 if ( NOT Trilinos_INSTALL_PREFIX )
+  message(WARNING "Trilinos_INSTALL_PREFIX=${Trilinos_INSTALL_PREFIX}")
   message(WARNING "Use Trilinos_INSTALL_PREFIX"
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilnos directory>\n")
 endif()
 set(Trilinos_MINIMUM_VERSION 12.0.0)
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
-             PATHS ${Trilinos_INSTALL_PREFIX}
-             PATH_SUFFIXES include)
+             PATHS ${Trilinos_INSTALL_PREFIX})
+
             
 if (Trilinos_FOUND)
   message(STATUS "Trilinos Package information")
@@ -213,10 +214,7 @@ if (Trilinos_FOUND)
   # Epetra  - distributed data objects
   # NOX     - nonlinear solver (Unstructured ONLY)
   # ML      - multilevel preconditioner (Unstructured ONLY)
-  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
-  if (ENABLE_Unstructured)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
-  endif()
+  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Tpetra Kokkos Ifpack2) 
 
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
     find_package(${tri_package} REQUIRED

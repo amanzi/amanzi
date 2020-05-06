@@ -783,6 +783,13 @@ endif()
 # ############################################################################ #
 #  Final steps
 # ############################################################################ #
+# -- override compiler with nvccwrapper
+if (ENABLE_CUDA)
+  set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
+  set(CMAKE_CXX_COMPILER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
+else()
+  set(NVCC_WRAPPER_DEFAULT_COMPILER "")
+endif()
 
 #  --- Create a CMake cache script
 set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)

@@ -1677,11 +1677,6 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
     fi
 fi
 
-# Replace default compiler to NVCC_WRAPPER to build with CUDA/Kokkos 
-if [ "${AMANZI_ARCH}" = "Summit" ]; then
-  build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
-fi 
- 
 
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
@@ -1692,10 +1687,6 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
     -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-    -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
-    -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
-    -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
-    -DCXX_DEFAULT_COMPILER:STRING=${cxx_default_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
     -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
@@ -1714,7 +1705,6 @@ cmd_configure="${cmake_binary} \
     -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
     -DENABLE_KOKKOS:BOOL=${kokkos} \
     -DENABLE_CUDA:BOOL=${cuda} \
-    -DNVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 
