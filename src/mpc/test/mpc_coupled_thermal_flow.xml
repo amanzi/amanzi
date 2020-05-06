@@ -337,7 +337,7 @@
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9792.3}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -352,7 +352,7 @@
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9792.3}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -633,6 +633,17 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
+	<ParameterList name="pressure">
+	  <ParameterList name="BC 0">
+	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="101325.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
