@@ -196,29 +196,31 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
 {
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
-  using memory_space = decltype(op.A)::memory_space;
-  using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
+  //  using memory_space = decltype(op.A)::memory_space;
+  //  using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
 
   // // space to store the indices
   // CSR<int,1,memory_space> lid_row(op.Av);
   // CSR<int,1,memory_space> lid_col(op.v);
   
-  const auto cell_row_inds = map.GhostIndices<memory_space>(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.GhostIndices<memory_space>(my_block_col, "cell", 0);
+  const auto cell_row_inds = map.GhostIndices<>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.GhostIndices<>(my_block_col, "cell", 0);
 
   // hard-coded version, interfaces TBD...
   auto proc_mat = mat.getLocalMatrix();
   auto offproc_mat = mat.getOffProcLocalMatrix();
   int nrows_local = mat.getMatrix()->getNodeNumRows();
 
+  const AmanziMesh::Mesh* m = mesh_.get();
+  
   Kokkos::parallel_for(
       "Operator_Cell::AssembleMatrixOp::Face_Cell",
       nfaces_owned,
       KOKKOS_LAMBDA(const int& f) {
         AmanziMesh::Entity_ID_View cells;
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+        m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
-        DenseMatrix A_f = getFromCSR<WhetStone::DenseMatrix>(op.A,f);
+        auto A_f = getFromCSR<WhetStone::DenseMatrix>(op.A,f);
 
         for (int n = 0; n != cells.extent(0); ++n) {
           if (cell_row_inds[cells[n]] < nrows_local) {
