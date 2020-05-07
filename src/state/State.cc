@@ -63,10 +63,7 @@ State::RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
                     bool deformable)
 {
   if (key.empty()) key = "domain";
-  meshes_.emplace(std::piecewise_construct,
-                  std::forward_as_tuple<Key>(std::move(key)),
-                  std::forward_as_tuple<Teuchos::RCP<AmanziMesh::Mesh>, bool>(
-                    std::move(mesh), std::move(deformable)));
+  meshes_.emplace(std::make_tuple(key, std::make_tuple(mesh, deformable)));
 
   if (deformable) {
     //    RequireEvaluator(key, "");
