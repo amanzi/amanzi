@@ -289,14 +289,14 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   int num_rank = mesh->get_comm()->NumProc();
 
   
-  Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
-  if (num_rank==2){
-    if (rank==1) std::cout<<"x0 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
-  }else{
-    std::cout<<"x0 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
-    std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
-  }
+  // Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+  // if (num_rank==2){
+  //   if (rank==1) std::cout<<"x0 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+  // }else{
+  //   std::cout<<"x0 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
+  //   std::cout<<std::setprecision(14)<<"test_aux0 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+  // }
   
   //S->WriteStatistics(vo_);
 
@@ -639,12 +639,12 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
   int rank = mesh->get_comm()->MyPID();
   int num_rank = mesh->get_comm()->NumProc();
 
-  Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
-  if (num_rank==2) {
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
-  }
+  // Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  // if (num_rank==2) {
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6_a "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  // }
 
 
   
@@ -794,20 +794,20 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   int rank = mesh->get_comm()->MyPID();
   int num_rank = mesh->get_comm()->NumProc();
 
-  Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
-  if (num_rank==2) {
-    if (rank==1) {
-      std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
-      if ((cell==0)||(cell==1)||(cell==2)){
-        std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
-      }
-    }    
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
-    if ((cell==6)||(cell==7)||(cell==8)){
-      std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
-    }
-  }
+  // Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  // if (num_rank==2) {
+  //   if (rank==1) {
+  //     std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  //     if ((cell==0)||(cell==1)||(cell==2)){
+  //       std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
+  //     }
+  //   }    
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6_a0 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  //   if ((cell==6)||(cell==7)||(cell==8)){
+  //     std::cout<<"test_aux6 look "<<cell<<" : "<<aux_data.aux_doubles.data[0]<<"\n";
+  //   }
+  // }
 
 
   if (S_->HasField(alquimia_aux_data_key_)) {
@@ -816,7 +816,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
 
-    std::cout<<"test_aux6 num_aux_ints "<<num_aux_ints<<" num_aux_doubles  "<<num_aux_doubles <<"\n";
+    //    std::cout<<"test_aux6 num_aux_ints "<<num_aux_ints<<" num_aux_doubles  "<<num_aux_doubles <<"\n";
 
     for (int i = 0; i < num_aux_ints; i++) {
       double* cell_aux_ints = (*aux_data_)[i];
@@ -828,11 +828,11 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     } 
   }
 
-  if (num_rank==2) {
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
-  }
+  // if (num_rank==2) {
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6_a1 "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  // }
 
   if (using_sorption_isotherms_) {
     const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell", true);
@@ -869,15 +869,85 @@ int Alquimia_PK::AdvanceSingleCell(
   Teuchos::RCP<const Epetra_MultiVector> test_aux = S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
   if (num_rank==2) {
     if (rank==1){
-      std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+      //std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
       if ((cell==0)||(cell==1)||(cell==2)){
-        std::cout<<"test_aux7a look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+        std::cout<<std::setprecision(14)<<"DEBUGINPUT: "<<"before cell "<<cell<<" : aux :\n";
+        for (int k=0;k<40;k++) std::cout<<"DEBUGINPUT: "<<k<<" "<<alq_aux_data_.aux_doubles.data[k]<<"\n";//std::cout<<"\n";
+        std::cout<<"DEBUGINPUT: state water_density " <<alq_state_.water_density<<"\n";
+        std::cout<<"DEBUGINPUT: state porosity "<<alq_state_.porosity<<"\n";
+        std::cout<<"DEBUGINPUT: volume "<<alq_mat_props_.volume<<"\n";
+        std::cout<<"DEBUGINPUT: saturation "<<alq_mat_props_.saturation<<"\n";
+        for (int i = 0; i < number_aqueous_components_; i++){
+          std::cout<<"DEBUGINPUT: tcc "<<i <<" "<<alq_state_.total_mobile.data[i]<<"\n";
+        }
+        for (unsigned int i = 0; i < number_minerals_; ++i) {
+          std::cout<<"DEBUGINPUT: minerals "<<i<<" "<<
+            alq_state_.mineral_volume_fraction.data[i]<<" "<<
+            alq_state_.mineral_specific_surface_area.data[i]<<" "<<
+            alq_mat_props_.mineral_rate_cnst.data[i]<<"\n";
+        }
+        for (int i = 0; i < number_ion_exchange_sites_; i++){
+          std::cout<<"DEBUGINPUT: ion_exchange_sites "<<i<<" "<<
+            alq_state_.cation_exchange_capacity.data[i]<<"\n";
+        }
+        for (int i = 0; i < number_sorption_sites_; ++i) {
+          std::cout<<"DEBUGINPUT: sorption_sites "<<i<<" "<<
+            alq_state_.surface_site_density.data[i]<<"\n";        
+        }
+        for (int i = 0; i < number_aqueous_kinetics_; ++i) {
+          std::cout<<"DEBUGINPUT: aqueous_kinetics_rate "<<i<<" "<<
+            alq_mat_props_.aqueous_kinetic_rate_cnst.data[i]<<"\n";        
+        }
+        if (using_sorption_isotherms_){
+          for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
+            std::cout<<"DEBUGINPUT: isotherm "<<i<<" "<<
+              alq_mat_props_.isotherm_kd.data[i]<<" "<<
+              alq_mat_props_.freundlich_n.data[i]<<" "<<
+              alq_mat_props_.langmuir_b.data[i]<<"\n";
+          }
+        }        
       }
     }
   }else{
-    std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+    //std::cout<<std::setprecision(14)<<"test_aux6aa "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
     if ((cell==6)||(cell==7)||(cell==8)){
-      std::cout<<"test_aux7a look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+      std::cout<<std::setprecision(14)<<"DEBUGINPUT: "<<"before cell "<<cell<<" : aux :\n";
+      for (int k=0;k<40;k++) std::cout<<"DEBUGINPUT: "<<k<<" "<<alq_aux_data_.aux_doubles.data[k]<<"\n";//std::cout<<"\n";
+      std::cout<<"DEBUGINPUT: state water_density " <<alq_state_.water_density<<"\n";
+      std::cout<<"DEBUGINPUT: state porosity "<<alq_state_.porosity<<"\n";
+      std::cout<<"DEBUGINPUT: volume "<<alq_mat_props_.volume<<"\n";
+      std::cout<<"DEBUGINPUT: saturation "<<alq_mat_props_.saturation<<"\n";      
+      for (int i = 0; i < number_aqueous_components_; i++){
+        std::cout<<"DEBUGINPUT: tcc "<<i <<" "<<alq_state_.total_mobile.data[i]<<"\n";
+      }
+      for (int i = 0; i < number_minerals_; ++i) {
+        std::cout<<"DEBUGINPUT: minerals "<<i<<" "<<
+          alq_state_.mineral_volume_fraction.data[i]<<" "<<
+          alq_state_.mineral_specific_surface_area.data[i]<<" "<<
+          alq_mat_props_.mineral_rate_cnst.data[i]<<"\n";
+      }
+      for (int i = 0; i < number_ion_exchange_sites_; i++){
+        std::cout<<"DEBUGINPUT: ion_exchange_sites "<<i<<" "<<
+          alq_state_.cation_exchange_capacity.data[i]<<"\n";
+      }
+      for (int i = 0; i < number_sorption_sites_; ++i) {
+        std::cout<<"DEBUGINPUT: sorption_sites "<<i<<" "<<
+          alq_state_.surface_site_density.data[i]<<"\n";        
+      }
+      for (int i = 0; i < number_aqueous_kinetics_; ++i) {
+       std::cout<<"DEBUGINPUT: aqueous_kinetics_rate "<<i<<" "<<
+          alq_mat_props_.aqueous_kinetic_rate_cnst.data[i]<<"\n";        
+      }
+      if (using_sorption_isotherms_){
+        for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
+          std::cout<<"DEBUGINPUT: isotherm "<<i<<" "<<
+            alq_mat_props_.isotherm_kd.data[i]<<" "<<
+            alq_mat_props_.freundlich_n.data[i]<<" "<<
+            alq_mat_props_.langmuir_b.data[i]<<"\n";
+          
+        }
+      }
+          
     }
   }
 
@@ -887,18 +957,18 @@ int Alquimia_PK::AdvanceSingleCell(
                                        alq_aux_data_, alq_aux_output_, num_iterations);
   if (not success) 
     return -1;
-
+ 
   if (num_rank==2) {
     if (rank==1){
-      std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+      //std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
       if ((cell==0)||(cell==1)||(cell==2)){
-        std::cout<<"test_aux7b look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+        std::cout<<std::setprecision(14)<<"DEBUGOUTPUT: "<<"after  cell "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
       }
     }
   }else{
-    std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+    //std::cout<<std::setprecision(14)<<"test_aux6ab "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
     if ((cell==6)||(cell==7)||(cell==8)){
-      std::cout<<"test_aux7b look "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
+      std::cout<<std::setprecision(14)<<"DEBUGOUTPUT: "<<"after  cell "<<cell<<" : "<<alq_aux_data_.aux_doubles.data[0]<<"\n";
     }    
   }  
   // Move the information back into Amanzi's state, updating the given total concentration vector.
@@ -906,11 +976,11 @@ int Alquimia_PK::AdvanceSingleCell(
                             alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
                             aqueous_components);
 
-  if (num_rank==2) {
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
-  }
+  // if (num_rank==2) {
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][0]<<" "<<(*test_aux)[0][1]<<" "<<(*test_aux)[0][2]<<"\n";
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6ac "<<(*test_aux)[0][6]<<" "<<(*test_aux)[0][7]<<" "<<(*test_aux)[0][8]<<"\n";
+  // }
 
   return num_iterations;
 }
@@ -969,12 +1039,12 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
-  const Epetra_MultiVector& test_aux = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
-  if (num_rank==2){
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
-  }
+  // const Epetra_MultiVector& test_aux = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  // if (num_rank==2){
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6ad "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+  // }
 
 
   // Check for convergence failure and broadcast if needed. Also agree on the maximum number 
@@ -1006,12 +1076,12 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
 
-  const Epetra_MultiVector& test_aux0 = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
-  if (num_rank==2){
-    if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][0]<<" "<<test_aux0[0][1]<<" "<<test_aux0[0][2]<<"\n";
-  }else{
-    std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][6]<<" "<<test_aux0[0][7]<<" "<<test_aux0[0][8]<<"\n";
-  }
+  // const Epetra_MultiVector& test_aux0 = *S_->GetFieldData("alquimia_aux_data")->ViewComponent("cell", false);
+  // if (num_rank==2){
+  //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][0]<<" "<<test_aux0[0][1]<<" "<<test_aux0[0][2]<<"\n";
+  // }else{
+  //   std::cout<<std::setprecision(14)<<"test_aux6a "<<test_aux0[0][6]<<" "<<test_aux0[0][7]<<" "<<test_aux0[0][8]<<"\n";
+  // }
 
   
   // now publish auxiliary data to state
@@ -1100,14 +1170,14 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
     *S_next->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false) =
       *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
 
-    Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
-    if (num_rank==2){
-      if (rank==1) std::cout<<"x1 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
-      if (rank==1) std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
-    }else{
-      std::cout<<"x1 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
-      std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
-    }
+    // Epetra_MultiVector& test_aux = *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+    // if (num_rank==2){
+    //   if (rank==1) std::cout<<"x1 "<<mesh->cell_centroid(0)[0]<<" "<<mesh->cell_centroid(1)[0]<<" "<<mesh->cell_centroid(2)[0]<<"\n";
+    //   if (rank==1) std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][0]<<" "<<test_aux[0][1]<<" "<<test_aux[0][2]<<"\n";
+    // }else{
+    //   std::cout<<"x1 "<<mesh->cell_centroid(6)[0]<<" "<<mesh->cell_centroid(7)[0]<<" "<<mesh->cell_centroid(8)[0]<<"\n";
+    //   std::cout<<std::setprecision(14)<<"test_aux1 "<<test_aux[0][6]<<" "<<test_aux[0][7]<<" "<<test_aux[0][8]<<"\n";
+    // }
       
   }
 }

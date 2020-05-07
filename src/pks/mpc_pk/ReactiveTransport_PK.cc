@@ -99,7 +99,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
   chem_step_succeeded = false;
 
   // First we do a transport step.
-  bool pk_fail = transport_pk_->AdvanceStep(t_old, t_new, reinit);
+  //bool pk_fail = transport_pk_->AdvanceStep(t_old, t_new, reinit);
+  bool pk_fail = false;
 
   // Right now transport step is always succeeded.
   if (!pk_fail) {
