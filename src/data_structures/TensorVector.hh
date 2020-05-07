@@ -79,8 +79,6 @@ struct TensorVector {
       }
     }
     data.update_entries_device(); 
-    data.update_sizes_device(); 
-    data.update_row_map_device(); 
   }
 
   void Init() {

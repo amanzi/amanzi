@@ -40,12 +40,12 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
 
     // entity_get_parent is not available on device
     A.update_entries_host();
-    for(int sf = 0 ; sf < A.size_host(); ++sf){
+    for(int sf = 0 ; sf < A.size(); ++sf){
       AmanziMesh::Entity_ID_View cells;
       surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
       auto f0 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(0));
 
-      WhetStone::DenseMatrix<> lm(A.at_host(sf),A.size_host(sf,0),A.size_host(sf,1)); 
+      WhetStone::DenseMatrix<> lm = getFromCSR_host<WhetStone::DenseMatrix>(A,sf);
 
       Kokkos::atomic_add(&Xv(f0,0), lm(0,0));
       if (cells.extent(0) > 1) {

@@ -85,7 +85,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto local_v = op.v; 
 
   // Allocate the first time 
-  if (local_v.size_host() != local_A.size_host()) {
+  if (local_v.size() != local_A.size()) {
     op.PreallocateWorkVectors();
     local_v = op.v;
     local_Av = op.Av;
@@ -94,20 +94,15 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   // parallel matrix-vector product
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-      local_A.size_host(),
+      local_A.size(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv(
-          local_v.at(f),local_v.size(f));
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv(
-          local_Av.at(f), local_Av.size(f));
-        WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA(
-          local_A.at(f),
-          local_A.size(f,0),local_A.size(f,1)); 
-
+        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,f);
+        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,f);
+        WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,f);
         for (int n = 0; n != ncells; ++n) {
           lv(n) = Xc(cells[n],0);
         }
@@ -223,7 +218,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
         AmanziMesh::Entity_ID_View cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
-        DenseMatrix A_f(op.A.at(f), op.A.size(f,0), op.A.size(f,1));
+        DenseMatrix A_f = getFromCSR<WhetStone::DenseMatrix>(op.A,f);
 
         for (int n = 0; n != cells.extent(0); ++n) {
           if (cell_row_inds[cells[n]] < nrows_local) {

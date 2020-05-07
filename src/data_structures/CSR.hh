@@ -73,7 +73,7 @@ public:
   // void update_sizes_host(){
   //   sizes_.modify_device(); sizes_.sync_host(); 
   // }
-  void update_entries_host(){
+  void update_entries_host() const {
     entries_.modify_device(); entries_.sync_host(); 
   }
 
@@ -236,9 +236,9 @@ public:
   }
 
 public: 
-  Kokkos::DualView<int*,MEMSPACE> row_map_; // Indices: number of element +1 
-  Kokkos::DualView<T*,MEMSPACE> entries_; // Values for all entries 
-  Kokkos::DualView<int**,MEMSPACE> sizes_; // Represent the sizes for matrices/tensors
+  mutable Kokkos::DualView<int*,MEMSPACE> row_map_; // Indices: number of element +1 
+  mutable Kokkos::DualView<T*,MEMSPACE> entries_; // Values for all entries 
+  mutable Kokkos::DualView<int**,MEMSPACE> sizes_; // Represent the sizes for matrices/tensors
 
 };
 
