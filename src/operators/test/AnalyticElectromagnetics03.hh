@@ -18,9 +18,10 @@
 
 class AnalyticElectromagnetics03 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+  AnalyticElectromagnetics03(double c,
+                             Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      c_(c),
       AnalyticElectromagneticsBase(mesh) {};
-  ~AnalyticElectromagnetics03() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(3, 2);
@@ -47,6 +48,9 @@ class AnalyticElectromagnetics03 : public AnalyticElectromagneticsBase {
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
   }
+
+ private:
+  double c_; 
 };
 
 #endif

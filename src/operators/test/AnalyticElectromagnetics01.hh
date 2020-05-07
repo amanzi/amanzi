@@ -8,7 +8,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear vector field and constant tensor.
+  The problem is c E + curl K curl E = Q, where
+  E = linear
+  K = full tensor
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_01_HH_
@@ -18,11 +20,16 @@
 
 class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+  AnalyticElectromagnetics01(double c,
+                             Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      c_(c),
       AnalyticElectromagneticsBase(mesh) {};
-  ~AnalyticElectromagnetics01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+    Amanzi::WhetStone::Tensor K1(3, 1);
+    K1(0, 0) = 1.0;
+    return K1;
+
     Amanzi::WhetStone::Tensor K(3, 2);
     K(0, 0) = 1.0;
     K(1, 1) = 2.0;
@@ -37,6 +44,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
     double z = p[2];
+    return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
     return Amanzi::AmanziGeometry::Point(z - y, x - z, y - x);
   }
 
@@ -45,8 +53,12 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    return c_ * electric_exact(p, t);
   }
+
+ private:
+  double c_;
+
 };
 
 #endif

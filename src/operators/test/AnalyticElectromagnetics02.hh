@@ -18,7 +18,9 @@
 
 class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+  AnalyticElectromagnetics02(double c,
+                             Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      c_(c),
       AnalyticElectromagneticsBase(mesh) {};
   ~AnalyticElectromagnetics02() {};
 
@@ -51,6 +53,10 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double fz = -2 * sin(y) + x * x * sin(y);
     return Amanzi::AmanziGeometry::Point(fx, fy, fz);
   }
+
+ private:
+  double c_; 
+
 };
 
 #endif

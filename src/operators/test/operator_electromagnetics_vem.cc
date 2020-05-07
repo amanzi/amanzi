@@ -34,15 +34,14 @@
 
 #include "AnalyticElectromagnetics01.hh"
 #include "AnalyticElectromagnetics02.hh"
-#include "AnalyticElectromagnetics03.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
-              const std::string& disc_method = "mfd: default") {
+void CurlCurl_VEM(int nx, double tolerance, 
+                  const std::string& disc_method = "mfd: default") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -76,7 +75,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // create resistivity coefficient
   double time = 1.0;
-  Analytic ana(0.0, mesh);
+  Analytic ana(1.0, mesh);
   WhetStone::Tensor Kc(3, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -135,7 +134,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
-    double vol = 3.0 * mesh->cell_volume(c) / nedges;
+    double vol = 3 * mesh->cell_volume(c) / nedges;
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -146,22 +145,15 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
       src[0][e] += (ana.source_exact(xe, time) * tau) / len * vol;
     }
   }
+  for (int e = 0; e < nedges_owned; ++e)
+    if (bc_model[e] == OPERATOR_BC_DIRICHLET) src[0][e] = 0.0;  // hack
+
   source.GatherGhostedToMaster("edge");
 
   // set up initial guess for a time-dependent problem
   CompositeVector solution(cvs);
   Epetra_MultiVector& sol = *solution.ViewComponent("edge");
-
   sol.PutScalar(0.0);
-  if (initial_guess) {
-    for (int e = 0; e < nedges_owned; e++) {
-      double len = mesh->edge_length(e);
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
-
-      sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
-    }
-  } 
 
   // set up the diffusion operator
   op_curlcurl->SetTensorCoefficient(K);
@@ -169,16 +161,19 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // Add an accumulation term.
   CompositeVector phi(cvs);
-  phi.PutScalar(c_t);
+  phi.PutScalar(1.0);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
+  auto op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
+  op_acc->SetBCs(bc, bc);
 
   double dT = 1.0;
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true, true);
+  op_acc->ApplyBCs();
+
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
@@ -190,7 +185,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(1e-12, true, true);
+  ver.CheckPreconditionerSPD(1e-10, true, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
@@ -227,16 +222,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 }
 
 
-TEST(CURL_CURL_LINEAR) {
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false);
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
+TEST(CURL_CURL_HIGH_ORDER) {
+  CurlCurl_VEM<AnalyticElectromagnetics01>(16, 1e-2);
 }
 
-TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false);
-}
-
-TEST(CURL_CURL_TIME_DEPENDENT) {
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
-}
