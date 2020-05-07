@@ -15,8 +15,48 @@
 namespace Amanzi {
 namespace Reductions {
 
+
+template<typename Scalar, typename GO>
+struct MinLoc {
+  std::pair<Scalar,GO> val;
+
+  KOKKOS_INLINE_FUNCTION
+  MinLoc() { init(); }
+
+  KOKKOS_INLINE_FUNCTION
+  MinLoc(Scalar s, GO g) {
+    val.first = s;
+    val.second = g;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  MinLoc(const MinLoc& other) : val(other.val) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void init() {
+    val.first = 1.0e99;
+    val.second = -1;
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  MinLoc& operator+=(const MinLoc& other) {
+    if (other.val.first < val.first) {
+      val = other.val;
+    }
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator += (const volatile MinLoc& other) volatile {
+    if (other.val.first < val.first) {
+      val = other.val;
+    }
+  }
+};
+
+
 template<typename Ordinal, typename Scalar, typename GO>
-class MinLoc :
+class MinLocArray :
       public Teuchos::ValueTypeReductionOp<Ordinal, std::pair<Scalar, GO> > {
  public:
   void
@@ -25,23 +65,55 @@ class MinLoc :
           std::pair<Scalar, GO> inoutBuffer[]) const
   {
     for (Ordinal ind = 0; ind < count; ++ind) {
-      const std::pair<Scalar, GO>& in = inBuffer[ind];
-      std::pair<Scalar, GO>& inout = inoutBuffer[ind];
-      if (in.first < inout.first) {
-        inout.first = in.first;
-        inout.second = in.second;
-      } else if (in.first > inout.first) {
-        // Don't need to do anything; inout has the values.
-      } else { // equal, or at least one is NaN.
-        inout.first = in.first;
-        inout.second = std::min (in.second, inout.second);
+      if (inBuffer[ind].first < inoutBuffer[ind].first) {
+        inoutBuffer[ind] = inBuffer[ind];
       }
     }
   }
 };
 
+
+template<typename Scalar, typename GO>
+struct MaxLoc {
+  std::pair<Scalar,GO> val;
+
+  KOKKOS_INLINE_FUNCTION
+  MaxLoc() { init(); }
+
+  KOKKOS_INLINE_FUNCTION
+  MaxLoc(Scalar s, GO g) {
+    val.first = s;
+    val.second = g;
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  MaxLoc(const MaxLoc& other) : val(other.val) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void init() {
+    val.first = -1.0e99;
+    val.second = -1;
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  MaxLoc& operator+=(const MaxLoc& other) {
+    if (other.val.first > val.first) {
+      val = other.val;
+    }
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator += (const volatile MaxLoc& other) volatile {
+    if (other.val.first > val.first) {
+      val = other.val;
+    }
+  }
+};
+
+
 template<typename Ordinal, typename Scalar, typename GO>
-class MaxLoc :
+class MaxLocArray :
       public Teuchos::ValueTypeReductionOp<Ordinal, std::pair<Scalar, GO> > {
  public:
   void
@@ -50,20 +122,13 @@ class MaxLoc :
           std::pair<Scalar, GO> inoutBuffer[]) const
   {
     for (Ordinal ind = 0; ind < count; ++ind) {
-      const std::pair<Scalar, GO>& in = inBuffer[ind];
-      std::pair<Scalar, GO>& inout = inoutBuffer[ind];
-      if (in.first > inout.first) {
-        inout.first = in.first;
-        inout.second = in.second;
-      } else if (in.first < inout.first) {
-        // Don't need to do anything; inout has the values.
-      } else { // equal, or at least one is NaN.
-        inout.first = in.first;
-        inout.second = std::max (in.second, inout.second);
+      if (inBuffer[ind].first > inoutBuffer[ind].first) {
+        inoutBuffer[ind] = inBuffer[ind];
       }
     }
   }
 };
+
 
 } // namespace Reductions
 } // namespace Amanzi
