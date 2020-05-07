@@ -35,15 +35,18 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   virtual void
   GetLocalDiagCopy(CompositeVector& X) const
   {
-    auto Xv = X.ViewComponent("face", true);
-    
     AmanziMesh::Mesh const * surf_mesh = mesh.get();
+    auto Xv = X.ViewComponent<Amanzi::MirrorHost>("face", true);
+
     // entity_get_parent is not available on device
-    for(int sf = 0 ; sf < csr.size_host(); ++sf){
+    A.update_entries_host();
+    for(int sf = 0 ; sf < A.size(); ++sf){
       AmanziMesh::Entity_ID_View cells;
       surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
       auto f0 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(0));
-      WhetStone::DenseMatrix<> lm(csr.at_host(sf),csr.size_host(sf,0),csr.size_host(sf,1)); 
+
+      WhetStone::DenseMatrix<> lm = getFromCSR_host<WhetStone::DenseMatrix>(A,sf);
+
       Kokkos::atomic_add(&Xv(f0,0), lm(0,0));
       if (cells.extent(0) > 1) {
         auto f1 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(1));

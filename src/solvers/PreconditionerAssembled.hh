@@ -31,9 +31,10 @@ class PreconditionerAssembled : public Preconditioner<Matrix, Vector> {
   ~PreconditionerAssembled() {};
 
   void
-  Init(const std::string& name, const Teuchos::ParameterList& plist) override {
+  Init(const std::string& name,
+       const Teuchos::RCP<Teuchos::ParameterList>& plist) override {
     PreconditionerFactory<Matrix_type,Vector_type> fac;
-    pc_ = fac.Create(name, plist);    
+    pc_ = fac.Create(plist);
   };
 
   void Update(const Teuchos::RCP<Matrix>& mat) override
@@ -64,6 +65,45 @@ class PreconditionerAssembled : public Preconditioner<Matrix, Vector> {
   Teuchos::RCP<const Operators::SuperMap> smap_;
   mutable int returned_code_;
 };
+
+
+template<class Matrix>
+class PreconditionerAssembled<Matrix, Vector_type>
+    : public Preconditioner<Matrix, Vector_type> {
+ public:
+
+  PreconditionerAssembled() {};
+  ~PreconditionerAssembled() {};
+
+  void
+  Init(const std::string& name,
+       const Teuchos::RCP<Teuchos::ParameterList>& plist) override {
+    PreconditionerFactory<Matrix_type,Vector_type> fac;
+    pc_ = fac.Create(plist);
+  };
+
+  void Update(const Teuchos::RCP<Matrix>& mat) override
+  {
+    mat->AssembleMatrix();
+    pc_->Update(mat->A());
+  }
+
+  void Destroy() override {};
+
+  int applyInverse(const Vector_type& Y, Vector_type& X) const override
+  {
+    returned_code_ |= pc_->applyInverse(Y, X);
+    return returned_code_;
+  }
+
+  int returned_code() override { return returned_code_; }
+
+ private:
+  Teuchos::RCP<Preconditioner<Matrix_type,Vector_type>> pc_;
+  mutable int returned_code_;
+};
+  
+
 
 } // namespace AmanziPreconditioners
 } // namespace Amanzi

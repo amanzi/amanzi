@@ -13,6 +13,8 @@
 #include "Kokkos_DualView.hpp"
 #include "AmanziTypes.hh"
 
+#include "DenseMatrix.hh"
+#include "DenseVector.hh"
 
 namespace Amanzi {
 
@@ -28,7 +30,8 @@ class CSR{
 static constexpr int dim = D;
 
 public: 
-
+  using memory_space = MEMSPACE;
+  
   CSR() {}
 
   CSR(const int& row_map_size, const int& entries_size)
@@ -44,24 +47,33 @@ public:
     sizes_.realloc(row_map_size,dim);
   }
 
+  template<typename T2>
+  CSR(const CSR<T2,D,MEMSPACE>& other) :
+      row_map_(other.row_map_),
+      sizes_(other.sizes_)
+  {
+    entries_.realloc(other.entries_.extent(0));
+  }
+  
   // Update functions 
-  void update_row_map_device(){
+  void update_row_map_device_(){
     row_map_.modify_host(); row_map_.sync_device(); 
   }
-  void update_sizes_device(){
+  void update_sizes_device_(){
     sizes_.modify_host(); sizes_.sync_device(); 
   }
+
   void update_entries_device(){
     entries_.modify_host(); entries_.sync_device(); 
   }
 
-  void update_row_map_host(){
-    row_map_.modify_device(); row_map_.sync_host(); 
-  }
-  void update_sizes_host(){
-    sizes_.modify_device(); sizes_.sync_host(); 
-  }
-  void update_entries_host(){
+  // void update_row_map_host(){
+  //   row_map_.modify_device(); row_map_.sync_host(); 
+  // }
+  // void update_sizes_host(){
+  //   sizes_.modify_device(); sizes_.sync_host(); 
+  // }
+  void update_entries_host() const {
     entries_.modify_device(); entries_.sync_host(); 
   }
 
@@ -81,24 +93,9 @@ public:
           row_map_.view_host()(row_map_.view_host().extent(0)-1))
       entries_.realloc(row_map_.view_host()(row_map_.extent(0)-1));
     // Transfer to device 
-    update_row_map_device(); 
+    update_row_map_device_(); 
+    update_sizes_device_();
   }
-
-  void prefix_sum_device(const int& total = -1){
-    Kokkos::parallel_scan (
-      "CSR:prefix_sum_device",row_map_.view_device().size(), KOKKOS_LAMBDA (
-      const int& i, int& upd, const bool& final) {
-        const float val_i = row_map_.view_device()(i); 
-        if (final) {
-          row_map_.view_device()(i) = upd;
-        }
-        upd += val_i;
-    });
-    if(total != -1){
-      entries_.realloc(total);
-    }
-  }
-
 
 
   // Host side functions ------------------------------------------------------
@@ -130,9 +127,6 @@ public:
       sizes_.realloc(row_map_size,D);   
   }
 
-  int size_host() const{
-    return row_map_.view_host().extent(0)-1;
-  }
   int size_host(int idx, int d) const {
     return sizes_.view_host()(idx,d);  
   }
@@ -242,16 +236,45 @@ public:
   }
 
 public: 
-  Kokkos::DualView<int*,MEMSPACE> row_map_; // Indices: number of element +1 
-  Kokkos::DualView<T*,MEMSPACE> entries_; // Values for all entries 
-  Kokkos::DualView<int**,MEMSPACE> sizes_; // Represent the sizes for matrices/tensors
+  mutable Kokkos::DualView<int*,MEMSPACE> row_map_; // Indices: number of element +1 
+  mutable Kokkos::DualView<T*,MEMSPACE> entries_; // Values for all entries 
+  mutable Kokkos::DualView<int**,MEMSPACE> sizes_; // Represent the sizes for matrices/tensors
 
 };
 
-// Definitions 
-using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>; 
-using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>; 
-using CSR_Tensor = CSR<double,3,DeviceOnlyMemorySpace>; 
+// 1d 
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 1, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0)));
+}
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 1, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0)));
+}
 
+// 2d
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 2, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0),csr.size(i,1)));
+}
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 2, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0),csr.size_host(i,1)));
+}
+
+// 3d
+template<template<class> class CT>
+KOKKOS_INLINE_FUNCTION CT<DeviceOnlyMemorySpace> getFromCSR(const CSR<double, 3, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<DeviceOnlyMemorySpace>(csr.at(i), csr.size(i,0),csr.size(i,1),csr.size(i,2)));
+}
+template<template<class> class CT>
+CT<Kokkos::HostSpace> getFromCSR_host(const CSR<double, 3, DeviceOnlyMemorySpace>& csr,const int& i) {
+    return std::move(CT<Kokkos::HostSpace>(csr.at_host(i), csr.size_host(i,0),csr.size_host(i,1),csr.size_host(i,2)));
+}
+
+using CSR_Vector = CSR<double,1,DeviceOnlyMemorySpace>;
+using CSR_IntVector = CSR<int,1,DeviceOnlyMemorySpace>;
+using CSR_Matrix = CSR<double,2,DeviceOnlyMemorySpace>;
+using CSR_Tensor = CSR<double,3,DeviceOnlyMemorySpace>; 
 
 } // namespace Amanzi

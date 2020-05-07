@@ -94,7 +94,7 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
-    ierr |= graph.InsertMyIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
+    ierr |= graph.insertLocalIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -132,7 +132,7 @@ void Operator_ConsistentFace::AssembleMatrixOp(
 
     for (int n=0; n!=nfaces; ++n) {
       for (int m=0; m!=nfaces; ++m) vals[m] = op.matrices[c](n,m);
-      ierr |= mat.SumIntoMyValues(lid_r[n], nfaces, vals.data(), lid_c.data());
+      ierr |= mat.sumIntoLocalValues(lid_r[n], nfaces, vals.data(), lid_c.data());
     }
   }
   AMANZI_ASSERT(!ierr);

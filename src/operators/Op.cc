@@ -26,17 +26,16 @@ namespace Operators {
 void
 Op::Zero()
 {
-  if (csr.size_host()) {
+  if (A.size()) {
     Kokkos::parallel_for(
       "Op::Zero",
-      csr.size_host(),
-                         KOKKOS_LAMBDA(const int i) {
-                           Zero(i);
-                         });
+      A.size(),
+      KOKKOS_LAMBDA(const int i) {
+        Zero(i);
+      });
   }
   if (diag.get()) diag->putScalar(0.);
 }
-
 
 
 // Matching rules for schemas.
@@ -55,14 +54,40 @@ Op::Matches(int match_schema, int matching_rule)
 // -- rescale local matrices in the container using a double
 void Op::Rescale(double scaling)
 {
-  if (csr.size_host())
-    for (int i = 0; i != csr.size_host(); ++i){
+  AMANZI_ASSERT(0);
+  if (A.size()) {
+    A.update_entries_host();
+    for (int i = 0; i != A.size(); ++i){
       WhetStone::DenseMatrix<DefaultHostMemorySpace> lm(
-        csr.at_host(i),csr.size_host(i,0),csr.size_host(i,1)); 
+        A.at_host(i),A.size_host(i,0),A.size_host(i,1)); 
       lm *= scaling; 
     }
+    A.update_entries_device();
+  }
+  
   if (diag.get()) diag->scale(scaling);
 }
+
+
+// allocate work vector space
+void Op::PreallocateWorkVectors() const
+{
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  AMANZI_ASSERT(A.size() == nfaces_owned);
+  v = CSR_Vector(A.size());
+  Av = CSR_Vector(A.size());
+
+  for (int i=0; i!=A.size(); ++i) {
+    v.sizes_.view_host()(i,0) = A.size_host(i,0);
+    v.row_map_.view_host()(i) = A.size_host(i,0);
+    Av.sizes_.view_host()(i,0) = A.size_host(i,1);
+    Av.row_map_.view_host()(i) = A.size_host(i,1);
+  }
+  
+  v.prefix_sum(); 
+  Av.prefix_sum();
+}    
+
 
 } // namespace Operators
 } // namespace Amanzi

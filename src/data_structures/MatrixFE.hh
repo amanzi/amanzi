@@ -23,11 +23,11 @@ map, not the true row map.
 
 */
 
-#ifndef AMANZI_MATRIX_FE_HH_
-#define AMANZI_MATRIX_FE_HH_
+#pragma once
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 #include "DenseMatrix.hh"
 #include "GraphFE.hh"
@@ -35,53 +35,68 @@ map, not the true row map.
 
 namespace Amanzi {
 
-namespace Operators {
-
 class MatrixFE {
  public:
   // Constructor
   MatrixFE(const Teuchos::RCP<const GraphFE>& graph);
 
   // accessors to maps
-  Map_ptr_type DomainMap() const { return graph_->DomainMap(); }
-  Map_ptr_type RangeMap() const { return graph_->RangeMap(); }
+  Map_ptr_type getDomainMap() const { return graph_->getDomainMap(); }
+  Map_ptr_type getRangeMap() const { return graph_->getRangeMap(); }
 
-  Map_ptr_type RowMap() const { return graph_->RowMap(); }
-  Map_ptr_type ColMap() const { return graph_->ColMap(); }
+  Map_ptr_type getRowMap() const { return graph_->getRowMap(); }
+  Map_ptr_type getColMap() const { return graph_->getColMap(); }
 
-  Map_ptr_type GhostedRowMap() const { return graph_->GhostedRowMap(); }
+  Map_ptr_type getGhostedRowMap() const { return graph_->getGhostedRowMap(); }
 
   // accessor to graphs
-  const GraphFE& Graph() const { return *graph_; }
+  Teuchos::RCP<const GraphFE> getGraph() const { return graph_; }
 
   // accessor to matrices
-  cMatrix_ptr_type Matrix() const { return matrix_; }
-  Matrix_ptr_type Matrix() { return matrix_; }
+  cMatrix_ptr_type getMatrix() const { return matrix_; }
+  Matrix_ptr_type getMatrix() { return matrix_; }
 
-  cMatrix_ptr_type OffProcMatrix() const { return offproc_matrix_; }
-  Matrix_ptr_type OffProcMatrix() { return offproc_matrix_; }
+  cMatrix_ptr_type getOffProcMatrix() const { return offproc_matrix_; }
+  Matrix_ptr_type getOffProcMatrix() { return offproc_matrix_; }
+
+  // accessor to local matrices
+  using LocalMatrix_type = Matrix_type::local_matrix_type;
+  LocalMatrix_type getLocalMatrix() const { return matrix_->getLocalMatrix(); }
+  LocalMatrix_type getOffProcLocalMatrix() const {
+    return offproc_matrix_.get() ? offproc_matrix_->getLocalMatrix() : LocalMatrix_type();
+  }
 
   // zero to allow mation
-  int Zero();
+  void zero();
 
   // fill graph
-  int
-  SumIntoMyValues(int row, int count, const double* values, const int* indices);
+  void
+  sumIntoLocalValues(int row, int count, const double* values, const int* indices);
 
   // local matrix sum
-  int SumIntoMyValues(const int *row_inds, const int *col_inds,
+  void sumIntoLocalValues(const int *row_inds, const int *col_inds,
                       const Teuchos::SerialDenseMatrix<int,double>& vals);
-  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
+  void sumIntoLocalValuesTransposed(const int *row_inds, const int *col_inds,
           const Teuchos::SerialDenseMatrix<int,double>& vals);
 
-  // local matrix sum
-  int SumIntoMyValues(const int *row_inds, const int *col_inds,
-                      const WhetStone::DenseMatrix<>& vals);
-  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
-          const WhetStone::DenseMatrix<>& vals);
+  void sumIntoLocalValues(const int* row_inds,
+                          const int* col_inds,
+                          const WhetStone::DenseMatrix<>& vals)
+  {
+    for (int i=0; i!=vals.NumRows(); ++i)
+      for (int j=0; j!=vals.NumCols(); ++j)
+        sumIntoLocalValues(row_inds[i], 1, &vals.Value(i,j), &col_inds[j]);
+  }
   
+  void sumIntoLocalValuesTransposed(const int* row_inds, const int* col_inds,
+          const WhetStone::DenseMatrix<>& vals)
+  {
+    for (int i=0; i!=vals.NumCols(); ++i)
+      sumIntoLocalValues(row_inds[i], vals.NumRows(), &vals.Value(0,i), col_inds);
+  }
+
   // hack the diagonal
-  int DiagonalShift(double shift);
+  void diagonalShift(double shift);
 
   // Passthroughs.
   // --
@@ -90,12 +105,12 @@ class MatrixFE {
   // flag, and only having issues when you try to both Sum and Insert without
   // FillComplete called between, but I don't see a need for this
   // functionality.  If you do, ask. --etc
-  int InsertMyValues(int row, int count, const double *values, const int *indices);
-  int ExtractMyRowCopy(int row, int& count, const double* &values, const int* &indices) const;
+  void insertLocalValues(int row, int count, const double *values, const int *indices);
+  void getLocalRowView(int row, int& count, const double* &values, const int* &indices) const;
   
   // finish fill
-  int ResumeFill();
-  int FillComplete();
+  void resumeFill();
+  void fillComplete();
 
  protected:
   Teuchos::RCP<const GraphFE> graph_;
@@ -106,7 +121,4 @@ class MatrixFE {
   int n_used_;
 };
 
-} // namespace Operators
 } // namespace Amanzi
-
-#endif

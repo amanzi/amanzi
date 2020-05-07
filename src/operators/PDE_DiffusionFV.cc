@@ -172,40 +172,41 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
   if (local_op_.get()) {
-    auto local_op = local_op_.get(); 
+    using memory_space = decltype(local_op_->A)::memory_space;
+    using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
+    
     const auto trans_face = transmissibility_->ViewComponent("face", true);
 
     // preparing upwind data
     const auto k_face = ScalarCoefficientFaces(true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
-    CSR_Matrix local_csr = local_op->csr; 
-    
+    CSR_Matrix& A = local_op_->A; 
+
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Aface(
-            local_csr.at(f),local_csr.size(f,0),local_csr.size(f,1)); 
-
+          DenseMatrix A_f(A.at(f),A.size(f,0),A.size(f,1)); 
           double tij = trans_face(f,0) * k_face(f,0);
           // if (f==0) {
           //   std::cout << "tij = " << trans_face(f,0) << " * " << k_face(f,0) << " = " << tij << std::endl;
           // }
 
-          for (int i = 0; i != Aface.NumRows(); ++i) {
-            Aface(i, i) = tij;
-            for (int j = i + 1; j != Aface.NumRows(); ++j) {
-              Aface(i, j) = -tij;
-              Aface(j, i) = -tij;
+          for (int i = 0; i != A_f.NumRows(); ++i) {
+            A_f(i, i) = tij;
+            for (int j = i + 1; j != A_f.NumRows(); ++j) {
+              A_f(i, j) = -tij;
+              A_f(j, i) = -tij;
             }
           }
 
           // if (f==0) {
-          //   std::cout << "A = " << Aface << std::endl;
+          //   std::cout << "A = " << A_f << std::endl;
           // }
 
         });
+    
   }
 }
 
@@ -300,10 +301,10 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     // AMANZI_ASSERT(false) // 
     // AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
     // for (int f = 0; f != nfaces_owned; ++f) {
-    //   WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
+    //   WhetStone::DenseMatrix& A_f = jac_op_->matrices[f];
 
     //   if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //     Aface *= 0.0;
+    //     A_f *= 0.0;
     //   }
     // }
   }
@@ -497,8 +498,15 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
       K->set_shape(c, mesh_->space_dimension(), 1);
     }
     K->Init();
-    for (int c=0; c!=ncells_owned; ++c) {
-      K->at(c)(0,0) = 1.;
+
+    {
+      TensorVector* Kc = K.get();
+      Kokkos::parallel_for(
+          "PDE_DiffusionFV::ComputeTrans Init Tensor Ceof",
+          ncells_owned,
+          KOKKOS_LAMBDA(const int& c) {
+            Kc->at(c)(0,0) = 1.0;
+          });
     }
     K_ = K;
   }

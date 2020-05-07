@@ -29,7 +29,7 @@ class PreconditionerDiagonal : public Preconditioner<Matrix, Vector> {
   ~PreconditionerDiagonal(){};
 
   void
-  Init(const std::string& name, const Teuchos::ParameterList& plist) override{};
+  Init(const std::string& name, const Teuchos::RCP<Teuchos::ParameterList>& plist) override{};
   void Update(const Teuchos::RCP<Matrix>& A) override
   {
     work_vec_ = Teuchos::rcp(new Vector(A->getRowMap()));

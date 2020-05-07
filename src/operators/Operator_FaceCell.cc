@@ -231,7 +231,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
       k++;
     }
     
-    ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
+    ierr |= graph.insertLocalIndices(k, lid_r.data(), k, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -271,7 +271,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
         k++;
       }
     }
-    ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
+    ierr |= graph.insertLocalIndices(k, lid_r.data(), k, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -295,7 +295,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
-    ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
+    ierr |= graph.insertLocalIndices(lid_r, 1, &lid_c);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -328,7 +328,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
       lid_c[n] = face_col_inds[f];
     }
 
-    ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+    ierr |= graph.insertLocalIndices(ncells, lid_r, ncells, lid_c);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -382,7 +382,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       k++;
     }
     
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -425,7 +425,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
       }
     }    
     
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -448,7 +448,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
-    ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
+    ierr |= mat.sumIntoLocalValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -477,7 +477,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
       lid_c[n] = face_col_inds[f];
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
+    ierr |= mat.sumIntoLocalValues(lid_r, lid_c, op.matrices[sf]);
   }
   AMANZI_ASSERT(!ierr);
 }

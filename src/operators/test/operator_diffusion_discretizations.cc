@@ -176,6 +176,7 @@ SUITE(DIFFUSION) {
     double norminf = res.normInf();
     std::cout << " Residual norm = " << norminf << std::endl;
     CHECK_CLOSE(0., norminf, 1.e-10);
+    if (norminf > 1.e-10) fix.solution->Print(std::cout);
     if (norminf > 1.e-10) res.Print(std::cout);
 
   }
@@ -184,24 +185,27 @@ SUITE(DIFFUSION) {
   // polynomial with coefficient=1
   //
   // Exact solution
+#if 1
   TEST(Analytic00_Linear1_FV_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
         ana, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-
   TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionFVwithGravity>(
         ana, 1.1, "identity", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+#endif
+
   //
   // Analytic00_Linear: tests exactness of no-gravity case for linear
   // polynomial with coefficient=1
   //
   // Exact solution
+#if 1  
   TEST(Analytic00_Linear1_FV_Dirichlet_Generate2D_diagonal) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -215,6 +219,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+#endif
   // TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_diagonal) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -256,18 +261,20 @@ SUITE(DIFFUSION) {
   // change PC, change BCs
   //
   // Exact solution
-  // TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionFV>(
-  //       ana, "HypreAMG", "DirichletNeumannBox", "Generate2D",
-  //       "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionFVwithGravity>(
-  //       ana, 1.1, "HypreAMG", "DirichletNeumannBox", "Generate2D",
-  //       "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_ILU) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionFV>(
+        ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+#if 1
+  TEST(Analytic00_LinearGravity1_FV_DirichletNeumannBox_Generate2D_ILU) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+#endif
   // TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Generate2D_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -310,6 +317,7 @@ SUITE(DIFFUSION) {
   // with uniform kr
   //
   // Exact solution
+#if 1
   TEST(Analytic00_Linearkr_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
     auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -322,6 +330,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::FACE, 1.e-12);
   }
+#endif
   // TEST(Analytic00_Linearkr_MFD_Dirichlet_Generate2D_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -364,6 +373,7 @@ SUITE(DIFFUSION) {
   // with uniform K
   //
   // Exact solution
+#if 1
   TEST(Analytic00_LinearK_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -376,6 +386,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+#endif  
   // TEST(Analytic00_LinearK_MFD_DirichletNeumannBox_Generate2D_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -420,6 +431,7 @@ SUITE(DIFFUSION) {
   // NOTE: FV cannot be exact
   //       MFD is still exact
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
+#if 1
   TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Wiggled_HypreAMG) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -432,6 +444,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "DirichletNeumannBox", "test/random10.exo",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 2.e-2);
   }
+#endif  
   // TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Wiggled_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -476,6 +489,7 @@ SUITE(DIFFUSION) {
   // NOTE: FV cannot be exact
   //       MFD is still exact
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
+#if 1
   TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Poly_HypreAMG) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -488,6 +502,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "DirichletNeumannBox", "test/median7x8_filtered.exo",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 2.8e-2);
   }
+#endif
   // TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Poly_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(
@@ -530,6 +545,7 @@ SUITE(DIFFUSION) {
   // Analytic00_Quadratic: test case for quadratic equations
   // polynomial with coefficient=1
   //
+#if 1  
   TEST(Analytic00_Quadratic1_FV_DirichletNeumannBox_Generate2D_HypreAMG) {
     auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -542,6 +558,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, .006);
   }
+#endif  
   // TEST(Analytic00_Quadratic1_MFD_DirichletNeumannBox_Generate2D_HypreAMG) {
   //   auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
   //   test<Operators::PDE_DiffusionMFD>(

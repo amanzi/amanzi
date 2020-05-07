@@ -121,7 +121,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 //     }
 
 
-//     ierr |= graph.InsertMyIndices(2, lid_r, 2, lid_c);
+//     ierr |= graph.insertLocalIndices(2, lid_r, 2, lid_c);
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -161,7 +161,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 //       lid_c[1] = bndface_col_inds[bf];     
 //     }
 
-//     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
+//     ierr |= mat.sumIntoLocalValues(lid_r, lid_c, op.matrices[f]);
 //     AMANZI_ASSERT(!ierr);
 //   }
 //   AMANZI_ASSERT(!ierr);
@@ -241,7 +241,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 //     int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
 //     int lid_r = face_row_inds[bf];
 //     int lid_c = face_col_inds[bf];
-//     ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
+//     ierr |= graph.insertLocalIndices(lid_r, 1, &lid_c);
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -273,7 +273,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
       
 //     }
 
-//     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+//     ierr |= graph.insertLocalIndices(ncells, lid_r, ncells, lid_c);
 //   }
 //   AMANZI_ASSERT(!ierr);
 // //   exit(0);
@@ -298,7 +298,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
      
 //       int lid_r = face_row_inds[bf];
 //       int lid_c = face_col_inds[bf];
-//       ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
+//       ierr |= mat.sumIntoLocalValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
       
     
 //   }
@@ -331,7 +331,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 //       lid_c[n] = face_col_inds[bf];
 //     }
 
-//     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
+//     ierr |= mat.sumIntoLocalValues(lid_r, lid_c, op.matrices[sf]);
 //   }
 
 //   AMANZI_ASSERT(!ierr);

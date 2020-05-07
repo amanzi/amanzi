@@ -39,6 +39,8 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
+#include "GraphFE.hh"
+#include "MatrixFE.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -101,45 +103,38 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix()
 {
-  // NOTE: not yet implemented, as we have no preconditioner, and the user
-  // shouldn't call this anyway (only the PC should!)
-  //
-  // What still needs to be implemented is GraphFE and MatrixFE (or ditch if no
-  // longer necessary) and the SymbolicAssemble sub-calls.
-  AMANZI_ASSERT(false);
-  // // Create the supermap given a space (set of possible schemas) and a
-  // // specific schema (assumed/checked to be consistent with the space).
-  //smap_ = createSuperMap(cvs_col_.ptr());
+  // Create the supermap given a space (set of possible schemas) and a
+  // specific schema (assumed/checked to be consistent with the space).
+  smap_ = createSuperMap(cvs_col_.ptr());
 
-  // // create the graph
-  //int row_size = MaxRowSize(*mesh_, schema(), 1);
-  //Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
-  //    smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
+  // create the graph
+  int row_size = MaxRowSize(*mesh_, schema(), 1);
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
+     smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
 
-  // // fill the graph
-  //SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  // fill the graph
+  SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
-  // // Completing and optimizing the graphs
-  //int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
-  //AMANZI_ASSERT(!ierr);
+  // Completing and optimizing the graphs
+  graph->fillComplete(smap_->getMap(), smap_->getMap());
 
-  // // create global matrix
-  //Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  //A_ = Amat_->Matrix();
+  // create global matrix
+  Amat_ = Teuchos::rcp(new MatrixFE(graph));
+  A_ = Amat_->getMatrix();
 }
 
 
 /* ******************************************************************
 * Create structure of a global matrix.
 ****************************************************************** */
-// void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
-//                                       int my_block_row, int my_block_col) const
-// {
-//   // first of double dispatch via Visitor pattern
-//   for (auto& it : *this) {
-//     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
-//   }
-// }
+void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
+                                      int my_block_row, int my_block_col) const
+{
+  // first of double dispatch via Visitor pattern
+  for (auto& it : *this) {
+    it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
+  }
+}
 
 
 // /* ******************************************************************
@@ -171,7 +166,7 @@ void Operator::SymbolicAssembleMatrix()
 //       lid_r.push_back(row_gids[row_lids[n][i]]);
 //       lid_c.push_back(col_gids[col_lids[n][i]]);
 //     }
-//     ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+//     ierr |= graph.insertLocalIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -182,36 +177,29 @@ void Operator::SymbolicAssembleMatrix()
 ****************************************************************** */
 void Operator::AssembleMatrix()
 {
-  // NOTE: not yet implemented, as we have no preconditioner, and the user
-  // shouldn't call this anyway (only the PC should!)
-  AMANZI_ASSERT(false);
+  if (Amat_ == Teuchos::null) SymbolicAssembleMatrix();
 
-  // if (Amat_ == Teuchos::null) {
-  //   Errors::Message msg("Symbolic assembling was not performed.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  Amat_->zero();
+  AssembleMatrix(*smap_, *Amat_, 0, 0);
+  Amat_->fillComplete();
 
-  // Amat_->Zero();
-  // AssembleMatrix(*smap_, *Amat_, 0, 0);
-  // Amat_->FillComplete();
-
-  // if (shift_ != 0.0) {
-  //   Amat_->DiagonalShift(shift_);
-  // }
+  if (shift_ != 0.0) {
+    Amat_->diagonalShift(shift_);
+  }
 }
 
 
 /* ******************************************************************
 * Populates matrix entries.
 ****************************************************************** */
-// void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-//                               int my_block_row, int my_block_col) const
-// {
-//   // first of double dispatch via Visitor pattern
-//   for (auto& it : *this) {
-//     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
-//   }
-// }
+void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+                              int my_block_row, int my_block_col) const
+{
+  // first of double dispatch via Visitor pattern
+  for (auto& it : *this) {
+    it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+  }
+}
 
 
 /* ******************************************************************
@@ -244,7 +232,7 @@ void Operator::AssembleMatrix()
 //       lid_c.push_back(col_gids[col_lids[n][i]]);
 //     }
 
-//     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
+//     ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[n]);
 //   }
 //   AMANZI_ASSERT(!ierr);
 // }
@@ -391,33 +379,6 @@ int Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
 //   return 0;
 // }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name,
-                                  const Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  UpdatePreconditioner();
-}
-
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  preconditioner_ = factory.Create(plist);
-  UpdatePreconditioner();
-}
-
 /* ******************************************************************
 * Init owned local operators.
 ****************************************************************** */
@@ -448,7 +409,7 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
 * Create the preconditioner and set options. Symbolic assemble of 
 * operator's matrix must have been called.
 ****************************************************************** */
-void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void Operator::InitializePreconditioner(const ParameterList_ptr_type& plist)
 {
   if (smap_.get() == nullptr) {
     smap_ = createSuperMap(getDomainMap().ptr());

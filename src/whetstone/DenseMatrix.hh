@@ -65,6 +65,24 @@ class DenseMatrix {
     }
   }
 
+  KOKKOS_INLINE_FUNCTION DenseMatrix(DenseMatrix&& other){
+    m_ = other.m_; 
+    n_ = other.n_; 
+    data_ = other.data_; 
+    mem_ = other.mem_;
+  }
+
+
+
+  // Default assigment implies view semantics
+  KOKKOS_INLINE_FUNCTION DenseMatrix& operator=(const DenseMatrix&& other){
+    m_ = other.m_; 
+    n_ = other.n_; 
+    data_ = other.data_; 
+    mem_ = other.mem_;
+    return *this; 
+  } 
+
   /* ******************************************************************
   * No memory check is performed: invalid read is possible.
   ****************************************************************** */

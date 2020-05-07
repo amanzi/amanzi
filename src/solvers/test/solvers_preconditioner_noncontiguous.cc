@@ -42,10 +42,10 @@ TEST(OUT_OF_ORDER_GIDS)
   double val;
   col = 2 * myRank + 1;
   val = 2 * myRank + 2;
-  accMat.InsertGlobalValues(col, 1, &val, &col);
+  accMat.insertGlobalValues(col, 1, &val, &col);
   col = 2 * myRank;
   val = 2 * myRank + 1;
-  accMat.InsertGlobalValues(col, 1, &val, &col);
+  accMat.insertGlobalValues(col, 1, &val, &col);
   accMat.FillComplete();
 
   //

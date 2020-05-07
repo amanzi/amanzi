@@ -29,7 +29,7 @@ class PreconditionerIdentity : public Preconditioner<Matrix, Vector> {
   ~PreconditionerIdentity(){};
 
   void
-  Init(const std::string& name, const Teuchos::ParameterList& list) override{};
+  Init(const std::string& name, const Teuchos::RCP<Teuchos::ParameterList>& list) override{};
   void Update(const Teuchos::RCP<Matrix>& A) override{};
   void Destroy() override{};
 

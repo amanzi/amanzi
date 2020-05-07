@@ -220,7 +220,9 @@ if (BUILD_TESTS)
     # Copy test directory files if an out of source build
     if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}))
         file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"
-                            "${OPERATORS_SOURCE_DIR}/test/*.exo")
+                            "${OPERATORS_SOURCE_DIR}/test/*.exo"
+                            "${OPERATORS_SOURCE_DIR}/test/*.gold"
+          )
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
@@ -239,6 +241,13 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_parabolic_surface.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
+    add_amanzi_test(operators_marshak_assembly operators_marshak_assembly
+                    KIND unit
+                    NPROCS 1
+                    SOURCE test/Main.cc test/operator_marshak_assembly.cc
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+    add_amanzi_test(operators_marshak_assembly_3pe operators_marshak_assembly NPROCS 3 KIND unit)
+                  
     # add_amanzi_test(operators_marshak operators_marshak
     #                 KIND unit
     #                 NPROCS 3
@@ -246,6 +255,7 @@ if (BUILD_TESTS)
     #                        test/operator_marshak_logical.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
+    
     # add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operator_nonlinear_surface.cc

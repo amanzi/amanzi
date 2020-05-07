@@ -36,30 +36,30 @@ class Op_Face_CellBndFace : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_BNDFACE,
-         name, mesh) {
-
+         name, mesh)
+  {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    csr = std::move(CSR_Matrix(nfaces_owned));
+    A = CSR_Matrix(nfaces_owned);
+
     for (int f=0; f!=nfaces_owned; ++f) {
       int loc[2] = {2,2};
-      csr.set_shape_host(f, loc);
+      A.set_shape_host(f, loc);
     }
-    csr.update_sizes_device(); 
-    csr.prefix_sum(); 
+    A.prefix_sum(); 
   }
 
   virtual void
-  GetLocalDiagCopy(CompositeVector& X) const
+  SumLocalDiag(CompositeVector& X) const
   {
     AmanziMesh::Mesh const* mesh_ = mesh.get();
     auto Xc = X.ViewComponent("cell", true);
     Kokkos::parallel_for(
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 1",
-        csr.size_host(),
+        A.size(),
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
           Xc(cells(0), 0) += lm(0,0);
           if (cells.extent(0) > 1) {
             Kokkos::atomic_add(&Xc(cells(1),0), lm(1,1));
@@ -72,7 +72,7 @@ class Op_Face_CellBndFace : public Op {
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 2",
         import_same_face,
         KOKKOS_LAMBDA(const int bf) {          
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(bf),csr.size(bf,0),csr.size(bf,1));
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,bf);
           // atomic not needed, each bf touched once
           Xbf(bf,0) += lm(1,1);
         });
@@ -84,7 +84,7 @@ class Op_Face_CellBndFace : public Op {
         import_permute_face.extent(0),
         KOKKOS_LAMBDA(const int bf_offset) {
           int f = import_permute_face(bf_offset); 
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
           // atomic not needed, each bf touched once
           Xbf(bf_offset+import_same_face,0) += lm(1,1);
         });
@@ -119,11 +119,11 @@ class Op_Face_CellBndFace : public Op {
 
         Kokkos::parallel_for(
             "Op_Face_CellBndFace::Rescale loop 1",
-            csr.size_host(),
+            A.size(),
             KOKKOS_LAMBDA(const int f) {
               AmanziMesh::Entity_ID_View cells;
               mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-              WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(f),csr.size(f,0),csr.size(f,1)); 
+              WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
               lm(0,0) *= s_c(cells(0),0);
               lm(1,0) *= s_c(cells(0),0);
               if (cells.extent(0) > 1) {
@@ -150,8 +150,7 @@ class Op_Face_CellBndFace : public Op {
           "Op_Face_CellBndFace::Rescale loop 2",
           import_same_face,
                              KOKKOS_LAMBDA(const int bf) {
-                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(bf),
-                                  csr.size(bf,0),csr.size(bf,1)); 
+                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,bf);
                                lm(0,1) *= s_bnd(bf,0);
                                lm(1,1) *= s_bnd(bf,0);
                              });
@@ -161,8 +160,7 @@ class Op_Face_CellBndFace : public Op {
           import_permute_face.extent(0),
                              KOKKOS_LAMBDA(const int bf_offset) {
                                 int f = import_permute_face(bf_offset); 
-                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(csr.at(f),
-                                  csr.size(f,0),csr.size(f,1)); 
+                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
                                lm(0,1) *=
                                    s_bnd(bf_offset+import_same_face,0);
                                lm(1,1) *=

@@ -122,11 +122,12 @@ namespace AmanziPreconditioners {
 template<class Matrix, class Vector> class Preconditioner;
 }
 
+class MatrixFE;
+class GraphFE;
+
 namespace Operators {
 
 class SuperMap;
-class MatrixFE;
-class GraphFE;
 class Op;
 //class Op_Cell_FaceCell;
 //class Op_Cell_Face;
@@ -187,15 +188,15 @@ class Operator {
   // -- wrapper
   virtual void SymbolicAssembleMatrix();
   // -- first dispatch
-  // virtual void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
-  //                                     int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
+                                      int my_block_row, int my_block_col) const;
 
   // actual assembly:
   // -- wrapper
   virtual void AssembleMatrix();
   // -- first dispatch
-  // virtual void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-  //                             int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+                              int my_block_row, int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector
@@ -217,10 +218,7 @@ class Operator {
                               bool zero = true);
 
   // preconditioner
-  void InitPreconditioner(const std::string& prec_name,
-                          const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void InitializePreconditioner(const ParameterList_ptr_type& plist);
   void UpdatePreconditioner();
 
   // access

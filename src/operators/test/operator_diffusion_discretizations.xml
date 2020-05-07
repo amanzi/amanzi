@@ -100,6 +100,14 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="ifpack2: ILUT">
+      <Parameter name="preconditioner type" type="string" value="ifpack2: ILUT"/>
+      <ParameterList name="ifpack2: ILUT parameters">
+       <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+       <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="identity">
       <Parameter name="preconditioner type" type="string" value="identity"/>
     </ParameterList>

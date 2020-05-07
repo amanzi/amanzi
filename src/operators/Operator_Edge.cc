@@ -140,7 +140,7 @@ void Operator_Edge::SymbolicAssembleMatrixOp(
       lid_r[n] = edge_row_inds[edges[n]];
       lid_c[n] = edge_col_inds[edges[n]];
     }
-    ierr |= graph.InsertMyIndices(nedges, lid_r.data(), nedges, lid_c.data());
+    ierr |= graph.insertLocalIndices(nedges, lid_r.data(), nedges, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -163,7 +163,7 @@ void Operator_Edge::SymbolicAssembleMatrixOp(
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
-    ierr |= graph.InsertMyIndices(row, 1, &col);
+    ierr |= graph.insertLocalIndices(row, 1, &col);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -198,7 +198,7 @@ void Operator_Edge::AssembleMatrixOp(
       lid_c[n] = edge_col_inds[edges[n]];
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -223,7 +223,7 @@ void Operator_Edge::AssembleMatrixOp(
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][e], &col);
+    ierr |= mat.sumIntoLocalValues(row, 1, &(*op.diag)[0][e], &col);
   }
   AMANZI_ASSERT(!ierr);
 }

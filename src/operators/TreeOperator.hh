@@ -67,15 +67,8 @@ class TreeOperator {
   Teuchos::RCP<const TreeVectorSpace> getRangeMap() const { return tvs_; }
   Teuchos::RCP<const TreeVectorSpace> getRowMap() const { return tvs_; }  
 
-  // preconditioners (deprecate)
-  void InitPreconditioner(const std::string& prec_name,
-                          const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitBlockDiagonalPreconditioner() { block_diagonal_ = true; }
-
-
   // two-stage initializeation (preferred)
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void InitializePreconditioner(const ParameterList_ptr_type& plist);
   void UpdatePreconditioner();
 
   // access

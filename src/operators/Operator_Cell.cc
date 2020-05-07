@@ -74,77 +74,48 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
 
-  AMANZI_ASSERT(op.csr.size() == nfaces_owned);
+  AMANZI_ASSERT(op.A.size() == nfaces_owned);
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
 
-  CSR_Matrix local_csr = op.csr; 
-
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
-  CSR<double,1,DeviceOnlyMemorySpace> csr_v = op.csr_v_;
-  CSR<double,1,DeviceOnlyMemorySpace> csr_Av = op.csr_Av_;
+  auto local_A = op.A; 
+  auto local_Av = op.Av; 
+  auto local_v = op.v; 
 
-  // Allocate for first time 
-  if(csr_v.size_host() != local_csr.size_host()){
-
-    csr_v.set_size(local_csr.size_host());
-    csr_Av.set_size(local_csr.size_host());  
-
-    int total1 = 0; 
-    int total2 = 0; 
-    // CSR version 
-    // 1. Compute size 
-    for (int i=0; i!=local_csr.size_host(); ++i) {
-      total1 += local_csr.size_host(i,0);
-      total2 += local_csr.size_host(i,1);
-    }
-
-    Kokkos::parallel_for(
-      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COPY",
-      local_csr.size_host(),
-      KOKKOS_LAMBDA(const int& i){      
-        csr_v.sizes_.view_device()(i,0) = local_csr.size(i,0);
-        csr_v.row_map_.view_device()(i) = local_csr.size(i,0);
-        csr_Av.sizes_.view_device()(i,0) = local_csr.size(i,1);
-        csr_Av.row_map_.view_device()(i) = local_csr.size(i,1);
-      });
-
-    csr_v.prefix_sum_device(total1); 
-    csr_Av.prefix_sum_device(total2); 
+  // Allocate the first time 
+  if (local_v.size() != local_A.size()) {
+    op.PreallocateWorkVectors();
+    local_v = op.v;
+    local_Av = op.Av;
   }
 
+  // parallel matrix-vector product
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-      op.csr.size_host(),
+      local_A.size(),
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-
-        WhetStone::DenseVector<DeviceOnlyMemorySpace> vv(
-          csr_v.at(f),csr_v.size(f));
-        WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv(
-          csr_Av.at(f), csr_Av.size(f));
-
+        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,f);
+        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,f);
+        WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,f);
         for (int n = 0; n != ncells; ++n) {
-          vv(n) = Xc(cells[n],0);
+          lv(n) = Xc(cells[n],0);
         }
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-          local_csr.at(f),
-          local_csr.size(f,0),local_csr.size(f,1)); 
-        lm.Multiply(vv,Avv,false);
+        lA.Multiply(lv,lAv,false);
 
         for (int n = 0; n != ncells; ++n) {
-          Kokkos::atomic_add(&Yc(cells[n],0), Avv(n));
+          Kokkos::atomic_add(&Yc(cells[n],0), lAv(n));
         }
       });
 
   return 0;
 }
 
-#if 0 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
 * Insert cell-based diagonal matrix.
@@ -156,14 +127,12 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
-  int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    ierr |= graph.InsertMyIndices(row, 1, &col);
+    graph.insertLocalIndices(row, 1, &col);
   }
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -174,7 +143,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
   std::vector<int> lid_r;
   std::vector<int> lid_c;
@@ -182,7 +151,6 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
-  int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_View cells; 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
@@ -195,10 +163,8 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    ierr |= graph.InsertMyIndices(ncells, lid_r.data(), ncells, lid_c.data());
+    graph.insertLocalIndices(ncells, lid_r.data(), ncells, lid_c.data());
   }
-
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -210,20 +176,17 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag.getNumVectors() == 1);
+  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
   const auto dv = op.diag->getLocalViewDevice(); 
 
-  int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
-
-    ierr |= mat.SumIntoMyValues(row, 1, &dv(0,c), &col);
+    mat.sumIntoLocalValues(row, 1, &dv(0,c), &col);
   }
-  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -231,34 +194,53 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.A.size() == nfaces_owned);
+
+  //  using memory_space = decltype(op.A)::memory_space;
+  //  using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
+
+  // // space to store the indices
+  // CSR<int,1,memory_space> lid_row(op.Av);
+  // CSR<int,1,memory_space> lid_col(op.v);
   
-  // ELEMENT: face, DOF: cell
-  std::vector<int> lid_r;
-  std::vector<int> lid_c;
+  const auto cell_row_inds = map.GhostIndices<>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.GhostIndices<>(my_block_col, "cell", 0);
 
-  const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
+  // hard-coded version, interfaces TBD...
+  auto proc_mat = mat.getLocalMatrix();
+  auto offproc_mat = mat.getOffProcLocalMatrix();
+  int nrows_local = mat.getMatrix()->getNodeNumRows();
 
-  int ierr(0);
-  for (int f = 0; f != nfaces_owned; ++f) {
-    AmanziMesh::Entity_ID_View cells;
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  const AmanziMesh::Mesh* m = mesh_.get();
+  
+  Kokkos::parallel_for(
+      "Operator_Cell::AssembleMatrixOp::Face_Cell",
+      nfaces_owned,
+      KOKKOS_LAMBDA(const int& f) {
+        AmanziMesh::Entity_ID_View cells;
+        m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
-    int ncells = cells.size();
-    lid_r.resize(ncells);
-    lid_c.resize(ncells);    
-    for (int n = 0; n != ncells; ++n) {      
-      lid_r[n] = cell_row_inds[cells[n]];
-      lid_c[n] = cell_col_inds[cells[n]];
-    }
-   
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
-    AMANZI_ASSERT(ierr>=0);
-  }
-  AMANZI_ASSERT(ierr>=0);
+        auto A_f = getFromCSR<WhetStone::DenseMatrix>(op.A,f);
+
+        for (int n = 0; n != cells.extent(0); ++n) {
+          if (cell_row_inds[cells[n]] < nrows_local) {
+            for (int m = 0; m != cells.extent(0); ++m) {
+              proc_mat.sumIntoValues(cell_row_inds(cells(n)),
+                      &cell_col_inds(cells(m)), 1,
+                      &A_f(n,m), true, true);
+            }
+          } else {
+            for (int m = 0; m != cells.extent(0); ++m) {
+              offproc_mat.sumIntoValues(cell_row_inds(cells(n))-nrows_local,
+                      &cell_col_inds(cells(m)), 1,
+                      &A_f(n,m), true, true);
+            }
+          }
+        }
+      });
+
 }
-#endif 
+
 
 }  // namespace Operators
 }  // namespace Amanzi

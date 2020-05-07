@@ -43,9 +43,7 @@ SUITE(COMMON_CSR)
       int vals[] = {nrows, ncols}; 
       csr_mat.set_shape_host(i,vals,nrows*ncols); 
     }
-    csr_mat.update_row_map_device(); 
-    csr_mat.update_sizes_device(); 
-    csr_mat.prefix_sum_device(total);
+    csr_mat.prefix_sum();
 
     // access and modify the matrices on device 
     Kokkos::parallel_for(
@@ -53,9 +51,7 @@ SUITE(COMMON_CSR)
       csr_mat.size(),
       KOKKOS_LAMBDA(const int f) {
 
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-          csr_mat.at(f),
-          csr_mat.size(f,0),csr_mat.size(f,1)); 
+        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(csr_mat,f); 
         for(int i = 0 ; i < nrows; ++i){
           for(int j = 0 ; j < ncols; ++j){
             lm(i,j) = i*nrows+j; 
@@ -65,13 +61,10 @@ SUITE(COMMON_CSR)
     csr_mat.update_entries_host();
 
     for(int f = 0 ; f < csr_mat.size(); ++f){
-      WhetStone::DenseMatrix<Kokkos::HostSpace> lm(
-            csr_mat.at_host(f),
-            csr_mat.size_host(f,0),csr_mat.size_host(f,1)); 
+      WhetStone::DenseMatrix<Kokkos::HostSpace> lm = getFromCSR_host<WhetStone::DenseMatrix>(csr_mat,f); 
       for(int i = 0 ; i < nrows; ++i){
         for(int j = 0 ; j < ncols; ++j){
           if(lm(i,j) != i*nrows+j)
-            std::cout<<f<<": "<<i<<";"<<j<<" = "<<lm(i,j)<<" != "<<i*nrows+j<<std::endl;
           assert(lm(i,j) == i*nrows+j); 
         }
       }
@@ -84,23 +77,15 @@ SUITE(COMMON_CSR)
     int total2 = 0; 
     // CSR version 
     // 1. Compute size 
-    for (int i=0; i!=csr_mat.size(); ++i) {
-      total1 += csr_mat.size_host(i,0);
-      total2 += csr_mat.size_host(i,1);
-    }
+    for(int i = 0 ; i < csr_mat.size(); ++i){
+      csr_v.sizes_.view_host()(i,0) = csr_mat.size_host(i,0);
+      csr_v.row_map_.view_host()(i) = csr_mat.size_host(i,0);
+      csr_Av.sizes_.view_host()(i,0) = csr_mat.size_host(i,1);
+      csr_Av.row_map_.view_host()(i) = csr_mat.size_host(i,1);
+   }
 
-    Kokkos::parallel_for(
-      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COPY",
-      csr_mat.size(),
-      KOKKOS_LAMBDA(const int& i){      
-        csr_v.sizes_.view_device()(i,0) = csr_mat.size(i,0);
-        csr_v.row_map_.view_device()(i) = csr_mat.size(i,0);
-        csr_Av.sizes_.view_device()(i,0) = csr_mat.size(i,1);
-        csr_Av.row_map_.view_device()(i) = csr_mat.size(i,1);
-      });
-
-    csr_v.prefix_sum_device(total1); 
-    csr_Av.prefix_sum_device(total2);
+    csr_v.prefix_sum(); 
+    csr_Av.prefix_sum();
     Kokkos::DualView<double*,DeviceOnlyMemorySpace> res; 
     res.realloc(ncells);
 
@@ -110,18 +95,14 @@ SUITE(COMMON_CSR)
       csr_mat.size(),
       KOKKOS_LAMBDA(const int f) {
 
-        WhetStone::DenseVector<DeviceOnlyMemorySpace> vv(
-          csr_v.at(f),csr_v.size(f));
-        WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv(
-          csr_Av.at(f), csr_Av.size(f));
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> vv = getFromCSR<WhetStone::DenseVector>(csr_v,f); 
+        WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv = getFromCSR<WhetStone::DenseVector>(csr_Av,f); 
 
         for (int n = 0; n != ncells; ++n) {
           vv(n) = f+n;
         }
 
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-          csr_mat.at(f),
-          csr_mat.size(f,0),csr_mat.size(f,1)); 
+        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(csr_mat,f); 
         lm.Multiply(vv,Avv,false);
 
         for (int n = 0; n != ncells; ++n) {
@@ -130,8 +111,8 @@ SUITE(COMMON_CSR)
       });
     res.modify_device(); 
     res.sync_host(); 
-    for(int i = 0 ; i < ncells; ++i){
-      std::cout<<res.view_host()(i)<<std::endl;
-    }
+    //for(int i = 0 ; i < ncells; ++i){
+    //  std::cout<<res.view_host()(i)<<std::endl;
+    //}
   }
 }

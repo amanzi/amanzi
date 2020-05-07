@@ -85,7 +85,7 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
       lid_r.push_back(row_gids[row_lids[n][i]]);
       lid_c.push_back(col_gids[col_lids[n][i]]);
     }
-    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+    ierr |= graph.insertLocalIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -119,7 +119,7 @@ void Operator_Diagonal::AssembleMatrixOp(
       lid_c.push_back(col_gids[col_lids[n][i]]);
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[n]);
   }
   AMANZI_ASSERT(!ierr);
 }
