@@ -1,0 +1,18 @@
+# CMake EXPRTK configure file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @EXPRTK_sh_install@
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY "@EXPRTK_source_dir@"
+)
+
+if (result)
+  set(msg "EXPRTK install command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()  
+
+                            
