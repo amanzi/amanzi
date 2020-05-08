@@ -59,9 +59,20 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   std::string name() { return "thermal flow matrix fracture"; } 
 
  private:
-  void SwapEvaluatorField_(const Key& key, const std::string& passwd,
-                           Teuchos::RCP<CompositeVector>& fdm_copy,
-                           Teuchos::RCP<CompositeVector>& fdf_copy);
+  void AddCouplingDiffFluxes_(
+      const Teuchos::RCP<Operators::Operator>& op0, 
+      const Teuchos::RCP<Operators::Operator>& op1, 
+      Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
+      Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
+      std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
+      std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
+      std::shared_ptr<const std::vector<double> > values,
+      int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree);
+
+  void SwapEvaluatorField_(
+      const Key& key, const std::string& passwd,
+      Teuchos::RCP<CompositeVector>& fdm_copy,
+      Teuchos::RCP<CompositeVector>& fdf_copy);
 
  public:
   // virtual void CalculateDiagnostics() {};
@@ -72,6 +83,8 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
+
+  Key normal_permeability_key_, normal_conductivity_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
