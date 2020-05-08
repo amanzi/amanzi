@@ -782,6 +782,9 @@ if (ENABLE_MSTK_Mesh)
   set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
 endif()
 
+# EXPRTK
+include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
+
 
 # ############################################################################ #
 #  Final steps
