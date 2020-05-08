@@ -288,17 +288,9 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   // generate local matrices and apply sources and boundary conditions
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-  // although, residual calculation can be completed using off-diagonal
-  // blocks, we use global matrix-vector multiplication instead.
-  op_tree_matrix_->AssembleMatrix();
-  int ierr = op_tree_matrix_->ApplyAssembled(*u_new, *f);
-  AMANZI_ASSERT(!ierr);
-  
-  // diagonal blocks in tree PKs
-  for (int i = 0; i < 2; ++i) {
-    auto pk = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i]);
-    f->SubVector(i)->Update(-1.0, *pk->op_tree_rhs(), 1.0);
-  }
+  /*
+  ADD COUPLING HERE
+  */
 }
 
 

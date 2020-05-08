@@ -102,7 +102,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="3.0e+9"/>
         <Parameter name="maximum cycle number" type="int" value="100"/>
-        <Parameter name="initial time step" type="double" value="1.0"/>
+        <Parameter name="initial time step" type="double" value="1.0e+2"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
@@ -200,7 +200,7 @@
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.8}"/>
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
@@ -212,7 +212,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.0"/>
+                <Parameter name="value" type="double" value="297.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -454,7 +454,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="3.0e-5"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -490,6 +490,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
+	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -499,6 +500,7 @@
 	    <Parameter name="gravity" type="bool" value="false"/>
 	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="advection operator">
@@ -546,7 +548,7 @@
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary pressure">
 	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="101325.0"/>
+		<Parameter name="value" type="double" value="105000.0"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
@@ -602,7 +604,7 @@
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary pressure">
 	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="101325.0"/>
+		<Parameter name="value" type="double" value="105000.0"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
@@ -672,6 +674,15 @@
 	    <ParameterList name="boundary temperature">
 	      <ParameterList name="function-constant">
 		<Parameter name="value" type="double" value="300.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="BC 1">
+	    <Parameter name="regions" type="Array(string)" value="{SurfaceBottom,SurfaceLeft}"/>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <ParameterList name="boundary temperature">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="295.0"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
