@@ -9,6 +9,7 @@
 set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@ CACHE FILEPATH "SuperBuild C Compiler" )
 set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@ CACHE FILEPATH "SuperBuild C++ Compiler" )
 set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER@ CACHE FILEPATH "SuperBuild Fortran Compiler")
+set(NVCC_WRAPPER_DEFAULT_COMPILER @NVCC_WRAPPER_DEFAULT_COMPILER@ "SuperBuild C++ Compiler for CPU code")
 
 # Compiler Flags
 set(CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "SuperBuild C compiler flags")

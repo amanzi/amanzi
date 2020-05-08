@@ -76,10 +76,16 @@ build_cxx_flags=
 build_fort_flags=
 build_link_flags=
 
+# Accelerators
+epetra=${TRUE}
+kokkos=${FALSE}
+kokkos_cuda=${FALSE}
+kokkos_openmp=${FALSE}
+
 # MPI installation
-mpi_root_dir=
 tools_mpi=openmpi
-tools_mpi_exec_args=
+mpi_root_dir=
+mpi_exec_args=
 
 # TPL (Third Party Libraries)
 
@@ -122,10 +128,6 @@ geochemistry=$TRUE
 #    stk framewotk was deprecated and removed
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
-# -- physics
-amanzi_physics=${TRUE}
-ats_physics=${FALSE}
-ats_dev=${FALSE}
 # -- tools
 amanzi_branch=
 ats_branch=
@@ -138,25 +140,24 @@ build_stage_2=${FALSE}
 dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
-clm=${FALSE}
 crunchtope=${FALSE}
 hypre=${TRUE}
+superlu=${TRUE}
 netcdf4=${TRUE}
 petsc=${TRUE}
 pflotran=${FALSE}
-silo=${FALSE}
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
 shared=${FALSE}
+silo=${FALSE}
 
-# System specific options
-# - Intended for supercomputing facilities, and institutional computing
-#
-# NERSC
-#
+# -- arch sets machine-specific variables
+amanzi_arch=
 prefer_static=${TRUE}
 exec_static=${FALSE}
-nersc=${FALSE}
-nersc_tpl_opts=
-nersc_amanzi_opts=
+arch_tpl_opts=
+arch_amanzi_opts=
+
 
 # ---------------------------------------------------------------------------- #
 # Functions: basic messages and exit functions
@@ -325,12 +326,10 @@ Configuration:
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
-  --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
-
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
 
-  --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
-  
+  --arch                  define the architecture for the build, only Summit, NERSC available
+
 
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
@@ -344,6 +343,7 @@ Value in brackets indicates default setting.
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
 
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
+  superlu                 build the SuperLU solver ['"${superlu}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
   geochemistry            build all geochemistry packages (pflotran, crunchtope, alquimia) ['"${geochemistry}"']
@@ -360,6 +360,11 @@ Value in brackets indicates default setting.
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
+
+  epetra                  build the Epetra stack of TPLs ['"${epetra}"']
+  kokkos                  build the Tpetra/Kokkos stack of TPLs ['"${kokkos}"']
+  kokkos_cuda             build Kokkos with Cuda node support (currently only Kokkos) ['"${kokkos_cuda}"']
+  kokkos_openmp           build Kokkos with OpenMP node support (currently only Kokkos) ['"${kokkos_openmp}"']
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
@@ -468,7 +473,6 @@ Build configuration:
     build_type          = '"${build_type}"'
     build_stage_1       = '"${build_stage_1}"'
     build_stage_2       = '"${build_stage_2}"'
-    nersc               = '"${nersc}"'
     parallel            = '"${parallel_jobs}"'
     shared              = '"${shared}"'
     static_libs_prefer  = '"${prefer_static}"'
@@ -476,7 +480,7 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
-    ats_dev             = '"${ats_dev}"'
+    amanzi_arch         ='"${amanzi_arch}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -493,9 +497,11 @@ Amanzi TPLs:
     moab_mesh    = '"${moab_mesh}"'
     netcdf4      = '"${netcdf4}"'
     hypre        = '"${hypre}"'
+    superlu      = '"${superlu}"'
     petsc        = '"${petsc}"'
+    epetra       = '"${epetra}"'
+    kokkos       = '"${kokkos}"' (Cuda='"${kokkos_cuda}"', OpenMP='"${kokkos_openmp}"')
     pflotran     = '"${pflotran}"'
-    pf_clm       = '"${clm}"'
     silo         = '"${silo}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
@@ -521,6 +527,7 @@ Directories:
     tools_install_prefix  = '"${tools_install_prefix}"'
     tools_build_dir       = '"${tools_build_dir}"'
     tools_download_dir    = '"${tpl_download_dir}"'
+    
 '    
 }  
 
@@ -547,6 +554,10 @@ List of INPUT parameters
                  tmp=`parse_option_with_equal "${opt}" 'prefix'`
                  prefix=`make_fullpath ${tmp}`
                  ;;
+
+      --arch=*)
+                 amanzi_arch=`parse_option_with_equal "${opt}" 'arch'`
+		 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
@@ -608,10 +619,6 @@ List of INPUT parameters
 
       --spacedim=*)
                  spacedim=`parse_option_with_equal "${opt}" 'spacedim'`
-                 ;;
-
-      --nersc)
-                 nersc=${TRUE}
                  ;;
 
       --with-c-compiler=*)
@@ -748,21 +755,25 @@ List of INPUT parameters
 
   # enforce implicit rules
   if [ "${build_user_guide}" -eq "${TRUE}" ]; then
-    build_amanzi=$TRUE
+    build_amanzi=${TRUE}
   fi
 
+  if [ "${epetra}" -eq "${FALSE}" ]; then
+      warning_message "Disabling Epetra disables all of geochemistry and hypre"
+      geochemistry=${FALSE}
+      hypre=${FALSE}
+      superlu=${FALSE}
+      alquimia=${FALSE}
+      pflotran=${FALSE}
+      crunchtope=${FALSE}
+      petsc=${FALSE}
+  fi
+  
   if [ "${geochemistry}" -eq "${TRUE}" ]; then
     alquimia=${geochemistry}
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
   fi
-
-  #if [ "${ats_physics}" -eq "${FALSE}" ]; then
-  #  if [ "${clm}" -eq "${TRUE}" ]; then
-  #    error_message "Option 'clm' requires option 'ats_physics'"
-  #    exit_now 30
-  #  fi
-  #fi
 
   # check compatibility
   if [ "${geochemistry}" -eq "${FALSE}" ]; then
@@ -780,7 +791,21 @@ List of INPUT parameters
     fi
   fi
 
-  # delprecased options
+  # superlu required by petsc and hypre
+  if [ "${petsc}" -eq "${TRUE}" ]; then
+    if [ "${superlu}" -eq "${FALSE}" ]; then
+      warning_message "Option 'petsc' requires 'superlu', turning it on."
+      superlu=${TRUE}
+    fi
+  fi
+  if [ "${hypre}" -eq "${TRUE}" ]; then
+    if [ "${superlu}" -eq "${FALSE}" ]; then
+      warning_message "Option 'hypre' requires 'superlu', turning it on."
+      superlu=${TRUE}
+    fi
+  fi
+  
+  # deprecated options
   if [ "${tpls_only}" ]; then
     error_message "Option 'tpls_only' has been deprecated"
     exit_now 30
@@ -1377,30 +1402,53 @@ function define_structured_dependencies
   fi
 }
 
+
+# ---------------------------------------------------------------------------- #
+# Arch-specific functions
+# ---------------------------------------------------------------------------- #
 function define_nersc_options
 {
-  if [ "${nersc}" -eq "${TRUE}" ]; then
+  shared=$FALSE
+  prefer_static=$TRUE
+  exec_static=$TRUE
+  prg_env="gnu"
+    
+  libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                 -DMPI_EXEC:STRING=srun \
+                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                 -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                 -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                 -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+  
+  arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                    -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
-    shared=$FALSE
-    prefer_static=$TRUE
-    exec_static=$TRUE
-    prg_env="gnu"
-    
-    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
-    nersc_tpl_opts="-DMPI_EXEC:STRING=srun \
-                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
-                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                    -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                    -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
-    
-    nersc_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
-                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
-    
-    echo "NERSC TPL OPTS = " ${nersc_tpl_opts}
-    echo "NERSC AMANZI OPTS = " ${nersc_amanzi_opts}
-
-  fi
+  echo "Setting ARCH for: NERSC"
+  echo "ARCH TPL OPTS = " ${arch_tpl_opts}
+  echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
 }
+
+function define_summit_options
+{
+  if [ "${kokkos_cuda}" -eq "${TRUE}" ]; then
+    mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
+  elif [ "${kokkos_openmp}" -eq "${TRUE}" ]; then
+    mpi_exec_args="-a 1 -c 7" # 7 cpus per mpi rank, max 6 ranks
+  fi
+  
+  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                 -DMPI_EXEC:STRING=jsrun \
+                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
+  arch_amanzi_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                 -DMPI_EXEC:STRING=jsrun \
+                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
+  echo "Setting ARCH for: Summit"
+  echo "ARCH TPL OPTS = " ${arch_tpl_opts}
+  echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
+}    
 
 
 # ---------------------------------------------------------------------------- #
@@ -1434,14 +1482,17 @@ check_compilers
 check_tools
 
 # Set extra options for building on nersc
-define_nersc_options
+if [ "${amanzi_arch}" = "Summit" ]; then
+    define_summit_options
+elif [ "${amanzi_arch}" = "NERSC" ]; then
+    define_nersc_options
+elif [ "${amanzi_arch}" != "" ]; then
+    error_message "ARCH ${amanzi_arch} not supported -- valid are Summit and NERSC"
+    exit_now 10
+fi
+    
 
-# add fpic?
-#if [ "${shared}" -eq "${TRUE}" ]; then
-#  build_c_flags="${build_c_flags} -fPIC"
-#  build_fort_flags="${build_fort_flags} -fPIC"
-#  build_cxx_flags="${build_cxx_flags} -fPIC"
-#fi
+
 
 # Print and exit if --print is set
 if [ "${print_exit}" -eq "${TRUE}" ]; then
@@ -1453,7 +1504,6 @@ fi
 if [ ! -z "${amanzi_branch}" ]; then
   git_change_branch ${amanzi_branch}
 fi
-
 
 # ---------------------------------------------------------------------------- #
 # Configure tools
@@ -1486,7 +1536,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
   # Tools parameters
   # OpenMPI 3.x requires more slots to run Amanzi tests
   if [ "${tools_mpi}" = "openmpi" ]; then
-    tools_mpi_exec_args="--oversubscribe"
+    mpi_exec_args+="--oversubscribe"
   fi 
   
   # Tools install
@@ -1502,8 +1552,8 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_c_compiler=${tools_install_prefix}/bin/mpicc
   build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
-      
-  cd ${pwd_save}
+
+ cd ${pwd_save}
       
   status_message "Tools build complete: new MPI root=${mpi_root_dir}"
   status_message "  new MPI root=${mpi_root_dir}"
@@ -1547,7 +1597,8 @@ if [ -z "${tpl_config_file}" ]; then
   if [ "${build_amanzi}" -eq "${FALSE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
-
+ 
+ 
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1569,19 +1620,23 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
       -DENABLE_HYPRE:BOOL=${hypre} \
+      -DENABLE_SUPERLU:BOOL=${superlu} \
       -DENABLE_PETSC:BOOL=${petsc} \
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
+      -DENABLE_EPETRA:BOOL=${epetra} \
+      -DENABLE_KOKKOS:BOOL=${kokkos} \
+      -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
+      -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      ${nersc_tpl_opts} \
+      ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 
   # TPL build will create this configuration file
@@ -1647,6 +1702,7 @@ else
     error_message "Configure file ${tpl_config_file} is not a regular file"
     exit_now 30
   fi
+
 fi
 
 if [ "${build_amanzi}" -eq "${FALSE}" ]; then
@@ -1662,13 +1718,9 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
         exit_now 30
     fi
 
-    if [ "${ats_dev}" -eq "${TRUE}" ]; then
-        status_message "Build ATS without cloning new repository (ats_dev = ${ats_dev})"
-    else
-        git_submodule_clone "src/physics/ats"
-        if [ ! -z "${ats_branch}" ]; then
-            git_change_branch_ats ${ats_branch}
-        fi
+    git_submodule_clone "src/physics/ats"
+    if [ ! -z "${ats_branch}" ]; then
+        git_change_branch_ats ${ats_branch}
     fi
 fi
 
@@ -1682,26 +1734,28 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
     -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-    -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
-    -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
-    -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
     -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
     -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_SUPERLU:BOOL=${superlu} \
     -DENABLE_HYPRE:BOOL=${hypre} \
     -DENABLE_PETSC:BOOL=${petsc} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-    -DENABLE_CLM:BOOL=${clm} \
+    -DENABLE_Silo:BOOL=${silo} \
+    -DENABLE_EPETRA:BOOL=${epetra} \
+    -DENABLE_KOKKOS:BOOL=${kokkos} \
+    -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
+    -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
-    ${nersc_amanzi_opts} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 
 # Echo or execute configure command
