@@ -45,8 +45,8 @@ class GeneralRxn {
   void addContributionToJacobian(MatrixBlock* J,
                                  const std::vector<Species> primarySpecies,
                                  double por_den_sat_vol);
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
   unsigned int ncomp_;  // # components in reaction

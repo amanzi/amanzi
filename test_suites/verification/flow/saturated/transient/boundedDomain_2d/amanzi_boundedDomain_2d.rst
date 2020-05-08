@@ -22,7 +22,9 @@ For details on this test, see :ref:`about_bounded_domain`.
 Background
 ----------
 
-As we see from the comparison of results from Amanzi and Butler's solutions :cite:`bd-Butler_Liu_linear_strip_1991` :cite:`bd-Butler_Liu_radially_asymmetric_1993`, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded. In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
+As we see from the comparison of results from Amanzi and Butler's solutions :cite:`bd-Butler_Liu_linear_strip_1991` :cite:`bd-Butler_Liu_radially_asymmetric_1993`, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded,
+compare with the Theis test.
+In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
 
 
 Model

@@ -19,7 +19,7 @@ SUITE(TestPitzer) {
   class PitzerTest {
    public:
     PitzerTest();
-    ~PitzerTest() {}
+    ~PitzerTest() {};
 
     void StorePrimaries(void);
 
@@ -46,6 +46,8 @@ SUITE(TestPitzer) {
     ac::Species HSO4;
     ac::Species SO4;
     ac::Species Br;
+
+    Teuchos::RCP<Amanzi::VerboseObject> vo_;
   };
 
   PitzerTest::PitzerTest() 
@@ -66,10 +68,12 @@ SUITE(TestPitzer) {
         HSO4(13, "HSO4-", -1.0,0.0,0.0),
         SO4(14, "SO4-2", -2.0,0.0,0.0),
         Br(16, "Br-", -1.0, 0.0, 0.0) {
-    parameters.verbosity = ac::kSilent;
     // parameters.database_filename = "phreeqc_pitzer.dat";
     parameters.database_filename = "chemistry_pitzer.dat";
     parameters.pitzer_jfunction = "pitzer1975";
+
+    Teuchos::ParameterList plist;
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
   void PitzerTest::StorePrimaries(void) {
@@ -119,8 +123,9 @@ SUITE(TestPitzer) {
     aqx_.clear();
     std::vector<double> gamma(sp_.size(), 1.0);
 
-    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > ac::kSilent) {
+    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       am_->Display();
     }
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
@@ -179,8 +184,8 @@ SUITE(TestPitzer) {
     aqx_.clear();
     std::vector<double> gamma(sp_.size(), 1.0);
 
-    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > ac::kSilent) {
+    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
+    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       am_->Display();
     }
 
@@ -244,8 +249,8 @@ SUITE(TestPitzer) {
     sp_.push_back(Br);
     std::vector<double> gamma(sp_.size(), 1.0);
 
-    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > ac::kSilent) {
+    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
+    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       am_->Display();
     }
 
@@ -292,7 +297,7 @@ SUITE(TestPitzer) {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);
-    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_), ac::ChemistryException);
+    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
   }
 
   /*!
@@ -315,7 +320,7 @@ SUITE(TestPitzer) {
     sp_.push_back(Cl);
     sp_.push_back(Na);
     parameters.database_filename = "invalid data base";
-    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_), ac::ChemistryException);
+    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
   }
 
   /*!
@@ -328,7 +333,7 @@ SUITE(TestPitzer) {
     @test ActivityModelPitzer::Create()
   */
   TEST_FIXTURE(PitzerTest, TestZeroNumberSpecies) {
-    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_), ac::ChemistryException);
+    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
   }
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
@@ -352,8 +357,8 @@ SUITE(TestPitzer) {
     sp_.push_back(Na);
     std::vector<double> gamma(sp_.size(), 1.0);
 
-    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > ac::kSilent) {
+    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
+    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       am_->Display();
     }
     CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
@@ -383,8 +388,8 @@ SUITE(TestPitzer) {
     sp_.push_back(Na);
     sp_.push_back(Ca);
     std::vector<double> gamma(sp_.size(), 1.0);
-    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > ac::kSilent) {
+    am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
+    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       am_->Display();
     }
     sp_.pop_back();

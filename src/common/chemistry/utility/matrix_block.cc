@@ -213,37 +213,5 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
   }
 }
 
-void MatrixBlock::Print(const Teuchos::RCP<VerboseObject>& vo) const {
-  Print("", vo);
-}
-
-void MatrixBlock::Print(const std::string& name, const Teuchos::RCP<VerboseObject>& vo) const {
-  std::stringstream message;
-  message << name << " : \n";
-  for (int i = 0; i < size(); i++) {
-    for (int j = 0; j < size(); j++) {
-      if (std::fabs(A_[j][i]) > 0.) {
-        // TODO(bandre): is the [j][i] indexing here intentional for comparison to fortran...?
-        message << i << " " << j << " : "
-                << std::scientific << std::setprecision(12) << A_[j][i] << std::endl;
-      }
-    }
-  }
-  vo->Write(Teuchos::VERB_HIGH, message);
-}
-
-void MatrixBlock::Print_ij(const Teuchos::RCP<VerboseObject>& vo) const {
-  std::stringstream message;
-  for (int i = 0; i < size(); i++) {
-    for (int j = 0; j < size(); j++) {
-      if (std::fabs(A_[i][j]) > 0.) {
-        message << i << " " << j << " : "
-                  << std::scientific << A_[i][j] << std::endl;
-      }
-    }
-  }
-  vo->Write(Teuchos::VERB_HIGH, message);
-}
-
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
