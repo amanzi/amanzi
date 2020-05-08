@@ -140,11 +140,11 @@ build_stage_2=${FALSE}
 dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
-crunchtope=${FALSE}
 hypre=${TRUE}
 superlu=${TRUE}
 netcdf4=${TRUE}
-petsc=${TRUE}
+petsc=${FALSE}
+crunchtope=${FALSE}
 pflotran=${FALSE}
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
@@ -753,13 +753,20 @@ List of INPUT parameters
       i=$[$i+1]
   done
 
-  # enforce implicit rules
+# ---------------------------------------------------------------------------- #
+# Enforce implicit TPL dependencies
+  # ---------------------------------------------------------------------------- #
   if [ "${build_user_guide}" -eq "${TRUE}" ]; then
     build_amanzi=${TRUE}
   fi
 
-  if [ "${epetra}" -eq "${FALSE}" ]; then
-      warning_message "Disabling Epetra disables all of geochemistry and hypre"
+  if [ "${unstructured}" -eq "${FALSE}" ]; then
+    mstk_mesh=${FALSE}
+    moab_mesh=${FALSE}
+    stk_mesh=${FALSE}
+  else
+    if [ "${epetra}" -eq "${FALSE}" ]; then
+      warning_message "Disabling all of 'geochemistry', 'hypre', and 'superlu' as they are not required when disabling 'epetra'"
       geochemistry=${FALSE}
       hypre=${FALSE}
       superlu=${FALSE}
@@ -767,40 +774,59 @@ List of INPUT parameters
       pflotran=${FALSE}
       crunchtope=${FALSE}
       petsc=${FALSE}
+
+      if [ "${kokkos}" -eq "${FALSE}" ]; then
+        error_message "One of 'epetra' or 'kokkos' must be enabled"
+        exit_now 30
+      fi
+    fi
   fi
-  
+
+  if [ "${structured}" -eq "${TRUE}" ]; then
+    if [ "${petsc}" -eq "${FALSE}" ]; then
+      petsc=${TRUE}
+      warning_message "Enabling 'petsc' as required by 'structured'"
+    fi
+  fi
+
+
+  # check compatibility of geochemistry options
   if [ "${geochemistry}" -eq "${TRUE}" ]; then
+    petsc=${geochemistry}
     alquimia=${geochemistry}
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
   fi
 
-  # check compatibility
   if [ "${geochemistry}" -eq "${FALSE}" ]; then
     if [ "${pflotran}" -eq "${TRUE}" ]; then
-      error_message "Option 'geochemisty' is incomatible with option 'pflotran'"
-      exit_now 30
-    fi
-    if [ "${alquimia}" -eq "${TRUE}" ]; then
-      error_message "Option 'geochemisty' is incomatible with option 'alquimia'"
-      exit_now 30
+      if [ "${petsc}" -eq "${FALSE}" ]; then
+        petsc=${TRUE}
+        warning_message "Enabling 'petsc' as required by 'pflotran'"
+      fi
+      if [ "${alquimia}" -eq "${FALSE}" ]; then
+        alquimia=${TRUE}
+        warning_message "Enabling 'alquimia' as required by 'pflotran'"
+      fi
     fi
     if [ "${crunchtope}" -eq "${TRUE}" ]; then
-      error_message "Option 'geochemisty' is incomatible with option 'crunchtope'"
-      exit_now 30
+      if [ "${alquimia}" -eq "${FALSE}" ]; then
+        alquimia=${TRUE}
+        warning_message "Enabling 'alquimia' as required by 'crunchtope'"
+      fi
     fi
   fi
 
   # superlu required by petsc and hypre
   if [ "${petsc}" -eq "${TRUE}" ]; then
     if [ "${superlu}" -eq "${FALSE}" ]; then
-      warning_message "Option 'petsc' requires 'superlu', turning it on."
+      warning_message "Enabling 'superlu' as required by 'petsc'"
       superlu=${TRUE}
     fi
   fi
   if [ "${hypre}" -eq "${TRUE}" ]; then
     if [ "${superlu}" -eq "${FALSE}" ]; then
-      warning_message "Option 'hypre' requires 'superlu', turning it on."
+      warning_message "Enabling 'superlu' as required by 'hypre'"
       superlu=${TRUE}
     fi
   fi
@@ -1386,21 +1412,6 @@ function define_install_directories
   status_message "TPL installation: ${tpl_install_prefix}"
 }    
 
-function define_unstructured_dependencies
-{
-  if [ "${unstructured}" -eq "${FALSE}" ]; then
-    eval "mstk_mesh=$FALSE"
-    eval "moab_mesh=$FALSE"
-  fi
-}
-
-function define_structured_dependencies
-{
-  if [ "${structured}" -eq "${TRUE}" ]; then
-    eval "petsc=$TRUE"
-    status_message "Enable package PETSc"
-  fi
-}
 
 
 # ---------------------------------------------------------------------------- #
@@ -1463,12 +1474,6 @@ print_variable_values
 # Define the TPL build source directory
 tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
 
-# Set packages that depend on unstructured
-define_unstructured_dependencies
-
-# Set packages that depend on structured
-define_structured_dependencies
-
 # Define the install directories 
 define_install_directories
 
@@ -1483,12 +1488,12 @@ check_tools
 
 # Set extra options for building on nersc
 if [ "${amanzi_arch}" = "Summit" ]; then
-    define_summit_options
+  define_summit_options
 elif [ "${amanzi_arch}" = "NERSC" ]; then
-    define_nersc_options
+  define_nersc_options
 elif [ "${amanzi_arch}" != "" ]; then
-    error_message "ARCH ${amanzi_arch} not supported -- valid are Summit and NERSC"
-    exit_now 10
+  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit and NERSC"
+  exit_now 10
 fi
     
 
