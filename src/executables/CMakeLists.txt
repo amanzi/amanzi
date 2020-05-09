@@ -90,7 +90,6 @@ set(amanzi_link_libs
   functions
   geometry
   mesh_factory
-  interface
   output
   mstk_mesh
   mesh_logical
