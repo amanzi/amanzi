@@ -124,20 +124,27 @@ no_color=$FALSE
 structured=$TRUE
 unstructured=$TRUE
 geochemistry=$TRUE
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
+clm=${FALSE}
+
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
+
 # -- tools
 amanzi_branch=
 ats_branch=
-ccse_tools=$FALSE
+ats_dev=${FALSE}
+ccse_tools=${FALSE}
 spacedim=2
 test_suite=$FALSE
 reg_tests=$FALSE
 build_stage_1=${FALSE}
 build_stage_2=${FALSE}
 dry_run=${FALSE}
+
 # -- tpls
 alquimia=${FALSE}
 hypre=${TRUE}
@@ -146,8 +153,6 @@ netcdf4=${TRUE}
 petsc=${FALSE}
 crunchtope=${FALSE}
 pflotran=${FALSE}
-amanzi_physics=${TRUE}
-ats_physics=${FALSE}
 shared=${FALSE}
 silo=${FALSE}
 
@@ -323,6 +328,7 @@ Configuration:
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
 
   --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
+  --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
@@ -353,6 +359,7 @@ Value in brackets indicates default setting.
 
   amanzi_physics          build Amanzi native physics package ['"${amanzi_physics}"']
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
+  clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -488,11 +495,12 @@ Amanzi Components:
     unstructured   = '"${unstructured}"'
     amanzi_physics = '"${amanzi_physics}"'
     ats_physics    = '"${ats_physics}"'
+    clm            = '"${clm}"'
+    geochemistry   = '"${geochemistry}"'
 
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
-    geochemistry = '"${geochemistry}"'
     mstk_mesh    = '"${mstk_mesh}"'
     moab_mesh    = '"${moab_mesh}"'
     netcdf4      = '"${netcdf4}"'
@@ -615,6 +623,10 @@ List of INPUT parameters
 
       --branch_ats=*)
                  ats_branch=`parse_option_with_equal "${opt}" 'branch_ats'`
+                 ;;
+
+      --ats_dev)
+                 ats_dev=${TRUE}
                  ;;
 
       --spacedim=*)
@@ -791,6 +803,19 @@ List of INPUT parameters
 
 
   # check compatibility of geochemistry options
+  # -- for the moment, either all of geochemistry is on or none of it is on...
+  # -- this should get fixed to allow either PFLOTRAN or CRUNCHTOPE and not BOTH!
+  if [ "${alquimia}" -eq "${TRUE}" ]; then
+    geochemistry=${TRUE}
+  fi
+  if [ "${pflotran}" -eq "${TRUE}" ]; then
+    geochemistry=${TRUE}
+  fi
+  if [ "${crunchtope}" -eq "${TRUE}" ]; then
+    geochemistry=${TRUE}
+  fi
+  # -- once this is fixed, the above can get removed
+
   if [ "${geochemistry}" -eq "${TRUE}" ]; then
     petsc=${geochemistry}
     alquimia=${geochemistry}
@@ -1631,6 +1656,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
+      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DENABLE_EPETRA:BOOL=${epetra} \
       -DENABLE_KOKKOS:BOOL=${kokkos} \
@@ -1711,22 +1737,25 @@ else
 fi
 
 if [ "${build_amanzi}" -eq "${FALSE}" ]; then
-    exit_now 0
+  exit_now 0
 fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # Clone any submodules (ATS)
 if [ "${ats_physics}" -eq "${TRUE}" ]; then
-    if [ "${amanzi_physics}" -eq "${TRUE}" ]; then
-        error_message "amanzi_physics and ats_physics are currently incompatible -- enable only one."
-        exit_now 30
-    fi
+  if [ "${amanzi_physics}" -eq "${TRUE}" ]; then
+    error_message "amanzi_physics and ats_physics are currently incompatible -- enable only one."
+    exit_now 30
+  fi
 
+  if [ "${ats_dev}" -eq "${FALSE}" ]; then
     git_submodule_clone "src/physics/ats"
+
     if [ ! -z "${ats_branch}" ]; then
-        git_change_branch_ats ${ats_branch}
+      git_change_branch_ats ${ats_branch}
     fi
+  fi
 fi
 
 
@@ -1749,6 +1778,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_Silo:BOOL=${silo} \
     -DENABLE_EPETRA:BOOL=${epetra} \
     -DENABLE_KOKKOS:BOOL=${kokkos} \
