@@ -62,12 +62,14 @@ void EnergyOnePhase_PK::FunctionalResidual(
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
+  op_matrix_advection_->ApplyBCs(false, true, false);
 
   CompositeVector tmp(enthalpy);
   tmp.Multiply(1.0, tmp, n_l, 0.0);
 
   CompositeVector g_adv(g->Data()->Map());
-  op_advection_->Apply(tmp, g_adv);
+  // op_advection_->Apply(tmp, g_adv);
+  op_advection_->ComputeNegativeResidual(tmp, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
 
@@ -87,7 +89,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
   S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
-  // assemble residual for diffusion operator
+  // assemble matrices for diffusion operator
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
@@ -112,6 +114,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
     op_preconditioner_advection_->Setup(*darcy_flux);
     op_preconditioner_advection_->UpdateMatrices(darcy_flux.ptr(), dHdT.ptr());
+    op_preconditioner_advection_->ApplyBCs(false, true, false);
   }
 
   // finalize preconditioner

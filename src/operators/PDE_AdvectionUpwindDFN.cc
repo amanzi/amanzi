@@ -205,9 +205,9 @@ void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essenti
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] != OPERATOR_BC_NONE) {
-      AMANZI_ASSERT(downwind_cells_dfn_[f].size() == 1);
-    }
+    // if (bc_model[f] != OPERATOR_BC_NONE) {
+    //   AMANZI_ASSERT(downwind_cells_dfn_[f].size() == 1);
+    // }
 
     int c1 = (upwind_cells_dfn_[f].size() == 0) ? -1 : upwind_cells_dfn_[f][0];
     int c2 = (downwind_cells_dfn_[f].size() == 0) ? -1 : downwind_cells_dfn_[f][0];
