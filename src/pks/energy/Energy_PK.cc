@@ -139,6 +139,21 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", true)));
 
   // -- temperature
+  if (bc_list->isSublist("coupling")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("coupling");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_coupling_.push_back(bc_factory.Create(
+            spec, "boundary enthalpy", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
+
+  // -- temperature
   if (bc_list->isSublist("temperature")) {
     PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
 

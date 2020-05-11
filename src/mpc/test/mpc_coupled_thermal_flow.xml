@@ -706,7 +706,9 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="energy evaluator"/>
-      <ParameterList name="enthalpy evaluator"/>
+      <ParameterList name="enthalpy evaluator">
+	<Parameter name="include work term" type="bool" value="false"/>
+      </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
 	  <!--Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/-->
@@ -741,10 +743,22 @@
 	</ParameterList>
 	<ParameterList name="advection operator">
 	  <Parameter name="discretization primary" type="string" value="relative permeability"/>
+          <Parameter name="single domain" type="Array(string)" value="{domain}"/>
 	</ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
+        <ParameterList name="coupling">
+          <ParameterList name="BC coupling">
+            <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
+            <Parameter name="submodel" type="string" value="field"/>
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <ParameterList name="boundary enthalpy">
+              <Parameter name="field_out_key" type="string" value="fracture-enthalpy"/>
+              <Parameter name="copy_field_out_key" type="string" value="default"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 0">
 	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
@@ -777,7 +791,9 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="energy evaluator"/>
-      <ParameterList name="enthalpy evaluator"/>
+      <ParameterList name="enthalpy evaluator">
+	<Parameter name="include work term" type="bool" value="false"/>
+      </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
 	  <!--Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/-->
