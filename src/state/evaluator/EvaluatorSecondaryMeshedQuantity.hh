@@ -37,7 +37,8 @@ class EvaluatorSecondaryMeshedQuantity
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
   EvaluatorSecondaryMeshedQuantity(Teuchos::ParameterList& plist)
-      : EvaluatorSecondary(plist)
+      : EvaluatorSecondary(plist),
+        inited_(false)
   {}
 
   EvaluatorSecondaryMeshedQuantity(const EvaluatorSecondaryMeshedQuantity& other) = default;
@@ -50,16 +51,25 @@ class EvaluatorSecondaryMeshedQuantity
   virtual std::string name() const override { return "meshed quantity evaluator"; }
 
   virtual void EnsureCompatibility(State& S) override {
-    AMANZI_ASSERT(my_keys_.size() == 1);
-    std::string domain = Keys::getDomain(my_keys_[0].first);
+    if (!inited_) {
+      AMANZI_ASSERT(my_keys_.size() == 1);
+      domain_ = Keys::getDomain(my_keys_[0].first);
+      domain3d_ = domain_;
+      if (S.HasMesh(domain_+"_3d")) domain3d_ = domain_ + "_3d";
+      if (S.HasMesh(domain_+"_3D")) domain3d_ = domain_ + "_3D";
+      std::cout << "MeshedQuant: domains = " << domain_ << "," << domain3d_ << std::endl;
+      
+      S.Require<CompositeVector,CompositeVectorSpace>(my_keys_[0].first,
+              my_keys_[0].second, my_keys_[0].first)
+          .SetMesh(S.GetMesh(domain_))
+          ->SetComponent(AmanziMesh::entity_kind_string(Function_type::component),
+                         Function_type::component, 1)
+          ->SetGhosted(true);
+      S.RequireEvaluator(Keys::getKey(domain_, "mesh"));
+      inited_ = true;
+    }
 
-    S.Require<CompositeVector,CompositeVectorSpace>(my_keys_[0].first,
-            my_keys_[0].second, my_keys_[0].first)
-        .SetMesh(S.GetMesh(domain))
-        ->SetComponent(AmanziMesh::entity_kind_string(Function_type::component),
-                      Function_type::component, 1)
-        ->SetGhosted(true);
-    S.RequireEvaluator(Keys::getKey(domain, "mesh"));
+    EnsureCompatibility_Flags_(S);
   }
   
  protected:
@@ -67,8 +77,7 @@ class EvaluatorSecondaryMeshedQuantity
   // Does the actual work to update the value in the state.
   // ---------------------------------------------------------------------------
   virtual void Update_(State& S) override {
-    std::string domain = Keys::getDomain(my_keys_[0].first);
-    auto mesh = S.GetMesh(domain);
+    auto mesh = Function_type::needs_3d ? S.GetMesh(domain3d_) : S.GetMesh(domain_);
     auto v = S.GetPtrW<CompositeVector>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
     Function_type f(mesh.get(), v);
     f.Compute();
@@ -78,6 +87,11 @@ class EvaluatorSecondaryMeshedQuantity
   {
     AMANZI_ASSERT(false);
   }
+
+ protected:
+  bool inited_;
+  Key domain_;
+  Key domain3d_;
   
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMeshedQuantity<Function_type>> fac_;
@@ -88,6 +102,7 @@ class EvaluatorSecondaryMeshedQuantity
 //
 namespace Impl {
   struct CellVolume {
+    static const bool needs_3d = false;
     CellVolume(const AmanziMesh::Mesh* mesh_,
                Teuchos::RCP<CompositeVector>& v_)
         : mesh(mesh_),
@@ -111,6 +126,7 @@ namespace Impl {
 
 
   struct FaceArea {
+    static const bool needs_3d = false;
     FaceArea(const AmanziMesh::Mesh* mesh_,
                Teuchos::RCP<CompositeVector>& v_)
         : mesh(mesh_),
@@ -132,6 +148,7 @@ namespace Impl {
   };
 
   struct CellElevation {
+    static const bool needs_3d = true;
     CellElevation(const AmanziMesh::Mesh* mesh_,
                Teuchos::RCP<CompositeVector>& v_)
         : mesh(mesh_),
@@ -139,26 +156,14 @@ namespace Impl {
 
     void Compute() {
       auto vv = v->ViewComponent("cell", false);
-      const AmanziMesh::Mesh* parent = mesh->parent().get();
-      int d = parent->space_dimension()-1;
+      int d = mesh->space_dimension()-1;
 
-      if (parent->space_dimension() == mesh->space_dimension()) {
-        Kokkos::parallel_for(
-            "EvaluatorCellElevation",
-            vv.extent(0),
-            KOKKOS_LAMBDA(const int& c) {
-              vv(c,0) = parent->cell_centroid(mesh->entity_get_parent(AmanziMesh::CELL,c))[d];
-            });
-      } else if (parent->space_dimension() == mesh->space_dimension() + 1) {
-        Kokkos::parallel_for(
-            "EvaluatorCellElevation",
-            vv.extent(0),
-            KOKKOS_LAMBDA(const int& c) {
-              vv(c,0) = parent->face_centroid(mesh->entity_get_parent(AmanziMesh::CELL,c))[d];
-            });
-      } else {
-        AMANZI_ASSERT(false);
-      }        
+      Kokkos::parallel_for(
+          "EvaluatorCellElevation",
+          vv.extent(0),
+          KOKKOS_LAMBDA(const int& c) {
+            vv(c,0) = mesh->cell_centroid(c)[d];
+          });
     }
 
     const static AmanziMesh::Entity_kind component = AmanziMesh::Entity_kind::CELL;
@@ -167,6 +172,7 @@ namespace Impl {
   };
 
   struct SlopeMagnitude {
+    static const bool needs_3d = true;
     SlopeMagnitude(const AmanziMesh::Mesh* mesh_,
                Teuchos::RCP<CompositeVector>& v_)
         : mesh(mesh_),

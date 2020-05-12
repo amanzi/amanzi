@@ -126,6 +126,7 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
   const State& S, const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(results.size() > 0);
+  
   for (const auto& comp : *results[0]) {
     std::vector<cView_type> dependency_views;
     for (const auto& dep : dependencies_) {
@@ -155,6 +156,7 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
     Kokkos::parallel_for(
       name_, range, *model_);
   }
+  Debug_(S);
 }
 
 template <template <class, class> class Model, class Device_type>

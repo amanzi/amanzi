@@ -30,7 +30,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     verb_level_(verb_level),
     precision_(10),
     width_(15),
-    header_width_(20),
+    header_width_(35),
     cellnum_width_(5),
     decimal_width_(7)
 {

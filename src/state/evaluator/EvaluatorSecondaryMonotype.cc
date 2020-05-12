@@ -191,6 +191,9 @@ EvaluatorSecondaryMonotype<CompositeVector,
 
   // check plist for vis or checkpointing control
   EnsureCompatibility_Flags_(S);
+  if (my_fac.Mesh().get() && !db_.get()) {
+    db_ = Teuchos::rcp(new Debugger(my_fac.Mesh(), my_keys_[0].first, plist_));
+  }
 
   // require evaluators for dependencies
   // NOTE: unnecessary now, as require put in State::SetEvaluator()
@@ -316,6 +319,33 @@ EvaluatorSecondaryMonotype<CompositeVector,
     }
   }
 }
+
+
+
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector,
+                           CompositeVectorSpace>::Debug_(const State& S)
+{
+  if (vo_.os_OK(Teuchos::VERB_HIGH)) {
+    std::vector<Teuchos::Ptr<const CompositeVector>> my_vecs;
+    std::vector<std::string> my_names;
+    for (const auto& key : dependencies_) {
+      my_names.push_back(Keys::getKeyTag(key.first, key.second));
+      my_vecs.push_back(S.GetPtr<CompositeVector>(key.first, key.second).ptr());
+    }
+    db_->WriteVectors(my_names, my_vecs);
+    db_->WriteDivider();
+
+    my_vecs.clear(); my_names.clear();
+    for (const auto& key : my_keys_) {
+      my_names.push_back(Keys::getKeyTag(key.first, key.second));
+      my_vecs.push_back(S.GetPtr<CompositeVector>(key.first, key.second).ptr());
+    }
+    db_->WriteVectors(my_names, my_vecs);
+  }
+}
+
 
 
 } // namespace Amanzi

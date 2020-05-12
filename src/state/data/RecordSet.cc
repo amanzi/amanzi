@@ -31,9 +31,13 @@ RecordSet::attributes() const
 void
 RecordSet::WriteVis(const Visualization& vis) const
 {
+  auto attrs = attributes();
   if (HasRecord("")) {
-    auto attrs = attributes();
     records_.at("")->WriteVis(vis, attrs);
+  } else if (HasRecord("next")) {
+    records_.at("next")->WriteVis(vis, attrs);
+  } else if (records_.size() > 0) {
+    records_.begin()->second->WriteVis(vis, attrs);
   }
 }
 void

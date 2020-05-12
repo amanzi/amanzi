@@ -43,6 +43,7 @@ class Visualization : public IOEvent {
 
   void CreateFile(const double& time, const int& cycle);
   void FinalizeFile();
+  const std::string& name() const { return name_; }
 
   // user-provided writing
   template <typename T>
@@ -62,6 +63,7 @@ class Visualization : public IOEvent {
 
  protected:
   std::unique_ptr<Output> output_;
+  std::string name_;
 };
 
 } // namespace Amanzi

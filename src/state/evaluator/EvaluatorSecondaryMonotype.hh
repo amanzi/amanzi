@@ -33,7 +33,7 @@ implementing the missing Update_() and UpdateFieldDerivative_() methods.
 #include "Teuchos_RCP.hpp"
 
 #include "exceptions.hh"
-
+#include "io/Debugger.hh"
 #include "EvaluatorSecondary.hh"
 
 namespace Amanzi {
@@ -63,8 +63,12 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
   virtual void
   Evaluate_(const State& S, const std::vector<Data_t*>& results) = 0;
 
+  virtual void
+  Debug_(const State& S) {}
+
  protected:
   bool inited_;
+  Teuchos::RCP<Debugger> db_;
   
 };
 
@@ -152,6 +156,11 @@ template <>
 void
 EvaluatorSecondaryMonotype<CompositeVector,
                            CompositeVectorSpace>::EnsureCompatibility(State& S);
+
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector,
+                           CompositeVectorSpace>::Debug_(const State& S);
 
 
 // ---------------------------------------------------------------------------
