@@ -182,11 +182,23 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
   const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
   const auto dv = op.diag->getLocalViewDevice(); 
 
-  for (int c = 0; c != ncells_owned; ++c) {
-    int row = cell_row_inds[c];
-    int col = cell_col_inds[c];
-    mat.sumIntoLocalValues(row, 1, &dv(0,c), &col);
-  }
+  // hard-coded version, interfaces TBD...
+  auto proc_mat = mat.getLocalMatrix();
+  auto offproc_mat = mat.getOffProcLocalMatrix();
+  int nrows_local = mat.getMatrix()->getNodeNumRows();
+  
+  Kokkos::parallel_for(
+      "Operator_Cell::AssembleMatrixOp::Cell_Cell",
+      ncells_owned,
+      KOKKOS_LAMBDA(const int& c) {
+        if (cell_row_inds(c) < nrows_local) {
+          proc_mat.sumIntoValues(cell_row_inds(c),
+                  &cell_col_inds(c), 1, &dv(c,0), true, false);
+        } else {
+          offproc_mat.sumIntoValues(cell_row_inds(c) - nrows_local,
+                  &cell_col_inds(c), 1, &dv(c,0), true, false);
+        }
+      });
 }
 
 
