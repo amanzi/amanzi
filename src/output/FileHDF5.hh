@@ -43,6 +43,8 @@ class FileHDF5 {
   void OpenFile(file_mode_t mode = FILE_READWRITE);
   void CloseFile();
   void CreateGroup(const std::string& h5path);
+  void CloseGroup();
+  bool HasGroup(const std::string& h5path) const;
 
 
   template <typename scalar_type>
@@ -97,6 +99,7 @@ class FileHDF5 {
   iogroup_t IOgroup_;
   hid_t data_file_;
   std::vector<int> open_groups_;
+  std::vector<std::string> all_groups_;
 
   std::string filename_;
 };

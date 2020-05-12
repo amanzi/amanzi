@@ -66,6 +66,10 @@ void
 FileHDF5::WriteAttribute(const std::string& attr_name_,
                          const std::string& h5path_, scalar_type value)
 {
+  if (!HasGroup(h5path_)) {
+    CreateGroup(h5path_);
+    CloseGroup();
+  }
   IODetails::DangerousString attr_name(attr_name_);
   IODetails::DangerousString h5path(h5path_);
   parallelIO_write_simple_attr(attr_name.c_str(),

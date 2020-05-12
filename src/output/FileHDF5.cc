@@ -88,8 +88,24 @@ FileHDF5::CreateGroup(const std::string& h5path_)
   }
   open_groups_.push_back(
     parallelIO_create_dataset_group(h5path.c_str(), data_file_, &IOgroup_));
+  all_groups_.push_back(h5path_);
 }
 
+void
+FileHDF5::CloseGroup()
+{
+  if (open_groups_.size() == 1) {
+    parallelIO_close_dataset_group(data_file_, &IOgroup_);
+    open_groups_.clear();
+  }
+}
+
+bool
+FileHDF5::HasGroup(const std::string& h5path) const
+{
+  return std::find(all_groups_.begin(), all_groups_.end(), h5path) != all_groups_.end();
+}
+  
 
 void
 FileHDF5::WriteVector(const std::string& var_name, const Map_type& vec)
@@ -139,6 +155,11 @@ FileHDF5::WriteAttribute<std::string>(const std::string& attr_name_,
                                       const std::string& h5path_,
                                       std::string value)
 {
+  if (!HasGroup(h5path_)) {
+    CreateGroup(h5path_);
+    CloseGroup();
+  }
+  
   IODetails::DangerousString attr_name(attr_name_);
   IODetails::DangerousString h5path(h5path_);
   parallelIO_write_simple_attr(attr_name.c_str(),
