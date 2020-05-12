@@ -53,7 +53,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
   // advect tmp = molar_density_liquid * enthalpy 
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
-  const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+  const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
 
   Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
   op_advection_->Init();
@@ -105,7 +105,10 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
     Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
 
     S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-    Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData("denthalpy_dtemperature");
+    auto dHdT = S_->GetFieldData("denthalpy_dtemperature", enthalpy_key_);
+
+    const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
+    dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*darcy_flux);
     op_preconditioner_advection_->UpdateMatrices(darcy_flux.ptr(), dHdT.ptr());

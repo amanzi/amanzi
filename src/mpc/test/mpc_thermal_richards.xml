@@ -8,7 +8,7 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_thermal"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -54,6 +54,11 @@
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Boundary">
+      <ParameterList name="region: boundary">
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
@@ -94,9 +99,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="9.0e+4"/>
-        <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="500.0"/>
+        <Parameter name="end period time" type="double" value="7.0e+10"/>
+        <Parameter name="maximum cycle number" type="int" value="20"/>
+        <Parameter name="initial time step" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
@@ -350,7 +355,7 @@
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -384,6 +389,7 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
+	<Parameter name="include work term" type="bool" value="true"/>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>
@@ -415,7 +421,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	    <Parameter name="Newton correction" type="string" value="none"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>
@@ -427,11 +433,13 @@
       <ParameterList name="boundary conditions">
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+	    <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="298.0"/>
+              <ParameterList name="function-linear">
+                <Parameter name="y0" type="double" value="298.0"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.1}"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
@@ -624,15 +632,7 @@
 	    <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
 	  </ParameterList>
 	  <Parameter name="solver type" type="string" value="nka"/>
-	  <ParameterList name="nka parameters">
-	    <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-	    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-	    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-	    <Parameter name="max divergent iterations" type="int" value="3"/>
-	    <Parameter name="max nka vectors" type="int" value="10"/>
-	    <Parameter name="limit iterations" type="int" value="20"/>
-	    <Parameter name="modify correction" type="bool" value="false"/>
-	  </ParameterList>
+	  <ParameterList name="nka parameters"/>
 	  <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
 	  <Parameter name="extrapolate initial guess" type="bool" value="true"/>
 	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
