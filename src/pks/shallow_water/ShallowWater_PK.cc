@@ -62,7 +62,7 @@ namespace ShallowWater {
     	Epetra_MultiVector h_vec_c_tmp(h_vec_c);
 
     	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
-    	Epetra_MultiVector ht_vec_c_tmp(h_vec_c);
+    	Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
         
         Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
         Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
@@ -84,6 +84,7 @@ namespace ShallowWater {
         S_->GetFieldData("surface-discharge-y")->ScatterMasterToGhosted("cell");
 
         h_vec_c_tmp  = h_vec_c;
+        ht_vec_c_tmp = ht_vec_c;
         vx_vec_c_tmp = vx_vec_c;
         vy_vec_c_tmp = vy_vec_c;
         qx_vec_c_tmp = qx_vec_c;
@@ -363,11 +364,12 @@ namespace ShallowWater {
 
           	 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
-          	 ht_vec_c[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
+          	 ht_vec_c_tmp[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
 
       	 }
 
       	 h_vec_c  = h_vec_c_tmp;
+      	 ht_vec_c = ht_vec_c_tmp;
       	 vx_vec_c = vx_vec_c_tmp;
       	 vy_vec_c = vy_vec_c_tmp;
       	 qx_vec_c = qx_vec_c_tmp;
@@ -615,6 +617,8 @@ namespace ShallowWater {
 		umin = *min_element(u_av.begin(),u_av.end());
 		umax = *max_element(u_av.begin(),u_av.end());
 
+		std::cout << "umin = " << umin << ", umax = " << umax << std::endl;
+
 		xc = mesh_->cell_centroid(c);
 
 		Phi_k.resize(cnodes.size());
@@ -623,16 +627,29 @@ namespace ShallowWater {
 
 			mesh_->node_get_coordinates(cnodes[k],&xv);
 
+//		for (int k = 0; k < cfaces.size(); k++) {
+//
+//			Amanzi::AmanziGeometry::Point xv = mesh_->face_centroid(cfaces[k]);
+
 		    uk = u_av0 + grad(0,0)*(xv[0]-xc[0]) + grad(1,0)*(xv[1]-xc[1]);
 
-            if (uk - u_av0 > 0.) {
+            if (uk - u_av0 > tol) {
+            	std::cout << "(umax-u_av0)/(uk-u_av0+tol) = " << (umax-u_av0)/(uk-u_av0+tol) << std::endl;
+				std::cout << "umax-u_av0 = " << umax-u_av0 << std::endl;
+				std::cout << "uk-u_av0+tol = " << uk-u_av0+tol << std::endl;
+				std::cout << "uk-u_av0 = " << uk-u_av0 << std::endl;
                 Phi_k[k] = std::min(1.,(umax-u_av0)/(uk-u_av0+tol));
             }
             else {
-                if (uk - u_av0 < 0.) {
+                if (uk - u_av0 < -tol) {
+                	std::cout << "(umin-u_av0)/(uk-u_av0+tol) = " << (umin-u_av0)/(uk-u_av0+tol) << std::endl;
+    				std::cout << "umin-u_av0 = " << umin-u_av0 << std::endl;
+    				std::cout << "uk-u_av0+tol = " << uk-u_av0+tol << std::endl;
+    				std::cout << "uk-u_av0 = " << uk-u_av0 << std::endl;
                     Phi_k[k] = std::min(1.,(umin-u_av0)/(uk-u_av0+tol));
                 }
                 else {
+                	std::cout << "uk-u_av0 = " << uk-u_av0 << std::endl;
                     Phi_k[k] = 1.;
                 }
             }
@@ -641,7 +658,14 @@ namespace ShallowWater {
 
         Phi = *min_element(Phi_k.begin(),Phi_k.end());
 
-        Phi = 0.;
+        for (int k = 0; k < cnodes.size(); k++) {
+        	std::cout << Phi_k[k] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Phi = " << Phi << std::endl;
+
+//        Phi = 0.;
 
         grad_lim = Phi*grad;
 
@@ -761,7 +785,7 @@ namespace ShallowWater {
 
 		 dudx.Multiply(InvAtA,Atb,false);
 
-//		 std::cout << "dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
+		 std::cout << field_key_ << ", dudx     = " << dudx(0,0) << " " << dudx(1,0) << std::endl;
 
 		 BJ_lim(dudx,dudx_lim,c,field_key_);
 
@@ -1152,7 +1176,7 @@ namespace ShallowWater {
 		double S, Smax;
 		double vol, dx, dx_min;
 		double dt;
-		double CFL = 0.025;
+		double CFL = 0.25;
 		double eps = 1.e-6;
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
