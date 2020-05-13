@@ -48,10 +48,15 @@ namespace ShallowWater {
 
     	bool failed = false;
 
+    	double eps = 1.e-6;
+
     	// save a copy of primary and conservative fields
     	CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
     	CompositeVector velocity_x_tmp(*S_->GetFieldData("surface-velocity-x", passwd_));
     	CompositeVector velocity_y_tmp(*S_->GetFieldData("surface-velocity-y", passwd_));
+
+    	Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+    	Epetra_MultiVector B_vec_c_tmp(B_vec_c);
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
     	Epetra_MultiVector h_vec_c_tmp(h_vec_c);
@@ -104,6 +109,8 @@ namespace ShallowWater {
 
       	 for (int c = 0; c < ncells_owned; c++) {
 
+      		 std::cout << "c = " << c << std::endl;
+
       		 // mesh sizes
       		 double dx, dy;
 
@@ -153,7 +160,24 @@ namespace ShallowWater {
 
 				 Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-				 double h_rec = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
+				 double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
+				 double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
+
+				 if (ht_rec < B_rec) {
+					 ht_rec = ht_vec_c[0][c];
+					 B_rec  = B_vec_c[0][c];
+				 }
+				 double h_rec = ht_rec - B_rec;
+
+			     if (h_rec < 0.) {
+			    	 std::cout << "c = " << c << std::endl;
+			    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+			    	 std::cout << "B_rec  = " << B_rec << std::endl;
+			    	 std::cout << "h_rec  = " << h_rec << std::endl;
+			    	 exit(0);
+			     }
+
+//				 double h_rec = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
 //				 double h_rec = h_vec_c[0][c];
 
 				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
@@ -178,8 +202,11 @@ namespace ShallowWater {
 //				 UL[1] = h_vec_c[0][c]*vn;
 //				 UL[2] = h_vec_c[0][c]*vt;
 
-			     vx_rec = qx_rec/h_rec;
-			     vy_rec = qy_rec/h_rec;
+//			     vx_rec = qx_rec/h_rec;
+//			     vy_rec = qy_rec/h_rec;
+
+			     vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+			     vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
 
 				 vn =  vx_rec*normal[0] + vy_rec*normal[1];
 				 vt = -vx_rec*normal[1] + vy_rec*normal[0];
@@ -199,7 +226,24 @@ namespace ShallowWater {
 					 int c_GID = mesh_->GID(c, AmanziMesh::CELL);
  			         int cn_GID = mesh_->GID(cn, AmanziMesh::CELL);
 
- 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
+ 			         double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth");
+				     double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry");
+
+				     if (ht_rec < B_rec) {
+						 ht_rec = ht_vec_c[0][cn];
+						 B_rec  = B_vec_c[0][cn];
+					 }
+					 double h_rec = ht_rec - B_rec;
+
+				     if (h_rec < 0.) {
+				    	 std::cout << "cn = " << cn << std::endl;
+				    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+				    	 std::cout << "B_rec  = " << B_rec << std::endl;
+				    	 std::cout << "h_rec  = " << h_rec << std::endl;
+				    	 exit(0);
+				     }
+
+// 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
 // 					 double h_rec = h_vec_c[0][cn];
 
  					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
@@ -223,8 +267,11 @@ namespace ShallowWater {
 // 					 UR[1] = h_vec_c[0][cn]*vn;
 // 					 UR[2] = h_vec_c[0][cn]*vt;
 
-				     vx_rec = qx_rec/h_rec;
-				     vy_rec = qy_rec/h_rec;
+//				     vx_rec = qx_rec/h_rec;
+//				     vy_rec = qy_rec/h_rec;
+
+				     vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+				     vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
 
 					 vn =  vx_rec*normal[0] + vy_rec*normal[1];
 					 vt = -vx_rec*normal[1] + vy_rec*normal[0];
@@ -252,6 +299,9 @@ namespace ShallowWater {
 					 }
 				 }
 
+				 std::cout << "advance step UL: " << UL[0] << " " << UL[1] << " " << UL[2] << std::endl;
+				 std::cout << "advance step UR: " << UR[0] << " " << UR[1] << " " << UR[2] << std::endl;
+
 				 FNum_rot = NumFlux_x(UL,UR);
 
 				 FNum[0] = FNum_rot[0];
@@ -264,11 +314,14 @@ namespace ShallowWater {
 
              } // faces
 
+             double h, u, v, qx, qy;
+
              U.resize(3);
 
              U[0] = h_vec_c[0][c];
 			 U[1] = h_vec_c[0][c]*vx_vec_c[0][c];
 			 U[2] = h_vec_c[0][c]*vy_vec_c[0][c];
+
              S = NumSrc(U,c);
 
              for (int i = 0; i < 3; i++) {
@@ -284,16 +337,33 @@ namespace ShallowWater {
             	 }
              }
 
-             h_vec_c_tmp[0][c]  = U_new[0];
-             vx_vec_c_tmp[0][c] = U_new[1]/U_new[0];
-             vy_vec_c_tmp[0][c] = U_new[2]/U_new[0];
+             std::cout << "U_new: " << U_new[0] << " " << U_new[1] << " " << U_new[2] << std::endl;
 
-             qx_vec_c_tmp[0][c] = U_new[1];
-             qy_vec_c_tmp[0][c] = U_new[2];
+//             h_vec_c_tmp[0][c]  = U_new[0];
+//             vx_vec_c_tmp[0][c] = U_new[1]/U_new[0];
+//             vy_vec_c_tmp[0][c] = U_new[2]/U_new[0];
+
+//             qx_vec_c_tmp[0][c] = U_new[1];
+//             qy_vec_c_tmp[0][c] = U_new[2];
+
+             h  = U_new[0];
+             qx = U_new[1];
+             qy = U_new[2];
+
+             h_vec_c_tmp[0][c] = h;
+             u = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
+             v = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+             vx_vec_c_tmp[0][c] = u;
+             vy_vec_c_tmp[0][c] = v;
+             qx_vec_c_tmp[0][c] = h*u;
+             qy_vec_c_tmp[0][c] = h*v;
+
+             std::cout << vx_vec_c_tmp[0][c] << " " << vy_vec_c_tmp[0][c] << std::endl;
+             std::cout << h_vec_c_tmp[0][c] << " " << qx_vec_c_tmp[0][c] << " " << qy_vec_c_tmp[0][c] << std::endl;
 
           	 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
-          	 ht_vec_c[0][c] = h_vec_c_tmp[0][c] + Bathymetry(xc[0],xc[1]);
+          	 ht_vec_c[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
 
       	 }
 
@@ -424,7 +494,7 @@ namespace ShallowWater {
         		   h_vec_c[0][c] = 4.;
         		}
 			    else {
-			       h_vec_c[0][c] = 1.;
+			       h_vec_c[0][c] = 0.;
 			    }
         		ht_vec_c[0][c] = h_vec_c[0][c] + Bathymetry(xc[0],xc[1]);
         	}
@@ -503,7 +573,7 @@ namespace ShallowWater {
     // bottom topography
     //--------------------------------------------------------------
     double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 1.-0.01*x;
+        return 1.; //-0.01*x;
     }
 
     //--------------------------------------------------------------
@@ -570,6 +640,8 @@ namespace ShallowWater {
         } // k
 
         Phi = *min_element(Phi_k.begin(),Phi_k.end());
+
+        Phi = 0.;
 
         grad_lim = Phi*grad;
 
@@ -693,7 +765,7 @@ namespace ShallowWater {
 
 		 BJ_lim(dudx,dudx_lim,c,field_key_);
 
-//		 std::cout << "dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
+		 std::cout << field_key_ << ", dudx_lim = " << dudx_lim(0,0) << " " << dudx_lim(1,0) << std::endl;
 
 		 double h_rec = h_vec_c[0][c] + dudx_lim(0,0)*(x-xc[0]) + dudx_lim(1,0)*(y-xc[1]);
 
@@ -709,12 +781,19 @@ namespace ShallowWater {
         
         F.resize(3);
         
-        double h, u, v, g = 9.81;
+        double h, u, v, qx, qy, g = 9.81;
+        double eps = 1.e-6;
         
         // SW conservative variables: (h, hu, hv)
-        h = U[0];
-        u = U[1]/U[0];
-        v = U[2]/U[0];
+//        h = U[0];
+//        u = U[1]/U[0];
+//        v = U[2]/U[0];
+
+		h  = U[0];
+		qx = U[1];
+		qy = U[2];
+		u  = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
+		v  = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
         
         // Form vector of x-fluxes F(U) = (hu, hu^2 + 1/2 gh^2, huv)
         
@@ -753,27 +832,34 @@ namespace ShallowWater {
     // physical source term
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U) {
-            std::vector<double> S;
+		std::vector<double> S;
 
-            S.resize(3);
+		S.resize(3);
 
-            double h, u, v, g = 9.81;
+		double h, u, v, qx, qy, g = 9.81;
+		double eps = 1.e-6;
 
-            // SW conservative variables: (h, hu, hv)
-            h = U[0];
-            u = U[1]/U[0];
-            v = U[2]/U[0];
+		// SW conservative variables: (h, hu, hv)
+//		h = U[0];
+//		u = U[1]/U[0];
+//		v = U[2]/U[0];
 
-            // Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
+		h  = U[0];
+		qx = U[1];
+		qy = U[2];
+		u  = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
+		v  = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
 
-            double dBathx = -0.01, dBathy = 0.;
+		// Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
 
-            S[0] = 0.;
-            S[1] = -g*h*dBathx;
-            S[2] = -g*h*dBathy;
+		double dBathx = -0.01, dBathy = 0.;
 
-            return S;
-        }
+		S[0] = 0.;
+		S[1] = -g*h*dBathx;
+		S[2] = -g*h*dBathy;
+
+		return S;
+	}
 
     //--------------------------------------------------------------
     // numerical flux in x-direction
@@ -864,18 +950,31 @@ namespace ShallowWater {
     std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double> UL,std::vector<double> UR) {
         std::vector<double> FL, FR, F, U_star, dU;
 
-        double hL, uL, vL, hR, uR, vR, g = 9.81;
+        double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
         double apx, amx, apy, amy;
         double ap, am;
+        double eps = 1.e-6;
 
 		// SW conservative variables: (h, hu, hv)
-		hL = UL[0];
-		uL = UL[1]/UL[0];
-		vL = UL[2]/UL[0];
+//		hL = UL[0];
+//		uL = UL[1]/UL[0];
+//		vL = UL[2]/UL[0];
 
-		hR = UR[0];
-		uR = UR[1]/UR[0];
-		vR = UR[2]/UR[0];
+//		hR = UR[0];
+//		uR = UR[1]/UR[0];
+//		vR = UR[2]/UR[0];
+
+		hL  = UL[0];
+        qxL = UL[1];
+		qyL = UL[2];
+		uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
+		vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
+
+		hR  = UR[0];
+		qxR = UR[1];
+		qyR = UR[2];
+		uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
+		vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
 
         apx = std::max(std::max(std::fabs(uL)+std::sqrt(g*hL),std::fabs(uR)+std::sqrt(g*hR)),0.);
         apy = std::max(std::max(std::fabs(vL)+std::sqrt(g*hL),std::fabs(vR)+std::sqrt(g*hR)),0.);
@@ -885,16 +984,26 @@ namespace ShallowWater {
         amy = std::min(std::min(std::fabs(vL)-std::sqrt(g*hL),std::fabs(vR)-std::sqrt(g*hR)),0.);
         am  = std::min(amx,amy);
 
+        std::cout << "UL: " << UL[0] << " " << UL[1] << " " << UL[2] << std::endl;
+        std::cout << "UR: " << UR[0] << " " << UR[1] << " " << UR[2] << std::endl;
+
         F.resize(3);
 
         FL = PhysFlux_x(UL);
         FR = PhysFlux_x(UR);
 
+        std::cout << "FL: " << FL[0] << " " << FL[1] << " " << FL[2] << std::endl;
+        std::cout << "FR: " << FR[0] << " " << FR[1] << " " << FR[2] << std::endl;
+
         U_star.resize(3);
 
         for (int i = 0; i < 3; i++) {
-        	U_star[i] = ( ap*UR[i] - am*UL[i] - (FR[i] - FL[i]) ) / (ap - am);
+        	U_star[i] = ( ap*UR[i] - am*UL[i] - (FR[i] - FL[i]) ) / (ap - am + eps);
         }
+
+        std::cout << "ap = " << ap << ", am = " << am << std::endl;
+
+        std::cout << "U_star: " << U_star[0] << " " << U_star[1] << " " << U_star[2] << std::endl;
 
         dU.resize(3);
 
@@ -903,8 +1012,10 @@ namespace ShallowWater {
         }
 
         for (int i = 0; i < 3; i++) {
-            F[i] = ( ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i]) ) / (ap - am);
+            F[i] = ( ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i]) ) / (ap - am + eps);
         }
+
+        std::cout << "F : " << F[0] << " " << F[1] << " " << F[2] << std::endl;
 
         return F;
     }
@@ -931,7 +1042,9 @@ namespace ShallowWater {
 
         double g = 9.81;
 
-        Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+        Epetra_MultiVector& B_vec_c  = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+        Epetra_MultiVector& h_vec_c  = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+        Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
 
 //        double BRx, BLx, BRy, BLy;
 
@@ -972,14 +1085,19 @@ namespace ShallowWater {
         	double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
         	double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
 
+        	if (ht_rec < B_rec) {
+				ht_rec = ht_vec_c[0][c];
+				B_rec  = B_vec_c[0][c];
+			}
+
 //        	S1 += (-2.*B*h - B*B)*normal[0]*farea;
 //        	S2 += (-2.*B*h - B*B)*normal[1]*farea;
 
-        	S1 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[0]*farea;
-        	S2 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[1]*farea;
+//        	S1 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[0]*farea;
+//        	S2 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[1]*farea;
 
-//        	S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0]*farea;
-//        	S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1]*farea;
+        	S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0]*farea;
+        	S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1]*farea;
 
 //        	S1 += B*normal[0]*farea;
 //        	S2 += B*normal[1]*farea;
@@ -1034,7 +1152,8 @@ namespace ShallowWater {
 		double S, Smax;
 		double vol, dx, dx_min;
 		double dt;
-		double CFL = 0.25;
+		double CFL = 0.025;
+		double eps = 1.e-6;
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
 		Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
@@ -1047,7 +1166,7 @@ namespace ShallowWater {
 			h = h_vec_c[0][c];
 			u = vx_vec_c[0][c];
 			v = vy_vec_c[0][c];
-			S = std::max(std::fabs(u) + std::sqrt(g*h),std::fabs(v) + std::sqrt(g*h));
+			S = std::max(std::fabs(u) + std::sqrt(g*h),std::fabs(v) + std::sqrt(g*h)) + eps;
 			vol = mesh_->cell_volume(c);
 			dx = std::sqrt(vol);
 			dt = std::min(dt,dx/S);
@@ -1060,7 +1179,7 @@ namespace ShallowWater {
 
 		mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
-//		dt_min = 0.0005;
+//		dt_min = 0.0001;
 
 		std::cout << "dt = " << dt << ", dt_min = " << dt_min << std::endl;
 

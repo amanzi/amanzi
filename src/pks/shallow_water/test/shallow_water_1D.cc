@@ -53,6 +53,7 @@ TEST(SHALLOW_WATER_1D) {
 
   RCP<const Mesh> mesh;
   mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 1, request_faces, request_edges);
+//  mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
   if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
   // create a state
