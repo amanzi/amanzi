@@ -129,6 +129,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
+  op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
@@ -140,6 +141,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
+  op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_preconditioner_->SymbolicAssembleMatrix();
 
   // initialize preconditioner

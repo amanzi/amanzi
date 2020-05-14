@@ -110,6 +110,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create BCs objects
   // -- memory
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_enth_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
@@ -265,6 +266,27 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
+  }
+
+  // additional boundary conditions
+  AmanziMesh::Entity_ID_List cells;
+  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
+
+  std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
+  std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
+
+  for (int n = 0; n < bc_model.size(); ++n) {
+    bc_model_enth_[n] = Operators::OPERATOR_BC_NONE;
+    bc_value_enth_[n] = 0.0;
+  }
+
+  for (int f = 0; f < bc_model.size(); ++f) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+      bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_enth_[f] = enth[0][cells[0]];
+    }
   }
 }
 
