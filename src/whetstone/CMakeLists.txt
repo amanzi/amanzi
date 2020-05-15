@@ -48,12 +48,20 @@ set(whetstone_inc_files
   SpaceTimePolynomial.hh
   VectorObjects.hh
   MatrixObjects.hh
+  DeRham_Face.hh
+  MFD3D.hh
+  MFD3D_Diffusion.hh
 )
 
 set(whetstone_src_files
   Tensor.cc
   SpaceTimePolynomial.cc
   VectorObjects.cc
+  MFD3D_Diffusion.cc
+  MFD3D.cc 
+  MFD3D_Diffusion_Other.cc
+  InnerProduct.cc
+  DeRham_Face.cc
 )
 
 set(whetstone_link_libs

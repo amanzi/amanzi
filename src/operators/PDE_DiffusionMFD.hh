@@ -91,7 +91,7 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
 
   virtual void Init() override;
   
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -112,6 +112,10 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               const Teuchos::Ptr<const CompositeVector>& factor) override;
 
+  // Need to be public for kokkos::parallel_for
+  void UpdateMatricesTPFA_();
+  void UpdateMatricesMixed_();
+
   // modify matrix due to boundary conditions 
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
@@ -123,6 +127,9 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+  void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
+                       const Teuchos::Ptr<const BCs>& bc_test,
+                       bool primary, bool eliminate, bool essential_eqn);
 
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;
@@ -156,8 +163,6 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
-  void UpdateMatricesTPFA_();
-  void UpdateMatricesMixed_();
   void UpdateMatricesMixed_little_k_();
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
@@ -169,9 +174,7 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 const Teuchos::Ptr<const CompositeVector>& factor);
 
-  void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
-                       const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate, bool essential_eqn);
+
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
                       bool primary, bool eliminate, bool essential_eqn);
@@ -180,7 +183,8 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                        bool primary, bool eliminate, bool essential_eqn);
 
  protected:
-  std::vector<WhetStone::DenseMatrix> Wff_cells_;
+  //std::vector<WhetStone::DenseMatrix<>> Wff_cells_;
+  CSR_Matrix Wff_cells_; 
   bool mass_matrices_initialized_;
 
   int newton_correction_;
@@ -195,6 +199,7 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   int nfailed_primary_;
 
   Teuchos::RCP<Operator> consistent_face_op_;
+  bool transmissibility_initialized_;
 
  private:
   int schema_prec_dofs_;

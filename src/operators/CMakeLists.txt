@@ -60,6 +60,7 @@ set(operators_inc_files
   OperatorUtils.hh
   Operator.hh
   Operator_Cell.hh
+  Operator_FaceCell.hh
 #  Operator_CellBndFace.hh
   Operator_Factory.hh
   TreeOperator.hh
@@ -70,6 +71,7 @@ set(operators_inc_files
   PDE_DiffusionFV.hh
   PDE_DiffusionFVwithGravity.hh
   PDE_DiffusionFactory.hh
+  PDE_DiffusionMFD.hh
   )
 
 set(operators_src_files
@@ -78,12 +80,14 @@ set(operators_src_files
   OperatorUtils.cc
   Operator.cc
   Operator_Cell.cc
+  Operator_FaceCell.cc
 #  Operator_CellBndFace.cc
   Operator_Factory.cc
   TreeOperator.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc
   PDE_DiffusionFVwithGravity.cc
+  PDE_DiffusionMFD.cc
   )
 
 set(operators_link_libs

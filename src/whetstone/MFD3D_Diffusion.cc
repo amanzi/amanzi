@@ -35,14 +35,14 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistencyScaledArea(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  N.Reshape(nfaces, d_);
-  Mc.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, d_);
+  Mc.reshape(nfaces, nfaces);
 
   double volume = mesh_->cell_volume(c);
 
@@ -86,14 +86,14 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
 int MFD3D_Diffusion::L2consistencyInverseScaledArea(
     int c, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_);
+  Wc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
@@ -137,22 +137,23 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
 int MFD3D_Diffusion::H1consistency(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.size();
 
-  N.Reshape(nnodes, d_ + 1);
-  Ac.Reshape(nnodes, nnodes);
+  N.reshape(nnodes, d_ + 1);
+  Ac.reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   double volume = mesh_->cell_volume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // to calculate matrix R, we use temporary matrix N
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
@@ -162,7 +163,7 @@ int MFD3D_Diffusion::H1consistency(
     double area = mesh_->face_area(f);
 
     Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    mesh_->face_get_nodes(f, face_nodes);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -331,13 +332,13 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial<>>& ve,
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int num_faces = faces.size();
 
-  vc.Reshape(d_, 1, true);
+  vc.reshape(d_, 1, true);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
@@ -357,13 +358,13 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial<>>& ve,
 ****************************************************************** */
 int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix<>& A)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  A.Reshape(1, nfaces);
+  A.reshape(1, nfaces);
 
   for (int n = 0; n < nfaces; ++n) {
     A(0, n) = mesh_->face_area(faces[n]) * dirs[n]; 
@@ -384,14 +385,15 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
     int c, const Tensor<>& K, double kmean, const AmanziGeometry::Point& kgrad,
     DenseMatrix<>& R, DenseMatrix<>& Wc)
 {
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View faces; 
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_);
+  Wc.reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(nfaces, 0.0);
@@ -423,7 +425,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     if (d_ == 2) { 
-      mesh_->face_get_nodes(f, &nodes);
+      mesh_->face_get_nodes(f, nodes);
 
       mesh_->node_get_coordinates(nodes[0], &v1);
       mesh_->node_get_coordinates(nodes[1], &v2);
@@ -487,9 +489,9 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 * Mass matrix for a polyhedral element via simplex method.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseMMatrix(
-    int c, const Tensor<>& K, DenseMatrix& W)
+    int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  DenseMatrix R;
+  DenseMatrix<> R;
 
   // use boolean flag to populate the whole matrix
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
@@ -549,9 +551,9 @@ int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
 ****************************************************************** */
 void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix<>& W)
 {
-  Entity_ID_List faces;
+  AmanziMesh::Entity_ID_View faces;
 
-  mesh_->cell_get_faces(c, &faces);
+  mesh_->cell_get_faces(c, faces);
   int num_faces = faces.size();
 
   // calculate areas of possibly curved faces
@@ -584,9 +586,9 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix<
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;

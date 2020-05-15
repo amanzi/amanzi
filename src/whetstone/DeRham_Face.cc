@@ -26,14 +26,14 @@ namespace WhetStone {
 int DeRham_Face::L2consistency(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  N.Reshape(nfaces, d_);
-  Mc.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, d_);
+  Mc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
@@ -94,14 +94,14 @@ int DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M)
 int DeRham_Face::L2consistencyInverse(
     int c, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_);
+  Wc.reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(nfaces, 0.0);

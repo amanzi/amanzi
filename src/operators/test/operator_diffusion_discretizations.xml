@@ -186,11 +186,11 @@
 
     <!-- MIXED MFD schemes -->
     <ParameterList name="mixed">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
     </ParameterList>
 
     <ParameterList name="divk">

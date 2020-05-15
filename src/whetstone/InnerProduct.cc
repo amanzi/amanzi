@@ -66,8 +66,8 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, Dense
   int info, ldv = 1, size = 5 * ncols + 3 * nrows;
   double V, S[nrows], work[size];
 
-  DGESVD_F77("A", "N", &nrows, &ncols, N.Values(), &nrows,  // N = u s v
-             S, U.Values(), &nrows, &V, &ldv, work, &size, &info);
+  DGESVD_F77("A", "N", &nrows, &ncols, N.Values_ptr(), &nrows,  // N = u s v
+             S, U.Values_ptr(), &nrows, &V, &ldv, work, &size, &info);
 
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
@@ -113,12 +113,12 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, Dense
 
   // Find parameters
   int nrhs = 1;
-  DPOSV_F77("U", &nparam, &nrhs, A.Values(), &nparam, G.Values(), &nparam, &info);
+  DPOSV_F77("U", &nparam, &nrhs, A.Values_ptr(), &nparam, G.Values_ptr(), &nparam, &info);
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // project solution on the positive quadrant and convert to matrix
   DenseMatrix<> P(mcols, mcols);
-  P.PutScalar(0.0);
+  P.putScalar(0.0);
 
   for (int loop = 0; loop < 3; loop++) {
     if (loop == 1) {   
@@ -141,7 +141,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, Dense
 
     // check SPD property (we use allocated memory)
     DenseMatrix<> Ptmp(P);
-    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info); 
+    DSYEV_F77("N", "U", &mcols, Ptmp.Values_ptr(), &mcols, S, work, &size, &info); 
     if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
     if (S[0] > eigmin) {
@@ -153,7 +153,7 @@ int InnerProduct::StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, Dense
 
   // add stability term U G U^T
   DenseMatrix<> UP(nrows, mcols);
-  UP.PutScalar(0.0);
+  UP.putScalar(0.0);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < mcols; j++) {
       double& entry = UP(i, j);
