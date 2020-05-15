@@ -132,6 +132,7 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Compute(double t0, double 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
         val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c];
+	std::cout<<"SubgridExpo: "<<i<<" "<<(*(*uspec)->first->second)(args)[i]<<" "<<tcc[i][*c]<<"\n";
       }
       value_[*c] = val_vec;
     }
