@@ -93,6 +93,18 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
+  // get the components that this interacts with
+  tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
+
+  // check that names size matches function size
+  for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
+       uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
+    int nfun = (*uspec)->first->second->size();
+    if (nfunc != tcc_names_.size()) {
+      Errors::Message m("PK_DomainFunctionSubgridReturn: \"component names\" was of different length than the number of degrees of freedom provided in the return function.");
+      Exceptions::amanzi_throw(m);
+    }
+  }
 }
 
 
@@ -119,6 +131,8 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
 
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
+    AMANZI_ASSERT(nfun == tcc_names_.size());
+    AMANZI_ASSERT(nfun == tcc_indices_.size());
 
     // loop over all entities in the spec
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -144,23 +158,17 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       const auto& vec_c = *vec_out.ViewComponent("cell", true);
 
       std::vector<double> val(nfun,0.);
-
-      
+    
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
       int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-      double cv_total = 0.;
       for (int c_sg=0; c_sg!=ncells_sg; ++c_sg) {
         for (int k=0; k!=nfun; ++k) {
-	  // if ((c_sg+1)%5 == 0)
-	  val[k] += vec_c[k][c_sg] * alpha[k];
+	  val[k] += vec_c[k][c_sg] * alpha[k] ;
         }
       }
-	
+
       for (int k=0; k!=nfun; ++k) {
         val[k] /= ncells_sg;
-	//std::cout<<"SubgridReturn: "<<" "<<k<<" "<<nfun<<" "<<domain.str()<<" "<<field_out_suffix_<<" "<<vec_c[0][0]<<" "<<vec_c[1][0]<<" "<<val[k]<<" "<<alpha[k]<<"\n";
-
-	std::cout<<"SubgridReturn: "<<" "<<k<<" "<<nfun<<" "<<domain.str()<<" "<<field_out_suffix_<<" "<<vec_c[0][0]<<" "<<val[k]<<" "<<alpha[k]<<"\n";
       }
       value_[*c] = val;
     }

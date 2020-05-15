@@ -95,6 +95,20 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Init(
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
+
+  // get the components that this interacts with
+  tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
+
+  // check that names size matches function size
+  for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
+       uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
+    int nfun = (*uspec)->first->second->size();
+    if (nfunc != tcc_names_.size()) {
+      Errors::Message m("PK_DomainFunctionExponentialDecay: \"component names\" was of different length than the number of degrees of freedom provided in the return function.");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+
 }
 
 
@@ -121,6 +135,8 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Compute(double t0, double 
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
+    AMANZI_ASSERT(nfun == tcc_names_.size());
+    AMANZI_ASSERT(nfun == tcc_indices_.size());
     std::vector<double> val_vec(nfun);  
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -132,9 +148,8 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Compute(double t0, double 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
         val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c];
-	std::cout<<"SubgridExpo: "<<i<<" "<<(*(*uspec)->first->second)(args)[i]<<" "<<tcc[i][*c]<<"\n";
       }
-      value_[*c] = val_vec;
+      value_[*c] = std::move(val_vec);
     }
   }
 }
