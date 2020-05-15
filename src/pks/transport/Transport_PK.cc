@@ -512,8 +512,15 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
             Teuchos::RCP<TransportDomainFunction> src = 
               factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
 
-            src->tcc_names().push_back(name);
-            src->tcc_index().push_back(FindComponentNumber(name));
+            // sets the default component name to be the parameterlist's name
+            if (src->tcc_names().size() == 0) {
+              src->tcc_names().push_back(name);
+            }
+
+            // set the component indicies
+            for (const auto& n : src->tcc_names()) {
+              src->tcc_index().push_back(FindComponentNumber(n));
+            }
           
             src->set_state(S_);
             srcs_.push_back(src);
@@ -521,6 +528,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
+
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
@@ -537,11 +545,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       mass_src_ = S->GetFieldData(mass_src_key_)->ViewComponent("cell",false);
       src->set_liquid_src_data_(mass_src_.ptr());
 
-      std::vector<int>& tcc_index = src->tcc_index();
-      std::vector<std::string>& tcc_names = src->tcc_names();
-
-      for (int i = 0; i < tcc_names.size(); i++) {
-        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      for (const auto& n : src->tcc_names()) {
+        src->tcc_index().push_back(FindComponentNumber(n));
       }
 
       srcs_.push_back(src);
