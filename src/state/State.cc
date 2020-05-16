@@ -480,8 +480,12 @@ WriteVis(Visualization& vis, const State& S)
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
+    std::string vname = vis.name();
+    if (vname.empty()) vname = "domain";
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteVis(vis);
+      if (Keys::getDomain(r->first) == vname) {
+        r->second->WriteVis(vis);
+      }
     }
 
     // vis.WriteRegions();

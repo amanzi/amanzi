@@ -141,6 +141,7 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
   const State& S, const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(results.size() > 0);
+  
   for (const auto& comp : *results[0]) {
     // get the list of dependency views
     std::vector<cView_type> dependency_views;
@@ -196,6 +197,7 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
       });
     }
   }
+  Debug_(S);
 }
 
 template <template <class, class> class Model, class Device_type>

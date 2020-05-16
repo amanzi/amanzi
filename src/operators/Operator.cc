@@ -179,6 +179,7 @@ void Operator::AssembleMatrix()
 {
   if (Amat_ == Teuchos::null) SymbolicAssembleMatrix();
 
+  Amat_->resumeFill();
   Amat_->zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->fillComplete();

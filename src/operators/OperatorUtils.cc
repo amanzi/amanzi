@@ -40,8 +40,9 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    row_size += i + 1;
+    row_size += OPERATOR_MAX_FACES;
+    //    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+    //row_size += i + 1;
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
