@@ -63,10 +63,7 @@ State::RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
                     bool deformable)
 {
   if (key.empty()) key = "domain";
-  meshes_.emplace(std::piecewise_construct,
-                  std::forward_as_tuple<Key>(std::move(key)),
-                  std::forward_as_tuple<Teuchos::RCP<AmanziMesh::Mesh>, bool>(
-                    std::move(mesh), std::move(deformable)));
+  meshes_[key] = std::make_pair(mesh, deformable);
 
   if (deformable) {
     //    RequireEvaluator(key, "");
@@ -483,8 +480,12 @@ WriteVis(Visualization& vis, const State& S)
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
+    std::string vname = vis.name();
+    if (vname.empty()) vname = "domain";
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteVis(vis);
+      if (Keys::getDomain(r->first) == vname) {
+        r->second->WriteVis(vis);
+      }
     }
 
     // vis.WriteRegions();
