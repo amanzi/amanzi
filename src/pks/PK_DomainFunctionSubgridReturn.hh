@@ -94,13 +94,13 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
   // get the components that this interacts with
-  tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
+  this->tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
 
   // check that names size matches function size
   for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
        uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
     int nfun = (*uspec)->first->second->size();
-    if (nfunc != tcc_names_.size()) {
+    if (nfun != this->tcc_names_.size()) {
       Errors::Message m("PK_DomainFunctionSubgridReturn: \"component names\" was of different length than the number of degrees of freedom provided in the return function.");
       Exceptions::amanzi_throw(m);
     }
@@ -131,8 +131,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
 
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
-    AMANZI_ASSERT(nfun == tcc_names_.size());
-    AMANZI_ASSERT(nfun == tcc_indices_.size());
+    AMANZI_ASSERT(nfun == this->tcc_names_.size());
 
     // loop over all entities in the spec
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
