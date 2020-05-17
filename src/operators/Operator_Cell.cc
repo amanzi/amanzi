@@ -94,7 +94,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   // parallel matrix-vector product
   Kokkos::parallel_for(
       "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-      local_A.size(),
+      nfaces_owned,
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);

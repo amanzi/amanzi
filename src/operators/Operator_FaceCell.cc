@@ -38,6 +38,9 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   std::cout<<"Operator_FaceCell::ApplyMatrixFreeOp"<<std::endl;
   std::cout<<"nfaces_owned: "<<nfaces_owned<<" op.A.size(): "<<op.A.size()<<std::endl;
+  std::cout << "  X norm = " << X.norm2() << std::endl;
+
+  {
   AMANZI_ASSERT(op.A.size() == ncells_owned);
   auto Xf = X.ViewComponent("face", true);
   auto Xc = X.ViewComponent("cell", true);
@@ -66,36 +69,32 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       mesh->cell_get_faces(c, faces);
       int nfaces = faces.size();
 
-      //int npoints(0);
-      //for (int n = 0; n != nfaces; ++n)
-      //  npoints += map.ElementSize(faces[n]);
-
       WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
       WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
       WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
-      //WhetStone::DenseVector<DeviceOnlyMemorySpace> v(npoints + 1), av(npoints + 1);
 
-      int m(0);
       for (int n = 0; n != nfaces; ++n) {
-      //  int f = faces[n];
-      //  assert(false); 
-        //int first = map.FirstPointInElement(f);
-        //for (int k = 0; k < map.ElementSize(f); ++k) {
-        lv(m++) = Xf(0,n);
-        //}
+        lv(n) = Xf(faces[n],0);
       }
-      lv(nfaces) = Xc(0,c); 
-      //lv(npoints) = Xc(0,c);
+      lv(nfaces) = Xc(c,0); 
 
       lA.Multiply(lv, lAv, false);
 
-      m = 0;
       for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
-        Kokkos::atomic_add(&Yf(0,n), lAv(m++));
+        Kokkos::atomic_add(&Yf(faces[n],0), lAv(n));
       }
-      Yc(0,c) += lAv(nfaces);
-    });  
+      Yc(c,0) += lAv(nfaces);
+      if (c == 0) {
+        std::cout << "In FaceCellApply:" << std::endl
+                  << " v = " << lv << std::endl
+                  << " A = " << lA << std::endl
+                  << " Av = " << lAv << std::endl;
+      }
+    });
+
+  }
+  std::cout << "  AX norm = " << Y.norm2() << std::endl;
   return 0;
 }
 
@@ -130,9 +129,9 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
       mesh->cell_get_faces(c, faces);
       int nfaces = faces.size();
 
-      WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
-      WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
-      WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
+      auto lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
+      auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
+      auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
 
       for (int n = 0; n != nfaces; ++n) {
         lv(n) = Xf(0,faces[n]);

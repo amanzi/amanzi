@@ -65,6 +65,7 @@ set(whetstone_src_files
 )
 
 set(whetstone_link_libs
+  mesh
   error_handling
   ${Teuchos_LIBRARIES}
   ${Kokkos_LIBRARIES}  

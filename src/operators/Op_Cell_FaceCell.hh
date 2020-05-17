@@ -35,7 +35,7 @@ class Op_Cell_FaceCell : public Op {
       AmanziMesh::Entity_ID_View faces;
       mesh->cell_get_faces(c, faces);      // This perform the prefix_sum
       int nfaces = faces.extent(0); 
-      int loc[2] = {nfaces,nfaces}; 
+      int loc[2] = {nfaces+1,nfaces+1}; 
       A.set_shape_host(c, loc);
     }
     A.prefix_sum();
@@ -47,21 +47,21 @@ class Op_Cell_FaceCell : public Op {
     std::cout<<"Op_Cell_FaceCell.hh::SumLocalDiag"<<std::endl;
     
     AmanziMesh::Mesh const * mesh_ = mesh.get();
-    auto Xv = X.ViewComponent("face", true);
+    auto Xf = X.ViewComponent("face", true);
+    auto Xc = X.ViewComponent("cell", false);
     Kokkos::parallel_for(
         "Op_Cell_FaceCell::GetLocalDiagCopy",
         A.size(),
-        KOKKOS_LAMBDA(const int f) {
-          // Extract matrix 
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-            A.at(f),A.size(f,0),A.size(f,1)); 
+        KOKKOS_LAMBDA(const int c) {
+          // Extract matrix
+          auto lA = getFromCSR<WhetStone::DenseMatrix>(A, c);
 
           AmanziMesh::Entity_ID_View faces;
-          mesh_->cell_get_faces(f, faces);
-          Kokkos::atomic_add(&Xv(faces(0), 0), lm(0,0));
-          if(faces.extent(0) > 1) {
-            Kokkos::atomic_add(&Xv(faces(1),0), lm(1,1));
-          }
+          mesh_->cell_get_faces(c, faces);
+          int nfaces = faces.extent(0);
+          for (int m=0; m!=nfaces; ++m)
+            Kokkos::atomic_add(&Xf(faces(m), 0), lA(m,m));
+          Kokkos::atomic_add(&Xc(c,0), lA(nfaces,nfaces));
         }); 
   }
 
