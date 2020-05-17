@@ -212,53 +212,30 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r(2*cell_max_faces + 1);
-  std::vector<int> lid_c(2*cell_max_faces + 1);
+  std::vector<int> lid_r(OPERATOR_MAX_FACES + 1);
+  std::vector<int> lid_c(OPERATOR_MAX_FACES + 1);
 
   // ELEMENT: cell, DOFS: cell and face
-  const auto face_row_inds = map.GhostIndices(my_block_row, "face", 0);
-  const auto face_col_inds = map.GhostIndices(my_block_col, "face", 0);
-  const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
+  const auto face_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "face", 0);
+  const auto face_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "face", 0);
+  const auto cell_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "cell", 0);
 
-  //const auto face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
-  //const auto cell_map = map.ComponentMap(my_block_row, "cell");
-  
-  //int ierr(0);
   AmanziMesh::Entity_ID_View faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, faces);
     int nfaces = faces.size();
 
-    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      lid_r[k] = face_row_inds[n];
-      lid_c[k] = face_col_inds[n];
-      ++k;
-      //int face_dof_size = face_gh_map->ElementSize(f);
-      //int first = face_gh_map->FirstPointInElement(f);
-
-      //for (int m = 0; m != face_dof_size; ++m) {
-      //  lid_r[k] = face_row_inds[first + m];
-      //  lid_c[k] = face_col_inds[first + m];
-      //  k++;
-      //}
+      lid_r[n] = face_row_inds[faces[n]];
+      lid_c[n] = face_col_inds[faces[n]];
     }
 
-    lid_r[k] = cell_row_inds[c]; 
-    lid_c[k] = cell_col_inds[c];
-    //int cell_dof_size = cell_map->ElementSize(c);
-    //int first = cell_map->FirstPointInElement(c);
-    //for (int m = 0; m != cell_dof_size; ++m) {
-    //  lid_r[k] = cell_row_inds[first + m];
-    //  lid_c[k] = cell_col_inds[first + m];
-    //  k++;
-    //}
+    lid_r[nfaces] = cell_row_inds[c]; 
+    lid_c[nfaces] = cell_col_inds[c];
     
-    graph.insertLocalIndices(k, lid_r.data(), k, lid_c.data());
+    graph.insertLocalIndices(nfaces+1, lid_r.data(), nfaces+1, lid_c.data());
   }
-  //AMANZI_ASSERT(!ierr);
 }
 
 #if 0 
@@ -327,7 +304,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
 }
 #endif 
 
-#if 0 
+#if 0
 /* ******************************************************************
 * Visit methods for symbolic assemble: Surface
 ****************************************************************** */
@@ -359,7 +336,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
   }
   AMANZI_ASSERT(!ierr);
 }
-#endif 
+#endif
 
 /* ******************************************************************
 * Visit methods for assemble: FaceCell
@@ -370,49 +347,62 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.A.size() == ncells_owned);
 
-  std::vector<int> lid_r(2*cell_max_faces + 1);
-  std::vector<int> lid_c(2*cell_max_faces + 1);
-
   // ELEMENT: cell, DOFS: face and cell
-  const auto face_row_inds = map.GhostIndices(my_block_row, "face", 0);
-  const auto face_col_inds = map.GhostIndices(my_block_col, "face", 0);
-  const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);        
+  const auto face_row_inds = map.GhostIndices<>(my_block_row, "face", 0);
+  const auto face_col_inds = map.GhostIndices<>(my_block_col, "face", 0);
+  const auto cell_row_inds = map.GhostIndices<>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.GhostIndices<>(my_block_col, "cell", 0);        
 
-  const auto face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
-  const auto cell_map = map.ComponentMap(my_block_row, "cell");
+  // hard-coded version, interfaces TBD...
+  auto proc_mat = mat.getLocalMatrix();
+  auto offproc_mat = mat.getOffProcLocalMatrix();
+  int nrows_local = mat.getMatrix()->getNodeNumRows();
 
-  //int ierr(0);
-  AmanziMesh::Entity_ID_View faces;
-  for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, faces);
-    
-    int nfaces = faces.size();
-    int k = 0;
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      assert(false); 
-      //int face_dof_size = face_gh_map->ElementSize(f);
-      //int first = face_gh_map->FirstPointInElement(f);
+  const AmanziMesh::Mesh* mesh = mesh_.get();
 
-      //for (int m = 0; m != face_dof_size; ++m) {
-      //  lid_r[k] = face_row_inds[first + m];
-      //  lid_c[k] = face_col_inds[first + m];
-      //  k++;
-      //}      
-    }
+  Kokkos::parallel_for(
+      "Operator_FaceCell::AssembleMatrixOp::Cell_FaceCell",
+      ncells_owned,
+      KOKKOS_LAMBDA(const int& c) {
+        AmanziMesh::Entity_ID_View faces;
+        mesh_->cell_get_faces(c, faces);
+        int nfaces = faces.extent(0);
 
-    //int cell_dof_size = cell_map->ElementSize(c);
-    //int first = cell_map->FirstPointInElement(c);
-    //for (int m = 0; m != cell_dof_size; ++m) {
-    //  lid_r[k] = cell_row_inds[first + m];
-    //  lid_c[k] = cell_col_inds[first + m];
-    //  k++;
-    //}
-    
-    //ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
-  }
-  //AMANZI_ASSERT(!ierr);
+        auto A_c = getFromCSR<WhetStone::DenseMatrix>(op.A,c);
+        
+        for (int n=0; n!=nfaces; ++n) {
+          if (face_row_inds[faces[n]] < nrows_local) {
+            for (int m=0; m!=nfaces; ++m) {
+              proc_mat.sumIntoValues(face_row_inds[faces[n]],
+                      &face_col_inds[faces[m]], 1, &A_c(n,m), true, true);
+            }
+            proc_mat.sumIntoValues(face_row_inds[faces[n]],
+                    &cell_col_inds[c], 1, &A_c(n, nfaces), true, true);
+          } else {
+            for (int m=0; m!=nfaces; ++m) {
+              offproc_mat.sumIntoValues(face_row_inds[faces[n]] - nrows_local,
+                      &face_col_inds[faces[m]], 1, &A_c(n,m), true, true);
+            }
+            offproc_mat.sumIntoValues(face_row_inds[faces[n]] - nrows_local,
+                    &cell_col_inds[c], 1, &A_c(n, nfaces), true, true);
+          }
+        }
+        if (cell_row_inds[c] < nrows_local) {
+          for (int m=0; m!=nfaces; ++m) {
+            proc_mat.sumIntoValues(cell_row_inds[c],
+                    &face_col_inds[faces[m]], 1, &A_c(nfaces,m), true, true);
+          }
+          proc_mat.sumIntoValues(cell_row_inds[c],
+                  &cell_col_inds[c], 1, &A_c(nfaces, nfaces), true, true);
+        } else {
+          for (int m=0; m!=nfaces; ++m) {
+            offproc_mat.sumIntoValues(cell_row_inds[c] - nrows_local,
+                    &face_col_inds[faces[m]], 1, &A_c(nfaces,m), true, true);
+          }
+          offproc_mat.sumIntoValues(cell_row_inds[c] - nrows_local,
+                  &cell_col_inds[c], 1, &A_c(nfaces, nfaces), true, true);
+        }
+      });
 }
 
 #if 0 
@@ -453,7 +443,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
       }
     }    
     
-    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+    ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }

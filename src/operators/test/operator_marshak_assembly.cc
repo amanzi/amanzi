@@ -295,6 +295,13 @@ TEST(MARSHAK_NONLINEAR_WAVE_FV) {
 // }
 
 
+TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA) {
+  writeMarshakMatrix("mfd: two-point flux approximation", 0.0, false);
+}
+// TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA_JAC) {
+//   writeMarshakMatrix("mfd: two-point flux approximation", 0.0, true);
+// }
+
 // TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
 //   writeMarshakMatrix("mfd: default", 0.0, false);
 // }

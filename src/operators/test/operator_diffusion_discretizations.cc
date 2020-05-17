@@ -113,7 +113,7 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
 #define FV 0
 #define MFD 1
 #define NLFV 0
-#define ASSEMBLING 0
+#define ASSEMBLING 1
 
 
 /* *****************************************************************
