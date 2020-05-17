@@ -35,12 +35,9 @@ ExternalProject_Add(${EXPRTK_BUILD_TARGET}
                     TMP_DIR   ${EXPRTK_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${EXPRTK_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
-                    GIT_REPOSITORY ${EXPRTK_GIT_REPOSITORY}              
-                    GIT_TAG        ${EXPRTK_GIT_TAG}      
-                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}
-                    URL            ${EXPRTK_URL}               # URL may be a web site OR a local file
-                    # -- Update (one way to skip this step is use null command)
-                    UPDATE_COMMAND ""
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
+                    URL          ${EXPRTK_URL}                 # URL may be a web site OR a local file
+                    URL_MD5      ${EXPRTK_MD5_SUM}             # md5sum of the archive file
                     # -- Patch 
                     # PATCH_COMMAND ${EXPRTK_PATCH_COMMAND}
                     # -- Configure
