@@ -63,7 +63,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     // set the names for vis
     std::vector<std::vector<std::string> > conc_names_cv(1);
     for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
-      conc_names_cv[0].push_back(*it + std::string(" conc"));
+      conc_names_cv[0].push_back(*it);
     }
     S->RequireField(tcc_key_, passwd_, conc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(true)
