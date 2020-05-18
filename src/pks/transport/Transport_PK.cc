@@ -1721,13 +1721,11 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-    std::cout<<"Calling Compute: \n";
+
     srcs_[m]->Compute(t0, tp); 
     
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
 
-    std::cout<<"Source1: "<<domain_name_<<" "<<m<<" "<<nsrcs<<" "<<tcc_index.size()<<" "<<srcs_[m]->name()<<"\n";
-    
     for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
       std::vector<double>& values = it->second;
@@ -1755,7 +1753,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         //add_mass += dtp * value; 
         cons_qty[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
-	std::cout<<"Source2: "<<c<<" "<<imap<<" "<<k<<" "<<value<<" \n";
+
       }
     }
   }
