@@ -100,9 +100,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,f);
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,f);
-        WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,f);
+        auto lv = getFromCSR<WhetStone::DenseVector>(local_v,f);
+        auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,f);
+        auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,f);
         for (int n = 0; n != ncells; ++n) {
           lv(n) = Xc(cells[n],0);
         }
@@ -145,19 +145,17 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 {
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
-  std::vector<int> lid_r;
-  std::vector<int> lid_c;
+  int lid_r[2];
+  int lid_c[2];
 
   const auto cell_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "cell", 0);
 
+  AmanziMesh::Entity_ID_View cells; 
   for (int f = 0; f != nfaces_owned; ++f) {
-    AmanziMesh::Entity_ID_View cells; 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    op.mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
     int ncells = cells.size();
-    lid_r.resize(ncells);
-    lid_c.resize(ncells);    
     for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
@@ -169,7 +167,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
     //     std::cout << "," << lid_r[1];
     //   std::cout << std::endl;
 
-    graph.insertLocalIndices(ncells, lid_r.data(), ncells, lid_c.data());
+    graph.insertLocalIndices(ncells, lid_r, ncells, lid_c);
   }
 }
 
@@ -222,7 +220,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto offproc_mat = mat.getOffProcLocalMatrix();
   int nrows_local = mat.getMatrix()->getNodeNumRows();
 
-  const AmanziMesh::Mesh* mesh = mesh_.get();
+  const AmanziMesh::Mesh* mesh = op.mesh.get();
   
   Kokkos::parallel_for(
       "Operator_Cell::AssembleMatrixOp::Face_Cell",
