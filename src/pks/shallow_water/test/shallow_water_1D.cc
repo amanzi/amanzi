@@ -24,6 +24,52 @@
 
 #include "OutputXDMF.hh"
 
+void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, double &u) {
+
+	double g = 9.81;
+	double xA = x0 - t*std::sqrt(g*hL);
+	double xB = x0 + 2.*t*std::sqrt(g*hL);
+
+	if (0. <= x && x < xA) {
+		h = hL;
+		u = 0.;
+	}
+	else {
+		if (xA <= x && x < xB) {
+			h = 4./(9.*g)*( std::sqrt(g*hL) - (x-x0)/(2.*t) )*( std::sqrt(g*hL) - (x-x0)/(2.*t) );
+			u = 2./3.*( (x-x0)/t + std::sqrt(g*hL) );
+		}
+		else {
+			h = 0.;
+		    u = 0.;
+		}
+	}
+
+}
+
+void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, double t) {
+
+	 double hL, x0, x, h, u;
+
+	 hL = 4.;
+	 x0 = 3.;
+
+	 int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+	 for (int c = 0; c < ncells_owned; c++) {
+
+		 Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+
+		 x = xc[0];
+
+		 dam_break_1D_exact(hL, x0, t, x, h, u);
+		 hh_ex[0][c] = h;
+		 vx_ex[0][c] = u;
+
+	 }
+
+}
+
 
 /* **************************************************************** */
 TEST(SHALLOW_WATER_1D) {
@@ -115,6 +161,11 @@ TEST(SHALLOW_WATER_1D) {
     const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
     const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
+    Epetra_MultiVector hh_ex(hh);
+    Epetra_MultiVector vx_ex(vx);
+
+    dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
+
     io.InitializeCycle(t_out, iter);
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
     io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
@@ -124,6 +175,8 @@ TEST(SHALLOW_WATER_1D) {
 	io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
     io.WriteVector(*B(0), "B", AmanziMesh::CELL);
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
+    io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
     io.FinalizeCycle();
 
     dt = SWPK.get_dt();
@@ -171,6 +224,11 @@ TEST(SHALLOW_WATER_1D) {
   const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
   const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
+  Epetra_MultiVector hh_ex(hh);
+  Epetra_MultiVector vx_ex(vx);
+
+  dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
+
   io.InitializeCycle(t_out, iter);
   io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
@@ -180,5 +238,7 @@ TEST(SHALLOW_WATER_1D) {
   io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
   io.WriteVector(*B(0), "B", AmanziMesh::CELL);
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+  io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
+  io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
 }
