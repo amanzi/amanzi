@@ -83,13 +83,8 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
-    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
-        little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       AMANZI_ASSERT(k->HasComponent("twin"));
-    }
-
-    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-      AMANZI_ASSERT(k->HasComponent("grad"));
     }
   }
 
@@ -117,11 +112,11 @@ void PDE_DiffusionMFD::UpdateMatrices(
       //UpdateMatricesNodal_();
     } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
                (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-      if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
-        UpdateMatricesMixed_();
-      } else {
+      // if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
+      //   UpdateMatricesMixed_();
+      // } else {
         UpdateMatricesMixed_little_k_();
-      }
+        //      }
     } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false); 
       //UpdateMatricesTPFA_();
@@ -230,11 +225,13 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
   // pre-stage kr face and cell quantities into work space
-  auto local_kr = local_op_->v; 
-  // Allocate the first time 
-  if (local_kr.size() != A.size()) {
-    local_op_->PreallocateWorkVectors();
-    local_kr = local_op_->v;
+  if (kr_cells_.size() != Wff_cells_.size()) {
+    kr_cells_ = CSR_Vector(Wff_cells_.size());
+    for (int i=0; i!=A.size(); ++i) {
+      kr_cells_.sizes_.view_host()(i,0) = Wff_cells_.size_host(i,0);
+      kr_cells_.row_map_.view_host()(i) = Wff_cells_.size_host(i,0);
+    }
+    kr_cells_.prefix_sum();
   }
 
   Kokkos::parallel_for(
@@ -246,39 +243,44 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
         int nfaces = faces.extent(0);  
 
         // set up kr
-        auto kr = getFromCSR<WhetStone::DenseVector>(local_kr,c);
-        kr(nfaces) = k_cell.extent(0) > 0 ? k_cell(c,0) : 1.0;
+        auto kr = getFromCSR<WhetStone::DenseVector>(kr_cells_,c);
+        kr.putScalar(1.0);
 
         // -- chefs recommendation: SPD discretization with upwind
-        if (little_k_type_ == OPERATOR_LITTLE_K_DIVK && k_face.extent(0) > 0) {
-          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+        if (little_k_type_ == OPERATOR_LITTLE_K_DIVK) {
+          if (k_face.extent(0) > 0)
+            for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+          if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c,0);
           
           // -- new scheme: SPD discretization with upwind and equal spliting
         } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_BASE) {
-          for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n],0));
-          kr(nfaces) = 1.0;
+          if (k_face.extent(0) > 0)
+            for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n],0));
 
           // -- same as above but remains second-order for dicontinuous coefficients
         } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-          for (int n = 0; n < nfaces; n++) {
-            AmanziMesh::Entity_ID_View cells;
-            int f = faces[n];
-            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-            kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
+          if (k_face.extent(0) > 0) {
+            for (int n = 0; n < nfaces; n++) {
+              AmanziMesh::Entity_ID_View cells;
+              int f = faces[n];
+              mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+              kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
+            }
           }
+          if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c,0);
 
           // -- the second most popular choice: classical upwind
         } else if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
-          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+          if (k_face.extent(0) > 0) 
+            for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
           
         } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
-          for (int n = 0; n < nfaces; n++) kr(n) = kr(nfaces);
+          if (k_cell.extent(0) > 0) 
+            for (int n = 0; n < nfaces; n++) kr(n) = k_cell(c,0);
         }
         
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Wff(
-            Wff_cells_.at(c),Wff_cells_.size(c,0),Wff_cells_.size(c,1));
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(
-            A.at(c),A.size(c,0),A.size(c,1));
+        auto Wff = getFromCSR<WhetStone::DenseMatrix>(Wff_cells_, c);
+        auto Acell = getFromCSR<WhetStone::DenseMatrix>(A, c);
 
 
         if (little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) {
@@ -1380,8 +1382,6 @@ void PDE_DiffusionMFD::Init()
     little_k_type_ = OPERATOR_LITTLE_K_DIVK;  // standard SPD upwind scheme
   } else if (name == "standard: cell") {
     little_k_type_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
-  } else if (name == "divk: cell-grad-face-twin") {  
-    little_k_type_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
   } else if (name == "divk: cell-face-twin") {  
     little_k_type_ = OPERATOR_LITTLE_K_DIVK_TWIN;  // for resolved simulation
   } else {

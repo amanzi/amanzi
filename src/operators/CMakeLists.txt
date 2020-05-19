@@ -54,8 +54,8 @@ set(operators_inc_files
   Op_Cell_Cell.hh
   Op_Face_Cell.hh
 #  Op_Face_CellBndFace.hh
-#  Op_SurfaceCell_SurfaceCell.hh  
-#  Op_SurfaceFace_SurfaceCell.hh
+  Op_SurfaceCell_SurfaceCell.hh  
+  Op_SurfaceFace_SurfaceCell.hh
   OperatorUtils.hh
   Operator.hh
   Operator_Cell.hh
@@ -71,6 +71,7 @@ set(operators_inc_files
   PDE_DiffusionFVwithGravity.hh
   PDE_DiffusionFactory.hh
   PDE_DiffusionMFD.hh
+  PDE_DiffusionMFDwithGravity.hh
   )
 
 set(operators_src_files
@@ -87,6 +88,7 @@ set(operators_src_files
   PDE_DiffusionFV.cc
   PDE_DiffusionFVwithGravity.cc
   PDE_DiffusionMFD.cc
+  PDE_DiffusionMFDwithGravity.cc
   )
 
 set(operators_link_libs

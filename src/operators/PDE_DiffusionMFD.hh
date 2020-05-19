@@ -184,7 +184,8 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
 
  protected:
   //std::vector<WhetStone::DenseMatrix<>> Wff_cells_;
-  CSR_Matrix Wff_cells_; 
+  CSR_Matrix Wff_cells_;
+  CSR_Vector kr_cells_;
   bool mass_matrices_initialized_;
 
   int newton_correction_;

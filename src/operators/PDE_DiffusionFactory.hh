@@ -25,7 +25,7 @@
 #include "PDE_DiffusionFVwithGravity.hh"
 // #include "PDE_DiffusionFracturedMatrix.hh"
 #include "PDE_DiffusionMFD.hh"
-// #include "PDE_DiffusionMFDwithGravity.hh"
+#include "PDE_DiffusionMFDwithGravity.hh"
 // #include "PDE_DiffusionNLFV.hh"
 // #include "PDE_DiffusionNLFVwithBndFaces.hh"
 // #include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
@@ -231,8 +231,8 @@ PDE_DiffusionFactory::CreateWithGravity_(
   //   op_g = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh_or_global_op));
   // } else if (fractured_matrix) {
   //   op_g = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh_or_global_op));
-  // } else {
-  //   op_g = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh_or_global_op));
+  } else {
+    op_g = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh_or_global_op));
   }
   op_g->Init();
   if (bc != Teuchos::null) op_g->SetBCs(bc, bc);
