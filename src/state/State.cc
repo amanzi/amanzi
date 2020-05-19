@@ -155,9 +155,36 @@ State::IsDeformableMesh(Key key) const
   return false;
 };
 
+
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
+RecordSet&
+State::GetRecordSet(const Key& fieldname)
+{
+  try {
+    return *data_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No record named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}  
+
+const RecordSet&
+State::GetRecordSet(const Key& fieldname) const
+{
+  try {
+    return *data_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No record named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}  
+
 Evaluator&
 State::RequireEvaluator(const Key& key, const Key& tag)
 {
