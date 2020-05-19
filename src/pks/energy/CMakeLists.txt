@@ -127,5 +127,11 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc test/energy_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: 4
+    add_amanzi_test(energy_one_phase energy_one_phase
+                    KIND int
+                    SOURCE test/Main.cc test/energy_one_phase.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

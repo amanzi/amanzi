@@ -27,7 +27,8 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_THERMAL_RICHARDS) {
+void RunTest(const std::string& flow)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -37,19 +38,21 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS) {
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_thermal_richards.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  if (flow == "darcy") {
+    auto& tmp = plist->sublist("cycle driver").sublist("time periods").sublist("TP 0")
+                     .sublist("PK tree").sublist("flow and energy");
+    tmp.sublist("flow").set<std::string>("PK type", "darcy");
+    tmp.sublist("energy").set<std::string>("PK type", "one-phase energy");
+  }
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
-
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(pref);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 216.0, 120.0, 54, 60);
   AMANZI_ASSERT(!mesh.is_null());
 
@@ -64,4 +67,9 @@ TEST(MPC_DRIVER_THERMAL_RICHARDS) {
   cycle_driver.Go();
 }
 
+
+TEST(MPC_DRIVER_THERMAL_RICHARDS) {
+  // RunTest("darcy");
+  RunTest("richards");
+}
 

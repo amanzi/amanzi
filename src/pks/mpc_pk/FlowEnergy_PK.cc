@@ -226,7 +226,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
-    // revover the original conserved quantaties
+    // recover conserved quantaties at the beginning of time step
     *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
     *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
     if (S_->HasField("water_content")) {

@@ -139,6 +139,7 @@
 #   0.97.2       - update MSTK to 3.3.5
 #   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
 #   0.97.4       - added CLM
+#   0.97.5       - added exprtk
 
 include(CMakeParseArguments)
 
@@ -191,7 +192,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 4)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -547,4 +548,16 @@ set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
 set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
 set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
 set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
+
+#
+# TPL: exprtk
+#
+set(EXPRTK_VERSION_MAJOR 0)
+set(EXPRTK_VERSION_MINOR 0)
+set(EXPRTK_VERSION_PATCH d81ac1a)
+set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
+set(EXPRTK_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(EXPRTK_ARCHIVE_FILE  exprtk-${EXPRTK_VERSION}.zip)
+set(EXPRTK_SAVEAS_FILE   ${EXPRTK_ARCHIVE_FILE})
+set(EXPRTK_MD5_SUM       3cd40d9d5b2cb913f1eb4fe07c7d04eb)
 
