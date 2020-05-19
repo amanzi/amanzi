@@ -69,7 +69,7 @@ void RunTest(const std::string& flow)
 
 
 TEST(MPC_DRIVER_THERMAL_RICHARDS) {
+  // RunTest("darcy");
   RunTest("richards");
-  RunTest("darcy");
 }
 
