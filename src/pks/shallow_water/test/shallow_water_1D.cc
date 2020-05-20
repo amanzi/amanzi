@@ -30,6 +30,8 @@ void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, dou
 	double xA = x0 - t*std::sqrt(g*hL);
 	double xB = x0 + 2.*t*std::sqrt(g*hL);
 
+//	std::cout << "xA = " << xA << ", xB = " << xB << std::endl;
+
 	if (0. <= x && x < xA) {
 		h = hL;
 		u = 0.;
@@ -51,8 +53,8 @@ void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
 	 double hL, x0, x, h, u;
 
-	 hL = 4.;
-	 x0 = 3.;
+	 hL = 10.;
+	 x0 = 1000.;
 
 	 int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -98,7 +100,7 @@ TEST(SHALLOW_WATER_1D) {
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 10, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 2000, 1, request_faces, request_edges);
 //  mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
   if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
@@ -148,7 +150,7 @@ TEST(SHALLOW_WATER_1D) {
   int iter = 0;
   bool flag = true;
   
-  while (t_new < 0.5) {
+  while (t_new < 40.) {
     // cycle 1, time t
     double t_out = t_new;
 

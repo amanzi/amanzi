@@ -37,7 +37,7 @@ namespace ShallowWater {
         
         vo_ = Teuchos::null;
     }
-    
+
     bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     {
 
@@ -63,10 +63,10 @@ namespace ShallowWater {
 
     	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
     	Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
-        
+
         Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
         Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
-        
+
         Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
         Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
 
@@ -136,10 +136,10 @@ namespace ShallowWater {
              std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
              std::vector<double> S;                           // source term
              std::vector<double> UL, UR, U;  			      // data for the fluxes
-             
+
              UL.resize(3);
              UR.resize(3);
-             
+
              FS.resize(3);
 
              FNum.resize(3);
@@ -155,7 +155,7 @@ namespace ShallowWater {
 //				 normal *= orientation;
 				 normal /= farea;
 
-//				 std::cout << "|n| = " << normal[0]*normal[0] + normal[1]*normal[1] << orientation << std::endl;
+//				 std::cout << "|n| = " << normal[0]*normal[0] + normal[1]*normal[1] << " " << orientation << std::endl;
 
 				 double vn, vt;
 
@@ -168,30 +168,30 @@ namespace ShallowWater {
 					 ht_rec = ht_vec_c[0][c];
 					 B_rec  = B_vec_c[0][c];
 				 }
-				 double h_rec = ht_rec - B_rec;
+//				 double h_rec = ht_rec - B_rec;
 
-			     if (h_rec < 0.) {
-			    	 std::cout << "c = " << c << std::endl;
-			    	 std::cout << "ht_rec = " << ht_rec << std::endl;
-			    	 std::cout << "B_rec  = " << B_rec << std::endl;
-			    	 std::cout << "h_rec  = " << h_rec << std::endl;
-			    	 exit(0);
-			     }
+//			     if (h_rec < 0.) {
+//			    	 std::cout << "c = " << c << std::endl;
+//			    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+//			    	 std::cout << "B_rec  = " << B_rec << std::endl;
+//			    	 std::cout << "h_rec  = " << h_rec << std::endl;
+//			    	 exit(0);
+//			     }
 
 //				 double h_rec = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
-//				 double h_rec = h_vec_c[0][c];
+				 double h_rec = h_vec_c[0][c];
 
-				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
-//				 double vx_rec = vx_vec_c[0][c];
+//				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
+				 double vx_rec = vx_vec_c[0][c];
 
-				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
-//				 double vy_rec = vy_vec_c[0][c];
+//				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
+				 double vy_rec = vy_vec_c[0][c];
 
-				 double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
-//				 double qx_rec = qx_vec_c[0][c];
+//				 double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
+				 double qx_rec = qx_vec_c[0][c];
 
-				 double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
-//				 double qy_rec = qy_vec_c[0][c];
+//				 double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
+				 double qy_rec = qy_vec_c[0][c];
 
 //				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 //				 std::cout << "xcf = " << xcf << std::endl;
@@ -234,30 +234,30 @@ namespace ShallowWater {
 						 ht_rec = ht_vec_c[0][cn];
 						 B_rec  = B_vec_c[0][cn];
 					 }
-					 double h_rec = ht_rec - B_rec;
+//					 double h_rec = ht_rec - B_rec;
 
-				     if (h_rec < 0.) {
-				    	 std::cout << "cn = " << cn << std::endl;
-				    	 std::cout << "ht_rec = " << ht_rec << std::endl;
-				    	 std::cout << "B_rec  = " << B_rec << std::endl;
-				    	 std::cout << "h_rec  = " << h_rec << std::endl;
-				    	 exit(0);
-				     }
+//				     if (h_rec < 0.) {
+//				    	 std::cout << "cn = " << cn << std::endl;
+//				    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+//				    	 std::cout << "B_rec  = " << B_rec << std::endl;
+//				    	 std::cout << "h_rec  = " << h_rec << std::endl;
+//				    	 exit(0);
+//				     }
 
 // 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
-// 					 double h_rec = h_vec_c[0][cn];
+ 					 double h_rec = h_vec_c[0][cn];
 
- 					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
-// 					 double vx_rec = vx_vec_c[0][cn];
+// 					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
+ 					 double vx_rec = vx_vec_c[0][cn];
 
- 					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
-// 					 double vy_rec = vy_vec_c[0][cn];
+// 					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
+ 					 double vy_rec = vy_vec_c[0][cn];
 
-				     double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
-//				     double qx_rec = qx_vec_c[0][cn];
+//				     double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
+				     double qx_rec = qx_vec_c[0][cn];
 
-				     double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
-//				     double qy_rec = qy_vec_c[0][cn];
+//				     double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
+				     double qy_rec = qy_vec_c[0][cn];
 
 // 					std::cout << "cn = " << cn << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 
@@ -322,6 +322,8 @@ namespace ShallowWater {
              h  = h_vec_c[0][c];
              qx = qx_vec_c[0][c];
              qy = qy_vec_c[0][c];
+//             u = qx/h;
+//             v = qy/h;
              u = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
              v = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
 
@@ -358,6 +360,8 @@ namespace ShallowWater {
              qy = U_new[2];
 
              h_vec_c_tmp[0][c] = h;
+//             u = qx/h;
+//             v = qy/h;
              u = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
              v = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
              vx_vec_c_tmp[0][c] = u;
@@ -367,6 +371,8 @@ namespace ShallowWater {
 
 //             std::cout << vx_vec_c_tmp[0][c] << " " << vy_vec_c_tmp[0][c] << std::endl;
 //             std::cout << h_vec_c_tmp[0][c] << " " << qx_vec_c_tmp[0][c] << " " << qy_vec_c_tmp[0][c] << std::endl;
+
+//             std::cout << h_vec_c_tmp[0][c] << " " << h_vec_c[0][c] << std::endl;
 
           	 AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
@@ -498,11 +504,11 @@ namespace ShallowWater {
 
         	for (int c = 0; c < ncells_owned; c++) {
         		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-        		if (xc[0] < 3.) {
-        		   h_vec_c[0][c] = 4.;
+        		if (xc[0] < 1000.) {
+        		   h_vec_c[0][c] = 10.;
         		}
 			    else {
-			       h_vec_c[0][c] = 0.;
+			       h_vec_c[0][c] = 0.; //0.0000000001;
 			    }
         		ht_vec_c[0][c] = h_vec_c[0][c] + Bathymetry(xc[0],xc[1]);
         	}
@@ -581,7 +587,7 @@ namespace ShallowWater {
     // bottom topography
     //--------------------------------------------------------------
     double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 1.; //-0.01*x;
+        return 0.; //-0.01*x;
     }
 
     //--------------------------------------------------------------
@@ -677,7 +683,7 @@ namespace ShallowWater {
 
 //        std::cout << "Phi = " << Phi << std::endl;
 
-//        Phi = 0.;
+        Phi = 0.;
 
         grad_lim = Phi*grad;
 
@@ -903,8 +909,8 @@ namespace ShallowWater {
     //--------------------------------------------------------------
     std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR) {
 
-//        return NumFlux_x_Rus(UL,UR);
-    	return NumFlux_x_central_upwind(UL,UR);
+        return NumFlux_x_Rus(UL,UR);
+//    	return NumFlux_x_central_upwind(UL,UR);
 
     }
 
@@ -950,16 +956,29 @@ namespace ShallowWater {
     std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::vector<double> UR) {
         std::vector<double> FL, FR, F;
 
-        double hL, uL, vL, hR, uR, vR, g = 9.81;
+        double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
+        double eps = 1.e-6;
 
-		// SW conservative variables: (h, hu, hv)
-		hL = UL[0];
-		uL = UL[1]/UL[0];
-		vL = UL[2]/UL[0];
+//		// SW conservative variables: (h, hu, hv)
+//		hL = UL[0];
+//		uL = UL[1]/UL[0];
+//		vL = UL[2]/UL[0];
+//
+//		hR = UR[0];
+//		uR = UR[1]/UR[0];
+//		vR = UR[2]/UR[0];
 
-		hR = UR[0];
-		uR = UR[1]/UR[0];
-		vR = UR[2]/UR[0];
+		hL  = UL[0];
+        qxL = UL[1];
+		qyL = UL[2];
+		uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
+		vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
+
+		hR  = UR[0];
+		qxR = UR[1];
+		qyR = UR[2];
+		uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
+		vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
 
         F.resize(3);
 
@@ -971,11 +990,24 @@ namespace ShallowWater {
         SL = std::max(std::fabs(uL) + std::sqrt(g*hL),std::fabs(vL) + std::sqrt(g*hL));
         SR = std::max(std::fabs(uR) + std::sqrt(g*hR),std::fabs(vR) + std::sqrt(g*hR));
 
+//        double apx = std::max(std::max(std::fabs(uL)+std::sqrt(g*hL),std::fabs(uR)+std::sqrt(g*hR)),0.);
+//        double apy = std::max(std::max(std::fabs(vL)+std::sqrt(g*hL),std::fabs(vR)+std::sqrt(g*hR)),0.);
+//        double ap  = std::max(apx,apy);
+//
+//        double amx = std::min(std::min(std::fabs(uL)-std::sqrt(g*hL),std::fabs(uR)-std::sqrt(g*hR)),0.);
+//        double amy = std::min(std::min(std::fabs(vL)-std::sqrt(g*hL),std::fabs(vR)-std::sqrt(g*hR)),0.);
+//        double am  = std::min(amx,amy);
+//
+//        SL = am;
+//        SR = ap;
+
         Smax = std::max(SL,SR);
 
         for (int i = 0; i < 3; i++) {
             F[i] = 0.5*(FL[i]+FR[i]) - 0.5*Smax*(UR[i]-UL[i]);
         }
+
+//        std::cout << "F : " << F[0] << " " << F[1] << " " << F[2] << std::endl;
 
         return F;
     }
@@ -992,25 +1024,25 @@ namespace ShallowWater {
         double eps = 1.e-6;
 
 		// SW conservative variables: (h, hu, hv)
-//		hL = UL[0];
-//		uL = UL[1]/UL[0];
-//		vL = UL[2]/UL[0];
+		hL = UL[0];
+		uL = UL[1]/UL[0];
+		vL = UL[2]/UL[0];
 
-//		hR = UR[0];
-//		uR = UR[1]/UR[0];
-//		vR = UR[2]/UR[0];
+		hR = UR[0];
+		uR = UR[1]/UR[0];
+		vR = UR[2]/UR[0];
 
-		hL  = UL[0];
-        qxL = UL[1];
-		qyL = UL[2];
-		uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
-		vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
-
-		hR  = UR[0];
-		qxR = UR[1];
-		qyR = UR[2];
-		uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
-		vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
+//		hL  = UL[0];
+//      qxL = UL[1];
+//		qyL = UL[2];
+//		uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
+//		vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
+//
+//		hR  = UR[0];
+//		qxR = UR[1];
+//		qyR = UR[2];
+//		uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
+//		vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
 
         apx = std::max(std::max(std::fabs(uL)+std::sqrt(g*hL),std::fabs(uR)+std::sqrt(g*hR)),0.);
         apy = std::max(std::max(std::fabs(vL)+std::sqrt(g*hL),std::fabs(vR)+std::sqrt(g*hR)),0.);
@@ -1044,11 +1076,33 @@ namespace ShallowWater {
         dU.resize(3);
 
         for (int i = 0; i < 3; i++) {
-        	dU[i] = minmod(UR[i]-U_star[i],U_star[i]-UL[i]);
+//        	dU[i] = minmod(UR[i]-U_star[i],U_star[i]-UL[i]);
+        	dU[i] = 0.;
         }
+
+//        std::cout << "dU: " << dU[0] << " " << dU[1] << " " << dU[2] << std::endl;
+
+        double Smax = std::max(am,ap);
+
+//
+//        if (0. < am) {
+//        	for (int i = 0; i < 3; i++) F[i] = FL[i];
+//        }
+//        else {
+//        	if (0. > ap) {
+//        		for (int i = 0; i < 3; i++) F[i] = FR[i];
+//        	}
+//        	else {
+//                for (int i = 0; i < 3; i++) {
+//                    F[i] = ( ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i]) ) / (ap - am + eps);
+//        //        	F[i] = 0.5*(FL[i]+FR[i]) - 0.5*Smax*(UR[i]-UL[i]);
+//                }
+//        	}
+//        }
 
         for (int i = 0; i < 3; i++) {
             F[i] = ( ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i]) ) / (ap - am + eps);
+//        	F[i] = 0.5*(FL[i]+FR[i]) - 0.5*Smax*(UR[i]-UL[i]);
         }
 
 //        std::cout << "F : " << F[0] << " " << F[1] << " " << F[2] << std::endl;
@@ -1155,9 +1209,9 @@ namespace ShallowWater {
 
         }
 
-        S[0] = 0.;
-        S[1] = 0.5*g/vol*S1;
-        S[2] = 0.5*g/vol*S2;
+//        S[0] = 0.;
+//        S[1] = 0.5*g/vol*S1;
+//        S[2] = 0.5*g/vol*S2;
 
 //        S[0] = 0.;
 //        S[1] = -g*h/vol*S1;
@@ -1172,6 +1226,8 @@ namespace ShallowWater {
 //        std::cout << "Sphys = " << Sphys[1] << " " << Sphys[2] << std::endl;
 
 //        S = PhysSrc(U);
+
+//        std::cout << "Sphys = " << S[0] << " " << S[1] << " " << S[2] << std::endl;
 
         return S;
 
@@ -1188,7 +1244,7 @@ namespace ShallowWater {
 		double S, Smax;
 		double vol, dx, dx_min;
 		double dt;
-		double CFL = 0.2;
+		double CFL = 0.1;
 		double eps = 1.e-6;
 
     	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
