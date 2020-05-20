@@ -8,7 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Identity tensor and non-zero source term.
+  The problem is c E + curl K curl E = Q, where K is the
+  identity tensor.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_02_HH_
@@ -34,6 +35,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
     double z = p[2];
+
     double Ex = y * y * sin(z);
     double Ey = z * z * sin(x);
     double Ez = x * x * sin(y);
@@ -51,7 +53,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double fx = -2 * sin(z) + y * y * sin(z);
     double fy = -2 * sin(x) + z * z * sin(x);
     double fz = -2 * sin(y) + x * x * sin(y);
-    return Amanzi::AmanziGeometry::Point(fx, fy, fz);
+    return Amanzi::AmanziGeometry::Point(fx, fy, fz) + c_ * electric_exact(p, t);
   }
 
  private:

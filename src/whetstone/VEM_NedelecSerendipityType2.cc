@@ -133,7 +133,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
     int row(0);
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
-      const auto& xe = mesh_->edge_centroid(e);
       const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
       double length = mesh_->edge_length(e);
 

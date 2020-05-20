@@ -238,7 +238,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   int dim = mesh.space_dimension();
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num, ndofs;
+    int num, ndofs(0);
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 

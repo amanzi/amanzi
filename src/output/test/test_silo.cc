@@ -14,8 +14,6 @@ TEST(SILO_STRUCTURED) {
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
-  unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL,
-          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
@@ -86,8 +84,6 @@ TEST(SILO_POLYGONAL) {
       new Amanzi::AmanziMesh::Mesh_MSTK("./test/four_polygon.exo", comm));
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::Parallel_type::OWNED);
-  unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;

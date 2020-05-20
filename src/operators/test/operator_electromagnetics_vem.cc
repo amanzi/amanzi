@@ -134,7 +134,7 @@ void CurlCurl_VEM(int nx, double tolerance,
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
-    double vol = 3 * mesh->cell_volume(c) / nedges;
+    double vol = 3.0 * mesh->cell_volume(c) / nedges;  // factor 3 comes from mass matrix
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -145,8 +145,6 @@ void CurlCurl_VEM(int nx, double tolerance,
       src[0][e] += (ana.source_exact(xe, time) * tau) / len * vol;
     }
   }
-  for (int e = 0; e < nedges_owned; ++e)
-    if (bc_model[e] == OPERATOR_BC_DIRICHLET) src[0][e] = 0.0;  // hack
 
   source.GatherGhostedToMaster("edge");
 
@@ -159,9 +157,9 @@ void CurlCurl_VEM(int nx, double tolerance,
   op_curlcurl->SetTensorCoefficient(K);
   op_curlcurl->UpdateMatrices();
 
-  // Add an accumulation term.
+  // Add an accumulation term. Factor 3 comes from mass matrix.
   CompositeVector phi(cvs);
-  phi.PutScalar(1.0);
+  phi.PutScalar(3.0);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   auto op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
@@ -171,12 +169,13 @@ void CurlCurl_VEM(int nx, double tolerance,
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
+  global_op->UpdateRHS(source, true);
+
   op_curlcurl->ApplyBCs(true, true, true);
   op_acc->ApplyBCs();
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
-  global_op->UpdateRHS(source, false);
 
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   global_op->InitializePreconditioner(slist);
@@ -214,8 +213,8 @@ void CurlCurl_VEM(int nx, double tolerance,
 
   if (MyPID == 0) {
     el2_err /= enorm;
-    printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver.num_itrs(), rhs.GlobalLength());
+    printf("L2(e)=%12.9f  Inf(e)=%12.9f  itr=%3d  size=%d\n",
+            el2_err, einf_err, solver.num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }
@@ -223,6 +222,7 @@ void CurlCurl_VEM(int nx, double tolerance,
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  CurlCurl_VEM<AnalyticElectromagnetics01>(16, 1e-2);
+  CurlCurl_VEM<AnalyticElectromagnetics01>(0, 1e-9);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, 1e-4);
 }
 
