@@ -505,8 +505,15 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
       K->set_shape(c, mesh_->space_dimension(), 1);
     }
     K->Init();
-    for (int c=0; c!=ncells_owned; ++c) {
-      K->at(c)(0,0) = 1.;
+
+    {
+      TensorVector* Kc = K.get();
+      Kokkos::parallel_for(
+          "PDE_DiffusionFV::ComputeTrans Init Tensor Ceof",
+          ncells_owned,
+          KOKKOS_LAMBDA(const int& c) {
+            Kc->at(c)(0,0) = 1.0;
+          });
     }
     K_ = K;
   }

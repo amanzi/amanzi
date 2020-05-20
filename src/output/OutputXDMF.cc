@@ -364,20 +364,20 @@ OutputXDMF::Write(const Teuchos::ParameterList& attrs,
 void
 OutputXDMF::Write(const Teuchos::ParameterList& attrs, const double& val) const
 {
-  h5_data_->WriteAttribute(attrs.name(), "/", val);
+  h5_data_->WriteAttribute(std::to_string(cycle_), attrs.name(), val);
 }
 
 void
 OutputXDMF::Write(const Teuchos::ParameterList& attrs, const int& val) const
 {
-  h5_data_->WriteAttribute(attrs.name(), "/", val);
+  h5_data_->WriteAttribute(std::to_string(cycle_), attrs.name(), val);
 }
 
 void
 OutputXDMF::Write(const Teuchos::ParameterList& attrs,
                   const std::string& val) const
 {
-  h5_data_->WriteAttribute(attrs.name(), "/", val);
+  h5_data_->WriteAttribute(std::to_string(cycle_), attrs.name(), val);
 }
 
 

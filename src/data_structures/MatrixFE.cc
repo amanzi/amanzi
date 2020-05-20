@@ -114,8 +114,10 @@ MatrixFE::getLocalRowView(int row, int& count, const double* &values, const int*
 // start fill
 void
 MatrixFE::resumeFill() {
-  offproc_matrix_->resumeFill();
-  matrix_->resumeFill();
+  if (matrix_->isFillComplete()) {
+    matrix_->resumeFill();
+    if (graph_->includes_offproc()) offproc_matrix_->resumeFill();
+  }
 }
 
 

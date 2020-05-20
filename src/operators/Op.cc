@@ -72,8 +72,6 @@ void Op::Rescale(double scaling)
 // allocate work vector space
 void Op::PreallocateWorkVectors() const
 {
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  //AMANZI_ASSERT(A.size() == nfaces_owned); // Not true for all??
   v = CSR_Vector(A.size());
   Av = CSR_Vector(A.size());
 

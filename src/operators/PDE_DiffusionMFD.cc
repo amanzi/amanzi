@@ -109,7 +109,6 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::cout<<"PDE_DiffusionMFD::UpdateMatrices"<<std::endl;
-
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
@@ -118,14 +117,10 @@ void PDE_DiffusionMFD::UpdateMatrices(
       //UpdateMatricesNodal_();
     } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
                (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-      if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-        assert(false); 
-        //UpdateMatricesMixedWithGrad_(flux);
-      } else if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
+      if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
         UpdateMatricesMixed_();
       } else {
-        assert(false); 
-        //UpdateMatricesMixed_little_k_();
+        UpdateMatricesMixed_little_k_();
       }
     } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false); 
@@ -181,75 +176,6 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
 }  
 
 
-/* ******************************************************************
-* Second-order reconstruction of little k inside mesh cells.
-* This member of DIVK-pamily of methods requires to recalcualte all
-* mass matrices.
-****************************************************************** */
-void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
-    const Teuchos::Ptr<const CompositeVector>& flux)
-{
-  AMANZI_ASSERT(!scaled_constraint_);
-  assert(false); 
-  // preparing little-k data
-  //const auto k_cell = k_->ViewComponent("cell");
-  //const auto k_face = k_->ViewComponent("face", true);
-  //const auto k_grad = k_->ViewComponent("grad");
-  //const auto k_twin = k_->ViewComponent("twin", true);
-  
-  // update matrix blocks
-  //int dim = mesh_->space_dimension();
-  //WhetStone::MFD3D_Diffusion mfd(mesh_);
-  //WhetStone::DenseMatrix<> Wff;
-
-  //AmanziMesh::Entity_ID_View faces, cells;
-
-  //WhetStone::Tensor<> Kc(mesh_->space_dimension(), 1);
-  //Kc(0, 0) = 1.0;
-  
-  //for (int c = 0; c < ncells_owned; c++) {
-    // mean value and gradient of nonlinear factor
-  //  double kc = k_cell(0,c);
-  //  AmanziGeometry::Point kgrad(dim);
-  //  for (int i = 0; i < dim; i++) kgrad[i] = k_grad(i,c);
- 
-    // upwinded values of nonlinear factor
-  //  mesh_->cell_get_faces(c, faces);
-  //  int nfaces = faces.size();
-  //  std::vector<double> kf(nfaces, 1.0); 
-  //  if (k_twin.extent(0) != 0) {
-  //    for (int n = 0; n < nfaces; n++) kf[n] = k_face(0,faces[n]);
-  //  } else {
-  //    for (int n = 0; n < nfaces; n++) {
-  //      int f = faces[n];
-  //      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-  //      kf[n] = (c == cells[0]) ? k_face(0,f) : k_twin(0,f);
-  //    }
-  //  }
-
-  //  if (K_.get()) Kc = K_->at_host(c);
-  //  mfd.MassMatrixInverseDivKScaled(c, Kc, kc, kgrad, Wff);
-
-  //  WhetStone::DenseMatrix<> Acell(nfaces + 1, nfaces + 1);
-
-  //  double matsum = 0.0; 
-  //  for (int n = 0; n < nfaces; n++) {
-  //    double rowsum = 0.0;
-  //    for (int m = 0; m < nfaces; m++) {
-  //      double tmp = Wff(n, m) * kf[n] * kf[m];
-  //      rowsum += tmp;
-  //      Acell(n, m) = tmp;
-  //    }
-
-  //    Acell(n, nfaces) = -rowsum;
-  //    Acell(nfaces, n) = -rowsum;
-  //    matsum += rowsum;
-  //  }
-  //  Acell(nfaces, nfaces) = matsum;
-  //  local_op_->matrices[c].assign(Acell);
-  //}
-}
-
 
 /* ******************************************************************
 * Basic routine for each operator: creation of elemental matrices.
@@ -269,9 +195,8 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
 
       WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(
         A.at(c),A.size(c,0),A.size(c,1));
-      assert(Acell.NumRows() == nfaces && Acell.NumCols() == nfaces); 
 
-      // create stiffness matrix by ellimination of the mass matrix
+      // create stiffness matrix by elimination of the mass matrix
       double matsum = 0.0;
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
@@ -286,7 +211,6 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
       }
       Acell(nfaces, nfaces) = matsum;
     }); 
-    //local_op_->matrices[c].assign(Acell);
 }
 
 
@@ -295,122 +219,108 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
 ****************************************************************** */
 void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 {
-  assert(false); 
-  //const auto k_cell = k_->ViewComponent("cell");
-  //const auto k_face = k_->ViewComponent("face", true);
-  //const auto k_twin = k_->ViewComponent("twin", true);
+  cMultiVectorView_type_<Amanzi::DefaultDevice,double> k_cell, k_face, k_twin;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent<>("cell", false);
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent<>("face", true);
+    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent<>("twin", true);
+  }
 
-  // update matrix blocks
-  //AmanziMesh::Entity_ID_View faces, cells;
+  CSR_Matrix& A = local_op_->A; 
+  const AmanziMesh::Mesh* mesh = mesh_.get();
 
-  //for (int c = 0; c < ncells_owned; c++) {
-  //  mesh_->cell_get_faces(c, faces);
-  //  int nfaces = faces.size();
+  // pre-stage kr face and cell quantities into work space
+  auto local_kr = local_op_->v; 
+  // Allocate the first time 
+  if (local_kr.size() != A.size()) {
+    local_op_->PreallocateWorkVectors();
+    local_kr = local_op_->v;
+  }
 
-  //  WhetStone::DenseMatrix<> Wff = Wff_cells_[c];
-  //  WhetStone::DenseMatrix<> Acell(nfaces + 1, nfaces + 1);
+  Kokkos::parallel_for(
+      "PDE_DiffusionMFD::UpdateMatricesMixed_little_k_",
+      ncells_owned,
+      KOKKOS_LAMBDA(const int& c) {
+        AmanziMesh::Entity_ID_View faces;
+        mesh->cell_get_faces(c, faces);
+        int nfaces = faces.extent(0);  
 
-    // Update terms due to nonlinear coefficient
-  //  double kc(1.0);
-  //  std::vector<double> kf(nfaces, 1.0); 
-   
-  //  if (k_cell.extent(0) != 0) kc = k_cell(0,c);
+        // set up kr
+        auto kr = getFromCSR<WhetStone::DenseVector>(local_kr,c);
+        kr(nfaces) = k_cell.extent(0) > 0 ? k_cell(c,0) : 1.0;
 
-    // -- chefs recommendation: SPD discretization with upwind
-  //  if (little_k_type_ == OPERATOR_LITTLE_K_DIVK && k_face.extent(0)) {
-  //    for (int n = 0; n < nfaces; n++) kf[n] = k_face(0,faces[n]);
-
-    // -- new scheme: SPD discretization with upwind and equal spliting
-  //  } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_BASE) {
-  //    kc = 1.0;
-  //    for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt(k_face(0,faces[n]));
-
-    // -- same as above but remains second-order for dicontinuous coefficients
-  //  } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-  //    for (int n = 0; n < nfaces; n++) {
-  //      int f = faces[n];
-  //      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-  //      kf[n] = (c == cells[0]) ? k_face(0,f) : k_twin(0,f);
-  //    }
-
-    // -- the second most popular choice: classical upwind
-  //  } else if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
-  //    for (int n = 0; n < nfaces; n++) kf[n] = k_face(0,faces[n]);
-
-  //  } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
-  //    for (int n = 0; n < nfaces; n++) kf[n] = kc;
-  //  }
-
-    // create stiffness matrix by ellimination of the mass matrix
-    // -- all methods expect for DIVK-family of methods.
-  //  if ((little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) == 0) {
-      // -- not scaled constraint: kr > 0
-  //    if (!scaled_constraint_) {
-  //      double matsum = 0.0; 
-  //      for (int n = 0; n < nfaces; n++) {
-  //        double rowsum = 0.0;
-  //        for (int m = 0; m < nfaces; m++) {
-  //          double tmp = Wff(n, m) * kf[n];
-  //          rowsum += tmp;
-  //          Acell(n, m) = tmp;
-  //        }
-
-  //        Acell(n, nfaces) = -rowsum;
-  //        matsum += rowsum;
-  //      }
-  //      Acell(nfaces, nfaces) = matsum;
-
-  //      for (int n = 0; n < nfaces; n++) {
-  //        double colsum = 0.0;
-  //        for (int m = 0; m < nfaces; m++) colsum += Acell(m, n);
-  //        Acell(nfaces, n) = -colsum;
-  //      }
-
-      // -- scaled constraint: kr >= 0
-  //    } else {
-  //      double matsum = 0.0;
-  //      for (int n = 0; n < nfaces; n++) {
-  //        double rowsum = 0.0;
-  //        double cur_kf = (kf[n] < scaled_constraint_cutoff_) ? 1.0 : kf[n];
-  //        for (int m = 0; m < nfaces; m++) {
-  //          double tmp = Wff(n, m) * cur_kf;
-  //          rowsum += tmp;
-  //          Acell(n, m) = tmp;
-  //        }
-  //        Acell(n, nfaces) = -rowsum;
-  //      }
-
-  //      for (int n = 0; n < nfaces; n++) {
-  //        double colsum = 0.0;
-  //        for (int m = 0; m < nfaces; m++) colsum += Wff(m, n) * kf[m];
-  //        Acell(nfaces, n) = -colsum;
-  //        matsum += colsum;
-  //      }
-  //      Acell(nfaces, nfaces) = matsum;
-  //    }
-  //  }
-
-    // Amanzi's first upwind: the family of DIVK fmethods
-  //  if (little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) {
-  //    double matsum = 0.0; 
-  //    for (int n = 0; n < nfaces; n++) {
-  //      double rowsum = 0.0;
-  //      for (int m = 0; m < nfaces; m++) {
-  //        double tmp = Wff(n, m) * kf[n] * kf[m] / kc;
-  //        rowsum += tmp;
-  //        Acell(n, m) = tmp;
-  //      }
+        // -- chefs recommendation: SPD discretization with upwind
+        if (little_k_type_ == OPERATOR_LITTLE_K_DIVK && k_face.extent(0) > 0) {
+          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
           
-  //      Acell(n, nfaces) = -rowsum;
-  //      Acell(nfaces, n) = -rowsum;
-  //      matsum += rowsum;
-  //    }
+          // -- new scheme: SPD discretization with upwind and equal spliting
+        } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+          for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n],0));
+          kr(nfaces) = 1.0;
 
-  //    Acell(nfaces, nfaces) = matsum;
-  //  }
-    
-  //  local_op_->matrices[c].assign(Acell);
-  //}
+          // -- same as above but remains second-order for dicontinuous coefficients
+        } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+          for (int n = 0; n < nfaces; n++) {
+            AmanziMesh::Entity_ID_View cells;
+            int f = faces[n];
+            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
+          }
+
+          // -- the second most popular choice: classical upwind
+        } else if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
+          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+          
+        } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
+          for (int n = 0; n < nfaces; n++) kr(n) = kr(nfaces);
+        }
+        
+        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Wff(
+            Wff_cells_.at(c),Wff_cells_.size(c,0),Wff_cells_.size(c,1));
+        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(
+            A.at(c),A.size(c,0),A.size(c,1));
+
+
+        if (little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) {
+          double matsum = 0.0; 
+          for (int n = 0; n < nfaces; n++) {
+            double rowsum = 0.0;
+            for (int m = 0; m < nfaces; m++) {
+              double tmp = Wff(n, m) * kr(n) * kr(m) / kr(nfaces);
+              rowsum += tmp;
+              Acell(n, m) = tmp;
+            }
+          
+            Acell(n, nfaces) = -rowsum;
+            Acell(nfaces, n) = -rowsum;
+            matsum += rowsum;
+          }
+
+          Acell(nfaces, nfaces) = matsum;
+
+        } else {
+          double matsum = 0.0; 
+          for (int n = 0; n < nfaces; n++) {
+            double rowsum = 0.0;
+            for (int m = 0; m < nfaces; m++) {
+              double tmp = Wff(n, m) * kr(n);
+              rowsum += tmp;
+              Acell(n, m) = tmp;
+            }
+
+            Acell(n, nfaces) = -rowsum;
+            matsum += rowsum;
+          }
+          Acell(nfaces, nfaces) = matsum;
+
+          for (int n = 0; n < nfaces; n++) {
+            double colsum = 0.0;
+            for (int m = 0; m < nfaces; m++) colsum += Acell(m, n);
+            Acell(nfaces, n) = -colsum;
+          }
+        }
+
+      });
 }
 
 
@@ -614,157 +524,75 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
 {
   std::cout<<"PDE_DiffusionMFD::ApplyBCs_Mixed_"<<std::endl;
 
-  // apply diffusion type BCs to FACE-CELL system
-  const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
-  CSR_Matrix& A = local_op_->A; 
+  global_op_->rhs()->putScalarGhosted(0.0);
 
-  const auto bc_model_trial = bc_trial->bc_model();
-  const auto bc_model_test = bc_test->bc_model();
+  { // context for views
+    // apply diffusion type BCs to FACE-CELL system
+    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
+    CSR_Matrix& A = local_op_->A; 
 
-  const auto bc_value = bc_trial->bc_value();
-  const auto bc_mixed = bc_trial->bc_mixed();
+    const auto bc_model_trial = bc_trial->bc_model();
+    const auto bc_model_test = bc_test->bc_model();
 
-  AMANZI_ASSERT(bc_model_trial.size() == nfaces_wghost);
-  AMANZI_ASSERT(bc_value.size() == nfaces_wghost);
+    const auto bc_value = bc_trial->bc_value();
+    const auto bc_mixed = bc_trial->bc_mixed();
 
-  //global_op_->rhs()->PutScalarGhosted(0.0);
-  const auto rhs_face = global_op_->rhs()->ViewComponent("face", true);
-  const auto rhs_cell = global_op_->rhs()->ViewComponent("cell");
+    AMANZI_ASSERT(bc_model_trial.size() == nfaces_wghost);
+    AMANZI_ASSERT(bc_value.size() == nfaces_wghost);
 
-  //const auto k_cell = k_->ViewComponent("cell");
-  const auto k_face = k_->ViewComponent("face", true);
-  std::cout<<"k_face: "<<k_face.extent(0)<<";"<<k_face.extent(1)<<std::endl;
+    const auto rhs_face = global_op_->rhs()->ViewComponent("face", true);
+    const auto rhs_cell = global_op_->rhs()->ViewComponent("cell");
 
-  Kokkos::parallel_for(
-    "PDE_DiffusionMFD::ApplyBCs_Mixed_",
-    ncells_owned,
-    KOKKOS_LAMBDA(const int& c){
-      AmanziMesh::Entity_ID_View faces;
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::ApplyBCs_Mixed_",
+        ncells_owned,
+        KOKKOS_LAMBDA(const int& c) {
+          AmanziMesh::Entity_ID_View faces;
+          mesh->cell_get_faces(c, faces);
+          int nfaces = faces.size();
 
-      m->cell_get_faces(c, faces);
-      int nfaces = faces.size();
-      
-      // Update terms due to nonlinear coefficient
-      double kc(1.0);
-      //std::vector<double> kf(nfaces, 1.0);
-      double kfa(1.0); 
-
-      if (scaled_constraint_) {
-        assert(false); 
-        // un-rolling little-k data
-        //if (k_cell.extent(0) != 0) kc = k_cell(0,c);
-        
-        if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
-          assert(false); 
-          //#if 0 
-          //for (int n = 0; n < nfaces; n++) kf[n] = k_face(0,faces[n]);
-          //#endif 
-          
-        } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
-          assert(false); 
-          //#if 0 
-          //for (int n = 0; n < nfaces; n++) kf[n] = kc;
-          //#endif 
-        }
-      }
-      
-      bool flag(true);
-      WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(A.at(c),A.size(c,0),A.size(c,1));
-      // essential conditions for test functions
-      for (int n = 0; n != nfaces; ++n) {
-        int f = faces[n];
-        if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) { 
-          //if (flag) {  // make a copy of elemental matrix
-          //  local_op_->matrices_shadow[c].assign(Acell);
-          //  flag = false;
-          //}
-          for (int m = 0; m < nfaces + 1; m++) Acell(n, m) = 0.0; 
-        }
-      }
-
-      // conditions for trial functions
-      for (int n = 0; n != nfaces; ++n) {
-        int f = faces[n];
-        double value = bc_value[f];
-
-        if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) { 
-          // make a copy of elemental matrix for post-processing
-          //if (flag) {
-          //  local_op_->matrices_shadow[c].assign(Acell);
-          //  flag = false;
-          //}
-
-          if (eliminate) { 
-            for (int m = 0; m < nfaces; m++) {
-              //rhs_face(0,faces[m]) -= Acell(m, n) * value;
-              Kokkos::atomic_add(&rhs_face(0,faces[m]),-Acell(m, n) * value); 
-              Acell(m, n) = 0.0;
+          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(A.at(c),A.size(c,0),A.size(c,1));
+          // essential conditions for test functions
+          for (int n = 0; n != nfaces; ++n) {
+            int f = faces[n];
+            if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) { 
+              for (int m = 0; m < nfaces + 1; m++) Acell(n, m) = 0.0; 
             }
-
-            rhs_cell(0,c) -= Acell(nfaces, n) * value;
-            Acell(nfaces, n) = 0.0;
           }
 
-          if (essential_eqn) {
-            rhs_face(0,f) = value;
-            Acell(n, n) = 1.0;
-          } 
-        } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
-          assert(false); 
-          //#if 0 
-          //if (scaled_constraint_) {
-          //  if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
-          //    AMANZI_ASSERT(value == 0.0);
-          //    rhs_face(0,f) = 0.0;
-          //  } else if (kf[n] < scaled_constraint_cutoff_) {
-          //    rhs_face(0,f) -= value * mesh_->face_area(f) / kf[n];
-          //  } else {
-          //    rhs_face(0,f) -= value * mesh_->face_area(f);
-          //  }
-          //} else {
-          //  rhs_face(0,f) -= value * mesh_->face_area(f);
-          //}
-          //#endif 
-        } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
-          assert(false); 
-          //#if 0 
-          //if (scaled_constraint_ && kf[n] < scaled_constraint_cutoff_) {
-          //  AMANZI_ASSERT(false);
-          //} else {
-          //  rhs_face(0,f) -= value * mesh_->face_area(f);
-          //}
-          //#endif 
-        } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
-          //if (flag) {  // make a copy of elemental matrix
-          //  local_op_->matrices_shadow[c].assign(Acell);
-          //  flag = false;
-          //}
-          double area = m->face_area(f);
-          if (scaled_constraint_) {
-            if (std::abs(kfa) < scaled_constraint_fuzzy_) {
-              assert((value == 0.0) && (bc_mixed[f] == 0.0));
-              //rhs_face(0,f) = 0.0;
-              //Kokkos::atomic_store(&rhs_face(0,f),0.0); // NOT FOUND?
-              Kokkos::atomic_exchange(&rhs_face(0,f),0.0); 
-              
-            } else if (kfa < scaled_constraint_cutoff_) {
-              //rhs_face(0,f) -= value * area / kfa;
-              Kokkos::atomic_add(&rhs_face(0,f),- value * area / kfa); 
-              Acell(n, n) += bc_mixed[f] * area / kfa;
-            } else {
-              //rhs_face(0,f) -= value * area;
-              Kokkos::atomic_add(&rhs_face(0,f),- value * area); 
+          // conditions for trial functions
+          for (int n = 0; n != nfaces; ++n) {
+            int f = faces[n];
+            double value = bc_value[f];
+
+            if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) { 
+              if (eliminate) { 
+                for (int m = 0; m < nfaces; m++) {
+                  Kokkos::atomic_add(&rhs_face(faces[m],0),-Acell(m, n) * value); 
+                  Acell(m, n) = 0.0;
+                }
+
+                Kokkos::atomic_add(&rhs_cell(c,0), -Acell(nfaces, n) * value);
+                Acell(nfaces, n) = 0.0;
+              }
+
+              if (essential_eqn) {
+                Kokkos::atomic_assign(&rhs_face(f,0), value);
+                Acell(n, n) = 1.0;
+              } 
+            } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
+              Kokkos::atomic_add(&rhs_face(f,0), -value * mesh->face_area(f));
+            } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
+              Kokkos::atomic_add(&rhs_face(f,0), -value * mesh->face_area(f));
+            } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
+              double area = mesh->face_area(f);
+              Kokkos::atomic_add(&rhs_face(f,0), -value * area); 
               Acell(n, n) += bc_mixed[f] * area;
             }
-          } else {
-            //rhs_face(0,f) -= value * area;
-            Kokkos::atomic_add(&rhs_face(0,f),- value * area); 
-            Acell(n, n) += bc_mixed[f] * area;
           }
-        }
-      }
-    }); 
-  //global_op_->rhs()->GatherGhostedToMaster("face", Add);
+        });
+  }
+  global_op_->rhs()->GatherGhostedToMaster("face", Tpetra::ADD);
 }
 
 
@@ -1101,102 +929,62 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
 {
   std::cout<<"PDS_DiffusionMFD::UpdateFlux"<<std::endl;
-  // Initialize intensity in ghost faces.
-  //flux->PutScalar(0.0);
-  //u->ScatterMasterToGhosted("face");
 
-  //if (k_ != Teuchos::null) {
-  //  if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-  //}
+  flux->putScalar(0.0);
+  u->ScatterMasterToGhosted("face");
 
-  const auto u_cell = u->ViewComponent("cell");
-  const auto u_face = u->ViewComponent("face", true);
-  const auto flux_data = flux->ViewComponent("face", true);
-  const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
+  if (k_ != Teuchos::null) {
+   if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+  }
 
+  {
+    const auto u_cell = u->ViewComponent("cell");
+    const auto u_face = u->ViewComponent("face", true);
+    const auto flux_data = flux->ViewComponent("face", true);
+    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
 
-  Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_wghost); 
-  //std::vector<int> hits(nfaces_wghost, 0);
+    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_wghost); 
 
-  auto local_A = local_op_->A; 
-  auto local_Av = local_op_->Av; 
-  auto local_v = local_op_->v; 
+    auto local_A = local_op_->A; 
+    auto local_Av = local_op_->Av; 
+    auto local_v = local_op_->v; 
 
-  Kokkos::parallel_for(
-    "PDE_DiffusionMFD::UpdateFlux",
-    ncells_owned, 
-    KOKKOS_LAMBDA(const int& c){
-      AmanziMesh::Entity_ID_View faces;
-      Kokkos::View<int*> dirs;
-      m->cell_get_faces_and_dirs(c, faces, dirs);
-      int nfaces = faces.size();
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::UpdateFlux",
+        ncells_owned, 
+        KOKKOS_LAMBDA(const int& c){
+          AmanziMesh::Entity_ID_View faces;
+          Kokkos::View<int*> dirs;
+          mesh->cell_get_faces_and_dirs(c, faces, dirs);
+          int nfaces = faces.size();
 
-      WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
-      WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
-      WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
+          auto lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
+          auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
+          auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
 
-      //WhetStone::DenseVector<> v(nfaces + 1), av(nfaces + 1);
+          for (int n = 0; n < nfaces; n++) {
+            lv(n) = u_face(faces[n], 0);
+          }
+          lv(nfaces) = u_cell(c,0);
 
-      for (int n = 0; n < nfaces; n++) {
-        lv(n) = u_face(0,faces[n]);
-      }
-      lv(nfaces) = u_cell(0,c);
+          lA.Multiply(lv, lAv, false);
 
-      lA.Multiply(lv, lAv, false);
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            if (f < nfaces_owned) {
+              Kokkos::atomic_add(&flux_data(f,0), -lAv(n) * dirs[n]);
+              Kokkos::atomic_increment(&hits(f));
+            }
+          }
+        });
 
-      //if (local_op_->matrices_shadow[c].NumRows() == 0) { 
-      //  local_op_->matrices[c].Multiply(v, av, false);
-      //} else {
-      //  local_op_->matrices_shadow[c].Multiply(v, av, false);
-      //}
-
-      for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
-        if (f < nfaces_owned) {
-          flux_data(0,f) -= lAv(n) * dirs[n];
-          Kokkos::atomic_add(&hits(f), 1);
-        }
-      }
-  });
-
-  Kokkos::parallel_for(
-    "PDE_DiffusionMFD::UpdateFlux",
-    nfaces_owned, 
-    KOKKOS_LAMBDA(const int& f){
-      flux_data(0,f) /= hits[f];
-    });
-    //for (int f = 0; f != nfaces_owned; ++f) {
-    //  flux_data(0,f) /= hits[f];
-    //}
-
-  //for (int c = 0; c < ncells_owned; c++) {
-    //mesh_->cell_get_faces_and_dirs(c, faces, dirs);
-    //nt nfaces = faces.size();
-
-    //WhetStone::DenseVector<> v(nfaces + 1), av(nfaces + 1);
-    //for (int n = 0; n < nfaces; n++) {
-    //  v(n) = u_face(0,faces[n]);
-    //}
-    //v(nfaces) = u_cell(0,c);
-
-    //if (local_op_->matrices_shadow[c].NumRows() == 0) { 
-    //  local_op_->matrices[c].Multiply(v, av, false);
-    //} else {
-    //  local_op_->matrices_shadow[c].Multiply(v, av, false);
-    //}
-
-    //for (int n = 0; n < nfaces; n++) {
-    //  int f = faces[n];
-    //  if (f < nfaces_owned) {
-    //    flux_data(0,f) -= av(n) * dirs[n];
-    //    hits[f]++;
-    //  }
-    //}
-  //}
-
-  //for (int f = 0; f != nfaces_owned; ++f) {
-  //  flux_data(0,f) /= hits[f];
-  //}
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::UpdateFlux",
+        nfaces_owned, 
+        KOKKOS_LAMBDA(const int& f){
+          flux_data(f,0) /= hits(f);
+        });
+  }
 }
 
 
@@ -1574,7 +1362,8 @@ void PDE_DiffusionMFD::Init()
   }
   
   // scaled constraint -- enables zero value of k on a face
-  scaled_constraint_ = plist_.get<bool>("scaled constraint equation", false);
+  // scaled_constraint_ = plist_.get<bool>("scaled constraint equation", false);
+  scaled_constraint_ = false;
   scaled_constraint_cutoff_ = plist_.get<double>("constraint equation scaling cutoff", 1.0);
   scaled_constraint_fuzzy_ = plist_.get<double>("constraint equation fuzzy number", 1.0e-12);
 

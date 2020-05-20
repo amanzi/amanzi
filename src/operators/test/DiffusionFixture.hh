@@ -257,7 +257,8 @@ struct DiffusionFixture {
 
       // calculate flux error
       double unorm, ul2_err, uinf_err;
-      
+
+      op->UpdateMatrices(Teuchos::null, Teuchos::null);
       op->UpdateFlux(solution.ptr(), flux.ptr());
       {
         auto fv = flux->ViewComponent<MirrorHost>("face", false);

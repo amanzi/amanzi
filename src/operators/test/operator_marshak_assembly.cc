@@ -270,6 +270,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
       CHECK(!ierr);
       
       std::cout << i << ": ";
+      CHECK_EQUAL(gold_n_cols, test_n_cols);
       if (test_n_cols == gold_n_cols) {
         for (int j=0; j!=gold_n_cols; ++j) {
           std::cout << "(" << j << ": " << gold_vals[j] << " == " << test_vals[j] << ")";
@@ -293,6 +294,13 @@ TEST(MARSHAK_NONLINEAR_WAVE_FV) {
 //   writeMarshakMatrix("fv: default", 0.0, true);
 // }
 
+
+TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA) {
+  writeMarshakMatrix("mfd: two-point flux approximation", 0.0, false);
+}
+// TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA_JAC) {
+//   writeMarshakMatrix("mfd: two-point flux approximation", 0.0, true);
+// }
 
 // TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
 //   writeMarshakMatrix("mfd: default", 0.0, false);
