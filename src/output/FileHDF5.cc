@@ -61,8 +61,8 @@ FileHDF5::CloseFile()
     AMANZI_ASSERT(data_file_ >= 0);
   }
   for (auto gid : open_groups_) {
-    int ierr = parallelIO_close_dataset_group(data_file_, &IOgroup_);
-    AMANZI_ASSERT(!ierr);
+    //int ierr = parallelIO_close_dataset_group(data_file_, &IOgroup_);
+    //AMANZI_ASSERT(!ierr);
   }
   open_groups_.clear();
 
