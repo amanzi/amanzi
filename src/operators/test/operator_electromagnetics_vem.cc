@@ -29,19 +29,18 @@
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "PDE_Accumulation.hh"
-#include "PDE_Electromagnetics.hh"
+#include "PDE_Abstract.hh"
 
 #include "AnalyticElectromagnetics01.hh"
 #include "AnalyticElectromagnetics02.hh"
+#include "MeshDeformation.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl_VEM(int nx, double tolerance, 
-                  const std::string& disc_method = "mfd: default") {
+void CurlCurl_VEM(int nx, int order, double tolerance) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,7 +51,7 @@ void CurlCurl_VEM(int nx, double tolerance,
   int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
-                            << "  method=" << disc_method << std::endl;
+                            << "  order=" << order << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
@@ -68,10 +67,13 @@ void CurlCurl_VEM(int nx, double tolerance,
 
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
-  if (nx > 0) 
+  if (nx > 0) {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
-  else
+    auto mesh_tmp = Teuchos::rcp_const_cast<Mesh>(mesh);
+    DeformMesh(mesh_tmp, 5, 1.0);
+  } else {
     mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
+  }
 
   // create resistivity coefficient
   double time = 1.0;
@@ -88,7 +90,7 @@ void CurlCurl_VEM(int nx, double tolerance,
   }
 
   // create boundary data
-  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+  // int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
@@ -120,13 +122,23 @@ void CurlCurl_VEM(int nx, double tolerance,
   }
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
-  olist.set<std::string>("discretization primary", disc_method);
-  Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("curlcurl operator");
+  olist.sublist("schema").set<int>("method order", order);
+  auto op_curlcurl = Teuchos::rcp(new PDE_Abstract(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
+  op_curlcurl->Setup(K, false);
+  op_curlcurl->UpdateMatrices();
+
+  // add an accumulation aoperator
+  Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
+  olist = plist.sublist("PK operator").sublist("accumulation operator");
+  olist.sublist("schema").set<int>("method order", order);
+  auto op_acc = Teuchos::rcp(new PDE_Abstract(olist, global_op));
+  op_acc->SetBCs(bc, bc);
+  op_acc->UpdateMatrices();
 
   // create source for a manufactured solution.
+  const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
   source.PutScalarMasterAndGhosted(0.0);
@@ -134,7 +146,7 @@ void CurlCurl_VEM(int nx, double tolerance,
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
-    double vol = 3.0 * mesh->cell_volume(c) / nedges;  // factor 3 comes from mass matrix
+    WhetStone::DenseVector ana_loc(nedges), src_loc(nedges);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -142,7 +154,15 @@ void CurlCurl_VEM(int nx, double tolerance,
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      src[0][e] += (ana.source_exact(xe, time) * tau) / len * vol;
+      ana_loc(n) = (ana.source_exact(xe, time) * tau) / len;
+    }
+
+    const auto& Acell = (op_acc->local_op()->matrices)[c]; 
+    Acell.Multiply(ana_loc, src_loc, false);
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      src[0][e] += src_loc(n);
     }
   }
 
@@ -153,26 +173,11 @@ void CurlCurl_VEM(int nx, double tolerance,
   Epetra_MultiVector& sol = *solution.ViewComponent("edge");
   sol.PutScalar(0.0);
 
-  // set up the diffusion operator
-  op_curlcurl->SetTensorCoefficient(K);
-  op_curlcurl->UpdateMatrices();
-
-  // Add an accumulation term. Factor 3 comes from mass matrix.
-  CompositeVector phi(cvs);
-  phi.PutScalar(3.0);
-
-  Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  auto op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
-  op_acc->SetBCs(bc, bc);
-
-  double dT = 1.0;
-  op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
-
   // BCs, sources, and assemble
   global_op->UpdateRHS(source, true);
 
   op_curlcurl->ApplyBCs(true, true, true);
-  op_acc->ApplyBCs();
+  op_acc->ApplyBCs(true, true, false);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
@@ -222,7 +227,7 @@ void CurlCurl_VEM(int nx, double tolerance,
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  CurlCurl_VEM<AnalyticElectromagnetics01>(0, 1e-9);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, 1e-4);
+  CurlCurl_VEM<AnalyticElectromagnetics01>(0, 1, 1e-8);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, 1, 1e-3);
 }
 

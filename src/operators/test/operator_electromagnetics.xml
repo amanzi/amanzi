@@ -37,6 +37,24 @@
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
     </ParameterList>
+
+    <ParameterList name="curlcurl operator">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="electromagnetics"/>
+        <Parameter name="method order" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="accumulation operator">
+      <Parameter name="matrix type" type="string" value="mass"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="electromagnetics"/>
+        <Parameter name="method order" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- SOLVERS -->
