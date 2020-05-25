@@ -134,19 +134,18 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  assert(false); 
-  // add Newton-type corrections
-  //if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-  //  if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+  //  add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
 
-  //    if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
-  //    AddNewtonCorrectionCell_(flux, u, scalar_factor);
+     if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
+     AddNewtonCorrectionCell_(flux, u, scalar_factor);
       
-  //  } else {
-  //    Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
-  //    Exceptions::amanzi_throw(msg);
-  //  }
-  //}
+   } else {
+     Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
+     Exceptions::amanzi_throw(msg);
+   }
+  }
 }
 
 
@@ -778,51 +777,55 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  assert(false); 
   // hack: ignore correction if no flux provided.
-  //if (flux == Teuchos::null) return;
+  if (flux == Teuchos::null) return;
 
   // Correction is zero for linear problems
-  //if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
   // only works on upwinded methods
-  //if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
+  if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  //const auto kf = k_->ViewComponent("face");
-  //const auto dkdp_f = dkdp_->ViewComponent("face");
-  //const auto flux_f = flux->ViewComponent("face");
+  const AmanziMesh::Mesh* mesh = mesh_.get();
+  CSR_Matrix& A = jac_op_->A; 
+  
+  { // context for views
+    const auto dkdp_f = dkdp_->ViewComponent("face");
+    const auto flux_f = flux->ViewComponent("face");
+    const auto kf = k_->ViewComponent("face");
 
-  // populate the local matrices
-  //double v, vmod;
-  //AmanziMesh::Entity_ID_View cells;
-  //for (int f = 0; f < nfaces_owned; f++) {
-  //  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-  //  int ncells = cells.size();
-  //  WhetStone::DenseMatrix<> Aface(ncells, ncells);
-  //  //Aface.PutScalar(0.0);
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::AddNewtonCorrectionCell_",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int& f) {
+          // populate the local matrices
+          AmanziMesh::Entity_ID_View cells;
+          mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          int ncells = cells.size();
 
-    // We use the upwind discretization of the generalized flux.
-  //  v = std::abs(kf(0,f)) > 0.0 ? flux_f(0,f) * dkdp_f(0,f) / kf(0,f) : 0.0;
-  //  vmod = std::abs(v);
+          auto Aface = getFromCSR<WhetStone::DenseMatrix>(A, f);
 
-    // prototype for future limiters (external or internal ?)
-  //  vmod *= scalar_factor;
+          // We use the upwind discretization of the generalized flux.
+          double v = fabs(kf(f,0)) > 0.0 ? flux_f(f,0) * dkdp_f(f,0) / kf(f,0) : 0.0;
+          double vmod = fabs(v);
 
-    // define the upwind cell, index i in this case
-  //  int i, dir, c1;
-  //  c1 = cells[0];
-  //  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
-  //  i = (v * dir >= 0.0) ? 0 : 1;
+          // prototype for future limiters (external or internal ?)
+          vmod *= scalar_factor;
 
-  //  if (ncells == 2) {
-  //    Aface(i, i) = vmod;
-  //    Aface(1 - i, i) = -vmod;
-  //  } else if (i == 0) {
-  //    Aface(0, 0) = vmod;
-  //  }
-
-  //  jac_op_->matrices[f].assign(Aface);
-  //}
+          // define the upwind cell, index i in this case
+          int i, dir, c1;
+          c1 = cells[0];
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+          i = (v * dir >= 0.0) ? 0 : 1;
+          
+          if (ncells == 2) {
+            Aface(i, i) = vmod;
+            Aface(1 - i, i) = -vmod;
+          } else if (i == 0) {
+            Aface(0, 0) = vmod;
+          }
+        });
+  }
 }
 
 

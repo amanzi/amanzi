@@ -290,17 +290,17 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
 TEST(MARSHAK_NONLINEAR_WAVE_FV) {
   writeMarshakMatrix("fv: default", 0.0, false);
 }
-// TEST(MARSHAK_NONLINEAR_WAVE_FV_JAC) {
-//   writeMarshakMatrix("fv: default", 0.0, true);
-// }
+TEST(MARSHAK_NONLINEAR_WAVE_FV_JAC) {
+  writeMarshakMatrix("fv: default", 0.0, true);
+}
 
 
 TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA) {
   writeMarshakMatrix("mfd: two-point flux approximation", 0.0, false);
 }
-// TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA_JAC) {
-//   writeMarshakMatrix("mfd: two-point flux approximation", 0.0, true);
-// }
+TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA_JAC) {
+  writeMarshakMatrix("mfd: two-point flux approximation", 0.0, true);
+}
 
 // TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
 //   writeMarshakMatrix("mfd: default", 0.0, false);

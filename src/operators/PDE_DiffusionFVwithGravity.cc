@@ -128,66 +128,117 @@ void PDE_DiffusionFVwithGravity::UpdateFlux(
 }
 
 
-// /* ******************************************************************
-// * Computation of a local submatrix of the analytical Jacobian 
-// * (its nonlinear part) on face f.
-// ****************************************************************** */
-// void PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(
-//     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
-//     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
-// {
-//   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-//   const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
-//       gravity_term_.get() ? gravity_term_->ViewComponent("face", true).ptr() : Teuchos::null;
 
-//   double dKrel_dp[2];
-//   double dpres;
+/* ******************************************************************
+* Computation the part of the Jacobian which depends on derivatives 
+* of the relative permeability wrt to capillary pressure. They must
+* be added to the existing matrix structure.
+****************************************************************** */
+void PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
+{
+  u.ScatterMasterToGhosted("cell");
 
-//   if (mcells == 2) {
-//     dpres = pres[0] - pres[1];  // + grn;
-//     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-//       double flux0to1;
-//       flux0to1 = trans_face[0][f] * dpres;
-//       if (gravity_face.get()) flux0to1 += face_dir_0to1 * (*gravity_face)[0][f];
-//       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = dkdp_cell[0];
-//         dKrel_dp[1] = 0.0;
-//       } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = 0.0;
-//         dKrel_dp[1] = dkdp_cell[1];
-//       } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-//         dKrel_dp[0] = 0.5 * dkdp_cell[0];
-//         dKrel_dp[1] = 0.5 * dkdp_cell[1];
-//       }
-//     } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-//       dKrel_dp[0] = 0.5 * dkdp_cell[0];
-//       dKrel_dp[1] = 0.5 * dkdp_cell[1];
-//     } else {
-//       AMANZI_ASSERT(0);
-//     }
+  { // scope for views
+    const auto bc_model = bcs_trial_[0]->bc_model();
+    const auto bc_value = bcs_trial_[0]->bc_value();
 
-//     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
-//     Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
+    const auto uc = u.ViewComponent("cell", true);
+    const auto cmap_wghost = mesh_->cell_map(true);
+    const auto trans_face = transmissibility_->ViewComponent("face", true);
+    const auto gravity_face = gravity_term_->ViewComponent("face", true);
+                              
 
-//     if (gravity_face.get()) {
-//       Jpp(0,0) += face_dir_0to1 * (*gravity_face)[0][f] * dKrel_dp[0];
-//       Jpp(0,1) += face_dir_0to1 * (*gravity_face)[0][f] * dKrel_dp[1];
-//     }
-//     Jpp(1, 0) = -Jpp(0, 0);
-//     Jpp(1, 1) = -Jpp(0, 1);
+    // AmanziMesh::Entity_ID_View cells, faces;
 
-//   } else if (mcells == 1) {
-//     if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
-//       pres[1] = bc_value_f;
-//       dpres = pres[0] - pres[1];  // + grn;
-//       Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-//       if (gravity_face.get())
-//           Jpp(0,0) += face_dir_0to1 * (*gravity_face)[0][f] * dkdp_cell[0];
-//     } else {
-//       Jpp(0, 0) = 0.0;
-//     }
-//   }
-// }
+    const auto dKdP_cell = dkdp_->ViewComponent("cell");
+    // Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
+    // if (dkdp_->HasComponent("face")) {
+    //   dKdP_face = dkdp_->ViewComponent("face", true);
+    // }
+    const AmanziMesh::Mesh* mesh = mesh_.get();
+    CSR_Matrix& A = jac_op_->A; 
+    
+
+    Kokkos::parallel_for(
+        "PDE_DiffusionFV::AnalyticJacobian_",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int& f) {
+          AmanziMesh::Entity_ID_View cells;
+          mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          int mcells = cells.size();
+
+          auto Aface = getFromCSR<WhetStone::DenseMatrix>(A,f);
+
+          double k_rel[2], dkdp[2], pres[2], dist;
+          for (int n = 0; n < mcells; n++) {
+            pres[n] = uc(cells(n),0);
+            dkdp[n] = dKdP_cell(cells(n),0);
+          }
+
+          if (mcells == 1) {
+            dkdp[1] = 0.;
+            //dkdp[1] = dKdP_face.get() ? (*dKdP_face)(f,0) : 0.;
+          }
+
+          // find the face direction from cell 0 to cell 1
+          AmanziMesh::Entity_ID_View cfaces;
+          Kokkos::View<int*> fdirs;
+          mesh->cell_get_faces_and_dirs(cells(0), cfaces, fdirs);
+          int f_index;
+          for (f_index=0; f_index!=cfaces.extent(0); ++f_index) {
+            if (cfaces(f_index) == f) break;
+          }
+
+          // Old virtual call... yuck
+          // ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
+          //         pres, dkdp, Aface);
+          double dKrel_dp[2];
+          double dpres;
+
+          if (mcells == 2) {
+            dpres = pres[0] - pres[1];
+            if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
+              double flux0to1;
+              flux0to1 = trans_face(f,0) * dpres;
+              if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = dkdp[0];
+                dKrel_dp[1] = 0.0;
+              } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = 0.0;
+                dKrel_dp[1] = dkdp[1];
+              } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = 0.5 * dkdp[0];
+                dKrel_dp[1] = 0.5 * dkdp[1];
+              }
+            } else if (little_k_type_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+              dKrel_dp[0] = 0.5 * dkdp[0];
+              dKrel_dp[1] = 0.5 * dkdp[1];
+            } else {
+              AMANZI_ASSERT(0);
+            }
+
+            Aface(0, 0) = trans_face(f,0) * dpres * dKrel_dp[0]
+                          + fdirs(f_index) * gravity_face(f,0) * dKrel_dp[0];
+            Aface(0, 1) = trans_face(f,0) * dpres * dKrel_dp[1]
+                          + fdirs(f_index) * gravity_face(f,0) * dKrel_dp[1];
+          
+            Aface(1, 0) = -Aface(0, 0);
+            Aface(1, 1) = -Aface(0, 1);
+
+          } else if (mcells == 1) {
+            if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
+              pres[1] = bc_value(f);
+              dpres = pres[0] - pres[1];
+              Aface(0, 0) = trans_face(f,0) * dpres * dkdp[0]
+                            + fdirs(f_index) * gravity_face(f,0) * dkdp[0];                            
+            } else {
+              Aface(0, 0) = 0.0;
+            }
+          }
+        });
+  }
+}
+
 
 
 /* ******************************************************************
