@@ -158,12 +158,15 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   int nfailed_primary() { return nfailed_primary_; }
   void set_factor(double factor) { factor_ = factor; }
 
+  // must be public to call device code
+  void UpdateMatricesMixed_little_k_();
+
+  
  protected:
   void ParsePList_();
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
-  void UpdateMatricesMixed_little_k_();
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -182,10 +185,12 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                        const Teuchos::Ptr<const BCs>& bc_n,
                        bool primary, bool eliminate, bool essential_eqn);
 
- protected:
-  //std::vector<WhetStone::DenseMatrix<>> Wff_cells_;
+public:
   CSR_Matrix Wff_cells_;
   CSR_Vector kr_cells_;
+
+protected:
+  //std::vector<WhetStone::DenseMatrix<>> Wff_cells_;
   bool mass_matrices_initialized_;
 
   int newton_correction_;

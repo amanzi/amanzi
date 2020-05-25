@@ -85,12 +85,12 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
         Kokkos::atomic_add(&Yf(faces[n],0), lAv(n));
       }
       Yc(c,0) += lAv(nfaces);
-      if (c == 0) {
-        std::cout << "In FaceCellApply:" << std::endl
-                  << " v = " << lv << std::endl
-                  << " A = " << lA << std::endl
-                  << " Av = " << lAv << std::endl;
-      }
+      // if (c == 0) {
+      //   std::cout << "In FaceCellApply:" << std::endl
+      //             << " v = " << lv << std::endl
+      //             << " A = " << lA << std::endl
+      //             << " Av = " << lAv << std::endl;
+      // }
     });
 
   }
@@ -374,7 +374,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       ncells_owned,
       KOKKOS_LAMBDA(const int& c) {
         AmanziMesh::Entity_ID_View faces;
-        mesh_->cell_get_faces(c, faces);
+        mesh->cell_get_faces(c, faces);
         int nfaces = faces.extent(0);
 
         auto A_c = getFromCSR<WhetStone::DenseMatrix>(op.A,c);

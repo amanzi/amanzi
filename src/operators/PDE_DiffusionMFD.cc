@@ -942,10 +942,10 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   {
     const auto u_cell = u->ViewComponent("cell");
     const auto u_face = u->ViewComponent("face", true);
-    const auto flux_data = flux->ViewComponent("face", true);
+    const auto flux_data = flux->ViewComponent("face", false);
     const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
 
-    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_wghost); 
+    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_owned);
 
     auto local_A = local_op_->A; 
     auto local_Av = local_op_->Av; 

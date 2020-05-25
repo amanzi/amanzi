@@ -58,7 +58,8 @@ void test(const Teuchos::RCP<AnalyticBase>& ana,
           double tol,
           int niters=1) {
   DiffusionFixture fix(ana, mesh_type);
-  std::cout << std::endl
+  std::cout << std::endl << std::endl << std::endl
+            << "================================================================================" << std::endl
             << "Diffusion Test (np=" << fix.comm->getSize() << "): " << disc_type << ", "
             << ana->name() << ", " << pc_type << ", " << mesh_type << std::endl
             << "--------------------------------------------------------------------------------"
@@ -76,6 +77,7 @@ void test(const Teuchos::RCP<AnalyticBase>& ana,
   fix.setup(pc_type, symmetric);
   for (int i=0; i!=niters-1; ++i) fix.go(0.0);
   fix.go(tol);
+  std::cout << "=============================================================================" << std::endl;
 }
 
 
@@ -91,7 +93,8 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
                   double tol,
                   int niters=1) {
   DiffusionFixture fix(ana, mesh_type);
-  std::cout << std::endl
+  std::cout << std::endl << std::endl << std::endl
+            << "================================================================================" << std::endl
             << "DiffusionWithGravity Test (np=" << fix.comm->getSize() << "): "
             << disc_type << ", " << ana->name() << ", " << pc_type << ", " << mesh_type << std::endl
             << "--------------------------------------------------------------------------------"
@@ -108,6 +111,7 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
   fix.setup(pc_type, symmetric);
   for (int i=0; i!=niters-1; ++i) fix.go(0.0);
   fix.go(tol);
+  std::cout << "=============================================================================" << std::endl;
 }
 
 #define FV 1

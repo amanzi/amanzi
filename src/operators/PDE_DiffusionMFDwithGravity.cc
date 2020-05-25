@@ -142,12 +142,12 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   CompositeVector grav_flux(flux->getMap());  
   grav_flux.putScalar(0.0);
 
-  Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_wghost);
+  Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_owned);
   
   { // context for views
     auto rho_c = DensityCells(true);
 
-    auto grav_flux_v = grav_flux.ViewComponent("face", true);
+    auto grav_flux_v = grav_flux.ViewComponent("face", false);
 
     const AmanziMesh::Mesh* mesh = mesh_.get();
     const TensorVector* K = K_.get();
@@ -185,8 +185,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
                 } else {
                   Kokkos::atomic_add(&grav_flux_v(f,0), (Kcg * normal) * rho_c(c,0) * kr(n));
                 }
-            
-                hits(f)++;
+                Kokkos::atomic_increment(&hits(f));
               }
             }
           }
@@ -218,8 +217,8 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   }
 
   {
-    auto grav_flux_v = grav_flux.ViewComponent("face", true);
-    auto flux_v = flux->ViewComponent("face", true);
+    auto grav_flux_v = grav_flux.ViewComponent("face", false);
+    auto flux_v = flux->ViewComponent("face", false);
     Kokkos::parallel_for(
         "PDE_DiffusionMFDwithGravity::UpdateFlux Average",
         nfaces_owned,

@@ -79,9 +79,6 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD {
   //                                    const Teuchos::Ptr<CompositeVector>& flux) override;
 
 
-
-
- protected:
   virtual void AddGravityToRHS_();
 
  protected:
