@@ -115,6 +115,9 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   // Need to be public for kokkos::parallel_for
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_();
+  void UpdateMatricesNodal_();
+  void UpdateMatricesMixed_little_k_();
+  void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   // modify matrix due to boundary conditions 
   //    primary=true indicates that the operator updates both matrix and right-hand
@@ -161,10 +164,6 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
  protected:
   void ParsePList_();
   void CreateMassMatrices_();
-
-  void UpdateMatricesNodal_();
-  void UpdateMatricesMixed_little_k_();
-  void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u,
