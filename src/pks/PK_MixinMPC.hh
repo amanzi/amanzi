@@ -142,7 +142,7 @@ PK_MixinMPC<Base_t,PK_Contained_t>::ConstructChildren()
 
   PKFactory fac;
   for (const std::string& child_pk_name : child_pks_list) {
-    auto pk_as_pk = fac.CreatePK(child_pk_list, pk_tree_,
+    auto pk_as_pk = fac.CreatePK(child_pk_name, pk_tree_,
             global_plist_, this->S_);
     auto pk_as_contained_t = Teuchos::rcp_dynamic_cast<PK_Contained_t>(pk_as_pk);
     if (pk_as_contained_t == Teuchos::null) {
@@ -153,6 +153,8 @@ PK_MixinMPC<Base_t,PK_Contained_t>::ConstructChildren()
     }
     sub_pks_.push_back(pk_as_contained_t);
   }
+
+  for (auto& pk : sub_pks_) pk->ConstructChildren();
 }
 
 
