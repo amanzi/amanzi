@@ -83,13 +83,8 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
-    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
-        little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       AMANZI_ASSERT(k->HasComponent("twin"));
-    }
-
-    if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-      AMANZI_ASSERT(k->HasComponent("grad"));
     }
   }
 
@@ -117,11 +112,11 @@ void PDE_DiffusionMFD::UpdateMatrices(
       //UpdateMatricesNodal_();
     } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
                (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-      if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
-        UpdateMatricesMixed_();
-      } else {
+      // if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
+      //   UpdateMatricesMixed_();
+      // } else {
         UpdateMatricesMixed_little_k_();
-      }
+        //      }
     } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false); 
       //UpdateMatricesTPFA_();
@@ -139,19 +134,18 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  assert(false); 
-  // add Newton-type corrections
-  //if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
-  //  if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+  //  add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+   if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
 
-  //    if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
-  //    AddNewtonCorrectionCell_(flux, u, scalar_factor);
+     if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
+     AddNewtonCorrectionCell_(flux, u, scalar_factor);
       
-  //  } else {
-  //    Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
-  //    Exceptions::amanzi_throw(msg);
-  //  }
-  //}
+   } else {
+     Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
+     Exceptions::amanzi_throw(msg);
+   }
+  }
 }
 
 
@@ -228,11 +222,12 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
   // pre-stage kr face and cell quantities into work space
-  auto local_kr = local_op_->v; 
-  // Allocate the first time 
-  if (local_kr.size() != A.size()) {
-    local_op_->PreallocateWorkVectors();
-    local_kr = local_op_->v;
+  if (kr_cells_.size() != Wff_cells_.size()) {
+    kr_cells_ = DenseVector_Vector(Wff_cells_.size());
+    for (int i=0; i!=Wff_cells_.size(); ++i) {
+      kr_cells_.set_shape(i,Wff_cells_.at_host(i).NumRows());
+    }
+    kr_cells_.Init();
   }
 
   Kokkos::parallel_for(
@@ -244,33 +239,40 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
         int nfaces = faces.extent(0);  
 
         // set up kr
-        auto kr = local_kr[c]; 
+        auto kr = kr_cells_[c]; 
         kr(nfaces) = k_cell.extent(0) > 0 ? k_cell(c,0) : 1.0;
 
         // -- chefs recommendation: SPD discretization with upwind
-        if (little_k_type_ == OPERATOR_LITTLE_K_DIVK && k_face.extent(0) > 0) {
-          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+        if (little_k_type_ == OPERATOR_LITTLE_K_DIVK) {
+          if (k_face.extent(0) > 0)
+            for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+          if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c,0);
           
           // -- new scheme: SPD discretization with upwind and equal spliting
         } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_BASE) {
-          for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n],0));
-          kr(nfaces) = 1.0;
+          if (k_face.extent(0) > 0)
+            for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n],0));
 
           // -- same as above but remains second-order for dicontinuous coefficients
         } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-          for (int n = 0; n < nfaces; n++) {
-            AmanziMesh::Entity_ID_View cells;
-            int f = faces[n];
-            mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-            kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
+          if (k_face.extent(0) > 0) {
+            for (int n = 0; n < nfaces; n++) {
+              AmanziMesh::Entity_ID_View cells;
+              int f = faces[n];
+              mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+              kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
+            }
           }
+          if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c,0);
 
           // -- the second most popular choice: classical upwind
         } else if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
-          for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
+          if (k_face.extent(0) > 0) 
+            for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n],0);
           
         } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
-          for (int n = 0; n < nfaces; n++) kr(n) = kr(nfaces);
+          if (k_cell.extent(0) > 0) 
+            for (int n = 0; n < nfaces; n++) kr(n) = k_cell(c,0);
         }
         
         auto Wff = Wff_cells_[c]; 
@@ -771,51 +773,56 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  assert(false); 
+  std::cout<<"PDE_DiffusionMFD::AddNewtonCorrectionCell_"<<std::endl;
   // hack: ignore correction if no flux provided.
-  //if (flux == Teuchos::null) return;
+  if (flux == Teuchos::null) return;
 
   // Correction is zero for linear problems
-  //if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
   // only works on upwinded methods
-  //if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
+  if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  //const auto kf = k_->ViewComponent("face");
-  //const auto dkdp_f = dkdp_->ViewComponent("face");
-  //const auto flux_f = flux->ViewComponent("face");
+  const AmanziMesh::Mesh* mesh = mesh_.get();
+  DenseMatrix_Vector& A = jac_op_->A; 
+  
+  { // context for views
+    const auto dkdp_f = dkdp_->ViewComponent("face");
+    const auto flux_f = flux->ViewComponent("face");
+    const auto kf = k_->ViewComponent("face");
 
-  // populate the local matrices
-  //double v, vmod;
-  //AmanziMesh::Entity_ID_View cells;
-  //for (int f = 0; f < nfaces_owned; f++) {
-  //  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-  //  int ncells = cells.size();
-  //  WhetStone::DenseMatrix<> Aface(ncells, ncells);
-  //  //Aface.PutScalar(0.0);
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::AddNewtonCorrectionCell_",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int& f) {
+          // populate the local matrices
+          AmanziMesh::Entity_ID_View cells;
+          mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          int ncells = cells.size();
 
-    // We use the upwind discretization of the generalized flux.
-  //  v = std::abs(kf(0,f)) > 0.0 ? flux_f(0,f) * dkdp_f(0,f) / kf(0,f) : 0.0;
-  //  vmod = std::abs(v);
+          auto Aface = A[f];
 
-    // prototype for future limiters (external or internal ?)
-  //  vmod *= scalar_factor;
+          // We use the upwind discretization of the generalized flux.
+          double v = fabs(kf(f,0)) > 0.0 ? flux_f(f,0) * dkdp_f(f,0) / kf(f,0) : 0.0;
+          double vmod = fabs(v);
 
-    // define the upwind cell, index i in this case
-  //  int i, dir, c1;
-  //  c1 = cells[0];
-  //  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
-  //  i = (v * dir >= 0.0) ? 0 : 1;
+          // prototype for future limiters (external or internal ?)
+          vmod *= scalar_factor;
 
-  //  if (ncells == 2) {
-  //    Aface(i, i) = vmod;
-  //    Aface(1 - i, i) = -vmod;
-  //  } else if (i == 0) {
-  //    Aface(0, 0) = vmod;
-  //  }
-
-  //  jac_op_->matrices[f].assign(Aface);
-  //}
+          // define the upwind cell, index i in this case
+          int i, dir, c1;
+          c1 = cells[0];
+          const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c1, &dir);
+          i = (v * dir >= 0.0) ? 0 : 1;
+          
+          if (ncells == 2) {
+            Aface(i, i) = vmod;
+            Aface(1 - i, i) = -vmod;
+          } else if (i == 0) {
+            Aface(0, 0) = vmod;
+          }
+        });
+  }
 }
 
 
@@ -935,10 +942,10 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   {
     const auto u_cell = u->ViewComponent("cell");
     const auto u_face = u->ViewComponent("face", true);
-    const auto flux_data = flux->ViewComponent("face", true);
+    const auto flux_data = flux->ViewComponent("face", false);
     const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
 
-    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_wghost); 
+    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_owned);
 
     auto local_A = local_op_->A; 
     auto local_Av = local_op_->Av; 
@@ -1360,8 +1367,6 @@ void PDE_DiffusionMFD::Init()
     little_k_type_ = OPERATOR_LITTLE_K_DIVK;  // standard SPD upwind scheme
   } else if (name == "standard: cell") {
     little_k_type_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
-  } else if (name == "divk: cell-grad-face-twin") {  
-    little_k_type_ = OPERATOR_LITTLE_K_DIVK_TWIN_GRAD;
   } else if (name == "divk: cell-face-twin") {  
     little_k_type_ = OPERATOR_LITTLE_K_DIVK_TWIN;  // for resolved simulation
   } else {

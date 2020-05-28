@@ -213,8 +213,8 @@ void ComputeFaceError(const AnalyticBase& ana,
     l2_err += std::pow((tmp - u(f,0)) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u(f,0)) / area);
     unorm += std::pow(tmp / area, 2.0);
-    //    if ((tmp - u(f,0)) / area > 1.e-4)
-    //      std::cout << f << " xf=" << xf << " u=" << u(f,0) << " u_ex=" << tmp << " velocity=" << velocity << std::endl;
+    if ((tmp - u(f,0)) / area > 1.e-4)
+      std::cout << f << " xf=" << xf << " u=" << u(f,0) << " u_ex=" << tmp << " velocity=" << velocity << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &unorm, 1);

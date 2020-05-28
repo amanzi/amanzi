@@ -224,8 +224,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
-  assert(0); 
-  #if 0 
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
@@ -239,7 +237,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 
     AnalyticJacobian_(*u);
   }
-  #endif 
 }
 
 void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
@@ -274,7 +271,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
-
+  
   if (local_op_.get()) {
     auto local_op = local_op_.get(); 
     // prep views
@@ -302,18 +299,19 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   }
 
   if (jac_op_ != Teuchos::null) {
-    AMANZI_ASSERT(false); // not yet implemented --etc
-    // AMANZI_ASSERT(false) // 
-    // AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-    // for (int f = 0; f != nfaces_owned; ++f) {
-    //   WhetStone::DenseMatrix& A_f = jac_op_->matrices[f];
-
-    //   if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //     A_f *= 0.0;
-    //   }
-    // }
+    auto& local_op = jac_op_->A;
+    
+    AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
+    Kokkos::parallel_for(
+        "PDE_DiffusionFV::ApplyBCs",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int f) {
+          if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+            auto A_f = local_op[f];
+            A_f.putScalar(0.);
+          }
+        });
   }
-  
 }
 
 
@@ -381,7 +379,6 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 }
 
 
-#if 0 
 /* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
 * of the relative permeability wrt to capillary pressure. They must
@@ -389,51 +386,98 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 ****************************************************************** */
 void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
-  const auto bc_model = bcs_trial_[0]->bc_model();
-  const auto bc_value = bcs_trial_[0]->bc_value();
-
   u.ScatterMasterToGhosted("cell");
-  const auto uc = u.ViewComponent("cell", true);
 
-  const auto cmap_wghost = mesh_->cell_map(true);
-  AmanziMesh::Entity_ID_View cells, faces;
+  { // scope for views
+    const auto bc_model = bcs_trial_[0]->bc_model();
+    const auto bc_value = bcs_trial_[0]->bc_value();
 
-  double k_rel[2], dkdp[2], pres[2], dist;
+    const auto uc = u.ViewComponent("cell", true);
+    const auto cmap_wghost = mesh_->cell_map(true);
+    const auto trans_face = transmissibility_->ViewComponent("face", true);
 
-  const auto dKdP_cell = dkdp_->ViewComponent("cell");
-  Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-  if (dkdp_->HasComponent("face")) {
-    dKdP_face = dkdp_->ViewComponent("face", true);
-  }
+    // AmanziMesh::Entity_ID_View cells, faces;
 
-  for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-    int mcells = cells.size();
+    const auto dKdP_cell = dkdp_->ViewComponent("cell");
+    // Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
+    // if (dkdp_->HasComponent("face")) {
+    //   dKdP_face = dkdp_->ViewComponent("face", true);
+    // }
+    const AmanziMesh::Mesh* mesh = mesh_.get();
+    DenseMatrix_Vector& A = jac_op_->A; 
+    
 
-    WhetStone::DenseMatrix<> Aface(mcells, mcells);
+    Kokkos::parallel_for(
+        "PDE_DiffusionFV::AnalyticJacobian_",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int& f) {
+          AmanziMesh::Entity_ID_View cells;
+          mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          int mcells = cells.size();
 
-    for (int n = 0; n < mcells; n++) {
-      int c1 = cells[n];
-      pres[n] = uc[0][c1];
-      dkdp[n] = dKdP_cell[0][c1];
-    }
+          auto Aface = A[f];
 
-    if (mcells == 1) {
-      dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
-    }
+          double k_rel[2], dkdp[2], pres[2], dist;
+          for (int n = 0; n < mcells; n++) {
+            pres[n] = uc(cells(n),0);
+            dkdp[n] = dKdP_cell(cells(n),0);
+          }
 
-    // find the face direction from cell 0 to cell 1
-    AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
-    int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
-    ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
-                          pres, dkdp, Aface);
+          if (mcells == 1) {
+            dkdp[1] = 0.;
+            //dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
+          }
 
-    jac_op_->matrices[f].assign(Aface);
+          // find the face direction from cell 0 to cell 1
+          AmanziMesh::Entity_ID_View cfaces;
+
+          // Old virtual call... yuck
+          // ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
+          //         pres, dkdp, Aface);
+          double dKrel_dp[2];
+          double dpres;
+
+          if (mcells == 2) {
+            dpres = pres[0] - pres[1];
+            if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
+              double flux0to1;
+              flux0to1 = trans_face(f,0) * dpres;
+              if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = dkdp[0];
+                dKrel_dp[1] = 0.0;
+              } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = 0.0;
+                dKrel_dp[1] = dkdp[1];
+              } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+                dKrel_dp[0] = 0.5 * dkdp[0];
+                dKrel_dp[1] = 0.5 * dkdp[1];
+              }
+            } else if (little_k_type_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+              dKrel_dp[0] = 0.5 * dkdp[0];
+              dKrel_dp[1] = 0.5 * dkdp[1];
+            } else {
+              assert(false);
+            }
+
+            Aface(0, 0) = trans_face(f,0) * dpres * dKrel_dp[0];
+            Aface(0, 1) = trans_face(f,0) * dpres * dKrel_dp[1];
+          
+            Aface(1, 0) = -Aface(0, 0);
+            Aface(1, 1) = -Aface(0, 1);
+
+          } else if (mcells == 1) {
+            if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
+              pres[1] = bc_value(f);
+              dpres = pres[0] - pres[1];
+              Aface(0, 0) = trans_face(f,0) * dpres * dkdp[0];
+            } else {
+              Aface(0, 0) = 0.0;
+            }
+          }
+        });
   }
 }
-#endif 
+
 
 #if 0 
 /* ******************************************************************
@@ -445,46 +489,6 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix<>& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-  double dKrel_dp[2];
-  double dpres;
-
-  if (mcells == 2) {
-    dpres = pres[0] - pres[1];  // + grn;
-    if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
-      double flux0to1;
-      flux0to1 = trans_face[0][f] * dpres;
-      if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = dkdp_cell[0];
-        dKrel_dp[1] = 0.0;
-      } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = 0.0;
-        dKrel_dp[1] = dkdp_cell[1];
-      } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
-        dKrel_dp[0] = 0.5 * dkdp_cell[0];
-        dKrel_dp[1] = 0.5 * dkdp_cell[1];
-      }
-    } else if (little_k_type_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-      dKrel_dp[0] = 0.5 * dkdp_cell[0];
-      dKrel_dp[1] = 0.5 * dkdp_cell[1];
-    } else {
-      AMANZI_ASSERT(0);
-    }
-
-    Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];
-    Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
-
-    Jpp(1, 0) = -Jpp(0, 0);
-    Jpp(1, 1) = -Jpp(0, 1);
-
-  } else if (mcells == 1) {
-    if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
-      pres[1] = bc_value_f;
-      dpres = pres[0] - pres[1];
-      Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-    } else {
-      Jpp(0, 0) = 0.0;
-    }
-  }
 }
 #endif 
 

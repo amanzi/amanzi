@@ -119,6 +119,16 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   void UpdateMatricesMixed_little_k_();
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
+
+  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                double scalar_factor);
+  
+  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                const Teuchos::Ptr<const CompositeVector>& factor);
+
+
   // modify matrix due to boundary conditions 
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
@@ -165,14 +175,6 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   void ParsePList_();
   void CreateMassMatrices_();
 
-  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u,
-                                double scalar_factor);
-  
-  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
-                                const Teuchos::Ptr<const CompositeVector>& u,
-                                const Teuchos::Ptr<const CompositeVector>& factor);
-
 
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
@@ -181,8 +183,12 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                        const Teuchos::Ptr<const BCs>& bc_n,
                        bool primary, bool eliminate, bool essential_eqn);
 
- protected:
-  DenseMatrix_Vector Wff_cells_; 
+public:
+  DenseMatrix_Vector Wff_cells_;
+  DenseVector_Vector kr_cells_;
+
+protected:
+  //std::vector<WhetStone::DenseMatrix<>> Wff_cells_;
   bool mass_matrices_initialized_;
 
   int newton_correction_;
