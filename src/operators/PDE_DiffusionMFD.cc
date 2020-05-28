@@ -240,7 +240,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 
         // set up kr
         auto kr = kr_cells_[c]; 
-        kr(nfaces) = k_cell.extent(0) > 0 ? k_cell(c,0) : 1.0;
+        kr.putScalar(1.0);
 
         // -- chefs recommendation: SPD discretization with upwind
         if (little_k_type_ == OPERATOR_LITTLE_K_DIVK) {

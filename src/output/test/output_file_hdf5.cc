@@ -55,7 +55,7 @@ SUITE(FILE_HDF5)
     ierr = parallelIO_create_dataset_group(group_name.c_str(), data_file, &io_group);
     CHECK(!ierr);
 
-    //ierr = parallelIO_close_dataset_group(data_file, &io_group);
+    ierr = parallelIO_close_dataset_group(data_file, &io_group);
     CHECK(!ierr);
 
     ierr = parallelIO_close_file(data_file, &io_group);
