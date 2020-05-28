@@ -45,12 +45,11 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
       surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
       auto f0 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(0));
 
-      WhetStone::DenseMatrix<> lm = getFromCSR_host<WhetStone::DenseMatrix>(A,sf);
-
-      Kokkos::atomic_add(&Xv(f0,0), lm(0,0));
+      auto lA = A.at_host(sf); 
+      Kokkos::atomic_add(&Xv(f0,0), lA(0,0));
       if (cells.extent(0) > 1) {
         auto f1 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(1));
-        Kokkos::atomic_add(&Xv(f1,0), lm(1,1));
+        Kokkos::atomic_add(&Xv(f1,0), lA(1,1));
       }
     }
   }

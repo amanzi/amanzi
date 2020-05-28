@@ -39,13 +39,12 @@ class Op_Face_CellBndFace : public Op {
          name, mesh)
   {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    A = CSR_Matrix(nfaces_owned);
+    A = DenseMatrix_Vector(nfaces_owned);
 
     for (int f=0; f!=nfaces_owned; ++f) {
-      int loc[2] = {2,2};
-      A.set_shape_host(f, loc);
+      A.set_shape(f, 2,2);
     }
-    A.prefix_sum(); 
+    A.Init(); 
   }
 
   virtual void
@@ -59,10 +58,10 @@ class Op_Face_CellBndFace : public Op {
         KOKKOS_LAMBDA(const int f) {
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
-          Xc(cells(0), 0) += lm(0,0);
+          auto lA = A[f]; 
+          Xc(cells(0), 0) += lA(0,0);
           if (cells.extent(0) > 1) {
-            Kokkos::atomic_add(&Xc(cells(1),0), lm(1,1));
+            Kokkos::atomic_add(&Xc(cells(1),0), lA(1,1));
           }
         });
 
@@ -72,9 +71,9 @@ class Op_Face_CellBndFace : public Op {
         "Op_Face_CellBndFace::GetLocalDiagCopy loop 2",
         import_same_face,
         KOKKOS_LAMBDA(const int bf) {          
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,bf);
+          auto lA = A[bf]; 
           // atomic not needed, each bf touched once
-          Xbf(bf,0) += lm(1,1);
+          Xbf(bf,0) += lA(1,1);
         });
 
     auto import_permute_face = mesh->exterior_face_importer()
@@ -84,9 +83,9 @@ class Op_Face_CellBndFace : public Op {
         import_permute_face.extent(0),
         KOKKOS_LAMBDA(const int bf_offset) {
           int f = import_permute_face(bf_offset); 
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
+          auto lA = A[f]; 
           // atomic not needed, each bf touched once
-          Xbf(bf_offset+import_same_face,0) += lm(1,1);
+          Xbf(bf_offset+import_same_face,0) += lA(1,1);
         });
   }
 
@@ -123,12 +122,12 @@ class Op_Face_CellBndFace : public Op {
             KOKKOS_LAMBDA(const int f) {
               AmanziMesh::Entity_ID_View cells;
               mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-              WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
-              lm(0,0) *= s_c(cells(0),0);
-              lm(1,0) *= s_c(cells(0),0);
+              auto lA = A[f]; 
+              lA(0,0) *= s_c(cells(0),0);
+              lA(1,0) *= s_c(cells(0),0);
               if (cells.extent(0) > 1) {
-                lm(0,1) *= s_c(cells(1),0);
-                lm(1,1) *= s_c(cells(1),0);
+                lA(0,1) *= s_c(cells(1),0);
+                lA(1,1) *= s_c(cells(1),0);
               }
             });
       }
@@ -149,22 +148,22 @@ class Op_Face_CellBndFace : public Op {
         Kokkos::parallel_for(
           "Op_Face_CellBndFace::Rescale loop 2",
           import_same_face,
-                             KOKKOS_LAMBDA(const int bf) {
-                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,bf);
-                               lm(0,1) *= s_bnd(bf,0);
-                               lm(1,1) *= s_bnd(bf,0);
-                             });
+                            KOKKOS_LAMBDA(const int bf) {
+                              auto lA = A[bf]; 
+                              lA(0,1) *= s_bnd(bf,0);
+                              lA(1,1) *= s_bnd(bf,0);
+                            });
 
         Kokkos::parallel_for(
           "Op_Face_CellBndFace::Rescale loop 3",
           import_permute_face.extent(0),
                              KOKKOS_LAMBDA(const int bf_offset) {
                                 int f = import_permute_face(bf_offset); 
-                                WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,f);
-                               lm(0,1) *=
-                                   s_bnd(bf_offset+import_same_face,0);
-                               lm(1,1) *=
-                                   s_bnd(bf_offset+import_same_face,0);
+                                auto lA = A[f]; 
+                                lA(0,1) *=
+                                  s_bnd(bf_offset+import_same_face,0);
+                                lA(1,1) *=
+                                  s_bnd(bf_offset+import_same_face,0);
                              });
       }
     }

@@ -100,9 +100,9 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lv = getFromCSR<WhetStone::DenseVector>(local_v,f);
-        WhetStone::DenseVector<Amanzi::DeviceOnlyMemorySpace> lAv = getFromCSR<WhetStone::DenseVector>(local_Av,f);
-        WhetStone::DenseMatrix<Amanzi::DeviceOnlyMemorySpace> lA = getFromCSR<WhetStone::DenseMatrix>(local_A,f);
+        auto lv = local_v[f];
+        auto lAv = local_Av[f]; 
+        auto lA = local_A[f];  
         for (int n = 0; n != ncells; ++n) {
           lv(n) = Xc(cells[n],0);
         }
@@ -231,8 +231,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
-        auto A_f = getFromCSR<WhetStone::DenseMatrix>(op.A,f);
-
+        auto A_f = op.A[f];
         for (int n = 0; n != cells.extent(0); ++n) {
           if (cell_row_inds[cells[n]] < nrows_local) {
             for (int m = 0; m != cells.extent(0); ++m) {

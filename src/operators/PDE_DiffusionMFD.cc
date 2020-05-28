@@ -183,18 +183,16 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
 void PDE_DiffusionMFD::UpdateMatricesMixed_()
 {
   std::cout<<"PDE_DiffusionMFD::UpdateMatricesMixed_"<<std::endl;
-  CSR_Matrix& A = local_op_->A; 
+  DenseMatrix_Vector& A = local_op_->A; 
 
   Kokkos::parallel_for(
     "PDE_DiffusionMFD::UpdateMatricesMixed_",
     ncells_owned, 
     KOKKOS_LAMBDA(const int& c){
-      WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Wff(
-        Wff_cells_.at(c),Wff_cells_.size(c,0),Wff_cells_.size(c,1));
+      auto Wff = Wff_cells_[c]; 
       int nfaces = Wff.NumRows();
 
-      WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(
-        A.at(c),A.size(c,0),A.size(c,1));
+      auto Acell = A[c]; 
 
       // create stiffness matrix by elimination of the mass matrix
       double matsum = 0.0;
@@ -226,7 +224,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
     if (k_->HasComponent("twin")) k_twin = k_->ViewComponent<>("twin", true);
   }
 
-  CSR_Matrix& A = local_op_->A; 
+  DenseMatrix_Vector& A = local_op_->A; 
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
   // pre-stage kr face and cell quantities into work space
@@ -246,7 +244,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
         int nfaces = faces.extent(0);  
 
         // set up kr
-        auto kr = getFromCSR<WhetStone::DenseVector>(local_kr,c);
+        auto kr = local_kr[c]; 
         kr(nfaces) = k_cell.extent(0) > 0 ? k_cell(c,0) : 1.0;
 
         // -- chefs recommendation: SPD discretization with upwind
@@ -263,7 +261,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
           for (int n = 0; n < nfaces; n++) {
             AmanziMesh::Entity_ID_View cells;
             int f = faces[n];
-            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
             kr(n) = (c == cells[0]) ? k_face(f,0) : k_twin(f,0);
           }
 
@@ -275,11 +273,8 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
           for (int n = 0; n < nfaces; n++) kr(n) = kr(nfaces);
         }
         
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Wff(
-            Wff_cells_.at(c),Wff_cells_.size(c,0),Wff_cells_.size(c,1));
-        WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(
-            A.at(c),A.size(c,0),A.size(c,1));
-
+        auto Wff = Wff_cells_[c]; 
+        auto Acell = A[c]; 
 
         if (little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) {
           double matsum = 0.0; 
@@ -529,7 +524,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
   { // context for views
     // apply diffusion type BCs to FACE-CELL system
     const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
-    CSR_Matrix& A = local_op_->A; 
+    DenseMatrix_Vector& A = local_op_->A; 
 
     const auto bc_model_trial = bc_trial->bc_model();
     const auto bc_model_test = bc_test->bc_model();
@@ -551,7 +546,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
           mesh->cell_get_faces(c, faces);
           int nfaces = faces.size();
 
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Acell(A.at(c),A.size(c,0),A.size(c,1));
+          auto Acell = A[c]; 
           // essential conditions for test functions
           for (int n = 0; n != nfaces; ++n) {
             int f = faces[n];
@@ -958,9 +953,9 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
           mesh->cell_get_faces_and_dirs(c, faces, dirs);
           int nfaces = faces.size();
 
-          auto lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
-          auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
-          auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
+          auto lv = local_v[c]; 
+          auto lAv = local_Av[c]; 
+          auto lA = local_A[c]; 
 
           for (int n = 0; n < nfaces; n++) {
             lv(n) = u_face(faces[n], 0);
@@ -1122,21 +1117,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
     }
   }
   // Copy data to GPU 
-  Wff_cells_ = CSR_Matrix(ncells_owned);
-  for(int c = 0 ; c < ncells_owned; ++c){
-    //int n = tmp_Wff_cells[c].NumRows();
-    //int m = tmp_Wff_Cells[c].NumCols(); 
-    int loc[2] = {tmp_Wff_cells[c].NumRows(),tmp_Wff_cells[c].NumCols()};
-    Wff_cells_.set_shape_host(c,loc); 
-  }
-  Wff_cells_.prefix_sum();  
-  // Copy data 
-  int k = 0 ; 
-  for(int c = 0 ; c < ncells_owned; ++c){
-    for(int i = 0 ; i < tmp_Wff_cells[c].Values().extent(0) ; ++i)
-      Wff_cells_.set_entries_host(k++,tmp_Wff_cells[c].Values()[i]);
-  }
-  Wff_cells_.update_entries_device();
+  Wff_cells_.Init(tmp_Wff_cells); 
 
   mass_matrices_initialized_ = true;
 }
@@ -1154,8 +1135,7 @@ void PDE_DiffusionMFD::ScaleMassMatrices(double s)
     "PDE_DiffusionMFD::ScaleMassMatrices",
     ncells_owned,
     KOKKOS_LAMBDA(const int& c){
-      WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-        Wff_cells_.at(c),Wff_cells_.size(c,0),Wff_cells_.size(c,1)); 
+      auto lm = Wff_cells_[c]; 
       lm *= s; 
     });
 }

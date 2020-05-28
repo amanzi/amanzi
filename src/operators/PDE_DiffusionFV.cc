@@ -184,14 +184,14 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     // preparing upwind data
     const auto k_face = ScalarCoefficientFaces(true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
-    CSR_Matrix& A = local_op_->A; 
+    DenseMatrix_Vector& A = local_op_->A; 
 
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
-          DenseMatrix A_f(A.at(f),A.size(f,0),A.size(f,1)); 
+          DenseMatrix A_f = A[f]; 
           double tij = trans_face(f,0) * k_face(f,0);
           // if (f==0) {
           //   std::cout << "tij = " << trans_face(f,0) << " * " << k_face(f,0) << " = " << tij << std::endl;

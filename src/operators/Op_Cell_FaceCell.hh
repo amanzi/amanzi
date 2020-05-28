@@ -27,18 +27,16 @@ class Op_Cell_FaceCell : public Op {
       Op(OPERATOR_SCHEMA_BASE_CELL |
          OPERATOR_SCHEMA_DOFS_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
-    std::cout<<"Matrix init"<<std::endl;
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    A = CSR_Matrix(ncells_owned); 
+    A = DenseMatrix_Vector(ncells_owned); 
 
     for (int c=0; c!=ncells_owned; ++c) {
       AmanziMesh::Entity_ID_View faces;
       mesh->cell_get_faces(c, faces);      // This perform the prefix_sum
       int nfaces = faces.extent(0); 
-      int loc[2] = {nfaces+1,nfaces+1}; 
-      A.set_shape_host(c, loc);
+      A.set_shape(c, nfaces+1,nfaces+1);
     }
-    A.prefix_sum();
+    A.Init(); 
   }
 
   virtual void
@@ -54,7 +52,7 @@ class Op_Cell_FaceCell : public Op {
         A.size(),
         KOKKOS_LAMBDA(const int c) {
           // Extract matrix
-          auto lA = getFromCSR<WhetStone::DenseMatrix>(A, c);
+          auto lA = A[c];
 
           AmanziMesh::Entity_ID_View faces;
           mesh_->cell_get_faces(c, faces);
@@ -94,12 +92,12 @@ class Op_Cell_FaceCell : public Op {
         KOKKOS_LAMBDA(const int& c){
           AmanziMesh::Entity_ID_View faces;
           mesh_->cell_get_faces(c, faces);
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,c); 
+          auto lA = A[c]; 
           for (int n = 0; n != faces.size(); ++n) {
             for (int m = 0; m != faces.size(); ++m) {
-              lm(n,m) *= s_c(0,faces[n]);
+              lA(n,m) *= s_c(0,faces[n]);
             }
-            lm(n,faces.size()) *= s_c(0,faces[n]);          
+            lA(n,faces.size()) *= s_c(0,faces[n]);          
           }
         }); 
     }
@@ -110,12 +108,12 @@ class Op_Cell_FaceCell : public Op {
         "Op_Cell_FaceCell::Rescale",
         A.size(), 
         KOKKOS_LAMBDA(const int& c){
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,c); 
+          auto lA = A[c]; 
           int nfaces = mesh_->cell_get_num_faces(c);
           for (int m = 0; m != nfaces; ++m) {
-            lm(nfaces,m) *= s_c(0,c);
+            lA(nfaces,m) *= s_c(0,c);
           }
-          lm(nfaces,nfaces) *= s_c(0,c);
+          lA(nfaces,nfaces) *= s_c(0,c);
         });
     }
   }

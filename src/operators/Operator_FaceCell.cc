@@ -69,9 +69,9 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       mesh->cell_get_faces(c, faces);
       int nfaces = faces.size();
 
-      auto lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
-      auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
-      auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
+      auto lv = local_v[c];
+      auto lAv = local_Av[c];
+      auto lA = local_A[c];
 
       for (int n = 0; n != nfaces; ++n) {
         lv(n) = Xf(faces[n],0);
@@ -123,9 +123,9 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
       mesh->cell_get_faces(c, faces);
       int nfaces = faces.size();
 
-      auto lv = getFromCSR<WhetStone::DenseVector>(local_v,c);
-      auto lAv = getFromCSR<WhetStone::DenseVector>(local_Av,c);
-      auto lA = getFromCSR<WhetStone::DenseMatrix>(local_A,c);
+      auto lv = local_v[c];
+      auto lAv = local_Av[c];
+      auto lA = local_A[c];
 
       for (int n = 0; n != nfaces; ++n) {
         lv(n) = Xf(0,faces[n]);
@@ -362,7 +362,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
         mesh->cell_get_faces(c, faces);
         int nfaces = faces.extent(0);
 
-        auto A_c = getFromCSR<WhetStone::DenseMatrix>(op.A,c);
+        auto A_c = op.A[c];
         
         for (int n=0; n!=nfaces; ++n) {
           if (face_row_inds[faces[n]] < nrows_local) {

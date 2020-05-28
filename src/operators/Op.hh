@@ -34,7 +34,8 @@
 #include "AmanziVector.hh"
 
 #include "CSR.hh"
-
+#include "DenseMatrix_Vector.hh"
+#include "DenseVector_Vector.hh"
 
 namespace Amanzi {
 
@@ -61,7 +62,7 @@ class Op {
         mesh(mesh_),
         schema_string(schema_row_.CreateUniqueName()+'+'+schema_col_.CreateUniqueName())
   {
-    AMANZI_ASSERT(schema_row.base() == schema_col.base());
+    AMANZI_ASSERT(schema_row.base() == schema_col.base()); 
   }
 
   Op(int schema_old_,
@@ -80,8 +81,7 @@ class Op {
 
   KOKKOS_INLINE_FUNCTION
   void Zero(const int i) {
-    WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-      A.at(i),A.size(i,0),A.size(i,1)); 
+    auto lm = A[i]; 
     lm.putScalar(0.); 
     // See PDE_DiffusionFV::ApplyBCs for canonical usage example. --etc
     //matrices(i).putScalar(0.);
@@ -130,11 +130,11 @@ class Op {
   MultiVector_ptr_type diag;
 
   // collection of local matrices
-  CSR_Matrix A;
+  mutable DenseMatrix_Vector A;
 
   // work space for local vectors, domain and range
-  mutable CSR_Vector v; // work vector in domain
-  mutable CSR_Vector Av; // work vector in range
+  mutable DenseVector_Vector v; // work vector in domain
+  mutable DenseVector_Vector Av; // work vector in range
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };

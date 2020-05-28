@@ -28,16 +28,15 @@ class Op_Cell_Face : public Op {
          OPERATOR_SCHEMA_DOFS_FACE, name, mesh) {
 
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    A = CSR_Matrix(ncells_owned); 
+    A = DenseMatrix_Vector(ncells_owned); 
 
     for (int c=0; c!=ncells_owned; ++c) {
       AmanziMesh::Entity_ID_View faces;
       mesh->cell_get_faces(c, faces);      // This perform the prefix_sum
       int nfaces = faces.extent(0); 
-      int loc[2] = {nfaces,nfaces}; 
-      A.set_shape_host(c, loc);
+      A.set_shape(c, nfaces, nfaces);
     }
-    A.prefix_sum();
+    A.Init();
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
@@ -68,10 +67,10 @@ class Op_Cell_Face : public Op {
         KOKKOS_LAMBDA(const int& c){
           AmanziMesh::Entity_ID_View faces;
           mesh_->cell_get_faces(c, faces);
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(A,c); 
+          auto lA = A[c]; 
           for (int n = 0; n != faces.size(); ++n) {
             for (int m = 0; m != faces.size(); ++m) {
-              lm(n,m) *= s_c(0,faces[n]);
+              lA(n,m) *= s_c(0,faces[n]);
             }
           }
         }); 
