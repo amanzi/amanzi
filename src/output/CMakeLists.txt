@@ -122,25 +122,25 @@ if (BUILD_TESTS)
   #                 KIND unit)
 
   # Test: file_hdf5
-  #add_amanzi_test(output_file_hdf5 output_file_hdf5
-  #                SOURCE      test/Main.cc test/output_file_hdf5.cc
-  #                LINK_LIBS   output ${UnitTest_LIBRARIES}
-  #                KIND unit)
-  #add_amanzi_test(output_file_hdf5_np2 output_file_hdf5 NPROCS 2 KIND unit)
-  #add_amanzi_test(output_file_hdf5_np5 output_file_hdf5 NPROCS 5 KIND unit)
+  add_amanzi_test(output_file_hdf5 output_file_hdf5
+                  SOURCE      test/Main.cc test/output_file_hdf5.cc
+                  LINK_LIBS   output ${UnitTest_LIBRARIES}
+                  KIND unit)
+  add_amanzi_test(output_file_hdf5_np2 output_file_hdf5 NPROCS 2 KIND unit)
+  add_amanzi_test(output_file_hdf5_np5 output_file_hdf5 NPROCS 5 KIND unit)
 
   # Test: file_xdmf
-  #add_amanzi_test(output_file_xdmf output_file_xdmf
-  #                SOURCE      test/Main.cc test/output_file_xdmf.cc
-  #                LINK_LIBS   output ${UnitTest_LIBRARIES}
-  #                KIND int)
+  add_amanzi_test(output_file_xdmf output_file_xdmf
+                  SOURCE      test/Main.cc test/output_file_xdmf.cc
+                  LINK_LIBS   output ${UnitTest_LIBRARIES}
+                  KIND int)
 
   # Test: output_xdmf
-  #add_amanzi_test(output_xdmf output_xdmf
-  #                SOURCE      test/Main.cc test/output_xdmf.cc
-  #                LINK_LIBS   output ${UnitTest_LIBRARIES}
-  #                KIND int)
-  #add_amanzi_test(output_xdmf_np2 output_xdmf NPROCS 2 KIND unit)
+  add_amanzi_test(output_xdmf output_xdmf
+                  SOURCE      test/Main.cc test/output_xdmf.cc
+                  LINK_LIBS   output ${UnitTest_LIBRARIES}
+                  KIND int)
+  add_amanzi_test(output_xdmf_np2 output_xdmf NPROCS 2 KIND unit)
 
   # if (ENABLE_Silo)
   #   # Test: uses the Output interface
