@@ -15,7 +15,7 @@
 #include "Op.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_Cell.hh"
-//#include "Op_Cell_FaceCell.hh"
+#include "Op_Cell_FaceCell.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -48,15 +48,17 @@ class Op_Factory {
 
     if (schema_row_.OldSchema() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) {
       return Teuchos::rcp(new Op_Cell_Cell(name_, mesh_));
-    // } else if (schema_row_.OldSchema() == 
-    //            (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
-    //   return Teuchos::rcp(new Op_Cell_FaceCell(name_, mesh_));
+    } else if (schema_row_.OldSchema() == 
+               (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
+      return Teuchos::rcp(new Op_Cell_FaceCell(name_, mesh_));
     } else if (schema_row_.OldSchema() ==
                (OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL)) {
       return Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
     } else {
-      Errors::Message message("Unimeplemented Op Schema requested in Op_Factory");
-      throw(message);
+      std::stringstream message;
+      message << "Unimeplemented Op Schema: \"" << schema_row_ << "\" requested in Op_Factory";
+      Errors::Message msg(message.str());
+      throw(msg);
     }
     return Teuchos::null;
   }

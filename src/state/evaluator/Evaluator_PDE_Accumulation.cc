@@ -79,6 +79,7 @@ Evaluator_PDE_Accumulation::Evaluate_(
     S.Get<CompositeVector>(conserved_key_, tag_old_),
     S.Get<CompositeVector>(cv_key_, tag_old_),
     1.);
+  Debug_(S);
 }
 
 

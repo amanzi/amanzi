@@ -9,11 +9,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include <vector>
-
-// TPLs
-#include "Epetra_Vector.h"
-
 // Amanzi
 #include "errors.hh"
 #include "LinearOperator.hh"
@@ -51,7 +46,6 @@ namespace Operators {
 ****************************************************************** */
 void PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K)
 {
-  std::cout<<"PDE_DiffusionMFD::SetTensorCoefficient"<<std::endl;
   transmissibility_initialized_ = false;
   K_ = K;
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
@@ -68,13 +62,11 @@ void PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const TensorVecto
 void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                             const Teuchos::RCP<const CompositeVector>& dkdp)
 {
-  std::cout<<"PDE_DiffusionMFD::SetScalarCoefficient"<<std::endl;
   k_ = k;
   dkdp_ = dkdp;
 
   // compatibility checks
   if (k_ != Teuchos::null) {
-    std::cout<<"k_ init"<<std::endl;
     if (little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
       //AMANZI_ASSERT(k->HasComponent("cell"));
     }
@@ -90,7 +82,6 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
 
   // verify that mass matrices were initialized.
   if (!mass_matrices_initialized_) {
-    std::cout<<"CreateMassMatrices"<<std::endl;
     CreateMassMatrices_();
   }
 }
@@ -103,7 +94,6 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  std::cout<<"PDE_DiffusionMFD::UpdateMatrices"<<std::endl;
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
@@ -176,7 +166,6 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
 ****************************************************************** */
 void PDE_DiffusionMFD::UpdateMatricesMixed_()
 {
-  std::cout<<"PDE_DiffusionMFD::UpdateMatricesMixed_"<<std::endl;
   CSR_Matrix& A = local_op_->A; 
 
   Kokkos::parallel_for(
@@ -467,8 +456,6 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 ****************************************************************** */
 void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  std::cout<<"PDE_DiffusionMFD::ApplyBCs"<<std::endl;
-
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                            | OPERATOR_SCHEMA_DOFS_FACE
@@ -523,8 +510,6 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
     const Teuchos::Ptr<const BCs>& bc_test,
     bool primary, bool eliminate, bool essential_eqn)
 {
-  std::cout<<"PDE_DiffusionMFD::ApplyBCs_Mixed_"<<std::endl;
-
   global_op_->rhs()->putScalarGhosted(0.0);
 
   { // context for views
@@ -933,8 +918,6 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
 {
-  std::cout<<"PDS_DiffusionMFD::UpdateFlux"<<std::endl;
-
   flux->putScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
@@ -1055,7 +1038,6 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
 ****************************************************************** */
 void PDE_DiffusionMFD::CreateMassMatrices_()
 {
-  std::cout<<"PDE_DiffusionMFD::CreateMassMatrices"<<std::endl;
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix<> Wff;
   bool surface_mesh = (mesh_->manifold_dimension() != mesh_->space_dimension());
@@ -1152,7 +1134,6 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 ****************************************************************** */
 void PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
-  std::cout<<"PDE_DiffusionMFD::ScaleMassMatrices"<<std::endl;
   assert(Wff_cells_.size() == ncells_owned); 
 
   Kokkos::parallel_for(
@@ -1171,8 +1152,6 @@ void PDE_DiffusionMFD::ScaleMassMatrices(double s)
 ****************************************************************** */
 void PDE_DiffusionMFD::ParsePList_()
 {
-  std::cout<<"PDE_DiffusionMFD::ParsePList_"<<std::endl;
-
   // Determine discretization
   std::string primary = plist_.get<std::string>("discretization primary");
   std::string secondary = plist_.get<std::string>("discretization secondary", primary);
@@ -1197,7 +1176,6 @@ void PDE_DiffusionMFD::ParsePList_()
   //   Exceptions::amanzi_throw(msg);
   // }
 
-  std::cout<<"Prim = "<<primary<<" Sec = "<<secondary<<std::endl;
   if (primary != "mfd: two-point flux approximation") {
     AMANZI_ASSERT(false);
   } else {
@@ -1260,7 +1238,6 @@ void PDE_DiffusionMFD::ParsePList_()
   if (plist_.isParameter("preconditioner schema")) {
     names = plist_.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
     for (int i = 0; i < names.size(); i++) {
-      std::cout<<"Name "<<i<<" = "<<names[i]<<std::endl;
       if (names[i] == "cell") {
         schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_CELL;
       } else if (names[i] == "node") {
@@ -1280,8 +1257,6 @@ void PDE_DiffusionMFD::ParsePList_()
  ****************************************************************** */
 void PDE_DiffusionMFD::Init()
 {
-  std::cout<<"PDE_DiffusionMFD::Init"<<std::endl;
-
   // create or check the existing Operator
   int global_op_schema = schema_prec_dofs_;  
   if (global_op_ == Teuchos::null) {
@@ -1292,11 +1267,9 @@ void PDE_DiffusionMFD::Init()
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_CELL){
-      std::cout<<"Adding cell component"<<std::endl;
       cvs->AddComponent("cell", AmanziMesh::CELL, 1);
     }
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_FACE){
-      std::cout<<"Adding face component"<<std::endl;
       cvs->AddComponent("face", AmanziMesh::FACE, 1);
     }
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE)
@@ -1328,10 +1301,9 @@ void PDE_DiffusionMFD::Init()
     }
 
   } else {
-    assert(false); 
     // constructor was given an Operator
-    //global_op_schema_ = global_op_->schema();
-    //mesh_ = global_op_->DomainMap().Mesh();
+    global_op_schema_ = global_op_->schema();
+    mesh_ = global_op_->getDomainMap()->Mesh();
   }
 
   // Do we need to exclude the primary terms?
@@ -1503,8 +1475,6 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 ****************************************************************** */
 double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
-  std::cout<<"PDE_DiffusionMFD::ComputeTransmissibility"<<std::endl;
-
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   AmanziMesh::Entity_ID_View cells;

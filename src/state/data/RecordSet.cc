@@ -29,16 +29,10 @@ RecordSet::attributes() const
 
 // pass-throughs for other functionality
 void
-RecordSet::WriteVis(const Visualization& vis) const
+RecordSet::WriteVis(const Visualization& vis, const Key& tag) const
 {
   auto attrs = attributes();
-  if (HasRecord("")) {
-    records_.at("")->WriteVis(vis, attrs);
-  } else if (HasRecord("next")) {
-    records_.at("next")->WriteVis(vis, attrs);
-  } else if (records_.size() > 0) {
-    records_.begin()->second->WriteVis(vis, attrs);
-  }
+  records_.at(tag)->WriteVis(vis, attrs);
 }
 void
 RecordSet::WriteCheckpoint(const Checkpoint& chkp) const

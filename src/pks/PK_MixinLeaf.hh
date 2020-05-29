@@ -119,7 +119,7 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Setup()
 {
   // note that this will inherit all of its metadata from requirements made
   // elsewhere
-  S_->template Require<Data_t, DataFactory_t>(key_, "", key_);
+  // S_->template Require<Data_t, DataFactory_t>(key_, "", key_);
 }
 
 template <class Base_t, class Data_t, class DataFactory_t>
@@ -190,6 +190,7 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::StateToState(const Key& tag_from,
 {
   S_->template GetW<Data_t>(key_, tag_to, key_) =
     S_->template Get<Data_t>(key_, tag_from);
+  this->ChangedSolutionPK(tag_to);
 }
 
 template <class Base_t>

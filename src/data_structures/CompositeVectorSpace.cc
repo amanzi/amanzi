@@ -232,8 +232,17 @@ CompositeVectorSpace::AddComponents(
     // Factory's specs are fixed by an owning PK.  Check that the requested
     // components are supplied by the owning PK.
     if (!CheckContained_(names_, names)) {
-      Errors::Message message("Requested components are not supplied by an "
-                              "already owned CompositeVector.");
+      Errors::Message message;
+      message << "Requested components {";
+      for (const auto& n : names) {
+        message << "\"" << n << "\",";
+      }
+      message << "} are not supplied by an already owned CompositeVector"
+              << " which has components {";
+      for (const auto& n : names_) {
+        message << "\"" << n << "\",";
+      }
+      message << "}.";
       Exceptions::amanzi_throw(message);
     }
 

@@ -319,6 +319,14 @@ class Mesh {
                                         cell_face_dirs_.row_map(cellid + 1)));
   }
 
+  void
+  cell_get_faces_and_dirs(const Entity_ID cellid,
+                          Entity_ID_List& faceids,
+                          std::vector<int>& face_dirs) const {
+    cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs);
+  }
+
+  
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   KOKKOS_INLINE_FUNCTION void 
   cell_get_faces_and_bisectors(const Entity_ID cellid, 

@@ -422,7 +422,9 @@ BlockVector<Scalar>::update(Scalar scalarA, const BlockVector<Scalar>& A,
                             Scalar scalarThis)
 {
   for (const auto& name : *this) {
-    GetComponent_(name)->update(scalarA, *A.GetComponent_(name), scalarThis);
+    if (A.HasComponent(name)) {
+      GetComponent_(name)->update(scalarA, *A.GetComponent_(name), scalarThis);
+    }
   }
 };
 
@@ -435,11 +437,13 @@ BlockVector<Scalar>::update(Scalar scalarA, const BlockVector<Scalar>& A,
                             Scalar scalarThis)
 {
   for (const auto& name : *this) {
-    GetComponent_(name)->update(scalarA,
-                                *A.GetComponent_(name),
-                                scalarB,
-                                *B.GetComponent_(name),
-                                scalarThis);
+    if (A.HasComponent(name) && B.HasComponent(name)) {
+      GetComponent_(name)->update(scalarA,
+              *A.GetComponent_(name),
+              scalarB,
+              *B.GetComponent_(name),
+              scalarThis);
+    }
   }
 };
 

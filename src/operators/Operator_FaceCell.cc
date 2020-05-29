@@ -36,11 +36,6 @@ namespace Operators {
 int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
-  std::cout<<"Operator_FaceCell::ApplyMatrixFreeOp"<<std::endl;
-  std::cout<<"nfaces_owned: "<<nfaces_owned<<" op.A.size(): "<<op.A.size()<<std::endl;
-  std::cout << "  X norm = " << X.norm2() << std::endl;
-
-  {
   AMANZI_ASSERT(op.A.size() == ncells_owned);
   auto Xf = X.ViewComponent("face", true);
   auto Xc = X.ViewComponent("cell", true);
@@ -92,9 +87,6 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       //             << " Av = " << lAv << std::endl;
       // }
     });
-
-  }
-  std::cout << "  AX norm = " << Y.norm2() << std::endl;
   return 0;
 }
 
@@ -105,7 +97,6 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
-
   auto Xf = X.ViewComponent("face", true);
   auto Yf = Y.ViewComponent("face", true);
 
