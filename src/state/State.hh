@@ -508,7 +508,7 @@ class State {
 
 // Visualization of State.
 void
-WriteVis(Visualization& vis, const State& S);
+WriteVis(Visualization& vis, State& S, const Key& tag="next");
 
 // Checkpointing State.
 void

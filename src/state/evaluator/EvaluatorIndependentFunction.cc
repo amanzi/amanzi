@@ -76,7 +76,10 @@ EvaluatorIndependentFunction::Update_(State& S)
     // Create the function.
     CompositeVectorSpace& cvs =
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_);
-    AMANZI_ASSERT(plist_.isSublist("function"));
+    if (!plist_.isSublist("function")) {
+      Errors::Message msg("Malformed EvaluatorIndependentFunction list: missing sublist \"function\"");
+      throw(msg);
+    }
     func_ = Functions::createCompositeVectorFunction(plist_.sublist("function"), cvs.Mesh());
   }
 
