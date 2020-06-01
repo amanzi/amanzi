@@ -26,6 +26,7 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  AMANZI_ASSERT(!exclude_primary_terms_);
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
   AddGravityToRHS_();
 }

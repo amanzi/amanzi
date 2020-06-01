@@ -38,10 +38,10 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.A.size() == ncells_owned);
   auto Xf = X.ViewComponent("face", true);
-  auto Xc = X.ViewComponent("cell", true);
+  auto Xc = X.ViewComponent("cell", false);
 
   auto Yf = Y.ViewComponent("face", true);
-  auto Yc = Y.ViewComponent("cell", true);
+  auto Yc = Y.ViewComponent("cell", false);
   
   const auto& map = Y.getMap();
   const AmanziMesh::Mesh* mesh = mesh_.get();

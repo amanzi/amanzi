@@ -86,6 +86,7 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
   }
 }
 
+  
 
 /* ******************************************************************
 * Calculate elemental matrices.
@@ -124,6 +125,8 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_factor)
 {
+  
+
   //  add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
@@ -202,6 +205,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
 ****************************************************************** */
 void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 {
+  k_->ScatterMasterToGhosted();
   cMultiVectorView_type_<Amanzi::DefaultDevice,double> k_cell, k_face, k_twin;
   if (k_ != Teuchos::null) {
     if (k_->HasComponent("cell")) k_cell = k_->ViewComponent<>("cell", false);
@@ -558,15 +562,16 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
                   Acell(m, n) = 0.0;
                 }
 
-                Kokkos::atomic_add(&rhs_cell(c,0), -Acell(nfaces, n) * value);
+                rhs_cell(c,0) -= Acell(nfaces, n) * value;
                 Acell(nfaces, n) = 0.0;
               }
 
               if (essential_eqn) {
-                Kokkos::atomic_assign(&rhs_face(f,0), value);
+                rhs_face(f,0) = value;
                 Acell(n, n) = 1.0;
               } 
             } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
+              // need not be atomic if f is boundary face?
               Kokkos::atomic_add(&rhs_face(f,0), -value * mesh->face_area(f));
             } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
               Kokkos::atomic_add(&rhs_face(f,0), -value * mesh->face_area(f));
