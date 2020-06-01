@@ -81,7 +81,7 @@ class Debugger {
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<AmanziMesh::Entity_ID> dc_gid_;
+  std::vector<GO> dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
   std::vector<std::pair<std::string,std::string>> vars_;

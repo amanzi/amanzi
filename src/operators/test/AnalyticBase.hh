@@ -177,6 +177,8 @@ void ComputeCellError(const AnalyticBase& ana,
     l2_err += std::pow(tmp - p(c,0), 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p(c,0)));
     pnorm += std::pow(tmp, 2.0) * volume;
+    if (tmp - p(c,0) > 1.e-2)
+      std::cout << c << " xc=" << xc << " p=" << p(c,0) << " p_ex=" << tmp << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &pnorm, 1);
@@ -213,8 +215,8 @@ void ComputeFaceError(const AnalyticBase& ana,
     l2_err += std::pow((tmp - u(f,0)) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u(f,0)) / area);
     unorm += std::pow(tmp / area, 2.0);
-    if ((tmp - u(f,0)) / area > 1.e-4)
-      std::cout << f << " xf=" << xf << " u=" << u(f,0) << " u_ex=" << tmp << " velocity=" << velocity << std::endl;
+    if ((tmp - u(f,0)) / area > 1.e-1)
+      std::cout << f << " xf=" << xf << " q=" << u(f,0) << " q_ex=" << tmp << " velocity=" << velocity << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &unorm, 1);

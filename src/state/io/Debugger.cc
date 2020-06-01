@@ -192,7 +192,7 @@ Debugger::WriteCellInfo(bool include_faces)
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
-    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+    GO c0_gid = dc_gid_[i];
     Teuchos::OSTab itab = dcvo_[i]->getOSTab();
 
     AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(c0);
@@ -207,7 +207,7 @@ Debugger::WriteCellInfo(bool include_faces)
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid =
+            GO f_gid =
               mesh_->face_map(true)->getGlobalElement(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
             *dcvo_[i]->os()

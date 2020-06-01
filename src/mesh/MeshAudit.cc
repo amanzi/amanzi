@@ -987,7 +987,7 @@ MeshAudit::check_maps(const Map_ptr_type& map_own,
   // Check that the global ID space is contiguously divided (but not
   // necessarily uniformly) across all processers
 
-  std::vector<int> owned_GIDs(map_own->getNodeNumElements());
+  std::vector<GO> owned_GIDs(map_own->getNodeNumElements());
   for (int i = 0; i < map_own->getNodeNumElements(); i++)
     owned_GIDs[i] = map_own->getGlobalElement(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
@@ -1042,7 +1042,7 @@ MeshAudit::check_maps(const Map_ptr_type& map_own,
     if (error) return error;
 
     // Verify that the overlap indices are owned by other processes.
-    int* gids = new int[num_ovl];
+    GO* gids = new GO[num_ovl];
     int* pids = new int[num_ovl];
     int* lids = new int[num_ovl];
     for (int j = 0; j < num_ovl; ++j)
