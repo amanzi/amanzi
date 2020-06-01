@@ -323,7 +323,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
 
     std::vector<std::string> names = { "/group/map.local",
                                        "/group/map.global" };
-    MultiVector_ptr_type multivec = Teuchos::rcp(new MultiVector_type(map, 2));
+    auto multivec = Teuchos::rcp(new MultiVector_type(map, 2));
     {
       auto mvv = multivec->getLocalViewHost();
       for (int i = 0; i != mvv.extent(0); ++i) {

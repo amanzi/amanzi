@@ -91,7 +91,7 @@ class MeshEmbeddedLogical : public Mesh {
 
 
   // Global ID of any entity
-  virtual Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
+  virtual GO GID(const Entity_ID lid, const Entity_kind kind) const;
 
 
   //

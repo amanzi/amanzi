@@ -182,7 +182,7 @@ OutputXDMF::WriteMesh_(int cycle)
   // Create a map and vector to store connection info
   auto map =
     Teuchos::rcp(new Map_type(global_conns, local_conns, 0, mesh_->get_comm()));
-  IntVector_type conns(map);
+  Vector_type_<GO> conns(map);
   {
     int lcv = 0;
     int lcv_entity = 0;
