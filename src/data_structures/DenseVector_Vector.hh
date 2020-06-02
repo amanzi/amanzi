@@ -51,6 +51,10 @@ public:
     inited = true;
     data.prefix_sum();
   }
+
+  void putScalar(double val) {
+    data.putScalar(val);
+  }
   
   // The operator[] return the value on device 
   KOKKOS_INLINE_FUNCTION

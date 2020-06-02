@@ -95,6 +95,7 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  bcs_applied_ = false;
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
@@ -103,11 +104,11 @@ void PDE_DiffusionMFD::UpdateMatrices(
       //UpdateMatricesNodal_();
     } else if ((local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) &&
                (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
-      // if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
-      //   UpdateMatricesMixed_();
-      // } else {
+      if (little_k_type_ == OPERATOR_LITTLE_K_NONE) {
+        UpdateMatricesMixed_();
+      } else {
         UpdateMatricesMixed_little_k_();
-        //      }
+      }
     } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false); 
       //UpdateMatricesTPFA_();
@@ -199,6 +200,22 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_()
 
 
 /* ******************************************************************
+* Helper function for staging kr
+****************************************************************** */
+void PDE_DiffusionMFD::Preallocate_little_k_(bool init)
+{
+  // pre-stage kr face and cell quantities into work space
+  if (kr_cells_.size() != Wff_cells_.size()) {
+    kr_cells_ = DenseVector_Vector(Wff_cells_.size());
+    for (int i=0; i!=Wff_cells_.size(); ++i) {
+      kr_cells_.set_shape(i,Wff_cells_.at_host(i).NumRows());
+    }
+    kr_cells_.Init();
+    if (init) kr_cells_.putScalar(1.0);
+  }
+}
+
+/* ******************************************************************
 * Basic routine for each operator: creation of elemental matrices.
 ****************************************************************** */
 void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
@@ -213,15 +230,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 
   DenseMatrix_Vector& A = local_op_->A; 
   const AmanziMesh::Mesh* mesh = mesh_.get();
-
-  // pre-stage kr face and cell quantities into work space
-  if (kr_cells_.size() != Wff_cells_.size()) {
-    kr_cells_ = DenseVector_Vector(Wff_cells_.size());
-    for (int i=0; i!=Wff_cells_.size(); ++i) {
-      kr_cells_.set_shape(i,Wff_cells_.at_host(i).NumRows());
-    }
-    kr_cells_.Init();
-  }
+  Preallocate_little_k_();
 
   Kokkos::parallel_for(
       "PDE_DiffusionMFD::UpdateMatricesMixed_little_k_",
@@ -456,6 +465,8 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 ****************************************************************** */
 void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  bcs_applied_ = true;
+  
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                            | OPERATOR_SCHEMA_DOFS_FACE
@@ -921,6 +932,11 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
 {
+  if (bcs_applied_) {
+    Errors::Message msg("PDE_DiffusionMFD::UpdateFlux: Developer Error -- UpdateFlux() cannot be called after BCs have been applied.");
+    Exceptions::amanzi_throw(msg);
+  }    
+  
   flux->putScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
@@ -1389,7 +1405,6 @@ void PDE_DiffusionMFD::Init()
   }
 
   // miscalleneous variables
-  mass_matrices_initialized_ = false;
   K_ = Teuchos::null;
   k_ = Teuchos::null;
   dkdp_ = Teuchos::null;

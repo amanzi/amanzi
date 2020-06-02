@@ -41,7 +41,9 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
     global_op_->rhs()->putScalarGhosted(0.);
     int dim = mesh_->space_dimension();
-  
+
+    Preallocate_little_k_(true);
+    
     { // context for views
       auto rho_c = DensityCells(true);
     
@@ -143,6 +145,8 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   CompositeVector grav_flux(flux->getMap());  
   grav_flux.putScalar(0.0);
 
+  Preallocate_little_k_(true);
+  
   Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_owned);
   
   { // context for views
@@ -171,7 +175,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
           auto kr = kr_cells_[c];
 
           if (fv_flag) { 
-            AmanziGeometry::Point Kcg = K == nullptr ? g_ : K->at(c) * g_;
+            AmanziGeometry::Point Kcg = (K == nullptr) ? g_ : K->at(c) * g_;
 
             for (int n = 0; n < nfaces; n++) {
               int f = faces[n];

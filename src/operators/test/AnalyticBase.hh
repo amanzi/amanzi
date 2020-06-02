@@ -49,6 +49,11 @@
 #include "Quadrature2D.hh"
 #include "Quadrature3D.hh"
 
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 using namespace Amanzi;
 
 class AnalyticBase { //: public WhetStone::WhetStoneFunction {
@@ -172,13 +177,13 @@ void ComputeCellError(const AnalyticBase& ana,
     double tmp = ana.pressure_exact(xc, t);
     double volume = mesh->cell_volume(c);
 
-    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p(c,0) <<
-    // std::endl;
     l2_err += std::pow(tmp - p(c,0), 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p(c,0)));
     pnorm += std::pow(tmp, 2.0) * volume;
+#if DEBUG
     if (tmp - p(c,0) > 1.e-2)
       std::cout << c << " xc=" << xc << " p=" << p(c,0) << " p_ex=" << tmp << std::endl;
+#endif    
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &pnorm, 1);
@@ -215,8 +220,10 @@ void ComputeFaceError(const AnalyticBase& ana,
     l2_err += std::pow((tmp - u(f,0)) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u(f,0)) / area);
     unorm += std::pow(tmp / area, 2.0);
+#if DEBUG
     if ((tmp - u(f,0)) / area > 1.e-1)
       std::cout << f << " xf=" << xf << " q=" << u(f,0) << " q_ex=" << tmp << " velocity=" << velocity << std::endl;
+#endif
   }
 #ifdef HAVE_MPI
   GlobalOp(*mesh->get_comm(), "sum", &unorm, 1);

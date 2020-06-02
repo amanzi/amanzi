@@ -76,7 +76,10 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<Operator>& global_op) :
       PDE_Diffusion(plist, global_op),
-      factor_(1.0)
+      factor_(1.0),
+      transmissibility_initialized_(false),
+      bcs_applied_(false),
+      mass_matrices_initialized_(false)
   {
     ParsePList_();
   }
@@ -84,7 +87,10 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Diffusion(plist, mesh),
-      factor_(1.0)
+      factor_(1.0),
+      transmissibility_initialized_(false),
+      bcs_applied_(false),
+      mass_matrices_initialized_(false)
   {
     ParsePList_();
   }
@@ -128,6 +134,7 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 const Teuchos::Ptr<const CompositeVector>& factor);
 
+  void Preallocate_little_k_(bool init=false);
 
   // modify matrix due to boundary conditions 
   //    primary=true indicates that the operator updates both matrix and right-hand
@@ -204,7 +211,8 @@ protected:
 
   Teuchos::RCP<Operator> consistent_face_op_;
   bool transmissibility_initialized_;
-
+  bool bcs_applied_;
+  
  private:
   int schema_prec_dofs_;
 };

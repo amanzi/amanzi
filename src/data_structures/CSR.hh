@@ -235,6 +235,10 @@ public:
     return *this; 
   }
 
+  void putScalar(T val) {
+    Kokkos::deep_copy(entries_.view_device(), val);
+  }
+
 public: 
   mutable Kokkos::DualView<int*,MEMSPACE> row_map_; // Indices: number of element +1 
   mutable Kokkos::DualView<T*,MEMSPACE> entries_; // Values for all entries 
