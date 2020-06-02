@@ -441,5 +441,3 @@ if (BUILD_TESTS)
     #                 LINK_LIBS ${operators_test_link_libs})
 
 endif()
-
-

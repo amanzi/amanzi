@@ -151,9 +151,6 @@ SUITE(DIFFUSION) {
 
   // Not all combinations make sense, obviously.  2D problems must be run with
   // 2D meshes, and 3D with 3D.
-#if 0
-
-  
 #if FV  
   TEST(EXACT) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
@@ -884,7 +881,6 @@ SUITE(DIFFUSION) {
 #endif 
 #endif
 
-#endif
   //  
   // Analytic03b tests non-constant, scalar coefficients
   //
@@ -894,26 +890,20 @@ SUITE(DIFFUSION) {
   //       MFD is still exact
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
 #if FV
-  TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_SCHWARZ) {
+  TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionFV>(
         ana, "ifpack2: SCHWARZ", "Dirichlet", "Generate2D_HiRes",
         "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
-
-    //        ana, "ifpack2: SCHWARZ", "Dirichlet", "Generate2D",
-
   }
 #endif
 #if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
-  TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_SCHWARZ) {
+  TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionMFD>(
         ana, "ifpack2: SCHWARZ", "Dirichlet", "Generate2D_HiRes",
         "mixed upwind", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
-
-    //        ana, "ifpack2: SCHWARZ", "Dirichlet", "Generate2D",
-
   }
 #endif
 #if NLFV
@@ -927,6 +917,38 @@ SUITE(DIFFUSION) {
   //   auto ana = Teuchos::rcp(new Analytic03b());
   //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
   //       ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  // }
+#endif
+
+#if FV
+  TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionFV>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
+  }
+#endif
+#if MFD
+  // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
+  TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionMFD>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "mixed upwind", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
+  }
+#endif
+#if NLFV
+  // TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal) {
+  //   auto ana = Teuchos::rcp(new Analytic03b());
+  //   test<Operators::PDE_DiffusionNLFV>(
+  //       ana, "diagonal", "Dirichlet", "Generate2D",
+  //       "nlfv", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  // }
+  // TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal) {
+  //   auto ana = Teuchos::rcp(new Analytic03b());
+  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+  //       ana, "diagonal", "Dirichlet", "Generate2D",
   //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
   // }
 #endif

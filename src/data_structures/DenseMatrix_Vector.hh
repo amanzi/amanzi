@@ -34,9 +34,9 @@ public:
 
   using memory_space = CSR_Matrix::memory_space; 
 
-  DenseMatrix_Vector() {}
+  DenseMatrix_Vector() : inited(false) {}
 
-  DenseMatrix_Vector(const int& count){
+  DenseMatrix_Vector(const int& count) : inited(false) {
     prealloc_(count); 
   }
 

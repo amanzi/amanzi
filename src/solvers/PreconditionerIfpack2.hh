@@ -34,6 +34,7 @@ class PreconditionerIfpack2 : public Preconditioner<Matrix_type, Vector_type> {
   void
   Init(const std::string& name, const ParameterList_ptr_type& plist) override {
     plist_ = plist;
+    vo_ = Teuchos::rcp(new VerboseObject("PC_Ifpack2", *plist_));
 
     if (Keys::startsWith(name, "ifpack2: ")) {
       name_ = name.substr(9,name.size());
@@ -49,12 +50,14 @@ class PreconditionerIfpack2 : public Preconditioner<Matrix_type, Vector_type> {
     pc_->setParameters(plist_->sublist(std::string("ifpack2: ")+name_+" parameters"));
     pc_->initialize();
     pc_->compute();
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
   }
 
   void Destroy() override {};
 
   int applyInverse(const Vector_type& v, Vector_type& hv) const override {
     pc_->apply(v, hv);
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     return 0;
   }
     
@@ -66,6 +69,7 @@ class PreconditionerIfpack2 : public Preconditioner<Matrix_type, Vector_type> {
 
   Teuchos::RCP<Ifpack_PC_type> pc_;
   Teuchos::RCP<const Matrix_type> A_;
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 } // namespace AmanziPreconditioners

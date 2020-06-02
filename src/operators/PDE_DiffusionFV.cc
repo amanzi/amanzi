@@ -29,7 +29,6 @@ namespace Operators {
 //void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
 void PDE_DiffusionFV::Init()
 {
-  std::cout<<"PDE_DiffusionFV::Init"<<std::endl;
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
 
@@ -130,7 +129,6 @@ void PDE_DiffusionFV::Init()
 ****************************************************************** */
 void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K)
 {
-  std::cout<<"PDE_DiffusionFV::SetTensorCoefficient"<<std::endl;
   transmissibility_initialized_ = false;
   K_ = K;
 }
@@ -143,7 +141,6 @@ void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const TensorVector
 void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                            const Teuchos::RCP<const CompositeVector>& dkdp)
 {
-  std::cout<<"PDE_DiffusionFV::SetScalarCoefficient"<<std::endl;
   transmissibility_initialized_ = false;
   k_ = k;
   dkdp_ = dkdp;
@@ -172,7 +169,6 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
 void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
-  std::cout<<"PDE_DiffusionFV::UpdateMatrices"<<std::endl;
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
   if (local_op_.get()) {
@@ -193,9 +189,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
         KOKKOS_LAMBDA(const int f) {
           DenseMatrix A_f = A[f]; 
           double tij = trans_face(f,0) * k_face(f,0);
-          // if (f==0) {
-          //   std::cout << "tij = " << trans_face(f,0) << " * " << k_face(f,0) << " = " << tij << std::endl;
-          // }
 
           for (int i = 0; i != A_f.NumRows(); ++i) {
             A_f(i, i) = tij;
@@ -204,11 +197,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
               A_f(j, i) = -tij;
             }
           }
-
-          // if (f==0) {
-          //   std::cout << "A = " << A_f << std::endl;
-          // }
-
         });
     
   }
@@ -227,14 +215,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
-
-    if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-    }
-    if (dkdp_ != Teuchos::null) {
-      if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
-    }
-
     AnalyticJacobian_(*u);
   }
 }
@@ -267,7 +247,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 ****************************************************************** */
 void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  std::cout<<"PDE_DiffusionFV::ApplyBCs"<<std::endl;
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
@@ -321,7 +300,6 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
                                  const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
-  std::cout<<"PDE_DiffusionFV::UpdateFlux"<<std::endl;
   // prep views
   auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
@@ -387,6 +365,8 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("cell");
+  AMANZI_ASSERT(dkdp_.get() && dkdp_->HasComponent("cell"));
+  dkdp_->ScatterMasterToGhosted("cell");
 
   { // scope for views
     const auto bc_model = bcs_trial_[0]->bc_model();
@@ -394,15 +374,10 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
     const auto uc = u.ViewComponent("cell", true);
     const auto cmap_wghost = mesh_->cell_map(true);
-    const auto trans_face = transmissibility_->ViewComponent("face", true);
+    const auto trans_face = transmissibility_->ViewComponent("face", false);
 
-    // AmanziMesh::Entity_ID_View cells, faces;
+    const auto dKdP_cell = dkdp_->ViewComponent("cell", true);
 
-    const auto dKdP_cell = dkdp_->ViewComponent("cell");
-    // Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-    // if (dkdp_->HasComponent("face")) {
-    //   dKdP_face = dkdp_->ViewComponent("face", true);
-    // }
     const AmanziMesh::Mesh* mesh = mesh_.get();
     DenseMatrix_Vector& A = jac_op_->A; 
     
@@ -458,10 +433,9 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
             } else {
               assert(false);
             }
-
+            
             Aface(0, 0) = trans_face(f,0) * dpres * dKrel_dp[0];
             Aface(0, 1) = trans_face(f,0) * dpres * dKrel_dp[1];
-          
             Aface(1, 0) = -Aface(0, 0);
             Aface(1, 1) = -Aface(0, 1);
 
@@ -497,7 +471,6 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 ****************************************************************** */
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
-  std::cout<<"PDE_DiffusionFV::ComputeTransmissibility_"<<std::endl;
   transmissibility_->putScalar(0.);
   if (!K_.get()) {
     CompositeVectorSpace cvs;

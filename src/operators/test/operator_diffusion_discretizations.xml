@@ -122,7 +122,16 @@
     <ParameterList name="ifpack2: SCHWARZ">
       <Parameter name="preconditioner type" type="string" value="ifpack2: SCHWARZ"/>
       <ParameterList name="ifpack2: SCHWARZ parameters">
-       <Parameter name="inner preconditioner type" type="string" value="ILUT"/>
+        <Parameter name="schwarz: combine mode" type="string" value="add"/>
+        <Parameter name="schwarz: overlap level" type="int" value="1"/>
+        <Parameter name="schwarz: use reordering" type="bool" value="false"/>-->
+        <Parameter name="schwarz: inner preconditioner name" type="string" value="ILUT"/>
+        <ParameterList name="schwarz: inner preconditioner parameters">
+          <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
     

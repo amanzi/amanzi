@@ -34,9 +34,9 @@ public:
 
   using memory_space = CSR_Vector::memory_space; 
 
-  DenseVector_Vector() {}
+  DenseVector_Vector() : inited(false) {}
 
-  DenseVector_Vector(const int& count) {
+  DenseVector_Vector(const int& count)  : inited(false) {
     prealloc_(count);
   }
 

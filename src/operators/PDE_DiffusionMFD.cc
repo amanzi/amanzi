@@ -487,17 +487,18 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn
   }
 
   if (jac_op_ != Teuchos::null) {
-    assert(false); 
-    //const auto bc_model = bcs_trial_[0]->bc_model();
-    //AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-    //for (int f = 0; f != nfaces_owned; ++f) {
-    //  WhetStone::DenseMatrix<> Aface = jac_op_->matrices[f];
-    //  if (bc_model[f] == OPERATOR_BC_NEUMANN ||
-    //      bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
-    //    jac_op_->matrices_shadow[f].assign(Aface);
-    //    Aface *= 0.0;
-    //  }
-    //}
+    const auto bc_model = bcs_trial_[0]->bc_model();
+    DenseMatrix_Vector& A = jac_op_->A;
+    Kokkos::parallel_for(
+        "PDE_DiffusionMFD::ApplyBCs on Jacobian",
+        nfaces_owned,
+        KOKKOS_LAMBDA(const int& f) {
+          if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+              bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
+            auto Aface = A[f];
+            Aface *= 0.0;
+          }
+        });
   }
 }
 
@@ -790,6 +791,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
           int ncells = cells.size();
 
           auto Aface = A[f];
+          Aface.putScalar(0.);
 
           // We use the upwind discretization of the generalized flux.
           double v = fabs(kf(f,0)) > 0.0 ? flux_f(f,0) * dkdp_f(f,0) / kf(f,0) : 0.0;
@@ -924,6 +926,10 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
   if (k_ != Teuchos::null) {
    if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+  }
+
+  if (local_op_->v.size() != local_op_->A.size()) {
+    local_op_->PreallocateWorkVectors();
   }
 
   {

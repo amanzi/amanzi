@@ -273,7 +273,14 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
       CHECK_EQUAL(gold_n_cols, test_n_cols);
       if (test_n_cols == gold_n_cols) {
         for (int j=0; j!=gold_n_cols; ++j) {
-          std::cout << "(" << j << ": " << gold_vals[j] << " == " << test_vals[j] << ")";
+          int k=0;
+          for (k; k!=test_n_cols; ++k) {
+            if (gold_cols[j] == test_cols[k]) break;
+          }
+          CHECK(k < test_n_cols);
+          if (k == test_n_cols) continue;
+          
+          std::cout << "(" << gold_cols[j] << ": " << gold_vals[j] << " == " << test_vals[k] << ")";
           CHECK_CLOSE(gold_vals[j], test_vals[j], 1.e-8);
         }
       }
