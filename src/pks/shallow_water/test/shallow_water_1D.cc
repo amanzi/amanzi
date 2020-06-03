@@ -29,7 +29,6 @@
 //--------------------------------------------------------------
 double Bathymetry(double x, double y) {
 	return 0.;
-//        return sin(M_PI*x)*sin(M_PI*x);
 }
 
 void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuchos::RCP<Amanzi::State>& S_) {
@@ -37,8 +36,6 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuc
 	int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
 	std::string passwd_ = "state";
-
-	S_->GetFieldData("surface-bathymetry", passwd_)->PutScalar(0.0);
 
 //			Teuchos::ParameterList  bathymetry_ = glist_->sublist("bathymetry");
 //	//        Teuchos::ParameterList& bathymetry_func_ = bathymetry_.sublist("function-smooth-step");

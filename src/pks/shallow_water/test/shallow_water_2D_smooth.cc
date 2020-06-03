@@ -24,6 +24,13 @@
 
 #include "OutputXDMF.hh"
 
+//--------------------------------------------------------------
+// bottom topography
+//--------------------------------------------------------------
+double Bathymetry(double x, double y) {
+	return 0.;
+}
+
 double hf(double x) {
 	return 2.*cos(x) + 2.*x*sin(x) + 1./8.*cos(2.*x) + x/4.*sin(2.*x) + 12./16.*x*x;
 }
@@ -32,18 +39,24 @@ void vortex_2D_exact(double t, double x, double y, double &h, double &u, double 
 
 	double g = 9.81;
     double gmm = 15.;
-    double omega = 4.*M_PI;
-    double u_inf = 1., v_inf = 0.;
-    double H_inf = 1.;
-    double xc = 5., yc = 0.5;
+    double omega = M_PI;
+    double u_inf = 6., v_inf = 0.;
+    double H_inf = 10.;
+    double xc = 5., yc = 5.;
     double H0;
 
-    double xt = x - u_inf*t - xc;
-    double yt = y - v_inf*t - yc;
+    double xt = x - xc - u_inf*t;
+    double yt = y - yc - v_inf*t;
 
     double rc = std::sqrt(xt*xt + yt*yt); // ??? distance from the vortex core
 
-	if (omega*rc <= M_PI) {
+//    std::cout << "x = " << x << ", y = " << y << std::endl;
+//    std::cout << "xt = " << xt << ", yt = " << yt << std::endl;
+//    std::cout << "rc = " << rc << std::endl;
+//    std::cout << "omega*rc = " << omega*rc << ", M_PI = " << M_PI << std::endl;
+
+//	if (omega*rc <= M_PI) {
+    if (rc <= 1.) {
 		h = H_inf + 1./g*(gmm/omega)*(gmm/omega)*(hf(omega*rc)-hf(M_PI));
 		u = u_inf + gmm*(1.+cos(omega*rc))*(yc-y);
 		v = v_inf + gmm*(1.+cos(omega*rc))*(x-xc);
@@ -78,6 +91,60 @@ void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Ep
 
 }
 
+void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuchos::RCP<Amanzi::State>& S_) {
+
+	int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+	std::string passwd_ = "state";
+
+	Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+
+	for (int c = 0; c < ncells_owned; c++) {
+		Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+		B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
+	}
+
+
+	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
+	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
+	Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
+	Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
+	Epetra_MultiVector& qx_vec_c = *S_->GetFieldData("surface-discharge-x",passwd_)->ViewComponent("cell");
+	Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell");
+
+	for (int c = 0; c < ncells_owned; c++) {
+		Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+		double h, u, v;
+		vortex_2D_exact(0., xc[0], xc[1], h, u, v);
+		h_vec_c[0][c] = h;
+		ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
+		vx_vec_c[0][c] = u;
+		vy_vec_c[0][c] = v;
+		qx_vec_c[0][c] = u*h;
+	    qy_vec_c[0][c] = v*h;
+	}
+
+
+}
+
+void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, Epetra_MultiVector& vy_ex, const Epetra_MultiVector& hh, const Epetra_MultiVector& vx, const Epetra_MultiVector& vy, double& err_max, double& err_L1, double& hmax) {
+
+	int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+	err_max = 0.;
+	err_L1 = 0.;
+	hmax = 0.;
+
+	for (int c = 0; c < ncells_owned; c++) {
+		err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
+		err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
+		hmax = std::sqrt(mesh->cell_volume(c));
+	}
+
+	std::cout << "err_max = " << err_max << std::endl;
+	std::cout << "err_L1  = " << err_L1 << std::endl;
+}
+
 
 /* **************************************************************** */
 TEST(SHALLOW_WATER_2D_SMOOTH) {
@@ -106,7 +173,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 100, 10, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, 40, 40, request_faces, request_edges);
 //  mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
   if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
@@ -129,6 +196,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   S->InitializeFields();
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
+  vortex_2D_setIC(mesh,S);
   if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
   
   // create screen io
@@ -156,7 +224,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   int iter = 0;
   bool flag = true;
   
-  while (t_new < 0.5) {
+  while (t_new < 1./6.) {
     // cycle 1, time t
     double t_out = t_new;
 
@@ -186,7 +254,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
     io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
     io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
-    io.WriteVector(*vx_ex(0), "vy_ex", AmanziMesh::CELL);
+    io.WriteVector(*vy_ex(0), "vy_ex", AmanziMesh::CELL);
     io.FinalizeCycle();
 
     dt = SWPK.get_dt();
@@ -240,6 +308,10 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   vortex_2D_exact_field(mesh, hh_ex, vx_ex, vy_ex, t_out);
 
+  double err_max, err_L1, hmax;
+
+  error(mesh, hh_ex, vx_ex, vy_ex, hh, vx, vy, err_max, err_L1, hmax);
+
   io.InitializeCycle(t_out, iter);
   io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
@@ -251,6 +323,9 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
   io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
   io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
-  io.WriteVector(*vx_ex(0), "vy_ex", AmanziMesh::CELL);
+  io.WriteVector(*vy_ex(0), "vy_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
+
+  CHECK_CLOSE(1./hmax, err_max, 0.1);
+
 }
