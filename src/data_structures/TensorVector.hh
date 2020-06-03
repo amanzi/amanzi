@@ -85,6 +85,10 @@ struct TensorVector {
     inited = true;
     data.prefix_sum();
   }
+
+  void update_entries_host() const {
+   data.update_entries_host(); 
+  }
   
   // The operator[] return the value on device 
   KOKKOS_INLINE_FUNCTION
