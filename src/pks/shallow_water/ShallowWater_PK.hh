@@ -35,6 +35,9 @@
 
 #include "WhetStoneMeshUtils.hh"
 
+#include "Function.hh"
+#include "FunctionFactory.hh"
+
 namespace Amanzi {
 namespace ShallowWater {
     
@@ -97,7 +100,7 @@ class ShallowWater_PK : public PK_Physical,
 
     double Reconstruction(double,double,int,Key);
 
-    double Bathymetry(double,double);
+//    double Bathymetry(double,double);
                             
   protected:
     

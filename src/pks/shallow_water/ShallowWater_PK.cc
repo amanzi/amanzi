@@ -22,7 +22,8 @@ namespace ShallowWater {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln) :
     S_(S),
-    soln_(soln)
+    soln_(soln),
+	glist_(glist)
     {
         std::string pk_name = pk_tree.name();
         auto found = pk_name.rfind("->");
@@ -168,30 +169,30 @@ namespace ShallowWater {
 					 ht_rec = ht_vec_c[0][c];
 					 B_rec  = B_vec_c[0][c];
 				 }
-//				 double h_rec = ht_rec - B_rec;
+				 double h_rec = ht_rec - B_rec;
 
-//			     if (h_rec < 0.) {
-//			    	 std::cout << "c = " << c << std::endl;
-//			    	 std::cout << "ht_rec = " << ht_rec << std::endl;
-//			    	 std::cout << "B_rec  = " << B_rec << std::endl;
-//			    	 std::cout << "h_rec  = " << h_rec << std::endl;
-//			    	 exit(0);
-//			     }
+			     if (h_rec < 0.) {
+			    	 std::cout << "c = " << c << std::endl;
+			    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+			    	 std::cout << "B_rec  = " << B_rec << std::endl;
+			    	 std::cout << "h_rec  = " << h_rec << std::endl;
+			    	 exit(0);
+			     }
 
 //				 double h_rec = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
-				 double h_rec = h_vec_c[0][c];
+//				 double h_rec = h_vec_c[0][c];
 
-//				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
-				 double vx_rec = vx_vec_c[0][c];
+				 double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
+//				 double vx_rec = vx_vec_c[0][c];
 
-//				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
-				 double vy_rec = vy_vec_c[0][c];
+				 double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
+//				 double vy_rec = vy_vec_c[0][c];
 
-//				 double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
-				 double qx_rec = qx_vec_c[0][c];
+				 double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
+//				 double qx_rec = qx_vec_c[0][c];
 
-//				 double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
-				 double qy_rec = qy_vec_c[0][c];
+				 double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
+//				 double qy_rec = qy_vec_c[0][c];
 
 //				 std::cout << "c = " << c << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 //				 std::cout << "xcf = " << xcf << std::endl;
@@ -234,30 +235,30 @@ namespace ShallowWater {
 						 ht_rec = ht_vec_c[0][cn];
 						 B_rec  = B_vec_c[0][cn];
 					 }
-//					 double h_rec = ht_rec - B_rec;
+					 double h_rec = ht_rec - B_rec;
 
-//				     if (h_rec < 0.) {
-//				    	 std::cout << "cn = " << cn << std::endl;
-//				    	 std::cout << "ht_rec = " << ht_rec << std::endl;
-//				    	 std::cout << "B_rec  = " << B_rec << std::endl;
-//				    	 std::cout << "h_rec  = " << h_rec << std::endl;
-//				    	 exit(0);
-//				     }
+				     if (h_rec < 0.) {
+				    	 std::cout << "cn = " << cn << std::endl;
+				    	 std::cout << "ht_rec = " << ht_rec << std::endl;
+				    	 std::cout << "B_rec  = " << B_rec << std::endl;
+				    	 std::cout << "h_rec  = " << h_rec << std::endl;
+				    	 exit(0);
+				     }
 
 // 					 double h_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-ponded_depth");
- 					 double h_rec = h_vec_c[0][cn];
+// 					 double h_rec = h_vec_c[0][cn];
 
-// 					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
- 					 double vx_rec = vx_vec_c[0][cn];
+ 					 double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
+// 					 double vx_rec = vx_vec_c[0][cn];
 
-// 					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
- 					 double vy_rec = vy_vec_c[0][cn];
+ 					 double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
+// 					 double vy_rec = vy_vec_c[0][cn];
 
-//				     double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
-				     double qx_rec = qx_vec_c[0][cn];
+				     double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
+//				     double qx_rec = qx_vec_c[0][cn];
 
-//				     double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
-				     double qy_rec = qy_vec_c[0][cn];
+				     double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
+//				     double qy_rec = qy_vec_c[0][cn];
 
 // 					std::cout << "cn = " << cn << "/" << ncells_owned << ", h_rec = " << h_rec << std::endl;
 
@@ -406,8 +407,8 @@ namespace ShallowWater {
         pressure_key_       = Keys::getKey(domain_, "pressure");
         velocity_x_key_     = Keys::getKey(domain_, "velocity-x");
         velocity_y_key_     = Keys::getKey(domain_, "velocity-y");
-        discharge_x_key_     = Keys::getKey(domain_, "discharge-x");
-        discharge_y_key_     = Keys::getKey(domain_, "discharge-y");
+        discharge_x_key_    = Keys::getKey(domain_, "discharge-x");
+        discharge_y_key_    = Keys::getKey(domain_, "discharge-y");
         ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
         total_depth_key_    = Keys::getKey(domain_, "total_depth");
         bathymetry_key_     = Keys::getKey(domain_, "bathymetry");
@@ -477,56 +478,80 @@ namespace ShallowWater {
 
     }
     
-    void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S) {
+    void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S) {  // default
 
     	int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     	if (!S_->GetField("surface-bathymetry", passwd_)->initialized()) {
 
-			Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+    		S_->GetFieldData("surface-bathymetry", passwd_)->PutScalar(0.0);
 
-			for (int c = 0; c < ncells_owned; c++) {
-				AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-				B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
-			}
+//            Teuchos::ParameterList  bathymetry_ = glist_->sublist("bathymetry");
+//    //        Teuchos::ParameterList& bathymetry_func_ = bathymetry_.sublist("function-smooth-step");
+//            Amanzi::FunctionFactory fact;
+//            Amanzi::Function *f = fact.Create(bathymetry_);
+//
+//			Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+//
+//			for (int c = 0; c < ncells_owned; c++) {
+//				AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+////				B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
+//				std::vector<double> x(1,xc[0]);
+//				B_vec_c[0][c] = (*f)(x);
+//			}
 
 			S_->GetField("surface-bathymetry", passwd_)->set_initialized();
 		}
 
 
-        
+
         if (!S_->GetField("surface-ponded_depth", passwd_)->initialized()) {
 
 //            S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(2.0);
 
         	Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
         	Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
+        	Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+
+        	S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(1.0);
+
+//        	Teuchos::ParameterList  state_ = glist_->sublist("state");
+//        	Teuchos::ParameterList  init_cond_ = state_.sublist("initial conditions");
+//            Teuchos::ParameterList  ponded_depth_ic_ = init_cond_.sublist("ponded_depth");
+//            Amanzi::FunctionFactory fact;
+//            Amanzi::Function *f = fact.Create(ponded_depth_ic_);
+//
+//        	for (int c = 0; c < ncells_owned; c++) {
+//        		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+//        		std::vector<double> x(1,xc[0]);
+//        		h_vec_c[0][c] = (*f)(x);
+////        		if (xc[0] < 1000.) {
+////        		   h_vec_c[0][c] = 10.;
+////        		}
+////			    else {
+////			       h_vec_c[0][c] = 0.; //0.0000000001;
+////			    }
+//        		ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
+//        	}
 
         	for (int c = 0; c < ncells_owned; c++) {
-        		AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-        		if (xc[0] < 1000.) {
-        		   h_vec_c[0][c] = 10.;
-        		}
-			    else {
-			       h_vec_c[0][c] = 0.; //0.0000000001;
-			    }
-        		ht_vec_c[0][c] = h_vec_c[0][c] + Bathymetry(xc[0],xc[1]);
+        		ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
         	}
 
         	S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
         	S_->GetField("surface-total_depth", passwd_)->set_initialized();
         }
-        
+
         if (!S_->GetField("surface-velocity-x", passwd_)->initialized()) {
             S_->GetFieldData("surface-velocity-x", passwd_)->PutScalar(0.0);
             S_->GetField("surface-velocity-x", passwd_)->set_initialized();
         }
-        
+
         if (!S_->GetField("surface-velocity-y", passwd_)->initialized()) {
             S_->GetFieldData("surface-velocity-y", passwd_)->PutScalar(0.0);
             S_->GetField("surface-velocity-y", passwd_)->set_initialized();
         }
-        
+
         if (!S_->GetField("surface-discharge-x", passwd_)->initialized()) {
             S_->GetFieldData("surface-discharge-x", passwd_)->PutScalar(0.0);
             S_->GetField("surface-discharge-x", passwd_)->set_initialized();
@@ -554,7 +579,7 @@ namespace ShallowWater {
         }
 
     }
-    
+
 //==========================================================================
 //
 // Discretization: numerical fluxes, source terms, etc
@@ -581,13 +606,6 @@ namespace ShallowWater {
 
 		return m;
 
-    }
-
-    //--------------------------------------------------------------
-    // bottom topography
-    //--------------------------------------------------------------
-    double ShallowWater_PK::Bathymetry(double x, double y) {
-        return 0.; //-0.01*x;
     }
 
     //--------------------------------------------------------------
@@ -683,7 +701,7 @@ namespace ShallowWater {
 
 //        std::cout << "Phi = " << Phi << std::endl;
 
-        Phi = 0.;
+//        Phi = 0.;
 
         grad_lim = Phi*grad;
 
@@ -1169,7 +1187,7 @@ namespace ShallowWater {
         	// face centroid
         	Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-        	double B = Bathymetry(xcf[0],xcf[1]);
+//        	double B = Bathymetry(xcf[0],xcf[1]);
 
         	double h_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
         	double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
