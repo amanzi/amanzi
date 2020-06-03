@@ -32,18 +32,56 @@ def close(m1, m2, perm, eps=1.e-5):
         col1 = m1[i1]
         col2 = m2[i2]
         if len(col1) != len(col2):
-            print(p, "NO")
+            print("len col {} not the same as col {}".format(i1,i2))
             return False
-        for j2, v2 in col2.items():
-            jj2 = perm[j2]
-            if jj2 in col1:
-                if abs(col1[jj2] - v2) > eps:
-                    print(p, "NO")
+        for j1, v1 in col1.items():
+            j2 = perm[j1]
+            if j2 in col2:
+                if abs(col2[j2] - v1) > eps:
+                    print("val ({},{} not the same as {},{}".format(j1,v1, j2,col2[j2]))
                     return False
             else:
-                print(p, "NO")
+                print("col {} not at {}".format(j1, j2))
                 return False
     return True
+
+def diag(m1,m2, eps=1.e-5):
+    valid = []
+    for i1 in m1:
+        valid_i1 = []
+        for i2 in m2:
+            if abs(m1[i1][i1] - m2[i2][i2]) < eps:
+                valid_i1.append(i2)
+        valid.append(valid_i1)
+
+    for i,v in enumerate(valid):
+        print(i, v)
+        
+        
+    def gen_perm(current, leftover):
+        if len(leftover) == 0:
+            yield current
+        else:
+            for i in valid[len(current)]:
+                if i in leftover:
+                    current.append(i)
+                    leftover.remove(i)
+                    for perm in gen_perm(current, leftover):
+                        yield perm
+            if len(current) == 0:
+                return
+
+            leftover.add(current.pop())
+            return
+
+    for perm in gen_perm([], set(range(len(m1)))):
+        print(perm)
+        if close(m1, m2, perm):
+            return True
+    return False
+    
+            
+        
 
 def brute_force(m1, m2):
     import itertools
@@ -63,9 +101,19 @@ def brute_force(m1, m2):
 if __name__ == "__main__":
     import sys
     fname = sys.argv[-1]
-    m1 = read_matrix(fname+"_np1.test")
-    m2 = read_matrix(fname+"_np3.test")
-    p = brute_force(m1, m2)
+    m1 = read_matrix(fname+"_np1.gold")
+
+    print(fname+"_np1.test")
+    for r, col in m1.items():
+        print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
+
+    m2 = read_matrix(fname+"_np3.gold")
+
+    print(fname+"_np3.test")
+    for r, col in m2.items():
+        print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
+
+    p = diag(m1, m2)
     if p:
         print(p)
         print("SUCCESS")
