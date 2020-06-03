@@ -231,7 +231,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 	  int iter = 0;
 	  bool flag = true;
 
-	  while (t_new < 0.005) {
+	  while (t_new < 0.001) {
 		// cycle 1, time t
 		double t_out = t_new;
 
@@ -347,6 +347,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 //  }
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK_CLOSE(1., order, 0.2);
+  CHECK_CLOSE(1.5, order, 0.2);
 
 }
