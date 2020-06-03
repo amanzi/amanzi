@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,6 +6,20 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+//! Identity as a preconditioner.
+
+/*!
+
+Simply copies the input vector to the output -- uses the Identity matrix as a
+preconditioner.
+
+This is provided when using the `"preconditioner type`"=`"identity`" in the
+`Preconditioner`_ spec.
+
+No parameters are required.
+
+*/
+
 
 #ifndef AMANZI_PRECONDITIONER_IDENTITY_HH_
 #define AMANZI_PRECONDITIONER_IDENTITY_HH_

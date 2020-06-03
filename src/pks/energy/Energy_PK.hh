@@ -103,25 +103,20 @@ class Energy_PK : public PK_PhysicalBDF {
   int nfaces_owned, nfaces_wghost;
 
  protected:
-  Key domain_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Teuchos::ParameterList> ep_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
-  // state and primary field
-  Teuchos::RCP<State> S_;
+  // primary field
   std::string passwd_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 
   // names of state fields 
-  Key temperature_key_;
-  Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_;
-  Key conductivity_key_;
+  Key temperature_key_, energy_key_, prev_energy_key_;
+  Key enthalpy_key_, conductivity_key_;
+  Key molar_density_liquid_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 
@@ -136,12 +131,9 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
-  Teuchos::RCP<Operators::BCs> op_bc_;
+  Teuchos::RCP<Operators::BCs> op_bc_, op_bc_enth_;
 
   bool prec_include_enthalpy_;
-
- protected:
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Energy

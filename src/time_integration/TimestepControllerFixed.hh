@@ -16,6 +16,8 @@
 a constant timestep size.  Note that the actual timestep size is given by the
 minimum of PK's initial timestep sizes.
 
+No parameters are required.
+
 */
 
 

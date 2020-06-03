@@ -179,7 +179,7 @@ void start_data()
 void write_node_data(const Epetra_Vector &x, std::string varname) 
 {
   double *node_data;
-  int err = x.ExtractView(&node_data);
+  x.ExtractView(&node_data);
   gmvwrite_variable_name_data(1, (char*) varname.c_str(), node_data);
 }
 
@@ -187,7 +187,7 @@ void write_node_data(const Epetra_Vector &x, std::string varname)
 void write_node_data(const Epetra_MultiVector &x, const unsigned int component, std::string varname) 
 {
   double **node_data;
-  int err = x.ExtractView(&node_data);
+  x.ExtractView(&node_data);
 
   double *component_data = node_data[component];
   gmvwrite_variable_name_data(1, (char*) varname.c_str(), component_data);
@@ -197,7 +197,7 @@ void write_node_data(const Epetra_MultiVector &x, const unsigned int component, 
 void write_cell_data(const Epetra_Vector &x, std::string varname) 
 {
   double *cell_data;
-  int err = x.ExtractView(&cell_data);
+  x.ExtractView(&cell_data);
   gmvwrite_variable_name_data(0, (char*) varname.c_str(), cell_data);
 }
 
@@ -205,7 +205,7 @@ void write_cell_data(const Epetra_Vector &x, std::string varname)
 void write_cell_data(const Epetra_MultiVector &x, const unsigned int component, std::string varname) 
 {
   double **cell_data;
-  int err = x.ExtractView(&cell_data);
+  x.ExtractView(&cell_data);
 
   double *component_data = cell_data[component];
   gmvwrite_variable_name_data(0, (char*) varname.c_str(), component_data);
@@ -215,7 +215,7 @@ void write_cell_data(const Epetra_MultiVector &x, const unsigned int component, 
 void write_face_data(const Epetra_Vector &x, std::string varname) 
 {
   double *face_data;
-  int err = x.ExtractView(&face_data);
+  x.ExtractView(&face_data);
   gmvwrite_variable_name_data(2, (char*) varname.c_str(), face_data);
 }
 

@@ -37,3 +37,4 @@ diff -Naur silo-pristine/src/hdf5_drv/silo_hdf5.c silo/src/hdf5_drv/silo_hdf5.c
  #else 
                      H5Pclose(retval);
                      return db_perror("HDF5 MPI VFD", E_NOTENABLEDINBUILD, me);
+

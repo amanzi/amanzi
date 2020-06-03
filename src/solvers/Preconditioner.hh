@@ -1,6 +1,4 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,17 +6,38 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
 //!  Base class for preconditioners.
 
 /*!
 
-``[preconditioner-typed-spec]``
+Provides approximate inverses of matrices.
 
-* `"preconditioner type`" ``[string]`` Iterative method to be used.
-* `"_preconditioner_type_ parameters`" ``[_preconditioner_type_-spec]``
-  Parameters associated with the requested preconditioner.
-  
+Note that preconditioners here differ from linear operators not in the
+approximate nature of their inverse, but in their interface.  Preconditioners
+work with raw vectors and matrices, and may need assembled matrices.  A `Linear
+Solver`_ works with the action of matrices only, and never need assembled
+matrices.  As such they are templated with an arbitrary Matrix and Vector type,
+whereas Preconditioners are not.
+
+
+.. _preconditioner-typed-spec:
+.. admonition:: preconditioner-typed-spec
+
+    * `"preconditioner type`" ``[string]`` **identity** Iterative method to be used.
+    * `"_preconditioner_type_ parameters`" ``[_preconditioner_type_-spec]``
+      Parameters associated with the requested preconditioner.
+
+Example:
+
+.. code-block:: xml
+
+     <ParameterList name="my preconditioner">
+       <Parameter name="type" type="string" value="trilinos ml"/>
+        <ParameterList name="trilinos ml parameters"> ?????? check me!
+            ... 
+        </ParameterList>
+     </ParameterList>
+      
  */
 
 #ifndef AMANZI_PRECONDITIONER_HH_

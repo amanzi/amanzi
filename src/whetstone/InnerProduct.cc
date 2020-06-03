@@ -57,7 +57,7 @@ int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatr
   int ncols = N.NumCols();
 
   // find correct scaling of a stability term
-  double lower, upper, eigmin = M(0, 0);
+  double eigmin = M(0, 0);
   // T.spectral_bounds(&lower, &upper);
   for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, M(k, k));
 

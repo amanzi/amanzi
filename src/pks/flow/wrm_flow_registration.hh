@@ -16,10 +16,10 @@
 #include "WRM_fake.hh"
 #include "WRM_vanGenuchten.hh"
 
-// explicity instantitate the static data of factory
 namespace Amanzi {
 namespace Utils {
 
+// explicity instantitate the static data of factory
 template<> Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
 }  // namespace Utils

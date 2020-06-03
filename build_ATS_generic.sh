@@ -29,6 +29,7 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    ${dbg_option} \
    --with-mpi=${OPENMPI_DIR} \
    --enable-shared \
+   --enable-clm \
    --disable-structured  --enable-unstructured \
    --disable-stk_mesh --enable-mstk_mesh \
    --enable-hypre \
@@ -36,6 +37,7 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --disable-petsc \
    --disable-amanzi_physics \
    --enable-ats_physics \
+   --disable-ats_dev \
    --disable-geochemistry \
    --amanzi-install-prefix=${AMANZI_DIR} \
    --amanzi-build-dir=${AMANZI_BUILD_DIR} \

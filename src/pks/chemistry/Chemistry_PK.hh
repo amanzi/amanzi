@@ -65,15 +65,13 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
+  Key domain_name() { return domain_; }
+  int num_aqueous_components() {return number_aqueous_components_;}
 
  protected:
   void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
  protected:
-  Key domain_;  // name of the computational domain
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-
-  Teuchos::RCP<State> S_;
   std::string passwd_;
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
 

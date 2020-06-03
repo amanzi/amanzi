@@ -19,10 +19,10 @@ class ConfigurationManager(object):
 
   def checkPythonVersion(self):
     if not hasattr(sys, 'version_info') or not sys.version_info[0] == 2 or not sys.version_info[1] >= 3:
-      print '*** You must have Python2 version 2.3 or higher to run ./configure        *****'
-      print '*          Python is easy to install for end users or sys-admin.              *'
-      print '*                  http://www.python.org/download/                            *'
-      print '*******************************************************************************'
+      print('*** You must have Python2 version 2.3 or higher to run ./configure        *****')
+      print('*          Python is easy to install for end users or sys-admin.              *')
+      print('*                  http://www.python.org/download/                            *')
+      print('*******************************************************************************')
       sys.exit(4)
     return
 
@@ -48,8 +48,8 @@ class ConfigurationManager(object):
 
   def downloadPackage(self, url, filename, targetDirname):
     '''Download the tarball for a package at url, save it as filename, and untar it into targetDirname'''
-    import tarfile, urllib
-    filename, headers = urllib.urlretrieve(url, filename)
+    import tarfile, urllib.request, urllib.parse, urllib.error
+    filename, headers = urllib.request.urlretrieve(url, filename)
     tar = tarfile.open(filename, 'r:gz')
     self.untar(tar, targetDirname, leading = filename.split('.')[0])
     return
@@ -106,7 +106,7 @@ class ConfigurationManager(object):
         break
     if not found:
       arch = os.environ.get(self.PROJECT+'_ARCH')
-      if arch != None:
+      if arch is not None:
         found = 1
       else:
         arch = ''
@@ -121,8 +121,8 @@ class ConfigurationManager(object):
         msg ='*******************************************************************************\n'\
             +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
             +'*******************************************************************************\n'
-        print msg
-        if not framework is None:
+        print(msg)
+        if framework is not None:
           framework.logClear()
           import traceback
           if hasattr(framework, 'log'):
@@ -170,7 +170,7 @@ class ConfigurationManager(object):
     return
 
   def setupBuildSystem(self):
-    import commands
+    import subprocess
 
     self.configDir = os.path.abspath('config')
     self.bsDir     = os.path.join(self.configDir, 'BuildSystem')
@@ -180,15 +180,15 @@ class ConfigurationManager(object):
       raise RuntimeError('Run configure from $'+self.PROJECT+'_DIR, not '+os.path.abspath('.'))
     # Try to clone BuildSystem via Mercurial; failing that, we then download the tarball.
     if not os.path.isdir(self.bsDir):
-      print '==============================================================================='
-      print '''++ Could not locate BuildSystem in %s.''' % self.configDir
-      print '''++ Downloading it from %s.''' % bsURL
-      print '''++ Attempting: %s''' % hgCommand
-      (status,output) = commands.getstatusoutput(hgCommand)
+      print('===============================================================================')
+      print('''++ Could not locate BuildSystem in %s.''' % self.configDir)
+      print('''++ Downloading it from %s.''' % bsURL)
+      print('''++ Attempting: %s''' % hgCommand)
+      (status,output) = subprocess.getstatusoutput(hgCommand)
       if status:
-        print '++ Unable to clone BuildSystem.  Attempting download from ' + bsURL + '/archive/tip.tar.gz'
+        print('++ Unable to clone BuildSystem.  Attempting download from ' + bsURL + '/archive/tip.tar.gz')
         self.downloadPackage('http://petsc.cs.iit.edu/petsc/BuildSystem/archive/tip.tar.gz', 'BuildSystem.tar.gz', self.configDir)
-      print '==============================================================================='
+      print('===============================================================================')
     # to load ~/.pythonrc.py before inserting correct BuildSystem to path
     import user
     sys.path.insert(0, self.bsDir)
@@ -204,17 +204,17 @@ class ConfigurationManager(object):
     if os.path.exists('/usr/bin/cygcheck.exe'):
       buf = os.popen('/usr/bin/cygcheck.exe -c cygwin').read()
       if buf.find('1.5.11-1') > -1:
-        print '==============================================================================='
-        print ' *** cygwin-1.5.11-1 detected. ./configure fails with this version ***'
-        print ' *** Please upgrade to cygwin-1.5.12-1 or newer version. This can  ***'
-        print ' *** be done by running cygwin-setup, selecting "next" all the way.***'
-        print '==============================================================================='
+        print('===============================================================================')
+        print(' *** cygwin-1.5.11-1 detected. ./configure fails with this version ***')
+        print(' *** Please upgrade to cygwin-1.5.12-1 or newer version. This can  ***')
+        print(' *** be done by running cygwin-setup, selecting "next" all the way.***')
+        print('===============================================================================')
         sys.exit(3)
       if sys.platform != 'cygwin':
-        print '==============================================================================='
-        print ' *** Non-cygwin python detected. Please rerun ./configure **'
-        print ' *** with cygwin-python. ***'
-        print '==============================================================================='
+        print('===============================================================================')
+        print(' *** Non-cygwin python detected. Please rerun ./configure **')
+        print(' *** with cygwin-python. ***')
+        print('===============================================================================')
         sys.exit(3)
       buf = os.popen('/usr/bin/cygcheck.exe -c python').read()
       if (buf.find('2.4') > -1) or (buf.find('2.5') > -1) or (buf.find('2.6') > -1):
@@ -228,11 +228,11 @@ class ConfigurationManager(object):
         if '--ignore-cygwin-link' in opts: return 0
         for arg in opts:
           if (arg.find('win32fe') >= 0 and (arg.find('f90') >=0 or arg.find('ifort') >=0)):
-            print '==============================================================================='
-            print ' *** Cygwin /usr/bin/link detected! Compiles with CVF/Intel f90 can break!  **'
-            print ' *** To workarround do: "mv /usr/bin/link.exe /usr/bin/link-cygwin.exe"     **'
-            print ' *** Or to ignore this check, use configure option: --ignore-cygwin-link    **'
-            print '==============================================================================='
+            print('===============================================================================')
+            print(' *** Cygwin /usr/bin/link detected! Compiles with CVF/Intel f90 can break!  **')
+            print(' *** To workarround do: "mv /usr/bin/link.exe /usr/bin/link-cygwin.exe"     **')
+            print(' *** Or to ignore this check, use configure option: --ignore-cygwin-link    **')
+            print('===============================================================================')
             sys.exit(3)
     return logMsg
 
@@ -263,9 +263,9 @@ class ConfigurationManager(object):
     return logMsg
 
   def configure(self, configure_options):
-    print '==============================================================================='
-    print '             Configuring '+self.Project+' to compile on your system                       '
-    print '==============================================================================='  
+    print('===============================================================================')
+    print('             Configuring '+self.Project+' to compile on your system                       ')
+    print('===============================================================================')  
 
     # Arguments passed in take precedence (but don't destroy argv[0])
     sys.argv = sys.argv[:1] + configure_options + sys.argv[1:]
@@ -275,7 +275,7 @@ class ConfigurationManager(object):
 
     import config.base
     import config.framework
-    import cPickle
+    import pickle
 
     framework = None
     arch = self.getArch(framework, sys.argv)
@@ -287,7 +287,7 @@ class ConfigurationManager(object):
       framework.logPrint('\n'.join(logMessages))
       framework.configure(out = sys.stdout)
       framework.storeSubstitutions(framework.argDB)
-      framework.argDB['configureCache'] = cPickle.dumps(framework)
+      framework.argDB['configureCache'] = pickle.dumps(framework)
       for i in framework.packages:
         if hasattr(i,'postProcess'):
           i.postProcess()
@@ -300,7 +300,7 @@ class ConfigurationManager(object):
         # perhaps print an error about unable to shuffle logs?
         pass
       return 0
-    except (RuntimeError, config.base.ConfigureSetupError), e:
+    except (RuntimeError, config.base.ConfigureSetupError) as e:
       emsg = str(e)
       if not emsg.endswith('\n'): emsg = emsg+'\n'
       msg ='*******************************************************************************\n'\
@@ -308,7 +308,7 @@ class ConfigurationManager(object):
           +'-------------------------------------------------------------------------------\n'  \
           +emsg+'*******************************************************************************\n'
       se = ''
-    except (TypeError, ValueError), e:
+    except (TypeError, ValueError) as e:
       emsg = str(e)
       if not emsg.endswith('\n'): emsg = emsg+'\n'
       msg ='*******************************************************************************\n'\
@@ -316,7 +316,7 @@ class ConfigurationManager(object):
           +'-------------------------------------------------------------------------------\n'  \
           +emsg+'*******************************************************************************\n'
       se = ''
-    except ImportError, e :
+    except ImportError as e :
       emsg = str(e)
       if not emsg.endswith('\n'): emsg = emsg+'\n'
       msg ='*******************************************************************************\n'\
@@ -324,7 +324,7 @@ class ConfigurationManager(object):
           +'-------------------------------------------------------------------------------\n'  \
           +emsg+'*******************************************************************************\n'
       se = ''
-    except OSError, e :
+    except OSError as e :
       emsg = str(e)
       if not emsg.endswith('\n'): emsg = emsg+'\n'
       msg ='*******************************************************************************\n'\
@@ -332,20 +332,20 @@ class ConfigurationManager(object):
           +'-------------------------------------------------------------------------------\n'  \
           +emsg+'*******************************************************************************\n'
       se = ''
-    except SystemExit, e:
+    except SystemExit as e:
       if e.code is None or e.code == 0:
         return
       msg ='*******************************************************************************\n'\
           +'         CONFIGURATION FAILURE  (Please send configure.log to the Amanzi developers)\n' \
           +'*******************************************************************************\n'
       se  = str(e)
-    except Exception, e:
+    except Exception as e:
       msg ='*******************************************************************************\n'\
           +'        CONFIGURATION CRASH  (Please send configure.log to the Amanzi developers)\n' \
           +'*******************************************************************************\n'
       se  = str(e)
-    print msg
-    if not framework is None:
+    print(msg)
+    if framework is not None:
       framework.logClear()
       if hasattr(framework, 'log'):
         import traceback
@@ -358,7 +358,7 @@ class ConfigurationManager(object):
           pass
         sys.exit(1)
     else:
-      print se
+      print(se)
       import traceback
       traceback.print_tb(sys.exc_info()[2])
     return

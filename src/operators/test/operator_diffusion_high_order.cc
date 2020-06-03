@@ -65,7 +65,6 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   // RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo", true, true);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.sublist("PK operator")
@@ -139,7 +138,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -276,7 +275,7 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -482,7 +481,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -495,7 +494,6 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& pn = *solution.ViewComponent("node", false);
   Epetra_MultiVector& pe = *solution.ViewComponent("edge", false);
-  Epetra_MultiVector& pf = *solution.ViewComponent("face", false);
 
   double pnorm, l2n_err, infn_err, hnorm, h1n_err;
   ana.ComputeNodeError(pn, 0.0, pnorm, l2n_err, infn_err, hnorm, h1n_err);

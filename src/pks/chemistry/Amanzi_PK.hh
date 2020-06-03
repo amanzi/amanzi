@@ -21,7 +21,6 @@
 // Amanzi
 #include "beaker.hh"
 #include "chemistry_exception.hh"
-#include "chemistry_verbosity.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"
@@ -66,9 +65,9 @@ class Amanzi_PK : public Chemistry_PK {
   void SizeBeakerStructures_();
 
   void CopyCellStateToBeakerStructures(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
   void CopyBeakerStructuresToCellState(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   // void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
 

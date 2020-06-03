@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     path_to_golden = "golden_output"
     if len(sys.argv) > 1:
-	path_to_golden = sys.argv[1]
+        path_to_golden = sys.argv[1]
         path_to_golden += "/golden_output"
 
     try:
@@ -51,15 +51,15 @@ if __name__ == "__main__":
     # Report
         tol = 1e-4
         if error < tol:
-	    msg = msg + "Comparison Passed"
+            msg = msg + "Comparison Passed"
             msg = msg + "\n  error = " + str(error)
-	    print msg
+            print(msg)
         else:
-	    msg = msg + "Comparison Failed"
+            msg = msg + "Comparison Failed"
             msg = msg + "\n  error = " + str(error)
-	    sys.exit(msg)
+            sys.exit(msg)
     else:
-	msg = msg + "Comparison Failed"
-	msg = msg + "\n  tests results or golden_output missing"
+        msg = msg + "Comparison Failed"
+        msg = msg + "\n  tests results or golden_output missing"
         sys.exit(msg)
 

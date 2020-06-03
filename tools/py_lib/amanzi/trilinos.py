@@ -53,7 +53,7 @@ def get_list_type(a):
     ret_type = type(a[0])
     for item in a:
         if type(item) != ret_type:
-            ret_type = types.StringType
+            ret_type = str
             break
     return ret_type
 
@@ -62,46 +62,41 @@ def get_str_list_type(a):
     tvalue = get_list_type(a)
     str_type = None
     
-    if tvalue == types.FloatType:
+    if isinstance(tvalue,float):
         str_type = 'Array double'
-    elif tvalue == types.IntType:
+    elif isinstance(tvalue,int):
         str_type = 'Array int'
-    elif tvalue == types.LongType:
-        str_type = 'Array long'
-    elif tvalue == types.StringType:
+    elif isinstance(tvalue,str):
         str_type = 'Array string'
-    elif tvalue == types.BooleanType:
+    elif isinstance(tvalue,bool):
         str_type = 'Array bool'
     else:
-        raise ValueError, str(value) + 'unknown value type' + \
-               str(tvalue) 
+        raise ValueError(str(tvalue) + 'unknown value type' + str(tvalue))
     return str_type
 
 def get_str_type(value):
     tvalue = type(value)
     str_type = None
-    if tvalue == types.FloatType:
+    if isinstance(tvalue,float):
         str_type = 'double'
-    elif tvalue == types.IntType:
+    elif isinstance(tvalue,int):
         str_type = 'int'
-    elif tvalue == types.LongType:
-        str_type = 'long'
-    elif tvalue == types.StringType:
+    elif isinstance(tvalue,str):
         str_type = 'string'
-    elif tvalue == types.BooleanType:
+    elif isinstance(tvalue,bool):
         str_type = 'bool'
-    elif tvalue == types.InstanceType:
+    elif isinstance(tvalue,object):
         str_type = str(value.__class__)
-    elif tvalue == types.ListType:
+    elif isinstance(tvalue,list):
         str_type = get_str_list_type(value)
     else:
-        raise ValueError, str(value) + 'unknown value type' + \
-               str(tvalue) 
+        raise ValueError(str(value) + 'unknown value type' + \
+               str(tvalue))
     return str_type
 
 def get_py_type(str_type):
 
-    result = types.NoneType
+    result = type(None)
 
     bool_type_strings = ['bool', 'boolean']
     int_type_strings  = ['int', 'integer']
@@ -109,39 +104,39 @@ def get_py_type(str_type):
     string_type_strings = ['str', 'string', 'char', 'character']
 
     if str_type in bool_type_strings:
-        result = types.BooleanType
+        result = bool
     elif str_type in int_type_strings:
-        result = types.IntType
+        result = int
     elif str_type in float_type_strings:
-        result = types.FloatType
+        result = float
     elif str_type in string_type_strings:
-        result = types.StringType
+        result = str
     else:
-        raise ValueError, str_type + 'is an unknown string type'
+        raise ValueError(str_type + 'is an unknown string type')
      
     return result 
 
 
 def convert_str_to_type(str,str_type):
  
-    if not isinstance(str_type,types.StringType):
-        raise TypeError, type(str_type).__name__ + ' is an invalid type'
+    if not isinstance(str_type,str):
+        raise TypeError(type(str_type).__name__ + ' is an invalid type')
 
     result = None
     py_type = get_py_type(str_type)
-    if py_type != types.NoneType:
-        if py_type == types.IntType:
+    if py_type is not None:
+        if isinstance(py_type,int):
             result = int(str)
-        elif py_type == types.FloatType:
+        elif isinstance(py_type,float):
             result = float(str)
-        elif py_type == types.BooleanType:
+        elif isinstance(py_type,bool):
             result = bool(str)
-        elif py_type == types.StringType:
+        elif isinstance(py_type,str):
             result = str
         else:
-            raise ValueError, py_type + ' no conversion possible with this type'
+            raise ValueError(py_type + ' no conversion possible with this type')
     else:
-        raise ValueError, str_type + ' can not convert this to a Python type'
+        raise ValueError(str_type + ' can not convert this to a Python type')
 
     return result
 
@@ -157,17 +152,17 @@ class _ParameterInterface(_ElementInterface):
 
     def __init__(self, name=None, value=None):
         
-        if name == None:
-            raise ValueError, 'Parameter constructor requires a name'
+        if name is None:
+            raise ValueError('Parameter constructor requires a name')
 
-        if value == None:
-            raise ValueError, 'Parameter constructor requires a value'
+        if value is None:
+            raise ValueError('Parameter constructor requires a value')
       
         #print "name=",name 
         #print "value=",value 
-	#print "type=",get_str_type(value)
+        #print "type=",get_str_type(value)
 
-	attrib= {'name':name,'value':str(value),'type':get_str_type(value)}
+        attrib= {'name':name,'value':str(value),'type':get_str_type(value)}
         _ElementInterface.__init__(self,_ParameterTag,attrib)
 
     def get_name(self):
@@ -187,10 +182,10 @@ class _ParameterInterface(_ElementInterface):
 
     def set_value(self,value):
         import re
-        if type(value) == types.ListType:
+        if isinstance(value,list):
             str1 = str(value)
-            str2 = re.sub('\[','{',str1)
-            str_value = re.sub('\]','}',str2)
+            str2 = re.sub('\\[','{',str1)
+            str_value = re.sub('\\]','}',str2)
         else:
             str_value = str(value)
 
@@ -206,8 +201,8 @@ class _ParameterListRootInterface(_ElementInterface):
 
     def __init__(self,name=None):
 
-        if name == None:
-            raise ValueError, 'Parameter constructor requires a name'
+        if name is None:
+            raise ValueError('Parameter constructor requires a name')
 
         _ElementInterface.__init__(self,_ParameterListTag,{})
         self.set('name',name)
@@ -229,14 +224,14 @@ class ParameterList(ElementTree):
     def __init__(self,name=None, file=None):
 
         # Throw an error if name or file is not defined
-        if name == None and file == None:
-            raise ValueError, 'creating ParameterList instance requires a name' \
-                              + ' or file'
+        if name is None and file is None:
+            raise ValueError('creating ParameterList instance requires a name' \
+                              + ' or file')
 
-        if name != None:
+        if name is not None:
             root = ParameterListRoot(name)
-	    ElementTree.__init__(self,element=root,file=None)
-	else:
+            ElementTree.__init__(self,element=root,file=None)
+        else:
             ElementTree.__init__(self,element=None,file=file)
 
     def name(self):
@@ -251,8 +246,8 @@ class ParameterList(ElementTree):
             oroot = object.getroot()
             root.append(oroot) 
         else:
-            raise TypeError, 'Can not attach type =' + get_str_type(object) + \
-                  ' is not a valid parameter or list element'
+            raise TypeError('Can not attach type =' + get_str_type(object) + \
+                  ' is not a valid parameter or list element')
 
     def add_parameter(self,name,data):
         node = Parameter(name,data)
@@ -270,8 +265,8 @@ class ParameterList(ElementTree):
             self.attach(root)
             return object
         else:
-            raise TypeError, 'type=' + type(object).__name__ \
-                              + ' is an invalid type'
+            raise TypeError('type=' + type(object).__name__ \
+                              + ' is an invalid type')
 
     def find_sublist(self,target):
         sublist = None
@@ -288,8 +283,8 @@ class ParameterList(ElementTree):
                 result = node
                 break
                  
-        if result == None:
-            print 'Could not find sublist with name=' + target
+        if result is None:
+            print('Could not find sublist with name=' + target)
         else:
             list_name = result.get('name')
             sublist = ParameterList(list_name)
@@ -300,46 +295,46 @@ class ParameterList(ElementTree):
     def find_parameter(self,target=None,quiet=False):
         result = None
 
-        if target == None:
-            raise ValueError, ' requires a parameter name'
+        if target is None:
+            raise ValueError(' requires a parameter name')
 
-	'''
+        '''
         search_list = []    
         try:
             search_list = self.iterfind(_ParameterTag)
         except AttributeError:
             search_list = self.getiterator(_ParameterTag)
-	'''
+        '''
         
-	search_list = self.findall(_ParameterTag)
+        search_list = self.findall(_ParameterTag)
         index=0
         for node in search_list:
             node_name = node.get('name')
             if node_name == target:
-	        tri_type=node.get('type')
-		py_value=convert_str_to_type(node.get('value'),tri_type) 
-	        result = Parameter(node.get('name'),py_value)
-		root = self.getroot()
-		try:
-		  root.remove(node)
-		except ValueError:
-		  print root.tag
-		  print root.get('name')
-		  for item in root.getchildren():
-		    print "CHILD tag", item.tag, " name=", item.get('name')
-		  raise
-		root.insert(index,result)
+                tri_type=node.get('type')
+                py_value=convert_str_to_type(node.get('value'),tri_type) 
+                result = Parameter(node.get('name'),py_value)
+                root = self.getroot()
+                try:
+                    root.remove(node)
+                except ValueError:
+                    print(root.tag)
+                    print(root.get('name'))
+                    for item in root.getchildren():
+                        print("CHILD tag", item.tag, " name=", item.get('name'))
+                    raise
+                root.insert(index,result)
                 break
-	    index=index+1  
+            index=index+1  
 
-        if result == None and quiet != False:
-            print 'Could not find parameter ' + target
+        if result is None and quiet is not False:
+            print('Could not find parameter ' + target)
 
         return result    
 
     def set_parameter(self,name,value):
         node = self.find_parameter(name,quiet=True)
-        if node != None:
+        if node is not None:
             node.set_value(value)
         else:
             node = Parameter(name,value)
@@ -348,14 +343,14 @@ class ParameterList(ElementTree):
         return node
 
     def add_verbose(self,level=None):
-	verbose = self.add_sublist("VerbosityObject")
-	verbose.add_parameter("Verbosity Level", str(level))
-	return verbose
+        verbose = self.add_sublist("VerbosityObject")
+        verbose.add_parameter("Verbosity Level", str(level))
+        return verbose
 
     def dumpXML(self,file=sys.stdout,encoding='utf-8',xml_translate=None,*args):
 
         sortflag='name,type,value'
-        if xml_translate != None :
+        if xml_translate is not None :
             print_tree = xml_translate(self,*args)
             prettyprint(print_tree,file,encoding,sortflag=sortflag)
         else:
@@ -419,13 +414,13 @@ class ParameterList(ElementTree):
                         sys.stderr.write("sortflag not formatted correctly, order won't be applied")
                         try:
                             items.sort(cmp=sortcmp)
-                        except:
+                        except Exception:
                             sys.stderr.write("sortcmp not a valid comparator, sorting alphabetically instead")
                             items.sort()
                 else:
                     try:
                         items.sort(cmp=sortcmp)
-                    except:
+                    except Exception:
                         sys.stderr.write("sortcmp not a valid comparator, sorting alphabetically instead")
                         items.sort()
                 ###
@@ -466,7 +461,7 @@ class ParameterList(ElementTree):
 ################################################################################
 def InputList(file=None):
 
-    if file == None:
+    if file is None:
         return ParameterList('Main')
     else:
         return ParameterList(file=file)
@@ -475,48 +470,48 @@ def InputList(file=None):
         # If run as a script, do some testing
 if __name__ == '__main__':
 
-   # Set up some input parameters and dump to STDOUT
-   input = InputList()
+    # Set up some input parameters and dump to STDOUT
+    input = InputList()
 
-   # Sample mesh
-   mesh = ParameterList('Mesh')
-   mesh.add_parameter('Mesh Class','MOAB')
-   moab_list = mesh.add_sublist('MOAB Mesh Parameters')
-   moab_list.add_parameter('Exodus file name','fbasin_unstr_400_V02.exo')
+    # Sample mesh
+    mesh = ParameterList('Mesh')
+    mesh.add_parameter('Mesh Class','MOAB')
+    moab_list = mesh.add_sublist('MOAB Mesh Parameters')
+    moab_list.add_parameter('Exodus file name','fbasin_unstr_400_V02.exo')
 
-   # MPC
-   mpc = ParameterList('MPC')
-   mpc.add_parameter('Start Time', 0.0)
-   mpc.add_parameter('End Time', 315360000.0)
-   mpc.add_parameter('End Cycle', -1)
-   mpc.add_parameter('disable Flow PK','no')
-   mpc.add_parameter('disable Transport PK','no')
-   mpc.add_parameter('disable Chemistry PK','no')
-   mpc.add_parameter('Viz dump cycle frequency', -1)
-   mpc.add_parameter('Viz dump time frequency',2592000.0 )
-   cgns = mpc.add_sublist('CGNS')
-   cgns.add_parameter('File name','fbasin-5-component.cgns')
+    # MPC
+    mpc = ParameterList('MPC')
+    mpc.add_parameter('Start Time', 0.0)
+    mpc.add_parameter('End Time', 315360000.0)
+    mpc.add_parameter('End Cycle', -1)
+    mpc.add_parameter('disable Flow PK','no')
+    mpc.add_parameter('disable Transport PK','no')
+    mpc.add_parameter('disable Chemistry PK','no')
+    mpc.add_parameter('Viz dump cycle frequency', -1)
+    mpc.add_parameter('Viz dump time frequency',2592000.0 )
+    cgns = mpc.add_sublist('CGNS')
+    cgns.add_parameter('File name','fbasin-5-component.cgns')
 
-   input.add_sublist(mesh)
-   input.add_sublist(mpc)
+    input.add_sublist(mesh)
+    input.add_sublist(mpc)
 
-   input.dumpXML()
+    input.dumpXML()
 
-   mpc.set_parameter('End Cycle', 100)
-   mpc.dumpXML()
-
-
-   # Example of an array parameter
-   array_list = ParameterList("Array List")
-   a = [0.0, 0.1, 0.2]
-   array_list.add_parameter("Double Array",a)
-   a = [0, 1, 2]
-   array_list.add_parameter("Int Array",a)
-   array_list.dumpXML()
+    mpc.set_parameter('End Cycle', 100)
+    mpc.dumpXML()
 
 
-   # Read Fbasin input file
-   #fbasin = InputList(file='fbasin-5-components-025.xml')
-   #print type(fbasin).__name__
-   #print fbasin
-   #flow = fbasin.find_sublist('Flow')
+    # Example of an array parameter
+    array_list = ParameterList("Array List")
+    a = [0.0, 0.1, 0.2]
+    array_list.add_parameter("Double Array",a)
+    a = [0, 1, 2]
+    array_list.add_parameter("Int Array",a)
+    array_list.dumpXML()
+
+
+    # Read Fbasin input file
+    #fbasin = InputList(file='fbasin-5-components-025.xml')
+    #print type(fbasin).__name__
+    #print fbasin
+    #flow = fbasin.find_sublist('Flow')

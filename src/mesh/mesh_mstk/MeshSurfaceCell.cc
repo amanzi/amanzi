@@ -27,10 +27,10 @@ namespace AmanziMesh {
 
 MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
         const std::string& setname, bool flatten)
-    : Mesh(getCommSelf(), parent_mesh->geometric_model(), parent_mesh->parameter_list(), true, false),
-      parent_mesh_(parent_mesh)
+    : Mesh(getCommSelf(), parent_mesh->geometric_model(), parent_mesh->parameter_list(), true, false)
 {
-
+  parent_ = parent_mesh;
+  
   // set dimensions
   if (flatten) {
     set_space_dimension(2);
@@ -42,18 +42,18 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // set my cells
   Entity_ID_List my_cells;
-  parent_mesh->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
+  parent_->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
   AMANZI_ASSERT(my_cells.size() == 1);
   parent_face_ = my_cells[0];
   
   // set my nodes
   Entity_ID_List my_nodes;
-  parent_mesh->face_get_nodes(parent_face_, &my_nodes);
+  parent_->face_get_nodes(parent_face_, &my_nodes);
   nodes_.resize(my_nodes.size());
   if (flatten) {
     for (int i=0; i!=my_nodes.size(); ++i) {
       AmanziGeometry::Point parent_node;
-      parent_mesh->node_get_coordinates(my_nodes[i], &parent_node);
+      parent_->node_get_coordinates(my_nodes[i], &parent_node);
       AmanziGeometry::Point child_node(2);
       child_node[0] = parent_node[0];
       child_node[1] = parent_node[1];
@@ -61,7 +61,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
     }
   } else {
     for (int i=0; i!=my_nodes.size(); ++i) {
-      parent_mesh->node_get_coordinates(my_nodes[i], &nodes_[i]);
+      parent_->node_get_coordinates(my_nodes[i], &nodes_[i]);
     }
   }
 
@@ -72,26 +72,27 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       Teuchos::rcp(new Epetra_Import(*face_map_,*face_map_));
 
   // set the geometric model and sets
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_mesh->geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_->geometric_model();
 
   for (auto& r : *gm) {
     // set to false as default
     sets_[r->id()] = false;
       
     // determine if true
-    if (r->type() == AmanziGeometry::LABELEDSET
-        || r->type() == AmanziGeometry::ENUMERATED) {
+    if ((r->type() == AmanziGeometry::LABELEDSET ||
+         r->type() == AmanziGeometry::ENUMERATED) &&
+        parent_->valid_set_name(r->name(), FACE)) {
       // label pulled from parent
       Entity_ID_List faces_in_set;
       std::vector<double> vofs;
-      parent_mesh->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
+      parent_->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
       sets_[r->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
               parent_face_) != faces_in_set.end();
 
     } else if (r->is_geometric()) {
       // check containment
       if (r->space_dimension() == 3) {
-        sets_[r->id()] = r->inside(parent_mesh->face_centroid(parent_face_));
+        sets_[r->id()] = r->inside(parent_->face_centroid(parent_face_));
 
       } else if (r->space_dimension() == 2 && flatten) {
         sets_[r->id()] = r->inside(cell_centroid(0));

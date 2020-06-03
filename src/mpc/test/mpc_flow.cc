@@ -58,9 +58,9 @@ using namespace Amanzi::AmanziGeometry;
   S->RegisterMesh("domain", mesh);
   
   {
-  Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
+    Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("saturation_liquid")->MeanValue(&avg1);
     } catch (...) {
       CHECK(false);
@@ -77,7 +77,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
-      auto S = cycle_driver.Go();
+      cycle_driver.Go();
       S->GetFieldData("saturation_liquid")->MeanValue(&avg2);
     } catch (...) {
       CHECK(false);
@@ -85,6 +85,10 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
+
+  // checking that we created only two pks
+  CHECK(PKFactory::num_pks == 2);
+  std::cout << PKFactory::list_pks << std::endl;
 }
 
 

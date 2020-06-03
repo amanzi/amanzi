@@ -1,91 +1,27 @@
-AMANZI: The Multi-Process HPC Simulator 
-===================================================
+# Amanzi
+
 Master:
 [![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=master)](https://travis-ci.org/amanzi/amanzi)
+Amanzi-1.0:
+[![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=amanzi-1.0)](https://travis-ci.org/amanzi/amanzi)
 Amanzi-0.88:
 [![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=amanzi-0.88)](https://travis-ci.org/amanzi/amanzi)
 
+### BACKGROUND
 
-BACKGROUND
------------------------------------------------
+Amanzi provides a flexible and extensible parallel flow and reactive transport simulation capability for environmental applications. It includes general polyhedral mesh infrastructure, which leverages MSTK, advanced discretizations of process models, including traditional finite volume schemes, mimetic finite differences, and nonlinear finite volumes. In addition, it provides advanced nonlinear solvers, such as Nonlinear Krylov Acceleration (NKA) and Anderson Acceleration, and leverages Trilinos-ML and Hypre Algebraic Multigrid for scalable solvers. The reaction of contaminants and minerals carried by the flow through the surrounding rock and soil is modeled through a general software interface called Alquimia that allows Amanzi to interface with a variety of powerful geochemistry engines including PFLOTRAN and CrunchFlow. The code is parallel and leverages open-source parallel frameworks such as Trilinos, PETSc. Amanzi has been used to model contaminant migration at various DOE waste sites (e.g., Nevada National Security Site, and Savannah River), and is generally applicable to groundwater contaminant migration under partially saturated, nonisothermal conditions and its interaction with surface water. 
 
-The objective of the Advanced Simulation Capability for Environmental
-Management (ASCEM) is to develop a state-of-the-art scientific
-approach and tool for understanding and predicting contaminant fate
-and transport in natural and engineered systems.  The modular and open
-source high performance computing tool will facilitate integrated
-approaches to modeling and site characterization that enable robust
-and standardized assessments of performance and risk for EM cleanup
-and closure activities. In addition, the integrated toolset will
-incorporate capabilities for predicting releases from various waste
-forms, identifying exposure pathways, performing dose calculations,
-conducting systematic uncertainty quantification.
+The multiphysics framework in Amanzi is called Arcos, and it provides modelers with the flexibility they need to creatively decompose complex problems and explore a variety of mixed-dimensional model configurations to develop understanding and make predictions of environmental systems. In particular, Arcos provides flexibility for hierarchical weak and strong coupling of processes with subcycling of mixed dimensions. This capability in conjuction with Amanzi's powerful mesh infrastructure, which supports the splitting and subsetting of meshes,  enables creative conceptual modeling. Applications in Amanzi include, coupling flow and transport on discrete-fracture-networks (DFNs) and the background matrix, while applications in the [Advanced Terrestrial Simulator (ATS)](https://amanzi.github.io/ats) include, integrated hydrology coupling surface and subsurface processes; and an intermediate scale thermal hydrology model of polygonal tundra based on one-dimensional columns coupled to the two-dimensional surface.
 
-Amanzi, the Multi-Process HPC Simulator is a critical component of
-this approach and tool.  Amanzi will be a highly modular and
-extensible computational engine for simulations of flow and reactive
-transport. Currently, it is capable of simulating transient saturated
-and variably saturated (Richards) flows, transport with
-non-grid-aligned dispersion and a variety of reactions. In the future
-it will include non-isothermal, multi-phase multi-component,
-geo-mechanical, and surface water models. To achive this ambitious
-goal we are building Amanzi as a grass-roots collaboration of an
-emerging broader community of geoscienists, computational and computer
-scientists, and applied mathematicians.  This broader community is
-leveraging its extensive experience, existing capabilities, and
-untapped advances from their areas of expertise to develop Amanzi.
+### BUILDING/INSTALLING AND RUNNING AMANZI
+
+See the [INSTALL.md](INSTALL.md) file in this directory.
 
 
-BUILDING/INSTALLING AND RUNNING AMANZI
------------------------------------------------
-
-See the INSTALL file in this directory.
-
-
-COPYRIGHT AND LICENSE (getting write access):
------------------------------------------------
+### COPYRIGHT AND LICENSE
 
 The copyright and license are contained in the top-level file
-COPYRIGHT.  The copyright is held jointly by the DOE laboratories that
-are contributing code to ASCEM.  If you are a developer that would
-like write permission on the repository you must send an e-mail to 
-David Moulton (moulton@lanl.gov), containing the following statement:
-
----------------
-I [insert name], am currently employed by [insert lab].  I have read
-and accept the terms and conditions presented in the COPYRIGHT file of
-the Amanzi repository.  In particular, I understand that
-
- 1. as a developer contributing new code to the Amanzi repository I
-    must have the right to do so, implicitly asserting copyright on
-    behalf of their laboratory on that contribution;
-
- 2. all new code that is contributed will be under the standard
-    three-clause BSD license contained in the copyright file, and so
-    by contributing code I assert that I have the right to chose this
-    BSD license for my contribution;
-
- 3. if an existing package is contributed by a developer, the
-    original copyright must be maintained, and the license must
-    be compatible with the three-clause BSD license.
-
-If I change employers I will either terminate my write (push) permission
-or submit a new e-mail confirmation with my updated information 
-in advance of the transition to my new job.
-
-Sincerely, [insert name]
-
--------------------------
-
-If your laboratory is not represented in the COPYRIGHT file, you
-should verify that the copyright assertion for your laboratory is in
-process. If it is not in process, then we may need you to file the
-paperwork at your lab. In this case please contact David Moulton 
-(moulton@lanl.gov) for templates of the necessary files.
-
-=============================================================================
-
-
-
+[COPYRIGHT.md](COPYRIGHT.md).  The copyright is held jointly by the DOE laboratories that
+are contributing code to the development of Amanzi. 
 
 

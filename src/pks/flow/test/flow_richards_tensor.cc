@@ -76,7 +76,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  /* create Richards problem */
+  // create Richards problem
   RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 

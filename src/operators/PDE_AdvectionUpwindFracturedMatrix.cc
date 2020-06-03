@@ -41,7 +41,6 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
@@ -82,6 +81,21 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
       matrix[block[n]] *= 0.0;
     }
   }
+}
+
+
+/* ******************************************************************
+* Add a simple first-order upwind method where the advected quantity
+* is not the primary variable (used in Jacobians).
+* Advection operator is of the form: div (q H(u))
+*     q:    flux
+*     H(u): advected quantity (i.e. enthalpy)
+****************************************************************** */
+void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& dhdT)
+{
+  AMANZI_ASSERT(false);
 }
 
 

@@ -108,7 +108,7 @@ tpl_install_prefix=${dflt_install_prefix}/install/tpls
 # build stages (TPLs, TPLs + Amanzi, TPLs + Amanzi + UserGuide)
 build_tpls=$TRUE
 build_amanzi=$TRUE
-build_user_guide=$TRUE
+build_user_guide=$FALSE
 
 # Color output display
 no_color=$FALSE
@@ -119,9 +119,13 @@ structured=$TRUE
 unstructured=$TRUE
 geochemistry=$TRUE
 # -- mesh frameworks
-stk_mesh=$FALSE
+#    stk framewotk was deprecated and removed
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
+# -- physics
+amanzi_physics=${TRUE}
+ats_physics=${FALSE}
+ats_dev=${FALSE}
 # -- tools
 amanzi_branch=
 ats_branch=
@@ -134,15 +138,14 @@ build_stage_2=${FALSE}
 dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
+clm=${FALSE}
 crunchtope=${FALSE}
 hypre=${TRUE}
 netcdf4=${TRUE}
 petsc=${TRUE}
 pflotran=${FALSE}
-amanzi_physics=${TRUE}
-ats_physics=${FALSE}
-shared=${FALSE}
 silo=${FALSE}
+shared=${FALSE}
 
 # System specific options
 # - Intended for supercomputing facilities, and institutional computing
@@ -325,6 +328,8 @@ Configuration:
   --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
+
+  --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
 
 Build features:
@@ -335,7 +340,6 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  stk_mesh                build the STK Mesh Toolkit (DISABLED) ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
 
@@ -357,8 +361,8 @@ Value in brackets indicates default setting.
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
 
-  build_amanzi            build TPLs and Amanzi
-  build_user_guide        build TPLs, Amanzi, and UserGuide
+  build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
+  build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
 
 
 Tool definitions:
@@ -469,9 +473,10 @@ Build configuration:
     shared              = '"${shared}"'
     static_libs_prefer  = '"${prefer_static}"'
     static_executables  = '"${exec_static}"'
-    tpls_build_type     = '"${tpls_build_type}"'
     trilinos_build_type = '"${trilinos_build_type}"'
+    tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    ats_dev             = '"${ats_dev}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -487,11 +492,11 @@ Amanzi TPLs:
     mstk_mesh    = '"${mstk_mesh}"'
     moab_mesh    = '"${moab_mesh}"'
     netcdf4      = '"${netcdf4}"'
-    reg_tests    = '"${reg_tests}"'
-    stk_mesh     = '"${stk_mesh}"'
     hypre        = '"${hypre}"'
     petsc        = '"${petsc}"'
     pflotran     = '"${pflotran}"'
+    pf_clm       = '"${clm}"'
+    silo         = '"${silo}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
 
@@ -502,7 +507,9 @@ Tools and Tests:
     curl_binary  = '"${curl_binary}"'
     git_binary   = '"${git_binary}"'
     Spack_binary = '"${Spack_binary}"'
+    reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
+    tools_mpi    = '"${tools_mpi}"'
 
 Directories:
     prefix                = '"${prefix}"'
@@ -749,6 +756,13 @@ List of INPUT parameters
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
   fi
+
+  #if [ "${ats_physics}" -eq "${FALSE}" ]; then
+  #  if [ "${clm}" -eq "${TRUE}" ]; then
+  #    error_message "Option 'clm' requires option 'ats_physics'"
+  #    exit_now 30
+  #  fi
+  #fi
 
   # check compatibility
   if [ "${geochemistry}" -eq "${FALSE}" ]; then
@@ -1283,7 +1297,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.10.0"
+      status_message "CMake version is less than required version. Will build CMake version 3.11.4"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
@@ -1350,7 +1364,6 @@ function define_install_directories
 function define_unstructured_dependencies
 {
   if [ "${unstructured}" -eq "${FALSE}" ]; then
-    eval "stk_mesh=$FALSE"
     eval "mstk_mesh=$FALSE"
     eval "moab_mesh=$FALSE"
   fi
@@ -1552,7 +1565,6 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Unstructured:BOOL=${unstructured} \
       -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-      -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
       -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
       -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
@@ -1561,6 +1573,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
@@ -1568,7 +1581,6 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1650,10 +1662,13 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
         exit_now 30
     fi
 
-    git_submodule_clone "src/physics/ats"
-
-    if [ ! -z "${ats_branch}" ]; then
-    git_change_branch_ats ${ats_branch}
+    if [ "${ats_dev}" -eq "${TRUE}" ]; then
+        status_message "Build ATS without cloning new repository (ats_dev = ${ats_dev})"
+    else
+        git_submodule_clone "src/physics/ats"
+        if [ ! -z "${ats_branch}" ]; then
+            git_change_branch_ats ${ats_branch}
+        fi
     fi
 fi
 
@@ -1672,7 +1687,6 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
-    -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
     -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
     -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
     -DENABLE_HYPRE:BOOL=${hypre} \
@@ -1680,6 +1694,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \

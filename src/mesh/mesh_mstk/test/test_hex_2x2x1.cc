@@ -12,8 +12,7 @@
 
 TEST(MSTK_HEX_2x2x1)
 {
-
-  int i, j, k, err, nc, nf, nv;
+  int i, j, k, nc, nf, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), cnodes(8), fnodes(6), expfacenodes(4);
   std::vector<int> facedirs(6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
@@ -135,7 +134,7 @@ TEST(MSTK_HEX_2x2x1)
     CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
     mesh->cell_get_faces(c, &c2f);
 
-    for (int j=0; j<6; j++) {
+    for (j=0; j<6; j++) {
       int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
       CHECK( f == c2f[j] );
     }

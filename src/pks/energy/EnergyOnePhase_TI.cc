@@ -23,8 +23,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
     double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g)
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  double h = t_new - t_old;  // get timestep
+  double dt = t_new - t_old;
 
   // update BCs and conductivity
   temperature_eval_->SetFieldAsChanged(S_.ptr());
@@ -46,28 +45,28 @@ void EnergyOnePhase_PK::FunctionalResidual(
   const Epetra_MultiVector& e0 = *S_->GetFieldData(prev_energy_key_)->ViewComponent("cell");
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
-  double dt = t_new - t_old;
-  int nsize = g_c.MyLength();
-
-  for (int i = 0; i < nsize; ++i) {
-    g_c[0][i] += (e1[0][i] - e0[0][i]) / dt;
+  for (int c = 0; c < ncells_owned; ++c) {
+    double factor = mesh_->cell_volume(c) / dt;
+    g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
   }
 
   // advect tmp = molar_density_liquid * enthalpy 
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
-  const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+  const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
 
   Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
+  op_matrix_advection_->ApplyBCs(false, true, false);
 
   CompositeVector tmp(enthalpy);
   tmp.Multiply(1.0, tmp, n_l, 0.0);
 
   CompositeVector g_adv(g->Data()->Map());
-  op_advection_->Apply(tmp, g_adv);
+  // op_advection_->Apply(tmp, g_adv);
+  op_advection_->ComputeNegativeResidual(tmp, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
 
@@ -87,7 +86,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
   S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
-  // assemble residual for diffusion operator
+  // assemble matrices for diffusion operator
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
@@ -106,10 +105,14 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
     Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
 
     S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-    Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData("denthalpy_dtemperature");
+    auto dHdT = S_->GetFieldData("denthalpy_dtemperature", enthalpy_key_);
+
+    const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
+    dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*darcy_flux);
     op_preconditioner_advection_->UpdateMatrices(darcy_flux.ptr(), dHdT.ptr());
+    op_preconditioner_advection_->ApplyBCs(false, true, false);
   }
 
   // finalize preconditioner

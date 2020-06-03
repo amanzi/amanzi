@@ -99,13 +99,11 @@ void ObservableSolute::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit)
 {
   Errors::Message msg;
-  int dim = mesh_->space_dimension();
 
   Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
   Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key darcy_key = Keys::getKey(domain_, "darcy_flux");
-
   
   if (!S.HasField(tcc_key)) {
     // bail out with default values if this field is not yet created
@@ -141,7 +139,9 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate") {
+
     const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_key)->ViewComponent("face");
+    const auto& fmap = *S.GetFieldData(darcy_key)->Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
 
     if (obs_boundary_) { // observation is on a boundary set
@@ -153,8 +153,9 @@ void ObservableSolute::ComputeObservation(
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
         double factor = units_.concentration_factor();
+        int g = fmap.FirstPointInElement(f);
 
-        *value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index_][c] * factor;
+        *value += std::max(0.0, sign * darcy_flux[0][g]) * tcc[tcc_index_][c] * factor;
         *volume += area * factor;
       }
 
@@ -170,8 +171,9 @@ void ObservableSolute::ComputeObservation(
         double area = mesh_->face_area(f);
         double sign = (reg_normal_ * face_normal) * csign / area;
         double factor = units_.concentration_factor();
-    
-        *value += sign * darcy_flux[0][f] * tcc[tcc_index_][c] * factor;
+        int g = fmap.FirstPointInElement(f);
+        
+        *value += sign * darcy_flux[0][g] * tcc[tcc_index_][c] * factor;
         *volume += area * factor;
       }
 

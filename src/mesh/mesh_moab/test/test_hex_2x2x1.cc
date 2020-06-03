@@ -1,19 +1,16 @@
-#include <UnitTest++.h>
-
 #include <iostream>
 
-#include "../Mesh_MOAB.hh"
-
-
 #include "Epetra_Map.h"
-#include "AmanziComm.hh"
-
 #include "mpi.h"
+#include "UnitTest++.h"
+
+#include "AmanziComm.hh"
+#include "../Mesh_MOAB.hh"
 
 
 TEST(MOAB_HEX_2x2x1)
 {
-  int i, j, k, err, nc, nf, nv;
+  int i, j, k, nc, nf, nv;
   Amanzi::AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> facedirs;
   std::vector<Amanzi::AmanziGeometry::Point> ccoords, fcoords;
@@ -138,7 +135,7 @@ TEST(MOAB_HEX_2x2x1)
     CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
 
     mesh.cell_get_faces( c, &c2f, true );
-    for (int j = 0; j < 6; ++j) {
+    for (j = 0; j < 6; ++j) {
       int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
       CHECK(f == c2f[j]);
     }

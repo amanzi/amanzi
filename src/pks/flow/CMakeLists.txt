@@ -35,53 +35,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
-# Flow registrations
-#
-# -- pk registration
-register_evaluator_with_factory(
-  HEADERFILE Darcy_PK_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE Richards_PK_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE VWContentEvaluator_reg.hh
-  LISTNAME   PKS_FLOW_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE pks_flow_registration.hh   
-  LISTNAME   PKS_FLOW_REGISTRATIONS
-  INSTALL    True
-  )
-
-# -- multiscale models registration
-register_evaluator_with_factory(
-  HEADERFILE MultiscaleFlowPorosityFactory_reg.hh
-  LISTNAME   MSM_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE MultiscaleFlowPorosity_DPM_reg.hh
-  LISTNAME   MSM_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE MultiscaleFlowPorosity_GDPM_reg.hh
-  LISTNAME   MSM_FLOW_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE multiscale_flow_registration.hh   
-  LISTNAME   MSM_FLOW_REGISTRATIONS
-  INSTALL    True
-  )
-
-#
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc 

@@ -1,26 +1,12 @@
+% !TEX TS-program = pdftex
 % ==========================================================================
 %
-%  ASCEM: Developers' Guide (Mathematical Modeling Requirements)
+%  ASCEM: Developers' Guide
 %
 % ==========================================================================
-
-% --------------------------------------------------------------------------
-%  Options for typesetting:
-% --------------------------------
-% 
-%    final     - no watermark
-%    draft     - draft watermark
-%    sidenotes - adjusts margins and enables the todonotes package
-%
-%  For example, draft watermark with sidenotes is written
-%
-%  \documentclass[draft,sidenotes]{guides}
-%
-% --------------------------------
 
 %\documentclass[sidenotes]{../tex/latex/ascem/guides}
-\documentclass[draft]{../tex/latex/ascem/guides}
-%\documentclass{../tex/latex/ascem/guides}
+\documentclass[dvipsnames]{../tex/latex/ascem/guides}
 
 % ---------------------
 % Amanzi TeX:
@@ -32,7 +18,7 @@
 %  ASCEM Theme:
 % ---------------------
 
-\usepackage{\AmanziTeXInputs/tex/latex/ascem/ASCEM_doc_theme}
+\usepackage{\AmanziTeXInputs/tex/latex/amanzi/amanzi_doc_theme}
 
 % --------------------------------
 %  Layout, fonts, macros etc. 
@@ -62,9 +48,9 @@
 % List of Tables and Figures
 % -------------------------------------------
 
-\clearpage
-\listoftables
-\listoffigures
+%\clearpage
+%\listoftables
+%\listoffigures
 
 % -------------------------------------------
 % Todo Notes list
@@ -87,6 +73,12 @@
 
 \clearpage
 \input{design}
+
+\clearpage
+\input{libraries}
+
+\clearpage
+\input{synthetic_example}
 
 \clearpage
 \input{testing}

@@ -172,7 +172,6 @@ class Transport_PK : public PK_Physical {
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // names of state fields 
   Key tcc_key_;
@@ -187,7 +186,6 @@ class Transport_PK : public PK_Physical {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
     
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
@@ -199,8 +197,6 @@ class Transport_PK : public PK_Physical {
 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
-  Key domain_;
-  Teuchos::RCP<State> S_;
   std::string passwd_;
 
   bool subcycling_, use_transport_porosity_;

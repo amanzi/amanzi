@@ -90,7 +90,7 @@ TEST(VERBOSE_TWO_OBJECTS)
     }
 
     {
-      Teuchos::OSTab tab1 = vo1.getOSTab();
+      Teuchos::OSTab tab2 = vo1.getOSTab();
       if (vo1.os_OK(Teuchos::VERB_MEDIUM)) {
         *vo1.os() << "object 1 at level 1" << std::endl;
       }

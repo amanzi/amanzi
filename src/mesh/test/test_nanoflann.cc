@@ -53,10 +53,10 @@ TEST(NANOFLANN) {
 
   std::cout << "\nSearch results: found " << nresults << " points.\n";
   for (int i = 0; i < nresults; i++) {
-    int n = idx[i];
+    int m = idx[i];
     double dist = std::pow(dist_sqr[i], 0.5);
-    std::cout << " point: " << n << " dist=" << dist << " xy=" << points[n] << std::endl;
-    CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points[n] - p), 1e-14);
+    std::cout << " point: " << m << " dist=" << dist << " xy=" << points[m] << std::endl;
+    CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points[m] - p), 1e-14);
   }
 
   // SEARCH 2: points is a ball 
@@ -70,9 +70,9 @@ TEST(NANOFLANN) {
 
   std::cout << "\nSearch results: radius=" << std::pow(radius, 0.5) << " -> " << nresults << " points inside\n";
   for (int i = 0; i < nresults; ++i) {
-    int n = matches[i].first;
+    int m = matches[i].first;
     double dist = std::pow(matches[i].second, 0.5);
-    std::cout << " point: " << n << " dist=" << dist << " xy=" << points[n] << std::endl;
-    CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points[n] - p), 1e-14);
+    std::cout << " point: " << m << " dist=" << dist << " xy=" << points[m] << std::endl;
+    CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points[m] - p), 1e-14);
   }
 }

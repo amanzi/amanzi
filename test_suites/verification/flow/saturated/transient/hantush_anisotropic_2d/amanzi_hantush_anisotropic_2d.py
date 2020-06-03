@@ -1,74 +1,94 @@
-import sys
 import matplotlib.pyplot as plt
 import numpy
+from numpy import linalg as linalg
 import math
 from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
+import model_hantush_anisotropic_2d
 import prettytable
 
-import os
-import run_amanzi_standard
+# load input xml file
+#  -- create an ObservationXML object
+def loadInputXML(filename):
+    Obs_xml = ObsXML(filename)
+    return Obs_xml
 
-def load_amanzi_obs():
-    #output_file = Obs_xml.getObservationFilename()
-    output_file = "observation.out"
-    obs_data = ObsDATA("amanzi-output/" + output_file)
-    obs_data.getObservationData()
-    return obs_data
+# load the data file
+#  -- use above xml object to get observation filename
+#  -- create an ObservationData object
+#  -- load the data using this object
 
-def load_ana_solution():
-    # load data from analytic solution
-    ana_data =numpy.genfromtxt('analytic/test_h_tr.dat')
-    return ana_data
+def loadDataFile(Obs_xml):
+    output_file = Obs_xml.getObservationFilename()
+    Obs_data = ObsDATA("amanzi-output/"+output_file)
+    Obs_data.getObservationData()
+    coords = Obs_xml.getAllCoordinates()
 
-def plottest(axes1, obstimes, obsdata, ana_data):
-    axes1.set_ylabel('Drawdown [m]')
-    axes1.set_xlabel('Time after pumping [days]')
-    axes1.set_title('Drawdown at Observation Well with Distance r1  = 24m and r2 = 100m ')
+    for obs in Obs_data.observations.values():
+        region = obs.region
+        obs.coordinate = coords[region]
     
-    ntime1 = len(ana_data[:,0])/2
-    ntime2= len(ana_data[:,0])
+    return Obs_data
 
-    ntime3 = len(obstimes[:,0])
-    ntime4 = len(obstimes[:,1])
+def plotHantushObservations(Obs_xml, Obs_data, axes1):
+    colors = ['g','r','b']
 
-    axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Analitical Solution: r=24m')
-    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
-    axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Analytial Solution: r=100m')
-    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'bo', label='Amanzi: r=100m')
+    i = 0
+    for obs in Obs_data.observations.values():
+        drawdown = numpy.array([obs.data])
+        axes1.scatter(obs.times, drawdown, marker='s', s=25, c=colors[i])
+        i = i + 1
+        
+    return colors
 
-    axes1.legend(loc='lower right')
+def plotHantushAnalytic(filename, axes1, Obs_xml, Obs_data):
+    colors = ['g','r','b']
+
+    mymodel = model_hantush_anisotropic_2d.createFromXML(filename)
+    tindex = numpy.arange(118)
+    times = []
+    axes1.set_ylabel('Drawdown [m]')
+    axes1.set_xlabel('Time after pumping [s]')
+    axes1.set_title('Drawdown vs Time after Pumping')
+    
+    for i in tindex:
+        times.append(1 + math.exp(float(i) * (i+1) / (10.29*len(tindex))))
+    
+    i = 0
+    for obs in Obs_data.observations.values():
+        x = obs.coordinate[0]
+        y = obs.coordinate[1]
+        drawdown=mymodel.runForFixedPoint(times, x, y)
+        axes1.plot(times, drawdown, label='$x=%0.0f m$ y=%0.0f m'%(x, y), c=colors[i])
+        i = i + 1
+    
+    axes1.legend(title='Hantush Solution',loc='lower right', fancybox=True, shadow=True)
+
 
 if __name__ == "__main__":
 
-    input_file =os.path.join("amanzi_hantush_anisotropic_2d-u.xml")
+    import os
+    import run_amanzi_standard
+
+    input_file = os.path.join("amanzi_hantush_anisotropic_2d-u.xml")
     run_dir = "amanzi-output"
 
+    cwd = os.getcwd()
     try: 
         run_amanzi_standard.run_amanzi(input_file, 1, ["porflow4_6.exo",input_file], run_dir)
-        obs_data = load_amanzi_obs()
+        obs_xml=loadInputXML(input_file)
+        obs_data=loadDataFile(obs_xml)
 
-        obsdata = []
-        obstimes = []
-        for obs in obs_data.observations.itervalues():
-            obsdata.append(obs.data)
-            obstimes.append(obs.times)
-
-        obsdata  = numpy.transpose(numpy.array(obsdata))
-        obstimes  = numpy.transpose(numpy.array(obstimes))
-        obstimes[:] =  obstimes[:] /24. / 3600.
-
-        # analytic solution is not available yet
-        ana_data=load_ana_solution()
-
-        fig1 = plt.figure()
-        axes1 = fig1.add_axes([.1,.1,.8,.8])
+        fig1= plt.figure()
+        axes1=fig1.add_axes([.1,.1,.8,.8])
        
-        plottest(axes1, obstimes, obsdata, ana_data)
+        plotHantushObservations(obs_xml,obs_data,axes1)
+        plotHantushAnalytic(input_file,axes1,obs_xml,obs_data)
         plt.savefig("hantush_anisotropic_2d.png",format="png")
         # plt.show()
- 
+
     finally:
-        pass
+        os.chdir(cwd)
+
 

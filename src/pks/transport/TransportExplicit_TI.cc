@@ -26,6 +26,8 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
     double t, const Epetra_Vector& component,
     Epetra_Vector& f_component)
 {
+  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+
   // distribute vector
   Epetra_Vector component_tmp(component);
   component_tmp.Import(component, *tcc->importer("cell"), Insert);
@@ -66,7 +68,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
-  int f, c1, c2;
+  int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
@@ -169,6 +171,8 @@ void TransportExplicit_PK::DudtOld(double t,
                            const Epetra_Vector& component,
                            Epetra_Vector& f_component)
 {
+  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
@@ -205,7 +209,7 @@ void TransportExplicit_PK::DudtOld(double t,
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
-  int f, c1, c2;
+  int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);

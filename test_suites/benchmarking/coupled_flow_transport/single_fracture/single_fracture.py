@@ -25,19 +25,21 @@ def loadDataFile(Obs_xml):
 
 def plotSingleFractureObservations(Obs_xml, Obs_data, axes1):
     regions = []
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         regions.append(obs.region)
 
     colors = ['b','g','r']
     cmap = dict((region,color) for (region,color) in zip(regions, colors))
 
-    legends = ["bottom region","fracture","outlet"]
+    legends = ["bottom region","fracture","Amanzi"]
     lmap = dict((region,legend) for (region,legend) in zip(regions, legends))
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         color = cmap[obs.region]
         legend = lmap[obs.region]
-        axes1.scatter(obs.times, numpy.log10(obs.data), marker='s', s=25, c=color, label=legend)
+        # a few pictures could be made later
+        if legend == "Amanzi" :
+            axes1.scatter(obs.times, numpy.log10(obs.data), marker='o', s=25, c=color, label=legend)
 
 
 if __name__ == "__main__":
@@ -57,13 +59,40 @@ if __name__ == "__main__":
         obs_data=loadDataFile(obs_xml)
 
         fig1 = plt.figure()
-        axes1 = fig1.add_axes([0.1,0.1,0.86,0.84])
+        axes1 = fig1.add_axes([0.12,0.1,0.86,0.84])
        
         plotSingleFractureObservations(obs_xml,obs_data,axes1)
 
-        axes1.set_ylabel('Integrated concentration [-]')
-        axes1.set_xlabel('Simulation time [y]')
-        axes1.set_title('Normalized concentation at the fracture outlet')
+        # first benchmark (2 figures are planned for future)
+        data = []
+        data = open("benchmark/UiB_RT0.txt").read().split();
+        for i in range(0, len(data)): 
+            data[i] = data[i].split(',')
+        data = numpy.array(data, dtype=numpy.double)
+
+        colors = ['k','b','g','g']
+        for i in range(1, 4):
+            x = data[:,0]
+            y = numpy.log10(data[:,i])
+            if i == 3 :
+                axes1.plot(x, y, linestyle='-', c=colors[i], label="UiB RT0")
+
+        # second benchmark (2 figures are planned for future)
+        data = []
+        data = open("benchmark/USTUTT_MPFA.txt").read().split();
+        for i in range(0, len(data)): 
+            data[i] = data[i].split(',')
+        data = numpy.array(data, dtype=numpy.double)
+
+        colors = ['k','b','g','k']
+        for i in range(1, 4):
+            x = data[:,0]
+            y = numpy.log10(data[:,i])
+            if i == 3 :
+                axes1.plot(x, y, linestyle='-', c=colors[i], label="USTUTT MPFA")
+
+        axes1.set_xlabel('Simulation time [s]')
+        axes1.set_ylabel('Integrated solute flux at the outlet')
         axes1.legend(loc="lower right", fancybox=True, shadow=True)
 
         # plt.show()

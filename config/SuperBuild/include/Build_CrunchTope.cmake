@@ -22,28 +22,28 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   
 
 # --- Patch the original code
-set(CRUNCHTOPE_patch_file crunchtope-cmake.patch)
-set(CRUNCHTOPE_sh_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.sh.in
-               ${CRUNCHTOPE_sh_patch}
-               @ONLY)
+# set(CRUNCHTOPE_patch_file crunchtope-cmake.patch)
+# set(CRUNCHTOPE_sh_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.sh)
+# configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.sh.in
+#               ${CRUNCHTOPE_sh_patch}
+#               @ONLY)
 # configure the CMake patch step
-set(CRUNCHTOPE_cmake_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
-               ${CRUNCHTOPE_cmake_patch}
-               @ONLY)
+#set(CRUNCHTOPE_cmake_patch ${CRUNCHTOPE_prefix_dir}/crunchtope-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
+#               ${CRUNCHTOPE_cmake_patch}
+#               @ONLY)
 # set the patch command
-set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
+#set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 
 # --- Define the arguments passed to CMake.
 set(CRUNCHTOPE_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-      "-DCMAKE_BUILD_TYPE:=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -fPIC -Wno-unused-variable -ffree-line-length-0 -O3"
       "-DTPL_PETSC_LIBRARIES:PATH=${PETSC_DIR}/lib"
       "-DTPL_PETSC_INCLUDE_DIRS:PATH=${PETSC_DIR}/include"
-      "-DPETSC_ARCH=.")
+      "-DPETSC_ARCH:PATH=.")
 
 # --- Add external project build and tie to the CRUNCHTOPE build target
 ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
@@ -55,13 +55,14 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
                     URL          ${CRUNCHTOPE_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CRUNCHTOPE_MD5_SUM}                # md5sum of the archive file
                     # -- Patch 
-                    PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}         # Mods to source
+                    # PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CRUNCHTOPE_source_dir}            # Source directory
-                    CMAKE_ARGS    ${CRUNCHTOPE_CMAKE_ARGS}            # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Ensure uniform build
+                                     ${CRUNCHTOPE_CMAKE_ARGS}
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
 
                     # -- Build
                     BINARY_DIR      ${CRUNCHTOPE_build_dir}           # Build directory 

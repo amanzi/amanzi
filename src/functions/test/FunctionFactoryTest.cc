@@ -30,7 +30,6 @@ SUITE(malformed_parameter_list) {
   TEST(unknown_function_sublist)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("fubar");
     FunctionFactory fact;
     //Function *f = fact.Create(list);
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
@@ -621,7 +620,7 @@ SUITE(distance_factory) {
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList& sublist = list.sublist("function-double");
+    list.sublist("function-double");
     FunctionFactory fact;
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
   }

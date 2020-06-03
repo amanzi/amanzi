@@ -9,7 +9,6 @@
 
 #include "mineral.hh"
 #include "chemistry_exception.hh"
-#include "chemistry_verbosity.hh"
 
 SUITE(GeochemistryTestsMineral) {
   namespace ac = Amanzi::AmanziChemistry;
@@ -256,10 +255,6 @@ SUITE(GeochemistryTestsMineral) {
   }
 */
 
-  TEST_FIXTURE(MineralTest, Mineral_verbosity) {
-    mineral_->set_verbosity(ac::kDebugMineralKinetics);
-    CHECK_EQUAL(mineral_->verbosity(), ac::kDebugMineralKinetics);
-  }
   //---------------------------------------------------------------
   // Test the log10(IAP/K) for Alunogen
   //---------------------------------------------------------------

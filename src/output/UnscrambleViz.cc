@@ -167,16 +167,14 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   return 0;
 }
 
+
 int main (int argc, char *argv[])
 {
-
   FILE *fp;
   hid_t mesh_file, dataset_id, dataspace, new_file, dt, data_file = 0;
-  hsize_t *cdims, *mdims, dimsf[2], mapnodes;
+  hsize_t *cdims, *mdims, dimsf[2];
   herr_t status;
   int rank;
-  double *data_d, *nodes;
-  int *data_i, *elem;
   
   // open mesh file
   if ((fp = fopen(argv[1],"r")) == NULL)
@@ -378,7 +376,8 @@ int main (int argc, char *argv[])
         std::stringstream group_name;
         group_name << "/" << groupList[i];
         std::cout << "E>> creating " << group_name.str() << std::endl;
-        hid_t group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+        group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         datasetList.erase(datasetList.begin(), datasetList.end());
         H5Giterate(data_file, group_name.str().c_str(), NULL, dataset_info, NULL);
         for (int j=0; j<datasetList.size(); j++) {

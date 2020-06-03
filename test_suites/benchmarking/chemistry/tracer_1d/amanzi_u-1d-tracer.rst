@@ -51,7 +51,7 @@ Problem Specification
 * The flow is horizontal in the x-direction. The uniform flow velocity in x-direction is
   :math:`7.913 \cdot 10^{-6} \text{ kg/s}`
   (or 
-  :math:`7.927 \cdot 10{-9} \text{ m}^3 \text{/s}`
+  :math:`7.927 \cdot 10^{-9} \text{ m}^3 \text{/s}`
   ) specified as mass flux boundary conditions ("BC: Flux") at the inlet end of the domain, i.e. "Inward Mass Flux" at 
   :math:`x_{min} = 0 \text{ m}`
   ). The oulet end of the domain (
@@ -73,7 +73,7 @@ Expected results
 ~~~~~~~~~~~~~~~~
 
 The flow solution is trivial and is independent of the choice of permeability. The flow velocity everywhere in the domain should be
-:math:`7.927 \cdot 10{-9} \text{ m}^3 \text{/s}`. The advective front moves with the flow velocity. In the simulation time (50 years), the front moves half way through the domain. In the absence of diffusion, spreading of the front can be attributed to numerical dispersion added by the numerical scheme employed.
+:math:`7.927 \cdot 10^{-9} \text{ m}^3 \text{/s}`. The advective front moves with the flow velocity. In the simulation time (50 years), the front moves half way through the domain. In the absence of diffusion, spreading of the front can be attributed to numerical dispersion added by the numerical scheme employed.
 
 Simulation results
 ~~~~~~~~~~~~~~~~~~
@@ -85,6 +85,7 @@ In the figure below, the solution by Amanzi at time 50 years is compared to resu
 ..   :align: left
 
 .. _about_tracer:
+
 
 About
 -----
@@ -101,4 +102,3 @@ About
 * Location: testing/benchmarking/chemistry/tracer_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-* Last tested on: Oct 3, 2013

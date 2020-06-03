@@ -14,7 +14,7 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # extract cell coordinates
     if (dim == 1):
-        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
+        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])//4,0])
     if (dim == 3):
         y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0::4,2])
 
@@ -23,7 +23,7 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # extract concentration array
     alltimes = [int(n) for n in amanzi_file[comp].keys()]
-    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+    time = list(amanzi_file[comp].keys())[alltimes.index(max(alltimes))]
 
     c_amanziU = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
@@ -129,7 +129,7 @@ def GetXY_AmanziU_Values(path, root, comp, start, stop, step):
 
     # extract data array with maximum time stamp
     alltimes = [int(n) for n in amanzi_file[comp].keys()]
-    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+    time = list(amanzi_file[comp].keys())[alltimes.index(max(alltimes))]
 
     tmp = np.array(amanzi_file[comp][time][start:stop]).flatten()
     values = tmp[::step]
@@ -146,14 +146,14 @@ of the most recent output file to be used in the comparison."""
     tree = ET.parse(input_xml)
     root = tree.getroot()
     if root.tag != 'amanzi_input':
-        raise RuntimeError, 'The given XML file is not a valid Amanzi input.'
+        raise RuntimeError('The given XML file is not a valid Amanzi input.')
     if 'type' not in root.attrib.keys():
-        raise RuntimeError, 'Could not find a type (structured/unstructured) in the given Amanzi input.'
+        raise RuntimeError('Could not find a type (structured/unstructured) in the given Amanzi input.')
 
     # Find the simulation type.
     file_type = root.attrib['type'].lower()
     if file_type not in ['structured', 'unstructured']:
-        raise RuntimeError, 'Invalid simulation type in given Amanzi input: %s'%file_type
+        raise RuntimeError('Invalid simulation type in given Amanzi input: %s' % file_type)
 
     # Now find the output prefix.
     output = root.find('output')

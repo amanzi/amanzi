@@ -457,7 +457,7 @@ void Mesh_simple::BuildMaps_()
 
   if (edges_requested_) {
     std::vector<int> edges(num_edges_);
-    for (int i=0; i< num_edges_; i++) edges[i] = i;
+    for (int n = 0; n < num_edges_; ++n) edges[n] = n;
 
     edge_map_ = Teuchos::rcp(new Epetra_Map(-1, num_edges_, &edges[0], 0, *get_comm()));
   }
@@ -674,11 +674,7 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
   unsigned int offset = (unsigned int) 3*local_node_id;
 
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  double coordarray[3] = {0.0,0.0,0.0};
   int spdim = Mesh::space_dimension();
-  for (int i = 0; i < spdim; i++)
-    coordarray[i] = ncoord[i];
-
   for (int i = 0; i < spdim; i++) {
     *destination_begin = ncoord[i];
     destination_begin++;
@@ -830,7 +826,6 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
     Entity_ID nodeid = cell_to_node_[offset+i];
 
     unsigned int offset2 = (unsigned int) 9*nodeid;
-    unsigned int ncell = node_to_cell_[offset2];
 
     for (int j = 0; j < 8; j++) {
       Entity_ID nodecell = node_to_cell_[offset2+j];
@@ -889,10 +884,12 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
   AMANZI_ASSERT(setents != NULL);
   
   std::string setname_internal = setname + std::to_string(kind);
-  auto it = sets_.find(setname_internal);
-  if (it != sets_.end()) {
-    *setents = it->second;
-    return;
+  {
+    auto it = sets_.find(setname_internal);
+    if (it != sets_.end()) {
+      *setents = it->second;
+      return;
+    }
   }
 
   // create the side set from the region definition

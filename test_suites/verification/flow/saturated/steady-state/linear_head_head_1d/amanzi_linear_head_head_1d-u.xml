@@ -23,7 +23,7 @@
     <comments>Single phase flow only</comments>
     <flow model="saturated" state="on" />
     <transport state="off" />
-    <chemistry engine="none" process_model="none" state="off" />
+    <chemistry engine="none" state="off" />
   </process_kernels>
 
   <phases>

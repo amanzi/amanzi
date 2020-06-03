@@ -8,7 +8,10 @@
       <mass_unit>kg</mass_unit>
       <conc_unit>SI</conc_unit>
     </units>
+    <coordinate_system>x,z</coordinate_system>
+  </model_description>
 
+  <definitions>
     <constants>
       <time_constant name="START" value="1956 y"/>
       <constant name="END" type="time" value="3000 y"/>
@@ -18,9 +21,7 @@
       <numerical_constant name="Y0" value="1.0 ft"/>
       <numerical_constant name="Y1" value="11.11 ft"/>
     </constants>
-  </model_description>
 
-  <definitions>
     <macros>
       <time_macro name="Observation Times">
         <time>1.2096E+10 s</time>
@@ -208,10 +209,12 @@
       </mechanical_properties>
       <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
-      <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0260E-03 Pa^-1" m="0.2136" sr="0.0"/>
+      <cap_pressure model="brooks_corey">
+        <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
       </cap_pressure>
-      <rel_perm model="mualem"/>
+      <rel_perm model="mualem">
+        <exp>0.5</exp>
+      </rel_perm>
       <assigned_regions>RegionBottom</assigned_regions>
     </material>
 
@@ -334,6 +337,15 @@
       <num_digits>5</num_digits>
       <cycle_macros>Every100Cycles </cycle_macros>
     </walkabout>
+    <observations>
+      <liquid_phase name="water">
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Well2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </aqueous_conc>
+      </liquid_phase>
+    </observations>
   </output>
 </amanzi_input>
   

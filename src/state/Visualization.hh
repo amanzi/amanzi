@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Visualization: a class for controlling simulation output.
+//! Manages simulation output to disk.
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -12,18 +12,28 @@
 
 /*!
 
-Each list contains all parameters as in a IOEvent_ spec, and also:
+A user may request periodic writes of field data for the purposes of
+visualization in the `"visualization`" sublists.
 
-* `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+ATS accepts a visualization list for each domain/mesh, including surface and
+column meshes.  These are in separate ParameterLists, entitled
+`"visualization`" for the main mesh, and `"visualization surface`" on the
+surface mesh.  It is expected that, for any addition meshes, each will have a
+domain name and therefore admit a spec of the form: `"visualization
+DOMAIN-NAME`".
 
-* `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
-  visualization dump; this facilitates visualizing deforming meshes.
+.. _visualization-spec:
+.. admonition:: visualization-spec
 
-* `"time units`" ``[string]`` **s** A valid time unit to convert time
-  into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
-  
-INCLUDES:
-* ``[io-event-spec]`` An IOEvent_ spec
+    * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
+    * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+      visualization dump; this facilitates visualizing deforming meshes.
+    * `"time units`" ``[string]`` **s** A valid time unit to convert time
+      into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
+
+    INCLUDES:
+
+    * ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:

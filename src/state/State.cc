@@ -893,7 +893,7 @@ void State::Setup() {
       Exceptions::amanzi_throw(message);
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
@@ -913,7 +913,7 @@ void State::Setup() {
       f_it->second->CreateData();
     }
     // std::cout<<"Field "<<f_it->first<<": ";
-    // if ( f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
     //   auto com_vec = f_it->second->GetFieldData();
     //     for (CompositeVector::name_iterator comp=com_vec->begin();
     //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
@@ -954,7 +954,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
 
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo->getOSTab();
+      Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "processing field \"" << f_it->first << "\"\n";
     }
     

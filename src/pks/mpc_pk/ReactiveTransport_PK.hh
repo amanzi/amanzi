@@ -46,19 +46,22 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
 
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
-  std::string name() { return "reactive transport"; } 
+  std::string name() { return "reactive transport"; }
+
+ protected:
+  bool chem_step_succeeded;
+  bool storage_created;
+  double dTtran_, dTchem_;
 
  private:
   // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
 
-  Teuchos::RCP<Transport::Transport_PK> tranport_pk_;
+  Teuchos::RCP<Transport::Transport_PK> transport_pk_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
   // int master_, slave_;
 
-  bool chem_step_succeeded;
-  bool storage_created;
-  double dTtran_, dTchem_;
+ 
 
   // factory registration
   static RegisteredPKFactory<ReactiveTransport_PK> reg_;

@@ -11,7 +11,7 @@
 
 TEST(MOAB_HEX1)
 {
-  int i, j, k, err, nc, nv;
+  int i, j, k, nc, nv;
   Amanzi::AmanziMesh::Entity_ID_List nodes;
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<Amanzi::AmanziGeometry::Point> ccoords, fcoords;

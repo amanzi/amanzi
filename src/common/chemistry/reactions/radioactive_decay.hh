@@ -48,7 +48,7 @@ class RadioactiveDecay {
                                  const double saturation,
                                  const double bulk_volume,
                                  MatrixBlock* J);
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
   int parent_id(void) const { return species_ids_.at(0); }
   std::string parent_name(void) const {return species_names_.at(0); }

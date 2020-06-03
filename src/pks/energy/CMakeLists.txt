@@ -39,63 +39,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
-# Energy registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE TCMFactory_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE TCM_PetersLidard_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE TCM_WetDry_TwoPhase_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE energy_tcm_registration.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  INSTALL    True
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE IEMEvaluator_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEMFactory_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEM_Linear_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE IEM_WaterVaporEvaluator_reg.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE energy_iem_registration.hh
-  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
-  INSTALL    True
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE EnergyOnePhase_PK_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE EnergyTwoPhase_PK_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  )
-generate_evaluators_registration_header(
-  HEADERFILE pks_energy_registration.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
-  INSTALL    True
-  )
-
-#
 # Library: energy
 #
 set(energy_src_files Energy_PK.cc
@@ -139,6 +82,7 @@ set(flow_inc_files
   IEMFactory.hh
   IEMEvaluator.hh
   energy_iem_registration.hh
+  energy_tcm_registration.hh
   TotalEnergyEvaluator.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh
@@ -182,6 +126,12 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_convergence energy_convergence
                     KIND int
                     SOURCE test/Main.cc test/energy_convergence.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: 4
+    add_amanzi_test(energy_one_phase energy_one_phase
+                    KIND int
+                    SOURCE test/Main.cc test/energy_one_phase.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

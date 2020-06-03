@@ -358,7 +358,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
   double kx, ky, dx, dy, h, r0, rw;
   double xmin, xmax, ymin, ymax, zmin, zmax;
-  int dim = mesh_->space_dimension();
+  int d = mesh_->space_dimension();
 
   std::vector<std::string> regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
   Teuchos::ParameterList well_list = spec.sublist("well");
@@ -379,14 +379,14 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
         xmin = std::min(xmin, xf[0]);
         ymax = std::max(ymax, xf[1]);
         ymin = std::min(ymin, xf[1]);
-        if (dim > 2) {
+        if (d > 2) {
           zmax = std::max(zmax, xf[2]);
           zmin = std::min(zmin, xf[2]);
         }        
       }
       dx = xmax - xmin;
       dy = ymax - ymin;
-      if (dim > 2) h = zmax - zmin;
+      if (d > 2) h = zmax - zmin;
       else h = 1.0;
 
       kx = perm[0][c];
@@ -450,8 +450,6 @@ void Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Composi
 ****************************************************************** */
 void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 {
-  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
   std::vector<double>& bc_mixed = op_bc_->bc_mixed();

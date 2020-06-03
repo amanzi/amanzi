@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+#  Run Amanzi in docker container
+#
+#  Customize as you like, this is a simple example and assumes you want to run
+#  in your current / present working directory:
+#
+#  - v mount_point_on_host:mount_point_on_container
+#  - w sets current working directory on the container
+#  --rm deletes the container on exit
+#
+#  There's not effort here to parse arguments.  Just assumes you are providing an xml file.
+#
+
+HOST_MNT=/Volumes/data/$PWD
+CONT_MNT=/home/amanzi_usr/work
+CONT_PWD=/home/amanzi_usr/work
+
+docker run --rm -v $HOST_MNT:$CONT_MNT:delegated -w $CONT_PWD metsi/amanzi:latest mpirun -n 4 amanzi --xml_file=$1

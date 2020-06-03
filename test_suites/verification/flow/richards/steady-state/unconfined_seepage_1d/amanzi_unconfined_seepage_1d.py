@@ -24,7 +24,7 @@ def loadDataFile(Obs_xml):
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         region = obs.region
         obs.coordinate = coords[region]
     return Obs_data
@@ -33,7 +33,7 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
 
     # === SPECIAL CODE ==== for linear flow problems
     # Collect the z-values from observations
-    z_vals = [coord[1] for coord in Obs_xml.coordinates.itervalues()]
+    z_vals = [coord[1] for coord in Obs_xml.coordinates.values()]
     z_vals.sort()
     z_vals = set(z_vals)
     colors = ['b','g','r']
@@ -47,7 +47,7 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
         scatter_data[key]['head']=[]
 
     # Collect observations in scatter_data
-    for obs in Obs_data.observations.itervalues(): 
+    for obs in Obs_data.observations.values(): 
         scatter_data[obs.coordinate[1]]['x'].append(obs.coordinate[0])
         scatter_data[obs.coordinate[1]]['head'].append(obs.data)
 
@@ -74,11 +74,12 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     coords[:,0] = x
 
     # Plot a line for each z-coordinate in the observations
-    for (z_val, color) in cmap.iteritems():
+    for (z_val, color) in cmap.items():
         coords[:,1] = z_val
         head = mymodel.head(coords)
-        axes1.plot(x,head,color,label='$z = %0.2f $'%z_val)
-        axes1.legend(loc="upper right" , fancybox = True , shadow = True)
+        # axes1.plot(x, head, color, label='analytic (Dupuit)')
+        axes1.plot(x, head, 'r', label='analytic (Dupuit)')
+        axes1.legend(loc="upper right", fancybox=True, shadow=True)
           
 def MakeTable(Obs_data,Obs_xml,filename):
 
@@ -86,7 +87,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     coordinates = []
     mymodel = model_unconfined_seepage_1d.createFromXML(filename)
 
-    for obs in Obs_data.observations.itervalues():
+    for obs in Obs_data.observations.values():
         coordinates.append([obs.coordinate[0], obs.coordinate[1]])
         head_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
 

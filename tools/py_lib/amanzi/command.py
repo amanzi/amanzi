@@ -14,25 +14,25 @@ class CommandInterface:
         self.exit_code=0
         self.output=''
 
-        if args != None:
+        if args is not None:
             self._parse_arg_list(args)
 
         try:
             import subprocess
             self.use_ospipe = False
-	except ImportError:
+        except ImportError:
             self.use_ospipe = True
-	except:
-	    print "Unexpected error:",sys.exec_info()[0]
-	    raise
-	    
+        except Exception:
+            print("Unexpected error:",sys.exec_info()[0])
+            raise
+            
 
     def _dump_state(self):
-        print 'command=',self.command
-        print 'args=',self.args
-        print 'exit_code=',self.exit_code
-        print 'output=',self.output
-        print 'use_ospipe=',self.use_ospipe
+        print('command=',self.command)
+        print('args=',self.args)
+        print('exit_code=',self.exit_code)
+        print('output=',self.output)
+        print('use_ospipe=',self.use_ospipe)
 
     def _parse_arg_list(self,args):
         list_args=[]
@@ -41,17 +41,16 @@ class CommandInterface:
         elif isinstance(args,str):
             list_args = shlex.split(args)
         else:
-            raise TypeError, 'args must be of type list or str'
+            raise TypeError('args must be of type list or str')
         self.args = list_args 
         return list_args
 
     def _build_run_command(self):
-        string=' '.join(self.args)
         return self.command + ' ' + ' '.join(self.args)
 
     def _parse_shell_exit(self,pattern):
         m = pattern.findall(self.output)
-        if m != None:
+        if m is not None:
             idx = len(m) - 1
             self.exit_code = m[idx]
 
@@ -66,10 +65,10 @@ class CommandInterface:
 
     def add_args(self,args):
         if len(self.args) == 0:
-	  self.set_args(args)
-	else:  
-          new_args = self._parse_arg_list(args)
-	  self.args.append(new_args)
+            self.set_args(args)
+        else:  
+            new_args = self._parse_arg_list(args)
+            self.args.append(new_args)
         return self.args
 
     def search_args(self,target,index=None):
@@ -84,7 +83,7 @@ class CommandInterface:
         return 
 
     def run(self):
-        if self.use_ospipe == True:
+        if self.use_ospipe:
             self._ospipe_run()
         else:
             self._subprocess_run()
@@ -95,49 +94,48 @@ class CommandInterface:
 
         import subprocess
         from subprocess import Popen,PIPE,STDOUT
-	import time
-	import signal
+        import time
+        import signal
 
         run_command=self._build_run_command()
-	try:
-          pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
-	except ValueError:
-	  raise ValueError, 'Incorrect arguments in Popen'
-	except:
-	  raise
-	else:
-	  output=pipe.stdout
-	  self.ouput=output.read()
-	  output.close
+        try:
+            pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
+        except ValueError:
+            raise ValueError('Incorrect arguments in Popen')
+        except Exception:
+            raise
+        else:
+            output=pipe.stdout
+            self.ouput=output.read()
+            output.close
 
         # Do not leave until the process completes!
-        while pipe.poll() == None:
-	  pass
+        while pipe.poll() is None:
+            pass
 
         # Set the return code
         self.exit_code=pipe.returncode 
         
         # Dump out the output
-	print self.output
+        print(self.output)
 
         return self.exit_code
 
     def _ospipe_run(self):
-        import os
         import re
         run_command = self._build_run_command()
 
         # Need the '$' to delete the last print just
         # in case the command output also has this 
         # print out!
-        pattern = re.compile('SHELL_EXIT=(\d+)$')
+        pattern = re.compile('SHELL_EXIT=(\\d+)$')
         
         run_command = run_command + '; echo SHELL_EXIT=$?'
         (child_stdin, child_outerr) =os.popen4(run_command)
         child_stdin.close()
         self.output = child_outerr.read()
         self.exit_code = child_outerr.close()
-        if self.exit_code == None:
+        if self.exit_code is None:
             self._parse_shell_exit(pattern)
         self._remove_shell_exit(pattern)    
             

@@ -32,6 +32,7 @@ include_directories(${EOS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
@@ -107,7 +108,8 @@ if (BUILD_TESTS)
                           "${MPC_SOURCE_DIR}/test/*.in"
                           "${MPC_SOURCE_DIR}/test/*.bgd"
                           "${MPC_SOURCE_DIR}/test/*.dat"
-                          "${MPC_SOURCE_DIR}/test/*.exo")
+                          "${MPC_SOURCE_DIR}/test/*.exo"
+                          "${MPC_SOURCE_DIR}/test/*.h5")
       file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
@@ -141,6 +143,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_thermal_richards.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_thermal_darcy_dfn mpc_thermal_darcy_dfn
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_thermal_darcy_dfn.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for flow and reactive transport
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int
@@ -165,7 +173,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_flow_transport_implicit.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
+    add_amanzi_test(mpc_coupled_reactive_transport mpc_coupled_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmark
     add_amanzi_test(mpc_benchmark_single mpc_benchmark_single
                     KIND      int
                     NPROC     3

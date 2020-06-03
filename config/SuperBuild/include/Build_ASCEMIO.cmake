@@ -14,7 +14,9 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${ASCEMIO_VERSION_MAJOR} ${ASCEMIO_VERSION_MINOR} ${ASCEMIO_VERSION_PATCH})  
 
 # --- Patch the original code
-set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch ascemio-2.2-CMakeLists.txt.patch)
+set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch
+                       ascemio-2.2-CMakeLists.txt.patch
+                       ascemio-2.2-hdf5.patch)
 set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
                ${ASCEMIO_sh_patch}
@@ -52,7 +54,7 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     PATCH_COMMAND ${ASCEMIO_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR  ${ASCEMIO_source_dir} 
-                    CMAKE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}        # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}        # Ensure uniform build
                                 ${ASCEMIO_CMAKE_ARGS}
                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}   # Ensure uniform build
                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

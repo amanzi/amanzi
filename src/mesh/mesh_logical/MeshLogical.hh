@@ -58,29 +58,37 @@ class MeshLogical : public Mesh {
   //                              is area
   //  - cell_centroids_          : (optional, for plotting) length ncell
   //                              array of centroids
+
+  //
+  // Topology only constructor
+  // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
               const std::vector<Entity_ID_List>& face_cell_ids,
-              const std::vector<AmanziGeometry::Point>& face_normals,
+              const std::vector<std::vector<int> >& face_cell_dirs,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
+  //
+  // Topology and geometry constructor
+  // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
-              const std::vector<double>& cell_volumes,
               const std::vector<Entity_ID_List>& face_cell_ids,
-              const std::vector<std::vector<double> >& face_cell_lengths,
-              const std::vector<AmanziGeometry::Point>& face_area_normals,
+              const std::vector<std::vector<int> >& face_cell_dirs,
+              const std::vector<double>& cell_volumes,
+              const std::vector<double>& face_areas,
+              const std::vector<std::vector<AmanziGeometry::Point> >& face_cell_bisectors,
               const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
   
   void get_logical_geometry(std::vector<double>* const cell_volumes,
-                            std::vector<std::vector<double> >* const cell_face_lengths,
                             std::vector<double>* const face_areas,
+                            std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
                             std::vector<AmanziGeometry::Point>* const cell_centroids) const;
       
   void set_logical_geometry(std::vector<double> const* const cell_volumes,
-                            std::vector<std::vector<double> > const* const cell_face_lengths,
                             std::vector<double> const* const face_areas,
-                            std::vector<AmanziGeometry::Point> const* const cell_centroids=NULL);
+                            std::vector<std::vector<AmanziGeometry::Point> > const* const face_cell_bisectors,
+                            std::vector<AmanziGeometry::Point> const* const cell_centroids=nullptr);
       
 
   // for testing

@@ -50,7 +50,7 @@ def find_output_observation_path(input_xml):
     tree = ET.parse(input_xml)
     root = tree.getroot()
     if root.tag != 'amanzi_input':
-        raise RuntimeError, 'The given XML file is not an Amanzi input.'
+        raise RuntimeError('The given XML file is not an Amanzi input.')
     output = root.find('output')
     observations = output.find('observations')
     obs_file = observations.find('filename').text

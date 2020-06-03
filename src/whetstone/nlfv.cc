@@ -36,7 +36,7 @@ void NLFV::HarmonicAveragingPoint(
     const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
     AmanziGeometry::Point& p, double& weight)
 {
-  int dir, d(mesh_->space_dimension());
+  int dir;
 
   const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);

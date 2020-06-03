@@ -92,7 +92,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
  protected:
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-  OperatorType operator_type_;
+  PDEType pde_type_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

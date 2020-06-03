@@ -56,20 +56,20 @@ void Transport_PK::PrepareAirWaterPartitioning_()
 ******************************************************************* */
 void Transport_PK::MakeAirWaterPartitioning_()
 {
-  Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell", false);
+  Epetra_MultiVector& tcc_c = *tcc_tmp->ViewComponent("cell", false);
   const Epetra_MultiVector& sat_l = *ws;
 
   int ig, il;
-  double sl, sg, total;
+  double sl, total;
   for (int i = 0; i < num_gaseous; ++i) {
     ig = num_aqueous + i;
     il = air_water_map_[i];
 
     for (int c = 0; c < ncells_owned; c++) {
       sl = sat_l[0][c];
-      total = tcc[il][c] * sl + tcc[ig][c] * (1.0 - sl);
-      tcc[ig][c] = total / (1.0 + (kH_[i] - 1.0) * sl);
-      tcc[il][c] = tcc[ig][c] * kH_[i];
+      total = tcc_c[il][c] * sl + tcc_c[ig][c] * (1.0 - sl);
+      tcc_c[ig][c] = total / (1.0 + (kH_[i] - 1.0) * sl);
+      tcc_c[il][c] = tcc_c[ig][c] * kH_[i];
     } 
   }
 }

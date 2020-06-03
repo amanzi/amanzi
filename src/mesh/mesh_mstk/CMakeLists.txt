@@ -87,6 +87,12 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/test_pinchouts.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    #Test: extracted surface from cell from volumetric face label
+    add_amanzi_test(mstk_surface_face_inheritance mstk_surface_face_inheritance
+                    KIND unit
+                    SOURCE test/Main.cc test/test_label_inheritance.cc
+                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     #Test: eliminate degeneracies in parallel mesh created from inline partitioning
     add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
                     KIND int

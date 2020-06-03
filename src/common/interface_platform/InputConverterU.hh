@@ -18,6 +18,7 @@
 #include "Teuchos_Array.hpp"
 
 // Amanzi's
+#include "Key.hh"
 #include "VerboseObject.hh"
 
 #include "InputConverter.hh"
@@ -113,10 +114,10 @@ class InputConverterU : public InputConverter {
 
   // -- state
   void TranslateFieldEvaluator_(
-      DOMNode* node, std::string field, std::string unit,
+      DOMNode* node, const std::string& field, const std::string& unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
       Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value");
+      std::string data_key = "value", std::string domain = "domain");
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
@@ -154,7 +155,7 @@ class InputConverterU : public InputConverter {
                                             std::vector<std::string>& regions);
 
   // -- chemistry and energy
-  Teuchos::ParameterList TranslateChemistry_();
+  Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();
 
@@ -165,6 +166,7 @@ class InputConverterU : public InputConverter {
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
+  void PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::string pk_name);
   void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
 
   void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
@@ -176,7 +178,7 @@ class InputConverterU : public InputConverter {
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
-  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
+  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
 
   // -- sort functions
   template<class Iterator>

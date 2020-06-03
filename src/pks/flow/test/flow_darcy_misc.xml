@@ -63,61 +63,59 @@
   <!-- FLOW -->
   <ParameterList name="PKs">
     <ParameterList name="flow">
-      <ParameterList name="Darcy problem">
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="medium"/>
-        </ParameterList>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="medium"/>
+      </ParameterList>
 
-        <ParameterList name="operators">
-          <ParameterList name="diffusion operator">
-            <ParameterList name="matrix">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+      <ParameterList name="operators">
+	<ParameterList name="diffusion operator">
+	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
 
-        <ParameterList name="time integrator">
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-          <Parameter name="linear solver" type="string" value="AztecOO"/>
+      <ParameterList name="time integrator">
+	<Parameter name="time integration method" type="string" value="BDF1"/>
+	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+	<Parameter name="linear solver" type="string" value="AztecOO"/>
 
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
-              <Parameter name="min iterations" type="int" value="5"/>
-              <Parameter name="max iterations" type="int" value="7"/>
-              <Parameter name="time step increase factor" type="double" value="1.2"/>
-              <Parameter name="time step reduction factor" type="double" value="0.5"/>
-              <Parameter name="min time step" type="double" value="0.0"/>
-              <Parameter name="max time step" type="double" value="1.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+	<ParameterList name="BDF1">
+	  <Parameter name="timestep controller type" type="string" value="standard"/>
+	  <ParameterList name="timestep controller standard parameters">
+	    <Parameter name="min iterations" type="int" value="5"/>
+	    <Parameter name="max iterations" type="int" value="7"/>
+	    <Parameter name="time step increase factor" type="double" value="1.2"/>
+	    <Parameter name="time step reduction factor" type="double" value="0.5"/>
+	    <Parameter name="min time step" type="double" value="0.0"/>
+	    <Parameter name="max time step" type="double" value="1.0"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
 
-        <ParameterList name="boundary conditions">
-          <ParameterList name="mass flux">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Left, Right, Front, Back}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-tabular">
-                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0, 7.884e+06}"/>
-                  <Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="pressure">
-            <!-- Will be populated by the code -->
+      <ParameterList name="boundary conditions">
+	<ParameterList name="mass flux">
+	  <ParameterList name="BC 0">
+	    <Parameter name="regions" type="Array(string)" value="{Left, Right, Front, Back}"/>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+		<Parameter name="x values" type="Array(double)" value="{0, 7.884e+06}"/>
+		<Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="pressure">
+	  <!-- Will be populated by the code -->
           </ParameterList>
           <ParameterList name="static head">
-            <!-- Will be populated by the code -->
-          </ParameterList>
+          <!-- Will be populated by the code -->
         </ParameterList>
       </ParameterList>
     </ParameterList>

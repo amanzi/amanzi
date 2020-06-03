@@ -22,9 +22,6 @@ Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentRegularManual();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalSegmentRegular();
-  
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentIrregularManual();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
@@ -34,7 +31,7 @@ Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalY();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalYFromXML(const std::string& meshname="logical mesh Y");
+demoMeshLogicalFromXML(const std::string& meshname);
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded();

@@ -9,8 +9,7 @@
 // Base mesh class for Amanzi
 //
 // Use the associated mesh factory to create an instance of a
-// derived class based on a particular mesh framework (like MSTK,
-// STKmesh etc.)
+// derived class based on a particular mesh framework (like MSTK, MOAB, etc)
 //
 // Design documentation:
 //
@@ -415,7 +414,6 @@ Mesh::cell_get_edges(const Entity_ID cellid,
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
   *edgeids = cell_edge_ids_[cellid]; // copy operation
 
 #else  // Non-cached version
@@ -717,7 +715,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       for (int i = 0; i < cellids.size(); i++) {
         Entity_ID_List cellfaceids;
         std::vector<int> cellfacedirs;
-        int dir = 1;
 
         cell_get_faces_and_dirs(cellids[i], &cellfaceids, &cellfacedirs);
 
@@ -725,7 +722,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         for (int j = 0; j < cellfaceids.size(); j++) {
           if (cellfaceids[j] == faceid) {
             found = true;
-            dir = cellfacedirs[j];
             break;
           }
         }
@@ -1057,34 +1053,13 @@ bool
 Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
   if (!geometric_model_.get()) return false;
-
-  unsigned int ngr = geometric_model_->size();
-  for (int i = 0; i < ngr; i++) {
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
-
-    unsigned int rdim = rgn->manifold_dimension();
-
-    if (rgn->id() == id) {
-      // For regions of type Labeled Set and Color Function, the
-      // dimension parameter is not guaranteed to be correct
-      if (rgn->type() == AmanziGeometry::LABELEDSET ||
-          rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
-
-      // If we are looking for a cell set the region has to be
-      // of the same topological dimension as the cells
-      if (kind == CELL && rdim == manifold_dim_) return true;
-
-      // If we are looking for a side set, the region has to be
-      // one topological dimension less than the cells
-      if (kind == FACE && rdim == manifold_dim_-1) return true;
-
-      // If we are looking for a node set, the region can be of any
-      // dimension upto the spatial dimension of the domain
-      if (kind == NODE) return true;
-    }
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = geometric_model_->FindRegion(id);
+  } catch (...) {
+    return false;
   }
-
-  return false;
+  return valid_set_name(rgn->name(), kind);
 }
 
 
@@ -1122,8 +1097,13 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
           (kind == NODE && entity_type == "NODE"))
         return true;
     } else {
-      if (kind == CELL && entity_type == "FACE") return true;
-      if (kind == FACE && entity_type == "EDGE") return true;
+      if ((kind == CELL && entity_type == "FACE") ||
+          (kind == CELL && entity_type == "CELL") ||
+          (kind == FACE && entity_type == "FACE") ||
+          (kind == NODE && entity_type == "NODE")) {
+        // guaranteed we can call, though it may be empty.
+        return true;
+      }
     } 
     return false;
   }
@@ -1390,10 +1370,7 @@ Mesh::build_columns(const std::string& setname) const
 
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);
-  int nf = num_entities(FACE,Parallel_type::ALL);
-  int nf_owned = num_entities(FACE,Parallel_type::OWNED);
   int nc = num_entities(CELL,Parallel_type::ALL);
-  int nc_owned = num_entities(CELL,Parallel_type::OWNED);
 
   columnID_.resize(nc);
   cell_cellbelow_.resize(nc);
@@ -1463,7 +1440,6 @@ Mesh::build_columns() const
   int nf = num_entities(FACE,Parallel_type::ALL);
   int nf_owned = num_entities(FACE,Parallel_type::OWNED);
   int nc = num_entities(CELL,Parallel_type::ALL);
-  int nc_owned = num_entities(CELL, Parallel_type::OWNED);
 
   columnID_.resize(nc);
   cell_cellbelow_.resize(nc);

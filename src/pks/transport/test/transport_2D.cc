@@ -102,7 +102,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   TPK.Initialize(S.ptr());
 
   // advance the transport state 
-  int iter, k;
+  int iter;
   double t_old(0.0), t_new(0.0), dt;
   bool flag(true);
 

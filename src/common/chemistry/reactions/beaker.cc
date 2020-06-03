@@ -39,7 +39,6 @@
 #include "lu_solver.hh"
 #include "matrix_block.hh"
 #include "chemistry_utilities.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
 #include "beaker.hh"
@@ -56,9 +55,8 @@ const double Beaker::saturation_default_ = 1.0;  // [-]
 const double Beaker::water_density_kg_m3_default_ = 1000.0;
 const double Beaker::volume_default_ = 1.0;  // [m^3]
 
-Beaker::Beaker()
-    : debug_(false),
-      verbosity_(kSilent),
+Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
+    : vo_(vo),
       tolerance_(tolerance_default_),
       max_iterations_(max_iterations_default_),
       ncomp_(0),
@@ -246,54 +244,30 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
       rhs_.at(i) = residual_.at(i);
     }
 
-    if (debug()) {
-      // geh
-      message.str("");
-      message << "\n- Iteration " << num_iterations << " --------\n";
-      vo_->Write(Teuchos::VERB_EXTREME, message);
-      //DisplayResults();
-    }
-
-    if (debug()) {
-      print_linear_system("before scale", jacobian_, rhs_);
-    }
-
     // scale the Jacobian
     ScaleRHSAndJacobian();
 
-    if (debug()) {
-      print_linear_system("after scale", jacobian_, rhs_);
-    }
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
     for (int i = 0; i < ncomp(); i++) {
       jacobian_.ScaleColumn(i, primary_species().at(i).molality());
     }
 
-    if (debug()) {
-      print_linear_system("before solve", jacobian_, rhs_);
-    }
-
     // call solver
     lu_solver_.Solve(&jacobian_, &rhs_);
-
-    if (debug()) {
-      print_linear_system("after solve", rhs_);
-    }
 
     // calculate update truncating at a maximum of 5 in log space
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
     CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
-    if (debug()) {
-      message.str("");
+    /*
       for (int i = 0; i < ncomp(); i++) {
         message << primary_species().at(i).name() << " "
                 << primary_species().at(i).molality() << " " << total_.at(i) << "\n";
       }
-      vo_->Write(Teuchos::VERB_EXTREME, message);
-    }
+      vo_->Write(Teuchos::VERB_EXTREME, "");
+    */
 
     num_iterations++;
 
@@ -322,7 +296,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
     status_.converged = true;
   }
 
-  if (debug()) {
+  /*
     message.str("");
     message << "Beaker::speciate: max_rel_change: " << max_rel_change 
             << "  tolerance: " << speciation_tolerance << std::endl;
@@ -333,7 +307,8 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
     message << "Beaker::speciate: status.num_newton_iterations: " << status_.num_newton_iterations << std::endl;
     message << "Beaker::speciate: status.converged: " << status_.converged << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message);
-  }
+  */
+
   return num_iterations;
 }
 
@@ -391,16 +366,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
       rhs_.at(i) = residual_.at(i);
     }
 
-    if (debug()) {
-      print_linear_system("before scale", jacobian_, rhs_);
-    }
-
     // scale the Jacobian
     ScaleRHSAndJacobian();
-
-    if (debug()) {
-      print_linear_system("after scale", jacobian_, rhs_);
-    }
 
     if (use_log_formulation()) {
       // for derivatives with respect to ln concentration, scale columns
@@ -409,16 +376,9 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
         jacobian_.ScaleColumn(i, primary_species().at(i).molality());
       }
     }
-    if (debug()) {
-      print_linear_system("before solve", jacobian_, rhs_);
-    }
 
     // solve J dlnc = r
     lu_solver_.Solve(&jacobian_, &rhs_);
-
-    if (debug()) {
-      print_linear_system("after solve", rhs_);
-    }
 
     // units of solution: mol/kg water (change in molality)
     // calculate update truncating at a maximum of 5 in nat log space
@@ -427,7 +387,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // calculate maximum relative change in concentration over all species
     CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
-    if (debug()) {
+    /*
       message.str("");
       message << "--Iteration: "
               << num_iterations << "\n  max_rel_change(" << max_rel_index 
@@ -443,7 +403,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
         message << "\n";
       }
       vo_->Write(Teuchos::VERB_HIGH, message);
-    }
+    */
 
     num_iterations++;
 
@@ -736,7 +696,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   }
   message << "------------------------------------------------- Input Components ---"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -770,7 +730,7 @@ void Beaker::DisplayResults(void) const {
           << std::endl;
 
   message << "---- Species " << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 
   primary_species().at(0).DisplayResultsHeader(vo_);
   for (int i = 0; i < ncomp(); i++) {
@@ -845,7 +805,7 @@ void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
     }
   }
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -874,7 +834,7 @@ void Beaker::DisplayTotalColumns(const double time,
     }
   }
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -1130,18 +1090,14 @@ void Beaker::SetupActivityModel(std::string model,
   ActivityModel::ActivityModelParameters parameters;
   parameters.database_filename = pitzer_database;
   parameters.pitzer_jfunction = jfunction_pitzer;
-  if (verbosity() == kDebugActivityModel) {
-    parameters.verbosity = verbosity();
-  }
 
   ActivityModelFactory amf;
 
   activity_model_ = amf.Create(model, parameters,
-                               primary_species(), aqComplexRxns_);
+                               primary_species(), aqComplexRxns_,
+                               vo_);
 
-  if (debug()) {
-    activity_model_->Display();
-  }
+  // activity_model_->Display();
 }
 
 
@@ -1703,7 +1659,7 @@ void Beaker::DisplayParameters(void) const {
   message << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
   message << "    volume: " << volume() << " [m^3]" << std::endl;
   message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
@@ -1715,7 +1671,7 @@ void Beaker::DisplayPrimary(void) const {
           << std::setw(10) << "GMW"
           << std::setw(10) << "D-H a0"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
   for (std::vector<Species>::const_iterator primary = primary_species().begin();
        primary != primary_species().end(); primary++) {
     primary->Display(vo_);
@@ -1733,7 +1689,7 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
           << std::setw(10) << "GMW"
           << std::setw(8) << "D-H a0"
           << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message);
+  vo_->Write(Teuchos::VERB_HIGH, message.str());
   for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
        aec != aqComplexRxns_.end(); aec++) {
     aec->Display(vo_);
@@ -1747,7 +1703,7 @@ void Beaker::DisplayGeneralKinetics(void) const {
     std::stringstream message;
     message << "---- General Kinetics" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
          rxn != generalKineticRxns_.end(); rxn++) {
       rxn->Display(vo_);
@@ -1762,7 +1718,7 @@ void Beaker::DisplayRadioactiveDecayRxns(void) const {
     std::stringstream message;
     message << "---- Radioactive Decay" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<RadioactiveDecay>::const_iterator rxn;
     for (rxn = radioactive_decay_rxns_.begin();
          rxn != radioactive_decay_rxns_.end(); ++rxn) {
@@ -1791,7 +1747,7 @@ void Beaker::DisplayMinerals(void) const {
             << std::setw(13) << "[m^2/m^3 blk]"
             << std::setw(13) << "[-]"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     for (std::vector<Mineral>::const_iterator m = minerals_.begin();
          m != minerals_.end(); m++) {
       m->Display(vo_);
@@ -1823,7 +1779,7 @@ void Beaker::DisplayIonExchangeSites(void) const {
             << std::setw(10) << "Charge"
             << std::setw(10) << "CEC"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<IonExchangeRxn>::const_iterator rxn;
     for (rxn = ion_exchange_rxns_.begin();
          rxn != ion_exchange_rxns_.end(); rxn++) {
@@ -1841,7 +1797,7 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
     message << std::setw(12) << "Reaction"
             << std::setw(38) << "K"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<IonExchangeRxn>::const_iterator ier;
     for (ier = ion_exchange_rxns_.begin();
          ier != ion_exchange_rxns_.end(); ier++) {
@@ -1862,7 +1818,7 @@ void Beaker::DisplaySurfaceSites(void) const {
     message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
@@ -1881,7 +1837,7 @@ void Beaker::DisplaySurfaceComplexes(void) const {
             << std::setw(38) << "log Keq"
             << std::setw(10) << "charge"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SurfaceComplexationRxn>::const_iterator s;
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
@@ -1900,7 +1856,7 @@ void Beaker::DisplaySorptionIsotherms(void) const {
             << std::setw(15) << "isotherm"
             << std::setw(15) << "parameters"
             << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, message);
+    vo_->Write(Teuchos::VERB_HIGH, message.str());
     std::vector<SorptionIsothermRxn>::const_iterator s;
     for (s = sorption_isotherm_rxns_.begin();
          s != sorption_isotherm_rxns_.end(); s++) {
@@ -1954,30 +1910,6 @@ void Beaker::print_results(double time) const {
     message << primary_species().at(i).molality() << "\t";
   }
   message << std::endl;
-} 
-
-
-void Beaker::print_linear_system(const std::string& s, 
-                                 const MatrixBlock& A,
-                                 const std::vector<double>& vector) const {
-  std::stringstream message;
-  message << s << std::endl;
-  for (unsigned int i = 0; i < vector.size(); i++) {
-    message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
-  }
-  vo_->Write(Teuchos::VERB_HIGH,message);
-  A.Print_ij(vo_);
-}
-
-
-void Beaker::print_linear_system(const std::string& s, 
-                                 const std::vector<double>& vector) const {
-  std::stringstream message;
-  message << s << std::endl;
-  for (unsigned int i = 0; i < vector.size(); i++) {
-    message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
-  }
-  vo_->Write(Teuchos::VERB_HIGH,message);
 } 
 
 }  // namespace AmanziChemistry

@@ -80,7 +80,7 @@ ExternalProject_add(${UnitTest_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
                     CMAKE_ARGS       ${Unittest_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}    # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}    # Ensure uniform build
                                      ${Unittest_CMAKE_ARGS}
                                      -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                                      -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}

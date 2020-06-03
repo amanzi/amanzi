@@ -90,7 +90,6 @@ SUITE (MeshFramework)
   TEST (Generate2D)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -193,7 +192,6 @@ SUITE (MeshFramework)
   TEST (ParameterGenerate2)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -243,7 +241,6 @@ SUITE (MeshFramework)
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -266,7 +263,6 @@ SUITE (MeshFramework)
   TEST (ReadMOABHDF5)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
