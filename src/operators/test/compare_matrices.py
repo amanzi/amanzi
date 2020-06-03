@@ -107,7 +107,7 @@ if __name__ == "__main__":
     for r, col in m1.items():
         print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
 
-    m2 = read_matrix(fname+"_np3.gold")
+    m2 = read_matrix(fname+"_np3.test")
 
     print(fname+"_np3.test")
     for r, col in m2.items():
