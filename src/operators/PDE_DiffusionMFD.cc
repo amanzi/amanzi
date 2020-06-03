@@ -939,6 +939,8 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   
   flux->putScalar(0.0);
   u->ScatterMasterToGhosted("face");
+  CompositeVector_<int> hits(flux->getMap());
+  hits.putScalar(0);
 
   if (k_ != Teuchos::null) {
    if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
@@ -951,10 +953,11 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   {
     const auto u_cell = u->ViewComponent("cell");
     const auto u_face = u->ViewComponent("face", true);
-    const auto flux_data = flux->ViewComponent("face", false);
-    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
 
-    Kokkos::View<int*,DeviceOnlyMemorySpace> hits("hits",nfaces_owned);
+    auto flux_data = flux->ViewComponent("face", true);
+    auto hits_data = hits.ViewComponent("face", true);
+    
+    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
 
     auto local_A = local_op_->A; 
     auto local_Av = local_op_->Av; 
@@ -982,18 +985,23 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
-            if (f < nfaces_owned) {
-              Kokkos::atomic_add(&flux_data(f,0), -lAv(n) * dirs[n]);
-              Kokkos::atomic_increment(&hits(f));
-            }
+            Kokkos::atomic_add(&flux_data(f,0), -lAv(n) * dirs[n]);
+            Kokkos::atomic_increment(&hits_data(f,0));
           }
         });
+  }
 
+  flux->GatherGhostedToMaster("face", Tpetra::ADD);
+  hits.GatherGhostedToMaster("face", Tpetra::ADD);
+
+  {
+    auto flux_data = flux->ViewComponent("face", false);
+    auto hits_data = hits.ViewComponent("face", false);
     Kokkos::parallel_for(
         "PDE_DiffusionMFD::UpdateFlux",
         nfaces_owned, 
         KOKKOS_LAMBDA(const int& f){
-          flux_data(f,0) /= hits(f);
+          flux_data(f,0) /= hits_data(f,0);
         });
   }
 }

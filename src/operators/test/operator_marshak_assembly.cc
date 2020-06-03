@@ -149,24 +149,27 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   knc->UpdateValues(*solution, *bc);
 
   // upwind
-  knc->values()->ScatterMasterToGhosted();
-  knc->derivatives()->ScatterMasterToGhosted();
+  knc->values()->ScatterMasterToGhosted("cell");
+  knc->derivatives()->ScatterMasterToGhosted("cell");
+  solution->ScatterMasterToGhosted("cell");
+  
   {
     auto u_c = solution->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto kc = knc->values()->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto dkc = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("cell", true);
+
     auto kf = knc->values()->ViewComponent<Amanzi::MirrorHost>("face", false);
     auto kbf = knc->values()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
-    auto kc = knc->values()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
     auto dkf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("face", false);
     auto dkbf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
-    auto dkc = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
     
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
       if (cells.size() == 2) {
         kf(f,0) = u_c(cells(0),0) > u_c(cells(1),0) ? kc(cells(0),0) : kc(cells(1),0);
         dkf(f,0) = u_c(cells(0),0) > u_c(cells(1),0) ? dkc(cells(0),0) : dkc(cells(1),0);
