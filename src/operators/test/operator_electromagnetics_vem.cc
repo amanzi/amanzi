@@ -40,7 +40,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl_VEM(int nx, int order, double tolerance) {
+void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,7 +50,7 @@ void CurlCurl_VEM(int nx, int order, double tolerance) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
+  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, method=" << method
                             << "  order=" << order << std::endl;
 
   // read parameter list
@@ -123,6 +123,7 @@ void CurlCurl_VEM(int nx, int order, double tolerance) {
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("curlcurl operator");
+  olist.sublist("schema").set<std::string>("method", method);
   olist.sublist("schema").set<int>("method order", order);
   auto op_curlcurl = Teuchos::rcp(new PDE_Abstract(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
@@ -132,6 +133,7 @@ void CurlCurl_VEM(int nx, int order, double tolerance) {
   // add an accumulation aoperator
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   olist = plist.sublist("PK operator").sublist("accumulation operator");
+  olist.sublist("schema").set<std::string>("method", method);
   olist.sublist("schema").set<int>("method order", order);
   auto op_acc = Teuchos::rcp(new PDE_Abstract(olist, global_op));
   op_acc->SetBCs(bc, bc);
@@ -227,7 +229,8 @@ void CurlCurl_VEM(int nx, int order, double tolerance) {
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  CurlCurl_VEM<AnalyticElectromagnetics01>(0, 1, 1e-8);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, 1, 1e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 1e-3);
 }
 

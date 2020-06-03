@@ -55,7 +55,10 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
 
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override { return 0; }
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override { return 0; }
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+
+  // other methods
+  void CurlMatrix(int c, DenseMatrix& C);
 
   // -- l2 projector
   void L2Cell(int c, const std::vector<VectorPolynomial>& ve,

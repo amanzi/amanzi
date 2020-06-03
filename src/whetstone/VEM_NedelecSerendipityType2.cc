@@ -39,6 +39,7 @@
 #include "Tensor.hh"
 #include "VectorObjectsUtils.hh"
 #include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_RaviartThomasSerendipity.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -52,6 +53,7 @@ VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
   : MFD3D(mesh),
     DeRham_Edge(mesh)
 {
+  // order of the maximum polynomial space
   order_ = plist.get<int>("method order");
 }
 
@@ -62,7 +64,7 @@ VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
 std::vector<SchemaItem> VEM_NedelecSerendipityType2::schema() const
 {
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, order_));
+  items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, order_ + 1));
 
   return items;
 }
@@ -356,6 +358,61 @@ int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix&
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix for edge-based discretization.
+****************************************************************** */
+int VEM_NedelecSerendipityType2::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+{
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", order_);
+
+  DenseMatrix M, C;
+  VEM_RaviartThomasSerendipity rts(plist, mesh_);
+  rts.MassMatrix(c, T, M);
+
+  // populate curl matrix
+  CurlMatrix(c, C);
+  int nfaces = C.NumRows();
+  int nedges = C.NumCols();
+
+  A.Reshape(nedges, nedges);
+  DenseMatrix MC(nfaces, nedges);
+
+  MC.Multiply(M, C, false);
+  A.Multiply(C, MC, true); 
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Curl matrix acts onto the space of total fluxes; hence, there is 
+* no face area scaling below. FIXME
+****************************************************************** */
+void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
+{
+  Entity_ID_List faces, nodes, fedges, edges;
+  std::vector<int> fdirs, edirs, map;
+  
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  int nfaces = faces.size();
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+
+    mesh_->face_to_cell_edge_map(f, c, &map);
+    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+    int nfedges = fedges.size();
+
+    for (int m = 0; m < nfedges; ++m) {
+      int e = fedges[m]; 
+      double len = mesh_->edge_length(e);
+      C(n, map[m]) = len * edirs[m] * fdirs[n];
+    }
+  }
 }
 
 
