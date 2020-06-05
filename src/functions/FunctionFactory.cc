@@ -9,6 +9,7 @@
 #include "FunctionComposition.hh"
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
+#include "FunctionExprTK.hh"
 #include "FunctionSquareDistance.hh"
 #include "FunctionFactory.hh"
 #include "FunctionLinear.hh"
@@ -71,6 +72,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_distance(function_params);
       else if (function_type == "function-squaredistance")
         f = create_squaredistance(function_params);
+      else if (function_type == "function-exprtk")
+        f = create_exprtk(function_params);
       else {  // I don't recognize this function type
         if (f) delete f;
         Errors::Message m;
@@ -609,6 +612,22 @@ Function* FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& para
   std::string value_header = params.get<std::string>("value header");
   return new FunctionBilinearAndTime(filename, time_header, row_header, row_coordinate,
           col_header, col_coordinate, value_header);
+}
+
+
+Function* FunctionFactory::create_exprtk(Teuchos::ParameterList& params) const
+{
+  Function *f;
+  try {
+    int n = params.get<int>("number of arguments");
+    std::string formula = params.get<std::string>("formula");
+    f = new FunctionExprTK(n, formula);
+  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-exprtk parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return f;
 }
 
 }  // namespace Amanzi
