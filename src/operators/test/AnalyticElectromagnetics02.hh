@@ -31,7 +31,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     double x = p[0];
     double y = p[1];
     double z = p[2];

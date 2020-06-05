@@ -459,6 +459,7 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     double area = mesh_->face_area(f);
+    const auto& xf = mesh_->face_centroid(f);
 
     mesh_->face_to_cell_edge_map(f, c, &map);
     mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
@@ -484,10 +485,11 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
 
           double factor = vbasisf[n].monomial_scales()[it.MonomialSetOrder()];
           Polynomial fmono(d_, it.multi_index(), factor);
+          fmono.set_origin(xf);  
           fmono.ChangeCoordinates(xe, tau);
 
           for (int k = 0; k < fmono.size(); ++k) {
-            C(row + pos, col + k) = fmono(k) * fdirs[n]; // * edirs[m] / area;
+            C(row + pos, col + k) = fmono(k) * len * edirs[m] * fdirs[n] / area;
           }
         }
       }

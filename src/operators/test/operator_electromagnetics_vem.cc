@@ -25,7 +25,9 @@
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
+#include "WhetStoneFunction.hh"
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
@@ -90,34 +92,43 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   }
 
   // create boundary data
-  // int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nde = order + 1;
+  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::VECTOR));
   auto& bc_model = bc->bc_model();
-  auto& bc_value = bc->bc_value_vector(order + 1);
+  auto& bc_value = bc->bc_value_vector(nde);
 
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+  std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
+  funcs[0] = &ana;
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+  for (int e = 0; e < nedges_wghost; ++e) {
+    double len = mesh->edge_length(e);
+    const auto& tau = mesh->edge_vector(e);
+    const auto& xe = mesh->edge_centroid(e);
 
-      mesh->face_get_edges_and_dirs(f, &edges, &edirs);
-      int nedges = edges.size();
-      for (int i = 0; i < nedges; ++i) {
-        int e = edges[i];
-        double len = mesh->edge_length(e);
-        const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-        const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+    std::vector<AmanziGeometry::Point> coordsys(1, tau);
+    ana.set_tau(tau / len);
 
+    WhetStone::Polynomial pe(1, order);
+
+    if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
+        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
+        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
+
+      for (auto it = pe.begin(); it < pe.end(); ++it) {
+        const int* index = it.multi_index();
+        WhetStone::Polynomial fmono(1, index, 1.0);
+        fmono.InverseChangeCoordinates(xe, coordsys);  
+        funcs[1] = &fmono;
+
+        int k = it.PolynomialPosition();
+        bc_value[e][k] = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
         bc_model[e] = OPERATOR_BC_DIRICHLET;
-        bc_value[e][0] = (ana.electric_exact(xe, time) * tau) / len;
-        // if (order > 0) bc_value[e][1] = 0.0;
       }
     }
   }
@@ -149,7 +160,8 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
-    WhetStone::DenseVector ana_loc(nedges), src_loc(nedges);
+    int nloc = nedges * nde;
+    WhetStone::DenseVector ana_loc(nloc, 0.0), src_loc(nloc);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -157,7 +169,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      ana_loc(n) = (ana.source_exact(xe, time) * tau) / len;
+      ana_loc(n * nde) = (ana.source_exact(xe, time) * tau) / len;
     }
 
     const auto& Acell = (op_acc->local_op()->matrices)[c]; 
@@ -165,7 +177,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      src[0][e] += src_loc(n);
+      src[0][e] += src_loc(n * nde);
       if (order > 0) src[1][e] += 0.0;
     }
   }
@@ -174,8 +186,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
   // set up initial guess for a time-dependent problem
   CompositeVector solution(cvs);
-  Epetra_MultiVector& sol = *solution.ViewComponent("edge");
-  sol.PutScalar(0.0);
+  solution.PutScalar(0.0);
 
   // BCs, sources, and assemble
   global_op->UpdateRHS(source, true);
@@ -231,8 +242,8 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
+  // CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
   // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
   CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 1, 2e-3);
 }
