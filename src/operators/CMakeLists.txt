@@ -204,7 +204,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_marshak operators_marshak
                     KIND unit
-                    NPROCS 3
+                    NPROCS 1
                     SOURCE test/Main.cc test/operator_marshak.cc
                            test/Main.cc test/operator_marshak_logical.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
