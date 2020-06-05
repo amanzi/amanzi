@@ -93,9 +93,9 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   // int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::VECTOR));
+  auto& bc_model = bc->bc_model();
+  auto& bc_value = bc->bc_value_vector(order + 1);
 
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
@@ -116,7 +116,8 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
         const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
         bc_model[e] = OPERATOR_BC_DIRICHLET;
-        bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
+        bc_value[e][0] = (ana.electric_exact(xe, time) * tau) / len;
+        // if (order > 0) bc_value[e][1] = 0.0;
       }
     }
   }
@@ -165,6 +166,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
       src[0][e] += src_loc(n);
+      if (order > 0) src[1][e] += 0.0;
     }
   }
 
@@ -231,6 +233,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 TEST(CURL_CURL_HIGH_ORDER) {
   CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
   CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 1e-3);
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 1, 2e-3);
 }
 

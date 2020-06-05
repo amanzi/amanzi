@@ -377,7 +377,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
 
 
 /* ******************************************************************
-* Apply BCs of vector type. The code is based on face (f) DOFs.
+* Apply BCs of vector type.
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     const BCs& bc, Teuchos::RCP<Op> op,
@@ -387,7 +387,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   const std::vector<std::vector<double> >& bc_value = bc.bc_value_vector();
   int d = bc_value[0].size();
 
-  AmanziMesh::Entity_ID_List entities;
+  AmanziMesh::Entity_ID_List entities, cells;
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -406,8 +406,13 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     int ncols = Acell.NumCols();
     int nrows = Acell.NumRows();
 
+    int nents_owned(0);
     if (kind == AmanziMesh::FACE) {
       mesh_->cell_get_faces(c, &entities);
+      nents_owned = ncells_owned;
+    } else if (kind == AmanziMesh::EDGE) {
+      mesh_->cell_get_edges(c, &entities);
+      nents_owned = nedges_owned;
     }
     int nents = entities.size();
 
@@ -431,8 +436,8 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
       if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
-          int f = entities[n];
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          int x = entities[n];
+          if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
             if (flag) {  // make a copy of elemental matrix
               op->matrices_shadow[c] = Acell;
               flag = false;
@@ -456,10 +461,10 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
       if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
-          int f = entities[n];
-          const std::vector<double>& value = bc_value[f];
+          int x = entities[n];
+          const std::vector<double>& value = bc_value[x];
 
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
             if (flag) {  // make a copy of elemental matrix
               op->matrices_shadow[c] = Acell;
               flag = false;
@@ -478,8 +483,14 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
               if (essential_eqn) {
                 rhs_loc(noff) = 0.0;
-                (*rhs_kind)[k][f] = value[k];
-                Acell(noff, noff) = 1.0;
+                (*rhs_kind)[k][x] = (x < nents_owned) ? value[k] : 0.0;
+
+                if (kind == AmanziMesh::FACE) {
+                  mesh_->face_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
+                } else if (kind == AmanziMesh::EDGE) {
+                  mesh_->edge_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
+                }
+                Acell(noff, noff) = 1.0 / cells.size();
               }
 
               global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);

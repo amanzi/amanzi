@@ -99,6 +99,20 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
                       const ProjectorType type,
                       const Polynomial* moments, VectorPolynomial& uf);
 
+  // auxiliary functions
+  void MatrixOfDofs_(
+      int c, const Entity_ID_List& edges,
+      const Basis_Regularized<AmanziMesh::Mesh>& basis,
+      const NumericalIntegration<AmanziMesh::Mesh>& numi,
+      DenseMatrix& N);
+
+  void L2ProjectorsOnFaces_(
+      int c, const Tensor& K, const Entity_ID_List& faces,
+      std::vector<WhetStone::DenseMatrix>& vL2f, 
+      std::vector<WhetStone::DenseMatrix>& vMGf,
+      std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+      std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys);
+
  protected:
   using MFD3D::mesh_;
   using MFD3D::d_;
