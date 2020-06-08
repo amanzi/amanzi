@@ -171,6 +171,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // -- matrix modifications
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
+  virtual void ApplyBCsJacobian() = 0;
+  
   virtual void ModifyMatrices(const CompositeVector& u) {
     Errors::Message msg("Diffusion: This diffusion implementation does not support ModifyMatrices.");
     Exceptions::amanzi_throw(msg);
@@ -212,8 +214,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   void set_jacobian_op(const Teuchos::RCP<Op>& op);
   int schema_jacobian() { return jac_op_schema_; }
 
-  int little_k_type() const { return little_k_type_; }
-  CompositeVectorSpace little_k_space() const {
+  int scalar_coefficient_type() const { return little_k_type_; }
+  CompositeVectorSpace scalar_coefficient_space() const {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
@@ -235,6 +237,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     }
     return out;          
   }
+  virtual CompositeVectorSpace scalar_coefficient_derivative_space() const = 0;
+
 
  protected:
   // accessors for things that may or may not be constant

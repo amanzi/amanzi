@@ -118,6 +118,18 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               const Teuchos::Ptr<const CompositeVector>& factor) override;
 
+  virtual CompositeVectorSpace scalar_coefficient_derivative_space() const override
+  {
+    CompositeVectorSpace out;
+    out.SetMesh(mesh_);
+    out.SetGhosted();
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) {
+      out.AddComponent("face", AmanziMesh::FACE, 1);
+    }
+    return out;
+  }
+
+  
   // Need to be public for kokkos::parallel_for
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_();
@@ -147,6 +159,8 @@ class PDE_DiffusionMFD : public PDE_Diffusion {
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+  virtual void ApplyBCsJacobian() override;
+
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
                        bool primary, bool eliminate, bool essential_eqn);

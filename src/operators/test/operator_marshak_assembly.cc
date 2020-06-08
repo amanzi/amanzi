@@ -242,11 +242,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   int ierr = 0;
 
   // write to disk
-  Tpetra::MatrixMarket::Writer<Matrix_type> writer;
-  writer.writeSparseFile(filename_test.c_str(),
-          global_op->A(), op_list_name.c_str(),
-          "result of operator marshak assemble test", true);
-  CHECK(!ierr);
+  global_op->WriteMatrix(filename_test);
 
   if (rank == 0) {
     // only test on rank 0, this gets ugly...
@@ -277,7 +273,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
       if (test_n_cols == gold_n_cols) {
         for (int j=0; j!=gold_n_cols; ++j) {
           int k=0;
-          for (k; k!=test_n_cols; ++k) {
+          for (; k!=test_n_cols; ++k) {
             if (gold_cols[j] == test_cols[k]) break;
           }
           CHECK(k < test_n_cols);

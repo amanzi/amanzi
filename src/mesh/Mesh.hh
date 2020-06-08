@@ -1079,6 +1079,9 @@ class Mesh {
   mutable KDTree kdtree_faces_;
 };
 
+// Get a coordinate
+AmanziGeometry::Point
+get_coordinate(const Mesh& m, const Entity_kind& kind, Entity_ID id);
 
 #include "Mesh_impl.hh"
 

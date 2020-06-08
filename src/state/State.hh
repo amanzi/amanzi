@@ -353,16 +353,14 @@ class State {
   const T& GetDerivative(const Key& key, const Key& tag, const Key& wrt_key,
                          const Key& wrt_tag) const
   {
-    return derivs_.at(Keys::getKeyTag(key, tag))
-      ->Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
+    return GetDerivativeSet(key, tag).Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
   }
 
   template <typename T>
   T& GetDerivativeW(const Key& key, const Key& tag, const Key& wrt_key,
                     const Key& wrt_tag, const Key& owner)
   {
-    return derivs_.at(Keys::getKeyTag(key, tag))
-      ->GetW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    return GetDerivativeSet(key, tag).GetW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
   }
 
   template <typename T>
@@ -370,8 +368,7 @@ class State {
   GetDerivativePtr(const Key& key, const Key& tag, const Key& wrt_key,
                    const Key& wrt_tag) const
   {
-    return derivs_.at(Keys::getKeyTag(key, tag))
-      ->GetPtr<T>(Keys::getKeyTag(wrt_key, wrt_tag));
+    return GetDerivativeSet(key, tag).GetPtr<T>(Keys::getKeyTag(wrt_key, wrt_tag));
   }
 
   template <typename T>
@@ -379,8 +376,7 @@ class State {
   GetDerivativePtrW(const Key& key, const Key& tag, const Key& wrt_key,
                     const Key& wrt_tag, const Key& owner)
   {
-    return derivs_.at(Keys::getKeyTag(key, tag))
-      ->GetPtrW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    return GetDerivativeSet(key, tag).GetPtrW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
   }
 
 
@@ -388,10 +384,8 @@ class State {
   {
     return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag));
   }
-  RecordSet& GetDerivativeSet(const Key& key, const Key& tag)
-  {
-    return *derivs_.at(Keys::getKeyTag(key, tag));
-  }
+  RecordSet& GetDerivativeSet(const Key& key, const Key& tag);
+  const RecordSet& GetDerivativeSet(const Key& key, const Key& tag) const;
 
   // A few special parameters with special methods
   double time(const Key& tag = "") const { return Get<double>("time", tag); }

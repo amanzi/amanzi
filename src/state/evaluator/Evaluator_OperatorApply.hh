@@ -82,6 +82,10 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   //  const Key& wrt_tag) override {}
 
   virtual std::string name() const override { return "operator application"; }
+
+  virtual bool UpdateDerivative(State& S, const Key& requestor,
+          const Key& wrt_key, const Key& wrt_tag) override;
+
   
  protected:
   // These do the actual work

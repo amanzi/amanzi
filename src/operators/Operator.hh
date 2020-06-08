@@ -174,38 +174,39 @@ class Operator {
   void Zero();
 
   // main members as an operator
-  virtual int apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
+  int apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
   //virtual int applyTranspose(const CompositeVector& X, CompositeVector& Y,
   //                   double scalar=0.0) const;
-  virtual int applyAssembled(const CompositeVector& X, CompositeVector& Y,
+  int applyAssembled(const CompositeVector& X, CompositeVector& Y,
                      double scalar=0.0) const;
-  virtual int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // diagonal
-  virtual void getLocalDiagCopy(CompositeVector& X) const;
+  void getLocalDiagCopy(CompositeVector& X) const;
 
   // symbolic assembly:
   // -- wrapper
-  virtual void SymbolicAssembleMatrix();
+  void SymbolicAssembleMatrix();
   // -- first dispatch
-  virtual void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
-                                      int my_block_row, int my_block_col) const;
+  void SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
 
   // actual assembly:
   // -- wrapper
-  virtual void AssembleMatrix();
+  void AssembleMatrix();
+  void WriteMatrix(const std::string& fname_base);
+  
   // -- first dispatch
-  virtual void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                              int my_block_row, int my_block_col) const;
+  void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
+                      int my_block_row, int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector
-  virtual void
-  UpdateRHS(const CompositeVector& source, bool volume_included = true);
+  void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
-  virtual void Rescale(double scaling);
-  virtual void Rescale(const CompositeVector& scaling);
-  virtual void Rescale(const CompositeVector& scaling, int iops);
+  void Rescale(double scaling);
+  void Rescale(const CompositeVector& scaling);
+  void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
   Teuchos::RCP<const CompositeSpace> getDomainMap() const { return cvs_col_; }

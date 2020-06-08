@@ -261,11 +261,20 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
          S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
       AMANZI_ASSERT(wrt.second == my_keys_[0].second);
-      AMANZI_ASSERT(
-        wrt.first ==
-        x0_key_); // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
-      // quasi-linear operators covered by Update() call --etc
-      // jacobian terms are covered by ParameterList jacobian option --etc
+      AMANZI_ASSERT(wrt.first == x0_key_); // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+
+      // quasi-linear operators covered by Update() call, no need to require anything
+
+      // jacobian terms
+      for (const auto& op_key : op0_keys_) {
+        if (plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt.first, false)) {
+          // there is a Jacobian term available
+          S.RequireDerivative<Operators::Op, Operators::Op_Factory>(
+              op_key, my_keys_[0].second, wrt.first, wrt.second);
+          S.RequireEvaluator(op_key, my_keys_[0].second)
+              .EnsureCompatibility(S);
+        }
+      }
 
       // rhs terms
       for (const auto& rhs_key : rhs_keys_) {
@@ -285,6 +294,135 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
     }
   }
 }
+
+
+
+// ---------------------------------------------------------------------------
+// Answers the question, Has This Field's derivative with respect to Key
+// wrt_key changed since it was last requested for Field Key reqest.
+// Updates the derivative if needed.
+// ---------------------------------------------------------------------------
+bool
+Evaluator_OperatorApply::UpdateDerivative(State& S, const Key& requestor,
+        const Key& wrt_key, const Key& wrt_tag)
+{
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    Errors::Message msg;
+    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second << ") is not differentiable with respect to (" << wrt_key << "," << wrt_tag << ").";
+    throw(msg);
+  }
+
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
+  auto& deriv_request_set = deriv_requests_[wrt];
+  
+  Teuchos::OSTab tab = vo_.getOSTab();
+  if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_.os() << "Evaluator_OperatorApply Derivative d" << my_keys_[0].first << "_d" << wrt_key
+              << " requested by " << requestor << "..." << std::endl;
+  }
+
+  // Check if we need to update ourselves, and potentially update our
+  // dependencies.
+  bool update = deriv_request_set.empty(); // not done once
+
+  // -- must update if our our dependencies have changed, as these affect the
+  // partial derivatives
+  Key my_request = Key{ "d" } +
+                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
+                   "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
+
+  // I don't believe this should be required.  It may be a lot of extra work to
+  //  compute ourselves (e.g. what if this is assembling local matrices).
+  //  update |= Update(S, my_request);
+
+  // -- must update if any of our dependencies or our dependencies' derivatives have changed
+  // check x0 key
+  Key my_tag = my_keys_[0].second;
+  update |= S.GetEvaluator(x0_key_, my_tag).Update(S, my_request);
+
+  // check rhs keys
+  for (const auto& dep : rhs_keys_) {
+    // but we must update our dependencies as we will use them to compute our derivative
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request);
+
+    // and we must update our dependencies derivatives to apply the chain rule
+    if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+    }
+  }
+
+  // check op keys
+  for (const auto& dep : op0_keys_) {
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request); // updates the primary term
+    if (plist_.get<bool>("include Jacobian term d" + dep + "_d" + wrt_key, false)) {
+      // check to see if we include the Jacobian term
+      if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+      }
+    }
+  }
+
+  // placeholder for op -- off-diagonal keys
+  // check offdiagonal x keys
+  for (const auto& dep : x_keys_) {
+    // but we must update our dependencies as we will use them to compute our derivative
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request);
+
+    // and we must update our dependencies derivatives to apply the chain rule
+    if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+    }
+  }
+  // check offdiagonal op keys
+  for (const auto& op_list : op_keys_) {
+    for (const auto& dep : op_list) {
+      update |= S.GetEvaluator(dep, my_tag).Update(S, my_request); // updates the primary term
+      if (plist_.get<bool>("include Jacobian term d" + dep + "_d" + wrt_key, false)) {
+        // check to see if we include the Jacobian term
+        if (S.GetEvaluator(dep, my_tag)
+            .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          update |= S.GetEvaluator(dep, my_tag)
+                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+        }
+      }
+    }
+  }
+
+  // Do the update
+  if (update) {
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "... updating." << std::endl;
+    }
+
+    // If so, update ourselves, empty our list of filled requests, and return.
+    UpdateDerivative_(S, wrt_key, wrt_tag);
+    deriv_request_set.clear();
+    deriv_request_set.insert(requestor);
+    return true;
+  } else {
+    // Otherwise, simply service the request
+    if (deriv_request_set.find(requestor) == deriv_request_set.end()) {
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "... not updating but new to this request." << std::endl;
+      }
+      deriv_request_set.insert(requestor);
+      return true;
+    } else {
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "... has not changed." << std::endl;
+      }
+      return false;
+    }
+  }
+}
+
+
 
 // These do the actual work
 void
@@ -384,8 +522,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
         //std::cout << "Adding diffusion op to operator" << std::endl;
         global_op->OpPushBack(
           S.GetPtrW<Operators::Op>(op_key, my_keys_[0].second, op_key));
-        if (S.GetEvaluator(op_key, my_keys_[0].second)
-              .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        if (S.GetEvaluator(op_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+            plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt_key, false)) {
           global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(
             op_key, my_keys_[0].second, wrt_key, wrt_tag, op_key));
         }
@@ -427,15 +565,15 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     int i = 0;
     for (const auto& op_key : op0_keys_) {
       i++;
-      if (S.GetEvaluator(op_key, my_keys_[0].second)
-          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      if (S.GetEvaluator(op_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+          plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt_key, false)) {
         i++;
       }
     }
     int j = 0;
     for (const auto& rhs_key : rhs_keys_) {
-      if (S.GetEvaluator(rhs_key, my_keys_[0].second)
-          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      if (S.GetEvaluator(rhs_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          
         // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
         CompositeVector drhs = S.GetDerivativeW<CompositeVector>(
             rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);

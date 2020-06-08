@@ -154,8 +154,10 @@
         <Parameter name="evaluator type" type="string" value="diffusion operator" />
         <Parameter name="local operator key" type="string" value="A_local" />
         <Parameter name="rhs key" type="string" value="A_rhs" />
+        <Parameter name="flux key" type="string" value="A_flux" />
         <Parameter name="tensor coefficient key" type="string" value="tensor_coefficient" />
         <Parameter name="scalar coefficient key" type="string" value="scalar_coefficient" />
+        <Parameter name="scalar coefficient type" type="string" value="upwind: face" />
         <Parameter name="boundary conditions key" type="string" value="boundary_conditions" />
         <Parameter name="operator argument key" type="string" value="u" />
         <Parameter name="discretization primary" type="string" value="fv: default" />

@@ -52,6 +52,22 @@ EvaluatorCellToFace::EnsureCompatibility(State& S)
     dep_fac.SetMesh(my_fac.Mesh());
     dep_fac.AddComponent("cell", AmanziMesh::CELL, 1)->SetGhosted();
     S.RequireEvaluator(dependencies_[0].first, dependencies_[0].second).EnsureCompatibility(S);
+
+    bool has_derivs = false;
+    for (auto keytag : my_keys_)
+      has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key.first, my_key.second)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+            my_key.first, my_key.second, wrt.first, wrt.second, my_key.first)
+            .Update(my_fac);
+
+        S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+            dependencies_[0].first, dependencies_[0].second, wrt.first, wrt.second)
+            .Update(dep_fac);
+      }
+    }
   }
 
   EnsureCompatibility_Flags_(S);
@@ -113,7 +129,55 @@ EvaluatorCellToFace::Update_(State& S)
 void
 EvaluatorCellToFace::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag)
 {
-  AMANZI_ASSERT(false);
+  // hacked together implementation...
+  const auto& cells = S.GetDerivative<CompositeVector>(dependencies_[0].first, dependencies_[0].second,
+          wrt_key, wrt_tag);
+  cells.ScatterMasterToGhosted("cell");
+
+  { // scope for views
+    const AmanziMesh::Mesh* m = cells.getMap()->Mesh().get();
+    auto cells_v = cells.ViewComponent("cell");
+    auto faces_v = S.GetDerivativeW<CompositeVector>(my_keys_[0].first, my_keys_[0].second,
+            wrt_key, wrt_tag, my_keys_[0].first).ViewComponent("face", false);
+
+    if (algorithm_ == "harmonic") {
+      Kokkos::parallel_for(
+          "EvaluatorCellToFace: harmonic",
+          faces_v.extent(0),
+          KOKKOS_LAMBDA(const int& f) {
+            AmanziMesh::Entity_ID_View cells;
+            m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            faces_v(f,0) = cells.extent(0) == 1
+                           ? cells_v(cells(0),0)
+                           : 1.0 / (1./cells_v(cells(0),0) + 1./cells_v(cells(1),0));
+          });
+    } else if (algorithm_ == "arithmetic") {
+      Kokkos::parallel_for(
+          "EvaluatorCellToFace: arithmetic",
+          faces_v.extent(0),
+          KOKKOS_LAMBDA(const int& f) {
+            AmanziMesh::Entity_ID_View cells;
+            m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            faces_v(f,0) = cells.extent(0) == 1
+                           ? cells_v(cells(0),0)
+                           : (cells_v(cells(0),0) + cells_v(cells(1),0)) / 2.0;
+          });
+
+    } else if (algorithm_ == "geometric") {
+      Kokkos::parallel_for(
+          "EvaluatorCellToFace: geometric",
+          faces_v.extent(0),
+          KOKKOS_LAMBDA(const int& f) {
+            AmanziMesh::Entity_ID_View cells;
+            m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            faces_v(f,0) = cells.extent(0) == 1
+                           ? cells_v(cells(0),0)
+                           : sqrt(cells_v(cells(0),0) * cells_v(cells(1),0));
+          });
+    } else {
+      AMANZI_ASSERT(false);
+    }
+  }
 }
 
 

@@ -1839,5 +1839,20 @@ Mesh::PrintMeshStatistics() const
   }
 }
 
+AmanziGeometry::Point
+get_coordinate(const Mesh& m, const Entity_kind& kind, Entity_ID id)
+{
+  switch(kind) {
+    case(CELL): return m.cell_centroid(id);
+    case(FACE): return m.face_centroid(id);
+    case(BOUNDARY_FACE): m.face_centroid(m.face_map(false)->getLocalElement(m.exterior_face_map(false)->getGlobalElement(id)));
+    case(EDGE): return AmanziGeometry::Point();
+    case(NODE):
+      { AmanziGeometry::Point p; m.node_get_coordinates(id, &p); return p; }
+    default: return AmanziGeometry::Point();
+  }
+}
+
+
 } // namespace AmanziMesh
 } // namespace Amanzi
