@@ -25,30 +25,30 @@
 #include "PK_DomainFunction.hh"
 
 namespace Amanzi {
-    namespace ShallowWater {
+namespace ShallowWater {
         
-        class ShallowWaterBoundaryFunction : public PK_DomainFunction {
-            public:
-            ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
-            ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
-            
-            void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-            
-            // modifiers and access
-            void set_bc_name(const std::string& name) { bc_name_ = name; }
-            std::string bc_name() { return bc_name_; }
-            
-            void set_type(WhetStone::DOF_Type type) { type_ = type; }
-            WhetStone::DOF_Type type() { return type_; }
-            
-            private:
-            std::string bc_name_;
-            WhetStone::DOF_Type type_;  // type of dofs related to this bc
-            
-            std::vector<std::string> regions_;
-        };
+  class ShallowWaterBoundaryFunction : public PK_DomainFunction {
+      public:
+      ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
+      ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
+
+      void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
+      // modifiers and access
+      void set_bc_name(const std::string& name) { bc_name_ = name; }
+      std::string bc_name() { return bc_name_; }
+
+      void set_type(WhetStone::DOF_Type type) { type_ = type; }
+      WhetStone::DOF_Type type() { return type_; }
+
+      private:
+      std::string bc_name_;
+      WhetStone::DOF_Type type_;  // type of dofs related to this bc
+
+      std::vector<std::string> regions_;
+  };
         
-    }  // namespace ShallowWater
+}  // namespace ShallowWater
 }  // namespace Amanzi
 
 #endif
