@@ -37,6 +37,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+    return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
     double x = p[0];
     double y = p[1];
     double z = p[2];
@@ -47,7 +48,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     return c_ * electric_exact(p, t);
   }
 

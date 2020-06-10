@@ -30,7 +30,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     Amanzi::AmanziGeometry::Point a(p.dim()), b(3), e(3);
     OrthonormalSystem(a, b, e);
 
@@ -46,7 +46,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
     return b * tmp;
   }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 

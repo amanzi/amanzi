@@ -72,7 +72,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   if (nx > 0) {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     auto mesh_tmp = Teuchos::rcp_const_cast<Mesh>(mesh);
-    DeformMesh(mesh_tmp, 5, 1.0);
+    // DeformMesh(mesh_tmp, 5, 1.0);
   } else {
     mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
   }
@@ -103,6 +103,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   AmanziMesh::Entity_ID_List cells, edges;
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
+  WhetStone::Polynomial pe(1, order);
   std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
   funcs[0] = &ana;
 
@@ -112,17 +113,14 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
     const auto& xe = mesh->edge_centroid(e);
 
     std::vector<AmanziGeometry::Point> coordsys(1, tau);
-    ana.set_tau(tau / len);
-
-    WhetStone::Polynomial pe(1, order);
+    ana.set_tau(tau / len, 0);
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
         fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
 
       for (auto it = pe.begin(); it < pe.end(); ++it) {
-        const int* index = it.multi_index();
-        WhetStone::Polynomial fmono(1, index, 1.0);
+        WhetStone::Polynomial fmono(1, it.multi_index(), 1.0);
         fmono.InverseChangeCoordinates(xe, coordsys);  
         funcs[1] = &fmono;
 
@@ -169,7 +167,17 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      ana_loc(n * nde) = (ana.source_exact(xe, time) * tau) / len;
+      std::vector<AmanziGeometry::Point> coordsys(1, tau);
+      ana.set_tau(tau / len, 1);
+
+      for (auto it = pe.begin(); it < pe.end(); ++it) {
+        WhetStone::Polynomial fmono(1, it.multi_index(), 1.0);
+        fmono.InverseChangeCoordinates(xe, coordsys);  
+        funcs[1] = &fmono;
+
+        int k = it.PolynomialPosition();
+        ana_loc(n * nde + k) = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
+      }
     }
 
     const auto& Acell = (op_acc->local_op()->matrices)[c]; 
@@ -177,8 +185,8 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      src[0][e] += src_loc(n * nde);
-      if (order > 0) src[1][e] += 0.0;
+      for (int k = 0; k < nde; ++k) 
+        src[k][e] += src_loc(n * nde + k);
     }
   }
 
@@ -245,6 +253,6 @@ TEST(CURL_CURL_HIGH_ORDER) {
   // CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
   // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
   // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 1, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics01>(2, "Nedelec serendipity type2", 1, 2e-3);
 }
 
