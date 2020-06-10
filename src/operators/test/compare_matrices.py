@@ -81,8 +81,6 @@ if __name__ == "__main__":
     fname1 = sys.argv[-1]
     m1 = read_matrix(fname1+".dat")
     d1 = read_mesh_info(fname1+"_map.dat")
-    
-
 
     # print(fname1)
     # for r, col in m1.items():
