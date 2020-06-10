@@ -284,7 +284,7 @@ MeshEmbeddedLogical::init_maps()
   maps_owned_[FACE] = face_map;
 
   // exterior face map and importer
-  std::vector<int> extface_ids;
+  std::vector<GO> extface_ids;
   int nfaces_owned = num_entities_owned_[FACE];
   for (int f = 0; f != nfaces_owned; ++f) {
     if (face_cell_ids_[f].size() == 1) {
@@ -308,7 +308,7 @@ MeshEmbeddedLogical::init_maps()
     int ncells_my_used = num_entities(CELL, Parallel_type::ALL);
 
     // -- create a populate the owned GIDs
-    IntVector_type bg_gids_owned_c(*bg_mesh_->cell_map(false));
+    Vector_type_<GO> bg_gids_owned_c(*bg_mesh_->cell_map(false));
 
     const auto& my_cell_map = *maps_owned_[CELL];
     for (int c = 0; c != ncells_bg_owned; ++c) {
@@ -320,12 +320,12 @@ MeshEmbeddedLogical::init_maps()
                             bg_mesh_->cell_map(false));
 
     // -- create the used GIDs vector, comm_unicate
-    IntVector_type bg_gids_used_c(*bg_mesh_->cell_map(true));
+    Vector_type_<GO> bg_gids_used_c(*bg_mesh_->cell_map(true));
     bg_gids_used_c.doImport(
       bg_gids_owned_c, cell_import, Tpetra::CombineMode::INSERT);
 
     // -- create a GID list of the used components
-    Entity_ID_List cells_my_used(ncells_my_used);
+    std::vector<GO> cells_my_used(ncells_my_used);
     for (int c = 0; c != ncells_log; ++c) {
       cells_my_used[c] = my_cell_map.getGlobalElement(c);
     }
@@ -344,7 +344,7 @@ MeshEmbeddedLogical::init_maps()
     int nfaces_log_extra = nfaces_my_used - nfaces_bg_used;
 
     // -- create a populate the owned GIDs
-    IntVector_type bg_gids_owned_f(*bg_mesh_->face_map(false));
+    Vector_type_<GO> bg_gids_owned_f(*bg_mesh_->face_map(false));
 
     const auto& my_face_map = *maps_owned_[FACE];
     for (int f = 0; f != nfaces_bg_owned; ++f) {
@@ -356,12 +356,12 @@ MeshEmbeddedLogical::init_maps()
                             bg_mesh_->face_map(false));
 
     // -- create the used GIDs vector, comm_unicate
-    IntVector_type bg_gids_used_f(*bg_mesh_->face_map(true));
+    Vector_type_<GO> bg_gids_used_f(*bg_mesh_->face_map(true));
     bg_gids_used_f.doImport(
       bg_gids_owned_f, face_import, Tpetra::CombineMode::INSERT);
 
     // -- create a GID list of the used components
-    Entity_ID_List faces_my_used(nfaces_my_used);
+    std::vector<GO> faces_my_used(nfaces_my_used);
     for (int f = 0; f != nfaces_log_extra; ++f) {
       faces_my_used[f] = my_face_map.getGlobalElement(f);
     }
@@ -421,7 +421,7 @@ MeshEmbeddedLogical::num_entities(const Entity_kind kind,
 }
 
 // Global ID of any entity
-Entity_ID
+GO
 MeshEmbeddedLogical::GID(const Entity_ID lid, const Entity_kind kind) const
 {
   return maps_used_.at(kind)->getGlobalElement(lid);

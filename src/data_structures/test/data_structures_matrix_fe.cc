@@ -130,7 +130,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     
     matrix.sumIntoLocalValues(c, neighbor_cells.size(), &vals(0,0), neighbor_cells.data());
 
-    std::vector<int> neighbor_cell_gids(neighbor_cells.size());
+    std::vector<GO> neighbor_cell_gids(neighbor_cells.size());
     for (int n=0; n!=neighbor_cells.size(); ++n) {
       neighbor_cell_gids[n] = cell_map_ghosted->getGlobalElement(neighbor_cells[n]);
       AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
@@ -228,7 +228,7 @@ TEST(FE_MATRIX_FACE_FACE)
   for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, faces);
 
-    Teuchos::SerialDenseVector<int,int> face_gids(faces.size());
+    Teuchos::SerialDenseVector<int,GO> face_gids(faces.size());
     for (int n=0; n!=faces.size(); ++n) {
       face_gids[n] = face_map_ghosted->getGlobalElement(faces[n]);
       AMANZI_ASSERT(face_gids[n] > -1);

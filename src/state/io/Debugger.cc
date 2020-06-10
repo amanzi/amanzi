@@ -192,7 +192,7 @@ Debugger::WriteCellInfo(bool include_faces)
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
-    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+    GO c0_gid = dc_gid_[i];
     Teuchos::OSTab itab = dcvo_[i]->getOSTab();
 
     AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(c0);
@@ -207,7 +207,7 @@ Debugger::WriteCellInfo(bool include_faces)
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid =
+            GO f_gid =
               mesh_->face_map(true)->getGlobalElement(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
             *dcvo_[i]->os()
@@ -227,10 +227,10 @@ Debugger::WriteVector(const std::string& name,
                       bool include_faces)
 {
   CompositeVector::cMultiVectorView_type<MirrorHost> vec_c;
-  if (vec.HasComponent("cell")) vec_c = vec.ViewComponent("cell", false);
+  if (vec.HasComponent("cell")) vec_c = vec.ViewComponent<MirrorHost>("cell", false);
 
   CompositeVector::cMultiVectorView_type<MirrorHost> vec_f;
-  if (vec.HasComponent("face")) vec_f = vec.ViewComponent("face", true);
+  if (vec.HasComponent("face")) vec_f = vec.ViewComponent<MirrorHost>("face", true);
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -243,13 +243,12 @@ Debugger::WriteVector(const std::string& name,
       if (vec_c.extent(0)) *dcvo_[i]->os() << Format_(vec_c(c0, 0));
 
       if (include_faces && vec_f.extent(0)) {
-        AmanziMesh::Entity_ID_View fnums0;
-        Kokkos::View<int*> dirs;
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
         mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
         for (unsigned int n = 0; n != fnums0.size(); ++n)
-          if (fnums0[n] < vec_f.extent(0))
-            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n], 0));
+          *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n], 0));
       }
       *dcvo_[i]->os() << std::endl;
     }
@@ -281,17 +280,17 @@ Debugger::WriteVectors(
 
         CompositeVector::cMultiVectorView_type<MirrorHost> vec_c;
         if (vec->HasComponent("cell"))
-          vec_c = vec->ViewComponent("cell", false);
+          vec_c = vec->ViewComponent<MirrorHost>("cell", false);
 
         CompositeVector::cMultiVectorView_type<MirrorHost> vec_f;
-        if (vec->HasComponent("face")) vec_f = vec->ViewComponent("face", true);
+        if (vec->HasComponent("face")) vec_f = vec->ViewComponent<MirrorHost>("face", true);
 
         *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
         if (vec_c.extent(0)) *dcvo_[i]->os() << Format_(vec_c(c0, 0));
 
-        if (include_faces && vec_f(c0, 0)) {
-          AmanziMesh::Entity_ID_View fnums0;
-          Kokkos::View<int*> dirs;
+        if (include_faces && vec_f.extent(0)) {
+          AmanziMesh::Entity_ID_List fnums0;
+          std::vector<int> dirs;
           mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
@@ -351,7 +350,8 @@ void
 Debugger::WriteState(const State& S, const std::string& tag) {
   for (const auto& var : vars_) {
     if (S.HasData(var.first, tag)) {
-      WriteVector(var.second, S.Get<CompositeVector>(var.first, tag), true);
+      WriteVector(Keys::getKeyTag(var.second, tag),
+                  S.Get<CompositeVector>(var.first, tag), true);
     }
   }
   if (vars_.size() > 0) WriteDivider();

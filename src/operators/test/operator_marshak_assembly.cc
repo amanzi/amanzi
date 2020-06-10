@@ -149,24 +149,27 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   knc->UpdateValues(*solution, *bc);
 
   // upwind
-  knc->values()->ScatterMasterToGhosted();
-  knc->derivatives()->ScatterMasterToGhosted();
+  knc->values()->ScatterMasterToGhosted("cell");
+  knc->derivatives()->ScatterMasterToGhosted("cell");
+  solution->ScatterMasterToGhosted("cell");
+  
   {
     auto u_c = solution->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto kc = knc->values()->ViewComponent<Amanzi::MirrorHost>("cell", true);
+    auto dkc = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("cell", true);
+
     auto kf = knc->values()->ViewComponent<Amanzi::MirrorHost>("face", false);
     auto kbf = knc->values()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
-    auto kc = knc->values()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
     auto dkf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("face", false);
     auto dkbf = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("dirichlet_faces", false);
-    auto dkc = knc->derivatives()->ViewComponent<Amanzi::MirrorHost>("cell", false);
 
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
     
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
       if (cells.size() == 2) {
         kf(f,0) = u_c(cells(0),0) > u_c(cells(1),0) ? kc(cells(0),0) : kc(cells(1),0);
         dkf(f,0) = u_c(cells(0),0) > u_c(cells(1),0) ? dkc(cells(0),0) : dkc(cells(1),0);
@@ -273,7 +276,14 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
       CHECK_EQUAL(gold_n_cols, test_n_cols);
       if (test_n_cols == gold_n_cols) {
         for (int j=0; j!=gold_n_cols; ++j) {
-          std::cout << "(" << j << ": " << gold_vals[j] << " == " << test_vals[j] << ")";
+          int k=0;
+          for (k; k!=test_n_cols; ++k) {
+            if (gold_cols[j] == test_cols[k]) break;
+          }
+          CHECK(k < test_n_cols);
+          if (k == test_n_cols) continue;
+          
+          std::cout << "(" << gold_cols[j] << ": " << gold_vals[j] << " == " << test_vals[k] << ")";
           CHECK_CLOSE(gold_vals[j], test_vals[j], 1.e-8);
         }
       }
@@ -290,10 +300,17 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
 TEST(MARSHAK_NONLINEAR_WAVE_FV) {
   writeMarshakMatrix("fv: default", 0.0, false);
 }
-// TEST(MARSHAK_NONLINEAR_WAVE_FV_JAC) {
-//   writeMarshakMatrix("fv: default", 0.0, true);
-// }
+TEST(MARSHAK_NONLINEAR_WAVE_FV_JAC) {
+  writeMarshakMatrix("fv: default", 0.0, true);
+}
 
+
+TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA) {
+  writeMarshakMatrix("mfd: two-point flux approximation", 0.0, false);
+}
+TEST(MARSHAK_NONLINEAR_WAVE_MFD_TPFA_JAC) {
+  writeMarshakMatrix("mfd: two-point flux approximation", 0.0, true);
+}
 
 // TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
 //   writeMarshakMatrix("mfd: default", 0.0, false);

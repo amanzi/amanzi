@@ -65,17 +65,17 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV {
     transmissibility_->scale(s);
   };
 
+
+  virtual void AnalyticJacobian_(const CompositeVector& solution) override;
+
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
   // virtual double ComputeGravityFlux(int f) const override;
 
   // access
   const CompositeVector& gravity_terms() { return *gravity_term_; }
+  
 
- protected:
-  // virtual void ComputeJacobianLocal_(
-  //     int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
-  //     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
 public: 
   // Neeed to be public for kokkos 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);

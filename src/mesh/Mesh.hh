@@ -251,7 +251,19 @@ class Mesh {
   //
   // On a distributed mesh, this will count all the faces of the
   // cell, OWNED or GHOST.
-  unsigned int cell_get_num_faces(const Entity_ID cellid) const;
+  KOKKOS_INLINE_FUNCTION unsigned int cell_get_num_faces(const Entity_ID cellid) const{
+    #if AMANZI_MESH_CACHE_VARS != 0
+      assert(cell2face_info_cached_);
+      return cell_face_ids_.row_map(cellid + 1) - cell_face_ids_.row_map(cellid);
+
+    #else // Non-cached version
+      Entity_ID_List cfaceids;
+      std::vector<int> cfacedirs;
+
+      cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
+      return cfaceids.size();
+    #endif
+  }
   unsigned int cell_get_max_faces() const;
   unsigned int cell_get_max_nodes() const;
   unsigned int cell_get_max_edges() const;
@@ -307,6 +319,14 @@ class Mesh {
                                         cell_face_dirs_.row_map(cellid + 1)));
   }
 
+  void
+  cell_get_faces_and_dirs(const Entity_ID cellid,
+                          Entity_ID_List& faceids,
+                          std::vector<int>& face_dirs) const {
+    cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs);
+  }
+
+  
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   KOKKOS_INLINE_FUNCTION void 
   cell_get_faces_and_bisectors(const Entity_ID cellid, 

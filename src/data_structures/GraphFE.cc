@@ -48,7 +48,7 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
 
   // potentially create the offproc graphs
   if (includes_ghosted_) {
-    std::vector<int> offproc_gids(n_used_ - n_owned_);
+    std::vector<GO> offproc_gids(n_used_ - n_owned_);
     for (int i=n_owned_; i!=n_used_; ++i)
       offproc_gids[i-n_owned_] = ghosted_row_map_->getGlobalElement(i);
     offproc_row_map_ = Teuchos::rcp(new Map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), 
@@ -84,7 +84,7 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
   graph_ = Teuchos::rcp(new Graph_type(row_map_, col_map_, max_nnz_per_row.view(0, n_owned_)));
 
   if (includes_ghosted_) {
-    std::vector<int> offproc_gids(n_used_ - n_owned_);
+    std::vector<GO> offproc_gids(n_used_ - n_owned_);
     for (int i=n_owned_; i!=n_used_; ++i)
       offproc_gids[i-n_owned_] = ghosted_row_map_->getGlobalElement(i);
 

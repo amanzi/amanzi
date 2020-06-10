@@ -330,17 +330,19 @@ EvaluatorSecondaryMonotype<CompositeVector,
   if (vo_.os_OK(Teuchos::VERB_HIGH)) {
     std::vector<Teuchos::Ptr<const CompositeVector>> my_vecs;
     std::vector<std::string> my_names;
-    for (const auto& key : dependencies_) {
-      my_names.push_back(Keys::getKeyTag(key.first, key.second));
-      my_vecs.push_back(S.GetPtr<CompositeVector>(key.first, key.second).ptr());
+    for (const auto& key_tag : dependencies_) {
+      if (key_tag.first != "time") { // this helps make life a bit simpler...
+        my_names.push_back(Keys::getKeyTag(key_tag.first, key_tag.second));
+        my_vecs.push_back(S.GetPtr<CompositeVector>(key_tag.first, key_tag.second).ptr());
+      }
     }
     db_->WriteVectors(my_names, my_vecs);
     db_->WriteDivider();
 
     my_vecs.clear(); my_names.clear();
-    for (const auto& key : my_keys_) {
-      my_names.push_back(Keys::getKeyTag(key.first, key.second));
-      my_vecs.push_back(S.GetPtr<CompositeVector>(key.first, key.second).ptr());
+    for (const auto& key_tag : my_keys_) {
+      my_names.push_back(Keys::getKeyTag(key_tag.first, key_tag.second));
+      my_vecs.push_back(S.GetPtr<CompositeVector>(key_tag.first, key_tag.second).ptr());
     }
     db_->WriteVectors(my_names, my_vecs);
   }

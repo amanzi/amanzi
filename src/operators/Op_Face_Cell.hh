@@ -27,16 +27,15 @@ class Op_Face_Cell : public Op {
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    A = CSR_Matrix(nfaces_owned); 
+    A = DenseMatrix_Vector(nfaces_owned); 
 
     for (int f=0; f!=nfaces_owned; ++f) {
       AmanziMesh::Entity_ID_View cells;
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
-      int loc[2] = {ncells,ncells}; 
-      A.set_shape_host(f, loc);
+      A.set_shape(f, ncells,ncells);
     }
-    A.prefix_sum();
+    A.Init();
   }
 
   virtual void
@@ -49,14 +48,12 @@ class Op_Face_Cell : public Op {
         A.size(),
         KOKKOS_LAMBDA(const int f) {
           // Extract matrix 
-          WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-            A.at(f),A.size(f,0),A.size(f,1)); 
-
+          auto lA = A[f]; 
           AmanziMesh::Entity_ID_View cells;
           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-          Kokkos::atomic_add(&Xv(cells(0), 0), lm(0,0));
+          Kokkos::atomic_add(&Xv(cells(0), 0), lA(0,0));
           if (cells.extent(0) > 1) {
-            Kokkos::atomic_add(&Xv(cells(1),0), lm(1,1));
+            Kokkos::atomic_add(&Xv(cells(1),0), lA(1,1));
           }
         });
   }
@@ -88,13 +85,12 @@ class Op_Face_Cell : public Op {
           KOKKOS_LAMBDA(const int& f) {
             AmanziMesh::Entity_ID_View cells;
             m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
-            WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm(
-              A.at(f),A.size(f,0),A.size(f,1)); 
-            lm(0,0) *= s_c(0, cells(0));
+            auto lA = A[f]; 
+            lA(0,0) *= s_c(0, cells(0));
             if (cells.size() > 1) {
-              lm(0,1) *= s_c(0, cells(1));          
-              lm(1,0) *= s_c(0, cells(0));          
-              lm(1,1) *= s_c(0, cells(1));
+              lA(0,1) *= s_c(0, cells(1));          
+              lA(1,0) *= s_c(0, cells(0));          
+              lA(1,1) *= s_c(0, cells(1));
             }          
           });
     }

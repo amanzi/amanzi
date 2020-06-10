@@ -43,8 +43,6 @@ class PK_MixinMPCImplicit : public PK_MixinMPC<Base_t, PK_Contained_t> {
  public:
   using PK_MixinMPC<Base_t, PK_Contained_t>::template PK_MixinMPC;
 
-  // IMPLEMENT ME! Is this different from MPC?
-  void ConstructChildren() {}
 
   // PK methods
   // the BDFfnBase interface

@@ -23,8 +23,8 @@
 #include "Op.hh"
 #include "Op_Cell_Cell.hh"
 //#include "Op_Cell_Edge.hh"
-//#include "Op_Cell_FaceCell.hh"
-//#include "Op_Cell_Face.hh"
+#include "Op_Cell_FaceCell.hh"
+#include "Op_Cell_Face.hh"
 //#include "Op_Cell_Node.hh"
 //#include "Op_Cell_Schema.hh"
 //#include "Op_Diagonal.hh"
@@ -600,16 +600,16 @@ std::string Operator::PrintDiagnostics() const
 /* ******************************************************************
 * Visit methods for Apply: Cell.
 ****************************************************************** */
-// int Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-//                                 const CompositeVector& X, CompositeVector& Y) const {
-//   return SchemaMismatch_(op.schema_string, schema_string_);
-// }
+int Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
-// int Operator::ApplyMatrixFreeOp(const Op_Cell_Face& op,
-//                                 const CompositeVector& X, CompositeVector& Y) const {
-//   return SchemaMismatch_(op.schema_string, schema_string_);
-// }
+int Operator::ApplyMatrixFreeOp(const Op_Cell_Face& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
 // int Operator::ApplyMatrixFreeOp(const Op_Cell_Node& op,
@@ -701,18 +701,18 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 /* ******************************************************************
 * Visit methods for symbolic assemble: Cell.
 ****************************************************************** */
-// void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-//                                         const SuperMap& map, GraphFE& graph,
-//                                         int my_block_row, int my_block_col) const {
-//   SchemaMismatch_(op.schema_string, schema_string_);
-// }
+void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
-// void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
-//                                         const SuperMap& map, GraphFE& graph,
-//                                         int my_block_row, int my_block_col) const {
-//   SchemaMismatch_(op.schema_string, schema_string_);
-// }
+void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
 // void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
@@ -816,18 +816,18 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 /* ******************************************************************
 * Visit methods for assemble: Cell.
 ****************************************************************** */
-// void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
-//                                 const SuperMap& map, MatrixFE& mat,
-//                                 int my_block_row, int my_block_col) const {
-//   SchemaMismatch_(op.schema_string, schema_string_);
-// }
+void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
-// void Operator::AssembleMatrixOp(const Op_Cell_Face& op,
-//                                 const SuperMap& map, MatrixFE& mat,
-//                                 int my_block_row, int my_block_col) const {
-//   SchemaMismatch_(op.schema_string, schema_string_);
-// }
+void Operator::AssembleMatrixOp(const Op_Cell_Face& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 
 // void Operator::AssembleMatrixOp(const Op_Cell_Node& op,

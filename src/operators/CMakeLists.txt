@@ -1,5 +1,4 @@
 # -*- mode: cmake -*-
-
 #
 #  Amanzi
 #   Operator library
@@ -55,11 +54,12 @@ set(operators_inc_files
   Op_Cell_Cell.hh
   Op_Face_Cell.hh
 #  Op_Face_CellBndFace.hh
-#  Op_SurfaceCell_SurfaceCell.hh  
-#  Op_SurfaceFace_SurfaceCell.hh
+  Op_SurfaceCell_SurfaceCell.hh  
+  Op_SurfaceFace_SurfaceCell.hh
   OperatorUtils.hh
   Operator.hh
   Operator_Cell.hh
+  Operator_FaceCell.hh
 #  Operator_CellBndFace.hh
   Operator_Factory.hh
   TreeOperator.hh
@@ -70,6 +70,8 @@ set(operators_inc_files
   PDE_DiffusionFV.hh
   PDE_DiffusionFVwithGravity.hh
   PDE_DiffusionFactory.hh
+  PDE_DiffusionMFD.hh
+  PDE_DiffusionMFDwithGravity.hh
   )
 
 set(operators_src_files
@@ -78,12 +80,15 @@ set(operators_src_files
   OperatorUtils.cc
   Operator.cc
   Operator_Cell.cc
+  Operator_FaceCell.cc
 #  Operator_CellBndFace.cc
   Operator_Factory.cc
   TreeOperator.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc
   PDE_DiffusionFVwithGravity.cc
+  PDE_DiffusionMFD.cc
+  PDE_DiffusionMFDwithGravity.cc
   )
 
 set(operators_link_libs
@@ -436,5 +441,4 @@ if (BUILD_TESTS)
     #                 LINK_LIBS ${operators_test_link_libs})
 
 endif()
-
 

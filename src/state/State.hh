@@ -172,8 +172,9 @@ class State {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag, owner);
-    return data_.at(fieldname)->SetType<T, F>();
+    RecordSet& r = GetRecordSet(fieldname);
+    r.RequireRecord(tag, owner);
+    return r.SetType<T, F>();
   }
 
   template <typename T>
@@ -182,8 +183,9 @@ class State {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag, owner);
-    data_.at(fieldname)->SetType<T>();
+    RecordSet& r = GetRecordSet(fieldname);
+    r.RequireRecord(tag, owner);
+    r.SetType<T>();
   }
 
   template <typename T, typename F>
@@ -199,35 +201,35 @@ class State {
   }
 
   // Ensure a record exists.
-  bool HasData(const Key& key, const Key& tag = "") const
+  bool HasData(const Key& fieldname, const Key& tag="") const
   {
-    if (Keys::hasKey(data_, key)) { return data_.at(key)->HasRecord(tag); }
+    if (Keys::hasKey(data_, fieldname)) {
+      return GetRecordSet(fieldname).HasRecord(tag);
+    }
     return false;
   }
 
   // Record accessor.
   Record& GetRecordW(const Key& fieldname, const Key& owner)
   {
-    auto& r = data_.at(fieldname)->GetRecord("");
+    Record& r = GetRecordSet(fieldname).GetRecord("");
     r.AssertOwnerOrDie(owner);
     return r;
   }
   Record& GetRecordW(const Key& fieldname, const Key& tag, const Key& owner)
   {
-    auto& r = data_.at(fieldname)->GetRecord(tag);
+    Record& r = GetRecordSet(fieldname).GetRecord(tag);
     r.AssertOwnerOrDie(owner);
     return r;
   }
   const Record& GetRecord(const Key& fieldname, const Key& tag = "") const
   {
-    return data_.at(fieldname)->GetRecord(tag);
+    return GetRecordSet(fieldname).GetRecord(tag);
   }
 
   // Record accessor.
-  RecordSet& GetRecordSet(const Key& fieldname)
-  {
-    return *data_.at(fieldname);
-  }
+  RecordSet& GetRecordSet(const Key& fieldname);
+  const RecordSet& GetRecordSet(const Key& fieldname) const;
   
   // Iterate over Records.
   typedef RecordSetMap::const_iterator data_iterator;
@@ -239,62 +241,62 @@ class State {
   template <typename T>
   const T& Get(const Key& fieldname) const
   {
-    return data_.at(fieldname)->Get<T>();
+    return GetRecordSet(fieldname).Get<T>();
   }
   template <typename T>
   const T& Get(const Key& fieldname, const Key& tag) const
   {
-    return data_.at(fieldname)->Get<T>(tag);
+    return GetRecordSet(fieldname).Get<T>(tag);
   }
   template <typename T>
   T& GetW(const Key& fieldname, const Key& owner)
   {
-    return data_.at(fieldname)->GetW<T>(owner);
+    return GetRecordSet(fieldname).GetW<T>(owner);
   }
   template <typename T>
   T& GetW(const Key& fieldname, const Key& tag, const Key& owner)
   {
-    return data_.at(fieldname)->GetW<T>(tag, owner);
+    return GetRecordSet(fieldname).GetW<T>(tag, owner);
   }
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Key& tag = "") const
   {
-    return data_.at(fieldname)->GetPtr<T>(tag);
+    return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner)
   {
-    return data_.at(fieldname)->GetPtrW<T>("", owner);
+    return GetRecordSet(fieldname).GetPtrW<T>("", owner);
   }
   template <typename T>
   Teuchos::RCP<T>
   GetPtrW(const Key& fieldname, const Key& tag, const Key& owner)
   {
-    return data_.at(fieldname)->GetPtrW<T>(tag, owner);
+    return GetRecordSet(fieldname).GetPtrW<T>(tag, owner);
   }
 
   template <typename T>
   void Set(const Key& fieldname, const Key& owner, const T& data)
   {
-    return data_.at(fieldname)->Set("", owner, data);
+    GetRecordSet(fieldname).Set("", owner, data);
   }
   template <typename T>
   void
   Set(const Key& fieldname, const Key& tag, const Key& owner, const T& data)
   {
-    return data_.at(fieldname)->Set(tag, owner, data);
+    GetRecordSet(fieldname).Set(tag, owner, data);
   }
   template <typename T>
   void
   SetPtr(const Key& fieldname, const Key& owner, const Teuchos::RCP<T>& data)
   {
-    return data_.at(fieldname)->SetPtr("", owner, data);
+    GetRecordSet(fieldname).SetPtr("", owner, data);
   }
   template <typename T>
   void SetPtr(const Key& fieldname, const Key& tag, const Key& owner,
               const Teuchos::RCP<T>& data)
   {
-    return data_.at(fieldname)->SetPtr(tag, owner, data);
+    GetRecordSet(fieldname).SetPtr(tag, owner, data);
   }
 
 
@@ -506,7 +508,7 @@ class State {
 
 // Visualization of State.
 void
-WriteVis(Visualization& vis, const State& S);
+WriteVis(Visualization& vis, State& S, const Key& tag="next");
 
 // Checkpointing State.
 void

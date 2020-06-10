@@ -453,24 +453,6 @@ Mesh::cache_parents_info_() const
 }
 
 
-
-unsigned int
-Mesh::cell_get_num_faces(const Entity_ID cellid) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell_face_info_();
-  return cell_face_ids_.row_map(cellid + 1) - cell_face_ids_.row_map(cellid);
-
-#else // Non-cached version
-  Entity_ID_List cfaceids;
-  std::vector<int> cfacedirs;
-
-  cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
-  return cfaceids.size();
-#endif
-}
-
-
 // NOTE: this is a on-processor routine
 unsigned int
 Mesh::cell_get_max_faces() const

@@ -33,39 +33,40 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   }
 
   virtual void
-  GetLocalDiagCopy(CompositeVector& X) const
+  SumLocalDiag(CompositeVector& X) const
   {
-    AmanziMesh::Mesh const * surf_mesh = mesh.get();
+    AmanziMesh::Mesh const * mesh_ = mesh.get();
+    AmanziMesh::Mesh const * surf_mesh_ = surf_mesh.get(); 
     auto Xv = X.ViewComponent<Amanzi::MirrorHost>("face", true);
 
-    // entity_get_parent is not available on device
-    A.update_entries_host();
-    for(int sf = 0 ; sf < A.size(); ++sf){
-      AmanziMesh::Entity_ID_View cells;
-      surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
-      auto f0 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(0));
+    Kokkos::parallel_for(
+        "Op_SurfaceFace_SurfaceCell::SumLocalDiag",
+        A.size(),
+        KOKKOS_LAMBDA(const int& sf) {
+          AmanziMesh::Entity_ID_View cells;
+          mesh_->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
 
-      WhetStone::DenseMatrix<> lm = getFromCSR_host<WhetStone::DenseMatrix>(A,sf);
-
-      Kokkos::atomic_add(&Xv(f0,0), lm(0,0));
-      if (cells.extent(0) > 1) {
-        auto f1 = surf_mesh->entity_get_parent(AmanziMesh::CELL, cells(1));
-        Kokkos::atomic_add(&Xv(f1,0), lm(1,1));
-      }
-    }
+          auto lm = A[sf];
+          auto f0 = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(0));
+          Kokkos::atomic_add(&Xv(f0,0), lm(0,0));
+          if (cells.extent(0) > 1) {
+            auto f1 = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(1));
+            Kokkos::atomic_add(&Xv(f1,0), lm(1,1));
+          }
+        });
   }
   
-  //virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-  //        const SuperMap& map, GraphFE& graph,
-  //        int my_block_row, int my_block_col) const {
-  //  assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
-  //}
+  virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
+         const SuperMap& map, GraphFE& graph,
+         int my_block_row, int my_block_col) const {
+   assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
+  }
 
-  //virtual void AssembleMatrixOp(const Operator* assembler,
-  //        const SuperMap& map, MatrixFE& mat,
-  //        int my_block_row, int my_block_col) const {
-  //  assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
-  //}
+  virtual void AssembleMatrixOp(const Operator* assembler,
+         const SuperMap& map, MatrixFE& mat,
+         int my_block_row, int my_block_col) const {
+   assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
+  }
   
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("cell") &&

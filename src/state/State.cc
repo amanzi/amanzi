@@ -155,9 +155,36 @@ State::IsDeformableMesh(Key key) const
   return false;
 };
 
+
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
+RecordSet&
+State::GetRecordSet(const Key& fieldname)
+{
+  try {
+    return *data_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No record named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}  
+
+const RecordSet&
+State::GetRecordSet(const Key& fieldname) const
+{
+  try {
+    return *data_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No record named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}  
+
 Evaluator&
 State::RequireEvaluator(const Key& key, const Key& tag)
 {
@@ -471,20 +498,47 @@ State::WriteDependencyGraph() const
 
 // Non-member function for vis.
 void
-WriteVis(Visualization& vis, const State& S)
+WriteVis(Visualization& vis, State& S, const Key& tag)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
     // NOTE: internally we use seconds, but for vis we write the time in years
     vis.CreateFile(S.time(), S.cycle());
 
+    // Note: we have no good way of knowing which tag, and whether data is up
+    // to date or not.  For instance, in an implicit term in an implicit solve,
+    // the residual has been calculated, meaning that data is up-to-date at the
+    // "next" time, and there may or may not be a field at the "old" time, and
+    // it may or may not be equal to the value at "next" as it depends upon how
+    // the PK implemented things.
+    //
+    // For an explicit term in either an explicit or implicit solve, there may
+    // only be a field at the "old" time, and the value in that field may not
+    // yet have been calculated consistently with the primary variable, which
+    // should have been copied over already from "next" into "old".
+    //
+    // Moral of the story -- we adopt the following.
+    // 1 -- prefer to write the first tag that exists in the order:
+    //    [user provided argument, "next", "", first tag in the record]
+    // 2 -- once we've determined which tag to write, check if there is an
+    //    evaluator.  If so, call update!
+    
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
     std::string vname = vis.name();
     if (vname.empty()) vname = "domain";
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
       if (Keys::getDomain(r->first) == vname) {
-        r->second->WriteVis(vis);
+        Key tag_to_vis;
+        if (r->second->HasRecord(tag)) tag_to_vis = tag;
+        else if (r->second->HasRecord("next")) tag_to_vis = "next";
+        else if (r->second->HasRecord("")) tag_to_vis = "";
+        else tag_to_vis = r->second->begin()->first;
+
+        if (S.HasEvaluator(r->first, tag_to_vis))
+          S.GetEvaluator(r->first, tag_to_vis).Update(S,"vis");
+
+        r->second->WriteVis(vis, tag_to_vis);
       }
     }
 

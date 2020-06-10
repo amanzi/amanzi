@@ -48,10 +48,12 @@ class PK_MixinMPC : public Base_t {
  public:
   typedef std::vector<Teuchos::RCP<PK_Contained_t>> SubPKList;
 
-  using Base_t::Base_t;
+  PK_MixinMPC(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+              const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+              const Teuchos::RCP<State>& S);
 
-  // IMPLEMENT ME!
-  void ConstructChildren() {}
+  // Uses a factory to construct child PKs.
+  void ConstructChildren();
 
   // This should NOT be a part of the public interface, and is only here for
   // testing.  Should make this private and friend the test generation
@@ -109,7 +111,52 @@ class PK_MixinMPC : public Base_t {
  protected:
   // list of the PKs coupled by this MPC
   SubPKList sub_pks_;
+
+  // plists needed to be saved for ConstructChildren
+  ParameterList_ptr_type pk_tree_;
+  ParameterList_ptr_type global_plist_;
 };
+
+
+// -----------------------------------------------------------------------------
+// Constructor
+// -----------------------------------------------------------------------------
+template <class Base_t, class PK_Contained_t>
+PK_MixinMPC<Base_t,PK_Contained_t>::PK_MixinMPC(
+              const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+              const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+              const Teuchos::RCP<State>& S)
+  : pk_tree_(pk_tree),
+    global_plist_(global_plist),
+    Base_t(pk_tree, global_plist, S) {}
+  
+// -----------------------------------------------------------------------------
+// Create child PKs.
+// -----------------------------------------------------------------------------
+template <class Base_t, class PK_Contained_t>
+void
+PK_MixinMPC<Base_t,PK_Contained_t>::ConstructChildren()
+{
+  auto child_pks_list =
+    this->plist_->template get<Teuchos::Array<std::string>>("PKs order");
+
+  PKFactory fac;
+  for (const std::string& child_pk_name : child_pks_list) {
+    auto pk_as_pk = fac.CreatePK(child_pk_name, pk_tree_,
+            global_plist_, this->S_);
+    auto pk_as_contained_t = Teuchos::rcp_dynamic_cast<PK_Contained_t>(pk_as_pk);
+    if (pk_as_contained_t == Teuchos::null) {
+      Errors::Message msg;
+      msg << "PK_MixinMPC attempted to cast PK \"" << child_pk_name
+          << "\" to type \"" << typeid(PK_Contained_t).name() << "\" failed.";
+      throw(msg);
+    }
+    sub_pks_.push_back(pk_as_contained_t);
+  }
+
+  for (auto& pk : sub_pks_) pk->ConstructChildren();
+}
+
 
 // -----------------------------------------------------------------------------
 // Loop over sub-PKs, calling their Setup methods

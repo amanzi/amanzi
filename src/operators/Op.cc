@@ -58,8 +58,7 @@ void Op::Rescale(double scaling)
   if (A.size()) {
     A.update_entries_host();
     for (int i = 0; i != A.size(); ++i){
-      WhetStone::DenseMatrix<DefaultHostMemorySpace> lm(
-        A.at_host(i),A.size_host(i,0),A.size_host(i,1)); 
+      auto lm = A.at_host(i); 
       lm *= scaling; 
     }
     A.update_entries_device();
@@ -72,20 +71,17 @@ void Op::Rescale(double scaling)
 // allocate work vector space
 void Op::PreallocateWorkVectors() const
 {
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  AMANZI_ASSERT(A.size() == nfaces_owned);
-  v = CSR_Vector(A.size());
-  Av = CSR_Vector(A.size());
+  v = DenseVector_Vector(A.size());
+  Av = DenseVector_Vector(A.size());
 
   for (int i=0; i!=A.size(); ++i) {
-    v.sizes_.view_host()(i,0) = A.size_host(i,0);
-    v.row_map_.view_host()(i) = A.size_host(i,0);
-    Av.sizes_.view_host()(i,0) = A.size_host(i,1);
-    Av.row_map_.view_host()(i) = A.size_host(i,1);
+    auto lA = A.at_host(i); 
+    v.set_shape(i,lA.NumRows()); 
+    Av.set_shape(i,lA.NumCols()); 
   }
-  
-  v.prefix_sum(); 
-  Av.prefix_sum();
+
+  v.Init(); 
+  Av.Init(); 
 }    
 
 

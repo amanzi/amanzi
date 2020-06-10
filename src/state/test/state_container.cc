@@ -114,8 +114,8 @@ TEST(STATE_HETEROGENEOUS_DATA)
 
   // nonexistent data -- two checks ensure that previous HasData() call didn't
   // create the data!
-  CHECK_THROW(s.Get<double>("my_nonexistent_data"), std::out_of_range);
-  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::out_of_range);
+  CHECK_THROW(s.Get<double>("my_nonexistent_data"), Errors::Message);
+  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), Errors::Message);
 
   // setting data
   s.Set("my_double", "", "my_double_owner", 1.1);

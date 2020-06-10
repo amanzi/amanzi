@@ -53,7 +53,7 @@ class Record {
   bool io_vis() const { return io_vis_; }
   void attributes(Teuchos::ParameterList& plist) const
   {
-    plist.setName(vis_fieldname());
+    //plist.setName(vis_fieldname());
   }
 
   // mutators

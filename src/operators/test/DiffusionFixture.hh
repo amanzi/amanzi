@@ -31,6 +31,7 @@
 #include "MeshFactory.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
+#include "LinearOperatorNKA.hh"
 #include "Tensor.hh"
 
 
@@ -54,7 +55,8 @@ struct DiffusionFixture {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
     } else if (mesh_file == "Generate2D") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
-      //mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 1000, 1000);
+    } else if (mesh_file == "Generate2D_HiRes") {
+      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
     } else if (mesh_file == "Generate3D") {
       mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
     } else {
@@ -210,7 +212,7 @@ struct DiffusionFixture {
       solver->Init(lop_list);
     } else {
       Teuchos::ParameterList lop_list = plist->sublist("solvers")
-                               .sublist("GMRES").sublist("GMRES parameters");
+                               .sublist("GMRES").sublist("gmres parameters");
       solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
       solver->Init(lop_list);
     }
@@ -257,7 +259,8 @@ struct DiffusionFixture {
 
       // calculate flux error
       double unorm, ul2_err, uinf_err;
-      
+
+      op->UpdateMatrices(Teuchos::null, Teuchos::null);
       op->UpdateFlux(solution.ptr(), flux.ptr());
       {
         auto fv = flux->ViewComponent<MirrorHost>("face", false);

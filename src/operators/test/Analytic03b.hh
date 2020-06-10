@@ -15,31 +15,34 @@
   Same as Analytic03, but moves the coefficient from the tensor to the scalar.
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_03_HH_
-#define AMANZI_OPERATOR_ANALYTIC_03_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_03B_HH_
+#define AMANZI_OPERATOR_ANALYTIC_03B_HH_
 
 #include "AnalyticBase.hh"
 
-class Analytic03 : public AnalyticBase {
+class Analytic03b : public AnalyticBase {
  public:
-  Analytic03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {
+  Analytic03b() :
+      AnalyticBase(2),
+      K_(2,1)
+  {
+    K_(0,0) = 1.0;
     k1 = 1.0;
     k2 = 20.0;
     a1 = 1.0 / k1;
     a2 = 1.0 / k2;
     b2 = (a1 - a2) / 4;
-
-    dim = mesh_->space_dimension();
   }
-  ~Analytic03() {};
+  ~Analytic03b() {};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(1,1);
-    K(0, 0) = 1.0;
-    return K;
+  std::string name() const override { return "Analytic03b"; }
+  
+  Amanzi::WhetStone::Tensor<Kokkos::HostSpace>
+  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+    return K_;
   }
 
-  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     double x = p[0];
     double y = p[1];
     double kr;
@@ -52,7 +55,8 @@ class Analytic03 : public AnalyticBase {
   }
 
   // gradient of scalar factor of the tensor
-  Amanzi::AmanziGeometry::Point ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point
+  ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t) const {
     double x = p[0];
     double y = p[1];
     Amanzi::AmanziGeometry::Point v(dim);
@@ -66,7 +70,7 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     double x = p[0];
     double y = p[1];
     if (x < 0.5) { 
@@ -76,7 +80,7 @@ class Analytic03 : public AnalyticBase {
     }
   }
 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     double x = p[0];
     double y = p[1];
     Amanzi::AmanziGeometry::Point v(dim);
@@ -90,11 +94,12 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point
+  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return Amanzi::AmanziGeometry::Point(2);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     double x = p[0];
     double y = p[1];
 
@@ -120,6 +125,8 @@ class Analytic03 : public AnalyticBase {
   int dim;
   double k1, k2;
   double a1, a2, b2;
+  WhetStone::Tensor<Kokkos::HostSpace> K_;
+  
 };
 
 #endif

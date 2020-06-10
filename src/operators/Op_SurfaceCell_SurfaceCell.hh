@@ -28,15 +28,19 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   {}
 
   virtual void
-  GetLocalDiagCopy(CompositeVector& X) const
+  SumLocalDiag(CompositeVector& X) const
   {
     auto Xv = X.ViewComponent("face", false);
     auto diag_v = diag->getLocalViewHost();
-    // entity_get_parent is not available on device --FIXME
-    for(int sc = 0 ; sc < diag_v.extent(0); ++sc){
-      auto f = mesh->entity_get_parent(AmanziMesh::CELL, sc);
-      Xv(f,0) += diag_v(sc,0);
-    }
+
+    const AmanziMesh::Mesh* mesh_ = mesh.get();
+    Kokkos::parallel_for(
+        "Op_Surfacecell_Surfacecell::SumLocalDiag",
+        diag_v.extent(0),
+        KOKKOS_LAMBDA(const int& sc) {
+          auto f = mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+          Xv(f,0) += diag_v(sc,0);
+        });
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
@@ -44,17 +48,17 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  //virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-  //        const SuperMap& map, GraphFE& graph,
-  //        int my_block_row, int my_block_col) const {
-  //  assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
-  //}
+  virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
+         const SuperMap& map, GraphFE& graph,
+         int my_block_row, int my_block_col) const {
+   assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
+  }
 
-  //virtual void AssembleMatrixOp(const Operator* assembler,
-  //        const SuperMap& map, MatrixFE& mat,
-  //        int my_block_row, int my_block_col) const {
-  //  assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
-  //}
+  virtual void AssembleMatrixOp(const Operator* assembler,
+         const SuperMap& map, MatrixFE& mat,
+         int my_block_row, int my_block_col) const {
+   assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
+  }
   
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("cell") &&
@@ -67,16 +71,16 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
         scaling.GetComponent("face", false)->getLocalLength() ==
         mesh->parent()->num_entities(AmanziMesh::FACE,
                 AmanziMesh::Parallel_type::OWNED)) {
+
       const auto s_f = scaling.ViewComponent("face", false);
       auto diag_v = diag->getLocalViewDevice();
-      const Amanzi::AmanziMesh::Mesh* m = mesh.get(); 
+      const AmanziMesh::Mesh* mesh_ = mesh.get();
 
-      // \TODO add entity_get_parent to mesh 
       Kokkos::parallel_for(
           "Op_SurfaceCell_SurfaceCell::Rescale",
           diag_v.extent(0),
-          KOKKOS_LAMBDA(const int sc) {
-            auto f = m->entity_get_parent(AmanziMesh::CELL, sc);
+          KOKKOS_LAMBDA(const int& sc) {
+            auto f = mesh_->entity_get_parent(AmanziMesh::CELL, sc);
             diag_v(sc,0) *= s_f(f,0);
           });
     }

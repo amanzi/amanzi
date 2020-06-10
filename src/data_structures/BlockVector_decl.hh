@@ -219,11 +219,21 @@ class BlockVector {
   virtual cMultiVector_ptr_type_<Scalar>
   GetComponent_(const std::string& name, bool ghosted = false) const
   {
+    if (!HasComponent(name)) {
+      Errors::Message msg;
+      msg << "Vector does not have component \"" << name << "\"";
+      throw(msg);
+    }
     return ghosted ? ghost_data_.at(name) : master_data_.at(name);
   }
   virtual MultiVector_ptr_type_<Scalar>
   GetComponent_(const std::string& name, bool ghosted = false)
   {
+    if (!HasComponent(name)) {
+      Errors::Message msg;
+      msg << "Vector does not have component \"" << name << "\"";
+      throw(msg);
+    }
     return ghosted ? ghost_data_.at(name) : master_data_.at(name);
   }
 
