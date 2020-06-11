@@ -35,9 +35,10 @@ class EvaluatorCellToFace : public EvaluatorSecondary {
   
   virtual void Update_(State& S) override;
 
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override;
+
 protected:
 
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override;
 
   std::string algorithm_;
 
