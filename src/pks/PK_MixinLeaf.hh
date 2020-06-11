@@ -70,13 +70,14 @@ class PK_MixinLeaf : public Base_t {
 
   // Construct all sub-PKs.  Leaf PKs have no children, hence have nothing to
   // do
-  void ConstructChildren(){};
+  void ConstructChildren() {};
 
 
  protected:
   // name of domain, associated mesh
   Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<TreeVectorSpace> soln_space_;
 
   // solution and evaluator
   Key key_;
@@ -170,7 +171,8 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::SolutionSpace()
 {
   // This sort of implies that a TreeVectorSpace can contain any DataFactory_t.
   // If this ever gets used, it will have to be thought more about.
-  return Teuchos::rcp(new TreeVectorSpace());
+  if (!soln_space_.get()) soln_space_ = Teuchos::rcp(new TreeVectorSpace());
+  return soln_space_;
 }
 
 
@@ -219,6 +221,7 @@ class PK_MixinLeafCompositeVector
   
 
  protected:
+  using PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace>::soln_space_;
   using PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace>::key_;
 };
 
@@ -226,12 +229,13 @@ template <class Base_t>
 Teuchos::RCP<TreeVectorSpace>
 PK_MixinLeafCompositeVector<Base_t>::SolutionSpace()
 {
-  auto space = Teuchos::rcp(new TreeVectorSpace());
-  space->SetData(
-    this->S_
-      ->template Require<CompositeVector, CompositeVectorSpace>(this->key_, "")
-      .CreateSpace());
-  return space;
+  if (!soln_space_.get()) {
+    soln_space_ = Teuchos::rcp(new TreeVectorSpace());
+    soln_space_->SetData(
+        this->S_->template Require<CompositeVector, CompositeVectorSpace>(this->key_, "")
+        .CreateSpace());
+  }
+  return soln_space_;
 }
 
 
