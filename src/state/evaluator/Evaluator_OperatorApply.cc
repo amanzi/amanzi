@@ -107,6 +107,12 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
     }
   }
 
+  // get a key to store the global operator
+  Key x0_key_suffix = Keys::getVarName(x0_key_);
+  global_operator_key_ = Keys::readKey(plist_, domain,
+          x0_key_suffix + " global operator",
+          x0_key_suffix + "_global_operator");
+  
   // push dependencies
   dependencies_.emplace_back(std::make_pair(x0_key_, my_keys_[0].second));
   for (const auto& x_key : x_keys_)
@@ -139,7 +145,7 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(my_keys_.size() == 1);
   auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(
-    my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+      my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
   for (const auto& dep : dependencies_)
     S.RequireEvaluator(dep.first, dep.second);
 
@@ -210,6 +216,13 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
       .Update(my_fac);
     S.RequireEvaluator(x0_key_, my_keys_[0].second).EnsureCompatibility(S);
 
+    // -- require the global op for forward application/Update_ calls
+    auto& global_op_fac = S.Require<Operators::Operator, Operators::Operator_Factory>(
+        global_operator_key_, my_keys_[0].second, global_operator_key_);
+    global_op_fac.set_mesh(my_fac.Mesh());
+    global_op_fac.set_cvs(my_fac.CreateSpace());
+    global_op_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
+
     // NOTE: should we ensure that other x's are a superset of the
     // domain-space of the other ops? Otherwise there is nothing to say about
     // the other x's.  --etc
@@ -249,7 +262,6 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
 
         // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
         deriv_fac.set_cvs(my_fac.CreateSpace());
-        auto plist = Teuchos::rcp(new Teuchos::ParameterList());
         deriv_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
       }
     }
@@ -428,41 +440,53 @@ Evaluator_OperatorApply::UpdateDerivative(State& S, const Key& requestor,
 void
 Evaluator_OperatorApply::Update_(State& S)
 {
+  Key my_tag = my_keys_[0].second;
   auto& result = S.GetW<CompositeVector>(
-    my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+    my_keys_[0].first, my_tag, my_keys_[0].first);
 
-  const auto& x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
+  const auto& x = S.Get<CompositeVector>(x0_key_, my_tag);
   x.ScatterMasterToGhosted();
   db_->WriteVector("x", x);
   result.putScalarMasterAndGhosted(0.);
 
-  int i = 0;
-  for (const auto& op_key : op0_keys_) {
-    // create the global operator
-    Operators::Operator_Factory global_op_fac;
-    global_op_fac.set_mesh(result.Mesh());
-    global_op_fac.set_cvs(x.getMap(), result.getMap());
-    auto global_op = global_op_fac.Create();
+  if (S.Get<Operators::Operator>(global_operator_key_, my_tag).size() == 0) {
+    // first pass through -- set up the global operator by giving it all the
+    // local ops
+    auto& global_operator = S.GetW<Operators::Operator>(global_operator_key_,
+            my_tag, global_operator_key_);
+    for (const auto& op_key : op0_keys_) {
+      // fix const correctness sometime?  Likely this would require a redesign...
+      global_operator.OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag, op_key));
+    }
+  }    
 
-    // do the apply
-    S.Get<Operators::Op>(op_key, my_keys_[0].second)
-      .ApplyMatrixFreeOp(&*global_op, x, result);
-    db_->WriteVector(op_key+" Ax", result);
-
+  // This is still a bit ugly -- each op has its own RHS vector, because BCs
+  // were not applied globally.  So we have to call the forward apply, then
+  // deal with RHSs independently
+  //
+  // Fixing this requires a rewrite of Operator to make it more functional and
+  // split out Op and Operator. --etc
+  const auto& global_operator = S.Get<Operators::Operator>(global_operator_key_, my_tag);
+  AMANZI_ASSERT(global_operator.size() == op0_keys_.size());
+  global_operator.apply(x, result);
+  db_->WriteVector(std::string("A * ")+x0_key_, result);
+  
+  for (const auto& op_rhs_key : op0_rhs_keys_) {
     // Ax - b
-    result.update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
-    db_->WriteVector(op_key+"Ax-b", result);
-    ++i;
+    result.update(-1.0, S.Get<CompositeVector>(op_rhs_key, my_tag), 1.0);
   }
+  db_->WriteVector(std::string("A * ")+x0_key_+" -b", result);
 
   int j = 0;
   for (const auto& op_list : op_keys_) {
-    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_keys_[0].second);
+    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_tag);
     xj.ScatterMasterToGhosted();
 
     int k = 0;
     for (const auto& op_key : op_list) {
-
+      // FIX ME BEFORE USING -- store a Global operator for each in the same
+      // way we did for x0 --etc
+      
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
@@ -470,14 +494,14 @@ Evaluator_OperatorApply::Update_(State& S)
       auto global_op = global_op_fac.Create();
 
       // do the apply
-      S.Get<Operators::Op>(op_key, my_keys_[0].second)
+      S.Get<Operators::Op>(op_key, my_tag)
         .ApplyMatrixFreeOp(&*global_op, xj, result);
       db_->WriteVector(op_key+" Ax", result);
 
       // Ax - b
       result.update(
         -1.0,
-        S.Get<CompositeVector>(op_rhs_keys_[j][k], my_keys_[0].second),
+        S.Get<CompositeVector>(op_rhs_keys_[j][k], my_tag),
         1.0);
       db_->WriteVector(op_key+" Ax-b", result);
       ++k;
@@ -489,7 +513,7 @@ Evaluator_OperatorApply::Update_(State& S)
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
     result.update(rhs_scalars_[j],
-                  S.Get<CompositeVector>(rhs_key, my_keys_[0].second),
+                  S.Get<CompositeVector>(rhs_key, my_tag),
                   1.0);
     db_->WriteVector(rhs_key, result);
     ++j;

@@ -187,6 +187,9 @@ void Operator::AssembleMatrix()
   if (shift_ != 0.0) {
     Amat_->diagonalShift(shift_);
   }
+
+  // WriteMatrix("assembled_matrix");
+  // throw("assembed matrix written");
 }
 
 void Operator::WriteMatrix(const std::string& fname_base) {

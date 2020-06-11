@@ -96,6 +96,7 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override;
 
  protected:
+  Key global_operator_key_;          // key of operator for calculating the A_0i * x_0
   Key x0_key_;                       // x_0
   Teuchos::Array<Key> x_keys_;       // x_i
   Teuchos::Array<Key> op0_keys_;     // A_0i
