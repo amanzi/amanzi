@@ -61,7 +61,7 @@ void MFD3D_Elasticity::LocalStressMatrices_(
    int v, const std::vector<Tensor>& T,
    DenseMatrix& M, DenseMatrix& D, DenseMatrix& S1, DenseMatrix& S2)
 {
-  Entity_ID_List cells, faces, cfaces, vcfaces;
+  Entity_ID_List cells, faces, cfaces, vcfaces, fcells;
   std::vector<int> cdirs;
 
   mesh_->node_get_faces(v, AmanziMesh::Parallel_type::ALL, &faces);
@@ -109,11 +109,11 @@ void MFD3D_Elasticity::LocalStressMatrices_(
   }
 
   // node
-  AmanziGeometry::Point xv(d_);
+  AmanziGeometry::Point xv(d_), yv(d_);
   mesh_->node_get_coordinates(v, &xv);
 
-  // volume of dual cell
-  double utot, volume_dual(0.0);
+  // dual cell geometry information
+  double volume_dual(0.0);
   std::vector<double> u(ncells, 0.0), volume_corner(ncells, 0.0);
 
   for (int n = 0; n < ncells; ++n) {
@@ -126,10 +126,13 @@ void MFD3D_Elasticity::LocalStressMatrices_(
     for (int i = 0; i < nvc; i++) {
       int f = vcfaces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      volume_corner[n] += norm((xf - xc) ^ (xf - xv)) / 2;
+      double tmp = norm((xf - xc) ^ (xf - xv)) / 2;
+      volume_corner[n] += tmp;
+      yv += (xv + xf + xc) * (tmp / 3);
     }
     volume_dual += volume_corner[n];
   }
+  yv /= volume_dual;
 
   // main loop over cells around the given node
   for (int n = 0; n < ncells; ++n) {
@@ -143,10 +146,21 @@ void MFD3D_Elasticity::LocalStressMatrices_(
 
     // -- generate auxiliary corner matrix for one component
     int mx = nvc * d_, nx = d_ * d_;
-    DenseMatrix Mcorner(mx, mx), Ncorner(mx, nx), Rcorner(mx, nx), Tcorner(mx, nx);
+    DenseMatrix Mcorner(mx, mx), Ncorner(mx, nx), Rcorner(mx, nx), Tcorner(mx, nx), Hcorner(mx, nx);
     DenseVector Dcorner(nvc);
 
     Tcorner.PutScalar(0.0);
+    Hcorner.PutScalar(0.0);
+
+    // new method
+    WhetStone::Tensor N(d_, 2);
+    for (int i = 0; i < nvc; i++) {
+      int f = vcfaces[i];
+      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      N.SetColumn(i, normal / area); 
+    }
+    N.Inverse();
 
     for (int i = 0; i < nvc; i++) {
       int f = vcfaces[i];
@@ -156,9 +170,21 @@ void MFD3D_Elasticity::LocalStressMatrices_(
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
+      // unit exterior normal to edge of the dual cell 
+      auto ds = xf - xc;
+      double dual_area = norm(ds);
+      ds /= dual_area;
+      AmanziGeometry::Point dual_normal(-ds[1], ds[0]); 
+      if (dual_normal * (xf - xv) < 0.0) dual_normal *= -1.0; 
+      auto mvec = N * dual_normal;
+
+      mesh_->face_get_cells(f, Parallel_type::ALL, &fcells);
+      int nfcells = fcells.size();
+
       double facet_area = area / 2;  // FIXME
       Dcorner(i) = cdirs[m] * facet_area;
 
+      // matrix of corner normals (natural orientation)
       for (int k = 0; k < d_; ++k) {
         for (int l = 0; l < d_; ++l) {
           Tcorner(nvc * k + l, d_ * l + i) = normal[k] / area;
@@ -167,37 +193,38 @@ void MFD3D_Elasticity::LocalStressMatrices_(
 
       for (int j = 0; j < d_ * d_; ++j) {
         auto conormal = (T[n] * vE[j]) * (normal / area);
+        auto dual_conormal = (T[n] * vE[j]) * dual_normal;
         // auto dx = vE[j] * ((2 * xf + xv) / 3 - xc);
-        auto dx = vE[j] * (xf - xc);
         // auto dx = vE[j] * ((xf + xv) / 2 - xc);
+        auto dx = vE[j] * (xf - xc);
+        auto dy = vE[j] * ((xf + xc) / 2 - yv);
 
         for (int k = 0; k < d_; ++k) {
           Ncorner(nvc * k + i, j) = conormal[k];
           Rcorner(nvc * k + i, j) = cdirs[m] * dx[k] * facet_area;
+
+          Hcorner(nvc * k + 0, j) += dual_area * dy[k] * mvec[0];
+          Hcorner(nvc * k + 1, j) += dual_area * dy[k] * mvec[1];
+        }
+
+        if (nfcells == 1) {
+          dx = vE[j] * ((xf + xv) / 2 - yv);
+          for (int k = 0; k < d_; ++k) {
+            Hcorner(nvc * k + i, j) += cdirs[m] * dx[k] * facet_area;
+          }
         }
       }
     }
 
-    // dual-volume scheme
+    // mixed scheme (best one)
     Tcorner.InverseMoorePenrose();
     DenseMatrix TcornerT(Tcorner);
     TcornerT.Transpose();
     auto Ycorner = Tcorner * TcornerT * Ncorner;
 
     // original scheme
-    DenseMatrix Ncorner_copy(Ncorner);
     Ncorner.InverseMoorePenrose();
     Mcorner = Rcorner * Ncorner;
-
-    // scheme based on rescaling
-    DenseVector one(mx);
-    one.PutScalar(0.0);
-    for (int r = 0; r < mx; ++r)
-      for (int j = 0; j < 1; ++j) one(r) += Ncorner_copy(r, j);
-
-    for (int i = 0; i < mx; ++i)
-      for (int j = 0; j < mx; ++j) u[n] += Mcorner(i, j) * one(i) * one(j);
-    utot += u[n];
 
     // support-operator scheme
     // Mcorner = (Tcorner * TcornerT) * volume_corner[n];
@@ -238,19 +265,17 @@ void MFD3D_Elasticity::LocalStressMatrices_(
           // S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m);
           // S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
 
-          // scheme based on rescaling 
-          S1(d_ * k + s, m) += Rcorner(nvc * s + i, nd + m) * volume_corner[n] / u[n];
-          S2(m, d_ * k + s) += Rcorner(nvc * s + i, nd + m) * volume_corner[n] / u[n];
-
           // support-operator
           // S1(d_ * k + s, m) += Ycorner(nvc * s + i, nd + m);
           // S2(m, d_ * k + s) += Ycorner(nvc * s + i, nd + m);
+
+          // new scheme
+          S1(d_ * k + s, m) += Hcorner(nvc * s + i, nd + m);
+          S2(m, d_ * k + s) += Hcorner(nvc * s + i, nd + m);
         }
       }
     }
   }
-
-  S2 *= utot;  // only in 2D
 }
 
 }  // namespace WhetStone

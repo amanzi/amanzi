@@ -201,7 +201,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 /* *****************************************************************
 * Elasticity model: convergence test.
 ***************************************************************** */
-void RunTestLocalStress(const std::string& filename) {
+void RunTestLocalStress(const std::string& filename, double nx = 0) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -222,8 +222,11 @@ void RunTestLocalStress(const std::string& filename) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
+  Teuchos::RCP<Mesh> mesh;
+  if (nx > 0)
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
+  else 
+    mesh = meshfactory.create(filename);
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator local stress");
 
   // DeformMesh(mesh, 1, 1.0);
@@ -347,7 +350,14 @@ void RunTestLocalStress(const std::string& filename) {
 
 TEST(OPERATOR_ELASTICITY_LOCAL_STRESS) {
   // RunTestLocalStress("test/triangular8.exo");
-  printf("\nKL: Triangular meshes\n");
+  printf("\nKL: Square meshes\n");
+  RunTestLocalStress("", 8);
+  RunTestLocalStress("", 16);
+  RunTestLocalStress("", 32);
+  RunTestLocalStress("", 64);
+  RunTestLocalStress("", 128);
+
+  printf("\nKL\nKL: Triangular meshes\n");
   RunTestLocalStress("test/triangular8.exo");
   RunTestLocalStress("test/triangular16.exo");
   RunTestLocalStress("test/triangular32.exo");
