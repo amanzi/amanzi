@@ -60,7 +60,7 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Vector,class VectorSpace>
-struct SolverFactory {
+class SolverFactory {
  public:
   Teuchos::RCP<Solver<Vector,VectorSpace> >
   Create(const std::string& name,

@@ -4,6 +4,7 @@
 #include "UnitTest++.h"
 
 #include "errors.hh"
+#include "VerboseObject_objs.hh"
 
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
@@ -620,7 +621,28 @@ SUITE(distance_factory) {
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList& sublist = list.sublist("function-double");
+    list.sublist("function-double");
+    FunctionFactory fact;
+    CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+  }
+}
+
+SUITE(exprtk_factory) {
+  TEST(create)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-exprtk");
+    sublist.set<int>("number of arguments", 3);
+    sublist.set<std::string>("formula", "t + 2 * x + y^2");
+    FunctionFactory fact;
+    Function *f = fact.Create(list);
+    std::vector<double> x(3, 2.0);
+    CHECK_EQUAL((*f)(x), 10.0);
+  }
+  TEST(missing_parameter)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-exprtk");
     FunctionFactory fact;
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
   }

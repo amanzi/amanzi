@@ -376,7 +376,8 @@ int main (int argc, char *argv[])
         std::stringstream group_name;
         group_name << "/" << groupList[i];
         std::cout << "E>> creating " << group_name.str() << std::endl;
-        hid_t group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+        group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         datasetList.erase(datasetList.begin(), datasetList.end());
         H5Giterate(data_file, group_name.str().c_str(), NULL, dataset_info, NULL);
         for (int j=0; j<datasetList.size(); j++) {

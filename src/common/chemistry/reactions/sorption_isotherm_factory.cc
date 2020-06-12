@@ -12,7 +12,6 @@
 #include <string>
 
 #include "chemistry_exception.hh"
-#include "chemistry_verbosity.hh"
 #include "exceptions.hh"
 #include "sorption_isotherm_factory.hh"
 #include "sorption_isotherm.hh"
@@ -27,10 +26,6 @@ namespace AmanziChemistry {
 const std::string SorptionIsothermFactory::linear = "linear";
 const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
-
-SorptionIsothermFactory::SorptionIsothermFactory(void) : verbosity_(kSilent) {
-}
-
 
 SorptionIsotherm* SorptionIsothermFactory::Create( 
     const std::string& isotherm_type,

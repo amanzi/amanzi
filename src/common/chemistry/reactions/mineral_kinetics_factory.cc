@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 
-#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 #include "kinetic_rate_tst.hh"

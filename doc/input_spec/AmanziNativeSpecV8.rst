@@ -3914,7 +3914,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
+    `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
@@ -4792,6 +4792,24 @@ This function requires a few parameters as well as one of the standard math func
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
+
+
+Expression function
+...................
+
+The expression function is defined by a string expression.
+The function has min(N, D + 1) arguments t, x, y, and z. The argument t is required. 
+D is the space dimension, and N is the user specified number of arguments which could 
+be less than D + 1.
+
+Example of a quadratic function in 2D:
+
+.. code-block:: xml
+
+  <ParameterList name="function-exprtk">
+    <Parameter name="number of arguments" type="int" value="3"/>
+    <Parameter name="formula" type="string" value="t + x + y^2"/>
   </ParameterList>
 
 

@@ -56,7 +56,7 @@ class KineticRateTST : public KineticRate {
                                  const std::vector<Mineral>& minerals,
                                  const double bulk_volume_vol,
                                  MatrixBlock* J);
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
   void ParseParameters(const StringTokenizer& rate);
 

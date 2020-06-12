@@ -105,29 +105,29 @@ void Species::display(void) const {
 }
 
 
-void Species::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed
           << std::setprecision(2) << std::setw(10) << charge()
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(10) << ion_size_parameter()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void Species::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void Species::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -135,7 +135,7 @@ void Species::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

@@ -27,8 +27,6 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
-
-  AMANZI_ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
 }
 
@@ -255,7 +253,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       for (int n = 0; n < nfaces; n++) {
         int dir, f = faces[n];
         if (f < nfaces_owned) {
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          mesh_->face_normal(f, false, c, &dir);
             
           double tmp = av(n) * kf[n] * dir;
           grav_flux[0][f] += tmp;

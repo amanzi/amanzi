@@ -81,7 +81,7 @@ private:
   struct mark_do_not_run : public boost::bfs_visitor<>
   {
     template <class Vertex, class Graph>
-    void discover_vertex(Vertex v, Graph &g) { g[v].run = false; }
+    void discover_vertex(Vertex v, Graph &gr) { gr[v].run = false; }
   };
   
   void create_test_dependencies();
