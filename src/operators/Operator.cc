@@ -11,6 +11,9 @@
 */
 
 #include <sstream>
+#include <fstream>
+
+#include "MatrixMarket_Tpetra.hpp"
 
 // Amanzi
 #include "dbc.hh"

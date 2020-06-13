@@ -23,7 +23,6 @@
 #include "MatrixMarket_Tpetra.hpp"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"

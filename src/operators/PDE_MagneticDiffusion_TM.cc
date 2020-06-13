@@ -12,7 +12,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_Vector.h"
 
 #include "DeRham_Node.hh"
 

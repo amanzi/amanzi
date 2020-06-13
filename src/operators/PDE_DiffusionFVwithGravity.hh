@@ -16,7 +16,6 @@
 #include <strings.h>
 
 // TPLs
-#include "Ifpack.h" 
 #include "Teuchos_RCP.hpp"
 
 // Amanzi

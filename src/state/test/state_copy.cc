@@ -11,8 +11,6 @@
 
 //! <MISSING_ONELINE_DOCSTRING>
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_MultiVector.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
 

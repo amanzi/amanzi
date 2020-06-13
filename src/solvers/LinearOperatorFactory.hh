@@ -15,7 +15,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
 
 #include "errors.hh"
 #include "exceptions.hh"

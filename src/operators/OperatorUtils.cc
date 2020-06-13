@@ -9,8 +9,6 @@
   Author: Ethan Coon (ecoon@lanl.gov)
 */
 #include "Mesh.hh"
-#include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
 
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"

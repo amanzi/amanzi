@@ -20,7 +20,6 @@
 #include <iterator>
 #include <set>
 
-#include "Epetra_BlockMap.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"

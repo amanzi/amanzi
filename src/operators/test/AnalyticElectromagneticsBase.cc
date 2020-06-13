@@ -11,7 +11,6 @@
   Base class for verifying numerical schemes for Maxwell's equations.
 */
 
-#include "Epetra_MultiVector.h"
 
 #include "AnalyticElectromagneticsBase.hh"
 

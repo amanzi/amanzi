@@ -23,8 +23,10 @@ Observable data object
 
 #include <algorithm>
 #include <string>
+#include <fstream>
 
-#include <boost/filesystem/operations.hpp>
+#include "boost/filesystem/operations.hpp"
+#include "Teuchos_RCP.hpp"
 
 //#include "Field.hh"
 #include "Mesh.hh"

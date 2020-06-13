@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

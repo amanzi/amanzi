@@ -30,7 +30,6 @@
 #include "AmanziTypes.hh"
 #include "matrix.hh"
 #include "Preconditioner.hh"
-#include "PreconditionerFactory.hh"
 #include "LinearOperatorPCG.hh"
 
 SUITE(PRECONDITIONERS)

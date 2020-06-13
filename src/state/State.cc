@@ -23,8 +23,8 @@
 #include <iostream>
 #include <map>
 #include <ostream>
+#include <fstream>
 
-#include "Epetra_Vector.h"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "CompositeVector.hh"

@@ -44,11 +44,13 @@ class PreconditionerIfpack2 : public Preconditioner<Matrix_type, Vector_type> {
   }
 
   void Update(const Teuchos::RCP<Matrix_type>& A) override {
-    A_ = A;
-    Ifpack2::Factory factory;
-    pc_ = factory.create(name_, A_);
-    pc_->setParameters(plist_->sublist(std::string("ifpack2: ")+name_+" parameters"));
-    pc_->initialize();
+    if (A_ == Teuchos::null || A_ != A) {
+      A_ = A;
+      Ifpack2::Factory factory;
+      pc_ = factory.create(name_, A_);
+      pc_->setParameters(plist_->sublist(std::string("ifpack2: ")+name_+" parameters"));
+      pc_->initialize();
+    }
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
   }

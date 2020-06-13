@@ -13,7 +13,6 @@
 #include <cmath>
 #include <vector>
 
-#include "Epetra_Vector.h"
 
 #include "DenseMatrix.hh"
 #include "lapack.hh"

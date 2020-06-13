@@ -14,7 +14,6 @@
 #define AMANZI_TEST_SOLVER_FNBASE1_HH_
 
 #include <math.h>
-#include "Epetra_Vector.h"
 
 #include "SolverFnBase.hh"
 

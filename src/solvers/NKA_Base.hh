@@ -61,7 +61,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_SerialDenseMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"
@@ -90,7 +90,7 @@ class NKA_Base {
 
   std::vector<Teuchos::RCP<Vector>> v_; // subspace storage
   std::vector<Teuchos::RCP<Vector>> w_; // function difference vectors
-  Epetra_SerialDenseMatrix h_;          // matrix of w vector inner products
+  Teuchos::SerialDenseMatrix<int,double> h_;          // matrix of w vector inner products
 
   // Linked-list organization of the vector storage.
   int first_v_; // index of first_v subspace vector
@@ -131,7 +131,7 @@ NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec,
     w_[i] = Teuchos::rcp(new Vector(map));
   }
 
-  h_.Shape(mvec_ + 1, mvec_ + 1);
+  h_.shape(mvec_ + 1, mvec_ + 1);
 
   next_v_.resize(mvec_ + 1, NKA_EOL);
   prev_v_.resize(mvec_ + 1, NKA_EOL);

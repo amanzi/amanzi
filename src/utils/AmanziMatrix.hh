@@ -30,8 +30,6 @@
 
 #else // Epetra stack
 
-#include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
 
 #endif // trilinos stack
 

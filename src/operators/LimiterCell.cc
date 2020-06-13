@@ -22,7 +22,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_Vector.h"
 
 // Amanzi
 #include "exceptions.hh"
