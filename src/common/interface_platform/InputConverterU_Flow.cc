@@ -643,7 +643,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
         fluxes.push_back(tp_fluxes[it->first]);
         forms.push_back(tp_forms[it->first]);
       }
-      forms.pop_back();
     }
 
     // -- create BC names, modify input data
@@ -703,8 +702,26 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
           .set<Teuchos::Array<double> >("x0", refc)
           .set<Teuchos::Array<double> >("gradient", grad);
     } else if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
+      if (forms[0] == "constant" || forms[0] == "uniform") {
+        bcfn.sublist("function-constant").set<double>("value", values[0]);
+      } else {
+        // assume that the only remaining option is a math formula
+        bcfn.sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", forms[0]);
+      }
     } else {
+      forms.pop_back();
+      for (int i = 0; i < forms.size(); ++i) {
+        if (forms[i] != "constant" && forms[i] != "linear") {
+          std::string user_fnc = "USER_FNC" + std::to_string(i);
+          bcfn.sublist("function-tabular")
+              .sublist(user_fnc).sublist("function-exprtk")
+              .set<int>("number of arguments", dim_ + 1)
+              .set<std::string>("formula", forms[i]);
+          forms[i] = user_fnc;
+        }
+      }
       bcfn.sublist("function-tabular")
           .set<Teuchos::Array<double> >("x values", times)
           .set<Teuchos::Array<double> >("y values", values)
