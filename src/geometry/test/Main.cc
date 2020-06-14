@@ -2,6 +2,8 @@
 #include <TestReporterStdout.h>
 #include <mpi.h>
 
+#include "VerboseObject_objs.hh"
+
 int main(int argc, char *argv[])
 {
 

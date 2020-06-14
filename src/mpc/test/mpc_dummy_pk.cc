@@ -46,7 +46,7 @@ using namespace std;
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
 
   // ---------------- MESH -----------------------------------------------
-  int rank, ierr, aerr;
+  int rank(0), ierr, aerr;
 
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");

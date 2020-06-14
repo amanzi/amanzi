@@ -4795,6 +4795,24 @@ This function requires a few parameters as well as one of the standard math func
   </ParameterList>
 
 
+Expression function
+...................
+
+The expression function is defined by a string expression.
+The function has min(N, D + 1) arguments t, x, y, and z. The argument t is required. 
+D is the space dimension, and N is the user specified number of arguments which could 
+be less than D + 1.
+
+Example of a quadratic function in 2D:
+
+.. code-block:: xml
+
+  <ParameterList name="function-exprtk">
+    <Parameter name="number of arguments" type="int" value="3"/>
+    <Parameter name="formula" type="string" value="t + x + y^2"/>
+  </ParameterList>
+
+
 Time functions
 --------------
 
