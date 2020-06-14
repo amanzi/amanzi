@@ -180,6 +180,12 @@ class InputConverterU : public InputConverter {
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
 
+  bool TranslateGenericBCs_(const std::vector<double>& times,
+                            const std::vector<double>& values,
+                            const std::vector<std::string>& forms,
+                            const std::vector<std::string>& formulas,
+                            Teuchos::ParameterList& bcfn);
+
   // -- sort functions
   template<class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
