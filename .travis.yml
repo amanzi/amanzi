@@ -10,12 +10,17 @@ jobs:
       - echo `./Docker/get_tpls_version.sh --amanzi_source_dir=${PWD}`
       - cd Docker
       - export AMANZI_TPLS_VER=`./get_tpls_version.sh`
+      - docker build --build-arg amanzi_branch=${TRAVIS_BRANCH} --build-arg amanzi_pr=${TRAVIS_PULL_REQUEST} --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -t ${DOCKER_USERNAME}/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-1 -f Dockerfile-Amanzi-build-stage-1 . 
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker push $DOCKER_USERNAME/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-1
     - stage: build phase 2
       script:
       - cd Docker
+      - docker build --build-arg amanzi_branch=${TRAVIS_BRANCH//\//--} -t ${DOCKER_USERNAME}/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-2 -f Dockerfile-Amanzi-build-stage-2 .
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker push $DOCKER_USERNAME/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-2
     - stage: test
       script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker run --rm $DOCKER_USERNAME/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-2 /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -R operators_marshak -V"
+      - docker run --rm $DOCKER_USERNAME/amanzi:${TRAVIS_BRANCH//\//--}-temp-build-stage-2 /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
 
