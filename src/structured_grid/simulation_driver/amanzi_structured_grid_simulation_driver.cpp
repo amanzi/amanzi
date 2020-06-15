@@ -116,7 +116,7 @@ AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const
 {
   int argc = 0;
   char** argv = NULL;
-	ParmParse::Initialize(argc,argv,NULL);
+  ParmParse::Initialize(argc,argv,NULL);
 
   Amanzi::AmanziInput::InputConverterS converter(input_file, input);
   converter.Translate(0); // Called before mpi setup, pass rank=0
@@ -127,8 +127,8 @@ AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()
 }
 
 Amanzi::Simulator::ReturnType
-AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                           Amanzi::ObservationData&      output_observations)
+AmanziStructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
+                                          Amanzi::ObservationData& output_observations)
 {
     ParmParse pp;
     int argc=0;
@@ -163,8 +163,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
       if (petsc_file_exists) {
        PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
       }
-      else
-      {
+      else {
        PetscInitializeNoArguments();
       }
     }
@@ -173,6 +172,10 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 #endif
 
+    // KL: boxlib uses argv[0][0], so memory should be allocated.
+    char* tmp = (char*)malloc(10);
+    strcpy(tmp, "/");
+    argv = &tmp;
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
     BL_PROFILE_VAR("main()", pmain);
