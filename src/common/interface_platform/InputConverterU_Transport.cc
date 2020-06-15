@@ -588,7 +588,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
     } else {
-      TranslateGenericBCs_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
 
     // data distribution method

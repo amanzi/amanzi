@@ -179,7 +179,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
       .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    TranslateGenericBCs_(times, values, forms, formulas, bcfn);
+    TranslateGenericMath_(times, values, forms, formulas, bcfn);
   }
 
   return out_list;
