@@ -114,19 +114,12 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   inline bool os_OK(Teuchos::EVerbosityLevel verbosity) const;
 
   // Get the stream (errors if !os_OK()).
-  inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
+  inline Teuchos::FancyOStream* os() const;
 
-  // Simple one-line wrapper
-  inline void Write(Teuchos::EVerbosityLevel verbosity,
-                    const std::stringstream& data) const;
-  inline void
-  Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
-
-  void WriteWarning(Teuchos::EVerbosityLevel verbosity,
-                    const std::stringstream& data) const;
-  void WriteWarning(Teuchos::EVerbosityLevel verbosity,
-                    const std::string& data) const;
-
+  // Color output for developers
+  std::string color(const std::string& name="") const;
+  std::string clock() const;
+  
  public:
   // The default global verbosity level.
   static Teuchos::EVerbosityLevel global_default_level;
@@ -136,13 +129,6 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
   // Size of the left column of names.
   static unsigned int global_line_prefix_size;
-
-  // Color output for developers
-  std::string color(const std::string& name) const;
-  std::string reset() const;
-  std::string clock() const;
-
-  void set_name(const std::string& name);
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -157,33 +143,13 @@ VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const
 };
 
 
-Teuchos::RCP<Teuchos::FancyOStream>
+Teuchos::FancyOStream*
 VerboseObject::os() const
 {
-  return out_;
+  return out_.get();
 };
 
 
-void
-VerboseObject::Write(Teuchos::EVerbosityLevel verbosity,
-                     const std::stringstream& data) const
-{
-  if (getVerbLevel() >= verbosity) {
-    Teuchos::OSTab tab = getOSTab();
-    *os() << data.str();
-  }
-}
-
-
-void
-VerboseObject::Write(Teuchos::EVerbosityLevel verbosity,
-                     const std::string& data) const
-{
-  if (getVerbLevel() >= verbosity) {
-    Teuchos::OSTab tab = getOSTab();
-    *os() << data;
-  }
-}
 
 } // namespace Amanzi
 

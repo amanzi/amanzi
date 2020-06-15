@@ -142,7 +142,7 @@ EvaluatorPrimary_::SetChanged()
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary field \"" << vo_.color("gree") << my_key_
-              << vo_.reset() << "\" marked as changed." << std::endl;
+              << vo_.color() << "\" marked as changed." << std::endl;
   }
 
   // clear cache
