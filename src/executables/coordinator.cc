@@ -215,21 +215,18 @@ void Coordinator::initialize() {
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
-  //S_->WriteStatistics(vo_);
 
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
-  //S_->WriteStatistics(vo_);
 
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->InitializeEvaluators();
-  //  S_->WriteStatistics(vo_);
 
 
   S_->CheckAllFieldsInitialized();
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
 
   // commit the initial conditions.
@@ -683,7 +680,6 @@ void Coordinator::cycle_driver() {
       S_->set_intermediate_time(S_->time());
 
       fail = advance(S_->time(), S_->time() + dt);
-      //S_->WriteStatistics(vo_);  
       dt = get_dt(fail);
 
     } // while not finished
@@ -713,7 +709,7 @@ void Coordinator::cycle_driver() {
 
 
   // finalizing simulation                                                                                                                                                                                                               
-  S_->WriteStatistics(vo_);  
+  WriteStateStatistics(S_.ptr(), vo_);  
   report_memory();
   Teuchos::TimeMonitor::summarize(*vo_->os());
 
