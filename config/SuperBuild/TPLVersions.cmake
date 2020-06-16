@@ -141,6 +141,7 @@
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
+#   0.97.7       - update BoxLib (CCSE) to version 16.03
 
 include(CMakeParseArguments)
 
@@ -193,7 +194,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -267,15 +268,15 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 # TPL: CCSE
 #
-set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 5)
-set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
+set(CCSE_VERSION_MAJOR 16)
+set(CCSE_VERSION_MINOR 03)
+set(CCSE_VERSION_PATCH 0)
+set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
-set(CCSE_ARCHIVE_FILE   v${CCSE_VERSION}.tar.gz) 
+set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        b1e0cfb99db6665ba70bb5e9ae56e14e) 
+set(CCSE_MD5_SUM        4dca48f4a025d33cc6d6463480534c52)
 
 #
 # TPL: UnitTest

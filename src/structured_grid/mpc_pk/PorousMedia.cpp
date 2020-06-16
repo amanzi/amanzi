@@ -6133,7 +6133,7 @@ PorousMedia::avgDown ()
 // Virtual access function for getting the advective flux out of the
 // advection routines for diagnostics and refluxing.
 //
-
+/*
 void
 PorousMedia::pullFluxes (int        i,
                          int        start_ind,
@@ -6169,6 +6169,7 @@ PorousMedia::pullFluxes (int        i,
         }
     }
 }
+*/
 
 void
 PorousMedia::ComputeSourceVolume ()
