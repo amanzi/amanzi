@@ -53,7 +53,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
  private: 
   void OrthonormalSystem(Amanzi::AmanziGeometry::Point& a,
                          Amanzi::AmanziGeometry::Point& b, 
-                         Amanzi::AmanziGeometry::Point& e) {
+                         Amanzi::AmanziGeometry::Point& e) const {
     if (a.dim() == 2) {
       a = Amanzi::AmanziGeometry::Point(0.6, 0.8);
       b = Amanzi::AmanziGeometry::Point(-0.8, 0.6, 0.0);

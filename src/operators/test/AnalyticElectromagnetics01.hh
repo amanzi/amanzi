@@ -26,6 +26,9 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
       AnalyticElectromagneticsBase(mesh) {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+// Amanzi::WhetStone::Tensor K1(3, 1);
+// K1(0, 0) = 1.0;
+// return K1;
     Amanzi::WhetStone::Tensor K(3, 2);
     K(0, 0) = 1.0;
     K(1, 1) = 2.0;
@@ -37,7 +40,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
-    return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
+// return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
     double x = p[0];
     double y = p[1];
     double z = p[2];

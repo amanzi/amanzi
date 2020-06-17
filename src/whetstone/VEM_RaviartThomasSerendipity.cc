@@ -75,6 +75,9 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   // div v is no longer a constant for order > 1
   AMANZI_ASSERT(order_ < 2);
 
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
   Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -160,7 +163,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double area = mesh_->face_area(f);
 
-      AmanziGeometry::Point knormal = K * normal;
+      AmanziGeometry::Point knormal = Kinv * normal;
       Polynomial poly(d_, index, factor * knormal[k]);
       poly.set_origin(xc);  
 

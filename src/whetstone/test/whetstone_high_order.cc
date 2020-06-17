@@ -531,7 +531,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
 
   int c(0);
   Tensor T(d, 1);
-  T(0, 0) = 1.0;
+  T(0, 0) = 2.0;
 
   // high-order schemes
   for (int k = 1; k < 2; ++k) {
@@ -559,6 +559,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
     basis.Init(mesh, 0, k, ptmp);
 
     GrammMatrix(numi, k, integrals, basis, G1);
+    G1 /= T(0, 0);
     int nd = G1.NumRows() / 3;
     G2 = G.SubMatrix(0, nd, 0, nd);
 

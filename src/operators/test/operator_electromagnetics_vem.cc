@@ -140,7 +140,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   op_curlcurl->Setup(K, false);
   op_curlcurl->UpdateMatrices();
 
-  // add an accumulation aoperator
+  // add an accumulation operator
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   olist = plist.sublist("PK operator").sublist("accumulation operator");
   olist.sublist("schema").set<std::string>("method", method);
