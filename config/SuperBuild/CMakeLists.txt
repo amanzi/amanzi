@@ -784,7 +784,7 @@ endif()
 #  Final steps
 # ############################################################################ #
 # -- override compiler with nvccwrapper
-if (ENABLE_CUDA)
+if (ENABLE_KOKKOS_CUDA)
   set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
   set(CMAKE_CXX_COMPILER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
 else()
