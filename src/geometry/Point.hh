@@ -151,8 +151,7 @@ class Point {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Point& p) {
-    os << p.x() << " " << p.y();
-    if (p.d == 3) os << " " << p.z();
+    for (int i = 0; i < p.d; ++i) os << p[i] << " ";
     return os;
   }
 

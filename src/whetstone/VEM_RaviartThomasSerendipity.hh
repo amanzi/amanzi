@@ -64,6 +64,16 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
   DenseMatrix& G() { return G_; }
   const std::vector<DenseMatrix>& MGf() { return MGf_; }
 
+ private:
+  // auxiliary functions
+  void ComputeN_(
+      int c, const Entity_ID_List& faces, const std::vector<int>& dirs,
+      const Basis_Regularized<AmanziMesh::Mesh>& basis,
+      const std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+      const std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
+      const std::vector<WhetStone::DenseMatrix>& vMGf,
+      const Tensor& Kinv, DenseMatrix& N);
+
  protected:
   using MFD3D::mesh_;
   using MFD3D::d_;

@@ -127,7 +127,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
-  L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys);
+  L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
 
   // L2-projector in cell
   Tensor Idc(d_, 2);
@@ -343,7 +343,8 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
     std::vector<WhetStone::DenseMatrix>& vL2f, 
     std::vector<WhetStone::DenseMatrix>& vMGf,
     std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
-    std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys)
+    std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
+    int MGorder)
 {
   int nfaces = faces.size();
 
@@ -357,11 +358,11 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    vcoordsys.push_back(coordsys);
 
     DenseMatrix Nf, NfT, Mf, MG;
     L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
-
-    vcoordsys.push_back(coordsys);
+    if (MGorder == order_) vMGf.push_back(Idf ^ MG);
 
     NfT.Transpose(Nf);
     auto NN = NfT * Nf;
@@ -375,7 +376,7 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
 
     NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
     GrammMatrix(numi_f, order_ + 1, integrals_, basis_f, MG);
-    vMGf.push_back(Idf ^ MG);
+    if (MGorder == order_ + 1) vMGf.push_back(Idf ^ MG);
   }
 }
 
@@ -446,20 +447,19 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
   C.PutScalar(0.0);
  
   // precompute L2 projectors on faces
-  std::vector<WhetStone::DenseMatrix> vL2f, vMGf;
+  std::vector<DenseMatrix> vL2f, vMGf;
   std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
-  std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
+  std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vcoordsys;
 
+  Tensor K(d_, 1);
+  K(0, 0) = 1.0;
   if (order_ > 0) {
-    Tensor K(d_, 1);
-    K(0, 0) = 1.0;
-    L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys);
+    L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_);
   }
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     double area = mesh_->face_area(f);
-    const auto& xf = mesh_->face_centroid(f);
 
     mesh_->face_to_cell_edge_map(f, c, &map);
     mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
@@ -469,7 +469,6 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
       int e = fedges[m]; 
       double len = mesh_->edge_length(e);
       const auto& xe = mesh_->edge_centroid(e);
-      std::vector<AmanziGeometry::Point> tau(1, mesh_->edge_vector(e));
 
       int row = n * ndf;
       int col = map[m] * nde;
@@ -483,13 +482,45 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
           int pos = it.PolynomialPosition();
           if (pos == 0) continue;
 
+          // surface terms
           double factor = vbasisf[n].monomial_scales()[it.MonomialSetOrder()];
-          Polynomial fmono(d_, it.multi_index(), factor);
-          fmono.set_origin(xf);  
-          fmono.ChangeCoordinates(xe, tau);
+          Polynomial fmono(d_ - 1, it.multi_index(), factor);
+          std::vector<AmanziGeometry::Point> tau(1, vcoordsys[n]->Project(mesh_->edge_vector(e), false));
+          fmono.ChangeCoordinates(vcoordsys[n]->Project(xe, true), tau);
 
           for (int k = 0; k < fmono.size(); ++k) {
-            C(row + pos, col + k) = fmono(k) * len * edirs[m] * fdirs[n] / area;
+            C(row + pos, col + k) += fmono(k) * len * edirs[m] * fdirs[n] / area;
+          }
+        }
+      }
+    }
+
+    // volumetric term
+    if (order_ > 0) {
+      for (auto it = pf.begin(); it < pf.end(); ++it) {
+        int pos = it.PolynomialPosition();
+        double factor = vbasisf[n].monomial_scales()[it.MonomialSetOrder()];
+        Polynomial fmono(d_ - 1, it.multi_index(), factor);
+
+        auto rot = Rot2D(fmono);
+        auto v1 = ExpandCoefficients(rot);
+
+        int stride1 = v1.NumRows() / (d_ - 1);
+        int stride2 = ndf;
+        v1.Regroup(stride1, stride2);
+
+        DenseVector v2(ndf * (d_ - 1)), v3(nfedges * nde);
+        vMGf[n].Multiply(v1, v2, false);
+        vL2f[n].Multiply(v2, v3, true);
+
+        int l(0);
+        for (int m = 0; m < nfedges; ++m) {
+          int row = n * ndf;
+          int col = map[m] * nde;
+
+          for (int k = 0; k < nde; ++k) {
+            C(row + pos, col + k) += v3(l) * fdirs[n] / area;
+            l++;
           }
         }
       }

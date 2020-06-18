@@ -135,10 +135,6 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     vMGs.push_back(S);
   }
 
-  // rows of matrix N are mean moments of gradients times normal
-  // shift of a basis polynomial by a constant is not needed here 
-  N.Reshape(ndof_S, d_ * ndc);
-
   // allocate sufficient memory to reduce memory copy inside vector reshape 
   int nrows = vMGf[0].NumRows();
   DenseVector v(nrows, 0.0), w(nrows, 0.0), u(ndf, 0.0);
@@ -148,46 +144,23 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   it0.begin();
   it1.end();
 
-  for (auto it = it0; it < it1; ++it) { 
-    int k = it.VectorComponent();
-    int m = it.MonomialSetOrder();
-    int col = it.VectorPolynomialPosition();
+  // rows of matrix N are mean moments of gradients times normal
+  // shift of a basis polynomial by a constant is not needed here 
+  N.Reshape(ndof_S, d_ * ndc);
+  ComputeN_(c, faces, dirs, basis, vbasisf, vcoordsys, vMGf, Kinv, N);
 
-    const int* index = it.multi_index();
-    double factor = basis.monomial_scales()[m];
+  Tensor Idc(d_, 1);
+  Idc(0, 0) = 1.0;
 
-    int row(0);
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      const auto& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double area = mesh_->face_area(f);
-
-      AmanziGeometry::Point knormal = Kinv * normal;
-      Polynomial poly(d_, index, factor * knormal[k]);
-      poly.set_origin(xc);  
-
-      poly.ChangeCoordinates(xf, *vcoordsys[i]->tau());  
-      v = poly.coefs();
-      vbasisf[i].ChangeBasisNaturalToMy(v);
-
-      v.Reshape(nrows);
-      vMGf[i].Multiply(v, w, false);
-
-      // one scale area factor for normal, one for mean integral value
-      double tmp = dirs[i] / area / area;
-      for (auto l = 0; l < ndf; ++l) {
-        N(row++, col) = tmp * w(l);
-      }
-    }
-  }
+  DenseMatrix N1(ndof_S, d_ * ndc);
+  ComputeN_(c, faces, dirs, basis, vbasisf, vcoordsys, vMGf, Idc, N1);
 
   // L2 (serendipity-type)  projector 
-  DenseMatrix NT;
-  NT.Transpose(N);
-  auto NN = NT * N;
+  DenseMatrix N1T;
+  N1T.Transpose(N1);
+  auto NN = N1T * N1;
   NN.InverseSPD();
-  auto L2c = N * NN;
+  auto L2c = N1 * NN;
 
   // fixed vector
   DenseMatrix MGc;
@@ -290,6 +263,67 @@ int VEM_RaviartThomasSerendipity::MassMatrix(int c, const Tensor& K, DenseMatrix
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Mass matrix for edge-based discretization.
+****************************************************************** */
+void VEM_RaviartThomasSerendipity::ComputeN_(
+    int c, const Entity_ID_List& faces, const std::vector<int>& dirs,
+    const Basis_Regularized<AmanziMesh::Mesh>& basis,
+    const std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+    const std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
+    const std::vector<WhetStone::DenseMatrix>& vMGf,
+    const Tensor& Kinv, DenseMatrix& N)
+{
+  int nfaces = faces.size();
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+  int ndf = PolynomialSpaceDimension(d_ - 1, order_);
+
+  // allocate sufficient memory to reduce memory copy inside vector reshape 
+  int nrows = vMGf[0].NumRows();
+  DenseVector v(nrows, 0.0), w(nrows, 0.0);
+
+  // iterators
+  VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
+  it0.begin();
+  it1.end();
+
+  for (auto it = it0; it < it1; ++it) { 
+    int k = it.VectorComponent();
+    int m = it.MonomialSetOrder();
+    int col = it.VectorPolynomialPosition();
+
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[m];
+
+    int row(0);
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const auto& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
+
+      AmanziGeometry::Point knormal = Kinv * normal;
+      Polynomial poly(d_, index, factor * knormal[k]);
+      poly.set_origin(xc);  
+
+      poly.ChangeCoordinates(xf, *vcoordsys[i]->tau());  
+      v = poly.coefs();
+      vbasisf[i].ChangeBasisNaturalToMy(v);
+
+      v.Reshape(nrows);
+      vMGf[i].Multiply(v, w, false);
+
+      // one factor "area" for normal, one for mean integral value
+      double tmp = dirs[i] / area / area;
+      for (auto l = 0; l < ndf; ++l) {
+        N(row++, col) = tmp * w(l);
+      }
+    }
+  }
 }
 
 }  // namespace WhetStone

@@ -574,6 +574,7 @@ TEST(HIGH_ORDER_RAVIART_THOMAS_SERENDIPITY) {
   HighOrderRaviartThomasSerendipity("test/cube_unit.exo");
   HighOrderRaviartThomasSerendipity("test/cube_unit_rotated.exo");
   HighOrderRaviartThomasSerendipity("test/cube_half.exo");
+  HighOrderRaviartThomasSerendipity("test/one_trapezoid.exo");
   HighOrderRaviartThomasSerendipity("");
 } 
 

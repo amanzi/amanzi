@@ -111,7 +111,8 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
       std::vector<WhetStone::DenseMatrix>& vL2f, 
       std::vector<WhetStone::DenseMatrix>& vMGf,
       std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
-      std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys);
+      std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
+      int MGorder);
 
  protected:
   using MFD3D::mesh_;

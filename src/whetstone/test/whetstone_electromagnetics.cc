@@ -391,8 +391,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     mesh = meshfactory.create(mesh_file, true, true); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  for (int c = 0; c < 1; ++c) {
-  // for (int c = 0; c < ncells; ++c) {
+  for (int c = 0; c < ncells; ++c) {
     Teuchos::ParameterList plist;
     plist.set<int>("method order", 0);
 
@@ -401,9 +400,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
     AmanziMesh::Entity_ID_List edges;
     mesh->cell_get_edges(c, &edges);
-
     int nedges = edges.size();
-    int nrows = nedges;
 
     Tensor T(3, 2);
     T(0, 0) = 2.0;
@@ -412,8 +409,8 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     T(0, 1) = 1.0;
     T(1, 0) = 1.0;
 
-    for (int method = 0; method < 3; method++) {
-      DenseMatrix A(nrows, nrows);
+    for (int method = 0; method < 4; method++) {
+      DenseMatrix A;
 
       if (method == 0) {
         mfd.StiffnessMatrix(c, T, A);
@@ -422,10 +419,15 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       } else if (method == 2) {
         vem.set_order(0);
         vem.StiffnessMatrix(c, T, A);
+      } else if (method == 3) {
+        vem.set_order(1);
+        vem.StiffnessMatrix(c, T, A);
       }
 
+      int nrows = A.NumRows();
       int m = std::min(nrows, max_row);
-      printf("Stiffness matrix: cell=%d  method=%d  edges=%d  submatrix=%dx%d\n", c, method, nedges, m, m);
+      printf("Stiffness matrix: cell=%d  method=%d  edges=%d  ndofs=%d  submatrix=%dx%d\n",
+             c, method, nedges, nrows, m, m);
 
       for (int i = 0; i < m; i++) {
         for (int j = 0; j < m; j++ ) printf("%9.5f ", A(i, j)); 
@@ -436,36 +438,46 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
       // verify exact integration property
-      double xi, xj, yj;
-      double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(c); 
-      AmanziGeometry::Point v1(3);
+      std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges), tf(nedges), yf(nedges);
+      for (int i = 0; i < nedges; ++i) {
+        uf[i].Reshape(3, 3, 1);
+        uf[i][1](3) =-1.0;
+        uf[i][2](2) = 1.0;
 
-      for (int i = 0; i < nedges; i++) {
-        int e1 = edges[i];
-        const AmanziGeometry::Point& xe = mesh->edge_centroid(e1);
-        const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
-        double a1 = mesh->edge_length(e1);
+        vf[i].Reshape(3, 3, 1);
+        vf[i][0](3) = 1.0;
+        vf[i][2](1) =-1.0;
 
-        v1 = xe ^ t1;
-        xi = v1[0] / a1;
+        wf[i].Reshape(3, 3, 1);
+        wf[i][0](2) =-1.0;
+        wf[i][1](1) = 1.0;
 
-        for (int j = 0; j < nedges; j++) {
-          int e2 = edges[j];
-          const AmanziGeometry::Point& ye = mesh->edge_centroid(e2);
-          const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
-          double a2 = mesh->edge_length(e2);
+        tf[i].Reshape(3, 3, 0);
+        tf[i][0](0) = 1.0;
 
-          v1 = ye ^ t2;
-          xj = v1[0] / a2;
-          yj = v1[1] / a2;
-
-          vxx += A(i, j) * xi * xj;
-          vxy += A(i, j) * xi * yj;
-        }
+        yf[i].Reshape(3, 3, 1);
+        yf[i][0](1) = 1.0;
       }
-      double tol = vxx * 1e-10;
+
+      WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows), t(nrows), y(nrows);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, tf, tf, t);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, yf, yf, y);
+
+      A.Multiply(u, a, false);
+      double vxx = u * a;
+      double vxy = v * a;
+      double vxz = w * a;
+      double vxt = t * a;
+
+      double volume = mesh->cell_volume(c); 
+      double tol = volume * 1e-10;
       CHECK_CLOSE(4 * volume * T(0,0), vxx, tol);
       CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
+      CHECK_CLOSE(4 * volume * T(0,2), vxz, tol);
+      CHECK_CLOSE(0.0, vxt, tol);
     }
   }
 }
@@ -474,7 +486,6 @@ TEST(STIFFNESS_MATRIX_3D_CUBE) {
   StiffnessMatrix3D("", 12);
 }
 
-/*
 TEST(STIFFNESS_MATRIX_3D_HEX) {
   StiffnessMatrix3D("test/one_trapezoid.exo", 12);
 }
@@ -486,6 +497,5 @@ TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
 TEST(STIFFNESS_MATRIX_3D_24SIDES) {
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 } 
-*/
 
 
