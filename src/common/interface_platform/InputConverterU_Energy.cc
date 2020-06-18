@@ -141,7 +141,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
     std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms;
+    std::map<double, std::string> tp_forms, tp_formulas;
 
     for (int j = 0; j < same_list.size(); ++j) {
       DOMNode* jnode = same_list[j];
@@ -150,17 +150,18 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
 
       tp_forms[t0] = GetAttributeValueS_(element, "function");
       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
+      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
     }
 
     // create vectors of values and forms
     std::vector<double> times, values;
-    std::vector<std::string> forms;
+    std::vector<std::string> forms, formulas;
     for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
       times.push_back(it->first);
       values.push_back(it->second);
       forms.push_back(tp_forms[it->first]);
+      formulas.push_back(tp_formulas[it->first]);
     }
-    forms.pop_back();
 
     // create names, modify data
     std::string bcname;
@@ -178,14 +179,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
       .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
-    } else {
-      bcfn.sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
-    }
+    TranslateGenericMath_(times, values, forms, formulas, bcfn);
   }
 
   return out_list;

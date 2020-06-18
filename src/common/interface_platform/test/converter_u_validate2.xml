@@ -677,9 +677,10 @@
 	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="2.980e+02"/>
-	      </ParameterList>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <Parameter name="formula" type="string" value="298.0 + 1e-8 * t"/>
+              </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>

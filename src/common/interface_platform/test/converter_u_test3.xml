@@ -283,7 +283,7 @@
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
           <inward_volumetric_flux value="0.00254022e-3" function="constant" start="6.17266656e+10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
+          <inward_volumetric_flux function="general" formula="t + x + y" start="6.1729344E10" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
         </liquid_component>
         <solute_component>
