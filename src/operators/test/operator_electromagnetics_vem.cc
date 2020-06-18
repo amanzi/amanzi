@@ -72,7 +72,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   if (nx > 0) {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     auto mesh_tmp = Teuchos::rcp_const_cast<Mesh>(mesh);
-    // DeformMesh(mesh_tmp, 5, 1.0);
+    DeformMesh(mesh_tmp, 5, 1.0);
   } else {
     mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
   }
@@ -250,9 +250,9 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  // CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
-  // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
-  // CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics01>(2, "Nedelec serendipity type2", 1, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 1, 2e-3);
 }
 
