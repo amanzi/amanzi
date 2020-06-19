@@ -42,7 +42,8 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance) {
+void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance, 
+                  const std::string filename = "") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -74,7 +75,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
     auto mesh_tmp = Teuchos::rcp_const_cast<Mesh>(mesh);
     DeformMesh(mesh_tmp, 5, 1.0);
   } else {
-    mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
+    mesh = meshfactory.create(filename, request_faces, request_edges);
   }
 
   // create resistivity coefficient
@@ -226,7 +227,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
   ver.CheckResidual(solution, 1.0e-10);
 
   int num_itrs = solver.num_itrs();
-  CHECK(num_itrs < 100);
+  CHECK(num_itrs < 2000);
 
   if (MyPID == 0) {
     std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
@@ -250,9 +251,27 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance)
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-  CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8);
+/*
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "electromagnetics", 0, 1e+1, "test/hexes8.exo");
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 0, 1e+1, "test/hexes8.exo");
+  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "electromagnetics", 0, 1e+3, "test/hexes8.exo");
+  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes8.exo");
+  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes16.exo");
+  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes32.exo");
+L2(e)= 0.030491648  Inf(e)= 0.033814076  itr= 89  size=10072
+L2(e)= 0.015556440  Inf(e)= 0.018429069  itr=162  size=78128
+L2(e)= 0.007872589  Inf(e)= 0.008978115  itr=291  size=615520
+
+L2(e)= 0.628790334  Inf(e)= 0.737978276  itr=137  size=10072
+L2(e)= 0.657143265  Inf(e)= 0.738068330  itr=249  size=78128
+
+L2(e)= 0.004197785  Inf(e)= 0.004418447  itr=131  size=10072
+L2(e)= 0.001097908  Inf(e)= 0.001145579  itr=243  size=78128
+
+*/
+  CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8, "test/hex_split_faces5.exo");
   CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 0, 2e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(8, "Nedelec serendipity type2", 1, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(7, "Nedelec serendipity type2", 0, 2e-3);
+  CurlCurl_VEM<AnalyticElectromagnetics02>(7, "Nedelec serendipity type2", 1, 2e-3);
 }
 
