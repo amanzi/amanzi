@@ -1,16 +1,16 @@
 diff -ruNbB ccse-16.03-source-orig/Src/C_BaseLib/FabArray.H ccse-16.03-source/Src/C_BaseLib/FabArray.H
 --- ccse-16.03-source-orig/Src/C_BaseLib/FabArray.H	2020-06-15 20:58:18.000000000 -0600
 +++ ccse-16.03-source/Src/C_BaseLib/FabArray.H	2020-06-15 21:01:18.000000000 -0600
-@@ -459,6 +420,8 @@
+@@ -513,6 +513,8 @@
  
-     const TileArray* getTileArray (const IntVect& tilesize) const;
+     void flushFPC ();
  
 +    const Array<int>& IndexMap () const { return indexMap; }
 +
  protected:
  
      DistributionMapping& ModifyDistributionMap () { return distributionMap; }
-@@ -466,7 +468,7 @@
+@@ -520,7 +522,7 @@
      //
      // Returns constant reference to indices in the FabArray that we have access
      //
