@@ -23,8 +23,8 @@ diff -ruNbB BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp BoxLib-16.04-new/Src/C_Base
  #include <BL_CXX11.H>
  #include <MemPool.H>
  
--#ifdef BL_Darwin
-+// #ifdef BL_Darwin
+-#if (__GNUC__ >= 6 || defined(BL_Darwin))
++// #if (__GNUC__ >= 6 || defined(BL_Darwin))
  using std::isinf;
  using std::isnan;
 -#endif
@@ -52,8 +52,8 @@ diff -ruNbB BoxLib-16.04/Src/LinearSolvers/C_CellMG/CGSolver.cpp BoxLib-16.04-ne
  #include <iomanip>
  #include <cmath>
  
--#ifdef BL_Darwin
-+// #ifdef BL_Darwin
+-#if (__GNUC__ >= 6 || defined(BL_Darwin))
++// #if (__GNUC__ >= 6 || defined(BL_Darwin))
  using std::isinf;
 -#endif
 +// #endif
