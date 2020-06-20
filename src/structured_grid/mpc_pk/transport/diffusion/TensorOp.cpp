@@ -418,14 +418,14 @@ TensorOp::applyBC (MultiFab&      inout,
   //
   // Fill boundary cells.
   //
-  const int N = inout.IndexMap().size();
+  const int N = inout.IndexArray().size();
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
   for (int i = 0; i < N; i++)
   {
-    const int gn = inout.IndexMap()[i];
+    const int gn = inout.IndexArray()[i];
 
     BL_ASSERT(gbox[level][gn] == inout.box(gn));
 
