@@ -591,7 +591,7 @@ Layout::Build()
             }
 
             nodeIds[lev].FillBoundary(0,1); 
-            BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+            BoxLib::FillPeriodicBoundary_nowait<IntFab>(geomArray[lev],nodeIds[lev],0,1);
 
             MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
             for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi) {
@@ -606,7 +606,7 @@ Layout::Build()
         }
         else {
             nodeIds[lev].FillBoundary(0,1);
-            BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+            BoxLib::FillPeriodicBoundary_nowait<IntFab>(geomArray[lev],nodeIds[lev],0,1);
         }
     }
 

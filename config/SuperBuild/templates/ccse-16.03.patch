@@ -1,7 +1,7 @@
 diff -ruNbB ccse-16.03-source-orig/Src/C_BaseLib/FabArray.H ccse-16.03-source/Src/C_BaseLib/FabArray.H
 --- ccse-16.03-source-orig/Src/C_BaseLib/FabArray.H	2020-06-15 20:58:18.000000000 -0600
 +++ ccse-16.03-source/Src/C_BaseLib/FabArray.H	2020-06-15 21:01:18.000000000 -0600
-@@ -420,6 +420,8 @@
+@@ -459,6 +420,8 @@
  
      const TileArray* getTileArray (const IntVect& tilesize) const;
  
@@ -10,12 +10,12 @@ diff -ruNbB ccse-16.03-source-orig/Src/C_BaseLib/FabArray.H ccse-16.03-source/Sr
  protected:
  
      DistributionMapping& ModifyDistributionMap () { return distributionMap; }
-@@ -427,7 +429,7 @@
+@@ -466,7 +468,7 @@
      //
-     // Returns constant reference to indices in the FabArray that we own.
+     // Returns constant reference to indices in the FabArray that we have access
      //
 -    const Array<int>& IndexMap () const { return indexMap; }
 +    // const Array<int>& IndexMap () const { return indexMap; }
      //
-     // Returns local index in the vector of FABs.
-     //
+     // Returns owenership of fabs. The concept of ownership only applies when UPC++
+     // team is used. In that case, each fab is shared by team workers, with one

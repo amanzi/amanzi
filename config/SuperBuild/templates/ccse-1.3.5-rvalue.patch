@@ -1,7 +1,7 @@
 diff -ruNbB ccse-1.3.5-source/Src/C_AMRLib/AmrLevel.cpp ccse-1.3.5-rvalue/Src/C_AMRLib/AmrLevel.cpp
 --- ccse-1.3.5-source/Src/C_AMRLib/AmrLevel.cpp	2016-02-18 19:15:45.000000000 -0700
 +++ ccse-1.3.5-rvalue/Src/C_AMRLib/AmrLevel.cpp	2020-05-02 21:54:43.000000000 -0600
-@@ -1412,13 +1412,22 @@
+@@ -1559,13 +1559,22 @@
  			       dlo,dhi,dom_lo,dom_hi,dx,xlo,&time,&dt,bcr,
  			       &level,&grid_no);
  	    } else if (rec->derFunc3D() != static_cast<DeriveFunc3D>(0)){
@@ -30,7 +30,7 @@ diff -ruNbB ccse-1.3.5-source/Src/C_AMRLib/AmrLevel.cpp ccse-1.3.5-rvalue/Src/C_
  				 &level,&grid_no);
  	    } else {
  		BoxLib::Error("AmeLevel::derive: no function available");
-@@ -1544,13 +1553,22 @@
+@@ -1695,13 +1704,22 @@
  			       dlo,dhi,dom_lo,dom_hi,dx,xlo,&time,&dt,bcr,
  			       &level,&idx);
  	    } else if (rec->derFunc3D() != static_cast<DeriveFunc3D>(0)){
