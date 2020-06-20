@@ -1,20 +1,12 @@
-diff -ruNbB ccse-orig/Src/F_BaseLib/CMakeLists.txt ccse-new/Src/F_BaseLib/CMakeLists.txt
---- ccse-orig/Src/F_BaseLib/CMakeLists.txt	2015-09-24 18:01:31.000000000 -0600
-+++ ccse-new/Src/F_BaseLib/CMakeLists.txt	2020-05-02 13:29:57.000000000 -0600
-@@ -26,14 +26,13 @@
- endif()
+diff -ruNbB BoxLib-16.04/Src/F_BaseLib/CMakeLists.txt BoxLib-16.04-new/Src/F_BaseLib/CMakeLists.txt
+--- BoxLib-16.04/Src/F_BaseLib/CMakeLists.txt	2020-06-19 19:11:19.000000000 -0600
++++ BoxLib-16.04-new/Src/F_BaseLib/CMakeLists.txt	2020-06-19 19:09:45.000000000 -0600
+@@ -11,7 +11,7 @@
+ # through these variables.
+ project(FBOXLIB)
  
- if (ENABLE_BACKTRACE)
--  list(APPEND F90_source_files bl_prof_backtrace.f90)
--else ()
-+  list(APPEND F90_source_files backtrace_f.f90)
-+endif()
-   if (ENABLE_PROFILING)
-     list(APPEND F90_source_files bl_prof.f90)
-   else()
-     list(APPEND F90_source_files bl_prof_stubs.f90)
-   endif()
--endif()
+-include_directories(${FBOXLIB_INCLUDE_DIRS})
++include_directories(${FBOXLIB_INCLUDE_DIRS} ${CBOXLIB_INCLUDE_DIRS})
  
- if (ENABLE_OMP)
-   list(APPEND F90_source_files omp.f90)
+ set(CXX_source_files backtrace_c.cpp)
+ set(C_source_files fabio_c.c  ppm_util_c.c  system_util_c.c  timer_c.c)
