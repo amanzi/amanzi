@@ -254,7 +254,7 @@ MatFiller::FindMixedCells()
         for (int k=0; k<nMat; ++k) {
           bool bounds_provided = material_bounds[k].size() > 0;
           if (bounds_provided) {
-            material_bounds[k].intersections(fbox,isects,first_only);
+            material_bounds[k].intersections(fbox,isects,first_only,0);
           }
           if (!bounds_provided || isects.size()>0) {
             hits.push_back(k);
@@ -334,10 +334,11 @@ MatFiller::FindMixedCells()
       }
       tbar[lev].buffer(tags_buffer);
 
-      long int num_tags;
-      IntVect* tags = tbar[lev].collate(num_tags);
+      std::vector<IntVect> tags;
+      tbar[lev].collate(tags);
+      long int num_tags = tags.size();
       if (num_tags>0) {
-	ClusterList clist(tags, num_tags);
+	ClusterList clist(&(tags[0]), num_tags);
 	clist.chop(grid_eff);
 	BoxList bl = clist.boxList(); bl.simplify();
 	ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());

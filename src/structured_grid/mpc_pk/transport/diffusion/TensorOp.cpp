@@ -411,7 +411,7 @@ TensorOp::applyBC (MultiFab&      inout,
   const bool do_corners = true;
 
   inout.setBndry(1.e30,src_comp,num_comp);
-  inout.FillBoundary(src_comp,num_comp,local,cross);
+  inout.FillBoundary(src_comp,num_comp,cross);
   prepareForLevel(level);
   geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
 
