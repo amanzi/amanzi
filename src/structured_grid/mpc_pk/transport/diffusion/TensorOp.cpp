@@ -413,7 +413,8 @@ TensorOp::applyBC (MultiFab&      inout,
   inout.setBndry(1.e30,src_comp,num_comp);
   inout.FillBoundary(src_comp,num_comp,cross);
   prepareForLevel(level);
-  geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+  // geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+  inout.FillBoundary(src_comp,num_comp,do_corners);
 
   //
   // Fill boundary cells.
@@ -583,11 +584,11 @@ TensorOp::applyBC (MultiFab&      inout,
         if (! is_per[d]) {
           Box tmpLo = BoxLib::adjCellLo(geomlev.Domain(),d,1);
           Geometry tmpGeomLo(tmpLo,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
-          tmpGeomLo.FillPeriodicBoundary(boundary_data);
+          boundary_data.FillBoundary();
 
           Box tmpHi = BoxLib::adjCellHi(geomlev.Domain(),d,1);
           Geometry tmpGeomHi(tmpHi,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
-          tmpGeomHi.FillPeriodicBoundary(boundary_data);
+          boundary_data.FillBoundary();
         }
       }
     }

@@ -337,6 +337,9 @@ MatFiller::FindMixedCells()
       std::vector<IntVect> tags;
       tbar[lev].collate(tags);
       long int num_tags = tags.size();
+      // IntVect* tags;
+      /// long int num_tags;
+      // tags = tbar[lev].collate(num_tags);
       if (num_tags>0) {
 	ClusterList clist(&(tags[0]), num_tags);
 	clist.chop(grid_eff);

@@ -263,7 +263,6 @@ RStdata::FillStateBndry (MFTower& press,
                  pressure_bc.vect());
     }
     mf.FillBoundary(src_comp,num_comp);
-    geom.FillPeriodicBoundary(mf, src_comp, num_comp);
 
     Box gbox = domain;
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -303,8 +302,6 @@ RStdata::calcInvPressure (MFTower&       N,
     N[lev].mult(rho_loc,dComp,1,nGrow);
     if (nGrow > 0) {
       N[lev].FillBoundary(dComp,1);
-      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
-      geom.FillPeriodicBoundary(N[lev],dComp,1);
     }
   }
 }
@@ -338,8 +335,6 @@ RStdata::calcLambda (MFTower&       Lambda,
     Lambda[lev].mult(1/mu_loc,dComp,1,nGrow);
     if (nGrow > 0) {
       Lambda[lev].FillBoundary(dComp,1);
-      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
-      geom.FillPeriodicBoundary(Lambda[lev],dComp,1);
     }
   }
 }
@@ -366,8 +361,6 @@ RStdata::calcRichardAlpha (MFTower&       Alpha,
     MultiFab::Multiply(Alpha[lev],(*Porosity)[lev],0,dComp,1,nGrow);
     if (nGrow > 0) {
       Alpha[lev].FillBoundary(dComp,1);
-      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
-      geom.FillPeriodicBoundary(Alpha[lev],dComp,1);
     }
   }
 }

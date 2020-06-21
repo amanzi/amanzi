@@ -3579,7 +3579,6 @@ TagUnusedGrowCells(MultiFab&    state,
   // Don't use any grow cells that are not f-f
   state.setBndry(tagVal,comp,nComp);
   state.FillBoundary(comp,nComp);
-  pm.Geom().FillPeriodicBoundary(state,comp,nComp);
 }
 
 static
@@ -3804,9 +3803,9 @@ PorousMedia::advance_chemistry (Real time,
   P_new.FillBoundary();
   Aux_new.FillBoundary();
 	
-  geom.FillPeriodicBoundary(S_new,true);
-  geom.FillPeriodicBoundary(P_new,true);
-  geom.FillPeriodicBoundary(Aux_new,true);
+  // geom.FillPeriodicBoundary(S_new,true);
+  // geom.FillPeriodicBoundary(P_new,true);
+  // geom.FillPeriodicBoundary(Aux_new,true);
 
   if (ngrow == 0 || ngrow_tmp == 0) {
       Fcnt_new.copy(fcnCntTemp,0,0,1); // Parallel copy.
@@ -5580,7 +5579,7 @@ PorousMedia::SyncInterp (MultiFab&      CrseSync,
 		     &(bc_new[2*BL_SPACEDIM*(n+src_comp)]));
         }
     }
-  cgeom.FillPeriodicBoundary(cdataMF, 0, num_comp);
+  cdataMF.FillBoundary(0, num_comp);
   //
   // Interpolate from cdataMF to fdata and update FineSync.
   // Note that FineSync and cdataMF will have the same distribution
@@ -6374,7 +6373,6 @@ PorousMedia::getForce (MultiFab& force,
     }
 
     force.FillBoundary(0,num_comp);
-    geom.FillPeriodicBoundary(force,0,num_comp);
 	
     if (do_rho_scale) {
       for (int i=0; i<snum_comp; ++i) {
@@ -6661,7 +6659,8 @@ PorousMedia::calc_richard_alpha (MultiFab&       alpha,
   MultiFab::Multiply(alpha,*rock_phi,0,dComp,1,nGrow);
   if (nGrow > 0) {
     alpha.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(alpha,dComp,ncomps);
+    // geom.FillPeriodicBoundary(alpha,dComp,ncomps);
+    alpha.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -6726,7 +6725,8 @@ PorousMedia::calcCapillary (MultiFab&       pc,
   rock_manager->CapillaryPressure(sat,*materialID,time,pc,sComp,dComp,nGrow);
   if (nGrow > 0) {
     pc.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(pc,dComp,ncomps);
+    // geom.FillPeriodicBoundary(pc,dComp,ncomps);
+    pc.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -6748,7 +6748,6 @@ PorousMedia::calcInvCapillary (MultiFab&       N,
 
   if (nGrow > 0) {
     N.FillBoundary(dComp,ncomps);
-    geom.FillPeriodicBoundary(N,dComp,ncomps);
   }
 }
 
@@ -6794,7 +6793,8 @@ PorousMedia::calcLambda (MultiFab&       lambda,
   lambda.mult(1/muval[0],0,1,nGrow);
   if (nGrow > 0) {
     lambda.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(lambda,dComp,ncomps);
+    // geom.FillPeriodicBoundary(lambda,dComp,ncomps);
+    lambda.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -7921,7 +7921,6 @@ PorousMedia::create_umac_grown (MultiFab* u_mac, MultiFab* u_macG)
       u_ghost.setVal(1.e40);
       u_ghost.copy(u_mac[n]);
       u_ghost.FillBoundary();
-      geom.FillPeriodicBoundary(u_ghost);
       for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi)
 	{
 	  u_macG[n][mfi].copy(u_ghost[mfi]);
@@ -8052,7 +8051,6 @@ PorousMedia::create_umac_grown (MultiFab* u_mac,
       u_ghost.setVal(1.e40);
       u_ghost.copy(u_mac[n]);
       u_ghost.FillBoundary();
-      geom.FillPeriodicBoundary(u_ghost);
       for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi) {
 	u_macG[n][mfi].copy(u_ghost[mfi]);
       }
@@ -8110,7 +8108,8 @@ PorousMedia::GetCrseUmac(PArray<MultiFab>& u_mac_crse,
       }
       bool do_corners = true;
       u_mac_crse[i].FillBoundary();
-      cgeom.FillPeriodicBoundary(u_mac_crse[i],do_corners);
+      // cgeom.FillPeriodicBoundary(u_mac_crse[i],do_corners);
+      u_mac_crse[i].FillBoundary(do_corners);
     }
 }
 
@@ -8169,7 +8168,8 @@ PorousMedia::GetCrsePressure (MultiFab& phi_crse,
     }
 
   phi_crse.FillBoundary();
-  cgeom.FillPeriodicBoundary(phi_crse,true);
+  // cgeom.FillPeriodicBoundary(phi_crse,true);
+  phi_crse.FillBoundary(true);
 }
 
 // ============
