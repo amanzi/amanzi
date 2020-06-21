@@ -424,15 +424,14 @@ TensorOp::applyBC (MultiFab&      inout,
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (int i = 0; i < N; i++)
+  for (MFIter mfi(inout); mfi.isValid(); ++mfi)
   {
-    const int gn = inout.IndexArray()[i];
+    const int gn = mfi.index();
 
     BL_ASSERT(gbox[level][gn] == inout.box(gn));
 
     const BndryData::RealTuple&      bdl = bgb.bndryLocs(gn);
     const Array< Array<BoundCond> >& bdc = bgb.bndryConds(gn);
-    const MaskTuple&                 msk = maskvals[level][gn];
 
     for (OrientationIter oitr; oitr; ++oitr)
     {
@@ -466,9 +465,9 @@ TensorOp::applyBC (MultiFab&      inout,
       else
         BoxLib::Abort("TensorOp::applyBC(): bad logic");
 
-      const Mask& m    = *msk[face];
-      const Mask& mphi = *msk[Orientation(perpdir,Orientation::high)];
-      const Mask& mplo = *msk[Orientation(perpdir,Orientation::low)];
+      const Mask& m    = maskvals[level][face][mfi];
+      const Mask& mphi = maskvals[level][Orientation(perpdir,Orientation::high)][mfi];
+      const Mask& mplo = maskvals[level][Orientation(perpdir,Orientation::low)][mfi];
       FORT_TOAPPLYBC( &flagden, &flagbc, &maxorder,
         inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
         bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
@@ -680,15 +679,13 @@ TensorOp::Fsmooth (MultiFab&       solnL,
 
     const int gn = mfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][mfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][mfi]; oitr++;);
 
     FArrayBox&       solfab = solnL[gn];
     const FArrayBox& rhsfab = rhsL[gn];
@@ -838,15 +835,13 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
 
     const int gn = xmfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][xmfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][xmfi]; oitr++;);
 
     FArrayBox&       xfab = x[gn];
     const FArrayBox& tdnfab = tdn[gn];
@@ -974,15 +969,13 @@ TensorOp::Fapply (MultiFab&       y,
 
     const int gn = xmfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][xmfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][xmfi]; oitr++;);
 
     FArrayBox&       yfab = y[gn];
     const FArrayBox& xfab = x[gn];

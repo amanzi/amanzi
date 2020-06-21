@@ -279,9 +279,9 @@ set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
 set(CCSE_MD5_SUM        3c26c38bfd06d2e37b22e31a9eacbf2f)
 set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
 # set(CCSE_GIT_TAG        "3c29d664ae1b9d23d2d570c18428b3e16b54a136") 16.09
-# set(CCSE_GIT_TAG        "89acb8e008f1e833efb7fb4638972fae238afd91") Ok
-# set(CCSE_GIT_TAG        "81128c082a995cdbb380c97a192818f5caf708d5") No
-set(CCSE_GIT_TAG        "b1dbcdd79c5bad0b80329e9d1a937823e36ae9bd")
+# set(CCSE_GIT_TAG        "b1dbcdd79c5bad0b80329e9d1a937823e36ae9bd") Ok
+set(CCSE_GIT_TAG        "8a9cc08845f8c4958c3cbdc37f98b5b3642ee57f")
+
 
 #
 # TPL: UnitTest
