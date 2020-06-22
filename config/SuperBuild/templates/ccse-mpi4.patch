@@ -11,7 +11,7 @@
  }
  #endif
  
-@@ -294,7 +290,7 @@
+@@ -293,7 +289,7 @@
  
      // ---- find the maximum value for a tag
      int flag(0), *attrVal;
@@ -20,7 +20,7 @@
      if(flag) {
        m_MaxTag_MPI = *attrVal;
        m_MaxTag = m_MaxTag_MPI - tagBuffer;  // ---- buffer for sidecar tags
-@@ -338,12 +334,9 @@
+@@ -337,12 +333,9 @@
      if(m_group_all != MPI_GROUP_NULL) {
        BL_MPI_REQUIRE( MPI_Group_free(&m_group_all) );
      }
@@ -33,7 +33,7 @@
  
      BL_MPI_REQUIRE( MPI_Finalize() );
  }
-@@ -639,7 +632,7 @@
+@@ -638,7 +631,7 @@
      }
  
  #ifdef BL_USE_FORTRAN_MPI
@@ -42,7 +42,7 @@
        int fcomma = MPI_Comm_c2f(m_comm_all);
        int fcommc = MPI_Comm_c2f(m_comm_comp);
        Array<int> fcomms(nSidecars, -1);
-@@ -657,14 +650,7 @@
+@@ -656,14 +649,7 @@
                                      fcomma, fcommc, fcomms.dataPtr(),
                                      fgrpa, fgrpc, fgrps.dataPtr(),
                                      m_MyId_all, m_MyId_comp, m_MyId_sidecar);
@@ -58,7 +58,7 @@
  #endif
  
      ParallelDescriptor::EndTeams();
-@@ -2222,20 +2208,20 @@
+@@ -2221,20 +2207,20 @@
      {
  	IntVect iv[2];	// Used to construct the data types
  	MPI_Datatype types[] = {
@@ -85,7 +85,7 @@
  	BL_MPI_REQUIRE( MPI_Type_commit( &mine ) );
      }
      return mine;
-@@ -2248,20 +2234,20 @@
+@@ -2247,20 +2233,20 @@
      {
  	IndexType iv[2];	// Used to construct the data types
  	MPI_Datatype types[] = {
@@ -112,7 +112,7 @@
  	BL_MPI_REQUIRE( MPI_Type_commit( &mine ) );
      }
      return mine;
-@@ -2274,24 +2260,24 @@
+@@ -2273,24 +2259,24 @@
      {
  	Box iv[2];	// Used to construct the data types
  	MPI_Datatype types[] = {

@@ -59,6 +59,7 @@ set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-1.3.4-tools-plot1d.patch
                     ccse-1.3.5-cmake.patch
                     ccse-1.3.5-rvalue.patch
+                    ccse-16.10-f90.patch
                     ccse-mpi4.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
@@ -81,10 +82,10 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    # URL          ${CCSE_URL}                      # URL may be a web site OR a local file
-                    # URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
-                    GIT_REPOSITORY ${CCSE_GIT_REPOSITORY}              
-                    GIT_TAG        ${CCSE_GIT_TAG}      
+                    URL          ${CCSE_URL}                      # URL may be a web site OR a local file
+                    URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
+                    # GIT_REPOSITORY ${CCSE_GIT_REPOSITORY}              
+                    # GIT_TAG        ${CCSE_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch

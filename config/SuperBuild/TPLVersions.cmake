@@ -141,7 +141,7 @@
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
-#   0.97.7       - update BoxLib (CCSE) to version 16.09
+#   0.97.7       - update BoxLib (CCSE) to version 16.10
 
 include(CMakeParseArguments)
 
@@ -269,18 +269,16 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 16)
-set(CCSE_VERSION_MINOR 09)
+set(CCSE_VERSION_MINOR 10)
 set(CCSE_VERSION_PATCH 0)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
 set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        3c26c38bfd06d2e37b22e31a9eacbf2f)
+set(CCSE_MD5_SUM        66ff9fff7cc5e44942217c889da032ad)
 set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
-# set(CCSE_GIT_TAG        "3c29d664ae1b9d23d2d570c18428b3e16b54a136") 16.09
-# set(CCSE_GIT_TAG        "b1dbcdd79c5bad0b80329e9d1a937823e36ae9bd") Ok
-set(CCSE_GIT_TAG        "8a9cc08845f8c4958c3cbdc37f98b5b3642ee57f")
+set(CCSE_GIT_TAG        "6082ae6b2fe8ed80951ea61ff30f6bf829e1af2d")
 
 
 #

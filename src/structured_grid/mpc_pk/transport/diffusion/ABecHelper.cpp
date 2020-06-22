@@ -141,6 +141,7 @@ ABecHelper::residual (MultiFab&       residL,
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
+  /*
   for (MFIter solnLmfi(solnL,tiling); solnLmfi.isValid(); ++solnLmfi)
   {
     const int nc = residL.nComp();
@@ -165,6 +166,8 @@ ABecHelper::residual (MultiFab&       residL,
       ARLIM(residfab.loVect()), ARLIM(residfab.hiVect()),
       tbx.loVect(), tbx.hiVect(), &nc);
   }
+  */
+  MultiFab::Xpay(residL, -1.0, rhsL, 0, 0, residL.nComp(), 0);
 }
 
 void 

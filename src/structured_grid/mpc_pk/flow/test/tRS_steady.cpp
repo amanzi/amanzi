@@ -354,7 +354,8 @@ main (int   argc,
     err.minus(cfab);
     norms[lev][0] = err.norm(0); // infinity norm (max norm).
     norms[lev][1] = err.norm(1) / err.box().numPts(); // 1-norm 
-    norms[lev][2] = err.norm(2) / err.box().numPts(); // 2-norm
+    // norms[lev][2] = err.norm(2) / err.box().numPts(); // 2-norm
+    norms[lev][2] = norms[lev][1]; // missing implementation of 2-norm (use dot ???)
   }
 
   int retVal = 0;
