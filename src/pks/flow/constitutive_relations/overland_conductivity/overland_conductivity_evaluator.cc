@@ -114,6 +114,15 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
 
+#ifdef ENABLE_DBC  
+  double min_coef = 1.;
+  coef->MinValue(&min_coef);
+  if (min_coef <= 0.) {
+    Errors::Message message("Overland Conductivity Evaluator: Manning coeficient has at least one value that is non-positive.  Perhaps you forgot to set the \"boundary_face\" component?"); 
+    Exceptions::amanzi_throw(message);
+  }
+#endif
+
   if (!sg_model_){
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
