@@ -839,8 +839,10 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_global = S_inter_->final_time() - S_inter_->initial_time();
   }
 
-  //StableTimeStep();
-  dt_ = dt_MPC;
+  if (subcycling_)
+    StableTimeStep();
+  else
+    dt_ = dt_MPC;
   double dt_stable = dt_;  // advance routines override dt_
 
  
@@ -1721,7 +1723,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-
     srcs_[m]->Compute(t0, tp); 
     
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
@@ -1753,7 +1754,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         //add_mass += dtp * value; 
         cons_qty[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
-
       }
     }
   }
