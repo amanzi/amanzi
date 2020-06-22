@@ -1,7 +1,7 @@
 diff -ruNbB BoxLib-16.04/Src/CMakeLists.txt BoxLib-16.04-new/Src/CMakeLists.txt
 --- BoxLib-16.04/Src/CMakeLists.txt	2016-04-11 16:42:12.000000000 -0600
 +++ BoxLib-16.04-new/Src/CMakeLists.txt	2020-06-19 18:15:50.000000000 -0600
-@@ -39,8 +39,14 @@
+@@ -44,8 +44,14 @@
  SET_TARGET_PROPERTIES(cboxlib PROPERTIES LINKER_LANGUAGE C)
  SET_TARGET_PROPERTIES(cfboxlib PROPERTIES LINKER_LANGUAGE C)
  SET_TARGET_PROPERTIES(fboxlib PROPERTIES LINKER_LANGUAGE C)
@@ -23,8 +23,8 @@ diff -ruNbB BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp BoxLib-16.04-new/Src/C_Base
  #include <BL_CXX11.H>
  #include <MemPool.H>
 
--#if (__GNUC__ >= 6 || defined(BL_Darwin))
-+// #if (__GNUC__ >= 6 || defined(BL_Darwin))
+-#if !defined(__PGI) && (__GNUC__ >= 5 || defined(BL_Darwin))
++// #if !defined(__PGI) && (__GNUC__ >= 5 || defined(BL_Darwin))
  using std::isinf;
  using std::isnan;
 -#endif

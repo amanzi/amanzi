@@ -37,7 +37,7 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DENABLE_TESTS:BOOL=FALSE
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
-                       -DBL_USE_PARTICLES:INT=0
+                       -DBL_USE_PARTICLES:INT=1
                        -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
