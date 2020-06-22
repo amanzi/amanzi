@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 // TPLs
 #include "Teuchos_RCP.hpp"
