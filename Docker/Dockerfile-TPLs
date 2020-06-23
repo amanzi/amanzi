@@ -18,7 +18,7 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
-  libmpich-dev \
+  libopenmpi-dev \
   libssl-dev \
   m4 \
   make \
@@ -54,8 +54,8 @@ USER amanzi_user
 # (creates teh directory if it doesn't exist)
 WORKDIR /home/amanzi_user
 
-# ENV https_proxy=proxyout.lanl.gov:8080 \
-#    http_proxy=proxyout.lanl.gov:8080
+ENV https_proxy=proxyout.lanl.gov:8080 \
+    http_proxy=proxyout.lanl.gov:8080
 
 # Clone the amanzi git repo.
 RUN git clone https://github.com/amanzi/amanzi.git
@@ -79,7 +79,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --disable-build_amanzi --disable-build_user_guide \
   --enable-shared --enable-structured --enable-silo \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
-  --enable-clm \
+  --enable-pf_clm \
   --with-mpi=/usr \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir
@@ -93,7 +93,7 @@ ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
 
 # Unset proxy
-# ENV https_proxy= \
-#    http_proxy= 
+ENV https_proxy= \
+    http_proxy= 
 
 
