@@ -3530,6 +3530,30 @@ This section to be written.
   </ParameterList>
 
 
+Shallow water PK
+----------------
+
+The mathematical model describing two-dimensional shallow water flow is
+
+.. math::
+  \begin{align*}
+  & h_t + (hu)_x + (hv)_y = 0, \\
+  & (hu)_t + (hu^2 + \frac{1}{2} gh^2)_x + (huv)_y = -ghB_x \\
+  & (hv)_t + (huv)_x + (hv^2 + \frac{1}{2} gh^2)_y = -ghB_y
+  \end{align*}  
+
+Here
+
+:math:`h` [m] is water depth, 
+:math:`g` [m/s^2] is gravity acceleration,
+:math:`u` [m/s] is depth averaged velocity in x direction,
+:math:`v` [m/s] is depth averaged velocity in y direction,
+:math:`B` [m] is bottom elevation (bathymetry),
+:math:`H = h + B` [m] is water surface elevation.
+
+Bathymetry function and initial conditions must be explicitly implemented in the test.
+
+
 Coupled process kernels
 =======================
 
