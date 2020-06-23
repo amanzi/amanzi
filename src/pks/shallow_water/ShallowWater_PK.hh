@@ -43,50 +43,47 @@ namespace ShallowWater {
     
 class ShallowWater_PK : public PK_Physical,
                         public PK_Explicit<Epetra_Vector> {
-                            
- public:
-                            
+  public:
+
     ShallowWater_PK(Teuchos::ParameterList& pk_tree,
-                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVector>& soln);
+                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                    const Teuchos::RCP<State>& S,
+                    const Teuchos::RCP<TreeVector>& soln);
 
     ShallowWater_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         Teuchos::RCP<State> S,
-                         const std::string& pk_list_name,
-                         std::vector<std::string>& component_names);
+                    Teuchos::RCP<State> S,
+                    const std::string& pk_list_name,
+                    std::vector<std::string>& component_names);
 
     ShallowWater_PK() {};
-                            
+
     ~ShallowWater_PK() {};
-                            
+
     virtual void Setup(const Teuchos::Ptr<State>& S) override;
     virtual void Initialize(const Teuchos::Ptr<State>& S) override;
-    
+
     virtual double get_dt() override;
     virtual void set_dt(double dt) override {};
-                     
+
     // Advance PK by step size dt.
     virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
-                            
+
     virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                          Epetra_Vector& f_component) override;
-                            
+			                              Epetra_Vector& f_component) override;
+
     // Commit any secondary (dependent) variables.
     virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
-                            
+
     // Calculate any diagnostics prior to doing vis
     virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
-    
+
     virtual std::string name() override { return "Shallow water PK"; }
-                            
+
     std::vector<double> PhysFlux_x(std::vector<double>);
 
     std::vector<double> PhysFlux_y(std::vector<double>);
-                            
-    std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
 
-//    std::vector<double> NumFlux_y(std::vector<double>,std::vector<double>);
+    std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
 
     std::vector<double> NumFlux_x_Rus(std::vector<double>,std::vector<double>);
 
@@ -100,20 +97,18 @@ class ShallowWater_PK : public PK_Physical,
 
     double Reconstruction(double,double,int,Key);
 
-//    double Bathymetry(double,double);
-                            
   protected:
-    
+
     Teuchos::RCP<Teuchos::ParameterList> glist_;
     Teuchos::RCP<Teuchos::ParameterList> sw_list_;
     Teuchos::RCP<TreeVector> soln_;
     Teuchos::RCP<State> S_;
-                            
+
     double dummy_dt;
     int step_count;
-                            
+
     Key domain_;
-                            
+
     // names of state fields
     Key pressure_key_;
     Key velocity_x_key_;
@@ -124,17 +119,17 @@ class ShallowWater_PK : public PK_Physical,
     Key total_depth_key_;
     Key bathymetry_key_;
     Key myPID_;
-                            
+
     std::string passwd_;
-                            
+
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
     int dim_;
-                            
+
   private:
-                            
+
     // factory registration
     static RegisteredPKFactory<ShallowWater_PK> reg_;
-                            
+
 };
     
     
