@@ -102,13 +102,7 @@ if (BUILD_TESTS)
     add_amanzi_test(shallow_water_1D shallow_water_1D
                     KIND int
                     SOURCE test/Main.cc test/shallow_water_1D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-                    
-    # Test: convergence in 1D  
-    add_amanzi_test(shallow_water_1D_convergence shallow_water_1D_convergence
-                    KIND int
-                    SOURCE test/Main.cc test/shallow_water_1D_convergence.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
                     
     # Test: smooth 2D travelling vortex 
     add_amanzi_test(shallow_water_2D_smooth shallow_water_2D_smooth
