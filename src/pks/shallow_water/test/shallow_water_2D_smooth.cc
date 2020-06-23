@@ -53,7 +53,7 @@ void vortex_2D_exact(double t, double x, double y, double &h, double &u, double 
 
   double rc = std::sqrt(xt*xt + yt*yt); // distance from the vortex core
 
-  //	if (omega*rc <= M_PI) {
+  // if (omega*rc <= M_PI) {
   if (rc <= 1.) {
     h = H_inf + 1./g*(gmm/omega)*(gmm/omega)*(hf(omega*rc)-hf(M_PI));
     u = u_inf + gmm*(1.+cos(omega*rc))*(yc-y);
@@ -119,7 +119,10 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuchos
   }
 }
 
-void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, Epetra_MultiVector& vy_ex, const Epetra_MultiVector& hh, const Epetra_MultiVector& vx, const Epetra_MultiVector& vy, double& err_max, double& err_L1, double& hmax)
+void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, Epetra_MultiVector& vy_ex, 
+           const Epetra_MultiVector& hh, const Epetra_MultiVector& vx, const Epetra_MultiVector& vy,
+           double& err_max, double& err_L1, double& hmax)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -172,7 +175,8 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     RCP<const Mesh> mesh;
     mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
-    //  mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
+    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); 
+    // works only with first order, no reconstruction
     if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
     // create a state

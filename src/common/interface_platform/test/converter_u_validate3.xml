@@ -429,8 +429,14 @@
 	    <ParameterList name="outward mass flux">
 	      <ParameterList name="function-tabular">
 		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
-		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
-		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, 0.0, -1.483984012e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant, constant, USER_FNC2}"/>
+                <ParameterList name="USER_FNC2">
+                  <ParameterList name="function-exprtk">
+                    <Parameter name="number of arguments" type="int" value="3"/>
+                    <Parameter name="formula" type="string" value="t + x + y"/>
+                  </ParameterList>
+                </ParameterList>
 	      </ParameterList>
 	    </ParameterList>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -583,8 +589,14 @@
 	    <ParameterList name="outward mass flux">
 	      <ParameterList name="function-tabular">
 		<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.17293440e+10, 9.46727980e+10}"/>
-		<Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
-		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, 0.0, -1.483984012e-06}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant, constant, USER_FNC2}"/>
+                <ParameterList name="USER_FNC2">
+                  <ParameterList name="function-exprtk">
+                    <Parameter name="number of arguments" type="int" value="3"/>
+                    <Parameter name="formula" type="string" value="t + x + y"/>
+                  </ParameterList>
+                </ParameterList>
 	      </ParameterList>
 	    </ParameterList>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>

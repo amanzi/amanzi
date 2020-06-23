@@ -2259,16 +2259,16 @@ The diffusivity is defined independently for each solute.
   * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
     For model `"scalar`", the following options must be specified:
 
-      * `"alpha`" [double] defines dispersion in all directions. 
+      * `"alpha`" [double] defines dispersion in all directions, [m]. 
 
     For model `"Bear`", the following options must be specified:
 
-      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity.
-      * `"alpha_t`" [double] defines dispersion in the orthogonal direction.
+      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
+      * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
     
     For model `"Burnett-Frind`", the following options must be specified:
 
-      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity.
+      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
       * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
       * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions.
         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
@@ -2276,7 +2276,7 @@ The diffusivity is defined independently for each solute.
 
     For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
 
-      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction.
+      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
       * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction.
         When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
@@ -4816,6 +4816,24 @@ This function requires a few parameters as well as one of the standard math func
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
+
+
+Expression function
+...................
+
+The expression function is defined by a string expression.
+The function has min(N, D + 1) arguments t, x, y, and z. The argument t is required. 
+D is the space dimension, and N is the user specified number of arguments which could 
+be less than D + 1.
+
+Example of a quadratic function in 2D:
+
+.. code-block:: xml
+
+  <ParameterList name="function-exprtk">
+    <Parameter name="number of arguments" type="int" value="3"/>
+    <Parameter name="formula" type="string" value="t + x + y^2"/>
   </ParameterList>
 
 

@@ -84,7 +84,7 @@ endif()
 if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(eos)
   add_subdirectory(flow)
-  add_subdirectory(navier_stokes) 
+  add_subdirectory(navier_stokes)
 endif()
 
 # chemistry isn't REALLY physics...
