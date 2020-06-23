@@ -39,9 +39,9 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
    vo_ = Teuchos::null;
 }
 
+
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
@@ -125,7 +125,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
     std::vector<double> S;                           // source term
-    std::vector<double> UL, UR, U;  			      // data for the fluxes
+    std::vector<double> UL, UR, U;                    // data for the fluxes
 
     UL.resize(3);
     UR.resize(3);
@@ -138,103 +138,103 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     for (int f = 0; f < cfaces.size(); f++) {
 
-	  int orientation;
-	  normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
-	  mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
-	  farea = mesh_->face_area(cfaces[f]);
-	  normal /= farea;
+      int orientation;
+      normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+      mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+      farea = mesh_->face_area(cfaces[f]);
+      normal /= farea;
 
-	  double vn, vt;
+      double vn, vt;
 
-	  Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+      Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-	  double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
-	  double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
+      double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
+      double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
 
-	  if (ht_rec < B_rec) {
-	    ht_rec = ht_vec_c[0][c];
-	    B_rec  = B_vec_c[0][c];
-	  }
-	  double h_rec = ht_rec - B_rec;
+      if (ht_rec < B_rec) {
+        ht_rec = ht_vec_c[0][c];
+        B_rec  = B_vec_c[0][c];
+      }
+      double h_rec = ht_rec - B_rec;
 
-	  if (h_rec < 0.) {
-	    std::cout << "c = " << c << std::endl;
-	    std::cout << "ht_rec = " << ht_rec << std::endl;
-	    std::cout << "B_rec  = " << B_rec << std::endl;
-	    std::cout << "h_rec  = " << h_rec << std::endl;
-	    Errors::Message msg;
-	    msg << "Shallow water PK: negative h.\n";
-	    Exceptions::amanzi_throw(msg);
-	  }
+      if (h_rec < 0.) {
+        std::cout << "c = " << c << std::endl;
+        std::cout << "ht_rec = " << ht_rec << std::endl;
+        std::cout << "B_rec  = " << B_rec << std::endl;
+        std::cout << "h_rec  = " << h_rec << std::endl;
+        Errors::Message msg;
+        msg << "Shallow water PK: negative h.\n";
+        Exceptions::amanzi_throw(msg);
+      }
 
-	  double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
-	  double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
-	  double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
-	  double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
+      double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
+      double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
+      double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
+      double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
 
-	  vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
-	  vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+      vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+      vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
 
-	  vn =  vx_rec*normal[0] + vy_rec*normal[1];
-	  vt = -vx_rec*normal[1] + vy_rec*normal[0];
+      vn =  vx_rec*normal[0] + vy_rec*normal[1];
+      vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
-	  UL[0] = h_rec;
-	  UL[1] = h_rec*vn;
-	  UL[2] = h_rec*vt;
+      UL[0] = h_rec;
+      UL[1] = h_rec*vn;
+      UL[2] = h_rec*vt;
 
-	  int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+      int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
-	  if (cn == -1) {
-	    UR[0] = UL[0];
-	    UR[1] = UL[1];
-	    UR[2] = UL[2];
-	  } else {
+      if (cn == -1) {
+        UR[0] = UL[0];
+        UR[1] = UL[1];
+        UR[2] = UL[2];
+      } else {
 
-	    double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth");
-	    double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry");
+        double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth");
+        double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry");
 
-	    if (ht_rec < B_rec) {
-		  ht_rec = ht_vec_c[0][cn];
-		  B_rec  = B_vec_c[0][cn];
-	    }
-	    double h_rec = ht_rec - B_rec;
+        if (ht_rec < B_rec) {
+          ht_rec = ht_vec_c[0][cn];
+          B_rec  = B_vec_c[0][cn];
+        }
+        double h_rec = ht_rec - B_rec;
 
-	    if (h_rec < 0.) {
-		  std::cout << "cn = " << cn << std::endl;
-		  std::cout << "ht_rec = " << ht_rec << std::endl;
-		  std::cout << "B_rec  = " << B_rec << std::endl;
-		  std::cout << "h_rec  = " << h_rec << std::endl;
-		  Errors::Message msg;
-		  msg << "Shallow water PK: negative h.\n";
-		  Exceptions::amanzi_throw(msg);
-	    }
+        if (h_rec < 0.) {
+          std::cout << "cn = " << cn << std::endl;
+          std::cout << "ht_rec = " << ht_rec << std::endl;
+          std::cout << "B_rec  = " << B_rec << std::endl;
+          std::cout << "h_rec  = " << h_rec << std::endl;
+          Errors::Message msg;
+          msg << "Shallow water PK: negative h.\n";
+          Exceptions::amanzi_throw(msg);
+        }
 
-	    double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
-	    double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
-	    double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
-	    double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
+        double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
+        double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
+        double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
+        double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
 
-	    vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
-	    vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+        vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+        vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
 
-	    vn =  vx_rec*normal[0] + vy_rec*normal[1];
-	    vt = -vx_rec*normal[1] + vy_rec*normal[0];
+        vn =  vx_rec*normal[0] + vy_rec*normal[1];
+        vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
-	    UR[0] = h_rec;
-	    UR[1] = h_rec*vn;
-	    UR[2] = h_rec*vt;
+        UR[0] = h_rec;
+        UR[1] = h_rec*vn;
+        UR[2] = h_rec*vt;
 
-	  }
+      }
 
-	  FNum_rot = NumFlux_x(UL,UR);
+      FNum_rot = NumFlux_x(UL,UR);
 
-	  FNum[0] = FNum_rot[0];
-	  FNum[1] = FNum_rot[1]*normal[0] - FNum_rot[2]*normal[1];
-	  FNum[2] = FNum_rot[1]*normal[1] + FNum_rot[2]*normal[0];
+      FNum[0] = FNum_rot[0];
+      FNum[1] = FNum_rot[1]*normal[0] - FNum_rot[2]*normal[1];
+      FNum[2] = FNum_rot[1]*normal[1] + FNum_rot[2]*normal[0];
 
-	  for (int i = 0; i < 3; i++) {
-	    FS[i] += FNum[i]*farea;
-	  }
+      for (int i = 0; i < 3; i++) {
+        FS[i] += FNum[i]*farea;
+      }
 
     } // faces
 
@@ -286,6 +286,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   return failed;
 }
 
+
 void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // SW conservative variables: (h, hu, hv)
@@ -305,7 +306,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
   total_depth_key_    = Keys::getKey(domain_, "total_depth");
   bathymetry_key_     = Keys::getKey(domain_, "bathymetry");
-  myPID_  		    = Keys::getKey(domain_, "PID");
+  myPID_              = Keys::getKey(domain_, "PID");
 
   // primary fields
 
@@ -364,6 +365,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 }
 
+
 void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 {  // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -382,7 +384,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(1.0);
 
     for (int c = 0; c < ncells_owned; c++) {
-	  ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
+      ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
     }
 
     S_->GetField("surface-ponded_depth", passwd_)->set_initialized();
@@ -424,6 +426,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 }
 
+
 //==========================================================================
 //
 // Discretization: numerical fluxes, source terms, etc
@@ -449,6 +452,7 @@ double minmod(double a, double b)
 
   return m;
 }
+
 
 //--------------------------------------------------------------
 // Barth-Jespersen limiter of the gradient
@@ -518,6 +522,7 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
 
   grad_lim = Phi*grad;
 }
+
 
 //--------------------------------------------------------------
 // piecewise-linear reconstruction of the function
@@ -608,6 +613,7 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
   return h_rec;
 }
 
+
 //--------------------------------------------------------------
 // physical flux in x-direction
 //--------------------------------------------------------------
@@ -637,6 +643,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U)
   return F;
 }
 
+
 //--------------------------------------------------------------
 // physical flux in y-direction
 //--------------------------------------------------------------
@@ -665,6 +672,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 
   return G;
 }
+
 
 //--------------------------------------------------------------
 // physical source term
@@ -697,6 +705,7 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
   return S;
 }
 
+
 //--------------------------------------------------------------
 // numerical flux in x-direction
 // note that the SW system has a rotational invariance property
@@ -704,8 +713,9 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
 std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR)
 {
   return NumFlux_x_Rus(UL,UR);
-//  return NumFlux_x_central_upwind(UL,UR);
+  // return NumFlux_x_central_upwind(UL,UR);
 }
+
 
 //--------------------------------------------------------------
 // Rusanov numerical flux -- very simple but very diffusive
@@ -749,6 +759,7 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::v
 
   return F;
 }
+
 
 //--------------------------------------------------------------
 // Central-upwind numerical flux (Kurganov, Acta Numerica 2018)
@@ -808,6 +819,7 @@ std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double
 
   return F;
 }
+
 
 //--------------------------------------------------------------------
 // discretization of the source term (well-balanced for lake at rest)
@@ -871,7 +883,6 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   return S;
 }
-
 
 
 //--------------------------------------------------------------
