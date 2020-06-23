@@ -37,11 +37,11 @@
       <viscosity>1.0E-03</viscosity>
       <density>1000.0</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="0.0">CO3--</solute>
-          <solute coefficient_of_diffusion="0.0">Ca++</solute>
-	  <solute coefficient_of_diffusion="0.0">Tracer</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0">CO3--</primary>
+          <primary coefficient_of_diffusion="0.0">Ca++</primary>
+	  <primary coefficient_of_diffusion="0.0">Tracer</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
     <solid_phase name="rock">
@@ -65,7 +65,7 @@
       </unstr_flow_controls>
       <unstr_transport_controls>
         <algorithm>explicit second-order</algorithm>
-        <sub-cycling>on</sub-cycling>
+        <sub_cycling>on</sub_cycling>
         <cfl>1</cfl>
       </unstr_transport_controls>
 
@@ -78,14 +78,15 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
-        <unstr_initialization method="darcy" />
+        <unstr_initialization>
+          <method>darcy_solver</method>
+        </unstr_initialization>
       </unstr_steady-state_controls>
 
       <unstr_chemistry_controls>
-        <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
         <activity_model>debye-huckel</activity_model>
         <tolerance>1.5e-12</tolerance>
-        <maximum_newton_terations>150</maximum_newton_terations>
+        <maximum_newton_iterations>150</maximum_newton_iterations>
         <max_time_step>0.2</max_time_step>
         <time_step_cut_threshold>20</time_step_cut_threshold>
         <initial_time_step>0.2</initial_time_step>
@@ -161,7 +162,7 @@
       <assigned_regions>Left top</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
+          <inward_mass_flux function="constant" start="0.0" value="0.50e+1"/>
         </liquid_component>
 	<geochemistry_component>
           <constraint name="top" function="constant" start="0.0"/>
@@ -173,7 +174,7 @@
       <assigned_regions>Left bottom</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
+          <inward_mass_flux function="constant" start="0.0" value="0.26e+1"/>
         </liquid_component>
         <geochemistry_component>
           <constraint name="bottom" function="constant" start="0.0"/>
@@ -185,7 +186,7 @@
       <assigned_regions>Right</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <hydrostatic function="uniform" start="0.0" value="1.0"/>
+          <hydrostatic function="constant" start="0.0" value="1.0"/>
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

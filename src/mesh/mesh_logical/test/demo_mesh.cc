@@ -24,8 +24,6 @@ demoMeshLogicalSegmentRegularManual()
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
@@ -79,8 +77,6 @@ demoMeshLogicalSegmentIrregularManual() {
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
@@ -130,8 +126,6 @@ demoMeshLogicalYManual() {
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
@@ -317,8 +311,6 @@ demoMeshLogicalFromXML(const std::string& meshname) {
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   MeshLogicalFactory fac(comm, gm);
@@ -359,8 +351,6 @@ demoMeshLogicalYEmbedded() {
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
   
   Teuchos::RCP<MeshLogical> m_log = demoMeshLogicalYManual();
 

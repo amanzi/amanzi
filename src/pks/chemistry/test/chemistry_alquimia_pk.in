@@ -78,11 +78,11 @@ CHEMISTRY
     Opal
   /
 
-  RADIOACTIVE_DECAY_REACTION
+  GENERAL_REACTION
     REACTION Tritium <-> 
-    RATE_CONSTANT 1.78577e-09
+    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
+    BACKWARD_RATE 0.d0
   /
-
 
   MINERAL_KINETICS
     Quartz
@@ -90,8 +90,8 @@ CHEMISTRY
     /
     Kaolinite
       RATE_CONSTANT -12.967 mol/cm^2-sec
-      PREFACTOR : acid
-        RATE_CONSTANT -12.967 mol/cm^2-sec
+      PREFACTOR
+        RATE_CONSTANT -12.967 mol/cm^2-sec <-- acid
         PREFACTOR_SPECIES H+
           ALPHA 0.777
         /
@@ -100,8 +100,8 @@ CHEMISTRY
     Goethite
       RATE_CONSTANT -7.94 mol/cm^2-sec
     /
-    Schoepite : equilibrium => fast rate
-      RATE_CONSTANT 2.0 mol/cm^2-sec
+    Schoepite
+      RATE_CONSTANT 2.0 mol/cm^2-sec <-- equilibrium (fast rate)
     /
     Gibbsite
       RATE_CONSTANT -11.5 mol/cm^2-sec
@@ -112,35 +112,40 @@ CHEMISTRY
     Basaluminite
       RATE_CONSTANT -8.0 mol/cm^2-sec
     /
-    Opal : dissolution
-      RATE_CONSTANT -12.135 mol/cm^2-sec
+    Opal
+      RATE_CONSTANT -12.135 mol/cm^2-sec <-- dissolution
     /
   /
 
   SORPTION
     SURFACE_COMPLEXATION_RXN
-      EQUILIBRIUM :MINERAL bulk sediment
-      SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk]
+      EQUILIBRIUM
+      SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk] <-- bulk sediment
       COMPLEXES
         (>davis_O)UO2+
       /
     /
-    ION_EXCHANGE_RXN :MINERAL Kaolinite
-      CEC 2.75  : [mol/m^3 bulk]
+    ION_EXCHANGE_RXN
+      CEC 2.75  : [mol/m^3 bulk] <-- Kaolinite
       CATIONS
-        Na+   1.0
-        Al+++ 1.71132830416
-        H+    0.0251188643151
-	Ca++  0.316227766017
+        Na+   1.0 REFERENCE
+!        Ca++  0.316227766017
+!        Al+++ 1.71132830416
+!        H+    0.0251188643151
+         Ca++  3.16227766017d0
+         Al+++ 0.584341413374d0
+         H+    39.8107170553d0
       /
     /
-  / :sorption
+  /
 
-
-  DATABASE test/chemistry_alquimia_pk.dat
+  DATABASE chemistry_alquimia_pk.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
-
+  OUTPUT
+    All
+    TOTAL
+  /
 END
 
 :=========================== constraints ======================================

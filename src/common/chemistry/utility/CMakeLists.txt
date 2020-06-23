@@ -16,9 +16,7 @@ set(geochemutil_src_files matrix_block.cc
 set(geochemutil_inc_files matrix_block.hh
                           chemistry_exception.hh
                           chemistry_utilities.hh
-                          string_tokenizer.hh
-                          chemistry_strings.hh
-                          chemistry_verbosity.hh)
+                          string_tokenizer.hh)
 
 add_amanzi_library(geochemutil SOURCE ${geochemutil_src_files}
 	                       LINK_LIBS ${Teuchos_LIBRARIES}) 

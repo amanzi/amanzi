@@ -75,7 +75,7 @@ TEST_FIXTURE(bits_and_pieces, empty_parameter_list)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   MeshFactory meshfactory(comm,gm);
-  Teuchos::RCP<Mesh> mesh(meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
+  // Teuchos::RCP<Mesh> mesh(meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
 

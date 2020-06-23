@@ -43,7 +43,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
       K_default_(1.0)
   {
     global_op_ = Teuchos::null;
-    operator_type_ = OPERATOR_ELASTICITY;
+    pde_type_ = PDE_ELASTICITY;
     Init_(plist);
   }
 
@@ -79,8 +79,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
-
-  OperatorType operator_type_;
 };
 
 }  // namespace Operators

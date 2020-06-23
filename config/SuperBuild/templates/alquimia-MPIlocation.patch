@@ -1,0 +1,12 @@
+diff -ruNbB alquimia-1.0.6-rc-old/cmake/Modules/ResolveCompilerPaths.cmake alquimia-1.0.6-rc-new/cmake/Modules/ResolveCompilerPaths.cmake
+--- alquimia-1.0.6-rc-old/cmake/Modules/ResolveCompilerPaths.cmake	2020-03-16 17:32:28.742144779 -0600
++++ alquimia-1.0.6-rc-new/cmake/Modules/ResolveCompilerPaths.cmake	2020-03-16 17:33:00.035168882 -0600
+@@ -43,7 +43,7 @@
+ macro (RESOLVE_LIBRARIES LIBS LINK_LINE)
+   string (REGEX MATCHALL "((-L|-l|-Wl)([^\" ]+|\"[^\"]+\")|[^\" ]+\\.(a|so|dll|lib))" _all_tokens "${LINK_LINE}")
+   set (_libs_found)
+-  set (_directory_list)
++  set (_directory_list "${MPI_PREFIX}/lib")
+   foreach (token ${_all_tokens})
+     if (token MATCHES "-L([^\" ]+|\"[^\"]+\")")
+       # If it's a library path, add it to the list

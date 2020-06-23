@@ -24,7 +24,6 @@ ActivityModel::ActivityModel()
     : I_(0.0),
       Z_(0.0),
       M_(0.0),
-      verbosity_(kSilent),
       name_(""),
       num_species_(0),
       gamma_() {

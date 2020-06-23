@@ -3,6 +3,10 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
+#include "HDF5Reader.hh"
+#include "errors.hh"
+#include "VerboseObject_objs.hh"
+
 #include "FunctionConstant.hh"
 #include "FunctionSmoothStep.hh"
 #include "FunctionTabular.hh"
@@ -13,8 +17,6 @@
 #include "FunctionStaticHead.hh"
 #include "FunctionBilinear.hh"
 #include "FunctionBilinearAndTime.hh"
-#include "errors.hh"
-#include "HDF5Reader.hh"
 
 using namespace Amanzi;
 
@@ -57,7 +59,7 @@ TEST(smooth_step_test)
   x[0] = 2.0;
   CHECK_EQUAL((*g)(x), 0.5);
   delete g;
-  CHECK_THROW(FunctionSmoothStep f(3.0, 1.0, 3.0, 0.0), Errors::Message);
+  CHECK_THROW(FunctionSmoothStep fun(3.0, 1.0, 3.0, 0.0), Errors::Message);
 }
       
 TEST(tabular_test)

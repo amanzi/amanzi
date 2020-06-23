@@ -778,8 +778,8 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
           double* cell_aux_data = (*aux_data_)[i];
           double* cell_free_ion = free_ion[aux_index_.at(i)];
           double* activity_coeff = activity[aux_index_.at(i)];
-          double activity = cell_free_ion[cell] * activity_coeff[cell];
-          cell_aux_data[cell] = -std::log10(activity);
+          double activity_val = cell_free_ion[cell] * activity_coeff[cell];
+          cell_aux_data[cell] = -std::log10(activity_val);
         } else {
           // don't support anything else at this time....
         }

@@ -108,8 +108,8 @@
       </unstr_transient_controls>
 
       <unstr_chemistry_controls>
-	<max_residual_tolerance>1.0e-12</max_residual_tolerance>
-        <maximum_newton_terations>50</maximum_newton_terations>
+        <max_residual_tolerance>1.0e-12</max_residual_tolerance>
+        <maximum_newton_iterations>150</maximum_newton_iterations>
         <auxiliary_data>pH</auxiliary_data>
         <initial_time_step>220000.0</initial_time_step>
         <max_time_step>220000.0</max_time_step>

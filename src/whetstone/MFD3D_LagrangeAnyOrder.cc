@@ -82,7 +82,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac, bool doAc)
 {
   Entity_ID_List nodes, edges, faces, fedges, fnodes, ids;
-  std::vector<int> dirs, fdirs, map;
+  std::vector<int> dirs, fdirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -132,7 +132,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     AmanziGeometry::Point normal = mesh_->face_normal(f);
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-    const auto& tau = *coordsys->tau();
     vsysf.push_back(coordsys);
 
     Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
@@ -358,8 +357,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
         }
 
         int m = MonomialSetPosition(d_, multi_index);
-        double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
-                        basis.monomial_scales()[jt.MonomialSetOrder()];
+        factor = basis.monomial_scales()[it.MonomialSetOrder()] *
+                 basis.monomial_scales()[jt.MonomialSetOrder()];
         N(row + n, col) = integrals_.poly()(nm, m) * factor / volume; 
       }
     }
@@ -567,7 +566,6 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);
@@ -642,7 +640,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
 
       int m = (n + 1) % nfaces;
-      double tmp = (dofs(n) + dofs(m)) / 2 - grad * (xf - xc);
+      tmp = (dofs(n) + dofs(m)) / 2 - grad * (xf - xc);
       a1 += tmp * area;
       a2 += area;
     }

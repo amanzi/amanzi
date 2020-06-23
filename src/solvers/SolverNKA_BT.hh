@@ -229,7 +229,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    int  prec_error = fn_->ApplyPreconditioner(r, du_tmp);
+    fn_->ApplyPreconditioner(r, du_tmp);
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {
@@ -304,7 +304,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       previous_l2_error = l2_error;
 
       BackTracking<Vector> bt(fn_);
-      int ok = bt.Bisection(u, du);
+      bt.Bisection(u, du);
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 

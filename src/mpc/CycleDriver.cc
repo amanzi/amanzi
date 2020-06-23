@@ -448,12 +448,14 @@ void CycleDriver::ReadParameterList_() {
     Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
     AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
-    Teuchos::Array<double>::const_iterator it_tim;
-    Teuchos::Array<double>::const_iterator it_dt;
-    for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
-         it_tim != reset_times.end();
+    {
+      Teuchos::Array<double>::const_iterator it_tim;
+      Teuchos::Array<double>::const_iterator it_dt;
+      for (it_tim = reset_times.begin(), it_dt = reset_times_dt.begin();
+           it_tim != reset_times.end();
          ++it_tim, ++it_dt) {
-      reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
+        reset_info_.push_back(std::make_pair(*it_tim, *it_dt));
+      }
     }  
 
     if (tpc_list.isParameter("maximum time step")) {
@@ -831,7 +833,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   Visualize();
   Observations();
   WriteCheckpoint(dt);
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // Amanzi::timer_manager.stop("I/O");
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -855,7 +857,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
-            S_->WriteStatistics(vo_);
+            WriteStateStatistics(S_.ptr(), vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
             *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
@@ -879,7 +881,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
-        S_->WriteStatistics(vo_);
+        WriteStateStatistics(S_.ptr(), vo_);
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
@@ -903,7 +905,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 #endif
   
   // finalizing simulation
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
   ReportMemory();
   // Finalize();
  
@@ -929,8 +931,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   Teuchos::ParameterList state_plist = glist_->sublist("state");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
-  for (auto mesh = S_old_->mesh_begin(); mesh != S_old_->mesh_end(); ++mesh) {
-    S_->RegisterMesh(mesh->first, mesh->second.first);
+  for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
+    S_->RegisterMesh(it->first, it->second.first);
   }    
   
   //  S_->RegisterMesh("domain", mesh);
@@ -977,7 +979,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->CalculateDiagnostics(S_);
   Observations();
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];

@@ -127,7 +127,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   std::vector<Tensor> Mv;
   std::vector<double> cwgt;
 
-  Tensor N(d_, 2), NK(d_, 2), Mv_tmp(d_, 2);
+  Tensor N(d_, 2), NK(d_, 2);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
@@ -149,7 +149,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     NK = N * Kinv;
 
     N.Transpose();
-    Mv_tmp = NK * N;
+    auto Mv_tmp = NK * N;
     Mv.push_back(Mv_tmp);
 
     for (int i = 0; i < d_; i++) {

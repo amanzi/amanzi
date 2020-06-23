@@ -39,6 +39,7 @@ add_amanzi_library(atk
                           Spline.cc
                           SplinedCurve.cc
                           Key.cc
+                          ExprTK.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Units.hh
@@ -59,6 +60,7 @@ add_amanzi_library(atk
                            Spline.hh
                            SplinedCurve.hh
                            Key.hh
+                           ExprTK.hh
                     LINK_LIBS error_handling ${Teuchos_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
@@ -108,6 +110,11 @@ if (BUILD_TESTS)
                     LINK_LIBS atk error_handling 
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
+    ADD_AMANZI_TEST(utils_exprtk utils_exprtk
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_exprtk.cc
+                    LINK_LIBS atk error_handling 
+                              ${UnitTest_LIBRARIES})
 
 endif()
 

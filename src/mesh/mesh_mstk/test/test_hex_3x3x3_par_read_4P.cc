@@ -13,8 +13,6 @@
 
 TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
 {
-
-  int i, j, k, err, nc, nf, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 

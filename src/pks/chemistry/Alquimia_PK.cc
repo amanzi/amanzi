@@ -854,7 +854,6 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int imax(-1), imin(-1);
 
   // Now loop through all the cells and advance the chemistry.
-  int ierr = 0;
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
     int num_itrs = AdvanceSingleCell(dt, aqueous_components_, cell);

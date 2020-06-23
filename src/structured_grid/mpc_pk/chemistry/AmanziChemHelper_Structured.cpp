@@ -134,7 +134,6 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
       components[ithread].surface_site_density.resize(NsorptionSites,surface_site_density);
     }
     
-    chemSolve[ithread].verbosity(Amanzi::AmanziChemistry::kTerse);	  
     chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
   }
 }

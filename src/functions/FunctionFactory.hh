@@ -30,6 +30,7 @@ class FunctionFactory {
   Function* create_distance(Teuchos::ParameterList&) const;
   Function* create_squaredistance(Teuchos::ParameterList&) const;
   Function* create_bilinear_and_time(Teuchos::ParameterList&) const;
+  Function* create_exprtk(Teuchos::ParameterList&) const;
 };
 
 } // namespace Amanzi

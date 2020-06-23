@@ -103,7 +103,6 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
@@ -181,8 +180,8 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
         }
 
         int np = MonomialSetPosition(d_, multi_index); 
-        double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
-                        basis.monomial_scales()[jt.MonomialSetOrder()];
+        factor = basis.monomial_scales()[it.MonomialSetOrder()] *
+                 basis.monomial_scales()[jt.MonomialSetOrder()];
         N(row + n, col) = integrals_.poly()(nm, np) * factor / volume; 
       }
     }
@@ -251,7 +250,6 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
   // number of degrees of freedom
   Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
-  int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
 

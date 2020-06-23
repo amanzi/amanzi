@@ -54,7 +54,10 @@ class ActivityModelTest {
   ac::Species Al_ppp;
   ac::Species PO4_mmm;
   std::vector<ac::AqueousEquilibriumComplex> aqueous_complexes_;
-};  // end class SpeciationTest
+
+  Teuchos::RCP<Amanzi::VerboseObject> vo_;
+};
+
 
 ActivityModelTest::ActivityModelTest()
     : amf_(),
@@ -81,6 +84,9 @@ ActivityModelTest::ActivityModelTest()
   species_.push_back(PO4_mmm);
   // TODO(bandre): should add some aqueous complexes to test ionic strength....
   aqueous_complexes_.clear();
+
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
 }
 
 ActivityModelTest::~ActivityModelTest() {
@@ -102,10 +108,12 @@ void ActivityModelTest::RunTest(const std::string name, double * gamma) {
   parameters.pitzer_jfunction = "";
 
   activity_model_ = amf_.Create(activity_model_name(), parameters, 
-                                species_, aqueous_complexes_);
+                                species_, aqueous_complexes_,
+                                vo_.ptr());
+
   activity_model_->CalculateIonicStrength(species_, aqueous_complexes_);
   *gamma = activity_model_->Evaluate(species_.at(index));
-}  // end ActivityModelTest::RunTest()
+}
 
 
 /*!

@@ -60,12 +60,12 @@ class IonExchangeRxn {
     return ref_cation_sorbed_conc_;
   }
 
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(void) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
   std::vector<IonExchangeComplex> ionx_complexes_;

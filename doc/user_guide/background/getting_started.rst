@@ -13,8 +13,8 @@ Downloading
 
 *Amanzi* is an open-source project that is distributed under a BSD license.  
 To download a tarball of the source, go to the *Amanzi* 
-`downloads <https://software.lanl.gov/ascem/amanzi/downloads>`_  page
-and following the links. 
+`downloads <https://github.com/amanzi/amanzi>`_  page
+and follow the instructions. 
 
 Installing
 ~~~~~~~~~~
@@ -24,7 +24,7 @@ installing *Amanzi* is relatively straightforward process.  The build
 process, which is launched by a single script - **bootstrap.sh** -
 automatically downloads and builds the required Third Party Libraries
 (TPLs), and then builds *Amanzi* and links it to the TPLs that it
-build.  The script can be found under the *config* subdirectory in the
+build.  The script can be found in the root directory of the
 *Amanzi* directory tree. However, care must be taken to ensure that
 the requirements for the compilers, message passing interface (MPI)
 libraries, and the build tool CMake are satisfied.  Details for the
@@ -52,10 +52,10 @@ for Microsoft Windows:
 Although not required by the XML standard or *Amanzi*, indentation
 using tabs and/or spaces is commonly used to indicate the hierarchy of
 nested XML elements and improve readibility.  Tabs (8 character width)
-are used in the above XML snippet.  *Amanzi* uses a custom XML
-*schema* to check the input file for inconsistencies in structure with
-respect to the configuration expected based on the *Amanzi* user
-guide. Any input errors of this nature are flagged for the user to
+are used in the above XML snippet.  
+.. *Amanzi* uses a custom XML *schema* to check the input file for inconsistencies in structure with
+.. respect to the configuration expected based on the *Amanzi* user guide. 
+Any input errors of this nature are flagged for the user to
 correct, and *Amanzi* does not attempt a numerical flow and/or
 transport simulation.  *Amanzi* XML element and attribute names are
 mnemonic, but the user will need to consult the user guide for
@@ -72,7 +72,13 @@ simply set the number of processor cores to 1 for a serial run.  On most
 desktop, laptop and small cluster systems, the mpirun or mpiexec command
 is used ::
 
-    mpirun -n NN <prefix>/bin/amanzi --xml_file=input.xml --xml_schema=<prefix>/bin/amanzi.xsd
+    mpirun -n NN <prefix>/bin/amanzi --xml_file=input.xml
+
+In the future *Amanzi* will use a custom XML *schema* to check the input file for i
+nconsistencies in structure with respect to the configuration expected based on the *Amanzi* user guide. 
+The new command line will be ::
+
+     mpirun -n NN <prefix>/bin/amanzi --xml_file=input.xml --xml_schema=<prefix>/bin/amanzi.xsd
 
 The input file is often in the directory that you are running the command
 in, while the *Amanzi* executable and schema generally require full paths.
@@ -149,14 +155,20 @@ in the visualization files is
   *  Volumetric water content [volume water / bulk volume]
   *  Aqueous saturation [volume water / volume pore space]
   *  Aqueous pressure [Pa]
-  *  XXX Aqueous concentration [moles of solute XXX / volume water in MKS] 
+  *  Hydraulic head [m]
+  *  Drawdown [m]
+  *  Water table [m]
+  *  SOLUTE aqueous concentration [moles of solute SOLUTE / volume water in MKS] 
      (name formed by string concatenation, given the definitions in "Phase Definition" section)
-  *  X-, Y-, Z- Aqueous volumetric fluxe [m/s]
-  *  MaterialID
+  *  SOLUTE volumetric flow rate [mol/s]
+  *  X-, Y-, Z- aqueous volumetric flux [m/s]
+  *  Material ID
+  *  Volumetric water content [-]
   *  Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
   *  Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]
-  *  Aqueous mass flow rate [ kg/s ] (must use integral functional in the observation)
-  *  Aqueous volumetric flow rate [ m^3/s ] (must use integral functional in the observation)
+  *  Aqueous mass flow rate [kg/s] (must use integral functional in the observation)
+  *  Aqueous volumetric flow rate [m^3/s  (must use integral functional in the observation)
+  *  Fracture aqueous volumetric flow rate [m^3/s] (must use integral functional in the observation)
 
 Tools such as `VisIt <http://wci.llnl.gov/codes/visit>`_ and `ParaView
 <http://www.paraview.org>`_ can read the xmf files visualization files directly.

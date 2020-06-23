@@ -78,11 +78,11 @@ using namespace Amanzi::AmanziGeometry;
   double kn = 4.0e-8;
   double L = 120.0;
   double q0 = -2.0e-3;
-  double g = 9.81;
+  double gravity = 9.81;
 
   // test pressure in fracture
   K1 *= rho / mu;
-  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - g * rho * L / 2;
+  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - gravity * rho * L / 2;
 
   auto& pf = *S->GetFieldData("fracture-pressure")->ViewComponent("cell");
   for (int c = 0; c < pf.MyLength(); ++c) {
@@ -100,7 +100,6 @@ using namespace Amanzi::AmanziGeometry;
   int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; ++f) {
-    double area = mesh->face_area(f);
     const auto& normal = mesh->face_normal(f);
 
     int g = fmap.FirstPointInElement(f);

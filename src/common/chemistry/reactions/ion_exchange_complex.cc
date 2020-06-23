@@ -90,49 +90,49 @@ IonExchangeComplex::IonExchangeComplex(
 **  Display functions
 **
 */
-void IonExchangeComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplayReaction(vo);
-  std::cout << "      K: " << K() << std::endl;
+  *vo->os() << "      K: " << K() << std::endl;
 }
 
 
-void IonExchangeComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplayReaction(vo);
   std::stringstream message;
   message << std::setw(40) << " "
           << std::setw(10) << K()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeComplex::DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
           << primary_name()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "X"
           << std::setw(15) << "Concentration"
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << X()
           << std::setw(15) << concentration()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

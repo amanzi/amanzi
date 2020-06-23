@@ -44,7 +44,8 @@ Observable::Observable(Teuchos::ParameterList& plist) :
 
   functional_ = plist.get<std::string>("functional");
   if (functional_ == "observation data: point" ||
-      functional_ == "observation data: integral") {
+      functional_ == "observation data: integral" ||
+      functional_ == "observation data: average") {
     function_ = &ObservableIntensiveSum;
   } else if (functional_ == "observation data: extensive integral") {
     function_ = &ObservableExtensiveSum;
@@ -57,7 +58,6 @@ Observable::Observable(Teuchos::ParameterList& plist) :
     msg << "Observable: unrecognized functional " << functional_;
     Exceptions::amanzi_throw(msg);
   }
-    
   
   // entity of region
   location_ = plist.get<std::string>("location name", "cell");
@@ -220,13 +220,15 @@ void Observable::Update_(const State& S,
     // syncronize the result across processors
     if (functional_ == "observation data: point" ||
         functional_ == "observation data: integral" ||
+        functional_ == "observation data: average" ||
         functional_ == "observation data: extensive integral") {
       double local[2], global[2];
       local[0] = value; local[1] = volume;
       S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
       if (global[1] > 0) {
-        if (functional_ == "observation data: point") {
+        if (functional_ == "observation data: point" ||
+            functional_ == "observation data: average") {
           data.value = global[0] / global[1];
           data.is_valid = true;
         } else if (functional_ == "observation data: integral" ||

@@ -284,7 +284,7 @@ visualization file with prefix ``steady-flow``.
 *Amanzi* is executed from the command-line using this or analogous command for
 the user's specific installation:
 
-``mpirun -n 4 /ascem/amanzi/install/current/bin/amanzi --xml_schema=/ascem/amanzi/install/current/bin/amanzi.xsd --xml_file=amanzi_steady_linear-isv2.xml``
+``mpirun -n 4 install/current/bin/amanzi --xml_schema=install/current/bin/amanzi.xsd --xml_file=amanzi_steady_linear-isv2.xml``
 
 Here execution using 4 processor cores is specified by ``-n 4``. Successful completion
 is marked by ``SIMULATION_SUCCESSFUL`` followed by a timing summary ::
@@ -323,19 +323,20 @@ In output file ``observations.out``, *Amanzi* produces the following results:
 +---------+-------+----------+-----------+
 |  ID     | x (m) |   h (m)  |   P (Pa)  |
 +=========+=======+==========+===========+
-| Well 1  |  0.5  |  318.96  |  2974022  |
+| Well 1  |  0.5  |  319.01  |  2974465  |
 +---------+-------+----------+-----------+
-| Well 2  | 50.5  |  218.98  |  1995310  |
+| Well 2  | 50.5  |  219.00  |  1995306  |
 +---------+-------+----------+-----------+
-| Well 2t | 50.5  |  218.98  |  1760374  |
+| Well 2t | 50.5  |  219.00  |  1760595  |
 +---------+-------+----------+-----------+
-| Well 2b | 50.5  |  218.98  |  2240035  |
+| Well 2b | 50.5  |  219.00  |  2240256  |
 +---------+-------+----------+-----------+
-| Well 3  | 99.5  |  121.00  |  1036172  |
+| Well 3  | 99.5  |  121.00  |  1036175  |
 +---------+-------+----------+-----------+
 
 The output from *Amanzi* is observed to agree closely with the expected hydraulic
 head and pressure results from the analytic solution.
+Minor mismatch is due to rounding of input data.
 
 *Amanzi* XML input file
 ~~~~~~~~~~~~~~~~~~~~~~~

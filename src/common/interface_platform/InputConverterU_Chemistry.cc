@@ -175,8 +175,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   std::vector<std::string> sorption_sites;
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  element = static_cast<DOMElement*>(node_list->item(0));
+  if (domain == "fracture") {
+    node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+    element = static_cast<DOMElement*>(node);
+  } else {
+    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+    element = static_cast<DOMElement*>(node_list->item(0));
+  }
+
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
@@ -271,7 +277,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
       double cec = GetAttributeValueD_(node, "cec", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "mol/m^3");
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
         sites.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")

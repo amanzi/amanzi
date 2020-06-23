@@ -43,7 +43,7 @@ herr_t dataset_info(hid_t loc_id, const char *name, void *empty)
 
 herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap, int *elemmap)
 {
-  hid_t dataset_id, dataspace, data_type;
+  hid_t dataset_id, dataspace;
   herr_t status;
   int rank, num;
   //hsize_t *cdims, *mdims;
@@ -152,14 +152,11 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
 
 int main (int argc, char *argv[])
 {
-
   FILE *fp;
   hid_t restart_file, dataset_id, dataspace, new_file, dt;
-  hsize_t *cdims, *mdims, dimsf[2], mapnodes;
+  hsize_t *cdims, *mdims, dimsf[2];
   herr_t status;
   int rank;
-  double *data_d, *nodes;
-  int *data_i, *elem;
   
   // open restart file
   if ((fp = fopen(argv[1],"r")) == NULL)

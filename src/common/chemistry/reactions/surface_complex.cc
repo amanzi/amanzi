@@ -152,7 +152,7 @@ void SurfaceComplex::AddContributionToDTotal(
 }
 
 
-void SurfaceComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -170,11 +170,11 @@ void SurfaceComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
             << std::setw(10) << logK_
             << std::setw(10) << charge()
             << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void SurfaceComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -190,11 +190,11 @@ void SurfaceComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
   message << std::endl;
   message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void SurfaceComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Complex Name"
             << std::setw(15) << "Concentration"
@@ -202,17 +202,17 @@ void SurfaceComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo)
   message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void SurfaceComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+void SurfaceComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << surface_concentration()
           << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

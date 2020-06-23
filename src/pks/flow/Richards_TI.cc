@@ -406,7 +406,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
   const Epetra_MultiVector& duc = *du.ViewComponent("cell");
 
   double error, error_p, error_r;
-  int cell_p(0), cell_r(0);
+  int cell_p(0);
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
@@ -493,7 +493,6 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     
     double press_pert = atm_pressure_ - wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
-    double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]

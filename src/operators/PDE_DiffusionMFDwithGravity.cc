@@ -27,8 +27,6 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
-
-  AMANZI_ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
 }
 
@@ -113,7 +111,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-          double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
+          double tmp;
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
@@ -255,7 +253,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       for (int n = 0; n < nfaces; n++) {
         int dir, f = faces[n];
         if (f < nfaces_owned) {
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          mesh_->face_normal(f, false, c, &dir);
             
           double tmp = av(n) * kf[n] * dir;
           grav_flux[0][f] += tmp;
@@ -299,7 +297,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   grav_data.PutScalar(0.0);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
-  int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
   const auto& fmap = *flux->Map().Map("face", true);
@@ -310,7 +307,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    double zc = mesh_->cell_centroid(c)[dim - 1];
 
     // Update terms due to nonlinear coefficient
     double kc(1.0);

@@ -68,7 +68,7 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* child = children->item(i);
       if (child->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-      DOMElement* element = static_cast<DOMElement*>(child);
+      element = static_cast<DOMElement*>(child);
       XMLString::transcode(element->getAttribute(xstr), str, 99);
       if (strcmp(str, "Native Unstructured Input") == 0) {
         type = "unstructured";

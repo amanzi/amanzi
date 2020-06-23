@@ -38,9 +38,9 @@ class SurfaceSite {
   void UpdateSiteDensity(const double site_density);
 
   void display(void) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   // TODO(bandre): should all these really be public? should not be changing the
   // name, id, etc after creation!

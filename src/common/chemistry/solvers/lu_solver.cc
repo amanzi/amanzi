@@ -14,7 +14,6 @@
 
 #include "exceptions.hh"
 
-#include "chemistry_strings.hh"
 #include "chemistry_exception.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"

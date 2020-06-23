@@ -97,6 +97,7 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     for (int r = 0; r < regs.size(); ++r) {
       AmanziMesh::Entity_ID_List block;
       mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+      regions_.push_back(regs[r]);
 
       for (auto id : block) {
         if ((*map_)[id] >= 0) {

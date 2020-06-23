@@ -60,7 +60,7 @@ class PK_MPC : virtual public PK {
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
@@ -72,23 +72,14 @@ class PK_MPC : virtual public PK {
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
                                  TreeVector& soln) {};
 
-  // -- identifier accessor
-  std::string name() const { return name_; }
-
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator begin() { return sub_pks_.begin(); }
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator end() { return sub_pks_.end(); }
     
  protected:
-  // identifier
-  std::string name_;
-
   // list of the PKs coupled by this MPC
   typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
   SubPKList sub_pks_;
-
-  // single solution vector for the global problem
-  Teuchos::RCP<TreeVector> solution_;
 
   // single solution vector for this pk only
   Teuchos::RCP<TreeVector> my_solution_;
@@ -97,9 +88,6 @@ class PK_MPC : virtual public PK {
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
   Teuchos::RCP<Teuchos::ParameterList> my_list_;
   Teuchos::ParameterList pk_tree_;
-
-  // states
-  Teuchos::RCP<State> S_;
 };
 
 
@@ -111,11 +99,14 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
-  pk_tree_(pk_tree),
   global_list_(global_list),
-  S_(S),
-  solution_(soln)
+  pk_tree_(pk_tree)
 {
+  S_ = S;
+
+  // instead of calling the base class contructor, we initialize here
+  solution_ = soln;
+
   // name the PK
   name_ = pk_tree.name();
   auto found = name_.rfind("->");
@@ -145,6 +136,7 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   }
 
   my_solution_ = Teuchos::rcp(new TreeVector());
+  sub_pks_.clear();
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
@@ -203,7 +195,7 @@ void PK_MPC<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 }
 
 template <class PK_Base>
-void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<const State>& S,
+void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<State>& S_inter,
                                    const Teuchos::RCP<State>& S_next) {
   for (typename SubPKList::iterator pk = sub_pks_.begin();

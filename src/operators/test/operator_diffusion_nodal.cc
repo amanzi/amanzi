@@ -66,7 +66,6 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   Analytic01 ana(mesh);
 
@@ -158,7 +157,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -235,7 +234,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
+  double rho(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data (no mixed bc)
@@ -307,7 +306,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

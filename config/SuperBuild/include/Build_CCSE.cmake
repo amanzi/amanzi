@@ -56,7 +56,9 @@ set(CCSE_CMAKE_CACHE_ARGS
 
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
-                    ccse-1.3.4-tools-plot1d.patch)
+                    ccse-1.3.4-tools-plot1d.patch
+                    ccse-1.3.5-cmake.patch
+                    ccse-1.3.5-rvalue.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
@@ -83,7 +85,7 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
-		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
 		                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
                     BINARY_DIR       ${CCSE_build_dir}            # Build directory 

@@ -19,7 +19,7 @@ TEST(SETS) {
                                  "Vertical Box",
                                  "Bottom ColFunc", "Middle ColFunc",
                                  "Top ColFunc"};
-  unsigned int csetsize, expcsetsizes[6] = {9,18,9,9,9,9};
+  unsigned int expcsetsizes[6] = {9,18,9,9,9,9};
   
   unsigned int expcsetcells[6][18] = {{0,3,6,1,4,7,2,5,8,0,0,0,0,0,0,0,0,0},
 				      {0,9,3,12,6,15,1,10,4,13,7,16,2,11,5,14,8,17},
@@ -30,7 +30,7 @@ TEST(SETS) {
 
   std::string expfsetnames[2] = {"ZLO FACE Plane", "YLO FACE Box"};
 
-  unsigned int fsetsize, expfsetsizes[2] = {9,3};
+  unsigned int expfsetsizes[2] = {9,3};
 
 
   int expfsetfaces[2][9] = {{0,3,6,1,4,7,2,5,8},
@@ -39,7 +39,7 @@ TEST(SETS) {
   std::string expnsetnames[3] = {"Sample Point 1", "INTERIOR XY PLANE", 
                                  "TOP BOX"};
 
-  unsigned int nsetsize, expnsetsizes[3] = {1, 16, 4};
+  unsigned int expnsetsizes[3] = {1, 16, 4};
   int expnsetnodes[3][16] = {{21,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
 			     {16,20,24,28,17,21,25,29,18,22,26,30,19,23,27,31},
 			     {53,57,54,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
@@ -75,9 +75,9 @@ TEST(SETS) {
 
     // Get the region info directly from the XML and compare
   
-    Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
+    Teuchos::ParameterList::ConstIterator it = reg_params.begin(); 
 
-    std::string shape = reg_params.name(j);
+    std::string shape = reg_params.name(it);
 
     if (shape == "region: plane") {
 

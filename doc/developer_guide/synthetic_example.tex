@@ -28,7 +28,8 @@ system and the right-hand side and apply a linear solver.
 \subsection{Defining your PDE class}\label{Sec:PDEClass}
 %
 The PDE class defined must be a derived class of PDE\_HelperDiscretization, this immediately gives 
-new class access to two important variables, a global operator and a container for local matrices and a series of useful routines to apply boundary conditions, assemble global systems, etc.
+new class access to two important variables, a global operator and a container for local matrices and a series of 
+useful routines to apply boundary conditions, assemble global systems, etc.
 %
 This all comes with a caveat: you must define a member function called {it UpdateMatrices()} which is usually used to populate the local matrices, failure to do so will result in an abstract class with no possibility for instantiation.
 %
@@ -61,7 +62,7 @@ class PDE_SecondOrderPoisson: public PDE_HelperDiscretization {
 Notice that in this class we have, additionally, defined a composite vector space as a class variable.
 % 
 Composite vector spaces are factories for composite vectors which is an enhanced EPetra MultiVector.
- %
+%
 This factory can help us create vectors for our trial or test spaces which in the case of a square system are the same or at least have the same set of degrees of freedom. 
 %
 In what follows we will explain how to define the global operator, we note that this is all done in the constructor of the PDE class.

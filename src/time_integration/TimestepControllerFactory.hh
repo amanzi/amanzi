@@ -6,7 +6,6 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
 //! Factory for creating TimestepController objects
 
 /*!
@@ -15,17 +14,20 @@ A TimestepController object sets what size timestep to take.  This can be a
 variety of things, from fixed timestep size, to adaptive based upon error
 control, to adapter based upon simple nonlinear iteration counts.
 
-
-* `"timestep controller type`" ``[string]`` Set the type.  One of the below types.
-* `"timestep controller X parameters`" ``[list]`` List of parameters for a timestep controller of type X.
-
 Available types include:
 
-- TimestepControllerFixed_  (type `"fixed`"), a constant timestep
-- TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
-- TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
-- TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
-- TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+- `Timestep Controller Fixed`_  (type `"fixed`"), a constant timestep
+- `Timestep Controller Standard`_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
+- `Timestep Controller Smarter`_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
+- `Timestep Controller Adaptive`_ (type `"adaptive`"), an adaptive timestep based upon error control.
+- `Timestep Controller From File`_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+
+
+.. _timestep-controller-typed-spec:
+.. admonition:: timestep-controller-typed-spec
+
+    * `"timestep controller type`" ``[string]`` Set the type.  One of: `"fixed`", `"standard`", `"smarter`", `"adaptive`", or `"from file`"
+    * `"timestep controller X parameters`" ``[list]`` List of parameters for a timestep controller of type X.
 
 */
 

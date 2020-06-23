@@ -39,7 +39,7 @@ Some of the salient features of *Amanzi* are listed below:
    high performance visualization tools,
    `ViSiT <http://wci.llnl.gov/codes/visit>`_ and
    `Paraview <http://www.paraview.org>`_.
-9. *Amanzi* also allows observations to at certain points or along
+9. *Amanzi* also allows observations at certain points or along
    specified planes to be written out to data files in support of
    uncertainty quantification and sensitivity analysis.
 10. *Amanzi* supports multiple process models and more process

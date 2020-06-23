@@ -3,6 +3,8 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
+#include "VerboseObject_objs.hh"
+
 #include "FunctionGridColor.hh"
 
 using namespace Amanzi;

@@ -1,5 +1,7 @@
 <amanzi_input version="2.3.0" type="unstructured">
-  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+  <misc>
+    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+  </misc>
 
   <model_description name="1D Flow and Transport w/ heterogeneous Kd">
     <author>Sergi Molins</author>
@@ -68,8 +70,8 @@
 
       <unstr_chemistry_controls>
           <process_model>implicit operator split</process_model>
-          <chem_tolerance>1e-12</chem_tolerance>
-          <chem_max_newton_iterations>250</chem_max_newton_iterations>
+          <tolerance>1e-12</tolerance>
+          <maximum_newton_iterations>250</maximum_newton_iterations>
           <max_time_step>1.5778463e+07</max_time_step>
           <initial_time_step>1.5778463e+07</initial_time_step>
       </unstr_chemistry_controls>
@@ -91,7 +93,6 @@
       </unstr_transient_controls>
 
       <unstr_linear_solver>
-        <comments>Comment section.</comments>
         <tolerance>1.0e-22</tolerance>
       </unstr_linear_solver>
 

@@ -66,7 +66,7 @@
       </unstr_flow_controls>
       <unstr_transport_controls>
         <algorithm>explicit second-order</algorithm>
-        <sub-cycling>on</sub-cycling>
+        <sub_cycling>on</sub_cycling>
         <cfl>1</cfl>
       </unstr_transport_controls>
 
@@ -164,7 +164,7 @@
       <assigned_regions>Left top</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
+          <inward_mass_flux function="constant" start="0.0" value="0.50e+1"/>
         </liquid_component>
         <solute_component name="solute">
           <aqueous_conc name="CO3--" value="1e-10" function="constant" start="0.0"/>
@@ -178,7 +178,7 @@
       <assigned_regions>Left bottom</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
+          <inward_mass_flux function="constant" start="0.0" value="0.26e+1"/>
         </liquid_component>
         <solute_component name="solute">
           <aqueous_conc name="CO3--" value="5e-2" function="constant" start="0.0"/>
@@ -192,7 +192,7 @@
       <assigned_regions>Right</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <hydrostatic function="uniform" start="0.0" value="1.0"/>
+          <hydrostatic function="constant" start="0.0" value="1.0"/>
         </liquid_component>
       </liquid_phase>
     </boundary_condition>

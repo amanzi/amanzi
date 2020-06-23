@@ -82,7 +82,7 @@ void UpwindDivK<Model>::Compute(
   flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
+  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);

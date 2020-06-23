@@ -55,7 +55,7 @@ class SorptionIsothermRxn {
   // add sorbed concentration to sorbed total
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                MatrixBlock* dtotal);
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
   void CleanMemory(void) {
     delete isotherm_;

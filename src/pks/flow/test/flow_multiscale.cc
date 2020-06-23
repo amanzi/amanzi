@@ -105,6 +105,5 @@ TEST(FLOW_2D_MULTISCALE) {
   }
 
   // check the pressure
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
 }

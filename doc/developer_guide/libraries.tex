@@ -187,6 +187,34 @@ A few comments are below, see the code for the complete description of these int
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Setup}
+The following example shows how to register the evaluator that computes 
+the total water content.
+First, we define a key for the field to avoid usage of hard-coded names
+in the code. 
+The key takes a name of a computational domain and the field name.
+Next, we populate names of the dependends fields: pressure, saturation,
+and porosity.
+Finally, we create a secondary variable field evaluator and link it
+to the field name.
+
+\begin{lstlisting}
+Key wc_key = Keys::getKey(domain, "water_content"); 
+
+S->RequireField(wc_key, wc_key)->SetMesh(mesh)->SetGhosted(true)
+  ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+Teuchos::ParameterList elist;
+elist.set<std::string>("pressure key", pressure_key_)
+     .set<std::string>("saturation key", saturation_liquid_key_)
+     .set<std::string>("porosity key", porosity_key_);
+
+auto eval = Teuchos::rcp(new VWContentEvaluator(elist));
+S->SetFieldEvaluator(water_content_key_, eval);
+\end{lstlisting}
+ 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Boundary conditions}
 To help implementing boundary conditions, this library provides a few helper 
 classes derived from the base class {\tt PK\_DomainFunction}.

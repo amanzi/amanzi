@@ -38,6 +38,7 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   ~AqueousEquilibriumComplex() {};
 
   // update molalities
+  using SecondarySpecies::Update;
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double>* total);
@@ -45,10 +46,11 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        MatrixBlock* dtotal);
 
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  using SecondarySpecies::Display;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 };
 
 }  // namespace AmanziChemistry

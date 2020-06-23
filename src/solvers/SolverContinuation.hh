@@ -1,15 +1,39 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Very simple continuation method.
 */
+
+//! A very simple nonlinear continuation method.
+
+/*!
+
+Continuation methods are useful when the nonlinearity can be controlled by a
+single simple parameter.  In this method, the nonlinear problem is solved with
+a less-nonlinear value of the parameter, and the solution of that is used as
+the initial guess to solve a harder problem.  As each successive problem is
+solved, the continuation parameter is changed closer and closer to the true
+value.
+
+Few if any PKs support this method currently -- it requires the PK to provide more
+interface about how to update the continuation parameter.
+
+.. _solver-typed-continuation-spec:
+.. admonition:: solver-typed-continuation-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
+      tolerance. The error is calculated by a PK.
+    
+    * `"number of continuation steps`" ``[int]`` **5** How many steps to take
+      from initial parameter to final parameter.
+
+    * `"inner solver`" ``[solver-typed-spec]``A Solver_, used at each step.
+
+ */
+
 
 #ifndef AMANZI_CONTINUATION_SOLVER_
 #define AMANZI_CONTINUATION_SOLVER_

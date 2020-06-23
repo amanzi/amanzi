@@ -46,7 +46,7 @@ using namespace std;
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
 
   // ---------------- MESH -----------------------------------------------
-  int rank, ierr, aerr, size;
+  int rank(0), ierr, aerr;
 
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");
@@ -61,8 +61,6 @@ using namespace std;
   Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("unstructured");
 
   // Decide on which mesh framework to use
-  bool expert_params_specified = unstr_mesh_params.isSublist("expert");
-
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   if (unstr_mesh_params.isSublist("generate mesh")) {  // If Read parameters are specified

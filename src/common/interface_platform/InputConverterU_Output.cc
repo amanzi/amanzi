@@ -51,8 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   char *tagname, *text;
   std::string unit;
 
-  DOMNamedNodeMap* attr_map;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *node_list;
   DOMNode* node;
 
   // get definitions node - this node MAY exist ONCE
@@ -90,7 +89,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
           node = list->item(0);
 
-          char* text = mm.transcode(node->getTextContent());
+          text = mm.transcode(node->getTextContent());
           Teuchos::Array<double> sps;
           sps.append(TimeCharToValue_(text));
 
@@ -300,7 +299,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       *vo_->os() << "Translating output: observations" << std::endl;
 
     Teuchos::ParameterList obsPL;
-    DOMNode* inode = node->getFirstChild();
+    inode = node->getFirstChild();
     while (inode != NULL) {
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) { 
         inode = inode->getNextSibling();
@@ -313,7 +312,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         obsPL.set<std::string>("observation output filename", output_prefix_ + TrimString_(text));
 
       } else if (strcmp(tagname, "units") == 0) {
-        std::string unit;
         unit = GetAttributeValueS_(inode, "time", TYPE_NONE, false, units_.system().time);
         obsPL.set<std::string>("time unit", unit);
 
