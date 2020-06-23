@@ -26,68 +26,68 @@
 
 void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, double &u) {
 
-	double g = 9.81;
-	double xA = x0 - t*std::sqrt(g*hL);
-	double xB = x0 + 2.*t*std::sqrt(g*hL);
+  double g = 9.81;
+  double xA = x0 - t*std::sqrt(g*hL);
+  double xB = x0 + 2.*t*std::sqrt(g*hL);
 
-//	std::cout << "xA = " << xA << ", xB = " << xB << std::endl;
+//  std::cout << "xA = " << xA << ", xB = " << xB << std::endl;
 
-	if (0. <= x && x < xA) {
-		h = hL;
-		u = 0.;
-	}
-	else {
-		if (xA <= x && x < xB) {
-			h = 4./(9.*g)*( std::sqrt(g*hL) - (x-x0)/(2.*t) )*( std::sqrt(g*hL) - (x-x0)/(2.*t) );
-			u = 2./3.*( (x-x0)/t + std::sqrt(g*hL) );
-		}
-		else {
-			h = 0.;
-		    u = 0.;
-		}
-	}
+  if (0. <= x && x < xA) {
+    h = hL;
+    u = 0.;
+  }
+  else {
+    if (xA <= x && x < xB) {
+      h = 4./(9.*g)*( std::sqrt(g*hL) - (x-x0)/(2.*t) )*( std::sqrt(g*hL) - (x-x0)/(2.*t) );
+      u = 2./3.*( (x-x0)/t + std::sqrt(g*hL) );
+    }
+    else {
+      h = 0.;
+        u = 0.;
+    }
+  }
 
 }
 
 void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, double t) {
 
-	 double hL, x0, x, h, u;
+   double hL, x0, x, h, u;
 
-	 hL = 10.;
-	 x0 = 1000.;
+   hL = 10.;
+   x0 = 1000.;
 
-	 int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-	 for (int c = 0; c < ncells_owned; c++) {
+   for (int c = 0; c < ncells_owned; c++) {
 
-		 Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
 
-		 x = xc[0];
+     x = xc[0];
 
-		 dam_break_1D_exact(hL, x0, t, x, h, u);
-		 hh_ex[0][c] = h;
-		 vx_ex[0][c] = u;
+     dam_break_1D_exact(hL, x0, t, x, h, u);
+     hh_ex[0][c] = h;
+     vx_ex[0][c] = u;
 
-	 }
+   }
 
 }
 
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, const Epetra_MultiVector& hh, const Epetra_MultiVector& vx) {
 
-	int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-	double err_max, err_L1;
+  double err_max, err_L1;
 
-	err_max = 0.;
-	err_L1 = 0.;
+  err_max = 0.;
+  err_L1 = 0.;
 
-	for (int c = 0; c < ncells_owned; c++) {
-		err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
-		err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
-	}
+  for (int c = 0; c < ncells_owned; c++) {
+    err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
+    err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
+  }
 
-	std::cout << "err_max = " << err_max << std::endl;
-	std::cout << "err_L1  = " << err_L1 << std::endl;
+  std::cout << "err_max = " << err_max << std::endl;
+  std::cout << "err_L1  = " << err_L1 << std::endl;
 }
 
 
@@ -147,7 +147,7 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE) {
   
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
-  S->WriteStatistics(vo);
+  WriteStateStatistics(S.ptr(), vo);
   
   // advance in time
   double t_old(0.0), t_new(0.0), dt;
@@ -194,7 +194,7 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE) {
     io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
     io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
     io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-	io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
+    io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
     io.WriteVector(*B(0), "B", AmanziMesh::CELL);
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
     io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);

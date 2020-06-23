@@ -201,7 +201,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     // create screen io
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
-    S->WriteStatistics(vo);
+    WriteStateStatistics(S.ptr(), vo);
 
     // advance in time
     double t_old(0.0), t_new(0.0), dt;
