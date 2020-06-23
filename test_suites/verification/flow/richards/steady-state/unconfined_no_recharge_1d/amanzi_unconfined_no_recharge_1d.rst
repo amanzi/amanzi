@@ -136,7 +136,9 @@ are selected. Input parameters for the numerical simulation are summarized as:
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* :math:`K_{xx} = 10^{-3} ft/s`
 	* :math:`K_{zz} = 10 \cdot K_{xx}` 
-	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for a gravel based on :cite:`ur-Phifer_data_2006`:
+	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for 
+          a gravel based on :cite:`ur-Phifer_data_2006`:
+
 		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
@@ -186,7 +188,9 @@ Input parameters for the numerical simulation are summarized as:
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* :math:`K_{xx} = 3.28 ft/d`
 	* :math:`K_{zz} = 10 \cdot K_{xx}` 
-	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for a gravel based on :cite:`ur-Phifer_data_2006`:
+	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for 
+          a gravel based on :cite:`ur-Phifer_data_2006`:
+
 		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
@@ -202,14 +206,15 @@ For these input specifications, *Amanzi* simulation output is expected to closel
 
 from Equation :eq:`specificSoln2`. 
 
+
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The presented results show good match of numerical data with semi-analytic solution.
 
 .. image:: ../unconfined_recharge_1d/hydraulic_head.png
    :scale: 75 %
    :align: center
-
-(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
 
 References
@@ -222,6 +227,7 @@ References
 
 .. _about_unconfined_no_recharge:
 	    
+
 About
 -----
 
@@ -233,13 +239,8 @@ About
 
 * Input Files:
 
-  * amanzi_unconfined_no_recharge_1d.xml
+  * amanzi_unconfined_no_recharge_1d.xml, Spec 2.3
+  * auto generated structured mesh
 
-    * Spec Version 
-    * mesh:  
-    * runs
-
-Status
-------
 
 

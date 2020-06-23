@@ -46,7 +46,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
   
@@ -56,7 +56,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
   }
   
@@ -67,7 +67,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
     SetGravity(g);
   }
@@ -79,7 +79,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
     SetGravity(g);
   }
@@ -91,7 +91,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(global_op),
       PDE_Diffusion(global_op)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
     SetGravity(g);
     SetDensity(rho);
@@ -104,7 +104,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)
   {
-    operator_type_ = OPERATOR_DIFFUSION_MFD_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
     Init_(plist);
     SetGravity(g);
     SetDensity(rho);

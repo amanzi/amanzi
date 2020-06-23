@@ -13,6 +13,14 @@
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
     <Parameter name="write partitions" type="bool" value="true"/>
   </ParameterList>
+  <ParameterList name="observation data">
+    <ParameterList name="obl 1">
+      <Parameter name="variable" type="string" value="Tc-99 aqueous concentration"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.62980e+06, 6.273650880e+10}"/>
+      <Parameter name="region" type="string" value="Well2"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="walkabout data">
     <Parameter name="file name base" type="string" value="walkabout"/>
     <Parameter name="file name digits" type="int" value="5"/>
@@ -419,13 +427,13 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_1">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-          <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.13600000000000012e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.02600000000000002e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_1.txt"/>
@@ -781,13 +789,13 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_1">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-          <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.13600000000000012e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.02600000000000002e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="residual saturation" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_1.txt"/>
@@ -981,7 +989,7 @@
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
       <Parameter name="used source regions" type="Array(string)" value="{}"/>
-      <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{Well2}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>

@@ -56,7 +56,6 @@ int MFD3D::StabilityMMatrix_(
     int c, DenseMatrix& N, DenseMatrix& M, int objective)
 {
   int nrows = N.NumRows();
-  int ncols = N.NumCols();
 
   // symmetrize the consistency matrix
   for (int i = 0; i < nrows; i++) {
@@ -186,7 +185,7 @@ int MFD3D::StabilityMMatrix_(
         M(i, j) += D(i, k) * D(j, k) * u[nx];
         nx++;
         for (int l = k + 1; l < mcols; l++) {
-          double tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
+          tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
           M(i, j) += tmp * (u[nx] - u[nx + 1]);
           nx += 2;
         }
@@ -334,7 +333,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
-  double qmin, q, qp, q0, tmin, tmp;
+  double qmin, q, tmin, tmp;
   double tol = WHETSTONE_SIMPLEX_TOLERANCE * n;
 
   *ip = 0;

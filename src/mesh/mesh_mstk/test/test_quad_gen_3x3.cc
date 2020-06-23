@@ -14,9 +14,8 @@
 
 TEST(MSTK_QUAD_GEN_3x3)
 {
-
-  int i, j, k, err, nc, nf, nv;
-  Amanzi::AmanziMesh::Set_ID faces[6], nodes[8];
+  int j, nc, nf, nv;
+  Amanzi::AmanziMesh::Set_ID faces[6];
 
   int NV = 16;
   int NF = 24;
@@ -46,7 +45,7 @@ TEST(MSTK_QUAD_GEN_3x3)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
-      for (int j=0; j<4; j++)
+      for (j=0; j<4; j++)
 	{
 	  int f = face_map.LID(c2f[j]);
 	  CHECK( f == c2f[j] );
@@ -57,6 +56,5 @@ TEST(MSTK_QUAD_GEN_3x3)
   std::ofstream fout("test/mstk_quad_gen_4x4.out");
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
-
 }
 

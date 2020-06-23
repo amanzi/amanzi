@@ -7,6 +7,9 @@
       <mass_unit>kg</mass_unit>
       <conc_unit>molar</conc_unit>
     </units>
+  </model_description>
+
+  <definitions>
     <constants>
       <numerical_constant name="X0" value="0.0"/>
       <numerical_constant name="Y0" value="0.0"/>
@@ -19,9 +22,7 @@
       <constant name="gravity" type="none" value="1.0"/>
       <constant name="atmospheric_pressure" type="none" value="0.0"/>
     </constants>
-  </model_description>
 
-  <definitions>
     <macros>
       <time_macro name="Steady State">
         <time>0.0</time>

@@ -68,12 +68,7 @@ HDF5_MPI::~HDF5_MPI()
 
 void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string filename)
 {
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
-  int globaldims[2], localdims[2];
-  int *ids;
 
   // store the mesh
   mesh_maps_ = mesh;
@@ -111,9 +106,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     return;
   }
 
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
   int globaldims[2], localdims[2];
   int *ids;
@@ -132,14 +124,13 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   const Epetra_Map &cmap = mesh_maps_->vis_mesh().cell_map(false);
   int ncells_local = cmap.NumMyElements();
-  int ncells_global = cmap.NumGlobalElements();
 
   // get space dimension
   int space_dim = mesh_maps_->vis_mesh().space_dimension();
 
   // Get and write node coordinate info
   // -- get coords
-  double *nodes = new double[nnodes_local*3];
+  double *xyz = new double[nnodes_local*3];
   globaldims[0] = nnodes_global;
   globaldims[1] = 3;
   localdims[0] = nnodes_local;
@@ -149,12 +140,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   for (int i = 0; i < nnodes_local; i++) {
     mesh_maps_->vis_mesh().node_get_coordinates(i, &xc);
     // VisIt and ParaView require all mesh entities to be in 3D space
-    nodes[i*3+0] = xc[0];
-    nodes[i*3+1] = xc[1];
+    xyz[i*3+0] = xc[0];
+    xyz[i*3+1] = xc[1];
     if (space_dim == 3) {
-      nodes[i*3+2] = xc[2];
+      xyz[i*3+2] = xc[2];
     } else {
-      nodes[i*3+2] = 0.0;
+      xyz[i*3+2] = 0.0;
     }
   }
 
@@ -162,12 +153,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(xyz, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
   // -- clean up
-  delete [] nodes;
+  delete [] xyz;
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
@@ -434,9 +425,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
 void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 {
-  hid_t group, dataspace, dataset;
-  herr_t status;
-  hsize_t dimsf[2];
   std::string xmfFilename;
   int globaldims[2], localdims[2];
   int *ids;
@@ -531,7 +519,6 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   const Epetra_Map &fmap = mesh_maps_->vis_mesh().face_map(false);
   int nfaces_local = fmap.NumMyElements();
-  int nfaces_global = fmap.NumGlobalElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
     AmanziMesh::Entity_ID_List cells;
@@ -661,7 +648,6 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 void HDF5_MPI::createDataFile(std::string soln_filename)
 {
   std::string h5filename, PVfilename, Vfilename;
-  herr_t status;
 
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
@@ -1117,9 +1103,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 {
   // write field data
   double *data;
-  int err = x.ExtractView(&data);
-  hid_t  group, dataspace, dataset;
-  herr_t status;
+  x.ExtractView(&data);
 
   int globaldims[2];
   int localdims[2];

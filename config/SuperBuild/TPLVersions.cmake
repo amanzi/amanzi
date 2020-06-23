@@ -136,6 +136,11 @@
 #                - update NetCDF-C to 4.7.3
 #                - update NetCDF-Fortran to 4.5.2
 #   0.97.1       - update MSTK to 3.3.1
+#   0.97.2       - update MSTK to 3.3.5
+#   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
+#   0.97.4       - added CLM
+#   0.97.5       - added exprtk
+#   0.97.6       - update BoxLib (CCSE) to version 1.3.5
 
 include(CMakeParseArguments)
 
@@ -188,7 +193,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 1)
+set(AMANZI_TPLS_VERSION_PATCH 6)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -264,13 +269,13 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 4)
+set(CCSE_VERSION_PATCH 5)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_SAVEAS_FILE    ${CCSE_ARCHIVE_FILE})
-set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
+set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
+set(CCSE_ARCHIVE_FILE   v${CCSE_VERSION}.tar.gz) 
+set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
+set(CCSE_MD5_SUM        b1e0cfb99db6665ba70bb5e9ae56e14e) 
 
 #
 # TPL: UnitTest
@@ -293,7 +298,7 @@ set(Boost_VERSION_MINOR 67)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
+set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
 set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
@@ -352,12 +357,13 @@ set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 3)
-set(MSTK_VERSION_PATCH 1)
+set(MSTK_VERSION_PATCH 5)
+
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
 set(MSTK_ARCHIVE_FILE   ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        5441d46ac1e2127eb5dd9a40a37da415)
+set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
 
 #
 # TPL: MOAB
@@ -511,14 +517,14 @@ set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
 #
 # TPL: CrunchTope
 #
-set(CRUNCHTOPE_VERSION_MAJOR 160915)
-set(CRUNCHTOPE_VERSION_MINOR c31ecb9)
+set(CRUNCHTOPE_VERSION_MAJOR 020420)
+set(CRUNCHTOPE_VERSION_MINOR 906e164)
 set(CRUNCHTOPE_VERSION_PATCH 0)
 set(CRUNCHTOPE_VERSION  ${CRUNCHTOPE_VERSION_MAJOR}.${CRUNCHTOPE_VERSION_MINOR}.${CRUNCHTOPE_VERSION_PATCH})
 set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_160915-c31ecb9.tgz)
+set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_020420-906e164.0.tgz)
 set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
-set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
+set(CRUNCHTOPE_MD5_SUM       059766e149e2a47c754ecf9815641d71)
 
 #
 # TPL: Nanoflann
@@ -531,4 +537,28 @@ set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
+
+#
+# TPL: CLM
+#
+set(CLM_VERSION_MAJOR 0)
+set(CLM_VERSION_MINOR 1)
+set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
+set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
+set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
+set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
+set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
+
+#
+# TPL: exprtk
+#
+set(EXPRTK_VERSION_MAJOR 0)
+set(EXPRTK_VERSION_MINOR 0)
+set(EXPRTK_VERSION_PATCH d81ac1a)
+set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
+set(EXPRTK_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(EXPRTK_ARCHIVE_FILE  exprtk-${EXPRTK_VERSION}.zip)
+set(EXPRTK_SAVEAS_FILE   ${EXPRTK_ARCHIVE_FILE})
+set(EXPRTK_MD5_SUM       3cd40d9d5b2cb913f1eb4fe07c7d04eb)
 

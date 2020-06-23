@@ -132,7 +132,6 @@ class TransportImplicit_PK : public Transport_PK,
   std::string solver_name_, solver_name_constraint_;
 
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
-  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
   // factory registration

@@ -97,7 +97,6 @@ class Dummy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::ParameterList ti_list_;
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<State> S_;
 
   double dummy_dt;
   int step_count;

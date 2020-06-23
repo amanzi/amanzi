@@ -51,9 +51,10 @@ governing groundwater equation:
 
 .. math::
     \frac{\partial }{\partial x} (T_x \frac{\partial h}{\partial x})+\frac{\partial }{\partial y} (T_y \frac{\partial h}{\partial y})
-    = S \frac{\partial h}{\partial t} + Q \delta(x) \delta(y),
+    = S \frac{\partial h}{\partial t} + Q,
 
-where :math:`T_i` is transmissivity in the direction :math:`i` [L\ :sup:`2`/T], :math:`h` is hydraulic head [L], :math:`S` is the storativity of the aquifer [-], and :math:`Q` is the volumetric pumping rate of the well [L\ :sup:`3`/T].
+where :math:`T_i` is transmissivity in the direction :math:`i` [L\ :sup:`2`/T], :math:`h` is hydraulic head [L], :math:`S` is the storativity of the aquifer [-], and :math:`Q` is the volumetric pumping rate of the well [L\ :sup:`3`/T]. 
+Mathematically, :math:`Q` is the point source.
 
 The initial condition is
 
@@ -154,7 +155,9 @@ Variables
 Results and Comparison
 ----------------------
 
-.. plot:: amanzi_hantush_anisotropic_2d.py
+Results are in good agreement with the analytic solution.
+
+.. plot:: verification/confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.py
           :align: center
 
        
@@ -190,10 +193,6 @@ About
   .. * porflow4_6.exo
 
 * Analytic Solution:
-
-  * Directory: analytic/
-   
-    * test_h_tr.dat
 
 
 .. todo::

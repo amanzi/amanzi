@@ -6,7 +6,14 @@
 
 In short, the guiding  principles described below are related to code readability,
 modularity, and extensibility.
-We follow closely, but not exactly, the Google C++ coding style.
+We facilitate community code development and code review, we follow closely, but not exactly, 
+the Google C++ coding style (https://google.github.io/styleguide/cppguide.html). 
+The Amanzi's version of the coding style is located here
+\begin{center}
+{\tt doc/standards/cxx/cppguide.html}
+\end{center}
+
+for more detail.
 In this section, we describe high-level principles and elaborate some of them 
 in the subsequent section.
 We use different fonts to distinguish between a {\tt Class} name, its {\it Methods()}, 
@@ -25,6 +32,8 @@ It allows process kernels (PK) to require, read, and write various variables (su
 It guarantees data protection by providing both const and non-const data pointers for variables.
 It provides some initialization capability -- this is where all independent variables can be 
 initialized -- since independent variables are typically owned by the state, not by a process kernel.
+A few initialization tools are supported: a space-time function, initialization from an Exodus file 
+and initialization from an HDF5 file.
 
 
 
@@ -43,6 +52,7 @@ An MPC PK may often be fully automated with no knowledge of the underlying PKs.
 Since an MPC PK has the same interface as a PK, it is also a process kernel which
 allows us to build a hierarchy of physical models with various degree of coupling
 ranging from a weak coupling to an iterative coupling to a strong coupling.
+
 
 Much of the work in a PK is delegated to field evaluators, which implement various 
 physical and mathematical models, such as the equations of state, or boundary conditions, 
@@ -81,6 +91,31 @@ and data, and splits complex equations into manageable chunks.
 It also allows lazy evaluation, where nodes in the graph are updated (re-calculated) only if their dependencies
 have changed, resulting in a managed, automated evaluation process with fewer bugs and inefficiencies.
 For more details, we refer to \cite{coon2016managing}.
+A developer may easily modify behavior of evaluators by overriding virtual member functions. 
+The example below shows implementation of one function in an abstract product evaluator of type 
+$\Pi_{i=1}^N f_i^{p_i}$ where $p_i$ is either 1 or -1.
+
+\begin{lstlisting}[language=C++]
+void ProductEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
+  auto& result_c = *result->ViewComponent("cell");
+  int ncells = result_c.MyLength();
+
+  int n(0);
+  result_c.PutScalar(1.0);
+  for (auto it = dependencies_.begin(); it != dependencies_.end(); ++it) {
+    const auto& field = *S->GetFieldData(*it)->ViewComponent("cell");
+    if (powers_[n] == 1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] *= field[0][c];
+    else if (powers_[n] == -1)
+      for (int c = 0; c != ncells; ++c) result_c[0][c] /= field[0][c];
+    n++;
+  }
+}
+\end{lstlisting}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -344,7 +379,7 @@ by creating two "discrete" PDEs for diffusion and advection processes.
 Class {\tt TreeOperator} is the block analogue of linear operators and 
 provides a linear operator acting on a {\tt TreeVectorSpace}. 
 In short, it is a matrix of operators.
-Currently this structure is used for things like multi-phased flows, 
+Currently this structure is used for things like multiphase flows, 
 thermal Richards, coupled matrix-fracture flow and transport, etc.
 
 

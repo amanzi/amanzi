@@ -55,8 +55,6 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
 
-  Teuchos::RCP<VerboseObject> vo_;
-
   // factory registration
   static RegisteredPKFactory<TransportMatrixFracture_PK> reg_;
 };

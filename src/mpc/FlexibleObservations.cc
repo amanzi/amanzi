@@ -122,7 +122,6 @@ FlexibleObservations::FlexibleObservations(
 int FlexibleObservations::MakeObservations(State& S)
 {
   int num_obs(0);
-  int dim = S.GetMesh()->space_dimension();
   std::string unit;
 
   // loop over all observables
@@ -245,8 +244,8 @@ void FlexibleObservations::FlushObservations()
           << "], Value [" << system.mass << " " << system.length << " " << system.concentration << "]\n";
       out << "============================================================================\n";
 
-      for (auto i = obs_list_->begin(); i != obs_list_->end(); ++i) {
-        std::string label = obs_list_->name(i);
+      for (auto it = obs_list_->begin(); it != obs_list_->end(); ++it) {
+        std::string label = obs_list_->name(it);
         const Teuchos::ParameterEntry& entry = obs_list_->getEntry(label);
         if (entry.isList()) {
           const Teuchos::ParameterList& ind_obs_list = obs_list_->sublist(label);

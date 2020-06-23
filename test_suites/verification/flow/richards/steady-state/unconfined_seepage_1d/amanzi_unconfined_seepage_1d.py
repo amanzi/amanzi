@@ -77,8 +77,9 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     for (z_val, color) in cmap.items():
         coords[:,1] = z_val
         head = mymodel.head(coords)
-        axes1.plot(x,head,color,label='$z = %0.2f $'%z_val)
-        axes1.legend(loc="upper right" , fancybox = True , shadow = True)
+        # axes1.plot(x, head, color, label='analytic (Dupuit)')
+        axes1.plot(x, head, 'r', label='analytic (Dupuit)')
+        axes1.legend(loc="upper right", fancybox=True, shadow=True)
           
 def MakeTable(Obs_data,Obs_xml,filename):
 

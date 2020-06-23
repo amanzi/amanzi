@@ -8,11 +8,9 @@
 
   Author: Ethan Coon
 
-  Linear internal energy model -- function of cv and temperature
-
-   IE = cv * (T - Tref)
-
-  UNITS: J/{mol/kg}
+  Linear internal energy IE [J/mol] or [J/kg] model as the function 
+  of the heat capacity (cv) and relative temperature:
+    IE = cv * (T - Tref)
 */
 
 #include "IEM_Linear.hh"

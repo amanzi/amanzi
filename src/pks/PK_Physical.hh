@@ -18,9 +18,11 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "VerboseObject.hh"
+
+#include "Debugger.hh"
+#include "Key.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
-#include "Debugger.hh"
 
 namespace Amanzi {
 
@@ -56,15 +58,12 @@ class PK_Physical : virtual public PK {
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                  TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln,
-                                  const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln,
-                                  const Teuchos::RCP<State>& S);
+  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln);
+  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S);
+  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S);
 
-  // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  // overloaded function also gets the primary field evaulator.
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
@@ -78,7 +77,7 @@ class PK_Physical : virtual public PK {
  protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string domain_;
+  Key domain_;
 
   // solution and evaluator
   std::string key_;

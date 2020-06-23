@@ -121,18 +121,13 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <ParameterList name="function">
-          <ParameterList name="fracture">
-            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="filename" type="string" value="aperture.h5"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="mesh entity" type="string" value="cell"/>
+        <Parameter name="number of dofs" type="int" value="1"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 
@@ -275,6 +270,59 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="isotherm_kd">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="region" type="string" value="EntireDomain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="isotherm_langmuir_b">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="region" type="string" value="EntireDomain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="isotherm_freundlich_n">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="region" type="string" value="EntireDomain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
@@ -494,7 +542,7 @@
 	<ParameterList name="FPM for fracture">
 	  <Parameter name="region" type="string" value="fracture"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
-	  <Parameter name="aperture" type="double" value="1.00000000000000005e-04"/>
+	  <Parameter name="aperture" type="double" value="0.0"/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
@@ -583,6 +631,18 @@
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
 
+      <ParameterList name="initial conditions">
+        <ParameterList name="isotherm_kd">
+          <Parameter name="function" type="string" value="list was moved to state"/>
+        </ParameterList>
+        <ParameterList name="isotherm_langmuir_b">
+          <Parameter name="function" type="string" value="list was moved to state"/>
+        </ParameterList>
+        <ParameterList name="isotherm_freundlich_n">
+          <Parameter name="function" type="string" value="list was moved to state"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -608,6 +668,9 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+
+      <ParameterList name="initial conditions"/>
+
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

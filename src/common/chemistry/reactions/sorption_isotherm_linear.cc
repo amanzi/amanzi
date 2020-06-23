@@ -74,7 +74,7 @@ void SorptionIsothermLinear::Display(const Teuchos::RCP<VerboseObject>& vo) cons
   message << std::setw(5) << "KD:"
           << std::scientific << std::setprecision(5)
           << std::setw(15) << KD() << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

@@ -57,68 +57,32 @@ class SurfaceComplex {
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                MatrixBlock* dtotal);
 
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_name(SpeciesName name) {
-    this->name_ = name;
-  }
-  void set_identifier(SpeciesId i) {
-    this->identifier_ = i;
-  }
-  void set_charge(double d) {
-    this->charge_ = d;
-  }
+  void set_name(SpeciesName name) { this->name_ = name; }
+  void set_identifier(SpeciesId i) { this->identifier_ = i; }
+  void set_charge(double d) { this->charge_ = d; }
 
-  void set_free_site_stoichiometry(const double d) {
-    this->free_site_stoichiometry_ = d;
-  }
-  void set_lnQK(const double d) {
-    this->lnQK_ = d;
-  };
-  void set_logK(const double d) {
-    this->logK_ = d;
-  };
-  void set_ncomp(const int i) {
-    this->ncomp_ = i;
-  };
-  void set_surface_concentration(const double d) {
-    this->surface_concentration_ = d;
-  };
+  void set_free_site_stoichiometry(const double d) { this->free_site_stoichiometry_ = d; }
+  void set_lnQK(const double d) { this->lnQK_ = d; };
+  void set_logK(const double d) { this->logK_ = d; };
+  void set_ncomp(const int i) { this->ncomp_ = i; };
+  void set_surface_concentration(const double d) { this->surface_concentration_ = d; };
 
-  SpeciesName name(void) const {
-    return this->name_;
-  }
-  SpeciesId identifier(void) const {
-    return this->identifier_;
-  }
-  double charge(void) const {
-    return this->charge_;
-  }
+  SpeciesName name(void) const { return this->name_; }
+  SpeciesId identifier(void) const { return this->identifier_; }
+  double charge(void) const { return this->charge_; }
 
-  double free_site_stoichiometry(void) const {
-    return this->free_site_stoichiometry_;
-  }
-  double stoichiometry(const int i) const {
-    return this->stoichiometry_[i];
-  }
-  double lnQK(void) const {
-    return this->lnQK_;
-  };
-  double logK(void) const {
-    return this->logK_;
-  };
-  int ncomp(void) const {
-    return this->ncomp_;
-  };
-  int species_id(const int i) const {
-    return this->species_ids_[i];
-  };
-  double surface_concentration(void) const {
-    return this->surface_concentration_;
-  };
+  double free_site_stoichiometry(void) const { return this->free_site_stoichiometry_; }
+  double stoichiometry(const int i) const { return this->stoichiometry_[i]; }
+  double lnQK(void) const { return this->lnQK_; };
+  double logK(void) const { return this->logK_; };
+  int ncomp(void) const { return this->ncomp_; };
+  int species_id(const int i) const { return this->species_ids_[i]; };
+  double surface_concentration(void) const { return this->surface_concentration_; };
 
  private:
   double log_to_ln(double d) {

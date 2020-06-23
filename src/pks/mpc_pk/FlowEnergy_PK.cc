@@ -46,7 +46,6 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_ = S->GetMesh();
-  int dim = mesh_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
 
@@ -227,7 +226,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
-    // revover the original conserved quantaties
+    // recover conserved quantaties at the beginning of time step
     *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
     *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
     if (S_->HasField("water_content")) {

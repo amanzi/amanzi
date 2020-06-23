@@ -91,7 +91,7 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                      ${MSTK_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR       ${MSTK_build_dir}            # Build directory 

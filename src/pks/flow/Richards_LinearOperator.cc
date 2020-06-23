@@ -100,7 +100,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   CompositeVector utmp(*u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
   Epetra_MultiVector& u_face = *u->ViewComponent("face");
-  Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
 
   // update relative permeability coefficients and upwind it
   darcy_flux_copy->ScatterMasterToGhosted("face");
@@ -145,7 +144,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
-    double residual = solver->residual();
     int code = solver->returned_code();
     double pnorm;
     u->Norm2(&pnorm);

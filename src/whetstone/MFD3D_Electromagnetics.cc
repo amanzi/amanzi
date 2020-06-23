@@ -219,7 +219,6 @@ int MFD3D_Electromagnetics::MassMatrixDiagonal(
 
   M.PutScalar(0.0);
   for (int n = 0; n < nedges; n++) {
-    int e = edges[n];
     M(n, n) = d_ * volume / (nedges * T(0, 0));
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -235,7 +234,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 {
   DenseMatrix M, C;
 
-  int ok = StiffnessMatrix(c, T, A, M, C);
+  StiffnessMatrix(c, T, A, M, C);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -248,7 +247,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
     int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
 {
   MFD3D_Diffusion diffusion(mesh_);
-  int ok = diffusion.MassMatrixScaledArea(c, T, M);
+  diffusion.MassMatrixScaledArea(c, T, M);
 
   // populate curl matrix
   CurlMatrix(c, C);

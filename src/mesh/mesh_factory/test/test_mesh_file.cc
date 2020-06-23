@@ -51,8 +51,6 @@ SUITE (MeshFileType)
     
     Amanzi::AmanziMesh::FileFormat f;
     if (comm->NumProc() > 1 && comm->NumProc() <= 4) {
-      int ierr[1];
-      ierr[0] = 0;
       try {
         f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname);
       } catch (const Amanzi::AmanziMesh::Message& e) {
@@ -89,8 +87,6 @@ SUITE (MeshFileType)
 
     std::string fname("/some/bogus/path.exo"); 
 
-    Amanzi::AmanziMesh::FileFormat f;
-
     CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }    
@@ -101,11 +97,8 @@ SUITE (MeshFileType)
 
     std::string fname(BOGUS_TEST_FILE); 
 
-    Amanzi::AmanziMesh::FileFormat f;
-
     CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }
-    
 }
     

@@ -34,7 +34,8 @@ ActivityModel* ActivityModelFactory::Create(
     const std::string& model,
     const ActivityModel::ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species) {
+    const std::vector<AqueousEquilibriumComplex>& secondary_species,
+    const Teuchos::Ptr<VerboseObject> vo) {
 
   ActivityModel* activity_model = NULL;
 
@@ -66,6 +67,7 @@ ActivityModel* ActivityModelFactory::Create(
 
     // TODO(bandre): set the name in the object constructor so we can
     // verify that the correct object was created.
+    activity_model->set_verbosity(vo);
     activity_model->name(model);
     activity_model->Setup(parameters, primary_species, secondary_species);
   }

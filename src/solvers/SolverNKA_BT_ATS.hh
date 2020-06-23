@@ -1,16 +1,91 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Interface for using NKA as a solver.
 */
+//! Nonlinear solve using NKA with a heuristic based backtracking.
 
+/*!
+
+Whereas line search uses a formal minimization method, backtracking simply uses
+a heuristic multiplier on :math:`\alpha` to find a correction that sufficiently
+reduces the residual.  This can be significantly faster than the full
+minimization problem, and finding the true minimum may not be as important as
+simply doing better and going on to the next nonlinear iteration.
+
+This is the workhorse for hard ATS problems, as it is usually rather efficient,
+even in problems where the linear solve results in a correction that is way too
+large (e.g. for steep nonlinearities such as phase change).
+
+Note this always monitors the residual, and the correction is always modified.
+
+.. _solver-typed-nka-bt-ats-spec:
+.. admonition:: solver-typed-nka-bt-ats-spec
+
+    * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
+      tolerance. The error is calculated by a PK.
+
+    * `"limit iterations`" ``[int]`` **20** Defines the maximum allowed number
+      of iterations.
+
+    * `"diverged tolerance`" ``[double]`` **1.e10** Defines the error level
+      indicating divergence of the solver. The error is calculated by a PK.
+
+    * `"nka lag iterations`" ``[int]`` **0** Delays the NKA acceleration, but
+      updates the Krylov space.
+
+    * `"max nka vectors`" ``[int]`` **10** Defines the maximum number of
+      consecutive vectors used for a local space.
+
+    * `"nka vector tolerance`" ``[double]`` **0.05** Defines the minimum
+      allowed orthogonality between vectors in the local space. If a new vector
+      does not satisfy this requirement, the space is modified.
+
+    * `"backtrack tolerance`" ``[double]`` **0.** Require a reduction of at
+      least this much in the residual norm before accepting a correction.
+
+    * `"backtrack factor`" ``[double]`` **0.5** Multiply the correction by this
+      factor each backtracking step.  Note, should be in (0, 1)
+
+    * `"backtrack monitor`" ``[string]`` **monitor either** What norm is
+      checked to determine whether backtracking has improved the residual or
+      not?  One of `"monitor enorm`", `"monitor L2 residual`", or `'monitor
+      either`"
+
+    * `"backtrack max steps`" ``[int]`` **10** Controls how many multiples of
+      the backtrack factor are applied before declaring failure.
+
+    * `"backtrack max total steps`" ``[int]`` **1e6** Controls how many total
+      backtrack steps may be taken before declaring failure.
+
+    * `"backtrack lag iterations`" ``[int]`` **0** Delay requiring a reduction
+      in residual for this many nonlinear iterations.
+
+    * `"backtrack last iteration`" ``[int]`` **1e6** Stop requiring a
+      reductiontion in residual after this many nonlinear iterations.
+
+    * `"backtrack fail on bad search direction`" ``[bool]`` **false** If
+      backtracking for the full number of "backtrack max steps" is taken, and
+      the residual norm has still not be reduced suffiently, this determines
+      the behavior.  If true, the solver declares failure.  If false, it takes
+      the bad step anyway and hopes to recover in later iterates.
+
+    IF
+    
+    * `"Anderson mixing`" ``[bool]`` **false** If true, use Anderson mixing instead of NKA.
+
+    THEN
+
+    * `"relaxation parameter`" ``[double]`` **0.7** The relaxation parameter
+      for Anderson mixing.
+
+    END
+
+*/
+    
 #ifndef AMANZI_NKA_BT_ATS_SOLVER_
 #define AMANZI_NKA_BT_ATS_SOLVER_
 
@@ -234,7 +309,6 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   bool nka_applied(false), nka_restarted(false);
   int nka_itr = 0;
   int total_backtrack = 0;
-  int prec_error;
   int db_write_iter = 0;
 
 
@@ -287,7 +361,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     du_pic->PutScalar(0.);
-    prec_error = fn_->ApplyPreconditioner(res, du_pic);
+    fn_->ApplyPreconditioner(res, du_pic);
     double du_pic_norm = 0;
     du_pic->NormInf(&du_pic_norm);
 

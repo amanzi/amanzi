@@ -64,8 +64,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
@@ -110,7 +108,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create source 
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
-  Epetra_MultiVector& sol = *solution->ViewComponent("cell");
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -142,8 +139,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    solver.ApplyInverse(rhs, *solution);
     
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -207,8 +203,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
@@ -254,8 +248,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // create source 
   CompositeVector source(cvs), t1(cvs), t2(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
-  Epetra_MultiVector& sol = *solution->ViewComponent("cell");
-  Epetra_MultiVector& sol_bnd = *solution->ViewComponent("boundary_face");
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -285,8 +277,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-   
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    solver.ApplyInverse(rhs, *solution);
  
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);

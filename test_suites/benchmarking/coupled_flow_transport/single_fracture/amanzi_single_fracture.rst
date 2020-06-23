@@ -11,7 +11,8 @@ Capabilties tested include
   
   * coupled steady-state velocity field in matrix and fracture network
   * constant boundary condition for tracer
-  * advection in coupled matrix and fracture network
+  * transport in coupled matrix and fracture network system
+  * implicit time integration for transport
   * single fracture case
 
 For details on this test, see :ref:`about_single_fracture`.
@@ -41,23 +42,23 @@ Then,
   \begin{array}{l}
   - \boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}_m) = 0,
   \quad
-  \boldsymbol{q}_m = -\frac{K_m}{\mu} 
+  \boldsymbol{q}_m = -\displaystyle\frac{K_m}{\mu} 
   (\boldsymbol{\nabla} p_m - \rho \boldsymbol{g}) \\
   %
   -\boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}_f) = 
-    -[[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
+    -[[ \widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
-  \boldsymbol{q}_f = -\frac{K_f}{\mu} 
+  \boldsymbol{q}_f = -\displaystyle\frac{K_f}{\mu} 
   (\boldsymbol{\nabla} p_f - \rho \boldsymbol{g}) \\
   %
-  \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = k (p_f - p_m)
+  \widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = k (p_f - p_m)
   \end{array}
 
-subject to convential boundary conditions for both matrix and fracture domains expect for 
-the matrix-fracture boundary where the boundary condition is
+subject to conventional boundary conditions for both matrix and fracture domains expect for 
+the matrix-fracture interface where the flux continuity condition is imposed:
 
 .. math::
-  \boldsymbol{q}_m \cdot \boldsymbol{n} = \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n}
+  \boldsymbol{q}_m \cdot \boldsymbol{n} = \widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n}.
 
 Here
 :math:`\rho` is fluid density [kg/m^3],
@@ -98,6 +99,9 @@ Schematic
 ~~~~~~~~~
 
 The domain, fracture location, and boundary conditions are shown in the schematic below.
+The solute enters domain through a narrow band on the left side marked with
+yellow color and leaves the domain through outlet marked with orange color.
+The flow is driven by the pressure gradient between the inlet and outlet, see data below.
 
 .. figure:: schematic/single_fracture_schematic.png
     :figclass: align-center
@@ -109,10 +113,9 @@ The domain, fracture location, and boundary conditions are shown in the schemati
 Mesh
 ~~~~
 
-The mesh in matrix consists of tetrahedal cells with average size :math:`h=15` m.
-It has 1368 cells.
+The mesh in matrix consists of 8000 hexahedral cells with average size :math:`h=5` m.
 The mesh in fracture is the trace of the hexahedral mesh.
-It has 144 quadrilateral cells.
+It has 400 quadrilateral cells.
 
 
 Variables
@@ -138,8 +141,18 @@ Results and Comparison
 
 The benchmark data used in this test were provided by the benchmark project "Verification
 benchmarks for single-phase flow in three-dimentional fractured porous media".
-We compare dynamics of the solute mass at the bottom part of the computational domain
-and in the fracture, and the integrated solute flux across the outlet boundary.
+We compare dynamics of the solute flux at the bottom outlet boundary with two other codes
+from the University of Bergen (UiB) and the University of Stuttgard (USTUTT).
+The first code is based on the the lower-order Raviart-Thomas mixed finite element method.
+The second code uses the multi-point flux approximation method.
+Recall that Amanzi employes the mimetic finite difference method for flow.
+The results are in excellent agreement.
+
+The benchmark setup is to use the fixed time step of :math:`10^7` seconds and run simulation 
+for 100 times steps.
+For this problem, the conventional two-point flux approximation method underestimates
+the solute flux by about 20%.
+
 
 .. plot:: benchmarking/transport/single_fracture/single_fracture.py
    :align: center
@@ -172,19 +185,6 @@ About
   * Spec Version 2.3, unstructured mesh framework
  
 
-Status
-~~~~~~
-
-  * Input Files:
-
-    * Version 2.3 - unstructured: runs 3D problem, results are in excellent agreement
-
-  * Documentation:
-
-    * Complete for unstructured mesh framework, including line plots. Tables will be added.
-
 .. todo:: 
 
-  * Documentation:
-
-    * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?
+  * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?

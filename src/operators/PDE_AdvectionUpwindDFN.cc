@@ -44,7 +44,6 @@ void PDE_AdvectionUpwindDFN::Setup(const CompositeVector& u)
 void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
  
@@ -86,12 +85,82 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
       
-      double tmp = u / flux_in;
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
         for (int j = 0; j < cells.size(); j++) {
           if (cells[j] == c) {
             Aface(j, upwind_loc[m]) = (u / flux_in) * v;
+            break;
+          }
+        }
+      }
+    }
+    matrix[f] = Aface;    
+  }
+}
+
+
+/* ******************************************************************
+* Add a simple first-order upwind method where the advected quantity
+* is not the primary variable (used in Jacobians).
+* Advection operator is of the form: div (q H(u))
+*     q:    flux
+*     H(u): advected quantity (i.e. enthalpy)
+****************************************************************** */
+void PDE_AdvectionUpwindDFN::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& q,
+    const Teuchos::Ptr<const CompositeVector>& dHdT)
+{
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  dHdT->ScatterMasterToGhosted("cell");
+  const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
+ 
+  for (int f = 0; f < nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    int nupwind = upwind_flux_dfn_[f].size();
+    int ndownwind = downwind_flux_dfn_[f].size();
+
+    // We assume that only one cell is attached to a boundary face
+    if (nupwind == 0) Aface(0, 0) = fabs(downwind_flux_dfn_[f][0]);
+    if (ndownwind == 0) Aface(0, 0) = fabs(upwind_flux_dfn_[f][0]);
+
+    std::vector<int> upwind_loc(nupwind);
+
+    for (int n = 0; n < nupwind; n++) {
+      int c = upwind_cells_dfn_[f][n];
+      double u = upwind_flux_dfn_[f][n];
+      for (int j = 0; j < ncells; j++) {
+        if (cells[j] == c) {
+          upwind_loc[n] = j;
+          Aface(j, j) = u * dHdT_c[0][c];
+          break;
+        }
+      }      
+    }
+
+    double flux_in(0.0);
+    for (int n = 0; n < ndownwind; ++n) {
+      flux_in -= downwind_flux_dfn_[f][n];
+    }
+    if (flux_in == 0.0) flux_in = 1e-12;
+    
+    for (int n = 0; n < ndownwind; ++n) {
+      int c = downwind_cells_dfn_[f][n];
+      double u = downwind_flux_dfn_[f][n];
+      
+      for (int m = 0; m < nupwind; m++) {
+        double v = upwind_flux_dfn_[f][m];
+        for (int j = 0; j < cells.size(); j++) {
+          if (cells[j] == c) {
+            Aface(j, upwind_loc[m]) = (u / flux_in) * v * dHdT_c[0][c];
             break;
           }
         }
@@ -130,17 +199,15 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
 void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
-
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] != OPERATOR_BC_NONE) {
-      AMANZI_ASSERT(downwind_cells_dfn_[f].size() == 1);
-    }
+    // if (bc_model[f] != OPERATOR_BC_NONE) {
+    //   AMANZI_ASSERT(downwind_cells_dfn_[f].size() == 1);
+    // }
 
     int c1 = (upwind_cells_dfn_[f].size() == 0) ? -1 : upwind_cells_dfn_[f][0];
     int c2 = (downwind_cells_dfn_[f].size() == 0) ? -1 : downwind_cells_dfn_[f][0];

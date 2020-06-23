@@ -18,6 +18,7 @@
 #include "Teuchos_Array.hpp"
 
 // Amanzi's
+#include "Key.hh"
 #include "VerboseObject.hh"
 
 #include "InputConverter.hh"
@@ -113,10 +114,10 @@ class InputConverterU : public InputConverter {
 
   // -- state
   void TranslateFieldEvaluator_(
-      DOMNode* node, std::string field, std::string unit,
+      DOMNode* node, const std::string& field, const std::string& unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
       Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value");
+      std::string data_key = "value", std::string domain = "domain");
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
@@ -177,7 +178,13 @@ class InputConverterU : public InputConverter {
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
-  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
+  void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
+
+  bool TranslateGenericMath_(const std::vector<double>& times,
+                             const std::vector<double>& values,
+                             const std::vector<std::string>& forms,
+                             const std::vector<std::string>& formulas,
+                             Teuchos::ParameterList& bcfn);
 
   // -- sort functions
   template<class Iterator>

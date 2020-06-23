@@ -201,7 +201,6 @@ void MyRemapDGc::StaticCellCoVelocity()
     // space-time cell velocity: v = -j J^{-1} u = -C^t u
     WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
     WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
-    const auto& origin = uc_[c][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
       for (int j = 0; j < dim_; ++j) {
@@ -479,9 +478,6 @@ void RemapTestsCurved(std::string file_name,
   Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
-    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
-
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
 

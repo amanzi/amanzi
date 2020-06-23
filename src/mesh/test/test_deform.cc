@@ -19,10 +19,7 @@
 
 TEST(MESH_DEFORM2D)
 {
-
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -106,18 +103,14 @@ TEST(MESH_DEFORM2D)
     }
 
   } // for each framework i
-
-
 }
 
 
 
 TEST(MESH_DEFORM3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh

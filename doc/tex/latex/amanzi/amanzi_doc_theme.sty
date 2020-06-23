@@ -1,0 +1,245 @@
+% =========================================================================
+% -------------------------------------------------------------------------
+% Amanzi Documents
+% -------------------------------------------
+%
+%  Based on the original ASCEM Dcoument template.
+%  - cover page
+%  - disclaimer 
+%
+% --------------------------------------------------------------------------
+
+% Contents -> Table of Contents
+\renewcommand\contentsname{Table of Contents}
+% List of Tables -> ?
+%\renewcommand\listtablename{Tables}
+% List of Figures -> ?
+%\renewcommand\listfigurename{Figures}
+
+% References -> REFERENCES
+%\renewcommand\refname{REFERENCES}
+
+% ---------------------------------------------------------------------------
+%  Amanzi colors
+% -------------------------------------------
+
+% Amanzi Logo Blue - writing
+%
+\definecolor{AMANZIlb}{rgb}{.34,.69,.84}
+
+% Amanzi logo Blue - dark droplet
+%
+\definecolor{AMANZIdb}{rgb}{.16,.26,.50}
+
+% ---------------------------------------------------------------------------
+%  ASCEM colors
+% -------------------------------------------
+
+% ASCEM Logo Green
+%
+\definecolor{ASCEMlg}{rgb}{.21,.42,.21}
+
+% ASCEM logo brown
+%
+\definecolor{ASCEMlb}{rgb}{.50,.30,.14}
+
+% ASCEM title blue
+%
+\definecolor{ASCEMtb}{rgb}{0.20,0.20,0.60}
+
+% ASCEM title shade: bottom
+%
+\definecolor{ASCEMtsb}{rgb}{0.91,0.94,0.84}
+
+% ASCEM title shade: top
+\definecolor{ASCEMtst}{rgb}{0.98,0.99,0.97}
+
+% ---------------------------------------------------------------------------
+
+\def\DocRev#1{\gdef\@DocRev{#1}}
+\def\DocLAUR#1{\gdef\@DocLAUR{#1}}
+\def\DocTitle#1{\gdef\@DocTitle{#1}}
+\def\DocDate#1{\gdef\@DocDate{#1}}
+\def\DocAuthors#1{\gdef\@DocAuthors{#1}}
+\def\LogoPath#1{\gdef\@LogoPath{#1}}
+\def\DocPrevVersions#1{\gdef\@DocPrevVersions{#1}}
+
+\newcommand{\AMANZIcover}{
+\thispagestyle{empty}
+
+\TPGrid[0.5in,1in]{15}{20}
+\textblockorigin{1in}{1in}
+
+%
+% Overlay for debugging the layout 
+%
+%\begin{textblock}{17}(-2,-2.25)
+%\includegraphics[height=11.0in,width=8.5in]
+%                {/u/moulton/projects/ascem/leonce/ASCEM_Document_Template.pdf}
+%\end{textblock}
+
+%
+% Horizontal Rule
+%
+\begin{textblock}{11}(0.78,5.40)
+  \textcolor{AMANZIlb}{\rule[3pt]{6.5in}{4.5pt}}
+\end{textblock}
+
+%
+% Vertical Rule
+%
+\begin{textblock}{0.2}(0.71,0.32)
+  \textcolor{AMANZIlb}{\rule[0pt]{4.5pt}{8.8in}}
+\end{textblock}
+
+%
+% Revision Number
+%
+\begin{textblock}{5}(0.99,5.91)
+  {\large \@DocRev}
+\end{textblock}
+
+%
+%  Title
+%
+%  Note: exact match with (x,y) = (2.10,0.45)
+%        but shift a bit for this title.
+%
+\begin{textblock}{12}(1.60,0.45)
+  \begin{center}
+  {\fontsize{24}{28}\selectfont \textbf{\@DocTitle}}
+  \end{center}
+\end{textblock}
+
+%
+% Date
+%
+\begin{textblock}{11}(2.09,3.845)
+  \begin{center}
+  {\fontsize{24}{28}\selectfont \textbf{\@DocDate}}
+  \end{center}
+\end{textblock}
+
+%
+% ASCEM logo
+%
+\if@draft
+ \begin{textblock}{7}(3.30,8.25)
+   \includegraphics[width=4.50in]{\@LogoPath/Amanzi-draft-logo-5}
+ \end{textblock}
+\else
+ \begin{textblock}{7}(3.30,8.25)
+   \includegraphics[width=4.50in]{\@LogoPath/Amanzi-draft-logo-5}
+ \end{textblock}
+\fi
+
+%
+% Lab logo collection:
+%
+\begin{textblock}{8}(2.75,13.57)
+  \includegraphics[height=0.50in]{\@LogoPath/LANL}
+  \hspace*{16pt}
+  \includegraphics[height=0.50in]{\@LogoPath/LBNL}
+  \hspace*{12pt}
+  \includegraphics[height=0.50in]{\@LogoPath/ORNL}
+  \hspace*{12pt}
+  \includegraphics[height=0.55in]{\@LogoPath/PNNL}
+\end{textblock}
+
+%
+% DOE text
+%
+\begin{textblock}{9}(3.30,15.23)
+  \begin{center}
+    {\fontsize{18}{21}\selectfont \textbf{United States Department of Energy}}
+  \end{center}
+\end{textblock}
+
+%
+% DOE logo - consider putting lab logo here instead?
+%
+%\begin{textblock}{10}(3.00,14.57)
+%  \includegraphics[width=4.92in]{\@LogoPath/DOE-EM}
+%\end{textblock}
+
+%
+% Author List?
+%
+%  Note: exact match with (x,y) = (4.75,17.20)
+%        but shift a bit for this title.
+%
+\begin{textblock}{6}(2.85,17.20)
+  {\fontsize{10}{12.5}\selectfont  \@DocAuthors  }
+\end{textblock}  
+
+% LAB release numbers: LA-UR Number
+%
+\begin{textblock}{15}(6.50,19.50)
+  {\normalsize  \@DocLAUR}
+\end{textblock}
+
+
+
+%
+% Force the page break
+%
+\null\newpage
+
+}
+
+% =========================================================================
+
+
+
+\newcommand{\AMANZIdisclaimer}{%
+%
+%  Disclaimer
+% 
+\vspace*{2.5in}
+\begin{center}
+  \textbf{DISCLAIMER}
+\end{center}
+
+\setlength{\fboxrule}{1pt}
+\fbox{\parbox[t]{6in}{%
+%
+This work was prepared under an agreement with and funded by the
+U.S. Government. Neither the U.S. Government or its employees, nor any
+of its contractors, subcontractors or their employees, makes any
+express or implied:
+\vspace*{-6pt}
+\begin{enumerate}
+\addtolength{\itemsep}{-9pt}
+\item warranty or assumes any legal liability for the accuracy,
+  completeness, or for the use or results of such use of any
+  information, product, or process disclosed; or
+\item representation that such use or results of such use would not
+  infringe privately owned rights; or
+\item endorsement or recommendation of any specifically identified
+  commercial product, process, or service.
+\end{enumerate}
+\vspace*{-6pt}
+Any views and opinions of authors expressed in this work do not
+necessarily state or reflect those of the United States Government, or
+its contractors, or subcontractors.
+%
+}}
+
+%
+%  Printed in ...
+% 
+%%\vspace*{0.50in}
+%%\fbox{\parbox[t]{6in}{%
+%
+%%\begin{center}
+%%\textbf{Printed in the United States of America}  \\[12pt]
+%
+%%\textbf{Prepared for} \\
+%%\textbf{U.S. Department of Energy}
+%%\end{center}
+%%}}
+
+\clearpage
+}
+
+% =========================================================================

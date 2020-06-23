@@ -291,7 +291,7 @@ void MiniDiffusion1D_Transient(int type_l, int type_r) {
 
 TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR_TRANSINET) {
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
-  int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
+  // int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Transient(dir, dir);
 }
 

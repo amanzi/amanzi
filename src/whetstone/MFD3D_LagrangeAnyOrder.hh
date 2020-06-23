@@ -254,7 +254,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
             // constant gradient contributes only to 0th moment 
             R_(row, col) += tmp(0);
           } else {
-            auto polys = ConvertMomentsToPolynomials_(order_);
+            auto polys_f = ConvertMomentsToPolynomials_(order_);
 
             // Gauss-Legendre quadrature rule with (order_) points
             int m(order_ - 1); 
@@ -262,12 +262,12 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
               xm = x0 * q1d_points[m][n] + x1 * (1.0 - q1d_points[m][n]);
               sm[0] = 0.5 - q1d_points[m][n];
 
-              double factor = q1d_weights[m][n] * tmp.Value(xm);
-              R_(pos0, col) += polys[0].Value(sm) * factor;
-              R_(pos1, col) += polys[1].Value(sm) * factor;
+              factor = q1d_weights[m][n] * tmp.Value(xm);
+              R_(pos0, col) += polys_f[0].Value(sm) * factor;
+              R_(pos1, col) += polys_f[1].Value(sm) * factor;
 
               for (int k = 0; k < m; ++k) { 
-                R_(row + k, col) += polys[k + 2].Value(sm) * factor;
+                R_(row + k, col) += polys_f[k + 2].Value(sm) * factor;
               }
             }
           }
@@ -315,8 +315,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
         }
 
         int m = MonomialSetPosition(d, multi_index);
-        double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
-                        basis.monomial_scales()[jt.MonomialSetOrder()];
+        factor = basis.monomial_scales()[it.MonomialSetOrder()] *
+                 basis.monomial_scales()[jt.MonomialSetOrder()];
         N(row + n, col) = integrals_.poly()(nm, m) * factor / volume; 
       }
     }

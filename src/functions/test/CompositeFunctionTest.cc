@@ -3,9 +3,11 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
+#include "errors.hh"
+#include "VerboseObject_objs.hh"
+
 #include "FunctionConstant.hh"
 #include "MultiFunction.hh"
-#include "errors.hh"
 
 using namespace Amanzi;
 

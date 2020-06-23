@@ -1,7 +1,7 @@
 ATS Installation Guide
 ==================================
 
-NOTE: This has changed significantly since ATS version 0.88.  If you are building the latest **RELEASE** of ATS, version 0.88, do not follow these instructions, but follow those at: https://github.com/amanzi/ats/blob/ats-0.88/INSTALL.md .  This file describes installation of master and versions of ATS newer than 0.88 (future releases).
+NOTE: This has changed significantly since ATS version 0.88.  If you are building versions of ATS including version 0.88 or older, do not follow these instructions, but follow those at: https://github.com/amanzi/ats/blob/ats-0.88/INSTALL.md .  This file describes installation ATS version 1.0 and newer.
 
 First, a word of warning -- please be patient.  Amanzi and therefore ATS depend upon a lot of third party libraries.  This allows us to use existing, mature code to make ATS a much better software tool.  It also means installing the code and its dependencies can be quite painful and time/labor intensive.  Installation time is a very bimodal distribution -- if it "just works" this process will take 10=20 minutes.  If it doesn't "just work" it can take much longer.
 

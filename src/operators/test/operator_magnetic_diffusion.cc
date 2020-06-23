@@ -97,9 +97,7 @@ void MagneticDiffusion2D(double dt, double tend,
   // create miscalleneous data
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
 
@@ -123,8 +121,6 @@ void MagneticDiffusion2D(double dt, double tend,
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
 
   AmanziGeometry::Point xv(2);
-  std::vector<int> edirs;
-  AmanziMesh::Entity_ID_List cells, faces;
 
   Ee.PutScalar(0.0);
   Bf.PutScalar(0.0);
@@ -194,7 +190,7 @@ void MagneticDiffusion2D(double dt, double tend,
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, E);
+    solver.ApplyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -359,8 +355,6 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
   // create boundary data
   int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
-
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -404,7 +398,6 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
  
     Bf[0][f] = (ana.magnetic_exact(xf, told) * normal) / area;
-    double tmp = Bf[0][f];
   }
 
   int cycle(0);
@@ -466,7 +459,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, E);
+    solver.ApplyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -525,7 +518,6 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     Epetra_MultiVector& sol_e = *Evec.ViewComponent("cell"); 
     sol_e.PutScalar(0.0);
 
-    double avgE(0.0);
     WhetStone::MFD3D_Electromagnetics mfd(plist, mesh); 
     WhetStone::Tensor Ic(3, 1);
     Ic(0, 0) = 1.0;

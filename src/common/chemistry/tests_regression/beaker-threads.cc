@@ -20,7 +20,6 @@
 
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
@@ -30,17 +29,15 @@ int main(int argc, char** argv) {
   ac::OutputOptions output_options;
   output_options.use_stdout = true;
   output_options.file_name = "chemistry-unit-test-results.txt";
-  output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
   ac::chem_out = new ac::ChemistryOutput();
   ac::chem_out->Initialize(output_options);
 
-  ac::Verbosity verbosity = ac::kTerse;
   int test = 0;
   int error = EXIT_SUCCESS;
 
   std::cout << "Serial setup:" << std::endl;
 
-  error = CommandLineOptions(argc, argv, &verbosity);
+  error = CommandLineOptions(argc, argv);
 
   // hard code some basic info we need for chemistry
   ac::Beaker::BeakerParameters parameters;
@@ -68,7 +65,7 @@ int main(int argc, char** argv) {
     mixing_cells[thread]->verbosity(verbosity);
     mixing_cells[thread]->Setup(cell_components[thread], parameters);
 
-    if (verbosity >= ac::kDebugBeaker) {
+    {
       std::cout << "Thread: " << thread << std::endl;
       mixing_cells[thread]->Display();
       mixing_cells[thread]->DisplayComponents(cell_components[thread]);
@@ -77,9 +74,7 @@ int main(int argc, char** argv) {
     // solve for initial free-ion concentrations
     mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
     mixing_cells[thread]->CopyBeakerToComponents(&cell_components[thread]);
-    if (verbosity >= ac::kDebugBeaker) {
-      mixing_cells[thread]->DisplayResults();
-    }
+    mixing_cells[thread]->DisplayResults();
   }
 
   // create a bunch of computational work
@@ -92,9 +87,8 @@ int main(int argc, char** argv) {
 #pragma omp parallel for schedule(dynamic, 1)
     for (int grid_block = 0; grid_block < num_grid_blocks; grid_block++) {
       int thread = omp_get_thread_num();
-      if (verbosity > ac::kVerbose) {
-        std::cout << "grid block: " << grid_block << "   on thread: " << thread << std::endl;
-      }
+      std::cout << "grid block: " << grid_block << "   on thread: " << thread << std::endl;
+
       try {
         mixing_cells[thread]->ReactionStep(&cell_components[thread], parameters, delta_time);
         mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
@@ -118,16 +112,15 @@ int main(int argc, char** argv) {
 }  // end main()
 
 
-int CommandLineOptions(int argc, char** argv,
-                       ac::Verbosity* verbosity) {
+int CommandLineOptions(int argc, char** argv) {
   int error = EXIT_SUCCESS;
-  int option;
+  int option, verbosity;
   extern char* optarg;
 
   while ((option = getopt(argc, argv, "hv:?")) != -1) {
     switch (option) {
       case 'v': {
-        *verbosity = static_cast<ac::Verbosity>(std::atoi(optarg));
+        verbosity = std::atoi(optarg);
         break;
       }
       case '?':
@@ -153,15 +146,8 @@ int CommandLineOptions(int argc, char** argv,
     }
   }
 
-  if (*verbosity >= ac::kVerbose) {
-    std::cout << "Command Line Options: " << std::endl;
-    std::cout << "\tVerbosity: " << *verbosity << std::endl;
-    std::cout << std::endl << std::endl;
-  }
-
   return error;
-}  // end commandLineOptions()
-
+}
 
 
 void fbasin_source(ac::Beaker::BeakerComponents* components) {
@@ -169,7 +155,7 @@ void fbasin_source(ac::Beaker::BeakerComponents* components) {
   fbasin_free_ions(components);
   fbasin_minerals(components);
   fbasin_sorbed(components);
-}  // end fbasin_source
+}
 
 
 void fbasin_aqueous_source(ac::Beaker::BeakerComponents* components) {

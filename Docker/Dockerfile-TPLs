@@ -79,6 +79,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --disable-build_amanzi --disable-build_user_guide \
   --enable-shared --enable-structured --enable-silo \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
+  --enable-pf_clm \
   --with-mpi=/usr \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir

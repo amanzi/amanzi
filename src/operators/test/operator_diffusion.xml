@@ -233,7 +233,8 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-grad-face-twin"/>
+      <!-- We use the existing option, since we override local matrix calculation anyway -->   
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face-twin"/>
     </ParameterList>
 
     <ParameterList name="upwind second-order">

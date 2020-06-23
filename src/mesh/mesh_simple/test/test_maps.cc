@@ -57,7 +57,6 @@ TEST(MAPS) {
     }
 
     Mm.cell_get_faces(i, &faces, true);
-    double xx[4][3];
     for (int j=0; j<6; j++) {
       Amanzi::AmanziMesh::Entity_ID_List fnodes;
 

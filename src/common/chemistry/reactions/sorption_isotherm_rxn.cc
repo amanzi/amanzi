@@ -60,12 +60,12 @@ void SorptionIsothermRxn::AddContributionToDTotal(
 }
 
 
-void SorptionIsothermRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SorptionIsothermRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(12) << species_name_
           << std::setw(15) << isotherm_->name()
           << std::setw(15);
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
   isotherm_->Display(vo);
 }
 

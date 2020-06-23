@@ -47,7 +47,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode* node;
-  DOMElement* element;
 
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -359,7 +358,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
-  DOMNode *node, *knode;
+  DOMNode *node;
   DOMElement* element;
 
   bool flag;
@@ -450,8 +449,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string
 
   MemoryManager mm;
 
-  char *text, *tagname;
-  DOMNodeList *node_list, *children;
+  char *text;
+  DOMNodeList *children;
   DOMNode *node, *phase;
   DOMElement* element;
 
@@ -469,7 +468,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string
   for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string bcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
@@ -521,7 +519,6 @@ void InputConverterU::TranslateTransportBCsGroup_(
   if (solutes->getLength() == 0) return;
  
   DOMNode* node = solutes->item(0);
-  DOMElement* element;
 
   // get child nodes with the same tagname
   bool flag;
@@ -539,7 +536,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
     std::vector<double> times, values;
     std::vector<double> data, data_tmp;
-    std::vector<std::string> forms;
+    std::vector<std::string> forms, formulas;
 
     if (space_bc) {
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
@@ -556,7 +553,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
       same_list.erase(same_list.begin());
     } else {
       std::map<double, double> tp_values;
-      std::map<double, std::string> tp_forms;
+      std::map<double, std::string> tp_forms, tp_formulas;
 
       for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
         tmp_name = GetAttributeValueS_(*it, "name");
@@ -566,6 +563,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
           tp_forms[t0] = GetAttributeValueS_(*it, "function");
           GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar");  // just a check
           tp_values[t0] = ConvertUnits_(GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
+          tp_formulas[t0] = GetAttributeValueS_(*it, "formula", TYPE_NONE, false, "");
 
           same_list.erase(it);
           it--;
@@ -577,8 +575,8 @@ void InputConverterU::TranslateTransportBCsGroup_(
         times.push_back(it->first);
         values.push_back(it->second);
         forms.push_back(tp_forms[it->first]);
+        formulas.push_back(tp_formulas[it->first]);
       }
-      forms.pop_back();
     }
      
     // save in the XML files  
@@ -589,13 +587,8 @@ void InputConverterU::TranslateTransportBCsGroup_(
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
-    } else if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {
-      bcfn.sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
 
     // data distribution method
@@ -725,7 +718,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
 
   MemoryManager mm;
 
-  char *text, *tagname;
+  char *text;
   DOMNodeList *node_list, *children;
   DOMNode *node;
   DOMElement* element;
@@ -738,7 +731,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
     std::string srcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions

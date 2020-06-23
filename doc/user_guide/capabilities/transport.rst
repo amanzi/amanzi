@@ -129,7 +129,7 @@ with caution.
 Initial Conditions
 ~~~~~~~~~~~~~~~~~~
 
-An initial conditon specifies concentration at time :math:`T=0` inside the
+An initial condition specifies concentration at time :math:`T=0` inside the
 computational domain:
 
 .. math::

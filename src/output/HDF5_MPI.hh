@@ -196,7 +196,6 @@ class HDF5_MPI {
   int ConnLength_;
   int Iteration_;
   double Time_;
-  int SpaceDim_;
 
   // Mesh information
   std::string cname_;

@@ -38,6 +38,10 @@ Typical models of relative permeability
 are the van Genuchten-Mualem relations and the Brooks-Corey-Burdine relations.
 The primary variable is liquid pressure :math:`p`, so that
 we write these models as functions of capillary pressure :math:`p_c`.
+ 
+When the Richards process kernel is a part of a complex multi-process non-isothermal simulation,
+fluid density and viscosity are functions of temperature and pressure.
+
 
 
 Van Genuchten Relative Permeability

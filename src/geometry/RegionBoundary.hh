@@ -15,8 +15,11 @@
 List *region: boundary* defines a set of all boundary faces. 
 Using this definition, faces located on the domain boundary are extracted.
 
-* `"entity`" ``[string]`` Type of the mesh object.  Unclear whether this is
-          used or can be other things than "face"?
+.. _region-boundary-spec:
+.. admonition:: region-boundary-spec
+
+    * `"entity`" ``[string]`` Type of the mesh object.  Unclear whether this is
+      used or can be other things than `"face`"?
 
 Example:
 

@@ -41,7 +41,7 @@ Spline::Setup(double x1, double y1, double dy1,
 
 double
 Spline::Value(double x) {
-  AMANZI_ASSERT(x1_ <= x <= x2_);
+  AMANZI_ASSERT(x1_ <= x && x <= x2_);
   double t = T(x);
   return std::pow(1-t,2) * ((1+2*t) * y1_ + t * (x2_ - x1_) * dy1_)
       + std::pow(t,2) * ((3-2*t) * y2_ + (t-1) * (x2_ - x1_) * dy2_);
@@ -55,7 +55,7 @@ Spline::Value(double x) {
 
 double
 Spline::Derivative(double x) {
-  AMANZI_ASSERT(x1_ <= x <= x2_);
+  AMANZI_ASSERT(x1_ <= x && x <= x2_);
   double t = T(x);
   double dtdx = 1./(x2_ - x1_);
   double dydt = (6*std::pow(t,2) - 6*t)* y1_

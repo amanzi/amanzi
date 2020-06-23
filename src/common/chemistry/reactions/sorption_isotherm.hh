@@ -29,7 +29,7 @@ class SorptionIsotherm {
   virtual double Evaluate(const Species& primarySpecies) = 0;
   virtual double EvaluateDerivative(const Species& primarySpecies) = 0;
 
-  virtual void Display(const Teuchos::RCP<VerboseObject>& vo) const {};
+  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const {};
 
   virtual const std::vector<double>& GetParameters(void) = 0;
   virtual void SetParameters(const std::vector<double>& params) = 0;

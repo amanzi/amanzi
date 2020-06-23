@@ -5,7 +5,10 @@
 #include <vector>
 #include <typeinfo>
 
-#include <UnitTest++.h>
+#include "UnitTest++.h"
+#include "Teuchos_RCP.hpp"
+
+#include "VerboseObject.hh"
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
@@ -49,11 +52,14 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
     ac::ActivityModel* activity_model_;
 
    private:
+    Teuchos::RCP<Amanzi::VerboseObject> vo_;
   };
 
   ActivityModelFactoryTest::ActivityModelFactoryTest()
-      : amf_(),
+    : amf_(),
       activity_model_(NULL) {
+    Teuchos::ParameterList plist;
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
   ActivityModelFactoryTest::~ActivityModelFactoryTest() {
@@ -66,7 +72,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
     parameters.pitzer_jfunction = "";
     std::vector<ac::Species> primaries;
     std::vector<ac::AqueousEquilibriumComplex> secondaries;
-    activity_model_ = amf_.Create(name, parameters, primaries, secondaries);
+
+    activity_model_ = amf_.Create(name, parameters, primaries, secondaries, vo_.ptr());
   }
 
   /*!

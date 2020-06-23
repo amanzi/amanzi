@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! The interface for a Process Kernel, an equation or system of equations.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,8 +6,10 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+//! The interface for a Process Kernel, an equation or system of equations.
 
-/*!  
+/*!
+  
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -19,12 +19,25 @@ Implementations of this interface typically are either an MPC
 other PKs and represent the system of equations, or a Physical PK,
 which represents a single equation.
 
-All PKs have the following parameters in their spec:
+Note there are two PK specs -- the first is the "typed" spec, which appears in
+the "cycle driver" list in the PK tree.  The second is the spec for the base
+class PK, which is inherited and included by each actual PK, and lives in the
+"PKs" sublist of "main".
 
-* `"PK type`" ``[string]``
+.. _pk-typed-spec:
+.. admonition:: pk-typed-spec
 
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
+    * `"PK type`" ``[string]`` One of the registered PK types
+    * `"sub PKs`" ``[pk-typed-spec-list]`` **optional** If there are sub pks, list them.
+    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
 
+.. _pk-spec:
+.. admonition:: pk-spec
+
+    * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
+      match the corresponding entry in the ``[pk-typed-spec]``
+    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
+    
 Example:
 
 .. code-block:: xml
@@ -41,9 +54,12 @@ Example:
   <ParameterList name="PKs">
     <ParameterList name="Top level MPC">
       <Parameter name="PK type" type="string" value="strong MPC"/>
-       ...
+      <ParameterList name="sub PKs">
+        ...   
+      </ParameterList>
     </ParameterList>
   </ParameterList>
+
 */
 
 
@@ -121,7 +137,7 @@ class PK {
   /////////////////////////////////////////////////////////////////////
 
   // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next) = 0;
 
@@ -133,12 +149,11 @@ class PK {
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
-  Teuchos::RCP<TreeVector> solution_;
+  Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
 
   // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_inter_, S_next_;
 
   // fancy IO
   Teuchos::RCP<VerboseObject> vo_;

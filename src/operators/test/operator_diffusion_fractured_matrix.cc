@@ -67,7 +67,6 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
@@ -109,12 +108,12 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   // create diffusion operator
   double rho = 1.0;
-  AmanziGeometry::Point g(3);
-  g[2] = -gravity;
+  AmanziGeometry::Point gvec(3);
+  gvec[2] = -gravity;
 
   if (gravity > 0.0) op_list.set<bool>("gravity", true);
 
-  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
+  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, gvec));
   op->Init(op_list);
   auto global_op = op->global_operator();
 
@@ -148,7 +147,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

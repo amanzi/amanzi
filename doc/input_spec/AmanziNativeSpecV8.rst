@@ -429,16 +429,18 @@ Field evaluators
 
 There are three different types of field evaluators.
 
-Independent field evaluator
-...........................
+Independent variable field evaluator
+....................................
 
-An independent field evaluator has no dependencies and is specified by a function.
+An independent ivariable field evaluator has no dependencies and is specified by a function.
 Typically, it is evaluated once per simulation.
-The evaluator has the following fields.
+The evaluator has the following control parameters.
 
 * `"field evaluator type`" [string] The value of this parameter is used by the factory
   of evaluators. The available option are `"independent variable`", `"primary variable`",
   and `"secondary variable`".
+
+* `"constant in time`" [bool] specifies time-dependence nature of the field.
 
 * `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
   In may contain multiple sublists `"_DOMAIN`" with identical structure.
@@ -461,6 +463,7 @@ The evaluator has the following fields.
   <ParameterList name="field_evaluators">  <!-- parent list -->
   <ParameterList name="saturation_liquid">
     <Parameter name="field evaluator type" type="string" value="independent variable"/>
+    <Parameter name="constant in time" type="bool" value="true"/>
     <ParameterList name="function">
       <ParameterList name="_DOMAIN">
         <Parameter name="region" type="string" value="_ALL DOMAIN"/>
@@ -482,11 +485,11 @@ In this example field *saturation_liquid* is defined as a cell-based variable wi
 Note that the user-defined name for this field cannot have spaces.
 
 
-Independent field evaluator from file
-.....................................
+Independent variable field evaluator from file
+..............................................
 
-An independent field evaluator from file has no dependencies and is specified by 
-data at specific time moments. 
+An independent variable field evaluator from file has no dependencies and is specified by 
+data at specific time moments.
 
 * `"filename`" [string] defines name of a data file.
   
@@ -499,7 +502,7 @@ data at specific time moments.
 * `"mesh entity`" [string] specifies geometric object associated with the mesh function.
   Available options are `"cell`", `"face`", and `"node`".
 
-* `"number of DoFs`" [string] defines the number of degrees of freedom. Default is 1.
+* `"number of dofs`" [string] defines the number of degrees of freedom. Default is 1.
 
 * `"time function`" [list] defines a time function to interpolate data. This is the 
   optional parameter.
@@ -514,7 +517,7 @@ data at specific time moments.
     <Parameter name="variable name" type="string" value="porosity"/>
     <Parameter name="component name" type="string" value="cell"/>
     <Parameter name="mesh entity" type="string" value="cell"/>
-    <Parameter name="number of DoFs" type="int" value="1"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
 
     <ParameterList name="time function">  
       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
@@ -526,10 +529,10 @@ The field *porosity* is defined as a cell-based variable and
 interpolated between three time intervals.
 
 
-Constant field evaluator
-........................
+Constant variable field evaluator
+.................................
 
-Constant field evaluator as a simplified version of independent field evaluator from
+Constant variable field evaluator as a simplified version of independent field evaluator from
 file which allows one to define constant in time field. Initialization of the field 
 has to be done in the initial conditions sublist of state.
 
@@ -558,18 +561,18 @@ has to be done in the initial conditions sublist of state.
   </ParameterList>
 
 
-Primary field evaluator
-.......................
+Primary variable field evaluator
+................................
 
-The primary field evaluator has no dependencies solved for by a PK.
+The primary variable field evaluator has no dependencies solved for by a PK.
 Examples of independent field evaluators are primary variable of PDEs, such as
 pressure and temperature.
 Typically this evaluator is used internally to inform the dependency tree about 
 a new state of the primary variable.
 
 
-Secondary field evaluators
-..........................
+Secondary variable field evaluators
+...................................
 
 Secondary fields are derived either from primary fields or other secondary fields.
 There are two types of secondary fields evaluators.
@@ -2256,16 +2259,16 @@ The diffusivity is defined independently for each solute.
   * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
     For model `"scalar`", the following options must be specified:
 
-      * `"alpha`" [double] defines dispersion in all directions. 
+      * `"alpha`" [double] defines dispersion in all directions, [m]. 
 
     For model `"Bear`", the following options must be specified:
 
-      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity.
-      * `"alpha_t`" [double] defines dispersion in the orthogonal direction.
+      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
+      * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
     
     For model `"Burnett-Frind`", the following options must be specified:
 
-      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity.
+      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
       * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
       * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions.
         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
@@ -2273,7 +2276,7 @@ The diffusivity is defined independently for each solute.
 
     For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
 
-      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction.
+      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
       * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction.
         When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
@@ -3911,7 +3914,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
+    `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
@@ -4789,6 +4792,24 @@ This function requires a few parameters as well as one of the standard math func
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
+
+
+Expression function
+...................
+
+The expression function is defined by a string expression.
+The function has min(N, D + 1) arguments t, x, y, and z. The argument t is required. 
+D is the space dimension, and N is the user specified number of arguments which could 
+be less than D + 1.
+
+Example of a quadratic function in 2D:
+
+.. code-block:: xml
+
+  <ParameterList name="function-exprtk">
+    <Parameter name="number of arguments" type="int" value="3"/>
+    <Parameter name="formula" type="string" value="t + x + y^2"/>
   </ParameterList>
 
 

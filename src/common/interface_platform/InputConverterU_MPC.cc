@@ -60,7 +60,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   int max_cycles, max_cycles_steady;
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
-  char *method, *tagname;
+  char *tagname;
   bool flag_steady(false); 
   std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, dt_max_d;
 
@@ -346,7 +346,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
-  char* text;
 
   // parse execution_controls_defaults
   bool flag;
@@ -354,8 +353,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
   double t0, t1, dt0, dt_max;
-  char *method, *tagname;
-  bool flag_steady(false); 
+  char *tagname;
   std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d;
 
   method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
@@ -670,7 +668,6 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   MemoryManager mm;
   DOMNodeList *node_list, *children;
   DOMNode* node;
-  DOMElement* element;
 
   // get the default time steps
   bool flag;
@@ -704,7 +701,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
       "inward_volumetric_flux", "outward_volumetric_flux",
       "seepage_face", "aqueous_conc",
       "uniform_conc", "constraint",
-      "uniform_temperature"};
+      "uniform_temperature", "no_flow"};
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() > 0) {

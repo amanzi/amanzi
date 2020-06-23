@@ -87,7 +87,6 @@ double CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh,
 {
   double error_L2 = 0.0;
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziMesh::Entity_ID_List faces;
