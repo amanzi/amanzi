@@ -137,7 +137,7 @@ double Coupled_ReactiveTransport_PK_ATS::get_dt() {
 
 }
 
-void Coupled_ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
+void Coupled_ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<State>& S,
                                                   const Teuchos::RCP<State>& S_inter,
                                                   const Teuchos::RCP<State>& S_next) {
   //  PKDefaultBase::set_states(S, S_inter, S_next);
