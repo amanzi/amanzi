@@ -171,7 +171,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  for (int NN = 20; NN <= 160; NN *= 2) {
+  for (int NN = 10; NN <= 80; NN *= 2) {
 
     RCP<const Mesh> mesh;
     mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
@@ -315,5 +315,5 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK_CLOSE(1.5, order, 0.2);
+  CHECK_CLOSE(1.5, order, 0.5);
 }

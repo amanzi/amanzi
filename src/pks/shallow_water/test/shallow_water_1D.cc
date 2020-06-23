@@ -156,7 +156,7 @@ TEST(SHALLOW_WATER_1D) {
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1600, 1, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1, request_faces, request_edges);
   // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
   if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
@@ -203,7 +203,7 @@ TEST(SHALLOW_WATER_1D) {
   int iter = 0;
   bool flag = true;
 
-  while (t_new < 40.) {
+  while (t_new < 10.) {
     // cycle 1, time t
     double t_out = t_new;
 
@@ -284,5 +284,5 @@ TEST(SHALLOW_WATER_1D) {
   io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
 
-  CHECK_CLOSE(1./hmax, err_max, 0.1);
+  CHECK_CLOSE(1./hmax, err_max, 0.5);
 }
