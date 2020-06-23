@@ -269,14 +269,14 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 16)
-set(CCSE_VERSION_MINOR 11)
+set(CCSE_VERSION_MINOR 12)
 set(CCSE_VERSION_PATCH 0)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
 set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        686e0dd20089457b6ad03c18dd60cd66)
+set(CCSE_MD5_SUM        80df48fc1ac0bcd88834c5ab87337974)
 set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
 set(CCSE_GIT_TAG        "a15e0ee6b043cb87dc99c8fe902b10217eb4fe94")
 

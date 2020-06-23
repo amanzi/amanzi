@@ -25,22 +25,6 @@ diff -ruNbB BoxLib-16.04/Src/CMakeLists.txt BoxLib-16.04-new/Src/CMakeLists.txt
  add_subdirectory(Extern/gslib)
 
 +add_dependencies(box_f box_c)
-diff -ruNbB BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp BoxLib-16.04-new/Src/C_BaseLib/FArrayBox.cpp
---- BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp	2016-04-11 16:42:12.000000000 -0600
-+++ BoxLib-16.04-new/Src/C_BaseLib/FArrayBox.cpp	2020-06-19 18:15:50.000000000 -0600
-@@ -21,10 +21,10 @@
- #include <BL_CXX11.H>
- #include <MemPool.H>
-
--#if !defined(__PGI) && (__GNUC__ >= 5 || defined(BL_Darwin))
-+// #if !defined(__PGI) && (__GNUC__ >= 5 || defined(BL_Darwin))
- using std::isinf;
- using std::isnan;
--#endif
-+// #endif
-
- bool FArrayBox::initialized = false;
-
 diff -ruNbB BoxLib-16.04/Src/Extern/amrdata/CMakeLists.txt BoxLib-16.04-new/Src/Extern/amrdata/CMakeLists.txt
 --- BoxLib-16.04/Src/Extern/amrdata/CMakeLists.txt	2016-04-11 16:42:12.000000000 -0600
 +++ BoxLib-16.04-new/Src/Extern/amrdata/CMakeLists.txt	2020-06-19 18:15:50.000000000 -0600
@@ -54,21 +38,6 @@ diff -ruNbB BoxLib-16.04/Src/Extern/amrdata/CMakeLists.txt BoxLib-16.04-new/Src/
  
  add_install_include_file(${local_header_files})
  add_install_library(box_camrdata)
-diff -ruNbB BoxLib-16.04/Src/LinearSolvers/C_CellMG/CGSolver.cpp BoxLib-16.04-new/Src/LinearSolvers/C_CellMG/CGSolver.cpp
---- BoxLib-16.04/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2016-04-11 16:42:12.000000000 -0600
-+++ BoxLib-16.04-new/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2020-06-19 18:15:50.000000000 -0600
-@@ -4,9 +4,9 @@
- #include <iomanip>
- #include <cmath>
- 
--#if (__GNUC__ >= 6 || defined(BL_Darwin))
-+// #if (__GNUC__ >= 6 || defined(BL_Darwin))
- using std::isinf;
--#endif
-+// #endif
- 
- #include <ParmParse.H>
- #include <ParallelDescriptor.H>
 diff -ruNbB BoxLib-16.04/Tools/CMake/PreprocessBoxLibFortran.cmake BoxLib-16.04-new/Tools/CMake/PreprocessBoxLibFortran.cmake
 --- BoxLib-16.04/Tools/CMake/PreprocessBoxLibFortran.cmake	2016-04-11 16:42:12.000000000 -0600
 +++ BoxLib-16.04-new/Tools/CMake/PreprocessBoxLibFortran.cmake	2020-06-19 18:15:50.000000000 -0600

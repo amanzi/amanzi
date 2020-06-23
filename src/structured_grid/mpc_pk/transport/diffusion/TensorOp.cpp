@@ -468,6 +468,7 @@ TensorOp::applyBC (MultiFab&      inout,
       const Mask& m    = maskvals[level][face][mfi];
       const Mask& mphi = maskvals[level][Orientation(perpdir,Orientation::high)][mfi];
       const Mask& mplo = maskvals[level][Orientation(perpdir,Orientation::low)][mfi];
+      const Box& box   = inout.box(gn);
       FORT_TOAPPLYBC( &flagden, &flagbc, &maxorder,
         inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
         bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
@@ -478,7 +479,7 @@ TensorOp::applyBC (MultiFab&      inout,
         dentfab.dataPtr(),           ARLIM(dentfab.loVect()),  ARLIM(dentfab.hiVect()),
         exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
-        inout.box(gn).loVect(), inout.box(gn).hiVect(),
+        box.loVect(), box.hiVect(),
         &num_comp, h[level]);
 #elif BL_SPACEDIM==3
       const Mask& mn = *msk[Orientation(1,Orientation::high)];
@@ -724,6 +725,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
            const FArrayBox& b1zfab = b1Z[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = mfi.validbox();
     FORT_TOGSRB(
       solfab.dataPtr(solnComp),  ARLIM(solfab.loVect()), ARLIM(solfab.hiVect()),
       rhsfab.dataPtr(rhsComp),   ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
@@ -749,7 +751,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      mfi.validbox().loVect(), mfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level], phaseflag);
 #else
     FORT_TOGSRB(
@@ -867,6 +869,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
            FArrayBox& zfluxfab = zflux[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = xmfi.validbox();
     FORT_TOFLUX(
       xfab.dataPtr(sComp),     ARLIM(xfab.loVect()),     ARLIM(xfab.hiVect()),
       bxfab.dataPtr(bndComp),  ARLIM(bxfab.loVect()),    ARLIM(bxfab.hiVect()),
@@ -883,7 +886,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
       tdefab.dataPtr(bndComp), ARLIM(tdefab.loVect()),   ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndComp), ARLIM(tdwfab.loVect()),   ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndComp), ARLIM(tdsfab.loVect()),   ARLIM(tdsfab.hiVect()),
-      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level]);
 
 #else
@@ -999,6 +1002,7 @@ TensorOp::Fapply (MultiFab&       y,
            const FArrayBox& b1zfab = b1Z[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = xmfi.validbox();
     FORT_TOAPPLY(
       xfab.dataPtr(src_comp),    ARLIM(xfab.loVect()),   ARLIM(xfab.hiVect()),
       &alpha, &beta,
@@ -1016,7 +1020,7 @@ TensorOp::Fapply (MultiFab&       y,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level]);
 #else
     FORT_TOAPPLY(

@@ -218,8 +218,12 @@ MatFiller::FindMixedCells()
   Array<BoxArray> material_bounds(nMat);
   for (int j=0; j<nMat; ++j) {
     UnionRegion union_region("test","all",materials[j].Regions());
-    material_bounds[j] = union_region.approximate_bounds(Array<Real>(geomArray[nLevs-1].ProbLo(),BL_SPACEDIM),
-                                                         Array<Real>(geomArray[nLevs-1].CellSize(),BL_SPACEDIM));
+    Array<Real> lo(BL_SPACEDIM), dx(BL_SPACEDIM);
+    for (int i = 0; i < BL_SPACEDIM; ++i) {
+      lo[i] = (geomArray[nLevs-1].ProbLo())[i];
+      dx[i] = (geomArray[nLevs-1].CellSize()[i]);
+    }
+    material_bounds[j] = union_region.approximate_bounds(lo, dx);
   }
 
   BoxArray cba(geomArray[0].Domain());

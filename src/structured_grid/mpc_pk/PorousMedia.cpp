@@ -3947,8 +3947,9 @@ PorousMedia::errorEst (TagBoxArray& tags,
               int*        tptr    = itags.dataPtr();
               const int*  tlo     = tags[mfi.index()].box().loVect();
               const int*  thi     = tags[mfi.index()].box().hiVect();
-              const int*  lo      = mfi.validbox().loVect();
-              const int*  hi      = mfi.validbox().hiVect();
+              const Box&  box_tmp = mfi.validbox();
+              const int*  lo      = box_tmp.loVect();
+              const int*  hi      = box_tmp.hiVect();
               const Real* xlo     = gridloc.lo();
               Real*       dat     = (*mf)[mfi].dataPtr();
               const int*  dlo     = (*mf)[mfi].box().loVect();
@@ -4155,8 +4156,9 @@ PorousMedia::volWgtSum (const std::string& name,
       const Real* dat = fab.dataPtr();
       const int*  dlo = fab.loVect();
       const int*  dhi = fab.hiVect();
-      const int*  lo  = grids[mfi.index()].loVect();
-      const int*  hi  = grids[mfi.index()].hiVect();
+      const Box&  box = grids[mfi.index()];
+      const int*  lo  = box.loVect();
+      const int*  hi  = box.hiVect();
 
       FORT_SUMMASS(dat,ARLIM(dlo),ARLIM(dhi),ARLIM(lo),ARLIM(hi),dx,&s);
 
@@ -5481,8 +5483,9 @@ set_bc_new (int*            bc_new,
         {
 	  for (int crse = 0; crse < cgrids.size(); crse++)
             {
-	      const int* c_lo = cgrids[crse].loVect();
-	      const int* c_hi = cgrids[crse].hiVect();
+	      const Box& box  = cgrids[crse];
+	      const int* c_lo = box.loVect();
+	      const int* c_hi = box.hiVect();
 
 	      if (clo[dir] < cdomlo[dir] && c_lo[dir] == cdomlo[dir])
 		bc_new[bc_index] = bc_orig_qty[crse][bc_index];
@@ -6679,8 +6682,9 @@ PorousMedia::calc_richard_velbc (MultiFab& res,
 
   for (MFIter mfi(res); mfi.isValid(); ++mfi)
     {
-      const int* lo = mfi.validbox().loVect();
-      const int* hi = mfi.validbox().hiVect();
+      const Box& box = mfi.validbox();
+      const int* lo  = box.loVect();
+      const int* hi  = box.hiVect();
 	
       FArrayBox& rg       = res[mfi];  
       FArrayBox& ux       = u_phase[0][mfi];
@@ -6975,7 +6979,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
         {
 	  const int len = Faces.size();
 	  Faces.resize(len+1);
-	  Faces.set(len,Orientation(idir,Orientation::low));
+	  Faces[len] = Orientation(idir,Orientation::low);
         }
       //if (1 || (comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
       if ((comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
@@ -6983,7 +6987,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
         {
 	  const int len = Faces.size();
 	  Faces.resize(len+1);
-	  Faces.set(len,Orientation(idir,Orientation::high));
+	  Faces[len] = Orientation(idir,Orientation::high);
         }
     }
 }
@@ -8508,8 +8512,9 @@ PorousMedia::umac_edge_to_cen(MultiFab* u_mac, MultiFab& U_cc, bool do_upwind)
   // average velocity onto cell center
   for (MFIter mfi(U_cc); mfi.isValid(); ++mfi)
     {
-      const int* lo     = mfi.validbox().loVect();
-      const int* hi     = mfi.validbox().hiVect();
+      const Box& box    = mfi.validbox();
+      const int* lo     = box.loVect();
+      const int* hi     = box.hiVect();
     
       const int* u_lo   = U_cc[mfi].loVect();
       const int* u_hi   = U_cc[mfi].hiVect();
@@ -8546,8 +8551,9 @@ PorousMedia::umac_cpy_edge_to_cen(MultiFab* u_mac, int idx_type, int ishift)
   MultiFab&  U_cor  = get_new_data(idx_type);
   for (MFIter mfi(U_cor); mfi.isValid(); ++mfi)
     {
-      const int* lo     = mfi.validbox().loVect();
-      const int* hi     = mfi.validbox().hiVect();
+      const Box& box    = mfi.validbox();
+      const int* lo     = box.loVect();
+      const int* hi     = box.hiVect();
     
       const int* u_lo   = U_cor[mfi].loVect();
       const int* u_hi   = U_cor[mfi].hiVect();
