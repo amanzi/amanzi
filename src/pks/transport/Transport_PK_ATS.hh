@@ -88,7 +88,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
@@ -208,7 +208,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
 
-    // void set_states(const Teuchos::RCP<const State>& S,
+    // void set_states(const Teuchos::RCP<State>& S,
     //                 const Teuchos::RCP<State>& S_inter,
     //                 const Teuchos::RCP<State>& S_next)
     // {

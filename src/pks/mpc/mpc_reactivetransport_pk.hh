@@ -40,7 +40,7 @@ class ReactiveTransport_PK_ATS : public PK_MPCAdditive<PK> {
   virtual void set_dt(double dt);
 
   // set States
-  virtual void set_states(const Teuchos::RCP<const State>& S,
+  virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 

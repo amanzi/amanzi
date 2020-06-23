@@ -98,7 +98,7 @@ void PK_BDF_Default::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     time_stepper_->CommitSolution(dt, solution_, true);
 }
 
-void PK_BDF_Default::set_states(const Teuchos::RCP<const State>& S,
+void PK_BDF_Default::set_states(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
   S_ = S;

@@ -90,14 +90,8 @@ void Coordinator::coordinator_init() {
     check << "checkpoint";
   
   // create the checkpointing
-
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  //if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-  //   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  // }
-  // else
   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -126,7 +120,7 @@ void Coordinator::coordinator_init() {
       }
     }
 
-  // -------------- ANALYSIS --------------------------------------------
+    // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
 
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
@@ -227,23 +221,15 @@ void Coordinator::initialize() {
 
   S_->InitializeFields();
 
-  // *vo_->os() << "Statistic after InitializeFields " << restart_filename_ << std::endl;  
-  // S_->WriteStatistics(vo_);
-
-  S_->InitializeEvaluators();
-  // *vo_->os() << "Statistic after InitializeEvaluators " << restart_filename_ << std::endl;  
-  // S_->WriteStatistics(vo_);
-  
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
-  
-  //Restore consistency with evaluators
-  S_->InitializeEvaluators();
 
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
-  S_->CheckAllFieldsInitialized();
+
+  S_->InitializeEvaluators();
 
   // Write dependency graph.
   //S_->WriteDependencyGraph();
@@ -252,7 +238,8 @@ void Coordinator::initialize() {
 
   // *vo_->os() << "Statistic before Commit " << restart_filename_ << std::endl;
 
-  S_->WriteStatistics(vo_);
+  S_->CheckAllFieldsInitialized();
+  WriteStateStatistics(S_.ptr(), vo_);
 
 
   // commit the initial conditions.
@@ -706,7 +693,6 @@ void Coordinator::cycle_driver() {
       S_->set_intermediate_time(S_->time());
 
       fail = advance(S_->time(), S_->time() + dt);
-      //S_->WriteStatistics(vo_);  
       dt = get_dt(fail);
 
     } // while not finished
@@ -736,7 +722,7 @@ void Coordinator::cycle_driver() {
 
 
   // finalizing simulation                                                                                                                                                                                                               
-  S_->WriteStatistics(vo_);  
+  WriteStateStatistics(S_.ptr(), vo_);  
   report_memory();
   Teuchos::TimeMonitor::summarize(*vo_->os());
 

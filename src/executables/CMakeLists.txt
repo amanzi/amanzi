@@ -96,7 +96,6 @@ set(amanzi_link_libs
   functions
   geometry
   mesh_factory
-  interface
   output
   mstk_mesh
   mesh_logical
@@ -122,7 +121,7 @@ set(ats_link_libs
   ats_surface_balance
   ats_mpc
   ats_mpc_relations
-  )  
+  )
 
 # note, we can be inclusive here, because if they aren't enabled,
 # these won't be defined and will result in empty strings.
@@ -137,6 +136,7 @@ set(tpl_link_libs
   ${SILO_LIBRARIES}
   ${HYPRE_LIBRARIES}
   ${HDF5_LIBRARIES}
+  ${CLM_LIBRARIES}
   )
 
 if (ENABLE_FATES)
@@ -147,6 +147,6 @@ endif()
 
 add_amanzi_executable(ats
   SOURCE ${ats_src_files}
-  LINK_LIBS ${fates_link_libs} ${ats_link_libs} ${amanzi_link_libs} ${tpl_link_libs}
+  LINK_LIBS ${fates_link_libs} ${tpl_link_libs} ${ats_link_libs} ${amanzi_link_libs} 
   OUTPUT_NAME ats
   OUTPUT_DIRECTORY ${ATS_BINARY_DIR})

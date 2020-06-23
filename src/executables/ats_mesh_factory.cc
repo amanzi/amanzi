@@ -264,10 +264,6 @@ bool checkVerifyMesh(Teuchos::ParameterList& mesh_plist,
   AMANZI_ASSERT(!mesh.is_null());
   bool verify = mesh_plist.get<bool>("verify mesh", false);
   if (verify) {
-
-
-
-    
     int num_procs = mesh->get_comm()->NumProc();
     int rank = mesh->get_comm()->MyPID();
     
