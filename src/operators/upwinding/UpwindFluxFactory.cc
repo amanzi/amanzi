@@ -41,6 +41,20 @@ Teuchos::RCP<Upwinding> UpwindFluxFactory::Create(Teuchos::ParameterList& oplist
     return Teuchos::rcp(new UpwindTotalFlux(pkname, cell_coef, face_coef, flux, flux_eps));
 
   } else if (model_type == "manning harmonic mean") {
+    // this is dangerous because it can result in 0 flux when there is a
+    // neighboring dry cell, which almost is never what is really wanted.  This
+    // option has shown up in a few input files and broken user code, so for
+    // now I am removing it as an option.
+    std::stringstream message;
+    message << "============== WARNING WARNING WARNING WARNING WARNING =============" << std::endl
+              << "Are you certain you intend to use the option:" << std::endl
+              << "  \"overland conductivity model\" = \"manning harmonic mean\"?"  << std::endl
+              << "As in, really really certain?  You might be better off removing this" << std::endl
+              << "option and using the default value of \"manning\" unless you know" << std::endl
+              << "what you are doing!" << std::endl
+              << "============== WARNING WARNING WARNING WARNING WARNING =============" << std::endl;
+    Errors::Message msg(message.str());
+    Exceptions::amanzi_throw(msg);
     return Teuchos::rcp(new UpwindFluxHarmonicMean(pkname, cell_coef, face_coef, flux, flux_eps));
 
   } else if (model_type == "manning split denominator") {

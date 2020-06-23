@@ -59,7 +59,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     modify_predictor_bc_flux_(false),
     modify_predictor_first_bc_flux_(false),
     upwind_from_prev_flux_(false),
-    precon_wc_(false),
     dynamic_mesh_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
@@ -127,17 +126,38 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
+  // scaling for permeability
+  perm_scale_ = plist_->get<double>("permeability rescaling", 1.e7);
+
+  // permeability type - scalar or tensor?
+  Teuchos::ParameterList& perm_list_ = S->FEList().sublist("permeability");
+  std::string perm_type_ = perm_list_.get<std::string>("permeability type", "scalar");
+
+  if (perm_type_ == "scalar") {
+    perm_tensor_rank_ = 1;
+    num_perm_vals_ = 1;
+  } else if (perm_type_ == "horizontal and vertical") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = 2;
+  } else if (perm_type_ == "diagonal tensor") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = mesh_->space_dimension();
+  } else if (perm_type_ == "full tensor") {
+    perm_tensor_rank_ = 2;
+    num_perm_vals_ = (mesh_->space_dimension() == 3) ? 6 : 3;
+  } else {
+    Errors::Message message("`permeability type` must be one of the following: \"scalar\", \"diagonal tensor\", \"full tensor\", or \"horizontal and vertical\".");
+    Exceptions::amanzi_throw(message);
+  }
+
   // -- linear tensor coefficients
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
-    (*K_)[c].Init(mesh_->space_dimension(),1);
+    (*K_)[c].Init(mesh_->space_dimension(),perm_tensor_rank_);
   }
-  // scaling for permeability
-  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
   
   // -- nonlinear coefficients/upwinding
-  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   if (plist_->isParameter("surface rel perm strategy")) {
     clobber_policy_ = plist_->get<std::string>("surface rel perm strategy");
   } else if (plist_->get<bool>("clobber surface rel perm", false)) {
@@ -301,9 +321,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  // -- PC control
-  precon_wc_ = plist_->get<bool>("precondition using WC", false);
-  
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
@@ -371,8 +388,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- primary variables
 
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
-
-  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+  
+  if (compute_boundary_values_) 
+    matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
   
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
 
@@ -381,7 +399,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   
 }
 
@@ -394,7 +411,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
   S->RequireField(perm_key_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, num_perm_vals_);
   S->RequireFieldEvaluator(perm_key_);
 
   // -- water content, and evaluator
@@ -403,17 +420,32 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(conserved_key_);
 
   // -- Water retention evaluators
-  // -- saturation
-  Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  wrm_plist.setName(sat_key_);
-  Teuchos::RCP<Flow::WRMEvaluator> wrm =
-      Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
+  if (plist_->isSublist("water retention evaluator")) {
 
-  if (!S->HasFieldEvaluator(sat_key_)) {
-    S->SetFieldEvaluator(sat_key_, wrm);
-    S->SetFieldEvaluator(sat_gas_key_, wrm);
+    // no list in State, put it there then require.  This can eventually be deprecated!
+    if (!S->HasFieldEvaluator(sat_key_)) {
+      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
+      wrm_plist.setName(sat_key_);
+      wrm_plist.set("field evaluator type", "WRM");
+      S->FEList().set(sat_key_, wrm_plist);
+    }
+
+    if (!S->HasFieldEvaluator(coef_key_)) {
+      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
+      wrm_plist.setName(coef_key_);
+      wrm_plist.set("field evaluator type", "WRM rel perm");
+      S->FEList().set(coef_key_, wrm_plist);
+    }
   }
 
+  // -- saturation
+  S->RequireField(sat_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField(sat_gas_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  auto wrm = S->RequireFieldEvaluator(sat_key_);
+  S->RequireFieldEvaluator(sat_gas_key_);
+        
   // -- rel perm
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -422,16 +454,16 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   locations2[1] = AmanziMesh::BOUNDARY_FACE;
   names2[0] = "cell";
   names2[1] = "boundary_face";
-
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  wrm_plist.setName(coef_key_);
-  wrm_plist.set("evaluator name", coef_key_);
-  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
-  S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
-  wrms_ = wrm->get_WRMs();
+  
+  S->FEList().sublist(coef_key_).set<double>("permeability rescaling", perm_scale_);
+  S->RequireFieldEvaluator(coef_key_);
+
+  // -- get the WRM models
+  auto wrm_eval = Teuchos::rcp_dynamic_cast<Flow::WRMEvaluator>(wrm);
+  AMANZI_ASSERT(wrm_eval != Teuchos::null);
+  wrms_ = wrm_eval->get_WRMs();
 
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField(molar_dens_key_)->SetMesh(mesh_)->SetGhosted()
@@ -456,6 +488,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
   
   
+
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -559,9 +592,11 @@ void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
     matrix_diff_->ApplyBCs(true, true, true);
 
+
     // derive fluxes
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
     matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
 
     if (compute_boundary_values_){
       Epetra_MultiVector& pres_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
@@ -573,6 +608,7 @@ void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
         pres_bf[0][bf] =  BoundaryFaceValue(f, *pres);
       }
     }      
+
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -676,6 +712,7 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
   UpdateVelocity_(S.ptr());
 };
 
@@ -707,8 +744,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> flux_dir = S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
+
       face_matrix_diff_->SetDensity(rho);
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+      //if (!pres->HasComponent("face"))
       face_matrix_diff_->ApplyBCs(true, true, true);
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
 
@@ -1426,7 +1465,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.
-  if (du->Data()->HasComponent("boundary_face")) {
+  if (du->Data()->HasComponent("boundary_face"))  {
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
   }
 

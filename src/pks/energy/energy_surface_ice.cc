@@ -124,6 +124,8 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Set the cell initial condition if it is taken from the subsurface
   if (!S->GetField(key_)->initialized()) {
+    // TODO: make this go away!  This should be in an MPC?
+    
     Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
       Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
@@ -137,16 +139,29 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       } else {
         key_ss = ic_plist.get<std::string>("subsurface temperature key", "temperature");
       }
-
-      const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
-        ->ViewComponent("face",false);
-
+      
+      Teuchos::RCP<const CompositeVector> subsurf_temp = S->GetFieldData(key_ss);
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
-      for (unsigned int c=0; c!=ncells_surface; ++c) {
-        // -- get the surface cell's equivalent subsurface face and neighboring cell
-        AmanziMesh::Entity_ID f =
-          mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        surf_temp[0][c] = temp[0][f];
+
+      if (subsurf_temp->HasComponent("face")){     
+        const Epetra_MultiVector& temp = *subsurf_temp->ViewComponent("face",false);
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face and neighboring cell
+          AmanziMesh::Entity_ID f =
+            mesh_->entity_get_parent(AmanziMesh::CELL, c);
+          surf_temp[0][c] = temp[0][f];
+        }
+      }else if (subsurf_temp->HasComponent("boundary_face")){
+        const Epetra_MultiVector& temp = *subsurf_temp->ViewComponent("boundary_face",false);
+        Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain = S->GetMesh("domain");
+        unsigned int ncells_sub = mesh_domain->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face and neighboring cell
+          AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+          int bf = mesh_domain->exterior_face_map(false).LID(mesh_domain->face_map(false).GID(f));
+          if (bf >=0)   surf_temp[0][c] = temp[0][bf];
+        }
       }
 
       // -- Update faces from cells if there
@@ -155,10 +170,9 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
 
-    } 
-    else if (ic_plist.get<bool>("initialize surface_star temperature from surface cells",false)) {
+    } else if (ic_plist.get<bool>("initialize surface_star temperature from surface cells",false)) {
       
-      assert(domain_ == "surface_star");
+      AMANZI_ASSERT(domain_ == "surface_star");
       Epetra_MultiVector& surf_temp = *S->GetFieldData(key_, name_)->ViewComponent("cell",false);
       
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);

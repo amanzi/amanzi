@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """Loads and plots timestep history for a given run."""
+from __future__ import print_function
+from __future__ import division
 
 import numpy as np
 

@@ -378,9 +378,10 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   flux.M_surf = met.Pr + mb.Mm;
 
   // Energy to surface.
+  double Train = std::max(0., met.air_temp - 273.15);
   flux.E_surf = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh // purely energy fluxes
                 - eb.fQm   // energy put into melting snow
-                + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water; // energy advected in by rainfall
+                + surf.density_w * met.Pr * Train * params.Cv_water; // energy advected in by rainfall
 
   // zero subsurf values
   flux.M_subsurf = 0.;
@@ -426,8 +427,9 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
   flux.M_snow = met.Ps + mb.Me - mb.Mm;
 
   // Energy to surface.
+  double Train = std::max(0., met.air_temp - 273.15);
   flux.E_surf = eb.fQc   // conducted to ground  
-                + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water; // rain enthalpy
+                + surf.density_w * met.Pr * Train * params.Cv_water; // rain enthalpy
                // + 0 // enthalpy of meltwater at 0C.
   return flux;
 }

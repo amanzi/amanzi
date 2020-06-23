@@ -4,6 +4,7 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
+#include "Operator_CellBndFace.hh"
 #include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 #include "permafrost_model.hh"
@@ -71,16 +72,34 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[2];
   surf_energy_pk_ = sub_pks_[3];
 
+  
   // Create the dE_dp block, which will at least have a CELL-based diagonal
   // entry (from subsurface dE/dp) and a FACE-based diagonal entry (from
-  // surface dE/dp), but the subsurface will likely create a CELL-only matrix.
-  // This can get removed/fixed once there is a better way of
-  // creating/amalgamating ops into a single global operator.
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(domain_mesh_)->SetGhosted()
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // surface dE/dp), but the subsurface might only create a CELL-only matrix if
+  // the other terms are supressed.  This can get removed/fixed once there is a
+  // better way of creating/amalgamating ops into a single global operator.
+  // For now this also means that we must have energy and flow using the same
+  // discretization.
   Teuchos::ParameterList plist;
+  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+
+  std::string pk0_method = pks_list_->sublist(names[0]).sublist("diffusion").get<std::string>("discretization primary");
+  std::string pk1_method = pks_list_->sublist(names[1]).sublist("diffusion").get<std::string>("discretization primary");
+  if (pk0_method != pk1_method) {
+    Errors::Message msg("MPC_Permafrost: for permafrost problems, due to issues in Jacobians, the flow and energy discretization methods must be the same.");
+    Exceptions::amanzi_throw(msg);
+  }
+  
+  if (pk0_method == "nlfv: bnd_faces" || pk0_method == "fv: bnd_faces") {
+    cvs->SetMesh(domain_mesh_)->SetGhosted()
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);  
+  } else {
+    cvs->SetMesh(domain_mesh_)->SetGhosted()
+      ->AddComponent("face", AmanziMesh::FACE, 1)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);  
+  }
+  
   dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(cvs, plist));
   
   // call the subsurface setup, which calls the sub-pk's setups and sets up
@@ -169,6 +188,7 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
     water_->set_indices(0,2,1,3);
     water_->set_db(surf_db_);
   }
+
 }
 
 void
@@ -201,7 +221,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S) {
 
 
 void
-MPCPermafrost::set_states(const Teuchos::RCP<const State>& S,
+MPCPermafrost::set_states(const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<State>& S_inter,
                            const Teuchos::RCP<State>& S_next) {
   MPCSubsurface::set_states(S,S_inter,S_next);
@@ -445,7 +465,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
-  
+ 
   // Calculate consistent faces
   modified |= domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
   modified |= domain_energy_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
@@ -471,12 +491,12 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   
   // Copy consistent faces to surface
   if (modified) {
-
     //S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
 
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());
+
   }
 
   // Hack surface faces

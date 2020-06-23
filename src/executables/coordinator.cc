@@ -23,7 +23,6 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziComm.hh"
 #include "AmanziTypes.hh"
 
-
 #include "InputAnalysis.hh"
 #include "Units.hh"
 #include "TimeStepManager.hh"
@@ -80,20 +79,8 @@ void Coordinator::coordinator_init() {
   pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
   // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  std::string chkp_filenamebase = chkp_plist.get<std::string>("file name base", "checkpoint");
-  auto split_restart = Amanzi::Keys::splitKey(chkp_filenamebase, '*');
-  if (split_restart.first.empty()) {
-    // standard checkpoint file on COMM_WORLD
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  } else {
-    // rank-based checkpoint file on COMM_SELF
-    auto comm_self = Amanzi::getCommSelf();
-    std::stringstream chkp_filenamebase_rank;
-    chkp_filenamebase_rank << split_restart.first << comm_->MyPID() << split_restart.second;
-    chkp_plist.set("file name base", chkp_filenamebase_rank.str());
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
-  }
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -177,17 +164,24 @@ void Coordinator::initialize() {
   }
   
   // Initialize the state (initializes all dependent variables).
-  //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
   S_->InitializeFields();
 
+  WriteStateStatistics(S_.ptr(), vo_);
+
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
+
+  // Not sure what these may be?
   S_->CheckNotEvaluatedFieldsInitialized();
+
+  // Initialize secondaries, etc
   S_->InitializeEvaluators();
-  S_->WriteStatistics(vo_);
+
+  // Check final initialization
   S_->CheckAllFieldsInitialized();
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
@@ -596,7 +590,6 @@ void Coordinator::cycle_driver() {
       S_->set_intermediate_time(S_->time());
 
       fail = advance(S_->time(), S_->time() + dt);
-      //S_->WriteStatistics(vo_);  
       dt = get_dt(fail);
 
     } // while not finished
@@ -626,7 +619,7 @@ void Coordinator::cycle_driver() {
 
 
   // finalizing simulation                                                                                                                                                                                                               
-  S_->WriteStatistics(vo_);  
+  WriteStateStatistics(S_.ptr(), vo_);  
   report_memory();
   Teuchos::TimeMonitor::summarize(*vo_->os());
 

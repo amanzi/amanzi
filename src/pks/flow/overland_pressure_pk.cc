@@ -240,7 +240,6 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-
       S->RequireField(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")), name_)
         ->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -334,6 +333,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField(slope_key)->SetMesh(S->GetMesh(domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  // TODO: move these to state
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (S->FEList().isSublist(elev_key)) {
     S->RequireFieldEvaluator(elev_key);
@@ -354,6 +354,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     S->SetFieldEvaluator(slope_key, elev_evaluator);
   }
 
+  // TODO: move this to state
   // -- evaluator for potential field, h + z
   S->RequireField(Keys::getKey(domain_,"pres_elev"))->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
@@ -453,6 +454,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
  
   if (!S->GetField(key_)->initialized()) {
+    // TODO: can this be deprecated?  Shouldn't this get handled by the MPC?    
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
@@ -468,14 +470,33 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
       } else {
         key_ss = ic_plist.get<std::string>("subsurface pressure key", "pressure");
       }
-      const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
-        ->ViewComponent("face",false);
+      
+      Teuchos::RCP<const CompositeVector> subsurf_pres = S->GetFieldData(key_ss);
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
-      for (unsigned int c=0; c!=ncells_surface; ++c) {
-        // -- get the surface cell's equivalent subsurface face and neighboring cell
-        AmanziMesh::Entity_ID f =
-          mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        pres[0][c] = subsurf_pres[0][f];
+      if (subsurf_pres->HasComponent("face")) {
+
+        const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
+                                                 ->ViewComponent("face",false);
+        unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face and neighboring cell
+          AmanziMesh::Entity_ID f =
+              mesh_->entity_get_parent(AmanziMesh::CELL, c);
+          pres[0][c] = subsurf_pres[0][f];
+        }
+          
+      } else if (subsurf_pres->HasComponent("boundary_face")) {
+
+        const Epetra_MultiVector& subsurf_pres_vec = *subsurf_pres->ViewComponent("boundary_face",false);
+        Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain = S->GetMesh("domain");
+        unsigned int ncells_sub = mesh_domain->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+          
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face and neighboring cell
+          AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+          int bf = mesh_domain->exterior_face_map(false).LID(mesh_domain->face_map(false).GID(f));
+          if (bf >=0)   pres[0][c] = subsurf_pres_vec[0][bf];
+        }
       }
 
       // -- Update faces from cells if there
@@ -486,9 +507,9 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
         S->GetField(key_,name_)->set_initialized();
       }
 
-    } 
-    else if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
-      assert(domain_ == "surface_star");
+    } else if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
+      // TODO: can't this move into an MPC?
+      AMANZI_ASSERT(domain_ == "surface_star");
       Epetra_MultiVector& pres_star = *pres_cv->ViewComponent("cell",false);
     
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
@@ -505,16 +526,12 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
           pres_star[0][c] = pres[0][0];
         else
           pres_star[0][c] = 101325.0;
-        
       }
      
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
-
     }
-
   }
-
   
   // Initialize BC values
   bc_head_->Compute(S->time());
@@ -542,9 +559,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"mass_flux_direction"), name_)->set_initialized();
   S->GetFieldData(Keys::getKey(domain_,"velocity"), name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_,"velocity"), name_)->set_initialized();
- 
-  
- };
+};
 
 
 // -----------------------------------------------------------------------------

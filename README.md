@@ -21,10 +21,15 @@ git clone http://github.com/amanzi/ats
 Installation
 ------------
 
-Please see the [INSTALL](https://github.com/amanzi/ats/blob/master/INSTALL.md) file included in the top level directory of your ATS download.
+ATS is now built as a part of Amanzi directly. Please see the [ATS installation instructions](https://github.com/amanzi/amanzi/blob/master/INSTALL_ATS.md) on Amanzi's site.
 
 
 License and Copyright
 ---------------------
 
 Please see the [LICENSE](https://github.com/amanzi/ats/blob/master/LICENSE) and [COPYRIGHT](https://github.com/amanzi/ats/blob/master/COPYRIGHT) files included in the top level directory of your ATS download.
+
+Citation
+--------
+
+E.T. Coon, M. Berndt, A. Jan, D. Svyatsky, A.L. Atchley, E. Kikinzon, D.R. Harp, G. Manzini, E. Shelef, K. Lipnikov, R. Garimella, C. Xu, J.D. Moulton, S. Karra, S.L. Painter, E. Jafarov, and S. Molins. 2019. Advanced Terrestrial Simulator. U.S. Department of Energy, USA. Version 1.0. 2020. DOI: 10.11578/dc.20190911.1
