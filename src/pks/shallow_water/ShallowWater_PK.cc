@@ -163,7 +163,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 	    std::cout << "ht_rec = " << ht_rec << std::endl;
 	    std::cout << "B_rec  = " << B_rec << std::endl;
 	    std::cout << "h_rec  = " << h_rec << std::endl;
-	    exit(0);
+	    Errors::Message msg;
+	    msg << "Shallow water PK: negative h.\n";
+	    Exceptions::amanzi_throw(msg);
 	  }
 
 	  double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
@@ -203,7 +205,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 		  std::cout << "ht_rec = " << ht_rec << std::endl;
 		  std::cout << "B_rec  = " << B_rec << std::endl;
 		  std::cout << "h_rec  = " << h_rec << std::endl;
-		REPLACE exit(0);
+		  Errors::Message msg;
+		  msg << "Shallow water PK: negative h.\n";
+		  Exceptions::amanzi_throw(msg);
 	    }
 
 	    double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
