@@ -22,5 +22,5 @@ namespace ShallowWater {
 void ShallowWater_PK::FunctionalTimeDerivative(double t, const Epetra_Vector& component,
                                                  Epetra_Vector& f_component) {};
 
-} // ShallowWater
-} // Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi

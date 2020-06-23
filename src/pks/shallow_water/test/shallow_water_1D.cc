@@ -228,7 +228,7 @@ TEST(SHALLOW_WATER_1D) {
     io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
     io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
     io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
-    o.WriteVector(*B(0), "B", AmanziMesh::CELL);
+    io.WriteVector(*B(0), "B", AmanziMesh::CELL);
     io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
     io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
     io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);

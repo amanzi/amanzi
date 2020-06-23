@@ -100,7 +100,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  std::cout << "ncells_owned = " << ncells_owned << std::endl;
 
   std::cout << "dt = " << dt << std::endl;
   std::cout << "t_new = " << t_new << std::endl;
@@ -647,7 +646,8 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 
   G.resize(3);
 
-  double h, u, v, g = 9.81;
+  double h, u, v, qx, qy, g = 9.81;
+  double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
 
