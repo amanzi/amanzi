@@ -278,7 +278,7 @@ set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz)
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
 set(CCSE_MD5_SUM        686e0dd20089457b6ad03c18dd60cd66)
 set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
-set(CCSE_GIT_TAG        "6082ae6b2fe8ed80951ea61ff30f6bf829e1af2d")
+set(CCSE_GIT_TAG        "a15e0ee6b043cb87dc99c8fe902b10217eb4fe94")
 
 
 #

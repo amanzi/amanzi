@@ -1,6 +1,15 @@
 diff -ruNbB BoxLib-16.04/Src/CMakeLists.txt BoxLib-16.04-new/Src/CMakeLists.txt
 --- BoxLib-16.04/Src/CMakeLists.txt	2016-04-11 16:42:12.000000000 -0600
 +++ BoxLib-16.04-new/Src/CMakeLists.txt	2020-06-19 18:15:50.000000000 -0600
+@@ -35,7 +35,7 @@
+
+ add_subdirectory(${CFMGDIR})
+
+-add_library(cboxlib $<TARGET_OBJECTS:box_c> $<TARGET_OBJECTS:box_cbndry> $<TARGET_OBJECTS:box_cpart> $<TARGET_OBJECTS:box_camr> $<TARGET_OBJECTS:box_camrcore> $<TARGET_OBJECTS:box_cmg> $<TARGET_OBJECTS:box_ctmg> $<TARGET_OBJECTS:box_cfmg>)
++add_library(cboxlib $<TARGET_OBJECTS:box_c> $<TARGET_OBJECTS:box_cbndry> $<TARGET_OBJECTS:box_camr> $<TARGET_OBJECTS:box_camrcore> $<TARGET_OBJECTS:box_cmg> $<TARGET_OBJECTS:box_ctmg> $<TARGET_OBJECTS:box_cfmg>)
+ add_library(cfboxlib $<TARGET_OBJECTS:box_cfmg>)
+ add_library(fboxlib $<TARGET_OBJECTS:box_f> $<TARGET_OBJECTS:box_fmg>)
+ add_install_library(cboxlib)
 @@ -44,8 +44,14 @@
  SET_TARGET_PROPERTIES(cboxlib PROPERTIES LINKER_LANGUAGE C)
  SET_TARGET_PROPERTIES(cfboxlib PROPERTIES LINKER_LANGUAGE C)
@@ -10,11 +19,11 @@ diff -ruNbB BoxLib-16.04/Src/CMakeLists.txt BoxLib-16.04-new/Src/CMakeLists.txt
 +  set_target_properties(cfboxlib PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +  set_target_properties(fboxlib PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +endif()
- 
+
  add_subdirectory(${CAMRDATADIR})
- 
+
  add_subdirectory(Extern/gslib)
- 
+
 +add_dependencies(box_f box_c)
 diff -ruNbB BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp BoxLib-16.04-new/Src/C_BaseLib/FArrayBox.cpp
 --- BoxLib-16.04/Src/C_BaseLib/FArrayBox.cpp	2016-04-11 16:42:12.000000000 -0600
