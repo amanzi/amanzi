@@ -141,7 +141,7 @@
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
-#   0.97.7       - update BoxLib (CCSE) to version 17.04
+#   0.97.7       - update BoxLib (CCSE) to version 17.05.1
 
 include(CMakeParseArguments)
 
@@ -269,14 +269,14 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 17)
-set(CCSE_VERSION_MINOR 04)
-set(CCSE_VERSION_PATCH 0)
-set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR})
+set(CCSE_VERSION_MINOR 05)
+set(CCSE_VERSION_PATCH 1)
+set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
 set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        bfa6f2f7b6d45eacba580c78c60a6bfd)
+set(CCSE_MD5_SUM        97c3e1615cc649e2748fa9a7291724fa)
 set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
 set(CCSE_GIT_TAG        "a15e0ee6b043cb87dc99c8fe902b10217eb4fe94")
 
