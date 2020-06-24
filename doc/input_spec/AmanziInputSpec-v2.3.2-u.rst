@@ -1101,8 +1101,8 @@ It has the following requirements.
 
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
       The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
-      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.
-      For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``.
+      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` [m] and ``alpha_t`` [m].
+      For ``burnett_frind`` values are specified using the attributes ``alpha_l`` [m], ``alpha_th`` [m], and ``alpha_tv`` [m].
       For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.
 
     * ``tortuosity`` is defined in-line using attributes. Either it is specified as a value using ``value`` or it specified 

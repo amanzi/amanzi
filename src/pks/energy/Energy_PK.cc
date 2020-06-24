@@ -43,11 +43,6 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-  energy_key_ = "energy";
-  prev_energy_key_ = "prev_energy";
-  enthalpy_key_ = "enthalpy";
-  conductivity_key_ = "thermal_conductivity";
 }
 
 
@@ -56,6 +51,13 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
+  //keys 
+  energy_key_ = "energy";
+  prev_energy_key_ = "prev_energy";
+  enthalpy_key_ = "enthalpy";
+  conductivity_key_ = "thermal_conductivity";
+  molar_density_liquid_key_ = "molar_density_liquid";
+
   // require first-requested state variables
   if (!S->HasField("atmospheric_pressure")) {
     S->RequireScalar("atmospheric_pressure", passwd_);
@@ -189,7 +191,7 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
   bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, passwd_);
   if (update) {
-    const Epetra_MultiVector& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
+    const auto& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
     WhetStone::Tensor Ktmp(dim, 1);
 
     K.clear();
@@ -270,7 +272,9 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 
   // additional boundary conditions
   AmanziMesh::Entity_ID_List cells;
+  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
+  const auto& n_l = *S_->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -283,9 +287,10 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   for (int f = 0; f < bc_model.size(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
 
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][cells[0]];
+      bc_value_enth_[f] = enth[0][c] * n_l[0][c];
     }
   }
 }

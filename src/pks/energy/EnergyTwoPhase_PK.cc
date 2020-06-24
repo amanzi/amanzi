@@ -142,7 +142,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
-  op_matrix_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, mesh_));
+  op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
   const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
@@ -275,7 +275,7 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ******************************************************************
 * TBW 
 ****************************************************************** */
-  void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   dt_ = dt_next_;
 }

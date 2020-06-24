@@ -114,10 +114,9 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 
   // names of state fields 
-  Key temperature_key_;
-  Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_;
-  Key conductivity_key_;
+  Key temperature_key_, energy_key_, prev_energy_key_;
+  Key enthalpy_key_, conductivity_key_;
+  Key molar_density_liquid_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 

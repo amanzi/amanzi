@@ -1,14 +1,15 @@
 #include <string>
 
-#include "UnitTest++.h"
-#include "TestReporterStdout.h"
-
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Epetra_MpiComm.h"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "TestReporterStdout.h"
+#include "UnitTest++.h"
+
+#include "errors.hh"
+#include "VerboseObject_objs.hh"
 
 #include "FunctionColor.hh"
 #include "FunctionColorFactory.hh"
-#include "errors.hh"
 
 using namespace Amanzi;
 

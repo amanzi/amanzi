@@ -503,44 +503,15 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 
 
 void State::WriteDependencyGraph() const {
-  std::ofstream os("dependency_graph.txt", std::ios::out);
-  for (evaluator_iterator fe=field_evaluator_begin();
-       fe!=field_evaluator_end(); ++fe) {
-    os << *fe->second;
-  }
-  os.close();
-}
-
-
-void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
-
-    for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-      std::string name(f_it->first);
-
-      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        std::map<std::string, double> vmin, vmax, vavg;
-        f_it->second->GetFieldData()->MinValue(vmin);
-        f_it->second->GetFieldData()->MaxValue(vmax);
-        f_it->second->GetFieldData()->MeanValue(vavg);
-
-        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-          std::string namedot(name), name_comp(c_it->first);
-          if (vmin.size() != 1) namedot.append("." + name_comp);
-          namedot.resize(40, '.');
-          *vo->os() << namedot << " " << c_it->second << " / " 
-                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
-        }
-      } else if (f_it->second->type() == CONSTANT_SCALAR) {
-        double vmin = *f_it->second->GetScalarData();
-        name.resize(40, '.');
-        *vo->os() << name << " " << vmin << std::endl;
-      }
+    std::ofstream os("dependency_graph.txt", std::ios::out);
+    for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
+      os << *fe->second;
     }
+    os.close();
   }
-};
+}
 
 
 // -----------------------------------------------------------------------------
@@ -1483,6 +1454,38 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   }
 }
 
+
+// Non-member function for statistics
+void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo)
+{
+  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
+
+    for (auto f_it = S->field_begin(); f_it != S->field_end(); ++f_it) {
+      std::string name(f_it->first);
+
+      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
+        std::map<std::string, double> vmin, vmax, vavg;
+        f_it->second->GetFieldData()->MinValue(vmin);
+        f_it->second->GetFieldData()->MaxValue(vmax);
+        f_it->second->GetFieldData()->MeanValue(vavg);
+
+        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
+          std::string namedot(name), name_comp(c_it->first);
+          if (vmin.size() != 1) namedot.append("." + name_comp);
+          namedot.resize(40, '.');
+          *vo->os() << namedot << " " << c_it->second << " / " 
+                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+        }
+      } else if (f_it->second->type() == CONSTANT_SCALAR) {
+        double vmin = *f_it->second->GetScalarData();
+        name.resize(40, '.');
+        *vo->os() << name << " " << vmin << std::endl;
+      }
+    }
+  }
+};
 
 
 

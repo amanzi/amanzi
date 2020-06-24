@@ -65,6 +65,22 @@ endforeach()
 # Add support of parallel LU solvers
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 
+# not sure why we don't like Stratimikos...
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE")
+
+# have already built SEACAS
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
+
+# we use ints for GOs in Tpetra only (for now)
+if (ENABLE_KOKKOS)
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_INT:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
+endif()
+
+
+
 # Build PyTrilinos if shared
 # if (BUILD_SHARED_LIBS)
 #   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
@@ -144,23 +160,28 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ParMETIS_INCLUDE_DIRS:FILEPATH=${ParMetis_DIR}/include"
             "-DTPL_ParMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
 
-#  - Addtional Trilinos CMake Arguments
+# - Additional Trilinos CMake Arguments
+# Attempts to make Trilinos compile faster go here...          
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+    "-DTpetra_ENABLE_TESTS:BOOL=OFF"
+    "-DTpetra_ENABLE_EXAMPLES:BOOL=OFF"
+    "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF"
     )
 
-if (TRILINOS_BUILD_TYPE)
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DCMAKE_BUILD_TYPE:STRING=${TRILINOS_BUILD_TYPE}")
+if (Trilinos_BUILD_TYPE)
+else()
+  set(Trilinos_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+endif()
 
-  if (${TRILINOS_BUILD_TYPE} STREQUAL "Debug")
-    list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
-  endif()
+if (${Trilinos_BUILD_TYPE} STREQUAL "Debug")
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DTpetra_ENABLE_DEBUG:BOOL=ON")
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -176,8 +197,10 @@ if (Trilinos_Build_Config_File)
     message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
 
-
-set(Trilinos_CMAKE_CXX_FLAGS ${Amanzi_COMMON_CXXFLAGS})
+set(Trilinos_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(Trilinos_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+set(Trilinos_CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
+message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS "")
@@ -205,7 +228,7 @@ if (ENABLE_KOKKOS_CUDA)
    message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
 endif()
 
-
+# Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
   if (ENABLE_CUDA) 
     message("AMANZI_ARCH: : ${AMANZI_ARCH}")
@@ -236,7 +259,6 @@ set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_ARCH_ARGS}
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
-
 
 #  --- Define the Trilinos patch step
 #
@@ -277,18 +299,16 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                       ${Trilinos_CMAKE_ARGS} 
 			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
-				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
-                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                      -DCMAKE_C_FLAGS:STRING=${Trilinos_CMAKE_C_FLAGS}
                                       -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                      -DCMAKE_Fortran_FLAGS:STRING=${Trilinos_CMAKE_Fortran_FLAGS}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
-                                      -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
-                                      -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
                                       -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
+                                      -DCMAKE_BUILD_TYPE:STRING=${Trilinos_BUILD_TYPE}
+
                     # -- Build
                     BINARY_DIR       ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make

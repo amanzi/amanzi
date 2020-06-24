@@ -1636,7 +1636,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
       -DCMAKE_BUILD_TYPE:STRING=${tpls_build_type} \
-      -DTRILINOS_BUILD_TYPE:STRING=${trilinos_build_type} \
+      -DTrilinos_BUILD_TYPE:STRING=${trilinos_build_type} \
       -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \

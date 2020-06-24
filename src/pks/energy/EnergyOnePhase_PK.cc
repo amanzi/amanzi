@@ -47,7 +47,7 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
    
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
-};
+}
 
 
 /* ******************************************************************

@@ -140,7 +140,8 @@
 #   0.97.3       - update CrunchTope to hash version 906e164 (Apr 2, 2020)
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
-#   0.97.6       - update ASCEMIO
+#   0.97.6       - update BoxLib (CCSE) to version 1.3.5
+#   0.97.7       - update ASCEMIO
 
 include(CMakeParseArguments)
 
@@ -193,7 +194,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -269,13 +270,13 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 4)
+set(CCSE_VERSION_PATCH 5)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_SAVEAS_FILE    ${CCSE_ARCHIVE_FILE})
-set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
+set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
+set(CCSE_ARCHIVE_FILE   v${CCSE_VERSION}.tar.gz) 
+set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
+set(CCSE_MD5_SUM        b1e0cfb99db6665ba70bb5e9ae56e14e) 
 
 #
 # TPL: UnitTest
@@ -555,10 +556,10 @@ set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
 #
 set(EXPRTK_VERSION_MAJOR 0)
 set(EXPRTK_VERSION_MINOR 0)
-set(EXPRTK_VERSION_PATCH 15b77a6)
+set(EXPRTK_VERSION_PATCH d81ac1a)
 set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
-set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk")
-set(EXPRTK_ARCHIVE_FILE  exptk-${EXPTK_VERSION}.tar.gz)
-set(EXPRTK_SAVEAS_FILE   ${EXPTK_ARCHIVE_FILE})
-set(EXPRTK_GIT_REPOSITORY "https://github.com/ArashPartow/exprtk")
-set(EXPRTK_GIT_TAG       "15b77a667b06d5bd82db01e0f4c773dd7cce9a97")
+set(EXPRTK_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(EXPRTK_ARCHIVE_FILE  exprtk-${EXPRTK_VERSION}.zip)
+set(EXPRTK_SAVEAS_FILE   ${EXPRTK_ARCHIVE_FILE})
+set(EXPRTK_MD5_SUM       3cd40d9d5b2cb913f1eb4fe07c7d04eb)
+
