@@ -6195,6 +6195,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
     `"region`", `"times`", and TSPS (see below).
 
+    * `"domain name`" [string] name of the domain. Typically, it is either `"domain`" for
+      the matrix/subsurface or `"fracture`" for the fracture network.
+
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
@@ -6210,12 +6213,14 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * water table [m]
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
+      * SOLUTE sorbed concentration [mol/kg] 
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
+      * pH [-] 
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
     registered at the first time it was requested.
@@ -6288,17 +6293,23 @@ All of them operate on the variables identified.
       <Parameter name="region" type="string" value="_REGION"/>
       <Parameter name="functional" type="string" value="observation data: point"/>
       <Parameter name="variable" type="string" value="volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
       <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
 
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    </ParameterList>
+
+    <ParameterList name="_ANY OBSERVATION NAME B">  <!-- another observation -->
+      ...
     </ParameterList>
   </ParameterList>
   </ParameterList>
+
+In this example, we collect `"volumetric water content`" on four selected cycles,
+every 100 cycles, three selected times, every 10 seconds from 0 to 100, and every 25 seconds after that.
 
 
 Checkpoint file
