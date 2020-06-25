@@ -2101,6 +2101,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="aqueous_mass_flow_rate" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="aqueous_volumetric_flow_rate" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="aqueous_conc" type="typedef_primary_observation" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="sorbed_conc" type="typedef_primary_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="aqueous_saturation" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="primary_volumetric_flow_rate" type="typedef_primary_observation" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="drawdown" type="typedef_observation" minOccurs="0" maxOccurs="unbounded"/>
