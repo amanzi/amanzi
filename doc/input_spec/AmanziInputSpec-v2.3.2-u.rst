@@ -1094,7 +1094,9 @@ It has the following requirements.
     * ``porosity``, ``particle_density`` and ``transport_porosity`` are defined in-line using attributes. 
       It is specified in one of three ways: as a value between 0 and 1 
       using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
-      HDF5 file (formatted differently than restart file)  using using type="h5file" and filename="<filename>".
+      HDF5 file (formatted differently than restart file) using using type="h5file", filename="<filename>" and 
+      "constant_in_time="true | false".
+      The dataset label should be the field name.
 
     * ``specific_storage`` and ``specific_yeild`` are defined in-line using attributes.
       Either it is specified as a value greater than 0 using ``value`` or it specified through a file using type="file" and filename="<filename>".

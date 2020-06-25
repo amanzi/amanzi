@@ -416,6 +416,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="file"/> <!-- TODO: what type should property files be? -->
 		<xs:enumeration value="h5file"/>
+		<xs:enumeration value="constant_in_time"/>
 	</xs:restriction>
 </xs:simpleType>
 

@@ -125,6 +125,7 @@
         <Parameter name="filename" type="string" value="aperture.h5"/>
         <Parameter name="domain name" type="string" value="fracture"/>
         <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="variable name" type="string" value="fracture-aperture"/>
         <Parameter name="mesh entity" type="string" value="cell"/>
         <Parameter name="number of dofs" type="int" value="1"/>
         <Parameter name="constant in time" type="bool" value="true"/>
