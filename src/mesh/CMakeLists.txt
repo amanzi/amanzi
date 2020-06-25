@@ -30,9 +30,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_amanzi_library(mesh SOURCE GenerationSpec.cc 
-                               Mesh.cc 
-                               Mesh_Sets.cc 
+add_amanzi_library(mesh SOURCE GenerationSpec.cc
+                               Mesh.cc
+                               Mesh_Sets.cc
+                               DomainSet.cc
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
 
 #
