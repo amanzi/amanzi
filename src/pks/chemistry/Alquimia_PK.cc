@@ -519,8 +519,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
-    if (cell ==0)
-    //  if ((*aqueous_components)[i][cell] > 0) abort();
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];
@@ -716,8 +714,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   // (this->porosity())[cell] = state.porosity;
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
-    if (cell ==0)
+    (*aqueous_components)[i][cell] = state.total_mobile.data[i];
     // if (convert2mole_fraction_) {
     //   if (S_->HasField(molar_fluid_den_key_)) {
     //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
