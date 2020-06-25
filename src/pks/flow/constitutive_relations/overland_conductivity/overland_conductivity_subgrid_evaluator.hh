@@ -15,13 +15,13 @@
 namespace Amanzi {
 namespace Flow {
 
-class OverlandConductivitySubgridModel;
+class ManningConductivityModel;
 
 class OverlandConductivitySubgridEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   OverlandConductivitySubgridEvaluator(Teuchos::ParameterList& plist);
-  OverlandConductivitySubgridEvaluator(const OverlandConductivitySubgridEvaluator& other);
+  OverlandConductivitySubgridEvaluator(const OverlandConductivitySubgridEvaluator& other) = default;
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -30,20 +30,17 @@ class OverlandConductivitySubgridEvaluator : public SecondaryVariableFieldEvalua
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Teuchos::RCP<OverlandConductivitySubgridModel> get_Model() { return model_; }
+  Teuchos::RCP<ManningConductivityModel> get_Model() { return model_; }
 
 private:
-  Teuchos::RCP<OverlandConductivitySubgridModel> model_;
+  Teuchos::RCP<ManningConductivityModel> model_;
 
-  Key depth_key_;
   Key slope_key_;
   Key coef_key_;
   Key dens_key_;
-  Key pdd_key_, drag_exp_key_;
-  Key frac_cond_key_, vpd_key_;
-  bool dt_,sg_model_;
-  double factor_;
-  bool dens_;
+  Key depth_key_;
+  Key drag_exp_key_;
+  Key frac_cond_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,OverlandConductivitySubgridEvaluator> factory_;

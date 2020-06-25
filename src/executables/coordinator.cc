@@ -79,7 +79,7 @@ void Coordinator::coordinator_init() {
   pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
   // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
 
   // create the observations
@@ -141,17 +141,7 @@ void Coordinator::initialize() {
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    auto split_restart = Amanzi::Keys::splitKey(restart_filename_, '*');
-    if (split_restart.first.empty()) {
-      // standard restart file on COMM_WORLD
-      ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
-    } else {
-      // rank-based restart file on COMM_SELF
-      auto comm_self = Amanzi::getCommSelf();
-      std::stringstream restart_fname;
-      restart_fname << split_restart.first << rank << split_restart.second;
-      ReadCheckpoint(comm_self, S_.ptr(), restart_fname.str());
-    }
+    ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
     

@@ -17,8 +17,7 @@
 
 */
 
-#ifndef AMANZI_FLOW_RELATIONS_VOLUMETRIC_HEIGHT_EVALUATOR_
-#define AMANZI_FLOW_RELATIONS_VOLUMETRIC_HEIGHT_EVALUATOR_
+#pragma once
 
 #include "secondary_variable_field_evaluator.hh"
 #include "Factory.hh"
@@ -26,16 +25,16 @@
 namespace Amanzi {
 namespace Flow {
 
-class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
+class VolumetricPondedDepthEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  VolumetricHeightEvaluator(Teuchos::ParameterList& plist);
-  VolumetricHeightEvaluator(const VolumetricHeightEvaluator& other) = default;
+  VolumetricPondedDepthEvaluator(Teuchos::ParameterList& plist);
+  VolumetricPondedDepthEvaluator(const VolumetricPondedDepthEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
-    return Teuchos::rcp(new VolumetricHeightEvaluator(*this));
+    return Teuchos::rcp(new VolumetricPondedDepthEvaluator(*this));
   }
 
  protected:
@@ -46,29 +45,15 @@ class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   Key pd_key_;
-  Key delta_max_key_, delta_ex_key_;
-
-  // TODO: put these functions into a model and share them across evaluators:
-  //  - this one
-  //  - overland_subgrid_water_content_evaluator
-  //  - volumetric_ponded_depth evaluator --etc
-  double f_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? delta - del_ex:
-        std::pow(delta/del_max, 2) * (2*del_max - 3*del_ex)
-        + std::pow(delta/del_max,3) * (2*del_ex - del_max);
-  }
-  double f_prime_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? 1 :
-        2 * delta/del_max * (2*del_max - 3*del_ex) / del_max
-        + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
-  }
+  Key delta_max_key_;
+  Key delta_ex_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,VolumetricHeightEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,VolumetricPondedDepthEvaluator> reg_;
 
 };
 
 } //namespace
 } //namespace
 
-#endif
+

@@ -13,6 +13,38 @@ A DomainSet coupler, couples a bunch of domains of the same structure.
 
 namespace Amanzi {
 
+DomainSetMPC::DomainSetMPC(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& solution)
+    : MPC<PK>(pk_tree, global_list, S, solution),
+      PK(pk_tree, global_list, S, solution)
+{
+  // grab the list of subpks
+  auto subpks = this->plist_->template get<Teuchos::Array<std::string> >("PKs order");
+  std::string dsname = subpks.back();
+  subpks.pop_back();
+
+  KeyTriple triple;
+  bool is_ds = Keys::splitDomainSet(dsname, triple);
+  if (!is_ds || !S->HasDomainSet(std::get<0>(triple))) {
+    Errors::Message msg;
+    msg << "DomainSetMPC: \"" << dsname << "\" should be a domain-set of the form DOMAIN_*-PK_NAME";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // add for the various sub-pks based on IDs
+  auto ds = S->GetDomainSet(std::get<0>(triple));
+  for (auto& name_id : *ds) {
+    subpks.push_back(Keys::getKey(name_id.first, std::get<2>(triple)));
+  }
+  this->plist_->template set("PKs order", subpks);
+
+  // construct the sub-PKs on COMM_SELF
+  MPC<PK>::init_(S, getCommSelf());
+}
+
+
 // must communicate dts since columns are serial
 double DomainSetMPC::get_dt() {
   double dt = 1.0e99;
