@@ -64,6 +64,7 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
   // A mapping of boundary face indices to interior cells.
   std::map<int, int> cell_for_face_;
+  bool ats_units_;
 };
 
 }  // namespace Transport

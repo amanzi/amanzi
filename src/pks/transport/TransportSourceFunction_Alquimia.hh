@@ -65,6 +65,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   AlquimiaProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
+  bool ats_units_;
 };
 
 }  // namespace Transport
