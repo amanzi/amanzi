@@ -399,7 +399,7 @@ void Coordinator::report_memory() {
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
           << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
           << " Bytes" << std::endl;
-    *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
+    *vo_->os() << "  Minimum per core:   " << std::setw(7) << min_mem 
           << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
          << " Bytes" << std::endl;
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
