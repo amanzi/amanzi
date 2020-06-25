@@ -220,6 +220,8 @@ void Coordinator::initialize() {
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
+  
+  S_->InitializeEvaluators();
 
   WriteStateStatistics(S_.ptr(), vo_);
 
