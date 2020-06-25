@@ -23,8 +23,6 @@
 #include <functional>
 #include <vector>
 
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "CompositeVector.hh"

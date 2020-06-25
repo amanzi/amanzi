@@ -18,11 +18,6 @@
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_Import.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_IntVector.h"
 
 #include "Geometry.hh"
 

@@ -44,8 +44,6 @@ Example:
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 
 #include "exceptions.hh"

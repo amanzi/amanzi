@@ -18,7 +18,6 @@
 #include "Amesos.h"
 #include "Amesos2.hpp"
 #include "Amesos_BaseSolver.h"
-#include "Epetra_CrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

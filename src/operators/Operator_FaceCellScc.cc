@@ -21,7 +21,6 @@
 
 #include <vector>
 
-#include "EpetraExt_RowMatrixOut.h"
 
 #include "SuperMap.hh"
 #include "GraphFE.hh"

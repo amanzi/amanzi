@@ -11,9 +11,6 @@
 //!
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 #include "UnitTest++.h"
 #include "Ifpack_Hypre.h"
 

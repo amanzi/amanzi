@@ -96,6 +96,14 @@ class PK_Veg : public Base_t {
     this->SolutionToState(tag_old_, "");
   }
 
+  virtual void ChangedSolutionPK(const Key& tag)
+  {
+    // a real extension to include PFTs would have to add an
+    // EvaluatorPrimary<PFTList>, register it with the factory, etc.  This
+    // avoids that hassle for testing by simply not using the evaluator.
+  }
+
+  
   bool AdvanceStep(const Key& tag_old, const Key& tag_new)
   {
     // my local tags, used in physics PKs?  Can we get rid of these? --etc

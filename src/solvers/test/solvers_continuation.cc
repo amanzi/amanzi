@@ -16,8 +16,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 
 #include "solver_fnbase1_cont.hh"
 #include "SolverContinuation.hh"

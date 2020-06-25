@@ -17,8 +17,6 @@
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 
 extern "C"
 {

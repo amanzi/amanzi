@@ -16,7 +16,6 @@
 
 #include <cmath>
 
-#include "Epetra_MultiVector.h"
 
 #include "Mesh.hh"
 

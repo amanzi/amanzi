@@ -107,6 +107,12 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
     }
   }
 
+  // get a key to store the global operator
+  Key x0_key_suffix = Keys::getVarName(x0_key_);
+  global_operator_key_ = Keys::readKey(plist_, domain,
+          x0_key_suffix + " global operator",
+          x0_key_suffix + "_global_operator");
+  
   // push dependencies
   dependencies_.emplace_back(std::make_pair(x0_key_, my_keys_[0].second));
   for (const auto& x_key : x_keys_)
@@ -139,7 +145,7 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(my_keys_.size() == 1);
   auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(
-    my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+      my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
   for (const auto& dep : dependencies_)
     S.RequireEvaluator(dep.first, dep.second);
 
@@ -210,6 +216,13 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
       .Update(my_fac);
     S.RequireEvaluator(x0_key_, my_keys_[0].second).EnsureCompatibility(S);
 
+    // -- require the global op for forward application/Update_ calls
+    auto& global_op_fac = S.Require<Operators::Operator, Operators::Operator_Factory>(
+        global_operator_key_, my_keys_[0].second, global_operator_key_);
+    global_op_fac.set_mesh(my_fac.Mesh());
+    global_op_fac.set_cvs(my_fac.CreateSpace());
+    global_op_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
+
     // NOTE: should we ensure that other x's are a superset of the
     // domain-space of the other ops? Otherwise there is nothing to say about
     // the other x's.  --etc
@@ -249,7 +262,6 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
 
         // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
         deriv_fac.set_cvs(my_fac.CreateSpace());
-        auto plist = Teuchos::rcp(new Teuchos::ParameterList());
         deriv_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
       }
     }
@@ -261,11 +273,20 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
          S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
       AMANZI_ASSERT(wrt.second == my_keys_[0].second);
-      AMANZI_ASSERT(
-        wrt.first ==
-        x0_key_); // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
-      // quasi-linear operators covered by Update() call --etc
-      // jacobian terms are covered by ParameterList jacobian option --etc
+      AMANZI_ASSERT(wrt.first == x0_key_); // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+
+      // quasi-linear operators covered by Update() call, no need to require anything
+
+      // jacobian terms
+      for (const auto& op_key : op0_keys_) {
+        if (plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt.first, false)) {
+          // there is a Jacobian term available
+          S.RequireDerivative<Operators::Op, Operators::Op_Factory>(
+              op_key, my_keys_[0].second, wrt.first, wrt.second);
+          S.RequireEvaluator(op_key, my_keys_[0].second)
+              .EnsureCompatibility(S);
+        }
+      }
 
       // rhs terms
       for (const auto& rhs_key : rhs_keys_) {
@@ -286,45 +307,186 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   }
 }
 
+
+
+// ---------------------------------------------------------------------------
+// Answers the question, Has This Field's derivative with respect to Key
+// wrt_key changed since it was last requested for Field Key reqest.
+// Updates the derivative if needed.
+// ---------------------------------------------------------------------------
+bool
+Evaluator_OperatorApply::UpdateDerivative(State& S, const Key& requestor,
+        const Key& wrt_key, const Key& wrt_tag)
+{
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    Errors::Message msg;
+    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second << ") is not differentiable with respect to (" << wrt_key << "," << wrt_tag << ").";
+    throw(msg);
+  }
+
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
+  auto& deriv_request_set = deriv_requests_[wrt];
+  
+  Teuchos::OSTab tab = vo_.getOSTab();
+  if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_.os() << "Evaluator_OperatorApply Derivative d" << my_keys_[0].first << "_d" << wrt_key
+              << " requested by " << requestor << "..." << std::endl;
+  }
+
+  // Check if we need to update ourselves, and potentially update our
+  // dependencies.
+  bool update = deriv_request_set.empty(); // not done once
+
+  // -- must update if our our dependencies have changed, as these affect the
+  // partial derivatives
+  Key my_request = Key{ "d" } +
+                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
+                   "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
+
+  // I don't believe this should be required.  It may be a lot of extra work to
+  //  compute ourselves (e.g. what if this is assembling local matrices).
+  //  update |= Update(S, my_request);
+
+  // -- must update if any of our dependencies or our dependencies' derivatives have changed
+  // check x0 key
+  Key my_tag = my_keys_[0].second;
+  update |= S.GetEvaluator(x0_key_, my_tag).Update(S, my_request);
+
+  // check rhs keys
+  for (const auto& dep : rhs_keys_) {
+    // but we must update our dependencies as we will use them to compute our derivative
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request);
+
+    // and we must update our dependencies derivatives to apply the chain rule
+    if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+    }
+  }
+
+  // check op keys
+  for (const auto& dep : op0_keys_) {
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request); // updates the primary term
+    if (plist_.get<bool>("include Jacobian term d" + dep + "_d" + wrt_key, false)) {
+      // check to see if we include the Jacobian term
+      if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+      }
+    }
+  }
+
+  // placeholder for op -- off-diagonal keys
+  // check offdiagonal x keys
+  for (const auto& dep : x_keys_) {
+    // but we must update our dependencies as we will use them to compute our derivative
+    update |= S.GetEvaluator(dep, my_tag).Update(S, my_request);
+
+    // and we must update our dependencies derivatives to apply the chain rule
+    if (S.GetEvaluator(dep, my_tag)
+          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(dep, my_tag)
+                  .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+    }
+  }
+  // check offdiagonal op keys
+  for (const auto& op_list : op_keys_) {
+    for (const auto& dep : op_list) {
+      update |= S.GetEvaluator(dep, my_tag).Update(S, my_request); // updates the primary term
+      if (plist_.get<bool>("include Jacobian term d" + dep + "_d" + wrt_key, false)) {
+        // check to see if we include the Jacobian term
+        if (S.GetEvaluator(dep, my_tag)
+            .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          update |= S.GetEvaluator(dep, my_tag)
+                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+        }
+      }
+    }
+  }
+
+  // Do the update
+  if (update) {
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "... updating." << std::endl;
+    }
+
+    // If so, update ourselves, empty our list of filled requests, and return.
+    UpdateDerivative_(S, wrt_key, wrt_tag);
+    deriv_request_set.clear();
+    deriv_request_set.insert(requestor);
+    return true;
+  } else {
+    // Otherwise, simply service the request
+    if (deriv_request_set.find(requestor) == deriv_request_set.end()) {
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "... not updating but new to this request." << std::endl;
+      }
+      deriv_request_set.insert(requestor);
+      return true;
+    } else {
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "... has not changed." << std::endl;
+      }
+      return false;
+    }
+  }
+}
+
+
+
 // These do the actual work
 void
 Evaluator_OperatorApply::Update_(State& S)
 {
+  Key my_tag = my_keys_[0].second;
   auto& result = S.GetW<CompositeVector>(
-    my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+    my_keys_[0].first, my_tag, my_keys_[0].first);
 
-  const auto& x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
+  const auto& x = S.Get<CompositeVector>(x0_key_, my_tag);
   x.ScatterMasterToGhosted();
   db_->WriteVector("x", x);
   result.putScalarMasterAndGhosted(0.);
 
-  int i = 0;
-  for (const auto& op_key : op0_keys_) {
-    // create the global operator
-    Operators::Operator_Factory global_op_fac;
-    global_op_fac.set_mesh(result.Mesh());
-    global_op_fac.set_cvs(x.getMap(), result.getMap());
-    auto global_op = global_op_fac.Create();
+  if (S.Get<Operators::Operator>(global_operator_key_, my_tag).size() == 0) {
+    // first pass through -- set up the global operator by giving it all the
+    // local ops
+    auto& global_operator = S.GetW<Operators::Operator>(global_operator_key_,
+            my_tag, global_operator_key_);
+    for (const auto& op_key : op0_keys_) {
+      // fix const correctness sometime?  Likely this would require a redesign...
+      global_operator.OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag, op_key));
+    }
+  }    
 
-    // do the apply
-    S.Get<Operators::Op>(op_key, my_keys_[0].second)
-      .ApplyMatrixFreeOp(&*global_op, x, result);
-    db_->WriteVector(op_key+" Ax", result);
-
+  // This is still a bit ugly -- each op has its own RHS vector, because BCs
+  // were not applied globally.  So we have to call the forward apply, then
+  // deal with RHSs independently
+  //
+  // Fixing this requires a rewrite of Operator to make it more functional and
+  // split out Op and Operator. --etc
+  const auto& global_operator = S.Get<Operators::Operator>(global_operator_key_, my_tag);
+  AMANZI_ASSERT(global_operator.size() == op0_keys_.size());
+  global_operator.apply(x, result);
+  db_->WriteVector(std::string("A * ")+x0_key_, result);
+  
+  for (const auto& op_rhs_key : op0_rhs_keys_) {
     // Ax - b
-    result.update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
-    db_->WriteVector(op_key+"Ax-b", result);
-    ++i;
+    result.update(-1.0, S.Get<CompositeVector>(op_rhs_key, my_tag), 1.0);
   }
+  db_->WriteVector(std::string("A * ")+x0_key_+" -b", result);
 
   int j = 0;
   for (const auto& op_list : op_keys_) {
-    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_keys_[0].second);
+    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_tag);
     xj.ScatterMasterToGhosted();
 
     int k = 0;
     for (const auto& op_key : op_list) {
-
+      // FIX ME BEFORE USING -- store a Global operator for each in the same
+      // way we did for x0 --etc
+      
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
@@ -332,14 +494,14 @@ Evaluator_OperatorApply::Update_(State& S)
       auto global_op = global_op_fac.Create();
 
       // do the apply
-      S.Get<Operators::Op>(op_key, my_keys_[0].second)
+      S.Get<Operators::Op>(op_key, my_tag)
         .ApplyMatrixFreeOp(&*global_op, xj, result);
       db_->WriteVector(op_key+" Ax", result);
 
       // Ax - b
       result.update(
         -1.0,
-        S.Get<CompositeVector>(op_rhs_keys_[j][k], my_keys_[0].second),
+        S.Get<CompositeVector>(op_rhs_keys_[j][k], my_tag),
         1.0);
       db_->WriteVector(op_key+" Ax-b", result);
       ++k;
@@ -351,7 +513,7 @@ Evaluator_OperatorApply::Update_(State& S)
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
     result.update(rhs_scalars_[j],
-                  S.Get<CompositeVector>(rhs_key, my_keys_[0].second),
+                  S.Get<CompositeVector>(rhs_key, my_tag),
                   1.0);
     db_->WriteVector(rhs_key, result);
     ++j;
@@ -384,8 +546,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
         //std::cout << "Adding diffusion op to operator" << std::endl;
         global_op->OpPushBack(
           S.GetPtrW<Operators::Op>(op_key, my_keys_[0].second, op_key));
-        if (S.GetEvaluator(op_key, my_keys_[0].second)
-              .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        if (S.GetEvaluator(op_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+            plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt_key, false)) {
           global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(
             op_key, my_keys_[0].second, wrt_key, wrt_tag, op_key));
         }
@@ -427,15 +589,15 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     int i = 0;
     for (const auto& op_key : op0_keys_) {
       i++;
-      if (S.GetEvaluator(op_key, my_keys_[0].second)
-          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      if (S.GetEvaluator(op_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+          plist_.get<bool>("include Jacobian term d" + op_key + "_d" + wrt_key, false)) {
         i++;
       }
     }
     int j = 0;
     for (const auto& rhs_key : rhs_keys_) {
-      if (S.GetEvaluator(rhs_key, my_keys_[0].second)
-          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      if (S.GetEvaluator(rhs_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          
         // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
         CompositeVector drhs = S.GetDerivativeW<CompositeVector>(
             rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);

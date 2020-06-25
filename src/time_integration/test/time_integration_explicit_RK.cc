@@ -291,7 +291,7 @@ TEST(Explicit_RK_UserDefined)
 
   fn1 f;
   int order = 2;
-  Epetra_SerialDenseMatrix a(order, order);
+  Teuchos::SerialDenseMatrix<int,double> a(order, order);
   std::vector<double> b(order);
   std::vector<double> c(order);
 

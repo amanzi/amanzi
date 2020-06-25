@@ -15,7 +15,6 @@
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_HH_
 #define AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_HH_
 
-#include "Epetra_IntVector.h"
 
 #include "PDE_Advection.hh"
 

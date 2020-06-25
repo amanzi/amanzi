@@ -44,6 +44,7 @@ struct SolverFactory {
   Create(Teuchos::ParameterList& solver_list);
 };
 
+  
 } // namespace AmanziSolvers
 } // namespace Amanzi
 

@@ -20,7 +20,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_IntVector.h"
 #include "Ifpack.h" 
 #include "Teuchos_RCP.hpp"
 

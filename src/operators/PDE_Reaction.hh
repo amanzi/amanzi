@@ -16,7 +16,6 @@
 
 #include <string>
 
-#include "Epetra_MultiVector.h"
 
 // Amanzi
 #include "BilinearForm.hh"

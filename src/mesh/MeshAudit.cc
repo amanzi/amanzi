@@ -20,8 +20,6 @@
 
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_IntSerialDenseMatrix.h"
 
 #include "Geometry.hh"
 

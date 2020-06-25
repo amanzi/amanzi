@@ -40,7 +40,6 @@
 #include <strings.h>
 
 // TPLs
-#include "Ifpack.h" 
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
@@ -96,12 +95,26 @@ class PDE_DiffusionFV : public PDE_Diffusion {
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+  virtual void ApplyBCsJacobian() override;
+  
   virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override {};
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
+  virtual CompositeVectorSpace scalar_coefficient_derivative_space() const override
+  {
+    CompositeVectorSpace out;
+    out.SetMesh(mesh_);
+    out.SetGhosted();
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) {
+      out.AddComponent("cell", AmanziMesh::CELL, 1);
+    }
+    return out;
+  }
+
+  
  protected:
   cMultiVectorView_type_<DefaultDevice,double>
   ScalarCoefficientFaces(bool scatter) const {

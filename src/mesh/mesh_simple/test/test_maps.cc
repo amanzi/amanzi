@@ -17,7 +17,6 @@
 #include "../Mesh_simple.hh"
 
 #include <AmanziComm.hh>
-#include "Epetra_SerialComm.h"
 #include "GenerationSpec.hh"
 
 SUITE(MeshSimple)

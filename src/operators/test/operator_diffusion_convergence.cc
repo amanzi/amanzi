@@ -19,8 +19,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Epetra_MultiVector.h"
-#include "EpetraExt_RowMatrixOut.h"
 #include "UnitTest++.h"
 
 // Amanzi

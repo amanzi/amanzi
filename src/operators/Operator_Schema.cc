@@ -12,7 +12,6 @@
   respected CVSs.
 */
 
-#include "Epetra_Vector.h"
 
 #include "DenseMatrix.hh"
 #include "GraphFE.hh"

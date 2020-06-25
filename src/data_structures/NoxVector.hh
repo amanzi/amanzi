@@ -20,7 +20,6 @@
 #ifndef AMANZI_NOXVECTOR_HH_
 #define AMANZI_NOXVECTOR_HH_
 
-#include "Epetra_Vector.h"
 #include "NOX_Abstract_Vector.H"
 
 namespace Amanzi {

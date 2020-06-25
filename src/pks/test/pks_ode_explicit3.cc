@@ -10,8 +10,6 @@
 
 //! <MISSING_ONELINE_DOCSTRING>
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"

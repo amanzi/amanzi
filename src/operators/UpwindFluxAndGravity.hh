@@ -19,7 +19,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

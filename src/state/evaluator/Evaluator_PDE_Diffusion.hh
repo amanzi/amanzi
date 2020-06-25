@@ -27,6 +27,10 @@ Lots of options here, document me!
 
 namespace Amanzi {
 
+namespace Operators {
+class PDE_Diffusion;
+}
+
 class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
  public:
   Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist);
@@ -42,6 +46,7 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   // jac-op handled in EnsureCompatibility()
   //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key,
   //  const Key& wrt_tag) override {}
+  virtual bool Update(State& S, const Key& request) override;
 
   virtual bool
   UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key,
@@ -50,7 +55,8 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
                                    const Key& wrt_tag) const override
   {
-    return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
+    return IsDependency(S, wrt_key, wrt_tag) &&
+        S.GetEvaluator(scalar_coef_key_, my_tag_).IsDifferentiableWRT(S,wrt_key, wrt_tag);
   }
 
   virtual std::string name() const override { return "diffusion operator"; }
@@ -62,11 +68,19 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
 
  protected:
   Key my_tag_;
-  Key rhs_key_, local_op_key_, jac_op_key_;
-  Key tensor_coef_key_, scalar_coef_key_, rho_key_;
+  Key rhs_key_, local_op_key_, flux_key_;
+  
+  Key tensor_coef_key_;
+  Key scalar_coef_key_;
+  Key rho_key_;
   Key bcs_key_;
   Key u_key_;
+
   bool gravity_;
+  bool newton_correction_primary_;
+
+  Teuchos::RCP<Operators::PDE_Diffusion> pde_;
+  std::map<Key, Teuchos::RCP<Operators::PDE_Diffusion>> pde_derivs_;
   
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Diffusion> fac_;
