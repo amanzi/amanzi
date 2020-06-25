@@ -632,7 +632,6 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
       if (aux_names_.at(i) == "pH") {
         double* cell_aux_output = (*aux_output_)[i];
         cell_aux_output[cell] = aux_output.pH;
-        //std::cout<<domain_<<" cell "<<cell<<" pH "<< aux_output.pH<<"\n";
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
