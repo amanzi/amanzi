@@ -46,7 +46,7 @@ if (ENABLE_EPETRA)
 endif()
 
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu)
+  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu ShyLU ShyLU_Node Amesos2 Basker)
 endif()
 
 if (ENABLE_STK_Mesh)
@@ -77,6 +77,8 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
+
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
 endif()
 
 
