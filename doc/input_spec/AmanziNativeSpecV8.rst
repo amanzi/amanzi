@@ -1644,7 +1644,7 @@ The boolen parameter `"use area fractions`" instructs the code to use all availa
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
-are `"area`" or `"none`". 
+are `"volume`", `"permeability`", `"domain coupling`", `"subgrid`", `"simple well`", or `"none`". 
 For instance, for a given boundary function :math:`g(x)`, these options correspond to 
 different boundary conditions for the Darcy velocity in the original PDE:
 
@@ -1674,7 +1674,7 @@ specified regions calculated using the folume fraction function.
     <ParameterList name="mass flux">
       <ParameterList name="_BC 1">
         <Parameter name="regions" type="Array(string)" value="{_NORTH_SIDE, _SOUTH_SIDE}"/>
-        <Parameter name="spatial distribution method" type="string" value="area"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
         <Parameter name="rainfall" type="bool" value="false"/>
         <ParameterList name="outward mass flux">
           <ParameterList name="function-constant">
@@ -4467,6 +4467,25 @@ and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
 The parameter *x coordinate* defines whether the *x values* refers to time *t*,
 x-coordinate *x*, y-coordinate *y*, or z-coordinate *z*.
 
+It is possible to populate *x values* and *y values* parameters in a tabular 
+function from an HDF5 file. The parameter *forms* is optional.
+
+* `"file`" [string] is the path to hdf5 file containing tabulr function information. 
+
+* `"x header`" [string] name of the dataset containing *x values*.
+
+* `"y header`" [string] name of the dataset containing *y values*.
+
+.. code-block:: xml
+
+  <ParameterList name="function-tabular">
+    <Parameter name="file" type="string" value="surface.h5"/>
+    <Parameter name="x header" type="string" value="times"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
+    <Parameter name="y header" type="string" value="recharge"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, constant}"/>
+  </ParameterList>
+  
 
 Bilinear function
 .................

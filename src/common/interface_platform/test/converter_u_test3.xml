@@ -302,7 +302,7 @@
           <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.17266656e+10" />
         </liquid_component>
         <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
+          <aqueous_conc name="Tc-99" h5file="surface.h5" times="times" values="recharge"/>
        </solute_component> 
       </liquid_phase>
     </boundary_condition>
