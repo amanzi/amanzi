@@ -40,6 +40,12 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="PK tree">
+    <ParameterList name="energy">
+      <Parameter name="PK type" type="string" value="one phase"/>
+    </ParameterList>
+  </ParameterList>
+
   <!--  FLOW  -->
   <ParameterList name="PKs">
     <ParameterList name="energy">
