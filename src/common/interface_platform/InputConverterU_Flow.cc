@@ -604,9 +604,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
     // -- process global and local BC separately
     double refv;
+    std::string filename, xheader, yheader;
     std::vector<double> grad, refc, data, data_tmp;
     std::vector<double> times, values, fluxes;
-    std::vector<std::string> forms;
+    std::vector<std::string> forms, formulas;
 
     if (space_bc) {
       data.push_back(GetAttributeValueD_(knode, "amplitude", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg/m^2/s"));
@@ -624,26 +625,34 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       grad = GetAttributeVectorD_(element, "gradient", dim_, unit_grad);
       refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
     } else {
-      std::map<double, double> tp_values, tp_fluxes;
-      std::map<double, std::string> tp_forms;
+      element = static_cast<DOMElement*>(same_list[0]);
+      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
+      if (filename != "") {
+        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
+        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
+      } else {
+        std::map<double, double> tp_values, tp_fluxes;
+        std::map<double, std::string> tp_forms, tp_formulas;
 
-      for (int j = 0; j < same_list.size(); ++j) {
-        element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        for (int j = 0; j < same_list.size(); ++j) {
+          element = static_cast<DOMElement*>(same_list[j]);
+          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
 
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_forms[t0] = GetAttributeValueS_(element, "function");
+          tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+        }
+
+        // create vectors of values and forms
+        for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
+          times.push_back(it->first);
+          values.push_back(it->second);
+          fluxes.push_back(tp_fluxes[it->first]);
+          forms.push_back(tp_forms[it->first]);
+          formulas.push_back(tp_formulas[it->first]);
+        }
       }
-
-      // create vectors of values and forms
-      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-        times.push_back(it->first);
-        values.push_back(it->second);
-        fluxes.push_back(tp_fluxes[it->first]);
-        forms.push_back(tp_forms[it->first]);
-      }
-      forms.pop_back();
     }
 
     // -- create BC names, modify input data
@@ -702,13 +711,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
           .set<double>("y0", refv)
           .set<Teuchos::Array<double> >("x0", refc)
           .set<Teuchos::Array<double> >("gradient", grad);
-    } else if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
-    } else {
+    } else if (filename != "") {
       bcfn.sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
+          .set<std::string>("file", filename)
+          .set<std::string>("x header", xheader)
+          .set<std::string>("y header", yheader);
+    } else {
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
 
     // data distribution method
@@ -821,13 +830,14 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     } 
 
     std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms;
+    std::map<double, std::string> tp_forms, tp_formulas;
  
     for (int j = 0; j < same_list.size(); ++j) {
       element = static_cast<DOMElement*>(same_list[j]);
       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
       tp_forms[t0] = GetAttributeValueS_(element, "function");
       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
     }
 
     // additional options for submodels
@@ -840,13 +850,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     // create vectors of values and forms
     std::vector<double> times, values;
-    std::vector<std::string> forms;
+    std::vector<std::string> forms, formulas;
     for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
       times.push_back(it->first);
       values.push_back(it->second);
       forms.push_back(tp_forms[it->first]);
+      formulas.push_back(tp_formulas[it->first]);
     }
-    forms.pop_back();
      
     // save in the XML files  
     Teuchos::ParameterList& src = out_list.sublist(srcname);
@@ -864,14 +874,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
       srcfn = &srcfn->sublist("bhp");
     }
 
-    if (times.size() == 1) {
-      srcfn->sublist("function-constant").set<double>("value", values[0]);
-    } else {
-      srcfn->sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
-    }
+    TranslateGenericMath_(times, values, forms, formulas, *srcfn);
   }
 
   return out_list;
@@ -984,6 +987,53 @@ void InputConverterU::TranslateFunctionGaussian_(
       .set<Teuchos::Array<double> >("metric", metric);
   bc_tmp.sublist("function2").sublist("function-constant")
       .set<double>("value", factor);
+}
+
+
+/* ******************************************************************
+* Generic output of math data.
+****************************************************************** */
+bool InputConverterU::TranslateGenericMath_(
+    const std::vector<double>& times,
+    const std::vector<double>& values,
+    const std::vector<std::string>& forms,
+    const std::vector<std::string>& formulas,
+    Teuchos::ParameterList& bcfn)
+{
+  bool flag(false);
+
+  if (times.size() == 1) {
+    if (forms[0] == "constant" || forms[0] == "uniform") {
+      bcfn.sublist("function-constant").set<double>("value", values[0]);
+    } else {
+      // assume that the only remaining option is a math formula
+      bcfn.sublist("function-exprtk")
+          .set<int>("number of arguments", dim_ + 1)
+          .set<std::string>("formula", formulas[0]);
+    }
+    flag = true;
+  } else {
+    auto forms_copy = forms;
+    forms_copy.pop_back();
+
+    for (int i = 0; i < forms_copy.size(); ++i) {
+      if (forms_copy[i] == "general") {
+        std::string user_fnc = "USER_FNC" + std::to_string(i);
+        bcfn.sublist("function-tabular")
+            .sublist(user_fnc).sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formulas[i]);
+        forms_copy[i] = user_fnc;
+      }
+    }
+    bcfn.sublist("function-tabular")
+        .set<Teuchos::Array<double> >("x values", times)
+        .set<Teuchos::Array<double> >("y values", values)
+        .set<Teuchos::Array<std::string> >("forms", forms_copy);
+    flag = true;
+  }
+
+  return flag;
 }
 
 }  // namespace AmanziInput

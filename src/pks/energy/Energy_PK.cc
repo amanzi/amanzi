@@ -83,6 +83,13 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
+  //keys 
+  energy_key_ = "energy";
+  prev_energy_key_ = "prev_energy";
+  enthalpy_key_ = "enthalpy";
+  conductivity_key_ = "thermal_conductivity";
+  mol_density_liquid_key_ = "molar_density_liquid";
+
   // require first-requested state variables
   if (!S->HasField("atmospheric_pressure")) {
     S->RequireScalar("atmospheric_pressure", passwd_);
@@ -309,7 +316,9 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 
   // additional boundary conditions
   AmanziMesh::Entity_ID_List cells;
+  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
+  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -322,9 +331,10 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   for (int f = 0; f < bc_model.size(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
 
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][cells[0]];
+      bc_value_enth_[f] = enth[0][c] * n_l[0][c];
     }
   }
 }

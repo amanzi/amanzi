@@ -344,6 +344,11 @@
           <functional>point</functional>
           <time_macros>EveryMonth</time_macros>
         </aqueous_conc>
+        <sorbed_conc solute="Tc-99">
+          <assigned_regions>Well</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </sorbed_conc>
       </liquid_phase>
     </observations>
   </output>

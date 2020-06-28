@@ -307,7 +307,6 @@ class State {
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
-  void WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const;
 
   // -----------------------------------------------------------------------------
   // State handles model parameters.
@@ -439,6 +438,8 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 Amanzi::ObservationData& obs_data);
 
 void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
+
+void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo);
 
 
 }  // namespace Amanzi

@@ -38,6 +38,17 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
     Energy_PK(pk_tree, glist, S, soln),
     soln_(soln)
 {
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  ep_list_ = Teuchos::sublist(pk_list, "energy", true);
+
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
+   
+  // domain name
+  domain_ = ep_list_->get<std::string>("domain name", "domain");
+
+  // verbose object
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
   std::string ioname = "Energy1Phase";

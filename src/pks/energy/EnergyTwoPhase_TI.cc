@@ -7,8 +7,6 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
-
-  Energy PK.
 */
 
 #include "Key.hh"
@@ -112,6 +110,9 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
     der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
     S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
     Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData(der_name);
+
+    const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+    dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*darcy_flux);
     op_preconditioner_advection_->UpdateMatrices(darcy_flux.ptr(), dHdT.ptr());

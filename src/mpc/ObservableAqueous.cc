@@ -268,7 +268,7 @@ void ObservableAqueous::ComputeObservation(
     unit = "kg/s";
 
   } else if (variable_ == "pH") {
-    Key ph_key =Keys::getKey(domain_, "pH");
+    Key ph_key = Keys::getKey(domain_, "pH");
     const Epetra_MultiVector& pH = *S.GetFieldData(ph_key)->ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
