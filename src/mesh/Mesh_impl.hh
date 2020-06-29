@@ -34,12 +34,12 @@
 inline int
 Mesh::num_columns(bool ghosted) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg("num_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return ghosted ? column_cells_.size() - 1 :
-                   num_owned_cols_; // number of vector of vectors
+  return ghosted ? mesh_cache_.column_cells_.size() - 1 :
+                   mesh_cache_.num_owned_cols_; // number of vector of vectors
 }
 
 
@@ -47,11 +47,11 @@ inline
 const Entity_ID_List&
 Mesh::cells_of_column(const int columnID) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg("cells_of_column called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_cells_[columnID];
+  return mesh_cache_.column_cells_[columnID];
 }
 
 
@@ -59,11 +59,11 @@ inline
 const Entity_ID_List&
 Mesh::faces_of_column(const int columnID) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg("faces_of_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_faces_[columnID];
+  return mesh_cache_.column_faces_[columnID];
 }
 
 
@@ -71,47 +71,47 @@ Mesh::faces_of_column(const int columnID) const
 inline int
 Mesh::column_ID(const Entity_ID cellid) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg("column_ID called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return columnID_[cellid];
+  return mesh_cache_.columnID_[cellid];
 }
 
 
 inline Entity_ID
 Mesh::cell_get_cell_above(const Entity_ID cellid) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg(
       "cell_get_cell_above called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return cell_cellabove_[cellid];
+  return mesh_cache_.cell_cellabove_[cellid];
 }
 
 
 inline Entity_ID
 Mesh::cell_get_cell_below(const Entity_ID cellid) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg(
       "cell_get_cell_below called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return cell_cellbelow_[cellid];
+  return mesh_cache_.cell_cellbelow_[cellid];
 }
 
 
 inline Entity_ID
 Mesh::node_get_node_above(const Entity_ID nodeid) const
 {
-  if (!columns_built_) {
+  if (!mesh_cache_.columns_built_) {
     Errors::Message mesg(
       "node_get_node_above called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return node_nodeabove_[nodeid];
+  return mesh_cache_.node_nodeabove_[nodeid];
 }
 
 

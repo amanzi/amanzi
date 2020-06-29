@@ -419,9 +419,9 @@ Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   // recompute all geometric quantities
 
-  compute_cell_geometric_quantities_();
-  if (faces_initialized) compute_face_geometric_quantities_();
-  if (edges_initialized) compute_edge_geometric_quantities_();
+  mesh_cache_.compute_cell_geometric_quantities_();
+  if (faces_initialized) mesh_cache_.compute_face_geometric_quantities_();
+  if (edges_initialized) mesh_cache_.compute_edge_geometric_quantities_();
 
   return 1;
 }

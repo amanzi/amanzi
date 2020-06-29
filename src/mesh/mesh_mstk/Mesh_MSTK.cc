@@ -2668,10 +2668,10 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       int nface = num_entities(FACE, Parallel_type::ALL);
 
       if (nface > 0) {
-        if (!kdtree_faces_initialized_) {
+        if (!mesh_cache_.kdtree_faces_initialized_) {
           face_centroid(0);
-          kdtree_faces_.Init(face_centroids_);
-          kdtree_faces_initialized_ = true;
+          mesh_cache_.kdtree_faces_.Init(mesh_cache_.face_centroids_);
+          mesh_cache_.kdtree_faces_initialized_ = true;
         }
 
         auto box =
@@ -2681,7 +2681,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
         double radius_sqr = std::pow(radius + AmanziGeometry::TOL, 2);
 
         std::vector<double> dist_sqr;
-        auto idx = kdtree_faces_.SearchInSphere(query, dist_sqr, radius_sqr);
+        auto idx = mesh_cache_.kdtree_faces_.SearchInSphere(query, dist_sqr, radius_sqr);
 
         for (int i = 0; i < idx.size(); ++i) {
           int iface = idx[i];
