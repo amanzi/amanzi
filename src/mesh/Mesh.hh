@@ -75,6 +75,8 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include "KDTree.hh"
 #include "MeshDefs.hh"
 
+#include "MeshCache.hh"
+
 // set to 0 to avoid using cache for profiling or debugging
 #define AMANZI_MESH_CACHE_VARS 1
 
@@ -171,7 +173,10 @@ class Mesh {
   // --------------------------------
   // Calls all the function to initialize the mesh cache
   // this is called in the meshfactory once the mesh is created
-  void init_cache();
+  void init_cache()
+  {
+    mesh_cache_.init(); 
+  }
 
   //
   // Entity meta-data
@@ -186,31 +191,7 @@ class Mesh {
   KOKKOS_INLINE_FUNCTION Entity_ID
   entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
   {
-    assert(parents_precomputed_); 
-    switch(kind){
-      case CELL:
-        if(entid > cells_parent_.extent(0))
-          return -1; 
-        return cells_parent_(entid);  
-        break;
-      case FACE: 
-        if(entid > faces_parent_.extent(0))
-          return -1; 
-        return faces_parent_(entid);
-        break; 
-      case EDGE: 
-        assert(edges_requested_); 
-        if(entid > edges_parent_.extent(0))
-          return -1; 
-        return edges_parent_(entid);
-        break; 
-      case NODE: 
-        if(entid > nodes_parent_.extent(0))
-          return -1; 
-        return nodes_parent_(entid);
-      default: {} 
-    }
-    return -1;
+    return mesh_cache_.entity_get_parent(kind,entid); 
   }
 
 
@@ -253,17 +234,15 @@ class Mesh {
   // cell, OWNED or GHOST.
   KOKKOS_INLINE_FUNCTION unsigned int cell_get_num_faces(const Entity_ID cellid) const{
     #if AMANZI_MESH_CACHE_VARS != 0
-      assert(cell2face_info_cached_);
-      return cell_face_ids_.row_map(cellid + 1) - cell_face_ids_.row_map(cellid);
-
+      return mesh_cache_.cell_get_num_faces(cellid); 
     #else // Non-cached version
       Entity_ID_List cfaceids;
       std::vector<int> cfacedirs;
-
       cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
       return cfaceids.size();
     #endif
   }
+  
   unsigned int cell_get_max_faces() const;
   unsigned int cell_get_max_nodes() const;
   unsigned int cell_get_max_edges() const;
@@ -284,11 +263,7 @@ class Mesh {
   cell_get_faces(const Entity_ID cellid,
                  Kokkos::View<Entity_ID*>& faceids) const
   {
-    assert(cell2face_info_cached_);
-    faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
+    mesh_cache_.cell_get_faces(cellid,faceids); 
   }
 
   // Get faces of a cell and directions in which the cell uses the face
@@ -308,15 +283,7 @@ class Mesh {
                           Kokkos::View<Entity_ID*>& faceids,
                           Kokkos::View<int*>& face_dirs) const
   {
-    assert(cell2face_info_cached_);
-    faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
-    face_dirs =
-      Kokkos::subview(cell_face_dirs_.entries,
-                      Kokkos::make_pair(cell_face_dirs_.row_map(cellid),
-                                        cell_face_dirs_.row_map(cellid + 1)));
+    mesh_cache_.cell_get_faces_and_dirs(cellid,faceids,face_dirs); 
   }
 
   void
@@ -333,62 +300,12 @@ class Mesh {
                       Kokkos::View<Entity_ID*>& faceids,
                       Kokkos::View<AmanziGeometry::Point*>& bisectors) const
   {
-    assert(cell_get_faces_and_bisectors_precomputed_); 
-    faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
-    bisectors = 
-      Kokkos::subview(cell_faces_bisectors_.entries,
-                    Kokkos::make_pair(cell_faces_bisectors_.row_map(cellid),
-                                      cell_faces_bisectors_.row_map(cellid + 1)));
-}
-
-  // Get edges of a cell
-  void cell_get_edges(const Entity_ID cellid,
-                      Kokkos::View<Entity_ID*>& edgeids) const;
-
-  // Get edges and dirs of a 2D cell.
-  //
-  // This is to make the code cleaner for integrating over the cell in 2D
-  // where faces and edges are identical but integrating over the cells using
-  // face information is more cumbersome (one would have to take the face
-  // normals, rotate them and then get a consistent edge vector)
-  void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                  Kokkos::View<Entity_ID*>& edgeids,
-                                  Kokkos::View<int*>* edge_dirs) const;
+    mesh_cache_.cell_get_faces_and_bisectors(cellid,faceids,bisectors); 
+  }
 
   // Get nodes of a cell
   virtual void cell_get_nodes(const Entity_ID cellid,
                               Entity_ID_List& nodeids) const = 0;
-
-  // Get edges of a face and directions in which the face uses the edges.
-  //
-  // In 3D, edge direction is 1 when it is oriented counter clockwise
-  // with respect to the face natural normal.
-  //
-  // On a distributed mesh, this will return all the edges of the
-  // face, OWNED or GHOST. If ordered = true, the edges will be
-  // returned in a ccw order around the face as it is naturally defined.
-  //
-  // IMPORTANT NOTE IN 2D CELLS: In meshes where the cells are two
-  // dimensional, faces and edges are identical. For such cells, this
-  // operator will return a single edge and a direction of 1. However,
-  // this direction cannot be relied upon to compute, say, a contour
-  // integral around the 2D cell.
-  void face_get_edges_and_dirs(const Entity_ID faceid,
-                               Kokkos::View<Entity_ID*>& edgeids,
-                               Kokkos::View<int*>* edge_dirs,
-                               const bool ordered = false) const;
-
-  // Get the local index of a face edge in a cell edge list
-  // Example:
-  //
-  // face_get_edges(face=5) --> {20, 21, 35, 9, 10}
-  // cell_get_edges(cell=18) --> {1, 2, 3, 5, 8, 9, 10, 13, 21, 35, 20, 37, 40}
-  // face_to_cell_edge_map(face=5,cell=18) --> {10, 8, 9, 5, 6}
-  void face_to_cell_edge_map(const Entity_ID faceid, const Entity_ID cellid,
-                             std::vector<int>* map) const;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -447,52 +364,7 @@ class Mesh {
   face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
                  Kokkos::View<Entity_ID*>& cellids) const
   {
-    int ncellids = 0;
-    int csr_start = face_cell_ptype_.row_map(faceid);
-    int csr_end = face_cell_ptype_.row_map(faceid + 1);
-
-    // Create a subview
-    int start = -1;
-    int stop = -1;
-    // Return all cells except the UNKNOWN
-    if (ptype == Parallel_type::ALL) {
-      bool done = false;
-      int i = csr_start;
-      stop = csr_end;
-      while (!done && i < csr_end) {
-        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
-        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
-          ++i;
-          continue;
-        } else {
-          start = i;
-          done = true;
-        }
-      }
-    } else if (ptype == Parallel_type::PTYPE_UNKNOWN) {
-      assert(false);
-      return;
-    } else {
-      bool done = false;
-      int i = csr_start;
-      while (!done && i < csr_end) {
-        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
-        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
-          ++i;
-          continue;
-        }
-        if (cell_ptype == ptype && start == -1) { start = i; }
-        if (cell_ptype != ptype && start != -1) { stop = i; }
-        ++i;
-      }
-      if (stop == -1) { stop = i; }
-    }
-    // Generte the subview
-    cellids =
-      Kokkos::subview(face_cell_ids_dirs_, Kokkos::make_pair(start, stop));
-
-    // Revert eventual cells
-    for (int i = 0; i < cellids.extent(0); ++i) { assert(cellids(i) >= 0); }
+    mesh_cache_.face_get_cells(faceid,ptype,cellids); 
   }
 
 
@@ -536,14 +408,20 @@ class Mesh {
   // is called and then cached
 
   //
-  virtual int build_columns(const std::string& Msetname) const;
+  virtual int build_columns(const std::string& Msetname) const
+  {
+    return mesh_cache_.build_columns(Msetname); 
+  }
 
   // Build columns over the entire mesh. The columns are defined by
   // starting from boundary faces which have a negative-z-direction
   // normal, then collecting cells and faces while traveling downward
   // through the columns.
 
-  virtual int build_columns() const;
+  virtual int build_columns() const
+  {
+    return mesh_cache_.build_columns(); 
+  }
 
   // Number of columns in mesh - must call build_columns before calling
   int num_columns(bool ghosted = false) const;
@@ -596,22 +474,29 @@ class Mesh {
                        std::vector<AmanziGeometry::Point>& ccoords) const = 0;
 
   // Volume/Area of cell
-  double cell_volume(const Entity_ID cellid, const bool recompute) const;
+  double cell_volume(const Entity_ID cellid, const bool recompute) const
+  {
+    return mesh_cache_.cell_volume(cellid,recompute); 
+  }
+
   KOKKOS_INLINE_FUNCTION double cell_volume(const Entity_ID cellid) const
   {
-    return cell_volumes_(cellid);
+    return mesh_cache_.cell_volume(cellid);
   }
 
   // Area/length of face
   KOKKOS_INLINE_FUNCTION double
   face_area(const Entity_ID faceid, const bool recompute = false) const
   {
-    return face_areas_(faceid);
+    return mesh_cache_.face_area(faceid,recompute);
   }
 
   // Length of edge
   double
-  edge_length(const Entity_ID edgeid, const bool recompute = false) const;
+  edge_length(const Entity_ID edgeid, const bool recompute = false) const
+  {
+    return mesh_cache_.edge_length(edgeid,recompute); 
+  }
 
   // Centroid of cell (center of gravity not just average of node coordinates)
   //
@@ -626,8 +511,7 @@ class Mesh {
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   cell_centroid(const Entity_ID cellid) const
   {
-    assert(cell_geometry_precomputed_);
-    return cell_centroids_(cellid);
+    return mesh_cache_.cell_centroid(cellid); 
   }
 
   // Centroid of face (center of gravity not just the average of node
@@ -641,10 +525,12 @@ class Mesh {
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   face_centroid(const Entity_ID faceid, const bool recompute = false) const
   {
-    return face_centroids_(faceid);
+    return mesh_cache_.face_centroid(faceid,recompute);
   }
 
-  void display_cache();
+  void display_cache(){
+    mesh_cache_.display_cache(); 
+  }
 
 
   // Centroid of edge
@@ -654,44 +540,7 @@ class Mesh {
   face_normal(const Entity_ID faceid, const bool recompute = false,
               const Entity_ID cellid = -1, int* orientation = NULL) const
   {
-    assert(face_geometry_precomputed_);
-    assert(recompute == false);
-    assert(faces_requested_);
-
-    Kokkos::View<AmanziGeometry::Point*> fnormals, fnormals_new;
-    fnormals =
-      Kokkos::subview(face_normals_.entries,
-                      Kokkos::make_pair(face_normals_.row_map(faceid),
-                                        face_normals_.row_map(faceid + 1)));
-
-    assert(fnormals.extent(0) > 0);
-
-    if (cellid == -1) {
-      // Return the natural normal. This is the normal with respect to
-      // the first cell, appropriately adjusted according to whether the
-      // face is pointing into the cell (-ve cell id) or out
-
-      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid));
-      return c < 0 ? -fnormals(0) : fnormals(0);
-    } else {
-      // Find the index of 'cellid' in list of cells connected to face
-
-      int dir;
-      int irefcell;
-      int nfc =
-        face_cell_ids_.row_map(faceid + 1) - face_cell_ids_.row_map(faceid);
-      for (irefcell = 0; irefcell < nfc; irefcell++) {
-        int c =
-          face_cell_ids_.entries(face_cell_ids_.row_map(faceid) + irefcell);
-        if (c == cellid || ~c == cellid) {
-          dir = c < 0 ? -1 : 1;
-          break;
-        }
-      }
-      assert(irefcell < nfc);
-      if (orientation) *orientation = dir; // if orientation was requested
-      return fnormals(irefcell);
-    }
+    return mesh_cache_.face_normal(faceid,recompute,cellid,orientation); 
   }
 
 
@@ -713,7 +562,10 @@ class Mesh {
   // away from the point and -1 is towards)
   AmanziGeometry::Point
   edge_vector(const Entity_ID edgeid, const bool recompute = false,
-              const Entity_ID pointid = -1, int* orientation = NULL) const;
+              const Entity_ID pointid = -1, int* orientation = NULL) const
+  {
+    return mesh_cache_.edge_vector(edgeid,recompute,pointid,orientation);
+  }
 
   // Is a point in a given cell?
   bool
@@ -915,20 +767,6 @@ class Mesh {
   // Cache management
   //-----------------
 
-  // Virtual methods to fill the cache with geometric quantities.
-  //
-  // Default implementations use _internal() methods below.
-  virtual int compute_cell_geometric_quantities_() const;
-  virtual int compute_face_geometric_quantities_() const;
-  virtual int compute_edge_geometric_quantities_() const;
-
-  // Virtual methods to fill the cache with topological quantities.
-  //
-  // Default implementations use _internal() methods below.
-  virtual void cache_cell_face_info_() const;
-  virtual void cache_cell2edge_info_() const;
-  virtual void cache_face2edge_info_() const;
-
   // Virtual methods for mesh geometry.
   //
   // These are virtual and therefore slightly expensive, so they
@@ -938,60 +776,123 @@ class Mesh {
   // the cache; these do the real work and are implemented by the mesh
   // implementation.
 
+public: 
   // Get faces of a cell and directions in which it is used.
   virtual void
   cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                     Entity_ID_List& faceids,
                                     std::vector<int>& face_dirs) const = 0;
-
-
+                                    
+protected: 
   // Cells connected to a face
   virtual void
   face_get_cells_internal_(const Entity_ID faceid, const Parallel_type ptype,
                            Entity_ID_List& cellids) const = 0;
-
+public: 
   // edges of a face
   virtual void
   face_get_edges_and_dirs_internal_(const Entity_ID faceid,
                                     Entity_ID_List& edgeids,
                                     std::vector<int>* edge_dirs,
                                     const bool ordered = true) const = 0;
-
   // edges of a cell
   virtual void
   cell_get_edges_internal_(const Entity_ID cellid,
                            Entity_ID_List& edgeids) const = 0;
 
+  // Get edges of a face and directions in which the face uses the edges.
+  //
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
+  //
+  // On a distributed mesh, this will return all the edges of the
+  // face, OWNED or GHOST. If ordered = true, the edges will be
+  // returned in a ccw order around the face as it is naturally defined.
+  //
+  // IMPORTANT NOTE IN 2D CELLS: In meshes where the cells are two
+  // dimensional, faces and edges are identical. For such cells, this
+  // operator will return a single edge and a direction of 1. However,
+  // this direction cannot be relied upon to compute, say, a contour
+  // integral around the 2D cell.
+  void
+  face_get_edges_and_dirs(const Entity_ID faceid,
+                                Kokkos::View<Entity_ID*>& edgeids,
+                                Kokkos::View<int*>* edge_dirs,
+                                const bool ordered = false) const
+  {
+  #if AMANZI_MESH_CACHE_VARS != 0
+    mesh_cache_.face_get_edges_and_dirs(faceid,edgeids,edge_dirs,ordered);
+  #else // Non-cached version
+    face_get_edges_and_dirs_internal_(faceid, edgeids, edge_dirs, ordered);
+  #endif
+  }
+
+
+  // Get the local index of a face edge in a cell edge list
+  // Example:
+  //
+  // face_get_edges(face=5) --> {20, 21, 35, 9, 10}
+  // cell_get_edges(cell=18) --> {1, 2, 3, 5, 8, 9, 10, 13, 21, 35, 20, 37, 40}
+  // face_to_cell_edge_map(face=5,cell=18) --> {10, 8, 9, 5, 6}
+  void face_to_cell_edge_map(const Entity_ID faceid, const Entity_ID cellid,
+                              std::vector<int>* map) const
+  {
+  #if AMANZI_MESH_CACHE_VARS != 0
+    mesh_cache_.face_to_cell_edge_map(faceid,cellid,map); 
+  #else // non-cached version
+    Kokkos::View<Entity_ID*> fedgeids, cedgeids;
+    Kokkos::View<int*> fedgedirs;
+    face_get_edges_and_dirs(faceid, fedgeids, &fedgedirs, true);
+    cell_get_edges(cellid, cedgeids);
+    map->resize(fedgeids.extent(0), -1);
+    for (int f = 0; f < fedgeids.extent(0); ++f) {
+      Entity_ID fedge = fedgeids(f);
+      for (int c = 0; c < cedgeids.extent(0); ++c) {
+        if (fedge == cedgeids(c)) {
+          (*map)[f] = c;
+          break;
+        }
+      }
+    }
+  #endif
+  }
+
+  // Get edges of a cell
+  void cell_get_edges(const Entity_ID cellid,
+                      Kokkos::View<Entity_ID*>& edgeids) const
+  {
+  #if AMANZI_MESH_CACHE_VARS != 0
+    mesh_cache_.cell_get_edges(cellid,edgeids);
+  #else // Non-cached version
+    cell_get_edges_internal_(cellid, edgeids);
+
+  #endif
+  }
+
+public: 
   // edges and directions of a 2D cell
   virtual void
   cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                        Entity_ID_List& edgeids,
                                        std::vector<int>* edge_dirs) const = 0;
 
-  // Virtual methods to fill the cache with geometric quantities.
-  //
-  // Convenience methods that wrap multiple calls.
-  //
-  // These are declared const since they do not modify the
-  // mesh but just modify cached variables declared as mutable
-  virtual int compute_cell_geometry_(const Entity_ID cellid, double* volume,
-                                     AmanziGeometry::Point* centroid) const;
-  virtual int
-  compute_face_geometry_(const Entity_ID faceid, double* area,
-                         AmanziGeometry::Point* centroid,
-                         std::vector<AmanziGeometry::Point>& normals) const;
+  // edges and directions of a 2D cell
+  void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
+                                  Kokkos::View<Entity_ID*>& edgeids,
+                                  Kokkos::View<int*>* edgedirs) const
+  {
+  #if AMANZI_MESH_CACHE_VARS != 0
+    mesh_cache_.cell_2D_get_edges_and_dirs(cellid,edgeids,edgedirs); 
+  #else // Non-cached version
+    cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
 
-  virtual int compute_edge_geometry_(const Entity_ID edgeid, double* length,
-                                     AmanziGeometry::Point* edge_vector) const;
-
-  virtual void cache_parents_info_() const; 
-
-  virtual void cache_cell_get_faces_and_bisectors_() const; 
+  #endif
+  }
 
  public:
   void PrintMeshStatistics() const;
 
-  Kokkos::View<double*> cell_volumes() const { return cell_volumes_; }
+  Kokkos::View<double*> cell_volumes() const { return mesh_cache_.cell_volumes(); }
 
  protected:
   Comm_ptr_type comm_;
@@ -1005,78 +906,7 @@ class Mesh {
   bool logical_;
   Teuchos::RCP<const Mesh> parent_;
 
-  // the cache
-  // -- geometry
-  mutable Kokkos::View<double*> cell_volumes_, face_areas_, edge_lengths_;
-  mutable Kokkos::View<AmanziGeometry::Point*> cell_centroids_, face_centroids_;
-
-  // -- Have to account for the fact that a "face" for a non-manifold
-  // surface mesh can have more than one cell connected to
-  // it. Therefore, we have to store as many normals for a face as
-  // there are cells connected to it. For a given face, its normal to
-  // face_get_cells()[i] is face_normals_[i]
-  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace>
-    face_normals_;
-
-  mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
-
-  mutable Kokkos::View<Entity_ID*> cells_parent_; 
-  mutable Kokkos::View<Entity_ID*> faces_parent_; 
-  mutable Kokkos::View<Entity_ID*> edges_parent_; 
-  mutable Kokkos::View<Entity_ID*> nodes_parent_; 
-
-  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace> cell_faces_bisectors_;
-
-
-  // -- column information, only created if columns are requested
-  mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_,
-    node_nodeabove_;
-  mutable std::vector<Entity_ID_List> column_cells_; 
-  mutable std::vector<Entity_ID_List> column_faces_; 
-  //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_cells_;
-  //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_faces_;
-  mutable Kokkos::View<Entity_ID*> columnID_;
-  mutable int num_owned_cols_;
-  mutable bool columns_built_;
-
-  // -- topology
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> cell_face_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace>
-    cell_face_dirs_; // 1 or -1
-
-  // 1s complement if face is pointing out of cell; cannot use 0 as
-  // cellid can be 0
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> face_cell_ids_;
-  mutable Kokkos::View<Entity_ID*> face_cell_ids_dirs_;
-
-  mutable Kokkos::Crs<Parallel_type, Kokkos::DefaultExecutionSpace>
-    face_cell_ptype_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> cell_edge_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> face_edge_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace> face_edge_dirs_;
-
-  // -- flags to indicate what part of cache is up-to-date
-  mutable bool cell2face_info_cached_, face2cell_info_cached_;
-  mutable bool cell2edge_info_cached_, face2edge_info_cached_;
-  mutable bool cell_geometry_precomputed_, face_geometry_precomputed_,
-    edge_geometry_precomputed_;
-  mutable bool parents_precomputed_, cell_get_faces_and_bisectors_precomputed_; 
-
-  // -- region data
-  mutable std::map<std::string, std::vector<int>> region_ids;
-  mutable std::map<std::string, std::vector<double>> region_vofs;
-
-  // probably should not be mutable?  these should be set by constructor and not
-  // changed! --etc
-  mutable bool faces_requested_, edges_requested_;
-
-  // friend classes change the cache?  why is this necessary? --etc
-  friend class MeshEmbeddedLogical;
-
-  // fast search tools
-  mutable bool kdtree_faces_initialized_;
-  mutable KDTree kdtree_faces_;
+  MeshCache mesh_cache_; 
 };
 
 // Get a coordinate
