@@ -84,6 +84,9 @@ class TreeOperator {
   Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
   int GetNumberBlocks() const {return blocks_.size();}
 
+  // i/o
+  std::string PrintDiagnostics() const;
+
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;

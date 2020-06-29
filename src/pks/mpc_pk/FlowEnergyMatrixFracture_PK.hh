@@ -18,11 +18,12 @@
 #include "Teuchos_RCP.hpp"
 
 #include "independent_variable_field_evaluator_fromfunction.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "PDE_CouplingFlux.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
 #include "TreeOperator.hh"
+#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
@@ -53,13 +54,13 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
   
-  // // preconditioner application
+  // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   std::string name() { return "thermal flow matrix fracture"; } 
 
  private:
-  void AddCouplingDiffFluxes_(
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > AddCouplingFluxes_(
       const Teuchos::RCP<Operators::Operator>& op0, 
       const Teuchos::RCP<Operators::Operator>& op1, 
       Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
@@ -85,6 +86,8 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Key normal_permeability_key_, normal_conductivity_key_;
+
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > adv_coupling_matrix_, adv_coupling_pc_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;

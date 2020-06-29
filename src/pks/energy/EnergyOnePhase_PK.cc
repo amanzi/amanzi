@@ -38,16 +38,6 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
     Energy_PK(pk_tree, glist, S, soln),
     soln_(soln)
 {
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(pk_list, "energy", true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
-   
-  // domain name
-  domain_ = ep_list_->get<std::string>("domain name", "domain");
-
   // verbose object
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
@@ -184,6 +174,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
     *vo_->os() << std::endl << vo_->color("green")
+               << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics() << std::endl
                << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;
   }

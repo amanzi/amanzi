@@ -17,6 +17,7 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -221,11 +222,11 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto op2 = (*pkf)->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
   AMANZI_ASSERT(op0 != Teuchos::null && op2 != Teuchos::null);
 
-  AddCouplingDiffFluxes_(Teuchos::null, Teuchos::null, cvs_matrix, cvs_fracture,
-                         inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_matrix_);
+  AddCouplingFluxes_(Teuchos::null, Teuchos::null, cvs_matrix, cvs_fracture,
+                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_matrix_);
 
-  AddCouplingDiffFluxes_(op0, op2, cvs_matrix, cvs_fracture,
-                         inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_pc_);
+  AddCouplingFluxes_(op0, op2, cvs_matrix, cvs_fracture,
+                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_pc_);
 
   // -- operators (energy)
   pkm++;
@@ -235,20 +236,62 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto op3 = (*pkf)->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
   AMANZI_ASSERT(op1 != Teuchos::null && op3 != Teuchos::null);
 
-  AddCouplingDiffFluxes_(Teuchos::null, Teuchos::null, cvs_matrix, cvs_fracture,
-                         inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_matrix_);
+  AddCouplingFluxes_(Teuchos::null, Teuchos::null, cvs_matrix, cvs_fracture,
+                     inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_matrix_);
 
+  AddCouplingFluxes_(op1, op3, cvs_matrix, cvs_fracture,
+                     inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_pc_);
 
-  AddCouplingDiffFluxes_(op1, op3, cvs_matrix, cvs_fracture,
-                         inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_pc_);
+  // -- indices transmissibimility coefficients for matrix-fracture advective flux
+  auto inds_matrix_adv = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  auto inds_fracture_adv = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  auto values_adv = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
 
-  // create global matrices
+  np = 0;
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
+    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    AMANZI_ASSERT(ncells == 2);
+
+    for (int k = 0; k < ncells; ++k) {
+      (*inds_matrix_adv)[np].resize(1);
+      (*inds_fracture_adv)[np].resize(1);
+      (*inds_matrix_adv)[np][0] = cells[k];
+      (*inds_fracture_adv)[np][0] = c;
+      np++;
+    }
+  }
+
+  // -- operators (energy)
+  adv_coupling_matrix_ = AddCouplingFluxes_(
+      Teuchos::null, Teuchos::null, cvs_matrix, cvs_fracture,
+      inds_matrix_adv, inds_fracture_adv, values_adv, 1, 3, op_tree_matrix_);
+
+  adv_coupling_pc_ = AddCouplingFluxes_(
+      op1, op3, cvs_matrix, cvs_fracture,
+      inds_matrix_adv, inds_fracture_adv, values_adv, 1, 3, op_tree_pc_);
+
+  // create global matrix
   op_tree_matrix_->SymbolicAssembleMatrix();
   op_tree_pc_->SymbolicAssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green")
+               << "matrix:" << std::endl
+               << op_tree_matrix_->PrintDiagnostics() << std::endl
+               << "preconditioner:" << std::endl
+               << op_tree_pc_->PrintDiagnostics() << std::endl
+               << "Initialization of PK is complete: my dT=" << get_dt() 
+               << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -300,7 +343,69 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
   // generate local matrices and apply sources and boundary conditions
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-  // coupling terms
+  // extract enthalpy fields
+  S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
+  const auto& enthalpy_m = *S_->GetFieldData("enthalpy")->ViewComponent("cell");
+  const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& temp_m = *S_->GetFieldData("temperature")->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
+  const auto& enthalpy_f = *S_->GetFieldData("fracture-enthalpy")->ViewComponent("cell");
+  const auto& n_l_f = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell");
+  const auto& temp_f = *S_->GetFieldData("fracture-temperature")->ViewComponent("cell");
+
+  // update coupling terms for advection
+  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto values1 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+  auto values2 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+
+  int np(0), dir, shift;
+  AmanziMesh::Entity_ID_List cells;
+  const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
+  const auto& mmap = flux.Map();
+
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
+    int first = mmap.FirstPointInElement(f);
+
+    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    mesh_domain_->face_normal(f, false, cells[0], &dir);
+    shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
+
+    for (int k = 0; k < ncells; ++k) {
+      // since cells are ordered differenty than points, we need a map
+      double tmp = flux[0][first + shift] * dir;
+
+      if (tmp > 0) {
+        int c1 = cells[k];
+        double factor = enthalpy_m[0][c1] * n_l_m[0][c1] / temp_m[0][c1];
+        (*values1)[np] = tmp * factor;
+      } else {
+        double factor = enthalpy_f[0][c] * n_l_f[0][c] / temp_f[0][c];
+        (*values2)[np] = -tmp * factor;
+      }
+
+      dir = -dir;
+      shift = 1 - shift;
+      np++;
+    }
+  }
+
+  // setup coupling operators with new data
+  adv_coupling_matrix_[0]->Setup(values1, 1.0);
+  adv_coupling_matrix_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling_matrix_[1]->Setup(values2, -1.0);
+  adv_coupling_matrix_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling_matrix_[2]->Setup(values1, -1.0);
+  adv_coupling_matrix_[2]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling_matrix_[3]->Setup(values2, 1.0);
+  adv_coupling_matrix_[3]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // add contribution of coupling terms to the residual
   TreeVector g(*f);
 
   op_tree_matrix_->AssembleMatrix();
@@ -341,7 +446,8 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
 /* ******************************************************************* 
 * Coupling term: diffusion fluxes between matrix and fracture 
 ******************************************************************* */
-void FlowEnergyMatrixFracture_PK::AddCouplingDiffFluxes_(
+std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
+    FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
     const Teuchos::RCP<Operators::Operator>& op0, 
     const Teuchos::RCP<Operators::Operator>& op1, 
     Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
@@ -381,6 +487,15 @@ void FlowEnergyMatrixFracture_PK::AddCouplingDiffFluxes_(
 
   op_tree->SetOperatorBlock(i, j, op_coupling01->global_operator());
   op_tree->SetOperatorBlock(j, i, op_coupling10->global_operator());
+
+  // return operators
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > ops;
+  ops.push_back(op_coupling00);
+  ops.push_back(op_coupling01);
+  ops.push_back(op_coupling10);
+  ops.push_back(op_coupling11);
+
+  return ops;
 }
 
 

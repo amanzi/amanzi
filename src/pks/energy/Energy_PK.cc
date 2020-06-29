@@ -83,13 +83,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  //keys 
-  energy_key_ = "energy";
-  prev_energy_key_ = "prev_energy";
-  enthalpy_key_ = "enthalpy";
-  conductivity_key_ = "thermal_conductivity";
-  mol_density_liquid_key_ = "molar_density_liquid";
-
   // require first-requested state variables
   if (!S->HasField("atmospheric_pressure")) {
     S->RequireScalar("atmospheric_pressure", passwd_);
