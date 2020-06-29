@@ -22,9 +22,21 @@ def read_matrix(fname):
                 mat[int(row_col_val[0])-1][int(row_col_val[1])-1] = float(row_col_val[2])
     return mat
 
+def read_mesh_info(fname):
+    """Read a sparse matrices mesh info file to get coordinates"""
+    class Point(object):
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+            self.coord = np.array([float(self.x),float(self.y),float(self.z)])
 
-def permute(mat, perm):
-    return dict(*sorted([(perm[i_row],dict(*sorted([(perm[i_col], v) for (i_col, v) in cols.items()]))) for (i_row, cols) in mat.items()]))
+
+    with open(fname, 'r') as fid:
+        points = [Point(**dict([(k,v) for (k,v) in
+                                zip(['rank', 'etype', 'lid', 'gid', 'smap_lid', 'smap_gid', 'x', 'y', 'z'],
+                                    line.split())]))
+                  for line in fid if not line.strip().startswith('#')]
+    return dict([(int(p.smap_gid), p.coord) for p in points])
+
 
 def close(m1, m2, perm, eps=1.e-5):
     for i1 in range(len(m1)):
@@ -45,77 +57,46 @@ def close(m1, m2, perm, eps=1.e-5):
                 return False
     return True
 
-def diag(m1,m2, eps=1.e-5):
-    valid = []
-    for i1 in m1:
-        valid_i1 = []
-        for i2 in m2:
-            if abs(m1[i1][i1] - m2[i2][i2]) < eps:
-                valid_i1.append(i2)
-        valid.append(valid_i1)
+def calc_permutation(d1,d2, eps=1.e-5):
+    perm = dict()
+    for gid, coord in d1.items():
+        done = False
+        for gid2, coord2 in d2.items():
+            if np.allclose(coord, coord2, eps):
+                perm[gid] = gid2
+                done = True
+                print('found match {}:{} at {}'.format(gid,gid2,coord))
+                break
 
-    for i,v in enumerate(valid):
-        print(i, v)
-        
-        
-    def gen_perm(current, leftover):
-        if len(leftover) == 0:
-            yield current
+        if not done:
+            raise RuntimeError("Could not find match for point {}".format(coord))
         else:
-            for i in valid[len(current)]:
-                if i in leftover:
-                    current.append(i)
-                    leftover.remove(i)
-                    for perm in gen_perm(current, leftover):
-                        yield perm
-            if len(current) == 0:
-                return
-
-            leftover.add(current.pop())
-            return
-
-    for perm in gen_perm([], set(range(len(m1)))):
-        print(perm)
-        if close(m1, m2, perm):
-            return True
-    return False
-    
-            
-        
-
-def brute_force(m1, m2):
-    import itertools
-
-    p = range(len(m1))
-    if close(m1, m2, p):
-        return p
-
-    perm_seed = range(len(m1))
-    for p in itertools.permutations(perm_seed):
-        if close(m1, m2, p):
-            return p
-
-    return False
+            d2.pop(gid2)
+    return perm
 
 
 if __name__ == "__main__":
     import sys
-    fname = sys.argv[-1]
-    m1 = read_matrix(fname+"_np1.gold")
 
-    print(fname+"_np1.test")
-    for r, col in m1.items():
-        print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
+    fname1 = sys.argv[-1]
+    m1 = read_matrix(fname1+".dat")
+    d1 = read_mesh_info(fname1+"_map.dat")
 
-    m2 = read_matrix(fname+"_np3.test")
+    # print(fname1)
+    # for r, col in m1.items():
+    #     print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
 
-    print(fname+"_np3.test")
-    for r, col in m2.items():
-        print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
+    fname2 = sys.argv[-2]
+    m2 = read_matrix(fname2+".dat")
+    d2 = read_mesh_info(fname2+"_map.dat")
 
-    p = diag(m1, m2)
-    if p:
-        print(p)
+    # print(fname2)
+    # for r, col in m2.items():
+    #     print(r, ''.join(["({0}, {1})".format(*c) for c in col.items()]))
+
+    p = calc_permutation(d1,d2)
+    
+    if close(m1,m2,p):
         print("SUCCESS")
         sys.exit(0)
     else:

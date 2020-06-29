@@ -11,6 +11,9 @@
 */
 
 #include <sstream>
+#include <fstream>
+
+#include "MatrixMarket_Tpetra.hpp"
 
 // Amanzi
 #include "dbc.hh"
@@ -186,6 +189,53 @@ void Operator::AssembleMatrix()
 
   if (shift_ != 0.0) {
     Amat_->diagonalShift(shift_);
+  }
+
+  // WriteMatrix("assembled_matrix");
+  // throw("assembed matrix written");
+}
+
+void Operator::WriteMatrix(const std::string& fname_base) {
+  // write to disk
+  std::string filename = fname_base + ".dat";
+  Tpetra::MatrixMarket::Writer<Matrix_type> writer;
+  writer.writeSparseFile(filename.c_str(), A_, "A", "A", true);
+
+  const auto smap = smap_->getMap();
+  for (int r=0; r!=mesh_->get_comm()->getSize(); ++r) {
+    if (r == mesh_->get_comm()->getRank()) {
+      std::ofstream os(fname_base+"_map.dat", std::ofstream::app);
+      if (r == 0)
+        os << "# Rank EType LID GID SMAP_LID SMAP_GID x y z" << std::endl;
+
+      std::vector<std::string> compnames = {"cell", "face", "boundary_face", "edge", "node"};
+      for (const auto& comp : compnames) {
+        auto mesh_map = mesh_->map(AmanziMesh::entity_kind(comp), false);
+        int lcv_block = 0;
+        bool not_done_block = smap_->HasComponent(lcv_block, comp, 0);
+        while(not_done_block) {
+          int lcv_dof = 0;
+          while(smap_->HasComponent(lcv_block, comp, lcv_dof)) {
+            auto ids = smap_->Indices<Amanzi::MirrorHost>(lcv_block, comp, lcv_dof);
+            for (int i=0; i!=ids.extent(0); ++i) {
+              os << r << " "
+                 << comp << " "
+                 << i << " "
+                 << mesh_map->getGlobalElement(i) << " "
+                 << ids(i) << " "
+                 << smap->getGlobalElement(ids(i)) << " "
+                 << AmanziMesh::get_coordinate(*mesh_, AmanziMesh::entity_kind(comp), i) << std::endl;
+            }
+            lcv_dof++;
+          }
+
+          lcv_block++;
+          not_done_block = smap_->HasComponent(lcv_block, comp, lcv_dof);
+        }
+      }
+      os.close();
+    }
+    mesh_->get_comm()->barrier();
   }
 }
 

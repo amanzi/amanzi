@@ -15,7 +15,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -109,7 +108,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       if (vo->getVerbLevel() >= Teuchos::VERB_LOW) {
         Teuchos::OSTab tab = vo->getOSTab();
         *vo->os() << vo->color("yellow") << "Parameter sublist \"" << tmp
-                  << "\" is missing, use defaults." << vo->reset() << std::endl;
+                  << "\" is missing, use defaults." << vo->color() << std::endl;
       }
     }
     if (!slist.sublist(tmp).isSublist("verbose object"))

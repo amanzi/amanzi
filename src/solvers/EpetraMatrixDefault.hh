@@ -15,7 +15,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "errors.hh"
-#include "EpetraMatrix.hh"
 
 namespace Amanzi {
 

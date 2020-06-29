@@ -68,7 +68,13 @@ void PDE_DiffusionFV::Init()
   
   // upwind options
   Errors::Message msg;
-  std::string uwname = plist_.get<std::string>("nonlinear coefficient", "upwind: face");
+  AMANZI_ASSERT(!plist_.isParameter("upwind method"));
+  std::string default_sc = "none";
+  // DEPRECATE!
+  if (plist_.isParameter("nonlinear coefficient")) {
+    default_sc = plist_.get<std::string>("nonlinear coefficient");
+  }
+  std::string uwname = plist_.get<std::string>("scalar coefficient type", default_sc);
   if (uwname == "none") {
     little_k_type_ = OPERATOR_LITTLE_K_NONE;
 
@@ -277,20 +283,24 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         });
   }
 
-  if (jac_op_ != Teuchos::null) {
-    auto& local_op = jac_op_->A;
+  if (jac_op_ != Teuchos::null) ApplyBCsJacobian();
+}
+
+void PDE_DiffusionFV::ApplyBCsJacobian()
+{
+  const auto bc_model = bcs_trial_[0]->bc_model();
+  auto& local_op = jac_op_->A;
     
-    AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-    Kokkos::parallel_for(
-        "PDE_DiffusionFV::ApplyBCs",
-        nfaces_owned,
-        KOKKOS_LAMBDA(const int f) {
-          if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-            auto A_f = local_op[f];
-            A_f.putScalar(0.);
-          }
-        });
-  }
+  AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
+  Kokkos::parallel_for(
+      "PDE_DiffusionFV::ApplyBCs",
+      nfaces_owned,
+      KOKKOS_LAMBDA(const int f) {
+        if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          auto A_f = local_op[f];
+          A_f.putScalar(0.);
+        }
+      });
 }
 
 

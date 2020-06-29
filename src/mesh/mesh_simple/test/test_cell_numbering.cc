@@ -14,7 +14,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include <AmanziComm.hh>
-#include "Epetra_SerialComm.h"
 
 #include "../Mesh_simple.hh"
 

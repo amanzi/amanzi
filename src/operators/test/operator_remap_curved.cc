@@ -15,7 +15,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"

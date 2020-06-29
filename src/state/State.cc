@@ -23,8 +23,8 @@
 #include <iostream>
 #include <map>
 #include <ostream>
+#include <fstream>
 
-#include "Epetra_Vector.h"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "CompositeVector.hh"
@@ -184,6 +184,34 @@ State::GetRecordSet(const Key& fieldname) const
     throw(message);
   }
 }  
+
+const RecordSet&
+State::GetDerivativeSet(const Key& key, const Key& tag) const
+{
+  auto fieldname = Keys::getKeyTag(key, tag);
+  try {
+    return *derivs_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No derivative named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}    
+
+RecordSet&
+State::GetDerivativeSet(const Key& key, const Key& tag)
+{
+  auto fieldname = Keys::getKeyTag(key, tag);
+  try {
+    return *derivs_.at(fieldname);
+  } catch (const std::out_of_range& e) {
+    std::stringstream messagestream;
+    messagestream << "No derivative named \"" << fieldname << "\" exists in the state.";
+    Errors::Message message(messagestream.str());
+    throw(message);
+  }
+}    
 
 Evaluator&
 State::RequireEvaluator(const Key& key, const Key& tag)

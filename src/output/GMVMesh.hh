@@ -15,8 +15,6 @@
 
 #include <string>
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 extern "C"
 {
 #include "gmvwrite.h"

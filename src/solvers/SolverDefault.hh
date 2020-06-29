@@ -144,6 +144,9 @@ class SolverDefault : public Solver<Vector,VectorSpace> {
   int pc_updates_;
   int function_calls_;
 
+  // work space
+  Teuchos::RCP<Vector> r, du;
+  
   // functional 
   Teuchos::RCP<SolverFnBase<Vector>> fn_;
 
@@ -241,8 +244,8 @@ SolverDefault<Vector,VectorSpace>::Solve(const Teuchos::RCP<Vector>& u)
   Restart_();
 
   // generate work space
-  auto r = Teuchos::rcp(new Vector(u->getMap()));
-  auto du = Teuchos::rcp(new Vector(u->getMap()));
+  if (!r.get()) r = Teuchos::rcp(new Vector(u->getMap()));
+  if (!du.get()) du = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   error_ = std::numeric_limits<double>::max();

@@ -1,5 +1,4 @@
 # -*- mode: cmake -*-
-
 #
 #  Amanzi
 #    PK class
@@ -46,7 +45,6 @@ set(pks_tpl_libs
 list(REVERSE pks_tpl_libs)
 list(REMOVE_DUPLICATES pks_tpl_libs)
 list(REVERSE pks_tpl_libs)
-
 
 
 #

@@ -15,7 +15,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_SerialDenseMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
 #include "Explicit_TI_FnBase.hh"
@@ -89,7 +89,7 @@ class RK {
      const Vector& initvector);
 
   // constructor for user defined RK methods
-  RK(fnBase<Vector>& fn, const int order, const Epetra_SerialDenseMatrix& a,
+  RK(fnBase<Vector>& fn, const int order, const Teuchos::SerialDenseMatrix<int,double>& a,
      const std::vector<double> b, const std::vector<double> c,
      const Vector& initvector);
 
@@ -105,7 +105,7 @@ class RK {
   fnBase<Vector>& fn_;
   int order_;
   method_t method_;
-  Epetra_SerialDenseMatrix a_;
+  Teuchos::SerialDenseMatrix<int,double> a_;
   std::vector<double> b_, c_;
   std::vector<Teuchos::RCP<Vector>> k_;
 
@@ -162,7 +162,7 @@ RK<Vector>::RK(fnBase<Vector>& fn, Teuchos::ParameterList& plist,
 
 template <class Vector>
 RK<Vector>::RK(fnBase<Vector>& fn, const int order,
-               const Epetra_SerialDenseMatrix& a, const std::vector<double> b,
+               const Teuchos::SerialDenseMatrix<int,double>& a, const std::vector<double> b,
                const std::vector<double> c, const Vector& initvector)
   : fn_(fn), order_(order), method_(user_defined), a_(a)
 {
@@ -208,7 +208,7 @@ RK<Vector>::InitMethod_(const method_t method)
     order_ = -1;
   }
 
-  a_.Shape(order_, order_);
+  a_.shape(order_, order_);
   b_.resize(order_);
   c_.resize(order_);
 

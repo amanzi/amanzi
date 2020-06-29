@@ -50,9 +50,6 @@ void PDE_DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<const TensorVecto
   K_ = K;
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
-    if (!mass_matrices_initialized_) {
-      CreateMassMatrices_();
-    }
   }
 }
 
@@ -79,11 +76,6 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("twin"));
     }
   }
-
-  // verify that mass matrices were initialized.
-  if (!mass_matrices_initialized_) {
-    CreateMassMatrices_();
-  }
 }
 
   
@@ -95,6 +87,9 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  // verify that mass matrices were initialized.
+  if (!mass_matrices_initialized_) CreateMassMatrices_();
+
   bcs_applied_ = false;
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
@@ -496,21 +491,22 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn
       //ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate, essential_eqn);
     }
   }
+  if (jac_op_.get()) ApplyBCsJacobian();
+}
 
-  if (jac_op_ != Teuchos::null) {
-    const auto bc_model = bcs_trial_[0]->bc_model();
-    DenseMatrix_Vector& A = jac_op_->A;
-    Kokkos::parallel_for(
-        "PDE_DiffusionMFD::ApplyBCs on Jacobian",
-        nfaces_owned,
-        KOKKOS_LAMBDA(const int& f) {
-          if (bc_model[f] == OPERATOR_BC_NEUMANN ||
-              bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
-            auto Aface = A[f];
-            Aface *= 0.0;
-          }
-        });
-  }
+void PDE_DiffusionMFD::ApplyBCsJacobian() {
+  const auto bc_model = bcs_trial_[0]->bc_model();
+  DenseMatrix_Vector& A = jac_op_->A;
+  Kokkos::parallel_for(
+      "PDE_DiffusionMFD::ApplyBCs on Jacobian",
+      nfaces_owned,
+      KOKKOS_LAMBDA(const int& f) {
+        if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+            bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
+          auto Aface = A[f];
+          Aface *= 0.0;
+        }
+      });
 }
 
 
@@ -1364,7 +1360,12 @@ void PDE_DiffusionMFD::Init()
 
   // little-k options
   AMANZI_ASSERT(!plist_.isParameter("upwind method"));
-  std::string name = plist_.get<std::string>("nonlinear coefficient", "none");
+  std::string default_sc = "none";
+  // DEPRECATE!
+  if (plist_.isParameter("nonlinear coefficient")) {
+    default_sc = plist_.get<std::string>("nonlinear coefficient");
+  }
+  std::string name = plist_.get<std::string>("scalar coefficient type", default_sc);
   if (name == "none") {
     little_k_type_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {
@@ -1388,7 +1389,14 @@ void PDE_DiffusionMFD::Init()
   }
 
   // Do we need to calculate Newton correction terms?
-  std::string jacobian = plist_.get<std::string>("Newton correction", "none");
+  std::string jacobian;
+  if (plist_.isParameter("Newton correction") && plist_.isType<bool>("Newton correction")) {
+    jacobian = plist_.get<bool>("Newton correction", false) ? "approximate Jacobian" : "none";
+  } else {
+    // legacy version
+    jacobian = plist_.get<std::string>("Newton correction", "none");
+  }
+  
   if (jacobian == "none") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "true Jacobian") {

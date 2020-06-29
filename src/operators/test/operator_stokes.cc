@@ -16,7 +16,6 @@
 #include <vector>
 
 // TPLs
-#include "EpetraExt_RowMatrixOut.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"

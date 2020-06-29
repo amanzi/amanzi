@@ -14,8 +14,6 @@
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 
 #include "exceptions.hh"
 #include "FnBaseDefs.hh"

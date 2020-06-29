@@ -31,12 +31,13 @@ class State;
 class Debugger {
  public:
   // Constructor
-  Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, std::string name,
+  Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+           std::string name,
            Teuchos::ParameterList& plist,
-           Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
+           Teuchos::EVerbosityLevel verb_level=Teuchos::VERB_HIGH);
 
   // Write cell + face info
-  void WriteCellInfo(bool include_faces = false);
+  void WriteCellInfo(bool include_faces=false);
 
   // Write a vector individually.
   void WriteVector(const std::string& name,
@@ -69,20 +70,18 @@ class Debugger {
   void SetPrecision(int prec) { precision_ = prec; }
   void SetWidth(int width) { width_ = width; }
 
-  // reverse order -- instead of passing in vector, do writing externally
-  Teuchos::RCP<VerboseObject> GetVerboseObject(AmanziMesh::Entity_ID, int rank);
-
  protected:
   std::string Format_(double dat);
   std::string FormatHeader_(std::string name, int c);
 
  protected:
   Teuchos::EVerbosityLevel verb_level_;
-  Teuchos::RCP<VerboseObject> vo_;
+
+  Teuchos::RCP<VerboseObject> vo_; // this is the vo that writes only on rank 0
+  Teuchos::RCP<VerboseObject> dcvo_; // this is the vo that writes on all ranks
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
   std::vector<GO> dc_gid_;
-  std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
   std::vector<std::pair<std::string,std::string>> vars_;
 

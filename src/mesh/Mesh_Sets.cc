@@ -47,15 +47,15 @@ Mesh::get_set_entities_box_vofs_(
   case CELL: {
     std::string name = region->name() + "_cell";
 
-    if (region_ids.find(name) != region_ids.end()) {
-      Kokkos::resize(setents, region_ids[name].size());
-      Kokkos::resize(*volume_fractions, region_vofs[name].size());
+    if (mesh_cache_.region_ids.find(name) !=  mesh_cache_.region_ids.end()) {
+      Kokkos::resize(setents, mesh_cache_.region_ids[name].size());
+      Kokkos::resize(*volume_fractions, mesh_cache_.region_vofs[name].size());
 
-      assert(region_ids[name].size() == region_vofs.size());
+      assert(mesh_cache_.region_ids[name].size() == mesh_cache_.region_vofs.size());
 
-      for (int i = 0; i < region_ids[name].size(); ++i) {
-        setents(i) = region_ids[name][i];
-        (*volume_fractions)(i) = region_vofs[name][i];
+      for (int i = 0; i < mesh_cache_.region_ids[name].size(); ++i) {
+        setents(i) = mesh_cache_.region_ids[name][i];
+        (*volume_fractions)(i) = mesh_cache_.region_vofs[name][i];
       }
     } else {
       int ncells = num_entities(CELL, ptype);
@@ -114,14 +114,14 @@ Mesh::get_set_entities_box_vofs_(
         }
       }
 
-      region_ids[name].resize(setents.extent(0));
+      mesh_cache_.region_ids[name].resize(setents.extent(0));
       // assert(region_ids[name].size() == region_vofs.size());
 
-      for (int i = 0; i < region_ids[name].size(); ++i) {
-        region_ids[name][i] = setents(i);
+      for (int i = 0; i < mesh_cache_.region_ids[name].size(); ++i) {
+        mesh_cache_.region_ids[name][i] = setents(i);
       }
-      for (int i = 0; i < region_vofs[name].size(); ++i) {
-        region_vofs[name][i] = (*volume_fractions)(i);
+      for (int i = 0; i < mesh_cache_.region_vofs[name].size(); ++i) {
+        mesh_cache_.region_vofs[name][i] = (*volume_fractions)(i);
       }
     }
     break;
@@ -130,12 +130,12 @@ Mesh::get_set_entities_box_vofs_(
   case FACE: {
     std::string name = region->name() + "_face";
 
-    if (region_ids.find(name) != region_ids.end()) {
-      Kokkos::resize(setents, region_ids[name].size());
-      assert(region_ids[name].size() == region_vofs.size());
-      for (int i = 0; i < region_ids[name].size(); ++i) {
-        setents(i) = region_ids[name][i];
-        (*volume_fractions)(i) = region_vofs[name][i];
+    if (mesh_cache_.region_ids.find(name) != mesh_cache_.region_ids.end()) {
+      Kokkos::resize(setents, mesh_cache_.region_ids[name].size());
+      assert(mesh_cache_.region_ids[name].size() == mesh_cache_.region_vofs.size());
+      for (int i = 0; i < mesh_cache_.region_ids[name].size(); ++i) {
+        setents(i) = mesh_cache_.region_ids[name][i];
+        (*volume_fractions)(i) = mesh_cache_.region_vofs[name][i];
       }
     } else {
       int nfaces = num_entities(FACE, ptype);
@@ -152,11 +152,11 @@ Mesh::get_set_entities_box_vofs_(
         }
       }
 
-      region_ids[name].resize(setents.extent(0));
-      assert(region_ids[name].size() == region_vofs.size());
-      for (int i = 0; i < region_ids[name].size(); ++i) {
-        region_ids[name][i] = setents(i);
-        region_vofs[name][i] = (*volume_fractions)(i);
+      mesh_cache_.region_ids[name].resize(setents.extent(0));
+      assert(mesh_cache_.region_ids[name].size() == mesh_cache_.region_vofs.size());
+      for (int i = 0; i < mesh_cache_.region_ids[name].size(); ++i) {
+        mesh_cache_.region_ids[name][i] = setents(i);
+        mesh_cache_.region_vofs[name][i] = (*volume_fractions)(i);
       }
     }
     break;
@@ -166,7 +166,7 @@ Mesh::get_set_entities_box_vofs_(
     int nedges = num_entities(EDGE, ptype);
 
     for (int e = 0; e < nedges; ++e) {
-      if (region->inside(edge_centroid(e))) {
+      if (region->inside(mesh_cache_.edge_centroid(e))) {
         Kokkos::resize(setents, setents.extent(0) + 1);
         setents(setents.extent(0) - 1) = e;
       }

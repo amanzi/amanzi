@@ -36,17 +36,25 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO Tpetra Ifpack2 Zoltan2 MueLu)
+set(Trilinos_PACKAGE_LIST Teuchos)
+
+if (ENABLE_EPETRA)
+  list(APPEND Trilinos_PACKAGE_LIST Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
+  if (ENABLE_Unstructured)
+    list(APPEND Trilinos_PACKAGE_LIST ML)
+  endif()
+endif()
+
+if (ENABLE_KOKKOS)
+  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu ShyLU ShyLU_Node Amesos2 Basker)
+endif()
+
 if (ENABLE_STK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
 if (ENABLE_MSTK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
-if (ENABLE_Unstructured)
-  list(APPEND Trilinos_PACKAGE_LIST ML)
-endif()
-
 
 # Generate the Trilinos Package CMake Arguments
 set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
@@ -57,33 +65,37 @@ endforeach()
 # Add support of parallel LU solvers
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 
+# not sure why we don't like Stratimikos...
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE")
+
+# have already built SEACAS
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
+
+# we use ints for GOs in Tpetra only (for now)
+if (ENABLE_KOKKOS)
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_INT:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
+
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
+endif()
+
+
+
 # Build PyTrilinos if shared
 # if (BUILD_SHARED_LIBS)
 #   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
 #endif()
 
-# Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
-# defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
-#list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTeuchos_ENABLE_ABC:BOOL=ON")
-
-# add support for global ordinals we use (int) -- change if we get really big
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_INT:BOOL=ON")        
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")        
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")        
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
-
-# Disable Pamgen ( doesn't compile with gnu++14 standard )
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Pamgen:STRING=OFF")
-
 #  - Trilinos TPL Configuration
-
 set(Trilinos_CMAKE_TPL_ARGS)
 
 # MPI
 list(APPEND Trilinos_CMAKE_TPL_ARGS "-DTPL_ENABLE_MPI:BOOL=ON")
 
 # Pass the following MPI arguments to Trilinos if they are set 
-set(MPI_CMAKE_ARGS DIR EXEC EXEC_NUMPROCS_FLAG EXE_MAX_NUMPROCS C_COMPILER)
+set(MPI_CMAKE_ARGS DIR EXEC EXEC_NUMPROCS_FLAG EXEC_MAX_NUMPROCS C_COMPILER)
 foreach (var ${MPI_CMAKE_ARGS} )
   set(mpi_var "MPI_${var}")
   if ( ${mpi_var} )
@@ -137,10 +149,12 @@ if (ENABLE_HYPRE)
 endif()
 
 # SuperLUDist
-list(APPEND Trilinos_CMAKE_TPL_ARGS
-            "-DTPL_ENABLE_SuperLUDist:BOOL=ON"
-            "-DTPL_SuperLUDist_INCLUDE_DIRS:FILEPATH=${SuperLUDist_DIR}/include"
-            "-DTPL_SuperLUDist_LIBRARIES:STRING=${SuperLUDist_LIBRARY}")
+if (ENABLE_SUPERLU)
+  list(APPEND Trilinos_CMAKE_TPL_ARGS
+              "-DTPL_ENABLE_SuperLUDist:BOOL=ON"
+              "-DTPL_SuperLUDist_INCLUDE_DIRS:FILEPATH=${SuperLUDist_DIR}/include"
+              "-DTPL_SuperLUDist_LIBRARIES:STRING=${SuperLUDist_LIBRARY}")
+endif()
 
 # ParMETIS
 list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -148,31 +162,32 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ParMETIS_INCLUDE_DIRS:FILEPATH=${ParMetis_DIR}/include"
             "-DTPL_ParMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
 
-#  - Addtional Trilinos CMake Arguments
+# - Additional Trilinos CMake Arguments
+# Attempts to make Trilinos compile faster go here...          
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+    "-DTpetra_ENABLE_TESTS:BOOL=OFF"
+    "-DTpetra_ENABLE_EXAMPLES:BOOL=OFF"
+    "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF"
     )
 
-if (TRILINOS_BUILD_TYPE)
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DCMAKE_BUILD_TYPE:STRING=${TRILNOS_BUILD_TYPE}")
+if (Trilinos_BUILD_TYPE)
+else()
+  set(Trilinos_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+endif()
 
-  if (${TRILINOS_BUILD_TYPE} STREQUAL "Debug")
-    list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-              "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
-  endif()
-  #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+if (${Trilinos_BUILD_TYPE} STREQUAL "Debug")
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DTpetra_ENABLE_DEBUG:BOOL=ON")
 endif()
 
 if (BUILD_SHARED_LIBS)
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS
-    "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
-  #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
 endif()
 
 
@@ -184,56 +199,62 @@ if (Trilinos_Build_Config_File)
     message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
 
+set(Trilinos_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(Trilinos_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+set(Trilinos_CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
+message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 
-set(Trilinos_CMAKE_CXX_FLAGS ${Amanzi_COMMON_CXXFLAGS})
+if (ENABLE_KOKKOS)
+  # - Architecture Args.... these will need work
+  set(Trilinos_CMAKE_ARCH_ARGS
+    "-DKokkos_ENABLE_Serial:BOOL=ON"
+    "-DKokkos_ENABLE_Pthread:BOOL=OFF"
+    )
 
-# - Architecture Args.... these will need work.
-set(Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_Serial:BOOL=ON"
-        "-DKokkos_ENABLE_OpenMP:BOOL=OFF"
-        "-DKokkos_ENABLE_Pthread:BOOL=OFF"
-        )
+  # By default compiler with the standard mpi compiler
+  set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+  message(STATUS "Trilinos COMPILER: ${Trilinos_CXX_COMPILER}")
 
-# By default compiler with the standard mpi compiler 
-set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-message(STATUS "Trilinos COMPILER: ${Trilinos_CXX_COMPILER}")
-
-if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-   message("AMANZI_ARCH: : ${AMANZI_ARCH}")
-   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
-     message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
-   endif() 
-   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
-   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+  if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
+    message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+    if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING})
+      message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
+    endif()
+    message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
+    set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
         -Wno-deprecated-declarations -lineinfo \
         -Xcudafe --diag_suppress=conversion_function_not_usable \
         -Xcudafe --diag_suppress=cc_clobber_ignored \
         -Xcudafe --diag_suppress=code_is_unreachable")
-   message("Wrapper: ${NVCC_WRAPPER_PATH}")
-   message("COMPILR: ${CMAKE_CXX_COMPILER}")
-   message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
-   list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DTrilinos_ENABLE_STK:BOOL=OFF"
-	"-DTPL_ENABLE_CUDA:BOOL=ON"
-	"-DKokkos_ENABLE_Cuda:BOOL=ON"
-        "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-        "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-        "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
-   # Change the default compiler for Trilinos to use nvcc_wrapper 
-   set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
- else()
-   list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_CUDA:BOOL=OFF")
- endif()
+    message("WRAPPER: ${NVCC_WRAPPER_PATH}")
+    message("COMPILER: ${CMAKE_CXX_COMPILER}")
+    message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DTPL_ENABLE_CUDA:BOOL=ON"
+      "-DKokkos_ENABLE_Cuda:BOOL=ON"
+      "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
+      "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+      "-DKOKKOS_ARCH:STRING=Power9;Volta70"
+      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+    # Change the default compiler for Trilinos to use nvcc_wrapper
+    set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
 
+  else()
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DKokkos_ENABLE_CUDA:BOOL=OFF"
+      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+  endif()
+endif()
+
+ 
 #  - Final Trilinos CMake Arguments
 set(Trilinos_CMAKE_ARGS
-   ${Trilinos_CMAKE_PACKAGE_ARGS}
-   ${Trilinos_CMAKE_TPL_ARGS}
-   ${Trilinos_CMAKE_ARCH_ARGS}
-   ${Trilinos_CMAKE_EXTRA_ARGS}
-   )
+  ${Trilinos_CMAKE_PACKAGE_ARGS}
+  ${Trilinos_CMAKE_TPL_ARGS}
+  ${Trilinos_CMAKE_ARCH_ARGS}
+  ${Trilinos_CMAKE_EXTRA_ARGS}
+  )
 
 
 #  --- Define the Trilinos patch step
@@ -275,18 +296,16 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                       ${Trilinos_CMAKE_ARGS} 
 			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
-				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
-                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                      -DCMAKE_C_FLAGS:STRING=${Trilinos_CMAKE_C_FLAGS}
                                       -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                      -DCMAKE_Fortran_FLAGS:STRING=${Trilinos_CMAKE_Fortran_FLAGS}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
-                                      -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
-                                      -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
                                       -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
+                                      -DCMAKE_BUILD_TYPE:STRING=${Trilinos_BUILD_TYPE}
+
                     # -- Build
                     BINARY_DIR       ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
@@ -298,5 +317,5 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
 		    )
 
 # --- Useful variables for packages that depends on Trilinos
-global_set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
+global_set(Trilinos_INSTALL_PREFIX "${Trilinos_install_dir}")
 global_set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")

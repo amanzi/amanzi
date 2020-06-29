@@ -290,7 +290,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << vo_->color("red") << "step failed with error code " << code
-                 << vo_->reset() << std::endl;
+                 << vo_->color() << std::endl;
     }
     u->assign(*u_prev);
   }

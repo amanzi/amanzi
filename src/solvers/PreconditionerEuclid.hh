@@ -16,8 +16,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
 #include "Ifpack.h"
 
 #include "exceptions.hh"

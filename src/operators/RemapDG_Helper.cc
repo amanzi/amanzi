@@ -14,7 +14,6 @@
   implemented differently by an application.
 */
 
-#include "Epetra_Vector.h"
 
 #include "RemapDG.hh"
 #include "WhetStoneDefs.hh"

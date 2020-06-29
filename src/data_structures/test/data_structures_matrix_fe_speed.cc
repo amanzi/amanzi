@@ -25,12 +25,6 @@
 #include "MeshFactory.hh"
 
 #include "Teuchos_TimeMonitor.hpp"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsGraph.h"
-#include "Epetra_FECrsMatrix.h"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 

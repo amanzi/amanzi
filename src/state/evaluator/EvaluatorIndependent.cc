@@ -121,7 +121,7 @@ EvaluatorIndependent_::Update(State& S, const Key& request)
     if (requests_.find(request) == requests_.end()) {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
         *vo_.os() << "Independent field \"" << vo_.color("green") << my_key_
-                  << vo_.reset() << "\" requested by " << request
+                  << vo_.color() << "\" requested by " << request
                   << " has changed." << std::endl;
       }
       requests_.insert(request);
@@ -169,7 +169,7 @@ EvaluatorIndependent_::UpdateDerivative(State& S, const Key& request, const Key&
   if (deriv_requests_.find(request) == deriv_requests_.end()) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Independent field \"" << vo_.color("green") << my_key_
-                << vo_.reset() << "\" requested by " << request
+                << vo_.color() << "\" requested by " << request
                 << " has changed." << std::endl;
     }
     deriv_requests_.insert(request);

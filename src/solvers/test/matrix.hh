@@ -14,6 +14,7 @@
 
 #include "AmanziTypes.hh"
 #include "AmanziComm.hh"
+#include "AmanziMatrix.hh"
 
 #include "Preconditioner.hh"
 #include "PreconditionerFactory.hh"

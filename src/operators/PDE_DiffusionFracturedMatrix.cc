@@ -12,7 +12,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_BlockMap.h"
 
 // Amanzi
 #include "CompositeVector.hh"

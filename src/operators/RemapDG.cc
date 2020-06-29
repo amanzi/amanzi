@@ -12,7 +12,6 @@
 */
 
 // TPLs
-#include "Epetra_Vector.h"
 
 // Amanzi
 #include "CompositeVector.hh"

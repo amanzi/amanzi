@@ -55,7 +55,7 @@ class PK_MixinLeaf : public Base_t {
   void Setup();
   void Initialize();
 
-  // Mark, as changed, any primary variable evaluator owned by this PK
+
   void ChangedSolutionPK(const Key& tag);
 
   void CommitStep(const Key& tag_old, const Key& tag_new);
@@ -70,13 +70,14 @@ class PK_MixinLeaf : public Base_t {
 
   // Construct all sub-PKs.  Leaf PKs have no children, hence have nothing to
   // do
-  void ConstructChildren(){};
+  void ConstructChildren() {};
 
 
  protected:
   // name of domain, associated mesh
   Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<TreeVectorSpace> soln_space_;
 
   // solution and evaluator
   Key key_;
@@ -102,9 +103,6 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::PK_MixinLeaf(
   // get the primary variable key
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
 
-  // create the primary variable evaluator
-  S->FEList().sublist(key_).set("evaluator type", "primary variable");
-
   // create a debugger
   auto db_plist = Teuchos::sublist(plist_, "debugger");
   if (!db_plist->isSublist("verbose object")) {
@@ -118,8 +116,9 @@ void
 PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::Setup()
 {
   // note that this will inherit all of its metadata from requirements made
-  // elsewhere
-  // S_->template Require<Data_t, DataFactory_t>(key_, "", key_);
+  // elsewhere.  Don't claim ownership here yet either, as requirements may
+  // need to be set still.
+  S_->template Require<Data_t, DataFactory_t>(key_, "");
 }
 
 template <class Base_t, class Data_t, class DataFactory_t>
@@ -135,11 +134,13 @@ template <class Base_t, class Data_t, class DataFactory_t>
 void
 PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::ChangedSolutionPK(const Key& tag)
 {
-  auto eval = S_->GetEvaluatorPtr(key_, tag);
-  auto eval_primary =
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<Data_t, DataFactory_t>>(eval);
-  AMANZI_ASSERT(eval_primary.get());
-  eval_primary->SetChanged();
+  if (S_->HasEvaluator(key_, tag)) {
+    auto eval = S_->GetEvaluatorPtr(key_, tag);
+    auto eval_primary =
+        Teuchos::rcp_dynamic_cast<EvaluatorPrimary<Data_t, DataFactory_t>>(eval);
+    AMANZI_ASSERT(eval_primary.get());
+    eval_primary->SetChanged();
+  }
 };
 
 template <class Base_t, class Data_t, class DataFactory_t>
@@ -170,7 +171,8 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::SolutionSpace()
 {
   // This sort of implies that a TreeVectorSpace can contain any DataFactory_t.
   // If this ever gets used, it will have to be thought more about.
-  return Teuchos::rcp(new TreeVectorSpace());
+  if (!soln_space_.get()) soln_space_ = Teuchos::rcp(new TreeVectorSpace());
+  return soln_space_;
 }
 
 
@@ -190,29 +192,50 @@ PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::StateToState(const Key& tag_from,
 {
   S_->template GetW<Data_t>(key_, tag_to, key_) =
     S_->template Get<Data_t>(key_, tag_from);
-  this->ChangedSolutionPK(tag_to);
 }
 
+
+//
+// Specialized class for CompositeVector with PrimaryVariable evaluator
+//
+// Note other classes would need their own evaluator types.
+// -----------------------------------------------------------------------------
 template <class Base_t>
 class PK_MixinLeafCompositeVector
   : public PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace> {
  public:
-  using PK_MixinLeaf<Base_t, CompositeVector,
-                     CompositeVectorSpace>::PK_MixinLeaf;
+  PK_MixinLeafCompositeVector(
+      const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+      const Teuchos::RCP<State>& S)
+      : PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace>(pk_tree, global_plist, S)
+  {
+    // create the primary variable evaluator NOTE: this is a CompositeVector --
+    // this would need to get removed/fixed for a non-CV-based leaf... --etc
+    S->FEList().sublist(key_).set("evaluator type", "primary variable");
+  }
+        
   Teuchos::RCP<TreeVectorSpace> SolutionSpace();
   void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix);
+  void StateToState(const Key& tag_from, const Key& tag_to);
+  
+
+ protected:
+  using PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace>::soln_space_;
+  using PK_MixinLeaf<Base_t, CompositeVector, CompositeVectorSpace>::key_;
 };
 
 template <class Base_t>
 Teuchos::RCP<TreeVectorSpace>
 PK_MixinLeafCompositeVector<Base_t>::SolutionSpace()
 {
-  auto space = Teuchos::rcp(new TreeVectorSpace());
-  space->SetData(
-    this->S_
-      ->template Require<CompositeVector, CompositeVectorSpace>(this->key_, "")
-      .CreateSpace());
-  return space;
+  if (!soln_space_.get()) {
+    soln_space_ = Teuchos::rcp(new TreeVectorSpace());
+    soln_space_->SetData(
+        this->S_->template Require<CompositeVector, CompositeVectorSpace>(this->key_, "")
+        .CreateSpace());
+  }
+  return soln_space_;
 }
 
 
@@ -230,6 +253,16 @@ PK_MixinLeafCompositeVector<Base_t>::StateToSolution(TreeVector& soln,
   AMANZI_ASSERT(soln.Data() ==
                 this->S_->template GetPtr<CompositeVector>(key, tag));
 }
+
+template <class Base_t>
+void
+PK_MixinLeafCompositeVector<Base_t>::StateToState(const Key& tag_from,
+        const Key& tag_to)
+{
+  PK_MixinLeaf<Base_t,CompositeVector,CompositeVectorSpace>::StateToState(tag_from,tag_to);
+  this->ChangedSolutionPK(tag_to);
+}
+
 
 
 } // namespace Amanzi

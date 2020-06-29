@@ -67,8 +67,8 @@ MeshColumn::deform(const Entity_ID_List& nodeids,
     extracted_->deform(nodeids, new_positions, keep_valid, final_positions);
 
   // recompute all geometric quantities
-  compute_cell_geometric_quantities_();
-  compute_face_geometric_quantities_();
+  mesh_cache_.compute_cell_geometric_quantities_();
+  mesh_cache_.compute_face_geometric_quantities_();
   return ierr;
 }
 
@@ -86,8 +86,8 @@ MeshColumn::deform(const std::vector<double>& target_cell_volumes_in,
   int ierr = extracted_->deform(
     target_cell_volumes_in, min_cell_volumes_in, fixed_nodes, move_vertical);
   // recompute all geometric quantities
-  compute_cell_geometric_quantities_();
-  compute_face_geometric_quantities_();
+  mesh_cache_.compute_cell_geometric_quantities_();
+  mesh_cache_.compute_face_geometric_quantities_();
   return ierr;
 }
 
