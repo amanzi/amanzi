@@ -95,20 +95,6 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Init(
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-  /*
-  // get the components that this interacts with
-  this->tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
-
-  // check that names size matches function size
-  for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
-       uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
-    int nfun = (*uspec)->first->second->size();
-    if (nfun != this->tcc_names_.size()) {
-      Errors::Message m("PK_DomainFunctionExponentialDecay: \"component names\" was of different length than the number of degrees of freedom provided in the return function.");
-      Exceptions::amanzi_throw(m);
-    }
-    }*/
-
 }
 
 
