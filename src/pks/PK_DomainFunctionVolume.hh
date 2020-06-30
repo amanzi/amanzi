@@ -91,7 +91,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Init(
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-  
+  /*
   if (plist.isParameter("component names")) {
     // added for multi-components in the multiscale stream-hyporheic model
     this->tcc_names_ = plist.get<Teuchos::Array<std::string>>("component names").toVector();
@@ -105,7 +105,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Init(
 	Exceptions::amanzi_throw(m);
       }
     }
-  }
+  }*/
 }
   
 
