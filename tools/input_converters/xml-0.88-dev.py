@@ -35,10 +35,25 @@ def vanGenuchtenParams(xml):
             changeName(region, "van Genuchten residual saturation", "residual saturation [-]")
             changeName(region, "residual saturation", "residual saturation [-]")
 
+def fixSnow(xml):
+    # todo: remove "include dt factor"
+    # todo: rename "dt factor" --> "dt factor [s]"
+    # todo: add "swe density factor [-]" (default is 10)
+    # todo: rename "include density factor" --> "include density"
+    raise NotImplementedError("fix snow")
+
+def fixSubgrid(xml):
+    # todo: ponded_depth_minus_depression_depth --> mobile_depth
+    raise NotImplementedError("fix subgrid")
+
+
+            
 
 def update(xml):
     vanGenuchtenParams(xml)
-
+    # NOTE: these will get added when subgrid pull request is done
+    #fixSnow(xml)
+    #fixSubgrid(xml)
             
 if __name__ == "__main__":
     import argparse
