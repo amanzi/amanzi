@@ -748,17 +748,6 @@
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-        <ParameterList name="coupling">
-          <ParameterList name="BC coupling">
-            <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
-            <Parameter name="submodel" type="string" value="field"/>
-            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <ParameterList name="boundary enthalpy">
-              <Parameter name="field_out_key" type="string" value="fracture-enthalpy"/>
-              <Parameter name="copy_field_out_key" type="string" value="default"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 0">
 	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>

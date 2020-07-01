@@ -61,14 +61,15 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
  private:
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > AddCouplingFluxes_(
-      const Teuchos::RCP<Operators::Operator>& op0, 
-      const Teuchos::RCP<Operators::Operator>& op1, 
       Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
       Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
       std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
       std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
       std::shared_ptr<const std::vector<double> > values,
       int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree);
+
+  void UpdateCouplingFluxes_(
+      const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling);
 
   void SwapEvaluatorField_(
       const Key& key, const std::string& passwd,

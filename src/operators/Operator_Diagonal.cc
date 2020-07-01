@@ -31,8 +31,8 @@ namespace Operators {
 int Operator_Diagonal::ApplyMatrixFreeOp(
     const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
 {
-  const Epetra_MultiVector& Xi = *X.ViewComponent(row_compname_, true);
-  Epetra_MultiVector& Yi = *Y.ViewComponent(col_compname_, true);
+  const Epetra_MultiVector& Xi = *X.ViewComponent(col_compname_, true);
+  Epetra_MultiVector& Yi = *Y.ViewComponent(row_compname_, true);
  
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
