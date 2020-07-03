@@ -121,7 +121,6 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
     std::vector<double> val_vec(nfun);  
 
     args[0] = t1;
-std::cout << "AAA: ============ " << t0 << " " << t1 << std::endl; 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
           mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);

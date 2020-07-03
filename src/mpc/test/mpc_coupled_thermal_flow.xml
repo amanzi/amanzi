@@ -494,6 +494,10 @@
             </ParameterList>                        
           </ParameterList>
         </ParameterList>
+      	<ParameterList name="initialization">
+      	  <Parameter name="method" type="string" value="saturated solver"/>
+      	  <Parameter name="linear solver" type="string" value="AztecOO"/>
+      	</ParameterList>
       </ParameterList>
     </ParameterList>
 
