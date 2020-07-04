@@ -71,7 +71,6 @@ void EnthalpyEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_liquid_key_);
   *result = *u_l;
 

@@ -230,7 +230,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="295.0"/>
+                <Parameter name="value" type="double" value="290.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -240,10 +240,10 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="ALL"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="295.0"/>
+                <Parameter name="value" type="double" value="290.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -358,11 +358,19 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{ALL}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.01325e+05"/>
-              </ParameterList>
+	      <ParameterList name="function-static-head">
+		<Parameter name="p0" type="double" value="101325.0"/>
+		<Parameter name="density" type="double" value="998.2"/>
+		<Parameter name="gravity" type="double" value="9.81"/>
+		<Parameter name="space dimension" type="int" value="3"/>
+		<ParameterList name="water table elevation">
+		  <ParameterList name="function-constant">
+		    <Parameter name="value" type="double" value="1.0"/>
+		  </ParameterList>
+		</ParameterList>
+	      </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -371,11 +379,19 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{ALL}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.01325e+05"/>
-              </ParameterList>
+	      <ParameterList name="function-static-head">
+		<Parameter name="p0" type="double" value="101325.0"/>
+		<Parameter name="density" type="double" value="998.2"/>
+		<Parameter name="gravity" type="double" value="9.81"/>
+		<Parameter name="space dimension" type="int" value="3"/>
+		<ParameterList name="water table elevation">
+		  <ParameterList name="function-constant">
+		    <Parameter name="value" type="double" value="1.0"/>
+		  </ParameterList>
+		</ParameterList>
+	      </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -529,7 +545,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -573,7 +589,6 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
@@ -610,7 +625,7 @@
       <ParameterList name="boundary conditions">
 	<ParameterList name="static head">
 	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceBottom,SurfaceLeft}"/>
+	    <Parameter name="regions" type="Array(string)" value="{SurfaceBottom}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="static head">
 	      <ParameterList name="function-static-head">
@@ -672,25 +687,6 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
-	<ParameterList name="static head">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="static head">
-	      <ParameterList name="function-static-head">
-		<Parameter name="p0" type="double" value="101325.0"/>
-		<Parameter name="density" type="double" value="998.2"/>
-		<Parameter name="gravity" type="double" value="9.81"/>
-		<Parameter name="space dimension" type="int" value="3"/>
-		<ParameterList name="water table elevation">
-		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.0"/>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
@@ -740,7 +736,6 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
@@ -754,7 +749,7 @@
       <ParameterList name="boundary conditions">
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
+	    <Parameter name="regions" type="Array(string)" value="{SurfaceBottom}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
 	      <ParameterList name="function-constant">
@@ -770,7 +765,7 @@
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 	<ParameterList name="pressure-lambda constraints">
-	  <Parameter name="method" type="string" value="projection"/>
+	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
 	</ParameterList>
@@ -813,7 +808,6 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>
@@ -823,17 +817,6 @@
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="temperature">
-	  <ParameterList name="BC 0">
-	    <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="295.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
@@ -841,7 +824,7 @@
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 	<ParameterList name="pressure-lambda constraints">
-	  <Parameter name="method" type="string" value="projection"/>
+	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
 	</ParameterList>

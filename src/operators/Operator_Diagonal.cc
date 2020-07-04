@@ -60,7 +60,6 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
-* Apply the local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Diagonal::SymbolicAssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
@@ -93,7 +92,6 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
 
 /* ******************************************************************
 * Visit methods for assemble
-* Apply the local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Diagonal::AssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
