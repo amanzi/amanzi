@@ -147,7 +147,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -161,10 +161,35 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.8"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/mol-K]" type="double" value="75.2"/>
+          <Parameter name="reference temperature" type="double" value="290.0"/>
+        </ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-internal_energy_liquid">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/mol-K]" type="double" value="75.2"/>
+          <Parameter name="reference temperature" type="double" value="290.0"/>
+        </ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
 
@@ -437,6 +462,7 @@
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
+        <Parameter name="use block indices" type="bool" value="true"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="1"/>
@@ -489,7 +515,7 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
             <Parameter name="time step reduction factor" type="double" value="0.8"/>
             <Parameter name="max time step" type="double" value="6.0e+10"/>
             <Parameter name="min time step" type="double" value="1.0e-20"/>
@@ -534,7 +560,7 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
             <Parameter name="time step reduction factor" type="double" value="0.8"/>
             <Parameter name="max time step" type="double" value="6.0e+10"/>
             <Parameter name="min time step" type="double" value="1.0e-10"/>
@@ -711,12 +737,14 @@
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
-	  <!--Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/-->
+	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
 	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
-	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-	  <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-	  <Parameter name="epsilon" type="double" value="1.e-10"/>
+	  <Parameter name="thermal conductivity of liquid" type="double" value="0.5"/>
+	  <Parameter name="reference temperature" type="double" value="275.0"/>
+	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	</ParameterList>
+	<ParameterList name="verbose object">
+	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>
       </ParameterList>
 
@@ -784,12 +812,12 @@
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
-	  <!--Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/-->
+	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
 	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
+	  <Parameter name="thermal conductivity of liquid" type="double" value="2.0"/>
 	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-	  <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-	  <Parameter name="epsilon" type="double" value="1.e-10"/>
+	  <Parameter name="reference temperature" type="double" value="275.0"/>
+	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
 	</ParameterList>
       </ParameterList>
 

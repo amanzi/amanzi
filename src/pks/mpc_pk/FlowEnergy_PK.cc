@@ -128,7 +128,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for liquid
   // -- internal energy
-  if (!S->HasField(ie_liquid_key_)) {
+  if (!S->HasField(ie_liquid_key_) && !elist.isSublist(ie_liquid_key_)) {
     elist.sublist(ie_liquid_key_)
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", ie_liquid_key_);

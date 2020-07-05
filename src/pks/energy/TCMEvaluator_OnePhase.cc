@@ -8,7 +8,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Interface for a thermal conductivity model with two phases.
+  Interface for a thermal conductivity model with one phase.
 */
 
 #include "dbc.hh"

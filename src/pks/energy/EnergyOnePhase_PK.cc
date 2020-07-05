@@ -175,6 +175,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
     *vo_->os() << std::endl << vo_->color("green")
                << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics() << std::endl
+               << "preconditioner: " << my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)->PrintDiagnostics() << std::endl
                << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;
   }
