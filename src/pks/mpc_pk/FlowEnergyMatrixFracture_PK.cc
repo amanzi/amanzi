@@ -463,11 +463,16 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
 void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
     const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling)
 {
+  S_->GetFieldData("enthalpy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("molar_density_liquid")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("temperature")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+
   // extract enthalpy fields
   S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
-  const auto& enthalpy_m = *S_->GetFieldData("enthalpy")->ViewComponent("cell");
-  const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-  const auto& temp_m = *S_->GetFieldData("temperature")->ViewComponent("cell");
+  const auto& enthalpy_m = *S_->GetFieldData("enthalpy")->ViewComponent("cell", true);
+  const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
+  const auto& temp_m = *S_->GetFieldData("temperature")->ViewComponent("cell", true);
 
   S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
   const auto& enthalpy_f = *S_->GetFieldData("fracture-enthalpy")->ViewComponent("cell");
@@ -481,7 +486,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
+  const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const auto& mmap = flux.Map();
 
   for (int c = 0; c < ncells_owned_f; ++c) {

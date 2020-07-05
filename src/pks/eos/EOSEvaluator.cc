@@ -122,7 +122,8 @@ void EOSEvaluator::EvaluateField_(
       int count = dens_v.MyLength();
       for (int id = 0; id != count; ++id) {
         dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
-        AMANZI_ASSERT(dens_v[0][id] > 0.0);
+        if (dens_v[0][id] <= 0.0)
+            Exceptions::amanzi_throw(Errors::CutTimeStep());
       }
     }
   }
