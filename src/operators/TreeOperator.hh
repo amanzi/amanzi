@@ -70,6 +70,8 @@ class TreeOperator {
   // preconditioners
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
+  void InitPreconditioner(Teuchos::ParameterList& plist,
+                          const std::pair<int, Teuchos::RCP<std::vector<int> > >& block_ids);
   void InitBlockDiagonalPreconditioner();
 
   void InitializePreconditioner(Teuchos::ParameterList& plist);
@@ -78,6 +80,7 @@ class TreeOperator {
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
   // deep copy for building interfaces to TPLs, mainly to solvers
   void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;

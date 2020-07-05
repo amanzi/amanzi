@@ -296,6 +296,28 @@ void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
+* Create preconditioner using name and a factory.
+****************************************************************** */
+void TreeOperator::InitPreconditioner(
+    Teuchos::ParameterList& plist,
+    const std::pair<int, Teuchos::RCP<std::vector<int> > >& block_ids)
+{
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+  preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
 * Create the PC and set options.  SymbolicAssemble() must have been called.
 ****************************************************************** */

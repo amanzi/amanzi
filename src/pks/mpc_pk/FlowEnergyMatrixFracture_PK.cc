@@ -17,6 +17,7 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
+#include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
 
 #include "FlowEnergyMatrixFracture_PK.hh"
@@ -358,7 +359,24 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
 
   op_tree_pc_->AssembleMatrix();
   // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
-  op_tree_pc_->InitPreconditioner(pc_list);
+
+  // block indices for preconditioner are (0, 1, 0, 1)
+  auto smap = op_tree_pc_->smap();
+  auto block_indices = Teuchos::rcp(new std::vector<int>(smap->Map()->NumMyElements()));
+
+  std::vector<std::string> comps = {"face", "cell"};
+  for (int n = 0; n < 4; ++n) {
+    int id = (n == 0 || n == 2) ? 0 : 1; 
+
+    for (int k = 0; k < 2; ++k) {
+      const auto& inds = smap->Indices(n, comps[k], 0);
+      for (int i = 0; i != inds.size(); ++i) (*block_indices)[inds[i]] = id;
+    }
+  }
+  auto block_ids = std::make_pair(2, block_indices);
+
+  // op_tree_pc_->InitPreconditioner(pc_list);
+  op_tree_pc_->InitPreconditioner(pc_list, block_ids);
 }
 
 
