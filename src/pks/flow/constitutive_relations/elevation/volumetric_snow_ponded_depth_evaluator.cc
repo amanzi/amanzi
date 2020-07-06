@@ -19,13 +19,14 @@
 
 */
 
-#include "volumetric_height_subgrid_evaluator.hh"
+#include "volumetric_snow_ponded_depth_evaluator.hh"
+#include "subgrid.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 
-VolumetricHeightSubgridEvaluator::VolumetricHeightSubgridEvaluator(Teuchos::ParameterList& plist) :
+VolumetricSnowPondedDepthEvaluator::VolumetricSnowPondedDepthEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     compatibility_checked_(false)
 {
@@ -41,7 +42,7 @@ VolumetricHeightSubgridEvaluator::VolumetricHeightSubgridEvaluator(Teuchos::Para
     domain_snow_ = domain;
     domain_surf_ = std::string("surface_") + domain.substr(5,domain.size());
   } else {
-    Errors::Message msg("VolumetricHeightSubgridEvaluator: not sure how to interpret domain.");
+    Errors::Message msg("VolumetricSnowPondedDepthEvaluator: not sure how to interpret domain.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -66,7 +67,7 @@ VolumetricHeightSubgridEvaluator::VolumetricHeightSubgridEvaluator(Teuchos::Para
 
 
 void
-VolumetricHeightSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+VolumetricSnowPondedDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                              const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
   auto& vpd = *results[0]->ViewComponent("cell",false);
@@ -77,15 +78,15 @@ VolumetricHeightSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell",false);
 
   for (int c=0; c!=vpd.MyLength(); ++c){
-    double vol_tot = f_(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
-    vpd[0][c] = f_(pd[0][c], del_max[0][c], del_ex[0][c]);
+    double vol_tot = subgrid_VolumetricDepth(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
+    vpd[0][c] = subgrid_VolumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
     vsd[0][c] = vol_tot - vpd[0][c];
   }
 }
 
 
 void
-VolumetricHeightSubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+VolumetricSnowPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
   auto& vpd = *results[0]->ViewComponent("cell",false);
@@ -97,22 +98,22 @@ VolumetricHeightSubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos:
 
   if (wrt_key == pd_key_) {
     for (int c=0; c!=vpd.MyLength(); ++c){
-      vpd[0][c] = f_prime_(pd[0][c], del_max[0][c], del_ex[0][c]);
-      vsd[0][c] = f_prime_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+      vpd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+      vsd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
     }
   } else if (wrt_key == sd_key_) {
     vpd.PutScalar(0.);
     for (int c=0; c!=vpd.MyLength(); ++c){
-      vsd[0][c] = f_prime_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+      vsd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
     }
   } else {
-    Errors::Message msg("VolumetricHeightSubgridEvaluator: Not Implemented: no derivatives implemented other than ponded depth.");
+    Errors::Message msg("VolumetricSnowPondedDepthEvaluator: Not Implemented: no derivatives implemented other than depths.");
     Exceptions::amanzi_throw(msg);
   }
 }
 
 void
-VolumetricHeightSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   if (!compatibility_checked_) {
     // see if we can find a master fac
     auto my_fac = S->RequireField(vol_pd_key_, vol_pd_key_);

@@ -105,7 +105,8 @@ void Richards::FunctionalResidual(double t_old,
       AddSources_(S_next_.ptr(), res.ptr());
     }
   }
-  
+
+  res->Print(std::cout);
 
 };
 

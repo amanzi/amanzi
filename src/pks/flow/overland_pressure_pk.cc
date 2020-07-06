@@ -102,6 +102,11 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   wc_bar_list.setName(Keys::getKey(domain_, "water_content_bar"));
   S->FEList().set(Keys::getKey(domain_, "water_content_bar"), wc_bar_list);
   
+  // this pk uses density
+  S->RequireField(Keys::getKey(domain_,"molar_density_liquid"))->SetMesh(mesh_)->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"molar_density_liquid"));
+
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -137,7 +142,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   // -- nonlinear coefficients/upwinding
-  Teuchos::ParameterList& cond_plist = plist_->sublist("overland conductivity evaluator");
+  Teuchos::ParameterList cond_plist;// = plist_->sublist("overland conductivity evaluator");
   Operators::UpwindFluxFactory upwfactory;
 
   upwinding_ = upwfactory.Create(cond_plist, name_,
@@ -398,14 +403,18 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  AMANZI_ASSERT(plist_->isSublist("overland conductivity evaluator"));
-  Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
-  cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
 
-  Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
-      Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
+  if (plist_->isSublist("overland conductivity evaluator")) {
+    Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
+    cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
 
-  S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
+    Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
+        Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
+
+    S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
+  } else {
+    S->RequireFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"));
+  }
 }
 
 
