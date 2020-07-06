@@ -142,7 +142,7 @@
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
 #   0.97.7       - update ASCEMIO
-#                - update BoxLib (CCSE) to version 17.05.1
+#   0.97.8       - update BoxLib (CCSE) to version 17.05.1
 
 include(CMakeParseArguments)
 
@@ -195,7 +195,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 7)
+set(AMANZI_TPLS_VERSION_PATCH 8)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
