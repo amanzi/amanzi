@@ -141,6 +141,7 @@
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
+#   0.97.7       - update ASCEMIO
 
 include(CMakeParseArguments)
 
@@ -193,7 +194,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -345,12 +346,12 @@ set(NetCDF_Fortran_MD5_SUM        759402703585d12f84667716887c42df)
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 2)
+set(ASCEMIO_VERSION_MINOR 4)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_SAVEAS_FILE    ${ASCEMIO_ARCHIVE_FILE})
-set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
+set(ASCEMIO_MD5_SUM        e395b1d32bac6f04fa518911d57de725)
 
 #
 # TPL: MSTK

@@ -1094,7 +1094,9 @@ It has the following requirements.
     * ``porosity``, ``particle_density`` and ``transport_porosity`` are defined in-line using attributes. 
       It is specified in one of three ways: as a value between 0 and 1 
       using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
-      HDF5 file (formatted differently than restart file)  using using type="h5file" and filename="<filename>".
+      HDF5 file (formatted differently than restart file) using using type="h5file", filename="<filename>" and 
+      "constant_in_time="true | false".
+      The dataset label should be the field name.
 
     * ``specific_storage`` and ``specific_yeild`` are defined in-line using attributes.
       Either it is specified as a value greater than 0 using ``value`` or it specified through a file using type="file" and filename="<filename>".
@@ -1526,10 +1528,15 @@ The ``liquid_phase`` has the following elements
 
 Here is more info on the ``liquid_component`` elements:
 
-    * ``inward_mass_flux`` is defined in-line using attributes.  The attributes include ``function``, ``start``, and ``value``. 
+    * ``inward_mass_flux`` is defined in-line using attributes. There are two set of attributes.
+      The first set include ``function``, ``start``, and ``value``. 
       The ``function`` specifies linear or constant temporal functional form during each time interval.
       The ``start`` is a series of time values at which time intervals start.
       The ``value`` is the value of the ``inward_mass_flux`` during the time interval. 
+      The second set include ``h5file``, ``times``, and ``values``.
+      The ``h5file`` specifies HDF5 files with piecewise constant tabular data in the format 
+      (start time, value). Lists of start times and respected values are taked from datasets 
+      labeled as ``times`` and ``values``, respectively.
 
     * ``outward_mass_flux`` is defined in-line using attributes.
       See ``inward_mass_flux`` for details.
@@ -1835,8 +1842,8 @@ The observation element is named according to what is being observed.  The obser
        Required Elements: NONE 
        Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
-                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown,
-                          water_table, solute_volumetric_flow_rate
+                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, sorbed_conc,
+                          drawdown, water_table, solute_volumetric_flow_rate
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1848,7 +1855,8 @@ The observation element identifies the field quantity to be observed.  Subelemen
      Optional Elements: NONE
    </observation_type>
 
-The only exceptions are ``aqueous_conc`` and ``solute_volumetric_flow_rate`` which both require a solute to be specified.
+The only exceptions are ``aqueous_conc``, ``sorbed_conc``, and ``solute_volumetric_flow_rate`` which require 
+a solute to be specified.
 An attribute ``solute`` gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.
 Be sure the name of given for the solute matches a defined solute elsewhere in the input file.  
 
@@ -1872,18 +1880,18 @@ Example:
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
+	  <time_macros>EveryDay</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
+	  <time_macros>EveryYear</time_macros>
 	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
+        <sorbed_conc solute="Ca">
+          <assigned_regions>Obs_r2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </sorbed_conc>
       </liquid_phase>
     </observations>
 
