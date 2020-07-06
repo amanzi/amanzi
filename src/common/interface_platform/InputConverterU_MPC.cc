@@ -715,7 +715,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, DVAL_MIN);
+        if (t == DVAL_MIN) continue;
+
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;
@@ -747,7 +749,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, DVAL_MIN);
+        if (t == DVAL_MIN) continue;
+
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;

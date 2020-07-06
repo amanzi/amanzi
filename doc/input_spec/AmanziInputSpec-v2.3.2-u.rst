@@ -1528,10 +1528,15 @@ The ``liquid_phase`` has the following elements
 
 Here is more info on the ``liquid_component`` elements:
 
-    * ``inward_mass_flux`` is defined in-line using attributes.  The attributes include ``function``, ``start``, and ``value``. 
+    * ``inward_mass_flux`` is defined in-line using attributes. There are two set of attributes.
+      The first set include ``function``, ``start``, and ``value``. 
       The ``function`` specifies linear or constant temporal functional form during each time interval.
       The ``start`` is a series of time values at which time intervals start.
       The ``value`` is the value of the ``inward_mass_flux`` during the time interval. 
+      The second set include ``h5file``, ``times``, and ``values``.
+      The ``h5file`` specifies HDF5 files with piecewise constant tabular data in the format 
+      (start time, value). Lists of start times and respected values are taked from datasets 
+      labeled as ``times`` and ``values``, respectively.
 
     * ``outward_mass_flux`` is defined in-line using attributes.
       See ``inward_mass_flux`` for details.

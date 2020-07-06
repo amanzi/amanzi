@@ -410,13 +410,13 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="filename" type="xs:string"/>
 	<xs:attribute name="type" use="required" type="typedef_property_file_formats"/>
 	<xs:attribute name="attribute" type="xs:string"/>
+	<xs:attribute name="constant_in_time" type="xs:string"/>
 </xs:complexType>
 
 <xs:simpleType name="typedef_property_file_formats">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="file"/> <!-- TODO: what type should property files be? -->
 		<xs:enumeration value="h5file"/>
-		<xs:enumeration value="constant_in_time"/>
 	</xs:restriction>
 </xs:simpleType>
 
@@ -1686,10 +1686,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_ic_liquid_component">
 	<xs:all minOccurs="0" maxOccurs="1">
 		<xs:element name="velocity" type="typedef_ic_velocity" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="uniform_pressure" type="typedef_ic_uniform_pressure" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="linear_pressure" type="typedef_ic_pressure" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="uniform_saturation" type="typedef_ic_uniform_saturation" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="linear_saturation" type="typedef_ic_saturation" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="uniform_pressure" type="typedef_ic_uniform_pressure" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="linear_pressure" type="typedef_ic_pressure" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="uniform_saturation" type="typedef_ic_uniform_saturation" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="linear_saturation" type="typedef_ic_saturation" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
 </xs:complexType>
@@ -1771,11 +1771,31 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_bc_liquid_component">
 	<xs:all minOccurs="0" maxOccurs="1">
-		<xs:element name="inward_mass_flux" type="typedef_bc_inward_mass_flux" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="outward_mass_flux" type="typedef_bc_outward_mass_flux" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="inward_volumetric_flux" type="typedef_bc_inward_volumetric_flux" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="outward_volumetric_flux" type="typedef_bc_outward_volumetric_flux" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="uniform_pressure" type="typedef_bc_uniform_pressure" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="inward_mass_flux" minOccurs="0" maxOccurs="unbounded">
+			<xs:alternative test="@h5file gt ''" type="typedef_bc_generic_file"/>
+			<xs:alternative type="typedef_bc_generic_value"/>
+		</xs:element>
+
+		<xs:element name="outward_mass_flux" minOccurs="0" maxOccurs="unbounded">
+			<xs:alternative test="@h5file gt ''" type="typedef_bc_generic_file"/>
+			<xs:alternative type="typedef_bc_generic_value"/>
+		</xs:element>
+
+		<xs:element name="inward_volumetric_flux" minOccurs="0" maxOccurs="unbounded">
+			<xs:alternative test="@h5file gt ''" type="typedef_bc_generic_file"/>
+			<xs:alternative type="typedef_bc_generic_value"/>
+		</xs:element>
+
+		<xs:element name="outward_volumetric_flux" minOccurs="0" maxOccurs="unbounded">
+			<xs:alternative test="@h5file gt ''" type="typedef_bc_generic_file"/>
+			<xs:alternative type="typedef_bc_generic_value"/>
+		</xs:element>
+
+		<xs:element name="uniform_pressure" minOccurs="0" maxOccurs="unbounded">
+			<xs:alternative test="@h5file gt ''" type="typedef_bc_generic_file"/>
+			<xs:alternative type="typedef_bc_generic_value"/>
+		</xs:element>
+
 		<xs:element name="linear_pressure" type="typedef_bc_linear_pressure" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="hydrostatic" type="typedef_bc_hydrostatic" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="linear_hydrostatic" type="typedef_bc_linear_hydrostatic" minOccurs="0" maxOccurs="unbounded"/>
@@ -1798,53 +1818,16 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:assert test="not(exists(@function)) or @function = ('linear', 'constant')"/>	
 </xs:complexType>
 
-<xs:complexType name="typedef_bc_no_flow">
+<xs:complexType name="typedef_bc_generic_file">
 	<xs:attribute name="name" type="xs:string"/>
-	<!-- TODO: It would be nice to evaluate these as either value or string somehow? 
-         -->
-	<xs:attribute name="start" type="xs:string" use="required"/>
-	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:assert test="@function = ('linear', 'constant')"/>	
+	<xs:attribute name="h5file" type="xs:string" use="required"/>
+	<xs:attribute name="times" type="xs:string" use="required"/>
+	<xs:attribute name="values" type="xs:string" use="required"/>
 </xs:complexType>
 
-<xs:complexType name="typedef_bc_inward_mass_flux">
+<xs:complexType name="typedef_bc_generic_value">
 	<xs:attribute name="name" type="xs:string"/>
-	<!-- TODO: It would be nice to evaluate these as either value or string somehow? 
-         -->
-	<xs:attribute name="start" type="xs:string" use="required"/>
-	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:attribute name="value" type="typedef_exponential"/>
-	<xs:attribute name="formula" type="xs:string"/>
-	<xs:assert test="@function = ('linear', 'constant', 'general')"/>	
-	<xs:assert test="not(@function = ('linear', 'constant')) or exists(@value)"/>	
-</xs:complexType>
-
-<xs:complexType name="typedef_bc_inward_volumetric_flux">
-	<xs:attribute name="name" type="xs:string"/>
-	<!-- TODO: It would be nice to evaluate these as either value or string somehow? -->
-	<xs:attribute name="start" type="xs:string" use="required"/>
-	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:attribute name="value" type="typedef_exponential"/>
-	<xs:attribute name="formula" type="xs:string"/>
-	<xs:assert test="@function = ('linear', 'constant', 'general')"/>	
-	<xs:assert test="not(@function = ('linear', 'constant')) or exists(@value)"/>	
-</xs:complexType>
-
-<xs:complexType name="typedef_bc_outward_mass_flux">
-	<xs:attribute name="name" type="xs:string"/>
-	<!-- TODO: It would be nice to evaluate these as either value or string somehow? -->
-	<xs:attribute name="start" type="xs:string" use="required"/>
-	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:attribute name="value" type="typedef_exponential"/>
-	<xs:attribute name="formula" type="xs:string"/>
-	<xs:assert test="@function = ('linear', 'constant', 'general')"/>	
-	<xs:assert test="not(@function = ('linear', 'constant')) or exists(@value)"/>	
-</xs:complexType>
-
-<xs:complexType name="typedef_bc_outward_volumetric_flux">
-	<!-- TODO: It would be nice to evaluate these as either value or string somehow? -->
-	<xs:attribute name="name" type="xs:string"/>
-	<xs:attribute name="start" type="xs:string" use="required"/>
+	<xs:attribute name="start" type="typedef_labeled_time" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="formula" type="xs:string"/>
@@ -1859,16 +1842,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="inward_mass_flux" type="xs:string" use="required"/>
 	<xs:assert test="@function = ('linear', 'constant')"/>	
-</xs:complexType>
-
-<xs:complexType name="typedef_bc_uniform_pressure">
-	<xs:attribute name="name" type="xs:string"/>
-	<xs:attribute name="start" type="xs:string" use="required"/>
-	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:attribute name="value" type="typedef_exponential"/>
-	<xs:attribute name="formula" type="xs:string"/>
-	<xs:assert test="@function = ('linear', 'constant', 'general')"/>
-	<xs:assert test="not(@function = ('linear', 'constant')) or exists(@value)"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_linear_pressure">
@@ -1899,8 +1872,17 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:assert test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
 </xs:complexType>
 
+<xs:complexType name="typedef_bc_no_flow">
+	<xs:attribute name="name" type="xs:string"/>
+	<!-- TODO: It would be nice to evaluate these as either value or string somehow? 
+         -->
+	<xs:attribute name="start" type="xs:string" use="required"/>
+	<xs:attribute name="function" type="xs:string" use="required"/>
+	<xs:assert test="@function = ('linear', 'constant')"/>	
+</xs:complexType>
 
-<!-- TODO These could be files, perhaps we need to use tags not attributes! -->
+
+<!-- TODO These could be files, perhaps we need to use tags not attributes! (this type is not used) -->
 <xs:complexType name="typedef_bc_aqueous_conc">
 	<!-- TODO It would be nice to evaluate these as either value or string somehow? -->
 	<xs:attribute name="start" type="xs:string" use="required"/>

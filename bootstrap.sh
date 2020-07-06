@@ -194,7 +194,7 @@ function error_message()
   fi
 }
 
-function warn_message()
+function warning_message()
 {
   local PINK='35m'
   if [ "${no_color}" -eq "${TRUE}" ]; then
