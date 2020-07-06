@@ -146,6 +146,9 @@ class Op_SurfaceFace_SurfaceCell;
 
 class Operator {
  public:
+  using Vector_t = CompositeVector;
+  using Space_t = CompositeVector::Space_t;
+  
   // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
@@ -179,7 +182,6 @@ class Operator {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // symbolic assembly:
   // -- wrapper
@@ -210,12 +212,6 @@ class Operator {
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
-  // preconditioner 
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
-
   void CreateCheckPoint();
   void RestoreCheckPoint();
 
@@ -231,7 +227,7 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
-  Teuchos::RCP<SuperMap> smap() const { return smap_; }
+  Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
@@ -442,8 +438,6 @@ class Operator {
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
-
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
   Teuchos::RCP<VerboseObject> vo_;
 

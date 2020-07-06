@@ -378,9 +378,9 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y);
+  ierr |= addFromSuperVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg;
@@ -407,9 +407,9 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   Epetra_Vector Xcopy(*smap_->Map());
   Epetra_Vector Ycopy(*smap_->Map());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
+  ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg("Operator: ApplyInverse failed.\n");
@@ -675,20 +675,6 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
   ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
   ops_properties_.resize(nnew, 0);  
-}
-
-
-/* ******************************************************************
-* Copies to/from SuperVector for use by Amesos.
-****************************************************************** */
-void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
-{
-  CopyCompositeVectorToSuperVector(*smap_, cv, sv);
-}
-
-void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
-{
-  CopySuperVectorToCompositeVector(*smap_, sv, cv);
 }
 
 

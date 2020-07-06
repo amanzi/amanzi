@@ -20,11 +20,15 @@
   It also enforces and mitigates the design limitations of SuperMapLumped itself.
 */
 
+#include "Epetra_Vector.h"
+
 #include "UniqueHelpers.hh"
 #include "MeshDefs.hh"
 #include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 #include "TreeVectorSpace.hh"
+#include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
 #include "SuperMap.hh"
 
@@ -51,6 +55,121 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tvs) {
       cvss.push_back(*tvs_tmp->Data());
     }
     return Teuchos::rcp(new SuperMap(cvss));
+  }
+}
+
+
+// Copy in/out
+int
+copyToSuperVector(const SuperMap& map, const CompositeVector& bv,
+                  Epetra_Vector& sv, int block_num)
+{
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto& data = *bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        for (int i=0; i!=data.MyLength(); ++i) {
+          sv[inds[i]] = data[dofnum][i];
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+int
+copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                    CompositeVector& bv, int block_num)
+{
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto& data = *bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        for (int i=0; i!=data.MyLength(); ++i) {
+          data[dofnum][i] = sv[inds[i]];
+        }
+      }
+    }
+  }  
+  return 0;
+}
+
+int
+addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                   CompositeVector& bv, int block_num)
+{
+  for (const auto& compname : bv) {
+    if (map.HasComponent(block_num, compname)) {
+      auto& data = *bv.ViewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
+        auto inds = map.Indices(block_num, compname, dofnum);
+        for (int i=0; i!=data.MyLength(); ++i) {
+          data[dofnum][i] += sv[inds[i]];
+        }
+      }
+    }
+  }  
+  return 0;
+}
+
+// Nonmember TreeVector to/from Super-vector
+// -- simple schema version
+int
+copyToSuperVector(const SuperMap& map, const TreeVector& tv,
+                  Epetra_Vector& sv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return copyToSuperVector(map, *tv.Data(), sv, 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves_const(tv);
+    int block_num = 0;
+    for (const auto& sub_tv : sub_tvs) {
+      ierr |= copyToSuperVector(map, *sub_tv->Data(), sv, block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+int
+copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                    TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return copyFromSuperVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (auto& sub_tv : sub_tvs) {
+      ierr |= copyFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
+  }
+}
+
+int
+addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                   TreeVector& tv)
+{
+  int ierr(0);
+
+  if (tv.Data().get()) {
+    return addFromSuperVector(map, sv, *tv.Data(), 0);
+  } else {
+    auto sub_tvs = collectTreeVectorLeaves(tv);
+    int block_num = 0;
+    for (auto& sub_tv : sub_tvs) {
+      ierr |= addFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      block_num++;
+    }
+    return ierr;
   }
 }
 

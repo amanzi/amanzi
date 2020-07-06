@@ -23,8 +23,8 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "MatrixJF.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
+#include "Matrix.hh"
+#include "MatrixFactory.hh"
 
 #include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
@@ -81,7 +81,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
  protected:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<MatrixJF<Vector, VectorSpace> > jf_mat_;
-  Teuchos::RCP<LinearOperator<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> > lin_op_;
+  Teuchos::RCP<Matrix<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> > lin_op_;
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
 
   double typical_u_;
@@ -104,7 +104,7 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 
   // Create the linear solver for that linear operator
   Teuchos::ParameterList lin_plist = plist_.sublist("linear operator");
-  LinearOperatorFactory<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> fac;
+  MatrixFactory<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> fac;
   lin_op_ = fac.Create(lin_plist, jf_mat_);
 }
 

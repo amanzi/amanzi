@@ -47,6 +47,9 @@ class MatrixFE;
 
 class TreeOperator {
  public:
+  using Vector_t = TreeVector;
+  using Space_t = TreeVector::Space_t;
+
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   virtual ~TreeOperator() = default;
@@ -63,6 +66,8 @@ class TreeOperator {
 
   const TreeVectorSpace& DomainMap() const { return *tvs_; }
   const TreeVectorSpace& RangeMap() const { return *tvs_; }
+  Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
+  
 
   // preconditioners
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
@@ -75,10 +80,6 @@ class TreeOperator {
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
-
-  // deep copy for building interfaces to TPLs, mainly to solvers
-  void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
-  void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
 
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;

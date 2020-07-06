@@ -31,19 +31,19 @@ Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
 #include "VerboseObject.hh"
 
 #include "DenseMatrix.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorDefs.hh"
+#include "Matrix.hh"
+#include "MatrixDefs.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpace>
+class MatrixBelosGMRES : public Matrix<Matrix, Vector, VectorSpace>
 {
  public:
-  LinearOperatorBelosGMRES(const Teuchos::RCP<const Matrix>& m,
+  MatrixBelosGMRES(const Teuchos::RCP<const Matrix>& m,
                            const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+      Matrix<Matrix, Vector, VectorSpace>(m, h),
       tol_(1e-6),
       overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
       max_itrs_(100),
@@ -52,7 +52,7 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
       initialized_(false) {}
 
   void Init(Teuchos::ParameterList& plist);
-  void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
+  void Init() { Matrix<Matrix, Vector, VectorSpace>::Init(); }
 
   int ApplyInverse(const Vector& v, Vector& hv) const;
 
@@ -69,9 +69,9 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
   int returned_code() { return returned_code_; }
 
  private:
-  // using LinearOperator<Matrix, Vector, VectorSpace>::m_; // solving mx=f
-  // using LinearOperator<Matrix, Vector, VectorSpace>::h_; // h is preconditioner
-  // using LinearOperator<Matrix, Vector, VectorSpace>::name_;
+  // using Matrix<Matrix, Vector, VectorSpace>::m_; // solving mx=f
+  // using Matrix<Matrix, Vector, VectorSpace>::h_; // h is preconditioner
+  // using Matrix<Matrix, Vector, VectorSpace>::name_;
 
   Teuchos::RCP<VerboseObject> vo_;
   
@@ -90,7 +90,7 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+void MatrixBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::BelosGMRES", plist));
 
@@ -116,7 +116,7 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
 	Errors::Message msg;
-	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	msg << "MatrixGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
 	Exceptions::amanzi_throw(msg);
       }
     }
@@ -131,13 +131,13 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
 
 
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
+int MatrixBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
 {
   typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> > LinearProblem;
   typedef Belos::PseudoBlockGmresSolMgr<double,Belos::MultiVec<double>,Belos::Operator<double> > GmresSolver;
 
   if (!initialized_) {
-    Errors::Message msg("LinearOperatorBelosGMRES: has not been initialized.");
+    Errors::Message msg("MatrixBelosGMRES: has not been initialized.");
     Exceptions::amanzi_throw(msg);
   }
 

@@ -88,11 +88,11 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
 
   ierr |= A_->Apply(Xcopy, Ycopy);
 
-  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+  ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
 
   return ierr;
@@ -109,9 +109,9 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     Epetra_Vector Xcopy(A_->RowMap());
     Epetra_Vector Ycopy(A_->RowMap());
 
-    int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+    int ierr = copyToSuperVector(*smap_, X, Xcopy);
     code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
-    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+    ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
 
     AMANZI_ASSERT(!ierr);
   } else {
@@ -292,21 +292,6 @@ void TreeOperator::UpdatePreconditioner()
 void TreeOperator::InitBlockDiagonalPreconditioner()
 {
   block_diagonal_ = true;
-}
- 
-
-/* ******************************************************************
-* Copies to/from SuperVector for use by Amesos.
-****************************************************************** */
-void TreeOperator::CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const
-{
-  CopyTreeVectorToSuperVector(*smap_, cv, sv);
-}
-
-
-void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const
-{
-  CopySuperVectorToTreeVector(*smap_, sv, cv);
 }
 
 }  // namespace Operators

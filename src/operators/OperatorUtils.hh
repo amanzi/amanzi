@@ -27,29 +27,12 @@ namespace Operators {
 class SuperMap;
 class Schema;
 
-// Nonmember CompositeVector to/from Super-vector
-// -- as a block in TreeVector
-int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-        Epetra_Vector& sv, int block_num=0);
-int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-        CompositeVector& cv, int block_num=0);
-int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-        CompositeVector& cv, int block_num=0);
-
 // -- complex schema version (deprecated?)
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
         Epetra_Vector& sv, const Schema& schema, int block_num=0);
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
         CompositeVector& cv, const Schema& schema, int block_num=0);
 
-// Nonmember TreeVector to/from Super-vector
-// -- simple schema version
-int CopyTreeVectorToSuperVector(const SuperMap& map,
-        const TreeVector& cv, Epetra_Vector& sv);
-int CopySuperVectorToTreeVector(const SuperMap& map,
-        const Epetra_Vector& sv, TreeVector& cv);
-int AddSuperVectorToTreeVector(const SuperMap& map,
-        const Epetra_Vector& sv, TreeVector& cv);
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.
