@@ -53,6 +53,9 @@ class Matrix {
     return 0;
   }
 
+  virtual void ComputeInverse() {}
+  virtual void UpdateInverse() {}
+  
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
     int n = v.Map().NumMyElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];

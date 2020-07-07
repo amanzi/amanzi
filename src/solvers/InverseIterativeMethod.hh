@@ -16,6 +16,8 @@ Document me...
 */
 #pragma once
 
+#include "Key.hh"
+#include "VerboseObject.hh"
 #include "Inverse.hh"
 
 namespace Amanzi {
@@ -34,8 +36,12 @@ class InverseIterativeMethod :
         Inverse<Matrix,Preconditioner,Vector,VectorSpace>() {}
 
   virtual void InitInverse(Teuchos::ParameterList& plist) override;
-  virtual void UpdateInverse() override {}
-  virtual void ComputeInverse() override {}
+  virtual void UpdateInverse() override {
+    h_->UpdateInverse();
+  }
+  virtual void ComputeInverse() override {
+    h_->ComputeInverse();
+  }
 
   // control and statistics -- must be valid for both iterative and
   // non-iterative methods, approximate and exact methods.

@@ -43,7 +43,9 @@ include_directories(${HDF5_INCLUDE_DIRS})
 file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files ResidualDebugger.cc
   DirectMethodAmesos.cc
-  DirectMethodAmesos2.cc)
+  DirectMethodAmesos2.cc
+  PreconditionerIfpack.cc
+  )
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
@@ -87,10 +89,10 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
-    # add_amanzi_test(solver_preconditioners solver_preconditioners
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_preconditioners.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_preconditioners solver_preconditioners
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_preconditioners.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     # add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
     #                 KIND unit

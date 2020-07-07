@@ -31,6 +31,8 @@
 #include "IterativeMethodNKA.hh"
 
 #include "PreconditionerIdentity.hh"
+#include "PreconditionerDiagonal.hh"
+#include "PreconditionerIfpack.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -42,27 +44,27 @@ inline Teuchos::ParameterList&
 getMethodSublist(Teuchos::ParameterList& inv_list,
         const std::string& method_name)
 {
-  if (!inv_list.isParameter("iterative method")) {
-    Errors::Message msg("InverseFactory: parameter `\"iterative method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
   std::string method_name_pars = method_name + " parameters";
 
-  // check for optional list of parameters
+  // check for optional list of parameters, warn if not found
   if (!inv_list.isSublist(method_name_pars)) {
     Teuchos::ParameterList vlist;
     Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("Solvers::Factory", vlist));
     if (vo->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo->getOSTab();
       *vo->os() << vo->color("yellow") << "Parameter sublist \"" << method_name_pars 
-                << "\" is missing, use defaults." << vo->reset() << std::endl;
+                << "\" is missing, using defaults." << vo->reset() << std::endl;
     }
   }
-
   auto& method_list = inv_list.sublist(method_name_pars);
-  
+
+  // update the list with verbose object info from the parent list
   if (!method_list.isSublist("verbose object"))
     method_list.set("verbose object", inv_list.sublist("verbose object"));
+
+  // update the list with the method name
+  if (!method_list.isParameter("method"))
+    method_list.set<std::string>("method", method_name);
   return method_list;  
 }
 
@@ -212,7 +214,16 @@ createPreconditioner(Teuchos::ParameterList& inv_list)
   auto& method_list = getMethodSublist(inv_list, method_name);
 
   Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> inv = Teuchos::null;
-  if (method_name == "boomer amg") {
+  if (method_name == "diagonal") {
+    inv = Teuchos::rcp(new PreconditionerDiagonal());
+  } else if (method_name == "block ilu") {
+    method_list.set<std::string>("method", "ILU");
+    inv = Teuchos::rcp(new PreconditionerIfpack());
+  } else if (Keys::starts_with(method_name, "ifpack: ")) {
+    method_list.set<std::string>("method", method_name.substr(std::string("ifpack: ").length(),
+            method_name.length()));
+    inv = Teuchos::rcp(new PreconditionerIfpack());
+    //  } else if (method_name == "boomer amg") {
   //   inv = Teuchos::rcp(new PreconditionerBoomerAMG());
   // } else if (method_name == "euclid") {
   //   inv = Teuchos::rcp(new PreconditionerEuclid());
