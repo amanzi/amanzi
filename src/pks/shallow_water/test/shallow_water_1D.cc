@@ -124,6 +124,15 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector
     hmax = std::sqrt(mesh->cell_volume(c));
   }
 
+  double err_max_tmp;
+  double err_L1_tmp;
+
+  mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
+  mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
+
+  err_max = err_max_tmp;
+  err_L1  = err_L1_tmp;
+
   std::cout << "err_max = " << err_max << std::endl;
   std::cout << "err_L1  = " << err_L1 << std::endl;
 }
