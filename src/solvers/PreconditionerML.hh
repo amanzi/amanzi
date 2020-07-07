@@ -58,30 +58,39 @@ Example:
 #include "Preconditioner.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
 class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerML() {};
-  ~PreconditionerML() {};
+  PreconditionerML() :
+      Preconditioner(),
+      initialized_(false) {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy();
+  ~PreconditionerML() {
+    // unclear whether this is needed or not...
+    if (ML_.get()) ML_->DestroyPreconditioner();
+  }
+  
+  virtual void InitInverse(Teuchos::ParameterList& list) override final;
+  virtual void UpdateInverse() override final;
+  virtual void ComputeInverse() override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
-
-  int returned_code() { return returned_code_; }
+  virtual int returned_code() const override final { return returned_code_; }
+  virtual std::string returned_code_string() const override final {
+    if (returned_code_ == 0) return "not yet applied.";
+    return "success";
+  }
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
+  mutable int returned_code_;
   bool initialized_;
-  int returned_code_;
 };
 
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi
 
 

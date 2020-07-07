@@ -4,18 +4,19 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (coonet@ornl.gov)
 */
-//! HYPRE's algebraic multigrid preconditioner.
 
+//! Hypre based preconditioners include Algebraic MultiGrid and global ILU
 /*!
 
 Boomer AMG is a HYPRE product consisting of a variety of Algebraic Multigrid
 methods.  It is accessed through Ifpack.
 
-This is provided when using the `"preconditioner type`"=`"boomer amg`" in the
-`Preconditioner`_ spec.
+This is provided when using the `"preconditioning method`"=`"boomer amg`" or
+`"preconditioning method`" = `"hypre: boomer amg`" in the `Preconditioner`_
+spec.
 
 .. _preconditioner-typed-boomer-amg-spec:
 .. admonition:: preconditioner-typed-boomer-amg-spec:
@@ -74,6 +75,22 @@ Example:
     <Parameter name="number of functions" type="int" value="1"/>
   </ParameterList>
 
+
+Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
+through the Ifpack interface.
+
+This is provided when using the `"preconditioning method`"=`"euclid`" or
+=`"hypre: euclid`" in the `Preconditioner`_ spec.
+
+.. _preconditioner-typed-euclid-spec:
+.. admonition:: preconditioner-typed-euclid-spec:
+
+    * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
+    * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
+    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
+    * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
+
+  
 */
 
 #ifndef AMANZI_PRECONDITIONER_BOOMERAMG_HH_
@@ -83,42 +100,54 @@ Example:
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_RowMatrix.h"
-#include "Ifpack.h"
+#include "Ifpack_Hypre.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
-class PreconditionerBoomerAMG : public Preconditioner {
+class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
  public:
-  PreconditionerBoomerAMG() :
+  PreconditionerHypre() :
+      Amanzi::AmanziSolvers::Preconditioner(),
       num_blocks_(0),
       block_indices_(Teuchos::null),
-      IfpHypre_(Teuchos::null) {}
-  ~PreconditionerBoomerAMG() {};
+      IfpHypre_(Teuchos::null),
+      returned_code_(0)
+  {}
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy() {};
+  virtual void InitInverse(Teuchos::ParameterList& list) override final;
+  virtual void UpdateInverse() override final;
+  virtual void ComputeInverse() override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
-
-  int returned_code() { return returned_code_; }
+  virtual int returned_code() const override final { return returned_code_; }
+  virtual std::string returned_code_string() const override final {
+    if (returned_code_ == 0) return "not yet applied.";
+    return "success";
+  }
+  
 
  private:
+
+  void InitBoomer_();
+  void InitEuclid_();
+  
   Teuchos::ParameterList plist_;
+
+  Hypre_Solver method_;
   std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
   int block_index_function_index_;
   
-  int returned_code_;
+  mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
 };
 
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi
 
 

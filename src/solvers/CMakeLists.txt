@@ -45,6 +45,8 @@ set(solvers_source_files ResidualDebugger.cc
   DirectMethodAmesos.cc
   DirectMethodAmesos2.cc
   PreconditionerIfpack.cc
+  PreconditionerHypre.cc
+  PreconditionerML.cc
   )
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}

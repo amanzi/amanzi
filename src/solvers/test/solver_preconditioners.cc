@@ -35,7 +35,7 @@ inline Teuchos::RCP<Epetra_CrsMatrix> matrix(const Epetra_Map& map) {
 }
   
 
-inline Teuchos::RCP<Preconditioner>
+inline Teuchos::RCP<Amanzi::AmanziSolvers::Preconditioner>
 preconditioner(const std::string& name,
                const Teuchos::RCP<Epetra_CrsMatrix>& mat)
 {
@@ -43,7 +43,7 @@ preconditioner(const std::string& name,
   plist.set<std::string>("preconditioning method", name);
   Teuchos::ParameterList& tmp = plist.sublist(name+" parameters");
 
-  tmp.set<std::string>("verbosity level", "high");
+  tmp.sublist("verbose object").set<std::string>("verbosity level", "high");
   if (name == "ml") {
     tmp.set("coarse: max size", 5);
     tmp.set("cycle applications", 2);
@@ -58,7 +58,7 @@ preconditioner(const std::string& name,
   return pc;
 };    
 
-inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Preconditioner,Epetra_Vector,Epetra_Map>>
+inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::Preconditioner,Epetra_Vector,Epetra_Map>>
     get_solver(const std::string& name, const Teuchos::RCP<Epetra_CrsMatrix>& m)
 {
   auto pc = preconditioner(name, m);
@@ -66,7 +66,7 @@ inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Preconditioner,Epetra_Ve
   Teuchos::ParameterList plist;
   plist.set("error tolerance", 1.e-12);
   plist.set("maximum number of iterations", 200);
-  auto inv = Teuchos::rcp(new IterativeMethodPCG<Epetra_CrsMatrix,Preconditioner,Epetra_Vector,Epetra_Map>());
+  auto inv = Teuchos::rcp(new IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::Preconditioner,Epetra_Vector,Epetra_Map>());
   inv->InitInverse(plist);
   inv->set_matrices(m, pc);
   inv->UpdateInverse();
@@ -85,7 +85,7 @@ TEST(PRECONDITIONERS) {
   Epetra_Vector u(map), v(map);
   for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
   
-  for (const auto& prec_name : {"identity", "diagonal", "block ilu"}) { //, "boomer amg", "ml"}) {
+  for (const auto& prec_name : {"identity", "diagonal", "block ilu", "boomer amg", "euclid", "ml"}) {
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 

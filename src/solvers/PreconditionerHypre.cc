@@ -1,16 +1,14 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Algebraic multigrid.
+          Ethan Coon (coonet@ornl.gov)
 */
 
+//! Hypre based preconditioners include Algebraic MultiGrid and global ILU
 
 #include "Teuchos_RCP.hpp"
 #include "Ifpack_Hypre.h"
@@ -18,18 +16,20 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "PreconditionerBoomerAMG.hh"
+#include "PreconditionerHypre.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
 /* ******************************************************************
 * Apply the preconditioner.
 ****************************************************************** */
-int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
+  AMANZI_ASSERT(returned_code_ == 0);
   // returned_code_ = 0 means success. This is the only code returned by IfPack.
+  returned_code_ = 1;
   return returned_code_;
 }
 
@@ -37,10 +37,25 @@ int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_Mu
 /* ******************************************************************
 * Initialize the preconditioner.
 ****************************************************************** */
-void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::ParameterList& list)
+void PreconditionerHypre::InitInverse(Teuchos::ParameterList& list)
 {
   plist_ = list;
+
+  std::string method_name = list.get<std::string>("method");
+  if (method_name == "boomer amg") InitBoomer_();
+  else if (method_name == "euclid") InitEuclid_();
+  else {
+    Errors::Message msg;
+    msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+void PreconditionerHypre::InitBoomer_()
+{  
 #ifdef HAVE_HYPRE
+  method_ = BoomerAMG;
+  
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
     Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
@@ -174,23 +189,63 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 
 
 /* ******************************************************************
-* Rebuild the preconditioner using the given matrix A.
-****************************************************************** */
-void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+ * Initialize the preconditioner.
+ ****************************************************************** */
+void PreconditionerHypre::InitEuclid_()
 {
 #ifdef HAVE_HYPRE
-  // if (!IfpHypre_.get()) { // this should be sufficient, but since
+  method_ = Euclid;
+  
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
+          plist_.get<int>("verbosity", 0))));
+
+  if (plist_.isParameter("ilu(k) fill level"))
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel,
+            plist_.get<int>("ilu(k) fill level"))));
+
+  if (plist_.isParameter("rescale rows")) {
+    bool rescale_rows = plist_.get<bool>("rescale rows");
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetRowScale,
+            rescale_rows ? 1 : 0)));
+  }
+
+  if (plist_.isParameter("ilut drop tolerance"))
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT,
+            plist_.get<double>("ilut drop tolerance"))));
+#else
+  Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
+  Exceptions::amanzi_throw(msg);
+#endif
+}
+
+
+void PreconditionerHypre::UpdateInverse()
+{
+  // NOTE BELOW
+  // -- pass for now...
+}
+  
+/* ******************************************************************
+* Rebuild the preconditioner using the given matrix A.
+****************************************************************** */
+void PreconditionerHypre::ComputeInverse()
+{
+#ifdef HAVE_HYPRE
+  AMANZI_ASSERT(h_.get());
+  
+  // BEGIN code to move to UpdateInverse()
+  // -- 
   // Ifpack_Hypre destroys the Hypre instance in each Compute(), which
   // destroys block indices, we MUST new the block indices every time
   // Compute() is called.  Nominally we shouldn't have to recreate this whole
   // object each time, only the block data, but Ifpack doesn't allow that.
   // For now, we'll comment this out and regenerate, but the next step is a
   // reimplemented Ifpack_Hypre. --etc
-  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*h_));
 
   // must reset the paramters every time to reset the block index
   Teuchos::ParameterList hypre_list("Preconditioner List");
-  hypre_list.set("Preconditioner", BoomerAMG);
+  hypre_list.set("Preconditioner", method_);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
   hypre_list.set("NumFunctions", (int)funcs_.size());
@@ -209,14 +264,17 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
     funcs_[block_index_function_index_] = 
         Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
   }
-  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
+
+  if (funcs_.size() > 0) hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_.front());
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
-  // } // see above --etc
+  // END code to move to UpdateInverse()
     
   IfpHypre_->Compute();
 #endif
 }
 
-}  // namespace AmanziPreconditioners
+
+
+}  // namespace AmanziSolvers
 }  // namespace Amanzi

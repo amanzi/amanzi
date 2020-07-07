@@ -12,20 +12,24 @@
 */
 
 #include "Teuchos_RCP.hpp"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
 
 #include "exceptions.hh"
 #include "PreconditionerML.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
 /* ******************************************************************
  * Apply the preconditioner. 
  * ML's return code is set to 0 if successful, see Trilinos webpages. 
  ****************************************************************** */
-int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   returned_code_ = ML_->ApplyInverse(v, hv);
+  AMANZI_ASSERT(returned_code_ == 0);
+  returned_code_ = 1;
   return returned_code_;
 }
 
@@ -33,33 +37,31 @@ int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVect
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerML::Init(const std::string& name, const Teuchos::ParameterList& list)
+void PreconditionerML::InitInverse(Teuchos::ParameterList& list)
 {
   list_ = list;
-  initialized_ = false;
+  list_.remove("verbose object", false); // note, ML validates parameter lists...
+  list_.remove("method", false); // note, ML validates parameter lists...
+  initialized_ = true;
 }
 
 
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerML::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void PreconditionerML::UpdateInverse()
 {
-  if (initialized_) ML_->DestroyPreconditioner();
-  ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, list_, false));
+  AMANZI_ASSERT(initialized_);
+  AMANZI_ASSERT(h_.get());
+  ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*h_, list_, false));
+}
+
+void PreconditionerML::ComputeInverse()
+{
+  AMANZI_ASSERT(ML_.get());
   ML_->ComputePreconditioner();
-  initialized_ = true; 
 }
 
 
-/* ******************************************************************
- * Destroy the preconditioner and auxiliary data structures.
- ****************************************************************** */
-void PreconditionerML::Destroy()
-{
-  if (initialized_) ML_->DestroyPreconditioner();
-  initialized_ = false;
-}
-
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi

@@ -33,6 +33,8 @@
 #include "PreconditionerIdentity.hh"
 #include "PreconditionerDiagonal.hh"
 #include "PreconditionerIfpack.hh"
+#include "PreconditionerHypre.hh"
+#include "PreconditionerML.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -223,16 +225,15 @@ createPreconditioner(Teuchos::ParameterList& inv_list)
     method_list.set<std::string>("method", method_name.substr(std::string("ifpack: ").length(),
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerIfpack());
-    //  } else if (method_name == "boomer amg") {
-  //   inv = Teuchos::rcp(new PreconditionerBoomerAMG());
-  // } else if (method_name == "euclid") {
-  //   inv = Teuchos::rcp(new PreconditionerEuclid());
-  // } else if (method_name == "ml") {
-  //   inv = Teuchos::rcp(new PreconditionerML());
-  // } else if (method_name == "block ilu") {
-  //   inv = Teuchos::rcp(new PreconditionerBlockILU());
-  // } else if (method_name == "diagonal") {
-  //   inv = Teuchos::rcp(new PreconditionerAssembledDiagonal());
+  } else if (method_name == "boomer amg" || method_name == "euclid") {
+    method_list.set<std::string>("method", method_name);
+    inv = Teuchos::rcp(new PreconditionerHypre());
+  } else if (Keys::starts_with(method_name, "hypre: ")) {
+    method_list.set<std::string>("method", method_name.substr(std::string("hypre: ").length(),
+            method_name.length()));
+    inv = Teuchos::rcp(new PreconditionerHypre());
+  } else if (method_name == "ml") {
+    inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "identity") {
     inv = Teuchos::rcp(new PreconditionerIdentity<Epetra_CrsMatrix,Epetra_CrsMatrix,
                        Epetra_Vector,Epetra_Map>());
