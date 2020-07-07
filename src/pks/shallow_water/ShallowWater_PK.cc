@@ -51,38 +51,40 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   double eps = 1.e-6;
 
-  // save a copy of primary and conservative fields
-  CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
-  CompositeVector velocity_x_tmp(*S_->GetFieldData("surface-velocity-x", passwd_));
-  CompositeVector velocity_y_tmp(*S_->GetFieldData("surface-velocity-y", passwd_));
-
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector B_vec_c_tmp(B_vec_c);
-
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector h_vec_c_tmp(h_vec_c);
-
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
-
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
-
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
-
-  Epetra_MultiVector& qx_vec_c = *S_->GetFieldData("surface-discharge-x",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector qx_vec_c_tmp(qx_vec_c);
-
-  Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
-
   // distribute data to ghost cells
+  S_->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("surface-velocity-x")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("surface-velocity-y")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("surface-discharge-x")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("surface-discharge-y")->ScatterMasterToGhosted("cell");
+
+  // save a copy of primary and conservative fields
+  CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
+  CompositeVector velocity_x_tmp(*S_->GetFieldData("surface-velocity-x", passwd_));
+  CompositeVector velocity_y_tmp(*S_->GetFieldData("surface-velocity-y", passwd_));
+
+  Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector B_vec_c_tmp(B_vec_c);
+
+  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector h_vec_c_tmp(h_vec_c);
+
+  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
+
+  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
+
+  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
+
+  Epetra_MultiVector& qx_vec_c = *S_->GetFieldData("surface-discharge-x",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector qx_vec_c_tmp(qx_vec_c);
+
+  Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
 
   h_vec_c_tmp  = h_vec_c;
   ht_vec_c_tmp = ht_vec_c;
@@ -111,7 +113,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
 
     mesh_->cell_get_edges(c,&cedges);
-    mesh_->cell_get_faces(c,&cfaces,true);
+//    mesh_->cell_get_faces(c,&cfaces,true);
+    mesh_->cell_get_faces(c,&cfaces);
 
     Amanzi::AmanziMesh::Entity_ID_List adjcells;
     mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
@@ -377,9 +380,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (!S_->GetField("surface-ponded_depth", passwd_)->initialized()) {
 
-    Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-    Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
-    Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+    Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
+    Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell",true);
+    Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell",true);
 
     S_->GetFieldData("surface-ponded_depth", passwd_)->PutScalar(1.0);
 
@@ -416,10 +419,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (!S_->GetField("surface-PID", passwd_)->initialized()) {
 
-    Epetra_MultiVector& PID_c = *S_->GetFieldData("surface-PID",passwd_)->ViewComponent("cell");
+    Epetra_MultiVector& PID_c = *S_->GetFieldData("surface-PID",passwd_)->ViewComponent("cell",true);
 
     for (int c = 0; c < ncells_owned; c++) {
-      PID_c[0][c] = MyPID;
+      PID_c[0][c] = double(MyPID);
     }
 
     S_->GetField("surface-PID", passwd_)->set_initialized();
@@ -471,10 +474,11 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, cnodes, fedges, edcells, fcells;
 
   mesh_->cell_get_edges(c,&cedges);
-  mesh_->cell_get_faces(c,&cfaces,true);
+//  mesh_->cell_get_faces(c,&cfaces,true);
+  mesh_->cell_get_faces(c,&cfaces);
   mesh_->cell_get_nodes(c,&cnodes);
 
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
 
   u_av0 = h_vec_c[0][c];
 
@@ -532,7 +536,8 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
   Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
 
   mesh_->cell_get_edges(c,&cedges);
-  mesh_->cell_get_faces(c,&cfaces,true);
+//  mesh_->cell_get_faces(c,&cfaces,true);
+  mesh_->cell_get_faces(c,&cfaces);
 
   Amanzi::AmanziMesh::Entity_ID_List adjcells;
   mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
@@ -556,7 +561,7 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
 
   AmanziGeometry::Point xc = mesh_->cell_centroid(c);
 
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
 
   for (int f = 0; f < cfaces.size(); f++) {
 
@@ -830,9 +835,9 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   double g = 9.81;
 
-  Epetra_MultiVector& B_vec_c  = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& h_vec_c  = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& B_vec_c  = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& h_vec_c  = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell",true);
 
   S.resize(3);
 
@@ -840,7 +845,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   Amanzi::AmanziMesh::Entity_ID_List cfaces;
 
-  mesh_->cell_get_faces(c,&cfaces,true);
+//  mesh_->cell_get_faces(c,&cfaces,true);
+  mesh_->cell_get_faces(c,&cfaces);
 
   // cell volume
   double vol = mesh_->cell_volume(c);
@@ -897,9 +903,9 @@ double ShallowWater_PK::get_dt()
   double CFL = 0.1;
   double eps = 1.e-6;
 
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell",true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
