@@ -128,7 +128,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
     std::vector<double> S;                           // source term
-    std::vector<double> UL, UR, U;                    // data for the fluxes
+    std::vector<double> UL, UR, U;                   // data for the fluxes
 
     UL.resize(3);
     UR.resize(3);
@@ -524,6 +524,8 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   // for better robustness on wet/dry front
   Phi = 0.1*Phi;
 
+  Phi = 0.;
+
   grad_lim = Phi*grad;
 }
 
@@ -567,13 +569,16 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
 
     int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
-    AmanziGeometry::Point xcn = mesh_->cell_centroid(cn);
+    AmanziGeometry::Point xcn;
 
     if (cn == -1) {
 
+      // formally, assign cn = c to pick correct solution
+      cn = c;
+
       // face centroid
       Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
-      Amanzi::AmanziGeometry::Point dx = xcf-xcn;
+      Amanzi::AmanziGeometry::Point dx = xcf-xc;
 
       // face area
       double farea = mesh_->face_area(cfaces[f]);
@@ -586,16 +591,17 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
 
       double l = dx[0]*normal[0] + dx[1]*normal[1];
 
+      // reflect the centroid from the internal cell to ghost cell
       xcn = xc + 2.*l*normal;
 
+    } else {
+      xcn = mesh_->cell_centroid(cn);
     }
-
-    if (cn == -1) cn = c;
 
     A(f,0) = xcn[0] - xc[0];
     A(f,1) = xcn[1] - xc[1];
 
-    b(f,0) = h_vec_c[0][cn] -  h_vec_c[0][c];
+    b(f,0) = h_vec_c[0][cn] - h_vec_c[0][c];
 
   }
 
