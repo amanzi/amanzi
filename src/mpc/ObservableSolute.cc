@@ -134,7 +134,7 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " sorbed concentration" &&
-    S.HasField(total_sorbed_key)) {
+             S.HasField(total_sorbed_key)) {
     const auto& sorbed = *S.GetFieldData(total_sorbed_key)->ViewComponent("cell");
 
     // we assume constant particle density
@@ -143,6 +143,22 @@ void ObservableSolute::ComputeObservation(
       double factor = (1.0 - porosity[0][c]) * mesh_->cell_volume(c);
 
       *value += sorbed[tcc_index_][c] * factor;
+      *volume += factor;
+    }
+
+  } else if (variable_ == comp_names_[tcc_index_] + " free ion concentration") {
+    Key free_ion_key = Keys::getKey(domain_, "primary_free_ion_concentration_" + comp_names_[tcc_index_]);
+    if (!S.HasField(free_ion_key)) {
+      msg << "Observation: state does not have field \"" << variable_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+    const auto& free_ion = *S.GetFieldData(free_ion_key)->ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double factor = mesh_->cell_volume(c);
+
+      *value += free_ion[0][c] * factor;
       *volume += factor;
     }
 

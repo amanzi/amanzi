@@ -373,6 +373,11 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             std::stringstream name;
             name << solute_name << " sorbed concentration";
             obPL.set<std::string>("variable", name.str());
+          } else if (strcmp(obs_type, "free_ion_conc") == 0) {
+            std::string solute_name = GetAttributeValueS_(jnode, "solute");
+            std::stringstream name;
+            name << solute_name << " free ion concentration";
+            obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
             obPL.set<std::string>("variable", "drawdown");
           } else if (strcmp(obs_type, "perm_weighted_drawdown") == 0) {

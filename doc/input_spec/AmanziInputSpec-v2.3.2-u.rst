@@ -1843,7 +1843,7 @@ The observation element is named according to what is being observed.  The obser
        Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
                           hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, sorbed_conc,
-                          drawdown, water_table, solute_volumetric_flow_rate
+                          drawdown, water_table, solute_volumetric_flow_rate, ph, free_ion_conc
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1855,7 +1855,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
      Optional Elements: NONE
    </observation_type>
 
-The only exceptions are ``aqueous_conc``, ``sorbed_conc``, and ``solute_volumetric_flow_rate`` which require 
+The only exceptions are ``aqueous_conc``, ``sorbed_conc``, ``free_ion_conc``, and ``solute_volumetric_flow_rate`` which require 
 a solute to be specified.
 An attribute ``solute`` gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.
 Be sure the name of given for the solute matches a defined solute elsewhere in the input file.  

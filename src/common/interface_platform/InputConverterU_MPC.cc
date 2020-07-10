@@ -417,6 +417,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   GetUniqueElementByTagsString_("fracture_network", coupled_flow_);
   coupled_transport_ = coupled_flow_;
+  coupled_energy_ = coupled_flow_;
 
   // new version of process_kernels
   // -- parse available PKs
@@ -534,7 +535,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       break;
     case 12: 
       pk_master_["thermal richards"] = true;
-      PopulatePKTree_(pk_tree_list, "flow and energy");
+      if (!coupled_flow_)
+        PopulatePKTree_(pk_tree_list, "flow and energy");
+      else 
+        PopulatePKTree_(pk_tree_list, "coupled thermal flow");
       break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
@@ -634,6 +638,12 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.set<std::string>("PK type", "thermal richards");
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
+  }
+  else if (pk_name == "coupled thermal flow") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled thermal flow");
+    tmp_list.set<std::string>("PK type", "coupled thermal flow");
+    PopulatePKTree_(tmp_list, "flow and energy");
+    PopulatePKTree_(tmp_list, "thermal flow fracture");
   }
   else if (pk_name == "coupled flow and transport") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and transport");

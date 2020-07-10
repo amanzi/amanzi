@@ -6233,6 +6233,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * SOLUTE sorbed concentration [mol/kg] 
+      * SOLUTE free ion concentration
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
