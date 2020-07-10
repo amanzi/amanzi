@@ -413,7 +413,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                   obPL.set<std::string>("functional", "observation data: mean");
                 }
               } else if (strcmp(elem, "domain_name") == 0) {
-                obPL.set<std::string>("domain name", (strcmp(value, "matrix") == 0) ? "domain" : "fracture");
+                obPL.set<std::string>("domain name", (strcmp(value, "fracture") == 0) ? "fracture" : "domain");
               } else if (strcmp(elem, "interpolation") == 0) {
                 if (strcmp(value, "constant") == 0) {
                   obPL.set<std::string>("interpolation", "constant");
