@@ -54,7 +54,9 @@ if (ENABLE_Unstructured)
   add_subdirectory(state)
 endif()
 
-add_subdirectory(common/interface_platform)
+if (ENABLE_AmanziPhysicsModule)
+  add_subdirectory(common/interface_platform)
+endif()
 
 if (ENABLE_Unstructured)  
   add_subdirectory(pks)

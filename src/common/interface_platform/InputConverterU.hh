@@ -160,7 +160,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateEnergyBCs_();
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_;
+  bool coupled_flow_, coupled_transport_, coupled_energy_;
   std::vector<std::string> fracture_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,

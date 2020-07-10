@@ -20,6 +20,12 @@
       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.62980e+06, 6.273650880e+10}"/>
       <Parameter name="region" type="string" value="Well2"/>
     </ParameterList>
+    <ParameterList name="obl 2">
+      <Parameter name="variable" type="string" value="Tc-99 sorbed concentration"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.62980e+06, 6.273650880e+10}"/>
+      <Parameter name="region" type="string" value="Well"/>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="walkabout data">
     <Parameter name="file name base" type="string" value="walkabout"/>
@@ -989,7 +995,7 @@
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
       <Parameter name="used source regions" type="Array(string)" value="{}"/>
-      <Parameter name="used observation regions" type="Array(string)" value="{Well2}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{Well2, Well}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>

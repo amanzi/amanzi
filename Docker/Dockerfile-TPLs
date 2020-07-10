@@ -4,6 +4,9 @@ FROM ubuntu:bionic
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
+# MPI flavor (mpich|openmpi)
+ARG mpi_flavor=mpich
+
 RUN apt-get -q update -y && apt-get -qq install -y \
   apt-utils \
   cmake \
@@ -18,7 +21,7 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
-  libopenmpi-dev \
+  lib${mpi_flavor}-dev \
   libssl-dev \
   m4 \
   make \
