@@ -18,6 +18,7 @@ include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/pks/flow)
 include_directories(${ATS_SOURCE_DIR}/pks/energy)
 include_directories(${ATS_SOURCE_DIR}/pks/transport)
+include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo)
 include_directories(${ATS_SOURCE_DIR}/constitutive_relations/generic_evaluators)
 include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/porosity)
@@ -51,6 +52,7 @@ set(ats_mpc_src_files
   mpc_surface.cc
   mpc_permafrost.cc
   mpc_morphology_pk.cc
+  mpc_lake_1D.cc
   biomass_evaluator.cc
   )
 
@@ -80,6 +82,7 @@ set(ats_mpc_inc_files
   mpc_subsurface.hh
   mpc_surface.hh
   mpc_permafrost.hh
+  mpc_lake_1D.hh
   biomass_evaluator.hh
   )
 
@@ -103,6 +106,7 @@ set(ats_mpc_link_libs
   ats_pks
   ats_transport
   ats_flow
+  ats_lake
   ats_mpc_relations
   )
 
@@ -171,6 +175,11 @@ register_evaluator_with_factory(
   HEADERFILE mpc_permafrost_reg.hh
   LISTNAME   ATS_MPC_REG
   )
+  
+register_evaluator_with_factory(
+  HEADERFILE mpc_lake_1D_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )  
 
 register_evaluator_with_factory(
   HEADERFILE mpc_coupled_water_reg.hh
