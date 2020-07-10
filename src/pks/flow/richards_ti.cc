@@ -106,8 +106,6 @@ void Richards::FunctionalResidual(double t_old,
     }
   }
 
-  res->Print(std::cout);
-
 };
 
 // -----------------------------------------------------------------------------

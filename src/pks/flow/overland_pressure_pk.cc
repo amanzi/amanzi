@@ -31,6 +31,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
+#include "overland_conductivity_subgrid_evaluator.hh"
 #include "overland_pressure_water_content_evaluator.hh"
 #include "height_model.hh"
 #include "height_evaluator.hh"
@@ -412,7 +413,15 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
 
     S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
-  } else {
+  } else if (plist_->isSublist("overland conductivity subgrid evaluator")) {
+    Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity subgrid evaluator");
+    cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
+    Teuchos::RCP<Flow::OverlandConductivitySubgridEvaluator> cond_evaluator =
+        Teuchos::rcp(new Flow::OverlandConductivitySubgridEvaluator(cond_plist));
+
+    S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
+  }
+  else {
     S->RequireFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"));
   }
 }
