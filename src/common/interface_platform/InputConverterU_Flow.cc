@@ -604,6 +604,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
     // -- process global and local BC separately
     double refv;
+    std::string filename, xheader, yheader;
     std::vector<double> grad, refc, data, data_tmp;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms, formulas;
@@ -624,26 +625,33 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       grad = GetAttributeVectorD_(element, "gradient", dim_, unit_grad);
       refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
     } else {
-      std::map<double, double> tp_values, tp_fluxes;
-      std::map<double, std::string> tp_forms, tp_formulas;
+      element = static_cast<DOMElement*>(same_list[0]);
+      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
+      if (filename != "") {
+        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
+        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
+      } else {
+        std::map<double, double> tp_values, tp_fluxes;
+        std::map<double, std::string> tp_forms, tp_formulas;
 
-      for (int j = 0; j < same_list.size(); ++j) {
-        element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        for (int j = 0; j < same_list.size(); ++j) {
+          element = static_cast<DOMElement*>(same_list[j]);
+          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
 
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-        tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-      }
+          tp_forms[t0] = GetAttributeValueS_(element, "function");
+          tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+        }
 
-      // create vectors of values and forms
-      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-        times.push_back(it->first);
-        values.push_back(it->second);
-        fluxes.push_back(tp_fluxes[it->first]);
-        forms.push_back(tp_forms[it->first]);
-        formulas.push_back(tp_formulas[it->first]);
+        // create vectors of values and forms
+        for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
+          times.push_back(it->first);
+          values.push_back(it->second);
+          fluxes.push_back(tp_fluxes[it->first]);
+          forms.push_back(tp_forms[it->first]);
+          formulas.push_back(tp_formulas[it->first]);
+        }
       }
     }
 
@@ -703,6 +711,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
           .set<double>("y0", refv)
           .set<Teuchos::Array<double> >("x0", refc)
           .set<Teuchos::Array<double> >("gradient", grad);
+    } else if (filename != "") {
+      bcfn.sublist("function-tabular")
+          .set<std::string>("file", filename)
+          .set<std::string>("x header", xheader)
+          .set<std::string>("y header", yheader);
     } else {
       TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }

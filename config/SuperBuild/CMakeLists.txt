@@ -619,15 +619,18 @@ else()
     set(ParMetis_DIR ${PARMETIS_INSTALL_PREFIX})
 endif()
 
-# SuperLU -- needs to go before HYPRE and PETSc because they needs it
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+option(ENABLE_SUPERLU "Build the SuperLU solver package" TRUE)
+if (ENABLE_SUPERLU)
+  # SuperLU -- needs to go before HYPRE and PETSc because they needs it
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# SuperLUDist
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+  # SuperLUDist
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+    -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
 
 # HYPRE
 option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
@@ -786,6 +789,13 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
 # ############################################################################ #
 #  Final steps
 # ############################################################################ #
+# -- override compiler with nvccwrapper
+if (ENABLE_KOKKOS_CUDA)
+  set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
+  set(CMAKE_CXX_COMPILER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
+else()
+  set(NVCC_WRAPPER_DEFAULT_COMPILER "")
+endif()
 
 #  --- Create a CMake cache script
 set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)

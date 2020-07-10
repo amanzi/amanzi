@@ -594,14 +594,17 @@ void InputConverterU::TranslateFieldEvaluator_(
     field_ev.set<std::string>("field evaluator type", "constant variable");
   } else if (type == "h5file") {  // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
+    bool temporal = GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
+
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("field evaluator type", "independent variable from file")
         .set<std::string>("filename", filename)
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
         .set<std::string>("mesh entity", "cell")
+        .set<std::string>("variable name", field)
         .set<int>("number of dofs", 1)
-        .set<bool>("constant in time", true);
+        .set<bool>("constant in time", temporal);
   } else {
     double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 

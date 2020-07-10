@@ -249,7 +249,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 void Flow_PK::VV_PrintSourceExtrema() const
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    double smin(0.0), smax(0.0);
+    double smin(1.0e+99), smax(0.0);
     std::vector<double> volumes;
 
     for (int i = 0; i < srcs.size(); ++i) {

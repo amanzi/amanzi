@@ -219,7 +219,7 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      //InitializeField_(S,  total_sorbed_key_, 0.0);
+      // InitializeField_(S,  total_sorbed_key_, 0.0);
       InitializeField(S, passwd_, total_sorbed_key_, 0.0);
     }
 

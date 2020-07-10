@@ -112,8 +112,17 @@ Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
 
+// helper functions...
+inline bool starts_with(const std::string& key, const std::string& substr) {
+  return key.length() >= substr.length() && key.substr(0,substr.length()) == substr;
+}
 
-} // namespace Key
+inline bool ends_with(const std::string& key, const std::string& substr) {
+  return key.length() >= substr.length() &&
+      key.substr(key.length()-substr.length(), key.length()) == substr;
+}
+
+} // namespace Keys
 } // namespace Amanzi
 
 #endif

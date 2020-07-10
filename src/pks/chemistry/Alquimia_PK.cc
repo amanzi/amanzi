@@ -218,7 +218,6 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     
     // InitializeField_(S, aux_names[i], 0.0);
     InitializeField(S, passwd_, aux_names[i], 0.0);
-    
   }
 
   // Read XML parameters from our input file.
@@ -623,6 +622,8 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
                    aqueous_components);
 
   // Auxiliary output.
+  std::string full_name;
+
   if (aux_output_ != Teuchos::null) {
     std::vector<std::string> mineralNames, primaryNames;
     chem_engine_->GetMineralNames(mineralNames);
@@ -632,64 +633,57 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 
     for (unsigned int i = 0; i < aux_names_.size(); i++) {
       if (aux_names_.at(i) == "pH") {
-        double* cell_aux_output = (*aux_output_)[i];
-        cell_aux_output[cell] = aux_output.pH;
+        (*aux_output_)[i][cell] = aux_output.pH;
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_saturation_index_") + mineralNames[j];
+          full_name = "mineral_saturation_index_" + mineralNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.mineral_saturation_index.data[j];
+            (*aux_output_)[i][cell] = aux_output.mineral_saturation_index.data[j];
           }
         }
       }
       else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_reaction_rate_") + mineralNames[j];
+          full_name = "mineral_reaction_rate_" + mineralNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.mineral_reaction_rate.data[j];
+            (*aux_output_)[i][cell] = aux_output.mineral_reaction_rate.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == "primary_free_ion_concentration") {
+      else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
         for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_free_ion_concentration_") + primaryNames[j];
+          full_name = "primary_free_ion_concentration_" + primaryNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.primary_free_ion_concentration.data[j];
+            (*aux_output_)[i][cell] = aux_output.primary_free_ion_concentration.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == primary_activity_coeff_key_) {
+      else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
         for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_activity_coeff_") + primaryNames[j];
+          full_name = "primary_activity_coeff_" + primaryNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.primary_activity_coeff.data[j];
+            (*aux_output_)[i][cell] = aux_output.primary_activity_coeff.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == "secondary_free_ion_concentration") {
+      else if (aux_names_.at(i).find("secondary_free_ion_concentration") != std::string::npos) {
         for (int j = 0; j < numAqueousComplexes; ++j) {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_free_ion_concentration_") + std::string(num_str);
+          full_name = "secondary_free_ion_concentration_" + std::string(num_str);
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.secondary_free_ion_concentration.data[j];
+            (*aux_output_)[i][cell] = aux_output.secondary_free_ion_concentration.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == secondary_activity_coeff_key_) {
+      else if (aux_names_.at(i).find(secondary_activity_coeff_key_) != std::string::npos) {
         for (int j = 0; j < numAqueousComplexes; ++j) {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_activity_coeff_") + std::string(num_str);
+          full_name = "secondary_activity_coeff_" + std::string(num_str);
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.secondary_activity_coeff.data[j];
+            (*aux_output_)[i][cell] = aux_output.secondary_activity_coeff.data[j];
           }
         }
       }
