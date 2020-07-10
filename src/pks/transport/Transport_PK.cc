@@ -511,7 +511,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
             Teuchos::ParameterList& spec = src_list.sublist(specname);
             Teuchos::RCP<TransportDomainFunction> src = 
               factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
-
+	    std::vector<std::string> tcc = spec.get<Teuchos::Array<std::string>>("component names").toVector();
+	    src->set_tcc_names(tcc);
             // sets the default component name to be the parameterlist's name
             if (src->tcc_names().size() == 0) {
               src->tcc_names().push_back(name);
