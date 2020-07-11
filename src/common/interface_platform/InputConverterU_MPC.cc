@@ -534,7 +534,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       PopulatePKTree_(pk_tree_list, "energy");
       break;
     case 12: 
-      pk_master_["thermal richards"] = true;
+      pk_master_["thermal flow"] = true;
       if (!coupled_flow_)
         PopulatePKTree_(pk_tree_list, "flow and energy");
       else 
@@ -635,7 +635,7 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "flow and energy") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("flow and energy");
-    tmp_list.set<std::string>("PK type", "thermal richards");
+    tmp_list.set<std::string>("PK type", "thermal flow");
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
   }
@@ -940,7 +940,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
 
-        if (pk_master_.find("thermal richards") != pk_master_.end()) {
+        if (pk_master_.find("thermal flow") != pk_master_.end()) {
           // we use steady defaults so far
           out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
               "pressure, temperature", "nka", false,

@@ -315,7 +315,7 @@
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
           <ParameterList name="flow and energy">
-            <Parameter name="PK type" type="string" value="thermal richards"/>
+            <Parameter name="PK type" type="string" value="thermal flow"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
