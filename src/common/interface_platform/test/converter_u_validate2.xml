@@ -600,6 +600,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="energy">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">

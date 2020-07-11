@@ -415,6 +415,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
   }
 
+  GetUniqueElementByTagsString_("execution_controls", flag);
   GetUniqueElementByTagsString_("fracture_network", coupled_flow_);
   coupled_transport_ = coupled_flow_;
   coupled_energy_ = coupled_flow_;
@@ -538,7 +539,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       if (!coupled_flow_)
         PopulatePKTree_(pk_tree_list, "flow and energy");
       else 
-        PopulatePKTree_(pk_tree_list, "coupled thermal flow");
+        PopulatePKTree_(pk_tree_list, "coupled flow and energy");
       break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
@@ -639,11 +640,17 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
   }
-  else if (pk_name == "coupled thermal flow") {
-    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled thermal flow");
+  else if (pk_name == "flow and energy fracture") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("flow and energy fracture");
+    tmp_list.set<std::string>("PK type", "thermal flow");
+    tmp_list.sublist("flow fracture").set<std::string>("PK type", pk_model_["flow"]);
+    tmp_list.sublist("energy fracture").set<std::string>("PK type", pk_model_["energy"]);
+  }
+  else if (pk_name == "coupled flow and energy") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and energy");
     tmp_list.set<std::string>("PK type", "coupled thermal flow");
     PopulatePKTree_(tmp_list, "flow and energy");
-    PopulatePKTree_(tmp_list, "thermal flow fracture");
+    PopulatePKTree_(tmp_list, "flow and energy fracture");
   }
   else if (pk_name == "coupled flow and transport") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and transport");
@@ -848,7 +855,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       }
       // -- energy PKs
       else if (it->first == "energy") {
-        out_list.sublist(it->first) = TranslateEnergy_();
+        out_list.sublist(it->first) = TranslateEnergy_("matrix");
+      }
+      else if (it->first == "energy fracture") {
+        out_list.sublist(it->first) = TranslateEnergy_("fracture");
       }
       // -- transport PKs
       else if (it->first == "transport" || it->first == "transport matrix") {
@@ -864,7 +874,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       else if (it->first == "chemistry fracture") {
         out_list.sublist(it->first) = TranslateChemistry_("fracture");
       }
-      // -- coupled PKs
+      // -- coupled PKs (matrix and fracture)
       else if (it->first == "coupled flow") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("flow matrix");
@@ -906,6 +916,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
       }
+      // -- multiple PKs
       else if (it->first == "reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("chemistry");
@@ -949,6 +960,23 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
       }
+      else if (it->first == "flow and energy fracture") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("flow fracture");
+        pk_names.push_back("energy fracture");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+
+        if (pk_master_.find("thermal flow") != pk_master_.end()) {
+          // we use steady defaults so far
+          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+              "pressure, temperature", "nka", false,
+              "unstructured_controls, unstr_thermal_richards_controls",
+              TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
+          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
+        }
+      }
+      // -- multiple PKs (matrix and fracture)
       else if (it->first == "coupled flow and transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("coupled flow");
@@ -962,6 +990,19 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         pk_names.push_back("coupled transport");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
+      else if (it->first == "coupled flow and energy") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("flow and energy");
+        pk_names.push_back("flow and energy fracture");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+
+        out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+            "pressure, temperature", "nka", false,
+            "unstructured_controls, unstr_thermal_richards_controls",
+            TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
+        out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
       }
     }
   }
