@@ -98,7 +98,7 @@
           <ParameterList name="coupled thermal flow">
             <Parameter name="PK type" type="string" value="thermal flow matrix fracture"/>
             <ParameterList name="thermal flow matrix">
-              <Parameter name="PK type" type="string" value="thermal richards"/>
+              <Parameter name="PK type" type="string" value="thermal flow"/>
               <ParameterList name="flow matrix">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
@@ -107,7 +107,7 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="thermal flow fracture">
-              <Parameter name="PK type" type="string" value="thermal richards"/>
+              <Parameter name="PK type" type="string" value="thermal flow"/>
               <ParameterList name="flow fracture">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
