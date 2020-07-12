@@ -136,7 +136,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_enth_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
-  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", true)));
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {

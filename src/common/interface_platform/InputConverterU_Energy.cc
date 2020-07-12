@@ -90,7 +90,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
   }
 
   // insert boundary conditions and source terms
-  out_list.sublist("boundary conditions") = TranslateEnergyBCs_();
+  out_list.sublist("boundary conditions") = TranslateEnergyBCs_(domain);
 
   // insert internal evaluators
   out_list.sublist("energy evaluator")
@@ -106,22 +106,27 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
 /* ******************************************************************
 * Create list of energy BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
+Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
   char *text;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode *node;
   DOMElement *element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (!node_list) return out_list;
+  // correct list of boundary conditions for given domain
+  bool flag;
+  if (domain == "matrix")
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  if (!flag) return out_list;
 
   int ibc(0);
-  children = node_list->item(0)->getChildNodes();
+  children = node->getChildNodes();
   int nchildren = children->getLength();
 
   for (int i = 0; i < nchildren; ++i) {
