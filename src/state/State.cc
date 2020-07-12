@@ -1012,7 +1012,7 @@ void State::InitializeEvaluators() {
       Teuchos::OSTab tab = vo->getOSTab();
       *vo->os() << "processing evaluator \"" << f_it->first << "\"\n";
     }
-
+ 
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
     fields_[f_it->first]->set_initialized();
   }

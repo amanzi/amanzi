@@ -282,6 +282,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         TranslateFieldEvaluator_(node, "fracture-particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
       }
+ 
+      // -- thermal conductivity
+      node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, out_ev, "normal");
+      }
     }
   }
 
@@ -548,6 +554,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
+      }
+
+      // -- uniform temperature
+      node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
+      if (flag) {
+        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
+
+        Teuchos::ParameterList& temperature_ic = out_ic.sublist("fracture-temperature");
+        temperature_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
       }
     }
   }

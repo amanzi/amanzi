@@ -113,8 +113,7 @@ void EOSEvaluator::EvaluateField_(
 
   if (molar_dens != Teuchos::null) {
     // evaluate MolarDensity()
-    for (CompositeVector::name_iterator comp=molar_dens->begin();
-         comp!=molar_dens->end(); ++comp) {
+    for (CompositeVector::name_iterator comp=molar_dens->begin(); comp!=molar_dens->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
@@ -129,8 +128,7 @@ void EOSEvaluator::EvaluateField_(
   }
 
   if (mass_dens != Teuchos::null) {
-    for (CompositeVector::name_iterator comp=mass_dens->begin();
-         comp!=mass_dens->end(); ++comp) {
+    for (CompositeVector::name_iterator comp=mass_dens->begin(); comp!=mass_dens->end(); ++comp) {
       if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
           molar_dens->HasComponent(*comp)) {
         // calculate MassDensity from MolarDensity and molar mass.

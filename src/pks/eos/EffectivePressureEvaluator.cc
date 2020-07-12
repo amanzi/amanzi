@@ -68,8 +68,8 @@ void EffectivePressureEvaluator::EvaluateField_(
   // evaluate effective pressure as max(pres, p_atm)
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp, false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
