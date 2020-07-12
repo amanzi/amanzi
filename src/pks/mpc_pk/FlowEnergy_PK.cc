@@ -76,6 +76,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   wc_key_ = Keys::getKey(domain_, "water_content");
   prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
 
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
+
   // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
@@ -157,18 +159,18 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity model
-  if (!S->HasField("viscosity_liquid")) {
-    elist.sublist("viscosity_liquid")
+  if (!S->HasField(viscosity_liquid_key_)) {
+    elist.sublist(viscosity_liquid_key_)
          .set<std::string>("field evaluator type", "viscosity")
-         .set<std::string>("viscosity key", "viscosity_liquid")
+         .set<std::string>("viscosity key", viscosity_liquid_key_)
          .sublist("viscosity model parameters")
          .set<std::string>("viscosity relation type", "liquid water");
     elist.sublist("viscosity_liquid")
          .sublist("verbose object").set<std::string>("verbosity level", "high");
 
-    S->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("viscosity_liquid");
+    S->RequireFieldEvaluator(viscosity_liquid_key_);
   }
 
   // Other fields

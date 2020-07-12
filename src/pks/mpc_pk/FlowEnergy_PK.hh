@@ -61,6 +61,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key mol_density_liquid_key_, mol_density_gas_key_, mass_density_liquid_key_;
   Key sat_liquid_key_, prev_sat_liquid_key_;
   Key wc_key_, prev_wc_key_;
+  Key viscosity_liquid_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

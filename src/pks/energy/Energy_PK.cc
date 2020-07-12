@@ -118,7 +118,7 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
   }
 
-  // Fields for energy as independent PK
+  // -- darcy flux
   if (!S->HasField(darcy_flux_key_)) {
     S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);

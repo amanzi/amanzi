@@ -648,7 +648,7 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "coupled flow and energy") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and energy");
-    tmp_list.set<std::string>("PK type", "coupled thermal flow");
+    tmp_list.set<std::string>("PK type", "thermal flow matrix fracture");
     PopulatePKTree_(tmp_list, "flow and energy");
     PopulatePKTree_(tmp_list, "flow and energy fracture");
   }
@@ -948,8 +948,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("flow");
         pk_names.push_back("energy");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(it->first)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0)
+            .set<std::string>("domain name", "domain");
 
         if (pk_master_.find("thermal flow") != pk_master_.end()) {
           // we use steady defaults so far
@@ -964,8 +966,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("flow fracture");
         pk_names.push_back("energy fracture");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(it->first)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0)
+            .set<std::string>("domain name", "fracture");
 
         if (pk_master_.find("thermal flow") != pk_master_.end()) {
           // we use steady defaults so far

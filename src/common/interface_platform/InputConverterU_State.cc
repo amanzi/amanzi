@@ -276,6 +276,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);
       }
+
+      // -- particle density
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+      }
     }
   }
 
