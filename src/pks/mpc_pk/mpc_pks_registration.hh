@@ -25,7 +25,7 @@
 namespace Amanzi {
 
 #ifndef DISABLE_PHYSICS
-RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal richards");
+RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_("thermal flow matrix fracture");
 RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_("flow reactive transport");
 RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");

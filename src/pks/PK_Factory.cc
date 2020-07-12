@@ -69,52 +69,47 @@ PKFactory::CreatePK(std::string pk_name,
     bool is_ds = Keys::splitDomainSet(pk_name, pk_triple);
     if (is_ds) {
       // flyweight PKs are defined across a domain_set
-      Teuchos::Array<std::string> domain_sets;    
-      domain_sets = global_list->sublist("state")
-                    .get<Teuchos::Array<std::string> >("domain sets", domain_sets);
-      for (auto ds : domain_sets) {
-        if (ds == std::get<0>(pk_triple)) {
-          // flyweight PK, alter the sublist and construct
-          // -- get the domain name and base varname
-          Key pk_flyweight = Keys::getKey(ds+"_*", std::get<2>(pk_triple));
-          Teuchos::ParameterList pk_list_new = global_list->sublist("PKs").sublist(pk_flyweight);
+      Key ds_name = std::get<0>(pk_triple);
+      if (state->HasDomainSet(ds_name)) {
+        // flyweight PK, alter the sublist and construct
+        // -- get the domain name and base varname
+        Key pk_flyweight = Keys::getKey(ds_name+"_*", std::get<2>(pk_triple));
+        Teuchos::ParameterList pk_list_new = global_list->sublist("PKs").sublist(pk_flyweight);
 
-          // -- overwrite the domain name
-          Key new_domain = ds+"_"+std::get<1>(pk_triple);
-          if (pk_list_new.isParameter("domain name"))
-            pk_list_new.set("domain name", new_domain);
+        // -- overwrite the domain name
+        Key new_domain = ds_name+"_"+std::get<1>(pk_triple);
+        if (pk_list_new.isParameter("domain name")) pk_list_new.set("domain name", new_domain);
 
-          // -- overwrite sub pks names with prepended domain
-          if (pk_list_new.isParameter("PKs order")) {
-            auto subpks_names = pk_list_new.get<Teuchos::Array<std::string> >("PKs order");
-            for (auto& subpk_name : subpks_names) {
-              KeyTriple subpk_triple;
-              bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
+        // -- overwrite sub pks names with prepended domain
+        if (pk_list_new.isParameter("PKs order")) {
+          auto subpks_names = pk_list_new.get<Teuchos::Array<std::string> >("PKs order");
+          for (auto& subpk_name : subpks_names) {
+            KeyTriple subpk_triple;
+            bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
 
-              if (subpk_is_ds) {
-                subpk_name = Keys::getKey(std::get<0>(subpk_triple)+"_"+std::get<1>(pk_triple),
-                        std::get<2>(subpk_triple));
-              }
+            if (subpk_is_ds) {
+              subpk_name = Keys::getKey(std::get<0>(subpk_triple)+"_"+std::get<1>(pk_triple),
+                      std::get<2>(subpk_triple));
             }
-            pk_list_new.set("PKs order", subpks_names);
           }
-            
-          // push into the PKs list
-          global_list->sublist("PKs").set(pk_name, pk_list_new);
-
-          // get the flyweight subtree
-          if (!pk_tree.isSublist(pk_flyweight)) {
-            std::stringstream msg;
-            msg << "PK_Factory: PK \"" << pk_name << "\" is a flyweight, but missing flyweight PK spec \""
-                << pk_flyweight << "\"\n";
-            Errors::Message message(msg.str());
-            Exceptions::amanzi_throw(message);
-          }            
-          pk_subtree = pk_tree.sublist(pk_flyweight);
-          pk_subtree.setName(pk_name);
-
-          pk_subtree_found = true;
+          pk_list_new.set("PKs order", subpks_names);
         }
+            
+        // push into the PKs list
+        global_list->sublist("PKs").set(pk_name, pk_list_new);
+
+        // get the flyweight subtree
+        if (!pk_tree.isSublist(pk_flyweight)) {
+          std::stringstream msg;
+          msg << "PK_Factory: PK \"" << pk_name << "\" is a flyweight, but missing flyweight PK spec \""
+              << pk_flyweight << "\"\n";
+          Errors::Message message(msg.str());
+          Exceptions::amanzi_throw(message);
+        }            
+        pk_subtree = pk_tree.sublist(pk_flyweight);
+        pk_subtree.setName(pk_name);
+
+        pk_subtree_found = true;
       }
     }
   }

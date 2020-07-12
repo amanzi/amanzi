@@ -43,7 +43,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  std::string name() override { return "thermal richards"; } 
+  std::string name() override { return "thermal flow"; }
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

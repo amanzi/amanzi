@@ -1,0 +1,232 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <misc>
+    <echo_translated_input format="unstructured_native" file_name="test/convert_u_test7_native_v8.xml"/>
+  </misc>
+
+  <model_description name="Fractured Rock 3D">
+    <comments>Example input file</comments>
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+10</time>
+      </time_macro>
+      <time_macro name="EveryMonth">
+        <start>1956,y</start>
+        <timestep_interval>1</timestep_interval>
+        <stop>1988,y</stop>
+      </time_macro>
+      <cycle_macro name="Every100Cycles">
+        <start>0</start>
+        <timestep_interval>100</timestep_interval>
+      </cycle_macro>
+    </macros>
+
+    <constants>
+      <numerical_constant name="X1" value="216.0 m"/>
+      <numerical_constant name="Y1" value="120.0 m"/>
+    </constants>
+  </definitions>
+
+  <process_kernels>
+    <pk mode="steady">
+      <flow model="saturated" state="on" />
+    </pk>
+    <pk mode="transient">
+      <flow model="saturated" state="on" />
+      <energy model="one-phase energy" state="on" />
+    </pk>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <restart>chk00168.h5</restart>
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+    <execution_control end="1956,y" mode="steady" start="0.0" init_dt="1000.0"/>
+    <execution_control end="3000,y" mode="transient" start="1956,y"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_flow_controls>
+        <preconditioning_strategy>linearized_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+
+      <unstr_steady-state_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
+      </unstr_steady-state_controls>
+
+      <unstr_transient_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+      </unstr_transient_controls>
+
+      <unstr_linear_solver>
+        <max_iterations>100</max_iterations>
+        <!-- iterative method will defined by the code -->
+        <!--method>pcg</method-->
+        <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+      <unstr_preconditioners>
+        <hypre_amg>
+          <use_block_indices>false</use_block_indices>
+        </hypre_amg>
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="54" nz="60" />
+      <box high_coordinates="X1, Y1" low_coordinates="0.0, 0.0" />
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="Bottom Surface">
+      <box high_coordinates="X1, 0.0" low_coordinates="0.0, 0.0" />
+    </region>
+    <region name="EntireDomain">
+      <box high_coordinates="X1, Y1" low_coordinates="0.0, 0.0" />
+    </region>
+    <box name="Crib" high_coordinates="80.0, Y1" low_coordinates="72.0, Y1" />
+    <box name="Well" high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />
+  </regions>
+
+  <materials>
+    <material name="Facies">
+      <mechanical_properties>
+        <porosity value="0.2206"/>
+      </mechanical_properties>
+      <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
+      <assigned_regions>EntireDomain</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>EntireDomain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0 m, 0.0" gradient="0,-9793.5192 Pa/m" />
+        </liquid_component>
+        <solute_component/> 
+      </liquid_phase>
+      <uniform_temperature function="uniform" value="298.0 K"/>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <comments/>
+    <boundary_condition name="BC For Bottom Surface">
+      <assigned_regions>Bottom Surface</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic function="uniform" start="0.0" value="0.0 m"/>
+        </liquid_component>
+        <solute_component/>
+      </liquid_phase>
+      <thermal_component>
+        <uniform_temperature function="general" formula="298.0 + 1e-8 * t" start="0.0"/>
+      </thermal_component>
+    </boundary_condition>
+
+    <boundary_condition name="BC For Crib">
+      <assigned_regions>Crib</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
+          <inward_volumetric_flux value="0.00254022e-3 m/s" function="constant" start="6.17266656e+10" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.1729344E10 s" />
+          <inward_volumetric_flux value="1.48666E-7 cm/s" function="constant" start="9.4672798E10" />
+        </liquid_component>
+        <solute_component/>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <fracture_network>
+    <materials>
+      <material name="Uniform">
+        <mechanical_properties>
+          <porosity value="0.004"/>
+        </mechanical_properties>
+        <fracture_permeability model="cubic law" type="h5file" filename="aperture.h5" normal="20.0"/>
+        <assigned_regions>fracture</assigned_regions>
+      </material>
+    </materials>
+
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <assigned_regions>EntireDomain</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <uniform_pressure value="101325 Pa" />
+          </liquid_component>
+        </liquid_phase>
+        <uniform_temperature function="uniform" value="298.0 K"/>
+      </initial_condition>
+    </initial_conditions>
+  </fracture_network>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every100Cycles</cycle_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>chk</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every100Cycles</cycle_macros>
+    </checkpoint>
+  </output>
+</amanzi_input>
+  
