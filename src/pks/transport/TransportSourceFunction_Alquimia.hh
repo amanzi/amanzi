@@ -49,7 +49,6 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::Ptr<const Epetra_MultiVector> mol_dens_data_;
   Teuchos::Ptr<const Epetra_MultiVector> src_liq_data_;
   
   // string function of geochemical conditions
