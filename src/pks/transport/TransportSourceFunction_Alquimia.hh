@@ -39,7 +39,6 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   
   void Compute(double t_old, double t_new);
 
-  void set_mol_dens_data_( Teuchos::Ptr<const Epetra_MultiVector> data) {mol_dens_data_ = data;}
   void set_liquid_src_data_( Teuchos::Ptr<const Epetra_MultiVector> data) {src_liq_data_ = data;}
   
   // require by the case class

@@ -72,27 +72,27 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   fluid_den_key_ = Keys::readKey(*cp_list_, domain_, "mass density liquid", "mass_density_liquid");
   
 
-  min_vol_frac_key_ = Keys::readKey(*cp_list_, domain_, "mineral volume fractions","mineral_volume_fractions");
-  min_ssa_key_ = Keys::readKey(*cp_list_, domain_, "mineral specific surface area","mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::readKey(*cp_list_, domain_, "sorption_sites","sorption sites");
-  surf_cfsc_key_ = Keys::readKey(*cp_list_, domain_, "surface_complex_free_site_conc","surface complex free site conc");
-  total_sorbed_key_ = Keys::readKey(*cp_list_, domain_, "total sorbed","total_sorbed");
-  isotherm_kd_key_ = Keys::readKey(*cp_list_, domain_, "isotherm_kd","isotherm_kd");
-  isotherm_freundlich_n_key_ = Keys::readKey(*cp_list_, domain_, "isotherm freundlich_n","isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = Keys::readKey(*cp_list_, domain_, "isotherm langmuir_b","isotherm_langmuir_b");
-  free_ion_species_key_ = Keys::readKey(*cp_list_, domain_, "free ion species","free_ion_species");
-  primary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "primary activity coeff","primary_activity_coeff");
+  min_vol_frac_key_ = Keys::readKey(*cp_list_, domain_, "mineral volume fractions", "mineral_volume_fractions");
+  min_ssa_key_ = Keys::readKey(*cp_list_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::readKey(*cp_list_, domain_, "sorption sites", "sorption_sites");
+  surf_cfsc_key_ = Keys::readKey(*cp_list_, domain_, "surface complex free site conc", "surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::readKey(*cp_list_, domain_, "total sorbed", "total_sorbed");
+  isotherm_kd_key_ = Keys::readKey(*cp_list_, domain_, "isotherm_kd", "isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::readKey(*cp_list_, domain_, "isotherm freundlich_n", "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::readKey(*cp_list_, domain_, "isotherm langmuir_b", "isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::readKey(*cp_list_, domain_, "free ion species", "free_ion_species");
+  primary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "primary activity coeff", "primary_activity_coeff");
 
-  ion_exchange_sites_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange sites","ion_exchange_sites");
-  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange ref cation conc","ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "secondary activity coeff","secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_, "alquimia aux data","alquimia_aux_data");
+  ion_exchange_sites_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange sites", "ion_exchange_sites");
+  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "secondary activity coeff", "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_, "alquimia aux data", "alquimia_aux_data");
 
-  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_,"ion exchange ref cation conc","ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_,"secondary activity coeff","secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_,"alquimia aux data","alquimia_aux_data");
-  mineral_rate_constant_key_ = Keys::readKey(*cp_list_, domain_,"mineral rate constant","mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::readKey(*cp_list_, domain_,"first order decay constant","first_order_decay_constant");
+  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_,"ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_,"secondary activity coeff", "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_,"alquimia aux data", "alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::readKey(*cp_list_, domain_,"mineral rate constant", "mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::readKey(*cp_list_, domain_,"first order decay constant", "first_order_decay_constant");
 
 
   // collect high-level information about the problem
