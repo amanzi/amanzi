@@ -770,7 +770,7 @@
 	</ParameterList>
 	<ParameterList name="advection operator">
 	  <Parameter name="discretization primary" type="string" value="relative permeability"/>
-          <Parameter name="single domain" type="Array(string)" value="{domain}"/>
+          <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	</ParameterList>
       </ParameterList>
 

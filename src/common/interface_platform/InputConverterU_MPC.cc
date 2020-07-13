@@ -1061,6 +1061,38 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       pk_list.sublist("transport matrix").sublist("operators").sublist("advection operator")
              .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
     }
+
+    if (name == "coupled flow and energy") {
+      std::vector<std::string> name_pks = { "flow and energy", "flow and energy fracture",
+                                            "flow", "energy", "flow fracture", "energy fracture"};
+
+      for (auto&& pk : name_pks) {
+        auto& tmp = pk_list.sublist(pk).sublist("time integrator");
+        tmp.set<std::string>("time integration method", "none");
+        tmp.remove("BDF1", false);
+        tmp.remove("initialization", false);
+
+        if (pk.find("fracture") == std::string::npos) {
+          if (pk_list.sublist(pk).isSublist("operators")) {
+            auto& oplist = pk_list.sublist(pk).sublist("operators").sublist("diffusion operator");
+            oplist.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+            oplist.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+            oplist.sublist("vapor matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+          }
+        }
+
+        if (pk == "energy") {
+          auto& oplist = pk_list.sublist(pk).sublist("operators").sublist("advection operator");
+          oplist.set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+        }
+      }
+
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
+    }
   }
 }
 

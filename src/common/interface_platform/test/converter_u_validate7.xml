@@ -619,37 +619,7 @@
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         </ParameterList>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.19999999999999996"/>
-            <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
@@ -668,6 +638,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -676,6 +647,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -687,6 +659,7 @@
             <Parameter name="exclude primary terms" type="bool" value="false"/>
             <Parameter name="scaled constraint equation" type="bool" value="false"/>
             <Parameter name="Newton correction" type="string" value="none"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -700,38 +673,7 @@
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         </ParameterList>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="static head">
@@ -790,6 +732,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -798,7 +741,14 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
@@ -821,37 +771,7 @@
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         </ParameterList>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1000.0"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="temperature">
@@ -895,42 +815,13 @@
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         </ParameterList>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1000.0"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="energy fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="operators">
@@ -972,37 +863,7 @@
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         </ParameterList>
-        <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="energy evaluator">
         <ParameterList name="verbose object">
@@ -1019,6 +880,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
