@@ -469,15 +469,15 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
-  S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
-  const auto& enthalpy_m = *S_->GetFieldData("enthalpy")->ViewComponent("cell", true);
+  std::string der_name = Keys::getDerivKey("enthalpy", "temperature");
+  S_->GetFieldEvaluator("enthalpy")->HasFieldDerivativeChanged(S_.ptr(), "thermal", "temperature");
+  const auto& dHdT_m = *S_->GetFieldData(der_name, "enthalpy")->ViewComponent("cell", true);
   const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
-  const auto& temp_m = *S_->GetFieldData("temperature")->ViewComponent("cell", true);
 
-  S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldChanged(S_.ptr(), "thermal");
-  const auto& enthalpy_f = *S_->GetFieldData("fracture-enthalpy")->ViewComponent("cell");
-  const auto& n_l_f = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell");
-  const auto& temp_f = *S_->GetFieldData("fracture-temperature")->ViewComponent("cell");
+  der_name = Keys::getDerivKey("fracture-enthalpy", "fracture-temperature");
+  S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldDerivativeChanged(S_.ptr(), "thermal", "fracture-temperature");
+  const auto& dHdT_f = *S_->GetFieldData(der_name, "fracture-enthalpy")->ViewComponent("cell", true);
+  const auto& n_l_f = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell", true);
 
   // update coupling terms for advection
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -504,10 +504,10 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
       if (tmp > 0) {
         int c1 = cells[k];
-        double factor = enthalpy_m[0][c1] * n_l_m[0][c1] / temp_m[0][c1];
+        double factor = dHdT_m[0][c1] * n_l_m[0][c1];
         (*values1)[np] = tmp * factor;
       } else {
-        double factor = enthalpy_f[0][c] * n_l_f[0][c] / temp_f[0][c];
+        double factor = dHdT_f[0][c] * n_l_f[0][c];
         (*values2)[np] = -tmp * factor;
       }
 
