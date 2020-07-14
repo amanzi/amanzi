@@ -1081,6 +1081,10 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
           }
         }
 
+        if (pk == "flow" || pk == "flow fracture") {
+          tmp.sublist("pressure-lambda constraints").set<std::string>("method", "none");
+        }
+
         if (pk == "energy") {
           auto& oplist = pk_list.sublist(pk).sublist("operators").sublist("advection operator");
           oplist.set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
