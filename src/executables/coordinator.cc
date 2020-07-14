@@ -80,8 +80,20 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-
+  std::string chkp_filenamebase = chkp_plist.get<std::string>("file name base", "checkpoint");
+  auto split_restart = Amanzi::Keys::splitKey(chkp_filenamebase, '*');
+  if (split_restart.first.empty()) {
+    // standard checkpoint file on COMM_WORLD
+    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  } else {
+    // rank-based checkpoint file on COMM_SELF
+    auto comm_self = Amanzi::getCommSelf();
+    std::stringstream chkp_filenamebase_rank;
+    chkp_filenamebase_rank << split_restart.first << comm_->MyPID() << "_" << split_restart.second;
+    chkp_plist.set("file name base", chkp_filenamebase_rank.str());
+    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
+  }
+  
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   observations_ = Teuchos::rcp(new Amanzi::UnstructuredObservations(observation_plist,
@@ -141,7 +153,17 @@ void Coordinator::initialize() {
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
+    auto split_restart = Amanzi::Keys::splitKey(restart_filename_, '*');
+    if (split_restart.first.empty()) {
+      // standard restart file on COMM_WORLD
+      ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
+    } else {
+      // rank-based restart file on COMM_SELF
+      auto comm_self = Amanzi::getCommSelf();
+      std::stringstream restart_fname;
+      restart_fname << split_restart.first << rank << split_restart.second;
+      ReadCheckpoint(comm_self, S_.ptr(), restart_fname.str());
+    }
     t0_ = S_->time();
     cycle0_ = S_->cycle();
     
