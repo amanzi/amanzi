@@ -385,10 +385,10 @@ set(HYPRE_VERSION_MAJOR  2)
 set(HYPRE_VERSION_MINOR  14)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
-set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
+set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
+set(HYPRE_MD5_SUM        270a6e4620622516655dd9903a36d314)
 
 #
 # TPL: ParMetis
@@ -409,10 +409,10 @@ set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
 set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
-set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
-set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
+set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive")
+set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
+set(SuperLU_MD5_SUM        4a1a602d9335f1da4ba786cccc7873cd)
 
 #
 # TPL: SuperLU_Dist
