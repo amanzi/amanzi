@@ -5,17 +5,10 @@ The Advanced Terrestrial Simulator (formerly sometimes known as the Arctic Terre
 
 Capabilities are largely based on solving various forms of Richards equation coupled to a surface flow equation, along with the needed sources and sinks for ecosystem and climate models.  This can (but need not) include thermal processes (especially ice for frozen soils), evapo-transpiration, albedo-driven surface energy balances, snow, biogeochemistry, plant dynamics, deformation, transport, and much more.
 
+Join the Community
+------------------
 
-Getting the code
-----------------
-
-If you just plan on using ATS and think what you want is likely in a recent release, please prefer to use the most recent [release version available here](https://github.com/amanzi/ats/releases).
-
-If you instead expect to do new development, please use the developer version and clone the [ats repository](http://github.com/amanzi/ats) using:
-
-```
-git clone http://github.com/amanzi/ats
-```
+ATS is more than just a code, but a community of users with a lot of experience in both integrated hydrology, Arctic hydrology, and ATS code development.  Please join us on our [google group](https://groups.google.com/forum/#!forum/ats-users).  We try very hard to create a welcoming community that supports and enables our users to do their science.
 
 
 Installation
