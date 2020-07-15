@@ -16,6 +16,11 @@ Installation
 
 ATS is now built as a part of Amanzi directly. Please see the [ATS installation instructions](https://github.com/amanzi/amanzi/blob/master/INSTALL_ATS.md) on Amanzi's site.
 
+Documentation
+-------------
+
+[Documentation](https://amanzi.github.io/ats/) is a work in progress, but includes a large suite of example problems.
+
 
 License and Copyright
 ---------------------
