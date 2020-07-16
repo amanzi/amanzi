@@ -150,26 +150,24 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   Chemistry_PK::Setup(S);
  
   // Set up auxiliary chemistry data using the ChemistryEngine.
-  std::vector<std::string> aux_names;
-  chem_engine_->GetAuxiliaryOutputNames(aux_names);
+  chem_engine_->GetAuxiliaryOutputNames(aux_names_);
 
-  for (size_t i = 0; i < aux_names.size(); ++i) {
+  for (size_t i = 0; i < aux_names_.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
-    aux_names[i] = Keys::getKey(domain_, aux_names[i]);
+    aux_names_[i] = Keys::getKey(domain_, aux_names_[i]);
 
-    if (!S->HasField(aux_names[i])) {
-      S->RequireField(aux_names[i], passwd_, subname)
+    if (!S->HasField(aux_names_[i])) {
+      S->RequireField(aux_names_[i], passwd_, subname)
        ->SetMesh(mesh_)->SetGhosted(false)
        ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
 
   if (cp_list_->isParameter("auxiliary data")) {
-    Teuchos::Array<std::string> names = 
-      cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
+    auto names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
-    for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
+    for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
       if (!S->HasField(aux_field_name)) {
         std::vector<std::vector<std::string> > subname(1);
@@ -190,8 +188,6 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->GetField(alquimia_aux_data_key_, passwd_)->set_io_vis(false);
   }
-
-
 }
 
 
@@ -203,35 +199,33 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
-  // initialize auxiliary fields as needed
-  std::vector<std::string> aux_names;
-  chem_engine_->GetAuxiliaryOutputNames(aux_names);
-
-  if (cp_list_->isParameter("auxiliary data")) {
-    std::vector<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data").toVector();  
-    aux_names.insert(aux_names.end(), names.begin(), names.end());
-  }
-
-  //  const Teuchos::RCP<State> Srcp = Teuchos::RCP<State>(S.get());
-  for (size_t i = 0; i < aux_names.size(); ++i) {
-    aux_names[i] = Keys::getKey(domain_, aux_names[i]);
-    
-    // InitializeField_(S, aux_names[i], 0.0);
-    InitializeField(S, passwd_, aux_names[i], 0.0);
+  if (!aux_names_.empty()) {
+    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), aux_names_.size()));
+  } else {
+    aux_output_ = Teuchos::null;
   }
 
   // Read XML parameters from our input file.
   XMLParameters();
 
+  // initialize fields as soon as possible
+  for (size_t i = 0; i < aux_names_.size(); ++i) {
+    InitializeField(S, passwd_, aux_names_[i], 0.0);
+  }
+
   // Initialize the data structures that we will use to traffic data between 
   // Amanzi and Alquimia.
   chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+
   if (using_sorption_ && alq_state_.total_immobile.data == NULL) {
     Errors::Message msg("Alquimia's state has no memory for total_immobile.");
     Exceptions::amanzi_throw(msg); 
   }
 
-  // Do we need to initialize chemsitry?
+  // all memory allocation consistency checks should be placed here
+  AMANZI_ASSERT(alq_state_.surface_site_density.size == number_sorption_sites_);
+
+  // Do we need to initialize chemistry?
   int ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * (1.0 + fabs(S->time()))) {
     for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
@@ -245,12 +239,12 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
 
       // Get the cells that belong to this region.
-      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+      int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
       AmanziMesh::Entity_ID_List cell_indices;
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
   
       // Loop over the cells.
-      for (unsigned int i = 0; i < num_cells; ++i) {
+      for (int i = 0; i < num_cells; ++i) {
         int cell = cell_indices[i];
         ierr = InitializeSingleCell(cell, condition);
       }
@@ -267,9 +261,10 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Key full_name = Keys::getKey(domain_, aux_names_[i]);
-      Epetra_MultiVector& aux_state = *S->GetFieldData(full_name, passwd_)->ViewComponent("cell", true);
+      auto& aux_state = *S->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
   }
@@ -354,16 +349,6 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
 void Alquimia_PK::XMLParameters() 
 {
   Errors::Message msg;
-
-  // We retrieve the names of the auxiliary output data from the chemistry engine--we don't rely on 
-  // the Auxiliary Data parameter list.
-  chem_engine_->GetAuxiliaryOutputNames(aux_names_);
-  if (!aux_names_.empty()) {
-    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), aux_names_.size()));
-  } else {
-    aux_output_ = Teuchos::null;
-  }
-
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Add any geochemical conditions we find in the Chemistry section of the file.
