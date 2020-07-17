@@ -80,7 +80,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // initialize the multiphase process kernel
   MPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
-  S->WriteStatistics(vo);
+  WriteStateStatistics(S.ptr(), vo);
 
   // initialize io
   Teuchos::ParameterList iolist;
@@ -114,11 +114,11 @@ TEST(MULTIPHASE_MODEL_I) {
       io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
       io->FinalizeCycle();
 
-      S->WriteStatistics(vo);
+      WriteStateStatistics(S.ptr(), vo);
     }
   }
 
-  S->WriteStatistics(vo);
+  WriteStateStatistics(S.ptr(), vo);
 
   // verification
   double dmin, dmax;

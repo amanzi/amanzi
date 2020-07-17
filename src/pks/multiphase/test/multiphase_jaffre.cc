@@ -80,7 +80,7 @@ TEST(MULTIPHASE_2P2C) {
   // initialize the multiphase process kernel
   MPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
-  S->WriteStatistics(vo);
+  WriteStateStatistics(S.ptr(), vo);
 
   // initialize io
   Teuchos::ParameterList iolist;
@@ -116,11 +116,11 @@ TEST(MULTIPHASE_2P2C) {
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();
 
-      S->WriteStatistics(vo);
+      WriteStateStatistics(S.ptr(), vo);
     }
   }
 
-  S->WriteStatistics(vo);
+  WriteStateStatistics(S.ptr(), vo);
 
   // verification
   double dmin, dmax;
