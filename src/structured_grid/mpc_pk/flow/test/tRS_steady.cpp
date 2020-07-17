@@ -202,8 +202,11 @@ main (int   argc,
     grid_array[0] = BoxArray(domain);
     geom_array[0] = Geometry(domain);
 
-    Array<Real> plo(Geometry::ProbLo(),BL_SPACEDIM);
-    Array<Real> phi(Geometry::ProbLo(),BL_SPACEDIM);
+    Array<Real> plo(BL_SPACEDIM), phi(BL_SPACEDIM);
+    for (int i = 0; i < BL_SPACEDIM; ++i) {
+      plo[i] = (Geometry::ProbLo())[i];
+      phi[i] = (Geometry::ProbLo())[i];
+    }
     RegionManager rm(plo,phi);
   
     Layout layout(refRatio_array,grid_array,geom_array,nLevs);
@@ -354,7 +357,8 @@ main (int   argc,
     err.minus(cfab);
     norms[lev][0] = err.norm(0); // infinity norm (max norm).
     norms[lev][1] = err.norm(1) / err.box().numPts(); // 1-norm 
-    norms[lev][2] = err.norm(2) / err.box().numPts(); // 2-norm
+    // norms[lev][2] = err.norm(2) / err.box().numPts(); // 2-norm
+    norms[lev][2] = norms[lev][1]; // missing implementation of 2-norm (use dot ???)
   }
 
   int retVal = 0;
