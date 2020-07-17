@@ -225,6 +225,10 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // all memory allocation consistency checks should be placed here
   AMANZI_ASSERT(alq_state_.surface_site_density.size == number_sorption_sites_);
 
+  chem_engine_->GetMineralNames(mineral_names_);
+  chem_engine_->GetPrimarySpeciesNames(primary_names_);
+  InitializeAuxNamesMap_();
+
   // Do we need to initialize chemistry?
   int ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * (1.0 + fabs(S->time()))) {
@@ -610,69 +614,28 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
   std::string full_name;
 
   if (aux_output_ != Teuchos::null) {
-    std::vector<std::string> mineralNames, primaryNames;
-    chem_engine_->GetMineralNames(mineralNames);
-    chem_engine_->GetPrimarySpeciesNames(primaryNames);
-
     int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
 
-    for (unsigned int i = 0; i < aux_names_.size(); i++) {
-      if (aux_names_.at(i) == "pH") {
-        (*aux_output_)[i][cell] = aux_output.pH;
-      }
-      else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
-        for (int j = 0; j < mineralNames.size(); ++j) {
-          full_name = "mineral_saturation_index_" + mineralNames[j];
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.mineral_saturation_index.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
-        for (int j = 0; j < mineralNames.size(); ++j) {
-          full_name = "mineral_reaction_rate_" + mineralNames[j];
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.mineral_reaction_rate.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
-        for (int j = 0; j < primaryNames.size(); ++j) {
-          full_name = "primary_free_ion_concentration_" + primaryNames[j];
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.primary_free_ion_concentration.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
-        for (int j = 0; j < primaryNames.size(); ++j) {
-          full_name = "primary_activity_coeff_" + primaryNames[j];
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.primary_activity_coeff.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find("secondary_free_ion_concentration") != std::string::npos) {
-        for (int j = 0; j < numAqueousComplexes; ++j) {
-          char num_str[16];
-          snprintf(num_str, 15, "%d", j);
-          full_name = "secondary_free_ion_concentration_" + std::string(num_str);
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.secondary_free_ion_concentration.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find(secondary_activity_coeff_key_) != std::string::npos) {
-        for (int j = 0; j < numAqueousComplexes; ++j) {
-          char num_str[16];
-          snprintf(num_str, 15, "%d", j);
-          full_name = "secondary_activity_coeff_" + std::string(num_str);
-          if (aux_names_.at(i) == full_name) {
-            (*aux_output_)[i][cell] = aux_output.secondary_activity_coeff.data[j];
-          }
-        }
-      }
-    }
+    for (int n = 0; n < map_[0].size(); ++n) 
+      (*aux_output_)[map_[0][n]][cell] = aux_output.pH;
+
+    for (int n = 0; n < mineral_names_.size(); ++n)
+      (*aux_output_)[map_[1][n]][cell] = aux_output.mineral_saturation_index.data[n];
+
+    for (int n = 0; n < mineral_names_.size(); ++n)
+      (*aux_output_)[map_[2][n]][cell] = aux_output.mineral_reaction_rate.data[n];
+
+    for (int n = 0; n < primary_names_.size(); ++n)
+      (*aux_output_)[map_[3][n]][cell] = aux_output.primary_free_ion_concentration.data[n];
+
+    for (int n = 0; n < primary_names_.size(); ++n)
+      (*aux_output_)[map_[4][n]][cell] = aux_output.primary_activity_coeff.data[n];
+
+    for (int n = 0; n < numAqueousComplexes; ++n)
+      (*aux_output_)[map_[5][n]][cell] = aux_output.secondary_free_ion_concentration.data[n];
+
+    for (int n = 0; n < numAqueousComplexes; ++n)
+      (*aux_output_)[map_[6][n]][cell] = aux_output.secondary_activity_coeff.data[n];
   }
 }
 
@@ -983,6 +946,76 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::extra_chemistry_output_data()
   // This vector is updated during the initialization and advance of 
   // the geochemistry, so we simply return it here.
   return aux_output_;
+}
+
+
+/* *******************************************************************
+* Auxiliary map from beacon to aux_names
+******************************************************************* */
+void Alquimia_PK::InitializeAuxNamesMap_()
+{
+  map_.resize(7);
+
+  std::string full_name;
+  int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
+
+  for (int i = 0; i < aux_names_.size(); i++) {
+    if (aux_names_.at(i) == "pH") {
+      map_[0].push_back(i);
+    }
+    else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
+      for (int j = 0; j < mineral_names_.size(); ++j) {
+        full_name = "mineral_saturation_index_" + mineral_names_[j];
+        if (aux_names_.at(i) == full_name) {
+          map_[1].push_back(i);
+        }
+      }
+    }
+    else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
+      for (int j = 0; j < mineral_names_.size(); ++j) {
+        full_name = "mineral_reaction_rate_" + mineral_names_[j];
+        if (aux_names_.at(i) == full_name) {
+          map_[2].push_back(i);
+        }
+      }
+    }
+    else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
+      for (int j = 0; j < primary_names_.size(); ++j) {
+        full_name = "primary_free_ion_concentration_" + primary_names_[j];
+        if (aux_names_.at(i) == full_name) {
+          map_[3].push_back(i);
+        }
+      }
+    }
+    else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
+      for (int j = 0; j < primary_names_.size(); ++j) {
+        full_name = "primary_activity_coeff_" + primary_names_[j];
+        if (aux_names_.at(i) == full_name) {
+          map_[4].push_back(i);
+        }
+      }
+    }
+    else if (aux_names_.at(i).find("secondary_free_ion_concentration") != std::string::npos) {
+      for (int j = 0; j < numAqueousComplexes; ++j) {
+        char num_str[16];
+        snprintf(num_str, 15, "%d", j);
+        full_name = "secondary_free_ion_concentration_" + std::string(num_str);
+        if (aux_names_.at(i) == full_name) {
+          map_[5].push_back(i);
+        }
+      }
+    }
+    else if (aux_names_.at(i).find(secondary_activity_coeff_key_) != std::string::npos) {
+      for (int j = 0; j < numAqueousComplexes; ++j) {
+        char num_str[16];
+        snprintf(num_str, 15, "%d", j);
+        full_name = "secondary_activity_coeff_" + std::string(num_str);
+        if (aux_names_.at(i) == full_name) {
+          map_[6].push_back(i);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace AmanziChemistry
