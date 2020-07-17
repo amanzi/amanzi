@@ -13,8 +13,8 @@
 #  There's not effort here to parse arguments.  Just assumes you are providing an xml file.
 #
 
-HOST_MNT=/Volumes/data/$PWD
+HOST_MNT=`pwd -P`
 CONT_MNT=/home/amanzi_usr/work
 CONT_PWD=/home/amanzi_usr/work
 
-docker run --rm -v $HOST_MNT:$CONT_MNT:delegated -w $CONT_PWD metsi/amanzi:latest mpirun -n 4 amanzi --xml_file=$1
+docker run --rm -v $HOST_MNT:$CONT_MNT:delegated -w $CONT_PWD metsi/amanzi:latest mpirun -n 4 amanzi "$@"

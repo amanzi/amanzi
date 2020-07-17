@@ -170,6 +170,8 @@ void CompositeVectorFunction::Compute(double time,
             AmanziMesh::Entity_ID_List id_list;
             mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
 
+	    auto map = cv->Map().Map(compname, false);
+
             // loop over indices
             for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
                  id!=id_list.end(); ++id) {
@@ -188,8 +190,13 @@ void CompositeVectorFunction::Compute(double time,
 
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
-              for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec[i][*id] = value[i];
+
+              int g = map->FirstPointInElement(*id);
+              int ndofs = map->ElementSize(*id);
+              for (int n = 0; n < ndofs; ++n) {
+                for (int i=0; i!=(*spec->second).size(); ++i) {
+                  compvec[i][g + n] = value[i];
+                }
               }
             }
           } else {

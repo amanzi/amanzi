@@ -43,7 +43,7 @@ file(GLOB inc_files "*.hh")
 add_amanzi_library(functions 
                    SOURCE ${src_files}
                    HEADERS ${inc_files}
-                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                   LINK_LIBS error_handling atk ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)

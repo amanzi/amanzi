@@ -1645,7 +1645,7 @@ The boolen parameter `"use area fractions`" instructs the code to use all availa
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
-are `"area`" or `"none`". 
+are `"volume`", `"permeability`", `"domain coupling`", `"subgrid`", `"simple well`", or `"none`". 
 For instance, for a given boundary function :math:`g(x)`, these options correspond to 
 different boundary conditions for the Darcy velocity in the original PDE:
 
@@ -1675,7 +1675,7 @@ specified regions calculated using the folume fraction function.
     <ParameterList name="mass flux">
       <ParameterList name="_BC 1">
         <Parameter name="regions" type="Array(string)" value="{_NORTH_SIDE, _SOUTH_SIDE}"/>
-        <Parameter name="spatial distribution method" type="string" value="area"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
         <Parameter name="rainfall" type="bool" value="false"/>
         <ParameterList name="outward mass flux">
           <ParameterList name="function-constant">
@@ -2260,16 +2260,16 @@ The diffusivity is defined independently for each solute.
   * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
     For model `"scalar`", the following options must be specified:
 
-      * `"alpha`" [double] defines dispersion in all directions. 
+      * `"alpha`" [double] defines dispersion in all directions, [m]. 
 
     For model `"Bear`", the following options must be specified:
 
-      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity.
-      * `"alpha_t`" [double] defines dispersion in the orthogonal direction.
+      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
+      * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
     
     For model `"Burnett-Frind`", the following options must be specified:
 
-      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity.
+      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
       * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
       * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions.
         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
@@ -2277,7 +2277,7 @@ The diffusivity is defined independently for each solute.
 
     For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
 
-      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction.
+      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
       * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction.
         When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
@@ -3924,7 +3924,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
-    `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
+    `"divk: face`", `"standard: cell`", and `"divk: cell-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
@@ -4477,6 +4477,25 @@ and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
 The parameter *x coordinate* defines whether the *x values* refers to time *t*,
 x-coordinate *x*, y-coordinate *y*, or z-coordinate *z*.
 
+It is possible to populate *x values* and *y values* parameters in a tabular 
+function from an HDF5 file. The parameter *forms* is optional.
+
+* `"file`" [string] is the path to hdf5 file containing tabulr function information. 
+
+* `"x header`" [string] name of the dataset containing *x values*.
+
+* `"y header`" [string] name of the dataset containing *y values*.
+
+.. code-block:: xml
+
+  <ParameterList name="function-tabular">
+    <Parameter name="file" type="string" value="surface.h5"/>
+    <Parameter name="x header" type="string" value="times"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
+    <Parameter name="y header" type="string" value="recharge"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, constant}"/>
+  </ParameterList>
+  
 
 Bilinear function
 .................
@@ -4802,6 +4821,24 @@ This function requires a few parameters as well as one of the standard math func
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
+
+
+Expression function
+...................
+
+The expression function is defined by a string expression.
+The function has min(N, D + 1) arguments t, x, y, and z. The argument t is required. 
+D is the space dimension, and N is the user specified number of arguments which could 
+be less than D + 1.
+
+Example of a quadratic function in 2D:
+
+.. code-block:: xml
+
+  <ParameterList name="function-exprtk">
+    <Parameter name="number of arguments" type="int" value="3"/>
+    <Parameter name="formula" type="string" value="t + x + y^2"/>
   </ParameterList>
 
 
@@ -6187,6 +6224,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
     `"region`", `"times`", and TSPS (see below).
 
+    * `"domain name`" [string] name of the domain. Typically, it is either `"domain`" for
+      the matrix/subsurface or `"fracture`" for the fracture network.
+
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
@@ -6202,12 +6242,15 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * water table [m]
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
+      * SOLUTE sorbed concentration [mol/kg] 
+      * SOLUTE free ion concentration
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
+      * pH [-] 
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
     registered at the first time it was requested.
@@ -6280,17 +6323,23 @@ All of them operate on the variables identified.
       <Parameter name="region" type="string" value="_REGION"/>
       <Parameter name="functional" type="string" value="observation data: point"/>
       <Parameter name="variable" type="string" value="volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
       <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
 
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    </ParameterList>
+
+    <ParameterList name="_ANY OBSERVATION NAME B">  <!-- another observation -->
+      ...
     </ParameterList>
   </ParameterList>
   </ParameterList>
+
+In this example, we collect `"volumetric water content`" on four selected cycles,
+every 100 cycles, three selected times, every 10 seconds from 0 to 100, and every 25 seconds after that.
 
 
 Checkpoint file

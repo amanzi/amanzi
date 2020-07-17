@@ -544,6 +544,10 @@
           <Parameter name="active wells" type="bool" value="false"/>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="flow matrix steady">

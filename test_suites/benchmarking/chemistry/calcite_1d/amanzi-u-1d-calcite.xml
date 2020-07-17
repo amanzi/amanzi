@@ -26,7 +26,7 @@
   <process_kernels>
     <flow model="saturated" state="on" />
     <transport state="on" />
-    <chemistry engine="amanzi" process_model="none" state="on" input_filename="calcite.bgd"/>
+    <chemistry engine="amanzi" state="on" input_filename="calcite.bgd"/>
   </process_kernels>
 
   <phases>
@@ -35,11 +35,11 @@
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="0.0">H+</solute>
-          <solute coefficient_of_diffusion="0.0">HCO3-</solute>
-          <solute coefficient_of_diffusion="0.0">Ca++</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0">H+</primary>
+          <primary coefficient_of_diffusion="0.0">HCO3-</primary>
+          <primary coefficient_of_diffusion="0.0">Ca++</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
     <solid_phase name="rock">
@@ -53,7 +53,7 @@
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" mode="steady" />
     <execution_control end="0.0" mode="steady" start="0.0" reduction_factor="0.8" increase_factor="1.25" init_dt="1.5768e+5"/>
-    <execution_control end="1.5778463e9" mode="transient" dt_max="6.0e+10" reduction_factor="0.8" increase_factor="1.25" start="0.0" init_dt="1.5768e+5"/>
+    <execution_control end="1.5778463e9" mode="transient" max_dt="6.0e+10" reduction_factor="0.8" increase_factor="1.25" start="0.0" init_dt="1.5768e+5"/>
   </execution_controls>
 
   <numerical_controls>
@@ -93,7 +93,7 @@
       <unstr_chemistry_controls>
         <activity_model>debye-huckel</activity_model>
         <tolerance>1.0e-12</tolerance>
-        <maximum_newton_terations>50</maximum_newton_terations>
+        <maximum_newton_iterations>50</maximum_newton_iterations>
         <auxiliary_data>pH</auxiliary_data>
         <initial_time_step>220000.0</initial_time_step>
         <max_time_step>220000.0</max_time_step>
@@ -121,7 +121,7 @@
   </mesh>
 
   <regions>
-    <region name="Entire Domain">
+    <region name="All">
       <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0,0.0,0.0" />
     </region>
     <region name="West">
@@ -138,7 +138,7 @@
         <porosity value="0.25"/>
       </mechanical_properties>
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />
-      <assigned_regions>Entire Domain</assigned_regions>
+      <assigned_regions>All</assigned_regions>
       <minerals>
         <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/>
       </minerals>
@@ -147,19 +147,14 @@
 
   <initial_conditions>
     <initial_condition name="All">
-      <assigned_regions>Entire Domain</assigned_regions>
+      <assigned_regions>All</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="201325.0" />
         </liquid_component>
-        <solute_component name="solute">
-          <uniform_conc name="H+" value="1.6288E-05" />
-          <uniform_conc name="HCO3-" value="1.7384E-03" />
-          <uniform_conc name="Ca++" value="5.2258E-04" />
-        </solute_component>
-        <geochemistry>
-          <constraint name="initial" start="0.0"/>
-        </geochemistry>
+        <geochemistry_component>
+          <constraint name="initial" />
+        </geochemistry_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -171,14 +166,9 @@
         <liquid_component name="water">
           <inward_mass_flux function="constant" start="0.0" value="7.91317859e-6"/>
         </liquid_component>
-        <solute_component name="solute">
-          <aqueous_conc name="H+" value="9.6643E-04" function="constant" start="0.0"/>
-          <aqueous_conc name="HCO3-" value="1.0000E-03" function="constant" start="0.0"/>
-          <aqueous_conc name="Ca++" value="1.6787E-05" function="constant" start="0.0"/>
-        </solute_component> 
-        <!--geochemistry>
-          <constraint name="west" function="uniform" start="0.0"/>
-        </geochemistry-->
+        <geochemistry_component>
+          <constraint name="west" function="constant" start="0.0"/>
+        </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
 
@@ -186,11 +176,27 @@
       <assigned_regions>East</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure function="uniform" start="0.0" value="201325.0"/>
+          <uniform_pressure function="constant" start="0.0" value="201325.0"/>
         </liquid_component>
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
+
+  <geochemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.2258e-4"/>
+        <primary name="HCO3-" type="gas" value="1.7384e-3" gas="CO2(g)"/>
+        <primary name="H+" type="free_ion" value="1.6288e-5"/>
+      </constraint>
+      <constraint name="west">
+        <primary name="Ca++" type="charge" value="1.6787E-05"/>
+        <primary name="HCO3-" type="total" value="1e-3"/>
+        <primary name="H+" type="pH" value="9.6643E-04"/>
+      </constraint>
+    </constraints>
+  </geochemistry>
 
   <output>
     <vis>

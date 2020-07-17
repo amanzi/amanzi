@@ -24,6 +24,9 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "Epetra_Vector.h"
 
 #include "errors.hh"
+#include "Mesh.hh"
+#include "DomainSet.hh"
+#include "MeshPartition.hh"
 #include "CompositeVector.hh"
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
@@ -186,26 +189,31 @@ void State::RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
 }
 
 
-void State::RegisterMesh(Key key,
+void State::RegisterMesh(const Key& key,
                          const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          bool deformable) {
   meshes_.insert(std::make_pair(key, std::make_pair(mesh,deformable)));
 };
 
 
-void State::AliasMesh(Key target, Key alias) {
+void State::AliasMesh(const Key& target, const Key& alias) {
   bool deformable = IsDeformableMesh(target);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
   RegisterMesh(alias, mesh, deformable);
+  mesh_aliases_[target] = alias;
 };
 
+bool State::IsAliasedMesh(const Key& key) const {
+  return (bool) mesh_aliases_.count(key);
+}
 
-void State::RemoveMesh(Key key) {
+
+void State::RemoveMesh(const Key& key) {
   meshes_.erase(key);
 };
 
 
-Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(Key key) const {
+Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   if (key.empty()) {
     mesh = GetMesh_("domain");
@@ -245,7 +253,7 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
 };
 
 
-bool State::IsDeformableMesh(Key key) const {
+bool State::IsDeformableMesh(const Key& key) const {
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
@@ -259,7 +267,7 @@ bool State::IsDeformableMesh(Key key) const {
 };
 
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(Key key) const {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const {
   if (key.empty()) return GetMesh_("domain");
   
   mesh_iterator lb = meshes_.lower_bound(key);
@@ -269,6 +277,21 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(Key key) const {
     return Teuchos::null;
   }
 };
+
+
+void State::RegisterDomainSet(const Key& name,
+        const Teuchos::RCP<AmanziMesh::DomainSet> set) {
+  domain_sets_[name] = set;
+}
+
+bool State::HasDomainSet(const Key& name) const {
+  return (bool) domain_sets_.count(name);
+}
+
+Teuchos::RCP<const AmanziMesh::DomainSet>
+State::GetDomainSet(const Key& name) const {
+  return domain_sets_.at(name);
+}
 
 
 // -----------------------------------------------------------------------------
@@ -330,57 +353,59 @@ State::RequireFieldEvaluator(Key key) {
   }
 
   // check to see if we have a flyweight evaluator
-  if (evaluator == Teuchos::null && state_plist_.isParameter("domain sets")) {
+  if (evaluator == Teuchos::null) {
     KeyTriple split;
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
-      auto domain_sets = state_plist_.get<Teuchos::Array<std::string> >("domain sets");
-      for (auto ds : domain_sets) {
-        if (ds == std::get<0>(split)) {
-          // The name is a domain set prefixed name, and we have a domain set
-          // of that name.  Grab the parameter list for the set's list and use
-          // that to construct the evaluator.
-          // -- Get this evaluator's plist.
-          Key lifted_key = Keys::getKey(ds+"_*",std::get<2>(split));
+      Key ds_name = std::get<0>(split);
+      if (HasDomainSet(std::get<0>(split))) {
+        auto ds = GetDomainSet(ds_name);
+        // The name is a domain set prefixed name, and we have a domain set
+        // of that name.  Grab the parameter list for the set's list and use
+        // that to construct the evaluator.
+        // -- Get this evaluator's plist.
+        Key lifted_key = Keys::getKey(ds_name+"_*",std::get<2>(split));
 
-          Teuchos::ParameterList& fm_plist = FEList();
-          if (fm_plist.isSublist(lifted_key)) {
-            Teuchos::ParameterList sublist = fm_plist.sublist(lifted_key);
-            sublist.set("evaluator name", key);
-            sublist.setName(key);
+        Teuchos::ParameterList& fm_plist = FEList();
+        if (fm_plist.isSublist(lifted_key)) {
+          Teuchos::ParameterList sublist = fm_plist.sublist(lifted_key);
+          sublist.set("evaluator name", key);
+          sublist.setName(key);
 
-            // -- Get the model plist.
-            Teuchos::ParameterList model_plist;
-            if (state_plist_.isSublist("model parameters")) {
-              model_plist = state_plist_.sublist("model parameters");
-            }
+          // -- Get the model plist.
+          Teuchos::ParameterList model_plist;
+          if (state_plist_.isSublist("model parameters")) {
+            model_plist = state_plist_.sublist("model parameters");
+          }
 
-            // -- Insert any model parameters.
-            if (sublist.isParameter("model parameters")) {
-              std::string modelname = sublist.get<std::string>("model parameters");
-              Teuchos::ParameterList modellist = GetModelParameters(modelname);
+          // -- Insert any model parameters.
+          if (sublist.isParameter("model parameters")) {
+            std::string modelname = sublist.get<std::string>("model parameters");
+            Teuchos::ParameterList modellist = GetModelParameters(modelname);
+            std::string modeltype = modellist.get<std::string>("model type");
+            sublist.set(modeltype, modellist);
+          } else if (sublist.isParameter("models parameters")) {
+            Teuchos::Array<std::string> modelnames =
+                sublist.get<Teuchos::Array<std::string> >("models parameters");
+            for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
+                 modelname!=modelnames.end(); ++modelname) {
+              Teuchos::ParameterList modellist = GetModelParameters(*modelname);
               std::string modeltype = modellist.get<std::string>("model type");
               sublist.set(modeltype, modellist);
-            } else if (sublist.isParameter("models parameters")) {
-              Teuchos::Array<std::string> modelnames =
-                  sublist.get<Teuchos::Array<std::string> >("models parameters");
-              for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
-                   modelname!=modelnames.end(); ++modelname) {
-                Teuchos::ParameterList modellist = GetModelParameters(*modelname);
-                std::string modeltype = modellist.get<std::string>("model type");
-                sublist.set(modeltype, modellist);
-              }
             }
+          }
 
-            // -- Create and set the evaluator.
-            fm_plist.set(key, sublist);
-            FieldEvaluator_Factory evaluator_factory;
-            evaluator = evaluator_factory.createFieldEvaluator(sublist);
+          // -- Create and set the evaluator.
+          fm_plist.set(key, sublist);
+          FieldEvaluator_Factory evaluator_factory;
+          evaluator = evaluator_factory.createFieldEvaluator(sublist);
             
-            SetFieldEvaluator(key, evaluator);
-            break;
-          }            
-        }          
+          SetFieldEvaluator(key, evaluator);
+        }            
+      } else {
+        Errors::Message msg;
+        msg << "Model for field \"" << key << "\" is on a DomainSet, but no DomainSet of name \"" << ds_name << "\" exists in State.";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
@@ -503,44 +528,15 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 
 
 void State::WriteDependencyGraph() const {
-  std::ofstream os("dependency_graph.txt", std::ios::out);
-  for (evaluator_iterator fe=field_evaluator_begin();
-       fe!=field_evaluator_end(); ++fe) {
-    os << *fe->second;
-  }
-  os.close();
-}
-
-
-void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
-
-    for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-      std::string name(f_it->first);
-
-      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        std::map<std::string, double> vmin, vmax, vavg;
-        f_it->second->GetFieldData()->MinValue(vmin);
-        f_it->second->GetFieldData()->MaxValue(vmax);
-        f_it->second->GetFieldData()->MeanValue(vavg);
-
-        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-          std::string namedot(name), name_comp(c_it->first);
-          if (vmin.size() != 1) namedot.append("." + name_comp);
-          namedot.resize(40, '.');
-          *vo->os() << namedot << " " << c_it->second << " / " 
-                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
-        }
-      } else if (f_it->second->type() == CONSTANT_SCALAR) {
-        double vmin = *f_it->second->GetScalarData();
-        name.resize(40, '.');
-        *vo->os() << name << " " << vmin << std::endl;
-      }
+    std::ofstream os("dependency_graph.txt", std::ios::out);
+    for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
+      os << *fe->second;
     }
+    os.close();
   }
-};
+}
 
 
 // -----------------------------------------------------------------------------
@@ -1484,6 +1480,58 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 }
 
 
+// Non-member function for statistics
+void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo)
+{
+  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
+
+    for (auto f_it = S->field_begin(); f_it != S->field_end(); ++f_it) {
+      std::string name(f_it->first);
+
+      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
+        std::map<std::string, double> vmin, vmax, vavg;
+        f_it->second->GetFieldData()->MinValue(vmin);
+        f_it->second->GetFieldData()->MaxValue(vmax);
+        f_it->second->GetFieldData()->MeanValue(vavg);
+
+        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
+          std::string namedot(name), name_comp(c_it->first);
+          if (vmin.size() != 1) namedot.append("." + name_comp);
+          namedot.resize(40, '.');
+          *vo->os() << namedot << " " << c_it->second << " / " 
+                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+        }
+      } else if (f_it->second->type() == CONSTANT_SCALAR) {
+        double vmin = *f_it->second->GetScalarData();
+        name.resize(40, '.');
+        *vo->os() << name << " " << vmin << std::endl;
+      }
+    }
+  }
+};
+
+
+Teuchos::ParameterList&
+State::GetEvaluatorList(const Key& key)
+{
+  if (FEList().isParameter(key)) {
+    return FEList().sublist(key);
+  } else {
+    // check for domain set
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      Key lifted_key = Keys::getKey(std::get<0>(split)+"_*", std::get<2>(split));
+      if (FEList().isParameter(lifted_key)) {
+        return FEList().sublist(lifted_key);
+      }
+    }
+  }
+  // return an empty new lsit
+  return FEList().sublist(key);
+}
 
 
 } // namespace Amanzi

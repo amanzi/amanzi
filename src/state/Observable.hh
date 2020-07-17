@@ -42,16 +42,26 @@ to disk.
       on the region.  One of:
 
       - `"observation data: point`" returns the value of the field quantity at a
-        point.  The region and location name must result in a single entity being
-        selected.
-      - `"observation data: average`" or equivalently, but deprecated,
-        `"observation data: integral`" returns the volume-weighted average of
-        an (intensive) variable over the region.  This should be used for
-        intensive quantities such as `"temperature`" or `"saturation_liquid`".
-      - `"observation data: extensive integral`" returns the sum of an
-        (extensive) variable over the region.  This should be used for
-        extensive quantities such as `"water_content`" or `"energy`".
+        point.  The region and location name should result in a single entity being
+        selected.  
+
+      - `"observation data: average`" returns the volume-weighted average of
+        the field across all entities in the region selected.  This is likely
+        what you want for intensive state variables such as `"temperature`" or
+        `"saturation_liquid`".
+
+      - `"observation data: integral`" returns the volume-weighted sum of a
+        variable over the region.  This should be used for example on intensive
+        sources, for instance `"surface-precipitation`", to get the total
+        source/sink.
+
+      - `"observation data: extensive integral`" returns the sum of an variable
+        over the region.  This should be used for extensive quantities such as
+        `"water_content`" or `"energy`" which already include the volume in
+        their value.
+        
       - `"observation data: minimum`" returns the min value over the region
+
       - `"observation data: maximum`" returns the max value over the region
 
     * `"direction normalized flux`" ``[bool]`` **optional** For flux observations,

@@ -39,6 +39,8 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   
   void Compute(double t_old, double t_new);
 
+  void set_mol_dens_data_( Teuchos::Ptr<const Epetra_MultiVector> data) {mol_dens_data_ = data;}
+
  private:
   void Init_(const std::vector<std::string> &regions);
 
@@ -52,6 +54,8 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
+  Teuchos::Ptr<const Epetra_MultiVector> mol_dens_data_;
+  
   // Containers for interacting with the chemistry engine.
   AlquimiaState alq_state_;
   AlquimiaProperties alq_mat_props_;
@@ -60,6 +64,7 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
   // A mapping of boundary face indices to interior cells.
   std::map<int, int> cell_for_face_;
+  bool ats_units_;
 };
 
 }  // namespace Transport

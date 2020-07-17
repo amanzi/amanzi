@@ -26,6 +26,8 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
     double t, const Epetra_Vector& component,
     Epetra_Vector& f_component)
 {
+  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+
   // distribute vector
   Epetra_Vector component_tmp(component);
   component_tmp.Import(component, *tcc->importer("cell"), Insert);
@@ -169,6 +171,8 @@ void TransportExplicit_PK::DudtOld(double t,
                            const Epetra_Vector& component,
                            Epetra_Vector& f_component)
 {
+  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 

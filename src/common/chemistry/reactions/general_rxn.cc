@@ -173,7 +173,7 @@ void GeneralRxn::addContributionToJacobian(
 }
 
 
-void GeneralRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+void GeneralRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
@@ -184,11 +184,11 @@ void GeneralRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
   message << std::endl;
   message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void GeneralRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich
@@ -245,7 +245,7 @@ void GeneralRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
       }
     }
   }
-  vo->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 }  // namespace AmanziChemistry

@@ -149,8 +149,8 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
 
   // functor for minimization in boost
   struct Functor {
-    Functor(const Teuchos::RCP<SolverFnBase<Vector> >& fn_) :
-        fn(fn_) {}
+    Functor(const Teuchos::RCP<SolverFnBase<Vector> >& my_fn) :
+        fn(my_fn) {}
 
     void setup(const Teuchos::RCP<Vector>& u_,
                const Teuchos::RCP<Vector>& u0_,

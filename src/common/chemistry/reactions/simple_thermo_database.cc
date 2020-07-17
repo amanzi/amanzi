@@ -43,7 +43,7 @@ namespace AmanziChemistry {
 ** TODO(bandre): need a lot more error checking and helpfull error messages from here.
 */
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo)
-    : Beaker(),
+    : Beaker(vo.ptr()),
       primary_id_(0),
       aqueous_equilibrium_complex_id_(0),
       mineral_id_(0),
@@ -53,7 +53,6 @@ SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo)
       surface_complexation_rxn_id_(0) {
   surface_sites_.clear();
   surface_complexation_reactions_.clear();
-  vo_ = vo;
 }
 
 
@@ -90,8 +89,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ReadFile()...." << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ReadFile()...." << std::endl;
   }
 
   std::ifstream input(file_name.c_str());
@@ -329,9 +328,9 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParsePrimarySpecies()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParsePrimarySpecies()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
 
   std::string semicolon(";");
@@ -361,7 +360,7 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
 
   Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
   this->AddPrimarySpecies(primary);
-  if (verbosity() == kDebugInputFile) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     primary.display();
   }
 }
@@ -379,9 +378,9 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseAqueousEquilibriumComplex()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseAqueousEquilibriumComplex()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" \t");
@@ -417,7 +416,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
                                       h2o_stoich,
                                       charge, gram_molecular_weight, size_parameter, logKeq);
   this->AddAqueousEquilibriumComplex(secondary);
-  if (verbosity() == kDebugInputFile) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     secondary.display(vo_);
   }
 }
@@ -440,7 +439,7 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl
           << "  data: " << data << std::endl;
-  vo_->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message.str());
 
   std::string semicolon(";");
   std::string space(" ");
@@ -476,9 +475,9 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseGeneralKinetics()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseGeneralKinetics()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" ");
@@ -706,7 +705,7 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseRadioactiveDecay()....\n"
           << "  data: " << data << std::endl;
-  vo_->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message.str());
   
   std::string semicolon(";");
   std::string space(" ");
@@ -820,9 +819,9 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseMineral(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseMineral()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseMineral()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" \t");
@@ -863,9 +862,10 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
                   logKeq,
                   molar_volume,
                   specific_surface_area);
-  mineral.set_verbosity(verbosity());
+
   this->AddMineral(mineral);
-  if (verbosity() == kDebugInputFile) {
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     mineral.display();
   }
 }
@@ -887,9 +887,9 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseMineralKinetics()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseMineralKinetics()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" \t");
@@ -910,7 +910,8 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
   KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, primary_species());
 
   this->AddMineralKineticRate(kinetic_rate);
-  if (verbosity() == kDebugInputFile || verbosity() == kDebugMineralKinetics) {
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     kinetic_rate->Display(vo_);
   }
 }
@@ -932,9 +933,9 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseIonExchangeSite()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseIonExchangeSite()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
 
   // double mol_wt = 0.0;  // not used in ion exchange sites
@@ -958,7 +959,8 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   IonExchangeRxn ionx_rxn(exchanger);
 
   this->AddIonExchangeRxn(ionx_rxn);
-  if (verbosity() == kDebugInputFile) {
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     exchanger.Display(vo_);
   }
 }
@@ -983,9 +985,9 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseIonExchangeComplex()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseIonExchangeComplex()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" \t");
@@ -1023,7 +1025,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
     }
   }
 
-  if (verbosity() == kDebugInputFile) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     exchange_complex.display(vo_);
   }
 }
@@ -1045,9 +1047,9 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseSurfaceComplexSite()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseSurfaceComplexSite()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
 
   // double mol_wt = 0.0;  // not used in ion exchange sites
@@ -1073,7 +1075,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   surface_complexation_rxn_id_++;
 
   // this->AddSurfaceComplexationRxn(rxn);
-  if (verbosity() == kDebugInputFile) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     site.display();
     // rxn.Display();
   }
@@ -1096,9 +1098,9 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseSurfaceComplex()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::ParseSurfaceComplex()...." << std::endl;
+    *vo_->os() << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
   std::string space(" \t");
@@ -1139,14 +1141,15 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
                                  logKeq);
   surface_complexation_reactions_[surface_site_id].AddSurfaceComplex(surface_complex);
 
-  if (verbosity() == kDebugInputFile) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     surface_complex.display(vo_);
   }
-}  // end ParseSurfaceComplex()
+}
+
 
 void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::FinishSurfaceComplexation() :" << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "SimpleThermoDatabase::FinishSurfaceComplexation() :" << std::endl;
   }
   std::vector<SurfaceComplexationRxn>::iterator rxn;
   for (rxn = surface_complexation_reactions_.begin();
@@ -1175,9 +1178,9 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
                                          std::vector<double>* stoichiometries,
                                          std::vector<int>* species_ids,
                                          double* h2o_stoich) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
-    std::cout << "      data: " << reaction << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
+    *vo_->os() << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
   std::string space(" \t");
@@ -1228,28 +1231,6 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
 
 /*******************************************************************************
  **
- **  parse ion exchange reaction, reaction products are single primary
- **  species and a single exchange site. The order of primary species
- **  and exchange species does not matter.
- **
- **  Fields:
- **
- **  SpeciesName = coeff PrimaryName coeff IonExchangeSite
- **
- *******************************************************************************/
-void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
-                                                    std::string* name,
-                                                    SpeciesName* primary_name,
-                                                    SpeciesId* primary_id) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
-    std::cout << "      data: " << reaction << std::endl;
-  }
-}
-
-
-/*******************************************************************************
- **
  **  parse surface complex reaction, reaction products are an array of
  **  primary species and a single surface site. The order of
  **  primary species and surface sites does not matter.
@@ -1268,9 +1249,9 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
                                                        double* surface_site_stoichiometry,
                                                        SpeciesId* surface_site_id,
                                                        double* h2o_stoich) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
-    std::cout << "      data: " << reaction << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
+    *vo_->os() << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
   std::string space(" \t");

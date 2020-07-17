@@ -35,7 +35,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist));
+  vo_ =  Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_); 
@@ -216,11 +216,13 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // stationary solve is modelled with large dt. To pick the correct
   // boundary conditions, dt is negative. This assumes that we are at
   // the beginning of simulation.
-  bool fail;
-  double dt(-1e+98), dt_solver;
-  fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+  if (ti_list_->isSublist("initialization")) {
+    bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
 
-  if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
+    double dt(-1e+98), dt_solver;
+    bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+    if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
+  }
 }
 
 

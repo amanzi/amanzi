@@ -560,9 +560,10 @@ void InputConverterU::TranslateTransportBCsGroup_(
     DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
     DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
 
+    std::string filename, xheader, yheader;
     std::vector<double> times, values;
     std::vector<double> data, data_tmp;
-    std::vector<std::string> forms;
+    std::vector<std::string> forms, formulas;
 
     if (space_bc) {
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
@@ -578,30 +579,40 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
       same_list.erase(same_list.begin());
     } else {
-      std::map<double, double> tp_values;
-      std::map<double, std::string> tp_forms;
+      DOMElement* element = static_cast<DOMElement*>(same_list[0]);
+      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
+      if (filename != "") {
+        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
+        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
 
-      for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-        tmp_name = GetAttributeValueS_(*it, "name");
+        same_list.erase(same_list.begin());
+      } else {
+        std::map<double, double> tp_values;
+        std::map<double, std::string> tp_forms, tp_formulas;
 
-        if (tmp_name == solute_name) {
-          double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-          tp_forms[t0] = GetAttributeValueS_(*it, "function");
-          GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar");  // just a check
-          tp_values[t0] = ConvertUnits_(GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
+        for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
+          tmp_name = GetAttributeValueS_(*it, "name");
 
-          same_list.erase(it);
-          it--;
-        } 
+          if (tmp_name == solute_name) {
+            double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+            tp_forms[t0] = GetAttributeValueS_(*it, "function");
+            GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar");  // just a check
+            tp_values[t0] = ConvertUnits_(GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
+            tp_formulas[t0] = GetAttributeValueS_(*it, "formula", TYPE_NONE, false, "");
+
+            same_list.erase(it);
+            it--;
+          } 
+        }
+
+        // create vectors of values and forms
+        for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+          times.push_back(it->first);
+          values.push_back(it->second);
+          forms.push_back(tp_forms[it->first]);
+          formulas.push_back(tp_formulas[it->first]);
+        }
       }
-
-      // create vectors of values and forms
-      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-        times.push_back(it->first);
-        values.push_back(it->second);
-        forms.push_back(tp_forms[it->first]);
-      }
-      forms.pop_back();
     }
      
     // save in the XML files  
@@ -612,13 +623,13 @@ void InputConverterU::TranslateTransportBCsGroup_(
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
-    } else if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
-    } else {
+    } else if (filename != "") {
       bcfn.sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
+          .set<std::string>("file", filename)
+          .set<std::string>("x header", xheader)
+          .set<std::string>("y header", yheader);
+    } else {
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
 
     // data distribution method

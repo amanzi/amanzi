@@ -362,11 +362,14 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize lambdas. It may be used by boundary conditions.
   CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
 
-  if (pressure.HasComponent("face")) {
-    Epetra_MultiVector& p = *solution->ViewComponent("cell");
-    Epetra_MultiVector& lambda = *solution->ViewComponent("face");
+  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+    std::string method = ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
+    if (method == "projection") {
+      Epetra_MultiVector& p = *solution->ViewComponent("cell");
+      Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
-    DeriveFaceValuesFromCellValues(p, lambda);
+      DeriveFaceValuesFromCellValues(p, lambda);
+    }
   }
 
   // Create and initialize boundary conditions and source terms.

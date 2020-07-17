@@ -164,7 +164,7 @@ class InputConverterU : public InputConverter {
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
-  Teuchos::ParameterList TranslateEnergy_();
+  Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergyBCs_();
 
   // -- multiphase
@@ -174,7 +174,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_;
+  bool coupled_flow_, coupled_transport_, coupled_energy_;
   std::vector<std::string> fracture_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
@@ -193,6 +193,12 @@ class InputConverterU : public InputConverter {
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
+
+  bool TranslateGenericMath_(const std::vector<double>& times,
+                             const std::vector<double>& values,
+                             const std::vector<std::string>& forms,
+                             const std::vector<std::string>& formulas,
+                             Teuchos::ParameterList& bcfn);
 
   // -- sort functions
   template<class Iterator>

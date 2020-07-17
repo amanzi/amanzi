@@ -106,6 +106,12 @@
 	    <Parameter name="gravity" type="bool" value="false"/>
 	  </ParameterList>
 	</ParameterList>
+        <ParameterList name="advection operator">
+          <Parameter name="schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="method order" type="int" value="0"/>
+          <Parameter name="matrix type" type="string" value="advection"/>
+          <Parameter name="single domain" type="Array(string)" value="{domain}"/>
+        </ParameterList>          
       </ParameterList>
 
       <ParameterList name="time integrator">

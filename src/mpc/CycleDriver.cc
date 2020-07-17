@@ -833,7 +833,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   Visualize();
   Observations();
   WriteCheckpoint(dt);
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // Amanzi::timer_manager.stop("I/O");
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -857,7 +857,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
-            S_->WriteStatistics(vo_);
+            WriteStateStatistics(S_.ptr(), vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
             *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
@@ -881,7 +881,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
-        S_->WriteStatistics(vo_);
+        WriteStateStatistics(S_.ptr(), vo_);
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
@@ -905,7 +905,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 #endif
   
   // finalizing simulation
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
   ReportMemory();
   // Finalize();
  
@@ -979,7 +979,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->CalculateDiagnostics(S_);
   Observations();
-  S_->WriteStatistics(vo_);
+  WriteStateStatistics(S_.ptr(), vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];

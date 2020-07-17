@@ -63,13 +63,6 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
   virtual double get_dt();
   virtual void set_dt(double dt);
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-
-  // -- identifier accessor
-  virtual std::string name() const { return name_; }
-
- protected:
-  // identifier
-  std::string name_;
 };
 
 
@@ -110,16 +103,6 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   PKFactory pk_factory;
-
-  for (int i = 0; i < pk_name.size(); ++i) {
-    //const std::string& sub_name = sub->first;
-    const std::string& sub_name = pk_name[i];
-    if (!plist->isSublist(sub_name)) {
-      Errors::Message msg;
-      msg << "PK tree has no sublist \"" << sub_name << "\"";
-      Exceptions::amanzi_throw(msg);
-    }
-  }
 
   // Create only one subvector for all PKs
   Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());

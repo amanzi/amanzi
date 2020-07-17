@@ -625,14 +625,15 @@
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Euclid">
+    <!--ParameterList name="Euclid">
       <Parameter name="preconditioner type" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
+        <Parameter name="ilut drop tolerance" type="double" value="0.01"/>
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList-->
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

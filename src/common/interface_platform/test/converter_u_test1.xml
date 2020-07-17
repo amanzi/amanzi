@@ -337,6 +337,20 @@
       <num_digits>5</num_digits>
       <cycle_macros>Every100Cycles </cycle_macros>
     </walkabout>
+    <observations>
+      <liquid_phase name="water">
+        <aqueous_conc solute="Tc-99">
+          <assigned_regions>Well2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </aqueous_conc>
+        <sorbed_conc solute="Tc-99">
+          <assigned_regions>Well</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </sorbed_conc>
+      </liquid_phase>
+    </observations>
   </output>
 </amanzi_input>
   

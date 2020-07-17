@@ -34,30 +34,19 @@ class IonExchangeComplex {
                      const double K);
   virtual ~IonExchangeComplex() {};
 
-  void display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
-  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
+  void display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
+  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  std::string name(void) const {
-    return name_;
-  };
-  std::string primary_name(void) const {
-    return primary_name_;
-  };
-  int primary_id(void) const {
-    return primary_id_;
-  };
-  double K(void) const {
-    return K_;
-  };
-  double X(void) const {
-    return X_;
-  };
-  double concentration(void) const {
-    return concentration_;
-  };
+  std::string name(void) const { return name_; };
+  std::string primary_name(void) const { return primary_name_; };
+
+  int primary_id(void) const { return primary_id_; };
+  double K(void) const { return K_; };
+  double X(void) const { return X_; };
+  double concentration(void) const { return concentration_; };
 
   void set_X(const double d) { X_ = d; };
   void set_concentration(const double d) { concentration_ = d; };

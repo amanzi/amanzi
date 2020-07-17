@@ -34,7 +34,7 @@ double ComputeL2Error(hid_t output, const std::string& output_component_name,
   // a Group for each time, in the format "Time:  x.yzxyzE+xy y". Within a Group for the 
   // Time, we search for the given component.
   hid_t slash = H5Gopen2(reference, "/", H5P_DEFAULT);
-  char reference_group_name[1024];
+  char reference_group_name[1025];
   snprintf(reference_group_name, 1024, "Time:  %1.5E y", time);
   hid_t reference_group = H5Gopen2(slash, reference_group_name, H5P_DEFAULT);
   if (reference_group < 0) return FLT_MAX;
@@ -95,11 +95,11 @@ SUITE(ChemistryBenchmarkTests) {
   // Amanzi U Calcite benchmark.
   TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalcite) {
     // Construct the Calcite benchmark directory.
-    char test_dir[1024];
+    char test_dir[1025];
     snprintf(test_dir, 1024, "%s/calcite_1d", benchmark_dir_.c_str());
 
     // Copy the contents of the directory to cwd.
-    char command[1024];
+    char command[1025];
     snprintf(command, 1024, "cp -R %s/* .", test_dir);
     int status = std::system(command);
 
@@ -111,7 +111,7 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
-    char reference_file[1024];
+    char reference_file[1025];
     snprintf(reference_file, 1024, "%s/pflotran/1d-calcite.h5", test_dir);
     hid_t reference = H5Fopen(reference_file, H5F_ACC_RDONLY, H5P_DEFAULT);
 

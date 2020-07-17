@@ -31,10 +31,11 @@ def plottest(axes1, obstimes, obsdata, ana_data):
     ntime3 = int(len(obstimes[:,0]))
     ntime4 = int(len(obstimes[:,1]))
 
-    axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Analytical Solution: r=24m')
-    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
-    axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Analytical Solution: r=100m')
-    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'bo', label='Amanzi: r=100m')
+    axes1.plot(ana_data[0:ntime1,0], ana_data[0:ntime1,1], '-r', label='Analytical Solution: r=24m')
+    axes1.plot(obstimes[1:ntime4,1], obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
+    axes1.plot(ana_data[ntime1+1:ntime2,0], ana_data[ntime1+1:ntime2,1], '-b', label='Analytical Solution: r=100m')
+    axes1.plot(obstimes[1:ntime3,0], obsdata[1:ntime3,0], 'bo', label='Amanzi: r=100m')
+    axes1.set_xscale('log')
 
     axes1.legend(loc='lower right')
 

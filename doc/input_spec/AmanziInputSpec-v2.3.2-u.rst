@@ -659,6 +659,11 @@ The subelements for the Hyper AMG preconditioner are as follows:
 +-----------------------------+--------------+------------------------------------------+
 | hypre_strong_threshold      | double       | *default = 0.5*                          |
 +-----------------------------+--------------+------------------------------------------+
+| use_block_indices           | bool         | *default = false*                        |
++-----------------------------+--------------+------------------------------------------+
+
+If `use_block_indices` is true, then Hypre uses the "systems of PDEs" code with blocks given 
+by the internal SuperMap, or one per degree of freedom per entity type. 
 
 The subelements for the Trilinos ML preconditioner are as follows:
 
@@ -1089,15 +1094,17 @@ It has the following requirements.
     * ``porosity``, ``particle_density`` and ``transport_porosity`` are defined in-line using attributes. 
       It is specified in one of three ways: as a value between 0 and 1 
       using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
-      HDF5 file (formatted differently than restart file)  using using type="h5file" and filename="<filename>".
+      HDF5 file (formatted differently than restart file) using using type="h5file", filename="<filename>" and 
+      "constant_in_time="true | false".
+      The dataset label should be the field name.
 
     * ``specific_storage`` and ``specific_yeild`` are defined in-line using attributes.
       Either it is specified as a value greater than 0 using ``value`` or it specified through a file using type="file" and filename="<filename>".
 
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
       The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
-      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.
-      For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``.
+      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` [m] and ``alpha_t`` [m].
+      For ``burnett_frind`` values are specified using the attributes ``alpha_l`` [m], ``alpha_th`` [m], and ``alpha_tv`` [m].
       For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.
 
     * ``tortuosity`` is defined in-line using attributes. Either it is specified as a value using ``value`` or it specified 
@@ -1521,10 +1528,15 @@ The ``liquid_phase`` has the following elements
 
 Here is more info on the ``liquid_component`` elements:
 
-    * ``inward_mass_flux`` is defined in-line using attributes.  The attributes include ``function``, ``start``, and ``value``. 
+    * ``inward_mass_flux`` is defined in-line using attributes. There are two set of attributes.
+      The first set include ``function``, ``start``, and ``value``. 
       The ``function`` specifies linear or constant temporal functional form during each time interval.
       The ``start`` is a series of time values at which time intervals start.
       The ``value`` is the value of the ``inward_mass_flux`` during the time interval. 
+      The second set include ``h5file``, ``times``, and ``values``.
+      The ``h5file`` specifies HDF5 files with piecewise constant tabular data in the format 
+      (start time, value). Lists of start times and respected values are taked from datasets 
+      labeled as ``times`` and ``values``, respectively.
 
     * ``outward_mass_flux`` is defined in-line using attributes.
       See ``inward_mass_flux`` for details.
@@ -1552,15 +1564,15 @@ The global boundary conditions that do not require the ``function`` element:
 
     * ``linear_pressure`` is defined in-line using attributes.
       Linear refers to linear pressure field. 
-      The ``gradient_value`` specifies the gradient value in each direction in the form of 
+      The ``gradient`` specifies the gradient value in each direction in the form of 
       a coordinate (grad_x, grad_y, grad_z).
-      The ``reference_point`` specifies a reference location as a coordinate.
-      The ``reference_value`` specifies a reference value for the boundary condition. 
+      The ``reference_coord`` specifies a reference location as a coordinate.
+      The ``value`` specifies a reference value for the boundary condition. 
 
     * ``linear_hydrostatic`` is defined in-line using attributes.
       Linear refers to linear in spatial dimension. 
-      The ``radient_value`` specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).
-      The ``reference_point`` specifies a reference location as a coordinate.
+      The ``gradient`` specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).
+      The ``reference_coord`` specifies a reference location as a coordinate.
       The ``reference_water_table_height`` specifies a reference value for the water table.
       Optionally, the attribute ``submodel`` can be used to specify no flow above the water table height.
 
@@ -1584,8 +1596,8 @@ Here is more info on the ``solute_component`` elements:
      <hydrostatic name="some name" value="double" function="uniform | constant" start="time" 
                   coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
      <no_flow function="linear | constant" start="time" />
-     <linear_pressure name="some name" gradient_value="coordinate" reference_point="coordinate" reference_value="double" />
-     <linear_hydrostatic name="some name" gradient_value="double" reference_point="coordinate"
+     <linear_pressure name="some name" gradient="coordinate" reference_coord="coordinate" value="double" />
+     <linear_hydrostatic name="some name" gradient="double" reference_coord="coordinate"
                          reference_water_table_height="double" submodel="no_flow_above_water_table | none"/>
 
 Here is more info on the ``geochemistry_component`` elements:
@@ -1741,6 +1753,8 @@ See the `Definitions`_ section for defining individual macros.
 
 The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attributes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.
 
+The ``vis`` element also includes an optional boolean subelement ``write_partition``.  This is useful for visualizing parallel mesh partition.
+
 The output is controlled by two parameters ``whitelist`` and ``blacklist``. 
 The latter denies output for the specified list of fields.
 The former allows output for the specified list of fields. 
@@ -1828,8 +1842,8 @@ The observation element is named according to what is being observed.  The obser
        Required Elements: NONE 
        Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
-                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, drawdown,
-                          water_table, solute_volumetric_flow_rate
+                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, sorbed_conc,
+                          drawdown, water_table, solute_volumetric_flow_rate, ph, free_ion_conc
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1841,8 +1855,9 @@ The observation element identifies the field quantity to be observed.  Subelemen
      Optional Elements: NONE
    </observation_type>
 
-The only exceptions are ``aqueous_conc`` and ``solute_volumetric_flow_rate`` which both require a solute to be specified.
-An additional subelement ``solute`` gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.
+The only exceptions are ``aqueous_conc``, ``sorbed_conc``, ``free_ion_conc``, and ``solute_volumetric_flow_rate`` which require 
+a solute to be specified.
+An attribute ``solute`` gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.
 Be sure the name of given for the solute matches a defined solute elsewhere in the input file.  
 
 NOTE: Previously individual observation elements had the subelement ``cycle_macro`` or ``time_macro``.
@@ -1865,18 +1880,18 @@ Example:
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
+	  <time_macros>EveryDay</time_macros>
 	</aqueous_pressure>
 	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
+	  <time_macros>EveryYear</time_macros>
 	</aqueous_pressure>
-	<aqueous_pressure>
-	  <assigned_regions>Obs_r2</assigned_regions>
-	  <functional>point</functional>
-	  <time_macros>Observation Times</time_macros>
-	</aqueous_pressure>
+        <sorbed_conc solute="Ca">
+          <assigned_regions>Obs_r2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </sorbed_conc>
       </liquid_phase>
     </observations>
 
