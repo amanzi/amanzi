@@ -1,7 +1,16 @@
-diff -ruNbB ccse-1.3.4/Src/CMakeLists.txt ccse-1.3.4-source/Src/CMakeLists.txt
---- ccse-1.3.4/Src/CMakeLists.txt	2017-10-20 11:37:44.000000000 -0600
-+++ ccse-1.3.4-source/Src/CMakeLists.txt	2017-10-20 11:37:12.000000000 -0600
-@@ -39,8 +39,14 @@
+diff -ruNbB BoxLib-16.04/Src/CMakeLists.txt BoxLib-16.04-new/Src/CMakeLists.txt
+--- BoxLib-16.04/Src/CMakeLists.txt	2016-04-11 16:42:12.000000000 -0600
++++ BoxLib-16.04-new/Src/CMakeLists.txt	2020-06-19 18:15:50.000000000 -0600
+@@ -35,7 +35,7 @@
+
+ add_subdirectory(${CFMGDIR})
+
+-add_library(cboxlib $<TARGET_OBJECTS:box_c> $<TARGET_OBJECTS:box_cbndry> $<TARGET_OBJECTS:box_cpart> $<TARGET_OBJECTS:box_camr> $<TARGET_OBJECTS:box_camrcore> $<TARGET_OBJECTS:box_cmg> $<TARGET_OBJECTS:box_ctmg> $<TARGET_OBJECTS:box_cfmg>)
++add_library(cboxlib $<TARGET_OBJECTS:box_c> $<TARGET_OBJECTS:box_cbndry> $<TARGET_OBJECTS:box_camr> $<TARGET_OBJECTS:box_camrcore> $<TARGET_OBJECTS:box_cmg> $<TARGET_OBJECTS:box_ctmg> $<TARGET_OBJECTS:box_cfmg>)
+ add_library(cfboxlib $<TARGET_OBJECTS:box_cfmg>)
+ add_library(fboxlib $<TARGET_OBJECTS:box_f> $<TARGET_OBJECTS:box_fmg>)
+ add_install_library(cboxlib)
+@@ -44,8 +44,14 @@
  SET_TARGET_PROPERTIES(cboxlib PROPERTIES LINKER_LANGUAGE C)
  SET_TARGET_PROPERTIES(cfboxlib PROPERTIES LINKER_LANGUAGE C)
  SET_TARGET_PROPERTIES(fboxlib PROPERTIES LINKER_LANGUAGE C)
@@ -10,31 +19,15 @@ diff -ruNbB ccse-1.3.4/Src/CMakeLists.txt ccse-1.3.4-source/Src/CMakeLists.txt
 +  set_target_properties(cfboxlib PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +  set_target_properties(fboxlib PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +endif()
- 
+
  add_subdirectory(${CAMRDATADIR})
- 
+
  add_subdirectory(Extern/gslib)
- 
+
 +add_dependencies(box_f box_c)
-diff -ruNbB ccse-1.3.4/Src/C_BaseLib/FArrayBox.cpp ccse-1.3.4-source/Src/C_BaseLib/FArrayBox.cpp
---- ccse-1.3.4/Src/C_BaseLib/FArrayBox.cpp	2017-10-20 11:37:44.000000000 -0600
-+++ ccse-1.3.4-source/Src/C_BaseLib/FArrayBox.cpp	2017-10-20 11:37:12.000000000 -0600
-@@ -19,10 +19,10 @@
- #include <Looping.H>
- #include <Utility.H>
- 
--#ifdef BL_Darwin
-+// #ifdef BL_Darwin
- using std::isinf;
- using std::isnan;
--#endif
-+// #endif
- 
- static const char sys_name[] = "IEEE";
- //
-diff -ruNbB ccse-1.3.4/Src/Extern/amrdata/CMakeLists.txt ccse-1.3.4-source/Src/Extern/amrdata/CMakeLists.txt
---- ccse-1.3.4/Src/Extern/amrdata/CMakeLists.txt	2017-10-20 11:37:44.000000000 -0600
-+++ ccse-1.3.4-source/Src/Extern/amrdata/CMakeLists.txt	2017-10-20 11:37:12.000000000 -0600
+diff -ruNbB BoxLib-16.04/Src/Extern/amrdata/CMakeLists.txt BoxLib-16.04-new/Src/Extern/amrdata/CMakeLists.txt
+--- BoxLib-16.04/Src/Extern/amrdata/CMakeLists.txt	2016-04-11 16:42:12.000000000 -0600
++++ BoxLib-16.04-new/Src/Extern/amrdata/CMakeLists.txt	2020-06-19 18:15:50.000000000 -0600
 @@ -28,6 +28,9 @@
  set(local_source_files ${CXX_source_files} ${F77_source_files} ${FPP_out_files} ${F90_source_files})
  set(local_header_files ${CXX_header_files} ${F77_header_files} ${FPP_header_files} ${F90_header_files})
@@ -45,24 +38,9 @@ diff -ruNbB ccse-1.3.4/Src/Extern/amrdata/CMakeLists.txt ccse-1.3.4-source/Src/E
  
  add_install_include_file(${local_header_files})
  add_install_library(box_camrdata)
-diff -ruNbB ccse-1.3.4/Src/LinearSolvers/C_CellMG/CGSolver.cpp ccse-1.3.4-source/Src/LinearSolvers/C_CellMG/CGSolver.cpp
---- ccse-1.3.4/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2017-10-20 11:37:44.000000000 -0600
-+++ ccse-1.3.4-source/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2017-10-20 11:37:13.000000000 -0600
-@@ -4,9 +4,9 @@
- #include <iomanip>
- #include <cmath>
- 
--#ifdef BL_Darwin
-+// #ifdef BL_Darwin
- using std::isinf;
--#endif
-+// #endif
- 
- #include <ParmParse.H>
- #include <ParallelDescriptor.H>
-diff -ruNbB ccse-1.3.4/Tools/CMake/PreprocessBoxLibFortran.cmake ccse-1.3.4-source/Tools/CMake/PreprocessBoxLibFortran.cmake
---- ccse-1.3.4/Tools/CMake/PreprocessBoxLibFortran.cmake	2017-10-20 11:37:44.000000000 -0600
-+++ ccse-1.3.4-source/Tools/CMake/PreprocessBoxLibFortran.cmake	2017-10-20 11:37:13.000000000 -0600
+diff -ruNbB BoxLib-16.04/Tools/CMake/PreprocessBoxLibFortran.cmake BoxLib-16.04-new/Tools/CMake/PreprocessBoxLibFortran.cmake
+--- BoxLib-16.04/Tools/CMake/PreprocessBoxLibFortran.cmake	2016-04-11 16:42:12.000000000 -0600
++++ BoxLib-16.04-new/Tools/CMake/PreprocessBoxLibFortran.cmake	2020-06-19 18:15:50.000000000 -0600
 @@ -66,11 +66,13 @@
          list(APPEND PREPROCESS_FLAGS "-traditional")
        elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
