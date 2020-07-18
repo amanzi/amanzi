@@ -52,15 +52,15 @@ void MicrotopographicReliefEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; c++){
     if (sg_entity_c[0][c] == 1) // 1 is for HCP, 0 is for LCP
-      res_c[0][c] = res_c[0][c];
+      res_c[0][c] = delta_init_c[0][c];
     else {
-      res_c[0][c] = sg_init_c[0][c] + sg_evolve_c[0][c];
+      res_c[0][c] = delta_evolve_c[0][c];
     }
   }
 
 }
     
-void DynamicMicrotopographicReliefEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void MicrotopographicReliefEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result){}
 
 } //namespace

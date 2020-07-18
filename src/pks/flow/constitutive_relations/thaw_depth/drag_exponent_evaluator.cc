@@ -6,13 +6,13 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "microtopographic_relief_evaluator.hh"
+#include "drag_exponent_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
   
 
-DepressionDepthEvaluator::DepressionDepthEvaluator(Teuchos::ParameterList& plist) :
+DragExponentEvaluator::DragExponentEvaluator(Teuchos::ParameterList& plist) :
    SecondaryVariableFieldEvaluator(plist){
 
   std::string domain_name=Keys::getDomain(my_key_);
@@ -27,7 +27,7 @@ DepressionDepthEvaluator::DepressionDepthEvaluator(Teuchos::ParameterList& plist
 }
 
   
-DepressionDepthEvaluator::DepressionDepthEvaluator(const DepressionDepthEvaluator& other) :
+DragExponentEvaluator::DragExponentEvaluator(const DragExponentEvaluator& other) :
   SecondaryVariableFieldEvaluator(other),
     delta_init_key_(other.delta_init_key_),
   delta_evolve_key_(other.delta_evolve_key_),
@@ -35,10 +35,10 @@ DepressionDepthEvaluator::DepressionDepthEvaluator(const DepressionDepthEvaluato
 
 
 Teuchos::RCP<FieldEvaluator>
-DepressionDepthEvaluator::Clone() const {
-  return Teuchos::rcp(new DepressionDepthEvaluator(*this));
+DragExponentEvaluator::Clone() const {
+  return Teuchos::rcp(new DragExponentEvaluator(*this));
 }
-void DepressionDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void DragExponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
  
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -54,13 +54,13 @@ void DepressionDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (sg_entity_c[0][c] == 1) // 1 is for HCP, 0 is for LCP
       res_c[0][c] = delta_init_c[0][c];
     else {
-      res_c[0][c] = delta_init_c[0][c] + delta_evolve_c[0][c];
+      res_c[0][c] = delta_evolve_c[0][c];
     }
   }
 
 }
     
-void DynamicDepressionDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void DragExponentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result){}
 
 } //namespace

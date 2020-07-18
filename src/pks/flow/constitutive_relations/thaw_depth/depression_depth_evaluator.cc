@@ -60,7 +60,7 @@ void DepressionDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 }
     
-void DynamicDepressionDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void DepressionDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result){}
 
 } //namespace
