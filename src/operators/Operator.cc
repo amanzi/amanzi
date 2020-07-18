@@ -351,7 +351,12 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   apply_calls_++;
 
-  for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
+std::cout << "BBBa: " << std::endl;
+  for (auto& it : *this) {
+std::cout << "   " << it << " this=" << this << std::endl;
+it->ApplyMatrixFreeOp(this, X, Y);
+}
+std::cout << std::endl;
 
   return 0;
 }

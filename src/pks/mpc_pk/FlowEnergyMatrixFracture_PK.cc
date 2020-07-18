@@ -262,6 +262,9 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // -- operators (energy)
+  cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+
   adv_coupling_matrix_ = AddCouplingFluxes_(
       cvs_matrix, cvs_fracture,
       inds_matrix_adv, inds_fracture_adv, values_adv, 1, 3, op_tree_matrix_);

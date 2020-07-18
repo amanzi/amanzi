@@ -31,9 +31,10 @@ namespace Operators {
 int Operator_Diagonal::ApplyMatrixFreeOp(
     const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
 {
-X.Print(std::cout, false);
-  const Epetra_MultiVector& Xi = *X.ViewComponent(col_compname_, true);
-  Epetra_MultiVector& Yi = *Y.ViewComponent(row_compname_, true);
+  const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
+std::cout << "Apply:  " << row_compname_ << " " << col_compname_ << " " << this << std::endl;
+std::cout << "Apply:  " << op.row_compname() << " " << op.col_compname() << " " << this << std::endl;
  
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -52,8 +53,8 @@ X.Print(std::cout, false);
 
     for (int i = 0; i != nrows; ++i) {
       Yi[0][row_lids[n][i]] += av(i);
-std::cout << n << ":  " << row_lids[n][i] << " " << col_lids[n][i] << " a=" << av(i) << std::endl;
     }
+if (n < 5) std::cout << n << " " << row_lids[n][0] << " " << col_lids[n][0] << std::endl;
   }
 
   return 0;
@@ -67,9 +68,8 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
     int my_block_row, int my_block_col) const
 {
-std::cout << "Component: " << row_compname_ << " " << col_compname_ << std::endl;
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, row_compname_, 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, col_compname_, 0);
+  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
+  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
 
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -86,7 +86,6 @@ std::cout << "Component: " << row_compname_ << " " << col_compname_ << std::endl
     for (int i = 0; i != ndofs; ++i) {
       lid_r.push_back(row_gids[row_lids[n][i]]);
       lid_c.push_back(col_gids[col_lids[n][i]]);
-std::cout << n << ":  " << row_lids[n][i] << " " << col_lids[n][i]  << std::endl;
     }
     ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
   }

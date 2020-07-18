@@ -35,6 +35,7 @@ class Operator_Diagonal : public Operator {
       Operator(cvs_row, cvs_col, plist, Schema(schema), Schema(schema)) {
     row_compname_ = *(cvs_row->begin());
     col_compname_ = *(cvs_col->begin());
+std::cout << "Init: " << row_compname_ << " " << col_compname_ << " " << this << std::endl;
     set_schema_string("INDICES");
   }
   ~Operator_Diagonal() {};

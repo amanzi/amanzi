@@ -123,11 +123,9 @@ int TreeOperator::ApplyFlattened(const TreeVector& X, TreeVector& Y) const
       if (blocks_[n][m] != Teuchos::null) {
 std::cout << "BBBa: " << n << " " << m << std::endl;
         ierr |= blocks_[n][m]->Apply(*(*it)->Data(), yN, 1.0);
-std::cout << "BBBb: " << n << " " << m << std::endl;
       }
     }
   }
-std::cout << "BBB================: " << std::endl;
   return ierr;
 }
 

@@ -130,11 +130,11 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
 
 AlquimiaHelper_Structured::~AlquimiaHelper_Structured()
 {
-  int nthreads = 1;
+  int num_threads = 1;
 #ifdef _OPENMP
-  nthreads = omp_get_max_threads();
+  num_threads = omp_get_max_threads();
 #endif
-  for (int ithread = 0; ithread < nthreads; ithread++) {
+  for (int ithread = 0; ithread < num_threads; ithread++) {
     engine->FreeState(alquimia_properties[ithread],
                       alquimia_state[ithread],
                       alquimia_aux_in[ithread],

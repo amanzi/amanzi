@@ -3579,7 +3579,6 @@ TagUnusedGrowCells(MultiFab&    state,
   // Don't use any grow cells that are not f-f
   state.setBndry(tagVal,comp,nComp);
   state.FillBoundary(comp,nComp);
-  pm.Geom().FillPeriodicBoundary(state,comp,nComp);
 }
 
 static
@@ -3804,9 +3803,9 @@ PorousMedia::advance_chemistry (Real time,
   P_new.FillBoundary();
   Aux_new.FillBoundary();
 	
-  geom.FillPeriodicBoundary(S_new,true);
-  geom.FillPeriodicBoundary(P_new,true);
-  geom.FillPeriodicBoundary(Aux_new,true);
+  // geom.FillPeriodicBoundary(S_new,true);
+  // geom.FillPeriodicBoundary(P_new,true);
+  // geom.FillPeriodicBoundary(Aux_new,true);
 
   if (ngrow == 0 || ngrow_tmp == 0) {
       Fcnt_new.copy(fcnCntTemp,0,0,1); // Parallel copy.
@@ -3948,8 +3947,9 @@ PorousMedia::errorEst (TagBoxArray& tags,
               int*        tptr    = itags.dataPtr();
               const int*  tlo     = tags[mfi.index()].box().loVect();
               const int*  thi     = tags[mfi.index()].box().hiVect();
-              const int*  lo      = mfi.validbox().loVect();
-              const int*  hi      = mfi.validbox().hiVect();
+              const Box&  box_tmp = mfi.validbox();
+              const int*  lo      = box_tmp.loVect();
+              const int*  hi      = box_tmp.hiVect();
               const Real* xlo     = gridloc.lo();
               Real*       dat     = (*mf)[mfi].dataPtr();
               const int*  dlo     = (*mf)[mfi].box().loVect();
@@ -4156,8 +4156,9 @@ PorousMedia::volWgtSum (const std::string& name,
       const Real* dat = fab.dataPtr();
       const int*  dlo = fab.loVect();
       const int*  dhi = fab.hiVect();
-      const int*  lo  = grids[mfi.index()].loVect();
-      const int*  hi  = grids[mfi.index()].hiVect();
+      const Box&  box = grids[mfi.index()];
+      const int*  lo  = box.loVect();
+      const int*  hi  = box.hiVect();
 
       FORT_SUMMASS(dat,ARLIM(dlo),ARLIM(dhi),ARLIM(lo),ARLIM(hi),dx,&s);
 
@@ -5482,8 +5483,9 @@ set_bc_new (int*            bc_new,
         {
 	  for (int crse = 0; crse < cgrids.size(); crse++)
             {
-	      const int* c_lo = cgrids[crse].loVect();
-	      const int* c_hi = cgrids[crse].hiVect();
+	      const Box& box  = cgrids[crse];
+	      const int* c_lo = box.loVect();
+	      const int* c_hi = box.hiVect();
 
 	      if (clo[dir] < cdomlo[dir] && c_lo[dir] == cdomlo[dir])
 		bc_new[bc_index] = bc_orig_qty[crse][bc_index];
@@ -5580,7 +5582,7 @@ PorousMedia::SyncInterp (MultiFab&      CrseSync,
 		     &(bc_new[2*BL_SPACEDIM*(n+src_comp)]));
         }
     }
-  cgeom.FillPeriodicBoundary(cdataMF, 0, num_comp);
+  cdataMF.FillBoundary(0, num_comp);
   //
   // Interpolate from cdataMF to fdata and update FineSync.
   // Note that FineSync and cdataMF will have the same distribution
@@ -6133,7 +6135,7 @@ PorousMedia::avgDown ()
 // Virtual access function for getting the advective flux out of the
 // advection routines for diagnostics and refluxing.
 //
-
+/*
 void
 PorousMedia::pullFluxes (int        i,
                          int        start_ind,
@@ -6169,6 +6171,7 @@ PorousMedia::pullFluxes (int        i,
         }
     }
 }
+*/
 
 void
 PorousMedia::ComputeSourceVolume ()
@@ -6373,7 +6376,6 @@ PorousMedia::getForce (MultiFab& force,
     }
 
     force.FillBoundary(0,num_comp);
-    geom.FillPeriodicBoundary(force,0,num_comp);
 	
     if (do_rho_scale) {
       for (int i=0; i<snum_comp; ++i) {
@@ -6660,7 +6662,8 @@ PorousMedia::calc_richard_alpha (MultiFab&       alpha,
   MultiFab::Multiply(alpha,*rock_phi,0,dComp,1,nGrow);
   if (nGrow > 0) {
     alpha.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(alpha,dComp,ncomps);
+    // geom.FillPeriodicBoundary(alpha,dComp,ncomps);
+    alpha.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -6679,8 +6682,9 @@ PorousMedia::calc_richard_velbc (MultiFab& res,
 
   for (MFIter mfi(res); mfi.isValid(); ++mfi)
     {
-      const int* lo = mfi.validbox().loVect();
-      const int* hi = mfi.validbox().hiVect();
+      const Box& box = mfi.validbox();
+      const int* lo  = box.loVect();
+      const int* hi  = box.hiVect();
 	
       FArrayBox& rg       = res[mfi];  
       FArrayBox& ux       = u_phase[0][mfi];
@@ -6725,7 +6729,8 @@ PorousMedia::calcCapillary (MultiFab&       pc,
   rock_manager->CapillaryPressure(sat,*materialID,time,pc,sComp,dComp,nGrow);
   if (nGrow > 0) {
     pc.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(pc,dComp,ncomps);
+    // geom.FillPeriodicBoundary(pc,dComp,ncomps);
+    pc.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -6747,7 +6752,6 @@ PorousMedia::calcInvCapillary (MultiFab&       N,
 
   if (nGrow > 0) {
     N.FillBoundary(dComp,ncomps);
-    geom.FillPeriodicBoundary(N,dComp,ncomps);
   }
 }
 
@@ -6793,7 +6797,8 @@ PorousMedia::calcLambda (MultiFab&       lambda,
   lambda.mult(1/muval[0],0,1,nGrow);
   if (nGrow > 0) {
     lambda.FillBoundary(dComp);
-    geom.FillPeriodicBoundary(lambda,dComp,ncomps);
+    // geom.FillPeriodicBoundary(lambda,dComp,ncomps);
+    lambda.FillBoundary(dComp,ncomps);
   }
 }
 
@@ -6974,7 +6979,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
         {
 	  const int len = Faces.size();
 	  Faces.resize(len+1);
-	  Faces.set(len,Orientation(idir,Orientation::low));
+	  Faces[len] = Orientation(idir,Orientation::low);
         }
       //if (1 || (comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
       if ((comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
@@ -6982,7 +6987,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
         {
 	  const int len = Faces.size();
 	  Faces.resize(len+1);
-	  Faces.set(len,Orientation(idir,Orientation::high));
+	  Faces[len] = Orientation(idir,Orientation::high);
         }
     }
 }
@@ -7920,7 +7925,6 @@ PorousMedia::create_umac_grown (MultiFab* u_mac, MultiFab* u_macG)
       u_ghost.setVal(1.e40);
       u_ghost.copy(u_mac[n]);
       u_ghost.FillBoundary();
-      geom.FillPeriodicBoundary(u_ghost);
       for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi)
 	{
 	  u_macG[n][mfi].copy(u_ghost[mfi]);
@@ -8051,7 +8055,6 @@ PorousMedia::create_umac_grown (MultiFab* u_mac,
       u_ghost.setVal(1.e40);
       u_ghost.copy(u_mac[n]);
       u_ghost.FillBoundary();
-      geom.FillPeriodicBoundary(u_ghost);
       for (MFIter mfi(u_macG[n]); mfi.isValid(); ++mfi) {
 	u_macG[n][mfi].copy(u_ghost[mfi]);
       }
@@ -8109,7 +8112,8 @@ PorousMedia::GetCrseUmac(PArray<MultiFab>& u_mac_crse,
       }
       bool do_corners = true;
       u_mac_crse[i].FillBoundary();
-      cgeom.FillPeriodicBoundary(u_mac_crse[i],do_corners);
+      // cgeom.FillPeriodicBoundary(u_mac_crse[i],do_corners);
+      u_mac_crse[i].FillBoundary(do_corners);
     }
 }
 
@@ -8168,7 +8172,8 @@ PorousMedia::GetCrsePressure (MultiFab& phi_crse,
     }
 
   phi_crse.FillBoundary();
-  cgeom.FillPeriodicBoundary(phi_crse,true);
+  // cgeom.FillPeriodicBoundary(phi_crse,true);
+  phi_crse.FillBoundary(true);
 }
 
 // ============
@@ -8507,8 +8512,9 @@ PorousMedia::umac_edge_to_cen(MultiFab* u_mac, MultiFab& U_cc, bool do_upwind)
   // average velocity onto cell center
   for (MFIter mfi(U_cc); mfi.isValid(); ++mfi)
     {
-      const int* lo     = mfi.validbox().loVect();
-      const int* hi     = mfi.validbox().hiVect();
+      const Box& box    = mfi.validbox();
+      const int* lo     = box.loVect();
+      const int* hi     = box.hiVect();
     
       const int* u_lo   = U_cc[mfi].loVect();
       const int* u_hi   = U_cc[mfi].hiVect();
@@ -8545,8 +8551,9 @@ PorousMedia::umac_cpy_edge_to_cen(MultiFab* u_mac, int idx_type, int ishift)
   MultiFab&  U_cor  = get_new_data(idx_type);
   for (MFIter mfi(U_cor); mfi.isValid(); ++mfi)
     {
-      const int* lo     = mfi.validbox().loVect();
-      const int* hi     = mfi.validbox().hiVect();
+      const Box& box    = mfi.validbox();
+      const int* lo     = box.loVect();
+      const int* hi     = box.hiVect();
     
       const int* u_lo   = U_cor[mfi].loVect();
       const int* u_hi   = U_cor[mfi].hiVect();

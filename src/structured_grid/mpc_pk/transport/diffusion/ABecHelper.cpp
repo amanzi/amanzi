@@ -141,6 +141,7 @@ ABecHelper::residual (MultiFab&       residL,
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
+  /*
   for (MFIter solnLmfi(solnL,tiling); solnLmfi.isValid(); ++solnLmfi)
   {
     const int nc = residL.nComp();
@@ -165,6 +166,8 @@ ABecHelper::residual (MultiFab&       residL,
       ARLIM(residfab.loVect()), ARLIM(residfab.hiVect()),
       tbx.loVect(), tbx.hiVect(), &nc);
   }
+  */
+  MultiFab::Xpay(residL, -1.0, rhsL, 0, 0, residL.nComp(), 0);
 }
 
 void 
@@ -389,15 +392,13 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
 
     const int gn = solnLmfi.index();
 
-    const LinOp::MaskTuple& mtuple = maskvals[level][gn];
-
-    const Mask& m0 = *mtuple[oitr()]; oitr++;
-    const Mask& m1 = *mtuple[oitr()]; oitr++;
-    const Mask& m2 = *mtuple[oitr()]; oitr++;
-    const Mask& m3 = *mtuple[oitr()]; oitr++;
+    const Mask& m0 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m1 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m2 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m3 = maskvals[level][oitr()][solnLmfi]; oitr++;
 #if (BL_SPACEDIM > 2)
-    const Mask& m4 = *mtuple[oitr()]; oitr++;
-    const Mask& m5 = *mtuple[oitr()]; oitr++;
+    const Mask& m4 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m5 = maskvals[level][oitr()][solnLmfi]; oitr++;
 #endif
     const Box&       tbx     = solnLmfi.tilebox();
     const Box&       vbx     = solnLmfi.validbox();
@@ -502,15 +503,13 @@ ABecHelper::Fsmooth_jacobi (MultiFab&       solnL,
 
     const int gn = solnLmfi.index();
 
-    const LinOp::MaskTuple& mtuple = maskvals[level][gn];
-
-    const Mask& m0 = *mtuple[oitr()]; oitr++;
-    const Mask& m1 = *mtuple[oitr()]; oitr++;
-    const Mask& m2 = *mtuple[oitr()]; oitr++;
-    const Mask& m3 = *mtuple[oitr()]; oitr++;
+    const Mask& m0 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m1 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m2 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m3 = maskvals[level][oitr()][solnLmfi]; oitr++;
 #if (BL_SPACEDIM > 2)
-    const Mask& m4 = *mtuple[oitr()]; oitr++;
-    const Mask& m5 = *mtuple[oitr()]; oitr++;
+    const Mask& m4 = maskvals[level][oitr()][solnLmfi]; oitr++;
+    const Mask& m5 = maskvals[level][oitr()][solnLmfi]; oitr++;
 #endif
     const Box&       vbx     = solnLmfi.validbox();
     FArrayBox&       solnfab = solnL[gn];

@@ -411,27 +411,27 @@ TensorOp::applyBC (MultiFab&      inout,
   const bool do_corners = true;
 
   inout.setBndry(1.e30,src_comp,num_comp);
-  inout.FillBoundary(src_comp,num_comp,local,cross);
+  inout.FillBoundary(src_comp,num_comp,cross);
   prepareForLevel(level);
-  geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+  // geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+  inout.FillBoundary(src_comp,num_comp,do_corners);
 
   //
   // Fill boundary cells.
   //
-  const int N = inout.IndexMap().size();
+  const int N = inout.IndexArray().size();
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (int i = 0; i < N; i++)
+  for (MFIter mfi(inout); mfi.isValid(); ++mfi)
   {
-    const int gn = inout.IndexMap()[i];
+    const int gn = mfi.index();
 
     BL_ASSERT(gbox[level][gn] == inout.box(gn));
 
     const BndryData::RealTuple&      bdl = bgb.bndryLocs(gn);
     const Array< Array<BoundCond> >& bdc = bgb.bndryConds(gn);
-    const MaskTuple&                 msk = maskvals[level][gn];
 
     for (OrientationIter oitr; oitr; ++oitr)
     {
@@ -465,9 +465,10 @@ TensorOp::applyBC (MultiFab&      inout,
       else
         BoxLib::Abort("TensorOp::applyBC(): bad logic");
 
-      const Mask& m    = *msk[face];
-      const Mask& mphi = *msk[Orientation(perpdir,Orientation::high)];
-      const Mask& mplo = *msk[Orientation(perpdir,Orientation::low)];
+      const Mask& m    = maskvals[level][face][mfi];
+      const Mask& mphi = maskvals[level][Orientation(perpdir,Orientation::high)][mfi];
+      const Mask& mplo = maskvals[level][Orientation(perpdir,Orientation::low)][mfi];
+      const Box& box   = inout.box(gn);
       FORT_TOAPPLYBC( &flagden, &flagbc, &maxorder,
         inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
         bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
@@ -478,7 +479,7 @@ TensorOp::applyBC (MultiFab&      inout,
         dentfab.dataPtr(),           ARLIM(dentfab.loVect()),  ARLIM(dentfab.hiVect()),
         exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
-        inout.box(gn).loVect(), inout.box(gn).hiVect(),
+        box.loVect(), box.hiVect(),
         &num_comp, h[level]);
 #elif BL_SPACEDIM==3
       const Mask& mn = *msk[Orientation(1,Orientation::high)];
@@ -583,11 +584,11 @@ TensorOp::applyBC (MultiFab&      inout,
         if (! is_per[d]) {
           Box tmpLo = BoxLib::adjCellLo(geomlev.Domain(),d,1);
           Geometry tmpGeomLo(tmpLo,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
-          tmpGeomLo.FillPeriodicBoundary(boundary_data);
+          boundary_data.FillBoundary();
 
           Box tmpHi = BoxLib::adjCellHi(geomlev.Domain(),d,1);
           Geometry tmpGeomHi(tmpHi,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
-          tmpGeomHi.FillPeriodicBoundary(boundary_data);
+          boundary_data.FillBoundary();
         }
       }
     }
@@ -679,15 +680,13 @@ TensorOp::Fsmooth (MultiFab&       solnL,
 
     const int gn = mfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][mfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][mfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][mfi]; oitr++;);
 
     FArrayBox&       solfab = solnL[gn];
     const FArrayBox& rhsfab = rhsL[gn];
@@ -726,6 +725,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
            const FArrayBox& b1zfab = b1Z[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = mfi.validbox();
     FORT_TOGSRB(
       solfab.dataPtr(solnComp),  ARLIM(solfab.loVect()), ARLIM(solfab.hiVect()),
       rhsfab.dataPtr(rhsComp),   ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
@@ -751,7 +751,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      mfi.validbox().loVect(), mfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level], phaseflag);
 #else
     FORT_TOGSRB(
@@ -837,15 +837,13 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
 
     const int gn = xmfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][xmfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][xmfi]; oitr++;);
 
     FArrayBox&       xfab = x[gn];
     const FArrayBox& tdnfab = tdn[gn];
@@ -871,6 +869,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
            FArrayBox& zfluxfab = zflux[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = xmfi.validbox();
     FORT_TOFLUX(
       xfab.dataPtr(sComp),     ARLIM(xfab.loVect()),     ARLIM(xfab.hiVect()),
       bxfab.dataPtr(bndComp),  ARLIM(bxfab.loVect()),    ARLIM(bxfab.hiVect()),
@@ -887,7 +886,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
       tdefab.dataPtr(bndComp), ARLIM(tdefab.loVect()),   ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndComp), ARLIM(tdwfab.loVect()),   ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndComp), ARLIM(tdsfab.loVect()),   ARLIM(tdsfab.hiVect()),
-      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level]);
 
 #else
@@ -973,15 +972,13 @@ TensorOp::Fapply (MultiFab&       y,
 
     const int gn = xmfi.index();
 
-    const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
+    D_TERM(const Mask& mw = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& ms = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mb = maskvals[level][oitr()][xmfi]; oitr++;);
 
-    D_TERM(const Mask& mw = *mtuple[oitr()]; oitr++;,
-           const Mask& ms = *mtuple[oitr()]; oitr++;,
-           const Mask& mb = *mtuple[oitr()]; oitr++;);
-
-    D_TERM(const Mask& me = *mtuple[oitr()]; oitr++;,
-           const Mask& mn = *mtuple[oitr()]; oitr++;,
-           const Mask& mt = *mtuple[oitr()]; oitr++;);
+    D_TERM(const Mask& me = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mn = maskvals[level][oitr()][xmfi]; oitr++;,
+           const Mask& mt = maskvals[level][oitr()][xmfi]; oitr++;);
 
     FArrayBox&       yfab = y[gn];
     const FArrayBox& xfab = x[gn];
@@ -1005,6 +1002,7 @@ TensorOp::Fapply (MultiFab&       y,
            const FArrayBox& b1zfab = b1Z[gn];);
 
 #if BL_SPACEDIM==2
+    const Box& box = xmfi.validbox();
     FORT_TOAPPLY(
       xfab.dataPtr(src_comp),    ARLIM(xfab.loVect()),   ARLIM(xfab.hiVect()),
       &alpha, &beta,
@@ -1022,7 +1020,7 @@ TensorOp::Fapply (MultiFab&       y,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      box.loVect(), box.hiVect(),
       h[level]);
 #else
     FORT_TOAPPLY(
