@@ -350,6 +350,7 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="PKs">
     <ParameterList name="coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
@@ -398,7 +399,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
     </ParameterList>
+
     <ParameterList name="flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">

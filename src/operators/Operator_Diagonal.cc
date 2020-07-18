@@ -31,6 +31,7 @@ namespace Operators {
 int Operator_Diagonal::ApplyMatrixFreeOp(
     const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
 {
+X.Print(std::cout, false);
   const Epetra_MultiVector& Xi = *X.ViewComponent(col_compname_, true);
   Epetra_MultiVector& Yi = *Y.ViewComponent(row_compname_, true);
  
@@ -51,6 +52,7 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 
     for (int i = 0; i != nrows; ++i) {
       Yi[0][row_lids[n][i]] += av(i);
+std::cout << n << ":  " << row_lids[n][i] << " " << col_lids[n][i] << " a=" << av(i) << std::endl;
     }
   }
 
@@ -65,6 +67,7 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
     int my_block_row, int my_block_col) const
 {
+std::cout << "Component: " << row_compname_ << " " << col_compname_ << std::endl;
   const std::vector<int>& row_gids = map.GhostIndices(my_block_row, row_compname_, 0);
   const std::vector<int>& col_gids = map.GhostIndices(my_block_col, col_compname_, 0);
 
@@ -83,6 +86,7 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
     for (int i = 0; i != ndofs; ++i) {
       lid_r.push_back(row_gids[row_lids[n][i]]);
       lid_c.push_back(col_gids[col_lids[n][i]]);
+std::cout << n << ":  " << row_lids[n][i] << " " << col_lids[n][i]  << std::endl;
     }
     ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
   }

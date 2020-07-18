@@ -20,6 +20,7 @@ project(MPC_TREE)
 
 # Get the includes directory for chemistry
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+message(DEBUG "Including GEOCHEM_SOURCE_DIR = ${GEOCHEM_SOURCE_DIR} ")
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
@@ -83,11 +84,7 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransport_PK.cc
       ReactiveTransportMatrixFracture_PK.cc)
 
-   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-   add_amanzi_library(mpc_tree
-                      SOURCE ${mpc_tree_src_files}
-                      LINK_LIBS pks flow transport energy time_integration data_structures state
-                                ${mpc_tree_tpl_libs})
+  set(mpc_tree_link_libs pks flow transport time_integration data_structures state)
 
 else()
 
@@ -108,13 +105,13 @@ else()
       TransportMatrixFracture_PK.cc        
       ReactiveTransport_PK.cc)
 
-   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-   add_amanzi_library(mpc_tree 
-                      SOURCE ${mpc_tree_src_files}
-                      LINK_LIBS pks transport time_integration data_structures state
-                                ${mpc_tree_tpl_libs})
+   set(mpc_tree_link_libs pks transport time_integration data_structures state)
 
 endif()
+
+set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
+                   LINK_LIBS ${mpc_tree_link_libs} ${mpc_tree_tpl_libs})
 
 
 add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)

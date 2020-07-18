@@ -93,7 +93,6 @@ void PK_DomainFunctionVolume<FunctionBase>::Init(
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
-
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */

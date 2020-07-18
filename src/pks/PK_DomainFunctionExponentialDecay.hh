@@ -121,14 +121,14 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Compute(double t0, double 
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
-    std::vector<double> val_vec(nfun);  
-
+    std::vector<double> val_vec(nfun,0.);
+    
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
           mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      
+            
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
         val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c];

@@ -11,9 +11,10 @@
 */
 
 #include <algorithm>
+#include <climits>
+#include <set>
 #include <sstream>
 #include <string>
-#include <climits>
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
@@ -332,7 +333,41 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
 
 /* ******************************************************************
-* Create new cycle driver list.
+* Create new cycle driver list for this type lists:
+<process_kernels>
+  <pk mode="steady">
+    <flow model="richards" state="on"/>
+  </pk>
+  <pk mode="transient1">
+    <flow model="richards" state="on"/>
+    <energy model="two-phase" state="on"/>
+    <stronly_coupled name="mpc">flow,energy</strongly_coupled>
+  </pk>
+  <pk mode="transient2">
+    <flow model="richards" state="on"/>
+    <energy model="two-phase" state="on"/>
+    <transport state="on"/>
+    <stronly_coupled name="mpc">flow,energy</strongly_coupled>
+    <sub_cycling>mpc,transport</sub_cycling>
+  </pk>
+  <pk mode="transient3">
+    <flow model="richards" state="on"/>
+    <energy model="two-phase" state="on"/>
+    <transport state="on"/>
+    <chemistry engine="none" process_model="none" state="on"/>
+    <stronly_coupled name="mpc">flow,energy</strongly_coupled>
+    <sub_cycling>mpc,transport,chemistry</sub_cycling>
+  </pk>
+  <pk mode="transient4">
+    <flow model="richards" state="on"/>
+    <energy model="two-phase" state="on"/>
+    <transport state="on"/>
+    <chemistry engine="none" process_model="none" state="on"/>
+    <stronly_coupled name="mpc1">flow,energy</strongly_coupled>
+    <weakly_coupled name="mpc2">transport,chemistry</weakly_coupled>
+    <sub_cycling>mpc1,mpc2</sub_cycling>
+  </pk>
+</process_kernels>
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 {
@@ -839,6 +874,8 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
         *vo_->os() << "Next PK is \"" << it->first << "\"" << std::endl;
 
+    std::string err_options("residual"), mode("transient");
+
     if ((it->second).isList()) {
       // -- flow PKs
       if (it->first == "flow steady" || it->first == "flow matrix steady") {
@@ -898,7 +935,6 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
         // implicit PK derived from a strongly coupled MPC needs a time integrator 
         if (transport_implicit_) {
-          std::string err_options("residual"), mode("transient");
           std::string nonlinear_solver("nka"), tags_default("unstructured_controls, unstr_nonlinear_solver");
 
           node = GetUniqueElementByTagsString_(tags_default, flag);
@@ -953,14 +989,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        if (pk_master_.find("thermal flow") != pk_master_.end()) {
-          // we use steady defaults so far
-          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
-              "pressure, temperature", "nka", false,
-              "unstructured_controls, unstr_thermal_richards_controls",
-              TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
-          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
-        }
+        err_options = "pressure, temperature";
       }
       else if (it->first == "flow and energy fracture") {
         Teuchos::Array<std::string> pk_names;
@@ -971,14 +1000,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        if (pk_master_.find("thermal flow") != pk_master_.end()) {
-          // we use steady defaults so far
-          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
-              "pressure, temperature", "nka", false,
-              "unstructured_controls, unstr_thermal_richards_controls",
-              TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
-          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
-        }
+        err_options = "pressure, temperature";
       }
       // -- multiple PKs (matrix and fracture)
       else if (it->first == "coupled flow and transport") {
@@ -1002,11 +1024,19 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
 
-        out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
-            "pressure, temperature", "nka", false,
-            "unstructured_controls, unstr_thermal_richards_controls",
-            TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
-        out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
+        err_options = "pressure, temperature";
+      }
+
+      // add time integrator to PKs that have no transport and chemistry sub-PKs.
+      if (it->first.find("transport") == std::string::npos &&
+          it->first.find("chemistry") == std::string::npos) {
+        if (!out_list.sublist(it->first).isSublist("time integrator")) {
+          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+              err_options, "nka", false,
+              "unstructured_controls, unstr_flow_controls",
+              dt_cut_[mode], dt_inc_[mode]);
+          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
+        }
       }
     }
   }

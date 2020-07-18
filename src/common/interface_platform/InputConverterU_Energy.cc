@@ -73,12 +73,16 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator")
                                             .sublist("thermal conductivity parameters");
-  thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+  if (pk_model_["energy"] == "two-phase energy") {
+    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+    thermal.set<double>("thermal conductivity of gas", 0.02);
+    thermal.set<double>("unsaturated alpha", 1.0);
+    thermal.set<double>("epsilon", 1.0e-10);
+  } else {
+    thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
+  }
   thermal.set<double>("thermal conductivity of rock", 0.2);
   thermal.set<double>("thermal conductivity of liquid", 0.1);
-  thermal.set<double>("thermal conductivity of gas", 0.02);
-  thermal.set<double>("unsaturated alpha", 1.0);
-  thermal.set<double>("epsilon", 1.0e-10);
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
