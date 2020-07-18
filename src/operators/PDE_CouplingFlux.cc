@@ -32,6 +32,10 @@ void PDE_CouplingFlux::Init_(
     std::shared_ptr<const std::vector<std::vector<int> > >& row_inds,
     std::shared_ptr<const std::vector<std::vector<int> > >& col_inds)
 {
+  // diagonal operator may work incorrectly if CVS has more than one component
+  AMANZI_ASSERT(cvs_row->size() == 1);
+  AMANZI_ASSERT(cvs_col->size() == 1);
+
   if (global_op_ == Teuchos::null) {
     global_op_ = Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
     std::string name("Coupling_DIAGONAL");
