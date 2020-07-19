@@ -87,25 +87,25 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(particle_density_key_);
   }
 
-  if (!S->HasField(ie_rock_key_)) {
+  if (!S->HasField(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
     elist.sublist(ie_rock_key_)
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", ie_rock_key_);
     elist.sublist(ie_rock_key_).sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
-         .set<double>("heat capacity [J/mol-K]", 620.0);
+         .set<double>("heat capacity", 620.0);
   }
 
   // Fields for gas
   // -- internal energy
-  if (!S->HasField(ie_gas_key_)) {
+  if (!S->HasField(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
     elist.sublist(ie_gas_key_)
          .set<std::string>("field evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", ie_gas_key_);
   }
 
   // -- molar density
-  if (!S->HasField(mol_density_gas_key_)) {
+  if (!S->HasField(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
     elist.sublist(mol_density_gas_key_)
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
@@ -119,7 +119,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- molar fraction
-  if (!S->HasField("molar_fraction_gas")) {
+  if (!S->HasField("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("field evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
@@ -137,11 +137,11 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist(ie_liquid_key_)
          .sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
-         .set<double>("heat capacity [J/mol-K]", 76.0);
+         .set<double>("molar heat capacity", 76.0);
   }
 
   // -- molar and mass density
-  if (!S->HasField(mol_density_liquid_key_)) {
+  if (!S->HasField(mol_density_liquid_key_) && !elist.isSublist(mol_density_liquid_key_)) {
     elist.sublist(mol_density_liquid_key_)
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "both")
@@ -159,7 +159,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity model
-  if (!S->HasField(viscosity_liquid_key_)) {
+  if (!S->HasField(viscosity_liquid_key_) && !elist.isSublist(viscosity_liquid_key_)) {
     elist.sublist(viscosity_liquid_key_)
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", viscosity_liquid_key_)
@@ -174,7 +174,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Other fields
-  if (!S->HasField(effective_pressure_key_)) {
+  if (!S->HasField(effective_pressure_key_) && !elist.isSublist(effective_pressure_key_)) {
     elist.sublist(effective_pressure_key_)
          .set<std::string>("field evaluator type", "effective_pressure");
 

@@ -24,6 +24,8 @@ void Darcy_PK::FunctionalResidual(
     Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
     Teuchos::RCP<TreeVector> f)
 { 
+if(domain_=="domain") std::cout << "AAA: u_new: " << (*u_new->Data()->ViewComponent("face"))[0][33] << std::endl;
+if(domain_=="domain") std::cout << "AAA: u_old: " << (*u_old->Data()->ViewComponent("face"))[0][33] << std::endl;
   dt_ = t_new - t_old;
 
   // refresh data
@@ -39,6 +41,7 @@ void Darcy_PK::FunctionalResidual(
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
 
+if(domain_=="domain") std::cout << "AAA: rhs=: " << (*op_->rhs()->ViewComponent("face"))[0][33] << std::endl;
   op_->RestoreCheckPoint();
   op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
@@ -55,6 +58,7 @@ void Darcy_PK::FunctionalResidual(
   AddSourceTerms(rhs);
 
   op_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
+if(domain_=="domain") std::cout << "AAA: f=: " << (*f->Data()->ViewComponent("face"))[0][33] << std::endl;
 }
 
 

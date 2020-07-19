@@ -273,7 +273,7 @@
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/mol-K]" type="double" value="1.0"/>
+          <Parameter name="molar heat capacity" type="double" value="1.0"/>
           <Parameter name="reference temperature" type="double" value="1.0"/>
         </ParameterList>
         <ParameterList name="verbose object">
@@ -285,7 +285,7 @@
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
           <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/kg-K]" type="double" value="1.0"/>
+          <Parameter name="heat capacity" type="double" value="1.0"/>
           <Parameter name="reference temperature" type="double" value="1.0"/>
         </ParameterList>
         <ParameterList name="verbose object">

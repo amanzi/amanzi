@@ -391,6 +391,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   double factor = rho_ * rho_ / mu;
   if (coupled_to_fracture_) factor = rho_;
+std::cout << "MFD: init " << " factor=" << factor << " rho=" << rho_ << std::endl;
 
   Operators::PDE_DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, factor, gravity_);

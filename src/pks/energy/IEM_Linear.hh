@@ -27,8 +27,6 @@ class IEM_Linear : public IEM {
  public:
   explicit IEM_Linear(Teuchos::ParameterList& plist);
 
-  bool IsMolarBasis() { return molar_basis_; }
-
   double InternalEnergy(double temp);
   double DInternalEnergyDT(double temp) { return cv_; }
 
@@ -39,7 +37,6 @@ class IEM_Linear : public IEM {
 
   double cv_;  // units: J/({mol/kg}-K)
   double Tref_;  // units: K
-  bool molar_basis_;
 
  private:
   // iem factor registration

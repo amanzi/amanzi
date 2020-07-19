@@ -503,8 +503,8 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
-      double tmp = flux[0][first + shift] * dir;
-      // double tmp = 0.0;
+      // double tmp = flux[0][first + shift] * dir;
+      double tmp = 0.0;
 
       if (tmp > 0) {
         int c1 = cells[k];
