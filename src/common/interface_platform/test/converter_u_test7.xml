@@ -146,6 +146,10 @@
         <porosity value="0.2206"/>
       </mechanical_properties>
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
+      <thermal_properties>
+        <liquid_heat_capacity cv="76.0" model="linear"/>
+        <rock_heat_capacity cv="620.0 J/K/kg" model="linear"/>
+      </thermal_properties>
       <assigned_regions>EntireDomain</assigned_regions>
     </material>
   </materials>

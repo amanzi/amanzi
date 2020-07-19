@@ -99,6 +99,22 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity" type="double" value="7.60000000000000000e+01"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity" type="double" value="6.20000000000000000e+02"/>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
           <ParameterList name="fracture">
