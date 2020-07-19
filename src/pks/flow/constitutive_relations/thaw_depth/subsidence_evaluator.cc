@@ -29,7 +29,7 @@ SubsidenceEvaluator::SubsidenceEvaluator(Teuchos::ParameterList& plist)
   std::stringstream domain_sf;
   domain_sf << "surface_column_"<< col_id;
   init_elev_key_ = Keys::getKey(domain_sf.str(),"initial_elevation");
-  dependencies_.insert(init_elev_key_);
+  //  dependencies_.insert(init_elev_key_);
 }
   
 
@@ -61,7 +61,7 @@ SubsidenceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     ->ViewComponent("cell", false);
       
   res_c[0][0] = init_elev_c[0][0] - top_z_centroid[2];
-  
+
 }
   
 void
