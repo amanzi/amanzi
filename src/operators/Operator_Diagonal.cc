@@ -33,8 +33,6 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 {
   const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
   Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
-std::cout << "Apply:  " << row_compname_ << " " << col_compname_ << " " << this << std::endl;
-std::cout << "Apply:  " << op.row_compname() << " " << op.col_compname() << " " << this << std::endl;
  
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -54,7 +52,6 @@ std::cout << "Apply:  " << op.row_compname() << " " << op.col_compname() << " " 
     for (int i = 0; i != nrows; ++i) {
       Yi[0][row_lids[n][i]] += av(i);
     }
-if (n < 5) std::cout << n << " " << row_lids[n][0] << " " << col_lids[n][0] << std::endl;
   }
 
   return 0;

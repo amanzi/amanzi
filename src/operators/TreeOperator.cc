@@ -121,7 +121,6 @@ int TreeOperator::ApplyFlattened(const TreeVector& X, TreeVector& Y) const
     int m(0);
     for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
-std::cout << "BBBa: " << n << " " << m << std::endl;
         ierr |= blocks_[n][m]->Apply(*(*it)->Data(), yN, 1.0);
       }
     }

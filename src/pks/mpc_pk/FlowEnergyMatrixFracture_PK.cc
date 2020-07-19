@@ -211,8 +211,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
       (*inds_fracture)[np][0] = c;
 
       (*values_kn)[np] = kn[0][c] * area / gravity;
-      // (*values_tn)[np] = tn[0][c] * area;
-      (*values_tn)[np] = 0.0;
+      (*values_tn)[np] = tn[0][c] * area;
       np++;
     }
   }
@@ -344,7 +343,6 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 
   op_tree_matrix_->ApplyFlattened(*u_new, g);
   f->Update(1.0, g, 1.0);
-exit(0);
 }
 
 
@@ -505,8 +503,8 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
-      // double tmp = flux[0][first + shift] * dir;
-      double tmp = 0.0;
+      double tmp = flux[0][first + shift] * dir;
+      // double tmp = 0.0;
 
       if (tmp > 0) {
         int c1 = cells[k];
