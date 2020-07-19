@@ -100,8 +100,8 @@ void Operator_Diagonal::AssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
     int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, row_compname_, 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, col_compname_, 0);
+  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
+  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
 
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
