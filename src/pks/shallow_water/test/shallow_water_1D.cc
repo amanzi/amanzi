@@ -137,6 +137,35 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector
   std::cout << "err_L1  = " << err_L1 << std::endl;
 }
 
+void conservation_check(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const Epetra_MultiVector& hh,
+                        const Epetra_MultiVector& ht,
+                        const Epetra_MultiVector& vx, const Epetra_MultiVector& vy,
+                        const Epetra_MultiVector& B, double& TE)
+{
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+  double g = 9.81;
+
+  TE = 0.;
+
+  double KE = 0., IE = 0.;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    KE += 0.5*hh[0][c]*(vx[0][c]*vx[0][c] + vy[0][c]*vy[0][c])*mesh->cell_volume(c);
+    IE += 0.5*g*hh[0][c]*hh[0][c]*mesh->cell_volume(c);
+  }
+
+  TE = KE+IE;
+
+  double TE_tmp;
+
+  mesh->get_comm()->SumAll(&TE, &TE_tmp, 1);
+
+  TE  = TE_tmp;
+
+  std::cout << "TE = " << TE << std::endl;
+}
+
 
 /* **************************************************************** */
 TEST(SHALLOW_WATER_1D) {
@@ -212,6 +241,7 @@ TEST(SHALLOW_WATER_1D) {
   int iter = 0;
   bool flag = true;
 
+//  while (iter < 2) {
   while (t_new < 10.) {
     // cycle 1, time t
     double t_out = t_new;
@@ -255,6 +285,10 @@ TEST(SHALLOW_WATER_1D) {
     t_old = t_new;
     iter++;
 
+    double TE;
+
+    conservation_check(mesh, hh, ht, vx, vy, B, TE);
+
   }
 
   if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
@@ -292,6 +326,15 @@ TEST(SHALLOW_WATER_1D) {
   io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
   io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
+
+  std::ofstream myfile;
+  myfile.open("solution_"+std::to_string(MyPID)+".txt");
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+      AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      myfile << xc[0] << " " << hh[0][c] << "\n";
+  }
+  myfile.close();
 
   CHECK_CLOSE(1./hmax, err_max, 0.5);
 }

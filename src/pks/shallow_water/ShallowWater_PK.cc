@@ -524,7 +524,7 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   // for better robustness on wet/dry front
   Phi = 0.1*Phi;
 
-  Phi = 0.;
+//  Phi = 0.;
 
   grad_lim = Phi*grad;
 }
