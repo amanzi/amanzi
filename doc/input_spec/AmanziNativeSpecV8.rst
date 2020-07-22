@@ -217,6 +217,7 @@ Amanzi's internal default units are SI units except for the concentration.
     <Parameter name="length" type="string" value="m"/>
     <Parameter name="time" type="string" value="s"/>
     <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
     <Parameter name="concentration" type="string" value="molar"/>
   </ParameterList>
   </ParameterList>
@@ -411,17 +412,16 @@ Primary and derived fields
   * total component concentration [mol/L] or [mol/m^3]
   * temperature [K]
 
-* Derived fields
+* Secondary fields
 
   * saturation [-]
   * hydraulic_head [m]
   * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
-  * porosity [-]
-  * transport_porosity [-] 
-
-* Static fields
-
   * permeability [m^2]
+  * porosity [-]
+  * specific_storage [m^-1]
+  * specific_yield [-]
+  * transport_porosity [-] 
 
 
 Field evaluators
@@ -3937,6 +3937,8 @@ Diffusion is the most frequently used operator. It employs the old schema.
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
+  * `"gravity magnitude`" [double] defined magnitude of the gravity vector.
+
   * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
     that must be added to the preconditioner. These terms approximate some Jacobian terms.
     Available options are `"true Jacobian`" and `"approximate Jacobian`".
@@ -3971,6 +3973,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
     <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     <Parameter name="gravity" type="bool" value="true"/>
     <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="gravity magnitude" type="double" value="9.81"/>
     <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
     <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 

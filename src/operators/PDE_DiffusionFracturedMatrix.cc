@@ -81,7 +81,6 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
   global_op_->rhs()->PutScalarGhosted(0.0);
 
-std::cout << "MFD: rhs=: " << (*global_op_->rhs()->ViewComponent("face"))[0][33] << std::endl;
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -136,7 +135,6 @@ std::cout << "MFD: rhs=: " << (*global_op_->rhs()->ViewComponent("face"))[0][33]
 
       for (int n = 0; n < nfaces; n++) {
         rhs_face[0][lid[n]] += av(n); 
-if (lid[n] == 33) std::cout << "MFD: rhs += " << (*global_op_->rhs()->ViewComponent("face"))[0][33] << " n=" << n << " rho=" << rho_ << std::endl;
         rhs_cell[0][c] -= av(n); 
       }
     }
