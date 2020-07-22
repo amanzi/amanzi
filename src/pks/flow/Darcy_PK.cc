@@ -386,25 +386,27 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (flow_on_manifold_)
       oplist.set<std::string>("nonlinear coefficient", "standard: cell");
 
-  double factor = rho_ * rho_ / mu;
-  if (coupled_to_fracture_) factor = rho_;
-
-  Operators::PDE_DiffusionFactory opfactory;
-  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, factor, gravity_);
-  op_diff_->SetBCs(op_bc_, op_bc_);
+  Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);
+  opfactory.SetConstantGravitationalTerm(gravity_, rho_);
 
   if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
-    op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
+    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetConstantScalarCoefficient(rho_ / mu);
   } else {
+    WhetStone::Tensor Ktmp(dim, 1);
+    Ktmp(0, 0) = rho_ / mu;
+    opfactory.SetConstantTensorCoefficient(Ktmp);
+
     S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
-    auto Kptr = S_->GetFieldData(permeability_key_);
-    op_diff_->Setup(Teuchos::null, Kptr, Teuchos::null);
+    auto kptr = S_->GetFieldData(permeability_key_);
+    opfactory.SetVariableScalarCoefficient(kptr);
   }
 
-  op_diff_->ScaleMassMatrices(rho_ / mu);
+  op_diff_ = opfactory.Create();
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_diff_->SetBCs(op_bc_, op_bc_);
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator.

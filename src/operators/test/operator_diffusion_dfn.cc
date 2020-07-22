@@ -129,16 +129,19 @@ void RunTest(int icase, double gravity) {
   AmanziGeometry::Point gvec(0.0, 0.0, -gravity);
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", (gravity > 0.0));
+  olist.set<double>("gravity magnitude", gravity);
 
-  Operators::PDE_DiffusionFactory opfactory;
-  Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, gvec);
+  Operators::PDE_DiffusionFactory opfactory(olist, surfmesh);
+  opfactory.SetVariableTensorCoefficient(K);
+  opfactory.SetConstantGravitationalTerm(gvec, rho);
+
+  Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create();
   op->SetBCs(bc, bc);
 
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
 
   // populate diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // apply BCs and assemble
