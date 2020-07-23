@@ -69,7 +69,7 @@ class ShallowWater_PK : public PK_Physical,
     virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
     virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-			                              Epetra_Vector& f_component) override;
+                                          Epetra_Vector& f_component) override;
 
     // Commit any secondary (dependent) variables.
     virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
@@ -95,6 +95,9 @@ class ShallowWater_PK : public PK_Physical,
 
     void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int,Key);
 
+    void ComputeGradients(Key,Key,Key);
+
+    double Reconstruction(double,double,int,Key,Key,Key);
     double Reconstruction(double,double,int,Key);
 
   protected:
@@ -110,7 +113,6 @@ class ShallowWater_PK : public PK_Physical,
     Key domain_;
 
     // names of state fields
-    Key pressure_key_;
     Key velocity_x_key_;
     Key velocity_y_key_;
     Key discharge_x_key_;
@@ -118,6 +120,20 @@ class ShallowWater_PK : public PK_Physical,
     Key ponded_depth_key_;
     Key total_depth_key_;
     Key bathymetry_key_;
+    Key velocity_x_dx_key_;
+    Key velocity_x_dy_key_;
+    Key velocity_y_dx_key_;
+    Key velocity_y_dy_key_;
+    Key discharge_x_dx_key_;
+    Key discharge_x_dy_key_;
+    Key discharge_y_dx_key_;
+    Key discharge_y_dy_key_;
+    Key ponded_depth_dx_key_;
+    Key ponded_depth_dy_key_;
+    Key total_depth_dx_key_;
+    Key total_depth_dy_key_;
+    Key bathymetry_dx_key_;
+    Key bathymetry_dy_key_;
     Key myPID_;
 
     std::string passwd_;

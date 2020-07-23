@@ -241,7 +241,6 @@ TEST(SHALLOW_WATER_1D) {
   int iter = 0;
   bool flag = true;
 
-//  while (iter < 2) {
   while (t_new < 10.) {
     // cycle 1, time t
     double t_out = t_new;

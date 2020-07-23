@@ -51,14 +51,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   double eps = 1.e-6;
 
-  // distribute data to ghost cells
-  S_->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-velocity-x")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-velocity-y")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-discharge-x")->ScatterMasterToGhosted("cell");
-  S_->GetFieldData("surface-discharge-y")->ScatterMasterToGhosted("cell");
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // save a copy of primary and conservative fields
   CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
@@ -86,6 +79,39 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
 
+  // distribute data to ghost cells
+  S_->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-x")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-y")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-x")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-y")->ScatterMasterToGhosted("cell");
+
+  ComputeGradients("surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
+  ComputeGradients("surface-ponded_depth","surface-ponded_depth_dx","surface-ponded_depth_dy");
+  ComputeGradients("surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
+  ComputeGradients("surface-velocity-x","surface-velocity-x_dx","surface-velocity-x_dy");
+  ComputeGradients("surface-velocity-y","surface-velocity-y_dx","surface-velocity-y_dy");
+  ComputeGradients("surface-discharge-x","surface-discharge-x_dx","surface-discharge-x_dy");
+  ComputeGradients("surface-discharge-y","surface-discharge-y_dx","surface-discharge-y_dy");
+
+  // distribute data to ghost cells
+  S_->GetFieldData("surface-bathymetry_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-bathymetry_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-total_depth_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-total_depth_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-ponded_depth_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-ponded_depth_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-x_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-x_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-y_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-velocity-y_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-x_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-x_dy")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-y_dx")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("surface-discharge-y_dy")->ScatterMasterToGhosted("cell");
+
   h_vec_c_tmp  = h_vec_c;
   ht_vec_c_tmp = ht_vec_c;
   vx_vec_c_tmp = vx_vec_c;
@@ -100,8 +126,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Simplest first-order form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::cout << "dt = " << dt << std::endl;
   std::cout << "t_new = " << t_new << std::endl;
@@ -151,8 +175,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-      double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
-      double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
+      double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
+      double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
 
       if (ht_rec < B_rec) {
         ht_rec = ht_vec_c[0][c];
@@ -170,10 +194,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         Exceptions::amanzi_throw(msg);
       }
 
-      double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x");
-      double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y");
-      double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x");
-      double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y");
+      double vx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-x","surface-velocity-x_dx","surface-velocity-x_dy");
+      double vy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-velocity-y","surface-velocity-y_dx","surface-velocity-y_dy");
+      double qx_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-x","surface-discharge-x_dx","surface-discharge-x_dy");
+      double qy_rec = Reconstruction(xcf[0],xcf[1],c,"surface-discharge-y","surface-discharge-y_dx","surface-discharge-y_dy");
 
       vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
       vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
@@ -193,8 +217,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         UR[2] = UL[2];
       } else {
 
-        double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth");
-        double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry");
+        double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
+        double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
 
         if (ht_rec < B_rec) {
           ht_rec = ht_vec_c[0][cn];
@@ -212,10 +236,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           Exceptions::amanzi_throw(msg);
         }
 
-        double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x");
-        double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y");
-        double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x");
-        double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y");
+        double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x","surface-velocity-x_dx","surface-velocity-x_dy");
+        double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y","surface-velocity-y_dx","surface-velocity-y_dy");
+        double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x","surface-discharge-x_dx","surface-discharge-x_dy");
+        double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y","surface-discharge-y_dx","surface-discharge-y_dy");
 
         vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
         vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
@@ -301,23 +325,32 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // domain name
   domain_ = "surface";
-  pressure_key_       = Keys::getKey(domain_, "pressure");
-  velocity_x_key_     = Keys::getKey(domain_, "velocity-x");
-  velocity_y_key_     = Keys::getKey(domain_, "velocity-y");
-  discharge_x_key_    = Keys::getKey(domain_, "discharge-x");
-  discharge_y_key_    = Keys::getKey(domain_, "discharge-y");
-  ponded_depth_key_   = Keys::getKey(domain_, "ponded_depth");
-  total_depth_key_    = Keys::getKey(domain_, "total_depth");
-  bathymetry_key_     = Keys::getKey(domain_, "bathymetry");
-  myPID_              = Keys::getKey(domain_, "PID");
+  velocity_x_key_      = Keys::getKey(domain_, "velocity-x");
+  velocity_y_key_      = Keys::getKey(domain_, "velocity-y");
+  discharge_x_key_     = Keys::getKey(domain_, "discharge-x");
+  discharge_y_key_     = Keys::getKey(domain_, "discharge-y");
+  ponded_depth_key_    = Keys::getKey(domain_, "ponded_depth");
+  total_depth_key_     = Keys::getKey(domain_, "total_depth");
+  bathymetry_key_      = Keys::getKey(domain_, "bathymetry");
+  velocity_x_dx_key_   = Keys::getKey(domain_, "velocity-x_dx");
+  velocity_x_dy_key_   = Keys::getKey(domain_, "velocity-x_dy");
+  velocity_y_dx_key_   = Keys::getKey(domain_, "velocity-y_dx");
+  velocity_y_dy_key_   = Keys::getKey(domain_, "velocity-y_dy");
+  discharge_x_dx_key_  = Keys::getKey(domain_, "discharge-x_dx");
+  discharge_x_dy_key_  = Keys::getKey(domain_, "discharge-x_dy");
+  discharge_y_dx_key_  = Keys::getKey(domain_, "discharge-y_dx");
+  discharge_y_dy_key_  = Keys::getKey(domain_, "discharge-y_dy");
+  ponded_depth_dx_key_ = Keys::getKey(domain_, "ponded_depth_dx");
+  ponded_depth_dy_key_ = Keys::getKey(domain_, "ponded_depth_dy");
+  total_depth_dx_key_  = Keys::getKey(domain_, "total_depth_dx");
+  total_depth_dy_key_  = Keys::getKey(domain_, "total_depth_dy");
+  bathymetry_dx_key_   = Keys::getKey(domain_, "bathymetry_dx");
+  bathymetry_dy_key_   = Keys::getKey(domain_, "bathymetry_dy");
+  myPID_               = Keys::getKey(domain_, "PID");
 
+  //-------------------------------
   // primary fields
-
-  // -- pressure
-  if (!S->HasField(pressure_key_)) {
-    S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
+  //-------------------------------
 
   // ponded_depth_key_
   if (!S->HasField(ponded_depth_key_)) {
@@ -366,6 +399,88 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(myPID_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
+  //-------------------------------
+  // gradients of the primary fields
+  //-------------------------------
+
+  // ponded_depth_key_
+  if (!S->HasField(ponded_depth_dx_key_)) {
+    S->RequireField(ponded_depth_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(ponded_depth_dy_key_)) {
+      S->RequireField(ponded_depth_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+
+  // total_depth_key_
+  if (!S->HasField(total_depth_dx_key_)) {
+    S->RequireField(total_depth_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(total_depth_dy_key_)) {
+    S->RequireField(total_depth_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // x velocity
+  if (!S->HasField(velocity_x_dx_key_)) {
+    S->RequireField(velocity_x_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(velocity_x_dy_key_)) {
+    S->RequireField(velocity_x_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // y velocity
+  if (!S->HasField(velocity_y_dx_key_)) {
+    S->RequireField(velocity_y_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(velocity_y_dy_key_)) {
+    S->RequireField(velocity_y_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // x discharge
+  if (!S->HasField(discharge_x_dx_key_)) {
+    S->RequireField(discharge_x_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(discharge_x_dy_key_)) {
+    S->RequireField(discharge_x_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // y discharge
+  if (!S->HasField(discharge_y_dx_key_)) {
+    S->RequireField(discharge_y_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(discharge_y_dy_key_)) {
+    S->RequireField(discharge_y_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // bathymetry
+  if (!S->HasField(bathymetry_dx_key_)) {
+    S->RequireField(bathymetry_dx_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S->HasField(bathymetry_dy_key_)) {
+    S->RequireField(bathymetry_dy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
 }
 
 
@@ -529,12 +644,134 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   grad_lim = Phi*grad;
 }
 
+//--------------------------------------------------------------
+// compute gradients
+//--------------------------------------------------------------
+void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key field_dy_key_)
+{
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  for (int c = 0; c < ncells_owned; c++) {
+
+    Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
+
+    mesh_->cell_get_edges(c,&cedges);
+  //  mesh_->cell_get_faces(c,&cfaces,true);
+    mesh_->cell_get_faces(c,&cfaces);
+
+    Amanzi::AmanziMesh::Entity_ID_List adjcells;
+    mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
+    unsigned int nadj = adjcells.size();
+
+    Amanzi::AmanziGeometry::Point evec(2), normal(2);
+    double farea;
+
+    // cell volume
+    double vol = mesh_->cell_volume(c);
+
+    std::vector<double> U, Un;
+
+    U.resize(3);
+    Un.resize(3);
+
+    WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size()), AtA(2,2), InvAtA(2,2);
+    WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+    WhetStone::DenseMatrix b(cfaces.size(),1);
+    WhetStone::DenseMatrix Atb(2,1);
+
+    AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+
+    Epetra_MultiVector& u_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
+    Epetra_MultiVector& dudx_vec_c = *S_->GetFieldData(field_dx_key_,passwd_)->ViewComponent("cell",true);
+    Epetra_MultiVector& dudy_vec_c = *S_->GetFieldData(field_dy_key_,passwd_)->ViewComponent("cell",true);
+
+    for (int f = 0; f < cfaces.size(); f++) {
+
+      int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+
+      AmanziGeometry::Point xcn;
+
+      if (cn == -1) {
+
+        // formally, assign cn = c to pick correct solution
+        cn = c;
+
+        // face centroid
+        Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+        Amanzi::AmanziGeometry::Point dx = xcf-xc;
+
+        // face area
+        double farea = mesh_->face_area(cfaces[f]);
+
+        // normal
+        Amanzi::AmanziGeometry::Point normal(2);
+        int orientation;
+        normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+        normal /= farea;
+
+        double l = dx[0]*normal[0] + dx[1]*normal[1];
+
+        // reflect the centroid from the internal cell to ghost cell
+        xcn = xc + 2.*l*normal;
+
+      } else {
+        xcn = mesh_->cell_centroid(cn);
+      }
+
+      A(f,0) = xcn[0] - xc[0];
+      A(f,1) = xcn[1] - xc[1];
+
+      b(f,0) = u_vec_c[0][cn] - u_vec_c[0][c];
+
+    }
+
+    At.Transpose(A);
+
+    AtA.Multiply(At,A,false);
+
+    Atb.Multiply(At,b,false);
+
+    AtA.Inverse();
+
+    InvAtA = AtA;
+
+    dudx.Multiply(InvAtA,Atb,false);
+
+    BJ_lim(dudx,dudx_lim,c,field_key_);
+
+    dudx_vec_c[0][c] = dudx_lim(0,0);
+    dudy_vec_c[0][c] = dudx_lim(1,0);
+
+  } // c
+
+}
+
+//--------------------------------------------------------------
+// piecewise-linear reconstruction of the function
+// from pre-computed gradients
+//--------------------------------------------------------------
+double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_, Key field_dx_key_, Key field_dy_key_)
+{
+  AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+  Epetra_MultiVector& u_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& dudx_vec_c = *S_->GetFieldData(field_dx_key_,passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector& dudy_vec_c = *S_->GetFieldData(field_dy_key_,passwd_)->ViewComponent("cell",true);
+
+  double u_rec = u_vec_c[0][c] + dudx_vec_c[0][c]*(x-xc[0]) + dudy_vec_c[0][c]*(y-xc[1]);
+
+  return u_rec;
+}
+
 
 //--------------------------------------------------------------
 // piecewise-linear reconstruction of the function
 //--------------------------------------------------------------
 double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_)
 {
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+
   Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
 
   mesh_->cell_get_edges(c,&cedges);
@@ -775,7 +1012,8 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::v
 //--------------------------------------------------------------
 // Central-upwind numerical flux (Kurganov, Acta Numerica 2018)
 //--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double> UL,std::vector<double> UR) {
+std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double> UL,std::vector<double> UR)
+{
   std::vector<double> FL, FR, F, U_star, dU;
 
   double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
@@ -876,9 +1114,9 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
     // face centroid
     Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
 
-    double h_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth");
-    double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth");
-    double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry");
+    double h_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth","surface-ponded_depth_dx","surface-ponded_depth_dy");
+    double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
+    double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
 
     if (ht_rec < B_rec) {
       ht_rec = ht_vec_c[0][c];
