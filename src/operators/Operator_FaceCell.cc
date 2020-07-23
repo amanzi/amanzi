@@ -482,6 +482,14 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   AMANZI_ASSERT(!ierr);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_FaceCell::Clone() const {
+  return Teuchos::rcp(new Operator_FaceCell(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

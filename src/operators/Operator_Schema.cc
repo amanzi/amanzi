@@ -822,6 +822,14 @@ void Operator_Schema::ExtractVectorNodeOp(
   }
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Schema::Clone() const {
+  return Teuchos::rcp(new Operator_Schema(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

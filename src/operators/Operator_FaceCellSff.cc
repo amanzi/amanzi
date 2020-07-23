@@ -308,6 +308,14 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_FaceCellSff::Clone() const {
+  return Teuchos::rcp(new Operator_FaceCellSff(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

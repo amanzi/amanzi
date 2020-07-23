@@ -228,6 +228,14 @@ void Operator_Edge::AssembleMatrixOp(
   AMANZI_ASSERT(!ierr);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Edge::Clone() const {
+  return Teuchos::rcp(new Operator_Edge(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

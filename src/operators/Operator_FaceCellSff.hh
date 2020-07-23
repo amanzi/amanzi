@@ -36,6 +36,8 @@ class Operator_FaceCellSff : public Operator_FaceCell {
     set_schema_string("FACE+CELL Schur to FACE");
   }
 
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   // Special Apply Inverse required to deal with schur complement
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
