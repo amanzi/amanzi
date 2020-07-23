@@ -22,12 +22,10 @@
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
 #include "Key.hh"
-#include "LimiterCell.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
-#include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -43,114 +41,107 @@ namespace ShallowWater {
     
 class ShallowWater_PK : public PK_Physical,
                         public PK_Explicit<Epetra_Vector> {
-  public:
+ public:
+  ShallowWater_PK(Teuchos::ParameterList& pk_tree,
+                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln);
 
-    ShallowWater_PK(Teuchos::ParameterList& pk_tree,
-                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                    const Teuchos::RCP<State>& S,
-                    const Teuchos::RCP<TreeVector>& soln);
+  ShallowWater_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                  Teuchos::RCP<State> S,
+                  const std::string& pk_list_name,
+                  std::vector<std::string>& component_names);
 
-    ShallowWater_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                    Teuchos::RCP<State> S,
-                    const std::string& pk_list_name,
-                    std::vector<std::string>& component_names);
+  ~ShallowWater_PK() {};
 
-    ShallowWater_PK() {};
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
-    ~ShallowWater_PK() {};
+  virtual double get_dt() override;
+  virtual void set_dt(double dt) override {};
 
-    virtual void Setup(const Teuchos::Ptr<State>& S) override;
-    virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  // Advance PK by step size dt.
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-    virtual double get_dt() override;
-    virtual void set_dt(double dt) override {};
+  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
+                                        Epetra_Vector& f_component) override;
 
-    // Advance PK by step size dt.
-    virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
+  // Commit any secondary (dependent) variables.
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
 
-    virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                          Epetra_Vector& f_component) override;
+  // Calculate any diagnostics prior to doing vis
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
-    // Commit any secondary (dependent) variables.
-    virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
+  virtual std::string name() override { return "Shallow water PK"; }
 
-    // Calculate any diagnostics prior to doing vis
-    virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  std::vector<double> PhysFlux_x(std::vector<double>);
 
-    virtual std::string name() override { return "Shallow water PK"; }
+  std::vector<double> PhysFlux_y(std::vector<double>);
 
-    std::vector<double> PhysFlux_x(std::vector<double>);
+  std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
 
-    std::vector<double> PhysFlux_y(std::vector<double>);
+  std::vector<double> NumFlux_x_Rus(std::vector<double>,std::vector<double>);
 
-    std::vector<double> NumFlux_x(std::vector<double>,std::vector<double>);
+  std::vector<double> NumFlux_x_central_upwind(std::vector<double>,std::vector<double>);
 
-    std::vector<double> NumFlux_x_Rus(std::vector<double>,std::vector<double>);
+  std::vector<double> PhysSrc(std::vector<double>);
 
-    std::vector<double> NumFlux_x_central_upwind(std::vector<double>,std::vector<double>);
+  std::vector<double> NumSrc(std::vector<double>,int);
 
-    std::vector<double> PhysSrc(std::vector<double>);
+  void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int,Key);
 
-    std::vector<double> NumSrc(std::vector<double>,int);
+  void ComputeGradients(Key,Key,Key);
 
-    void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int,Key);
+  double Reconstruction(double,double,int,const Key&,const Key&,const Key&);
+  double Reconstruction(double,double,int,const Key&);
 
-    void ComputeGradients(Key,Key,Key);
+ protected:
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> sw_list_;
+  Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<State> S_;
 
-    double Reconstruction(double,double,int,Key,Key,Key);
-    double Reconstruction(double,double,int,Key);
+  double dummy_dt;
+  int step_count;
 
-  protected:
+  Key domain_;
 
-    Teuchos::RCP<Teuchos::ParameterList> glist_;
-    Teuchos::RCP<Teuchos::ParameterList> sw_list_;
-    Teuchos::RCP<TreeVector> soln_;
-    Teuchos::RCP<State> S_;
+  // names of state fields
+  Key velocity_x_key_;
+  Key velocity_y_key_;
+  Key discharge_x_key_;
+  Key discharge_y_key_;
+  Key ponded_depth_key_;
+  Key total_depth_key_;
+  Key bathymetry_key_;
+  Key velocity_x_dx_key_;
+  Key velocity_x_dy_key_;
+  Key velocity_y_dx_key_;
+  Key velocity_y_dy_key_;
+  Key discharge_x_dx_key_;
+  Key discharge_x_dy_key_;
+  Key discharge_y_dx_key_;
+  Key discharge_y_dy_key_;
+  Key ponded_depth_dx_key_;
+  Key ponded_depth_dy_key_;
+  Key total_depth_dx_key_;
+  Key total_depth_dy_key_;
+  Key bathymetry_dx_key_;
+  Key bathymetry_dy_key_;
+  Key myPID_;
 
-    double dummy_dt;
-    int step_count;
+  std::string passwd_;
 
-    Key domain_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int dim_;
 
-    // names of state fields
-    Key velocity_x_key_;
-    Key velocity_y_key_;
-    Key discharge_x_key_;
-    Key discharge_y_key_;
-    Key ponded_depth_key_;
-    Key total_depth_key_;
-    Key bathymetry_key_;
-    Key velocity_x_dx_key_;
-    Key velocity_x_dy_key_;
-    Key velocity_y_dx_key_;
-    Key velocity_y_dy_key_;
-    Key discharge_x_dx_key_;
-    Key discharge_x_dy_key_;
-    Key discharge_y_dx_key_;
-    Key discharge_y_dy_key_;
-    Key ponded_depth_dx_key_;
-    Key ponded_depth_dy_key_;
-    Key total_depth_dx_key_;
-    Key total_depth_dy_key_;
-    Key bathymetry_dx_key_;
-    Key bathymetry_dy_key_;
-    Key myPID_;
-
-    std::string passwd_;
-
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-    int dim_;
-
-  private:
-
-    // factory registration
-    static RegisteredPKFactory<ShallowWater_PK> reg_;
-
+ private:
+  // factory registration
+  static RegisteredPKFactory<ShallowWater_PK> reg_;
 };
     
-    
-} // namespace ShallowWater
-} // namespace Amanzi
+}  // namespace ShallowWater
+}  // namespace Amanzi
 
 #endif
 

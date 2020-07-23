@@ -218,6 +218,15 @@ TEST(SHALLOW_WATER_1D) {
   dam_break_1D_setIC(mesh,S);
   if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
 
+  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
+  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
+  const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x")->ViewComponent("cell");
+  const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y")->ViewComponent("cell");
+  const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x")->ViewComponent("cell");
+  const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y")->ViewComponent("cell");
+  const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID")->ViewComponent("cell");
+
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
   WriteStateStatistics(S.ptr(), vo);
@@ -234,43 +243,31 @@ TEST(SHALLOW_WATER_1D) {
 
   std::string passwd("state");
 
-  auto& h_vec = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-  auto& u_vec = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-  auto& v_vec = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-
   int iter = 0;
-  bool flag = true;
 
   while (t_new < 10.) {
     // cycle 1, time t
     double t_out = t_new;
-
-    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
     Epetra_MultiVector hh_ex(hh);
     Epetra_MultiVector vx_ex(vx);
 
     dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
 
-    io.InitializeCycle(t_out, iter);
-    io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-    io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-    io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-    io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-    io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-    io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
-    io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-    io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-    io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
-    io.FinalizeCycle();
+    if (iter % 5 == 0) {
+      io.InitializeCycle(t_out, iter);
+      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
+      io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
+      io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+      io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
+      io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
+      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+      io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
+      io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+      io.FinalizeCycle();
+    }
 
     dt = SWPK.get_dt();
 
@@ -287,22 +284,12 @@ TEST(SHALLOW_WATER_1D) {
     double TE;
 
     conservation_check(mesh, hh, ht, vx, vy, B, TE);
-
   }
 
   if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
 
   // cycle 1, time t
   double t_out = t_new;
-
-  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
   Epetra_MultiVector hh_ex(hh);
   Epetra_MultiVector vx_ex(vx);

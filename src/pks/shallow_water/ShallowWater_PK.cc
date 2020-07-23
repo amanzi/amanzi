@@ -23,7 +23,8 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<TreeVector>& soln) :
   S_(S),
   soln_(soln),
-  glist_(glist)
+  glist_(glist),
+  passwd_("state")
 {
    std::string pk_name = pk_tree.name();
    auto found = pk_name.rfind("->");
@@ -42,9 +43,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-
   double dt = t_new - t_old;
 
   bool failed = false;
@@ -54,12 +52,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // save a copy of primary and conservative fields
-  CompositeVector ponded_depth_tmp(*S_->GetFieldData("surface-ponded_depth", passwd_));
-  CompositeVector velocity_x_tmp(*S_->GetFieldData("surface-velocity-x", passwd_));
-  CompositeVector velocity_y_tmp(*S_->GetFieldData("surface-velocity-y", passwd_));
-
   Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector B_vec_c_tmp(B_vec_c);
 
   Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector h_vec_c_tmp(h_vec_c);
@@ -122,29 +115,26 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
-  std::vector<double> U, U_new;
+  std::vector<double> U_new;
 
   // Simplest first-order form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
-  std::cout << "dt = " << dt << std::endl;
-  std::cout << "t_new = " << t_new << std::endl;
+  // std::cout << "dt = " << dt << std::endl;
+  // std::cout << "t_new = " << t_new << std::endl;
 
   U_new.resize(3);
 
   for (int c = 0; c < ncells_owned; c++) {
 
-    Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
+    Amanzi::AmanziMesh::Entity_ID_List cfaces, fedges, edcells, fcells;
 
-    mesh_->cell_get_edges(c,&cedges);
-//    mesh_->cell_get_faces(c,&cfaces,true);
     mesh_->cell_get_faces(c,&cfaces);
 
     Amanzi::AmanziMesh::Entity_ID_List adjcells;
     mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
-    unsigned int nadj = adjcells.size();
 
-    Amanzi::AmanziGeometry::Point evec(2), normal(2);
+    Amanzi::AmanziGeometry::Point normal(2);
     double farea;
 
     // cell volume
@@ -173,7 +163,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       double vn, vt;
 
-      Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+      const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
 
       double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
       double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
@@ -217,14 +207,14 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         UR[2] = UL[2];
       } else {
 
-        double ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
-        double B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
+        ht_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
+        B_rec  = Reconstruction(xcf[0],xcf[1],cn,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
 
         if (ht_rec < B_rec) {
           ht_rec = ht_vec_c[0][cn];
           B_rec  = B_vec_c[0][cn];
         }
-        double h_rec = ht_rec - B_rec;
+        h_rec = ht_rec - B_rec;
 
         if (h_rec < 0.) {
           std::cout << "cn = " << cn << std::endl;
@@ -236,10 +226,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           Exceptions::amanzi_throw(msg);
         }
 
-        double vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x","surface-velocity-x_dx","surface-velocity-x_dy");
-        double vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y","surface-velocity-y_dx","surface-velocity-y_dy");
-        double qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x","surface-discharge-x_dx","surface-discharge-x_dy");
-        double qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y","surface-discharge-y_dx","surface-discharge-y_dy");
+        vx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-x","surface-velocity-x_dx","surface-velocity-x_dy");
+        vy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-velocity-y","surface-velocity-y_dx","surface-velocity-y_dy");
+        qx_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-x","surface-discharge-x_dx","surface-discharge-x_dy");
+        qy_rec = Reconstruction(xcf[0],xcf[1],cn,"surface-discharge-y","surface-discharge-y_dx","surface-discharge-y_dy");
 
         vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
         vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
@@ -250,7 +240,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         UR[0] = h_rec;
         UR[1] = h_rec*vn;
         UR[2] = h_rec*vt;
-
       }
 
       FNum_rot = NumFlux_x(UL,UR);
@@ -297,8 +286,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     qx_vec_c_tmp[0][c] = h*u;
     qy_vec_c_tmp[0][c] = h*v;
 
-    AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-
     ht_vec_c_tmp[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
 
   } // c
@@ -317,8 +304,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // SW conservative variables: (h, hu, hv)
-
-  passwd_ = "state";  // owner's password
 
   mesh_ = S->GetMesh(domain_);
   dim_ = mesh_->space_dimension();
@@ -582,14 +567,11 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   double u_av0;
   double Phi;
   double umin, umax, uk;
-  double tol = 1.e-12;
 
-  Amanzi::AmanziGeometry::Point xc(2), xv(2);
+  AmanziGeometry::Point xv(2);
 
-  Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, cnodes, fedges, edcells, fcells;
+  AmanziMesh::Entity_ID_List cfaces, cnodes, fedges, edcells, fcells;
 
-  mesh_->cell_get_edges(c,&cedges);
-//  mesh_->cell_get_faces(c,&cfaces,true);
   mesh_->cell_get_faces(c,&cfaces);
   mesh_->cell_get_nodes(c,&cnodes);
 
@@ -611,7 +593,7 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   umin = *min_element(u_av.begin(),u_av.end());
   umax = *max_element(u_av.begin(),u_av.end());
 
-  xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   Phi_k.resize(cnodes.size());
 
@@ -644,43 +626,30 @@ void ShallowWater_PK::BJ_lim(WhetStone::DenseMatrix grad, WhetStone::DenseMatrix
   grad_lim = Phi*grad;
 }
 
+
 //--------------------------------------------------------------
 // compute gradients
 //--------------------------------------------------------------
 void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key field_dy_key_)
 {
-
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  WhetStone::DenseMatrix AtA(2,2);
+  WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+  WhetStone::DenseMatrix Atb(2,1);
 
   for (int c = 0; c < ncells_owned; c++) {
 
-    Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
+    Amanzi::AmanziMesh::Entity_ID_List cfaces, fedges, edcells, fcells;
 
-    mesh_->cell_get_edges(c,&cedges);
-  //  mesh_->cell_get_faces(c,&cfaces,true);
     mesh_->cell_get_faces(c,&cfaces);
 
     Amanzi::AmanziMesh::Entity_ID_List adjcells;
     mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
-    unsigned int nadj = adjcells.size();
 
-    Amanzi::AmanziGeometry::Point evec(2), normal(2);
-    double farea;
-
-    // cell volume
-    double vol = mesh_->cell_volume(c);
-
-    std::vector<double> U, Un;
-
-    U.resize(3);
-    Un.resize(3);
-
-    WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size()), AtA(2,2), InvAtA(2,2);
-    WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+    WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size());
     WhetStone::DenseMatrix b(cfaces.size(),1);
-    WhetStone::DenseMatrix Atb(2,1);
 
-    AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     Epetra_MultiVector& u_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
     Epetra_MultiVector& dudx_vec_c = *S_->GetFieldData(field_dx_key_,passwd_)->ViewComponent("cell",true);
@@ -698,19 +667,18 @@ void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key fi
         cn = c;
 
         // face centroid
-        Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
-        Amanzi::AmanziGeometry::Point dx = xcf-xc;
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
+        AmanziGeometry::Point dx = xcf - xc;
 
         // face area
         double farea = mesh_->face_area(cfaces[f]);
 
         // normal
-        Amanzi::AmanziGeometry::Point normal(2);
         int orientation;
-        normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+        AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
         normal /= farea;
 
-        double l = dx[0]*normal[0] + dx[1]*normal[1];
+        double l = dx * normal;
 
         // reflect the centroid from the internal cell to ghost cell
         xcn = xc + 2.*l*normal;
@@ -723,7 +691,6 @@ void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key fi
       A(f,1) = xcn[1] - xc[1];
 
       b(f,0) = u_vec_c[0][cn] - u_vec_c[0][c];
-
     }
 
     At.Transpose(A);
@@ -734,9 +701,7 @@ void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key fi
 
     AtA.Inverse();
 
-    InvAtA = AtA;
-
-    dudx.Multiply(InvAtA,Atb,false);
+    dudx.Multiply(AtA,Atb,false);
 
     BJ_lim(dudx,dudx_lim,c,field_key_);
 
@@ -751,9 +716,11 @@ void ShallowWater_PK::ComputeGradients(Key field_key_, Key field_dx_key_, Key fi
 // piecewise-linear reconstruction of the function
 // from pre-computed gradients
 //--------------------------------------------------------------
-double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_, Key field_dx_key_, Key field_dy_key_)
+double ShallowWater_PK::Reconstruction(
+    double x, double y, int c,
+    const Key& field_key_, const Key& field_dx_key_, const Key& field_dy_key_)
 {
-  AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   Epetra_MultiVector& u_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector& dudx_vec_c = *S_->GetFieldData(field_dx_key_,passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector& dudy_vec_c = *S_->GetFieldData(field_dy_key_,passwd_)->ViewComponent("cell",true);
@@ -767,38 +734,23 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
 //--------------------------------------------------------------
 // piecewise-linear reconstruction of the function
 //--------------------------------------------------------------
-double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_)
+double ShallowWater_PK::Reconstruction(double x, double y, int c, const Key& field_key_)
 {
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  WhetStone::DenseMatrix AtA(2,2), InvAtA(2,2);
+  WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+  WhetStone::DenseMatrix Atb(2,1);
 
-  Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges, edcells, fcells;
+  Amanzi::AmanziMesh::Entity_ID_List cfaces, fedges, edcells, fcells;
 
-  mesh_->cell_get_edges(c,&cedges);
-//  mesh_->cell_get_faces(c,&cfaces,true);
   mesh_->cell_get_faces(c,&cfaces);
 
   Amanzi::AmanziMesh::Entity_ID_List adjcells;
   mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
-  unsigned int nadj = adjcells.size();
 
-  Amanzi::AmanziGeometry::Point evec(2), normal(2);
-  double farea;
-
-  // cell volume
-  double vol = mesh_->cell_volume(c);
-
-  std::vector<double> U, Un;
-
-  U.resize(3);
-  Un.resize(3);
-
-  WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size()), AtA(2,2), InvAtA(2,2);
-  WhetStone::DenseMatrix dudx(2,1), dudx_lim(2,1);
+  WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size());
   WhetStone::DenseMatrix b(cfaces.size(),1);
-  WhetStone::DenseMatrix Atb(2,1);
 
-  AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   Epetra_MultiVector& h_vec_c = *S_->GetFieldData(field_key_,passwd_)->ViewComponent("cell",true);
 
@@ -814,19 +766,18 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
       cn = c;
 
       // face centroid
-      Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
-      Amanzi::AmanziGeometry::Point dx = xcf-xc;
+      const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
+      Amanzi::AmanziGeometry::Point dx = xcf - xc;
 
       // face area
       double farea = mesh_->face_area(cfaces[f]);
 
       // normal
-      Amanzi::AmanziGeometry::Point normal(2);
       int orientation;
-      normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+      AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
       normal /= farea;
 
-      double l = dx[0]*normal[0] + dx[1]*normal[1];
+      double l = dx * normal;
 
       // reflect the centroid from the internal cell to ghost cell
       xcn = xc + 2.*l*normal;
@@ -839,7 +790,6 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
     A(f,1) = xcn[1] - xc[1];
 
     b(f,0) = h_vec_c[0][cn] - h_vec_c[0][c];
-
   }
 
   At.Transpose(A);
@@ -850,9 +800,7 @@ double ShallowWater_PK::Reconstruction(double x, double y, int c, Key field_key_
 
   AtA.Inverse();
 
-  InvAtA = AtA;
-
-  dudx.Multiply(InvAtA,Atb,false);
+  dudx.Multiply(AtA,Atb,false);
 
   BJ_lim(dudx,dudx_lim,c,field_key_);
 
@@ -1060,8 +1008,6 @@ std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double
     dU[i] = minmod(UR[i]-U_star[i],U_star[i]-UL[i]);
   }
 
-  double Smax = std::max(am,ap);
-
   for (int i = 0; i < 3; i++) {
     F[i] = ( ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i]) ) / (ap - am + eps);
   }
@@ -1077,23 +1023,15 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 {
   std::vector<double> S;
 
-  double g = 9.81;
-
   Epetra_MultiVector& B_vec_c  = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector& h_vec_c  = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell",true);
 
   S.resize(3);
 
-  double h = h_vec_c[0][c];
+  AmanziMesh::Entity_ID_List cfaces;
 
-  Amanzi::AmanziMesh::Entity_ID_List cfaces;
-
-//  mesh_->cell_get_faces(c,&cfaces,true);
+  // mesh_->cell_get_faces(c,&cfaces,true);
   mesh_->cell_get_faces(c,&cfaces);
-
-  // cell volume
-  double vol = mesh_->cell_volume(c);
 
   double S1, S2;
 
@@ -1102,19 +1040,13 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   for (int f = 0; f < cfaces.size(); f++) {
 
-    // face area
-    double farea = mesh_->face_area(cfaces[f]);
-
     // normal
-    Amanzi::AmanziGeometry::Point normal(2);
     int orientation;
-    normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
-    normal /= farea;
+    const AmanziGeometry::Point& normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
 
     // face centroid
-    Amanzi::AmanziGeometry::Point xcf = mesh_->face_centroid(cfaces[f]);
+    const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
 
-    double h_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-ponded_depth","surface-ponded_depth_dx","surface-ponded_depth_dy");
     double ht_rec = Reconstruction(xcf[0],xcf[1],c,"surface-total_depth","surface-total_depth_dx","surface-total_depth_dy");
     double B_rec  = Reconstruction(xcf[0],xcf[1],c,"surface-bathymetry","surface-bathymetry_dx","surface-bathymetry_dy");
 
@@ -1123,12 +1055,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
       B_rec  = B_vec_c[0][c];
     }
 
-//    S1 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[0]*farea;
-//    S2 += (-2.*B_rec*h_rec - B_rec*B_rec)*normal[1]*farea;
-
-    S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0]*farea;
-    S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1]*farea;
-
+    S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0];
+    S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1];
   }
 
   return S;
@@ -1141,8 +1069,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 double ShallowWater_PK::get_dt()
 {
   double h, u, v, g = 9.81;
-  double S, Smax;
-  double vol, dx, dx_min;
+  double S;
+  double vol, dx;
   double dt;
   double CFL = 0.1;
   double eps = 1.e-6;
@@ -1163,9 +1091,6 @@ double ShallowWater_PK::get_dt()
     dx = std::sqrt(vol);
     dt = std::min(dt,dx/S);
   }
-
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
 
   double dt_min;
 
