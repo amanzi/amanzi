@@ -1,0 +1,110 @@
+<ParameterList name="main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!-- REGIONS -->
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- FLOW -->
+  <ParameterList name="PKs">
+    <ParameterList name="shallow water">
+      <Parameter name="domain name" type="string" value="surface"/>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="mass flux">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Left, Right, Front, Back}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-tabular">
+                <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                <Parameter name="x values" type="Array(double)" value="{0, 7.884e+06}"/>
+                <Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  STATE  -->
+  <ParameterList name="state">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.001"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+      </ParameterList>
+
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0."/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+
+
+
+
