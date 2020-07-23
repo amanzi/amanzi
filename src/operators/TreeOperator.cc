@@ -72,19 +72,6 @@ void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Opera
 
 
 /* ******************************************************************
-* Populate block matrix with pointers to operators.
-****************************************************************** */
-void TreeOperator::SetTreeOperatorBlock(int i, int j, const Teuchos::RCP<const TreeOperator>& op_tree) {
-  int n_blocks = op_tree->GetNumberBlocks();
-  for (int l = 0; l < n_blocks; l++) {
-    for (int m = 0; m < n_blocks; m++) {
-      blocks_[i+l][j+m] = op_tree->GetOperatorBlock(l,m);
-    }
-  }
-}
-
-  
-/* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
 int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const

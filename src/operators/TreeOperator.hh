@@ -54,7 +54,6 @@ class TreeOperator {
 
   // main members
   void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
-  void SetTreeOperatorBlock(int i, int j, const Teuchos::RCP<const TreeOperator>& op_tree);  
   
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
@@ -87,9 +86,6 @@ class TreeOperator {
   void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
   Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
   int GetNumberBlocks() const {return blocks_.size();}
-
-  // i/o
-  std::string PrintDiagnostics() const;
 
   // i/o
   std::string PrintDiagnostics() const;

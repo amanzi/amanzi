@@ -163,8 +163,15 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
   op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
 
-  op_tree_pc_->SetTreeOperatorBlock(0, 0, pk_matrix->op_tree_pc());
-  op_tree_pc_->SetTreeOperatorBlock(2, 2, pk_fracture->op_tree_pc());
+  for (int l = 0; l < 2; ++l) {
+    for (int m = 0; m < 2; ++m) {
+      auto op1 = pk_matrix->op_tree_pc()->GetOperatorBlock(l, m);
+      auto op2 = pk_fracture->op_tree_pc()->GetOperatorBlock(l, m);
+
+      if (op1 != Teuchos::null) op_tree_pc_->SetOperatorBlock(l, m, op1->Clone());
+      if (op2 != Teuchos::null) op_tree_pc_->SetOperatorBlock(2 + l, 2 + m, op2->Clone());
+    }
+  }
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -227,8 +234,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // diagonal coupling terms were added in the previous call
   AddCouplingFluxes_(cvs_matrix, cvs_fracture,
-                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_pc_,
-                     false);
+                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_pc_);
 
   // -- operators (energy)
   AddCouplingFluxes_(cvs_matrix, cvs_fracture,
@@ -404,8 +410,7 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
     std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
     std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
     std::shared_ptr<const std::vector<double> > values,
-    int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree,
-    bool add_diagonal)
+    int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree)
 {
   Teuchos::ParameterList oplist;
 
@@ -415,23 +420,22 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
   auto op11 = Teuchos::rcp_const_cast<Operators::Operator>(op_tree->GetOperatorBlock(j, j));
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00, op_coupling11;
-  if (add_diagonal) {
-    op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-        oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, op00));
-    op_coupling00->Setup(values, 1.0);
-    op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // add diagonal
+  op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, op00));
+  op_coupling00->Setup(values, 1.0);
+  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-        oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, op11));
-    op_coupling11->Setup(values, 1.0);
-    op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
+  op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, op11));
+  op_coupling11->Setup(values, 1.0);
+  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
-    if (op00 == Teuchos::null)
-      op_tree->SetOperatorBlock(i, i, op_coupling00->global_operator());
+  if (op00 == Teuchos::null)
+    op_tree->SetOperatorBlock(i, i, op_coupling00->global_operator());
 
-    if (op11 == Teuchos::null)
-      op_tree->SetOperatorBlock(j, j, op_coupling11->global_operator());
-  }
+  if (op11 == Teuchos::null)
+    op_tree->SetOperatorBlock(j, j, op_coupling11->global_operator());
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture, op01));
@@ -503,8 +507,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
-      // double tmp = flux[0][first + shift] * dir;
-      double tmp = 0.0;
+      double tmp = flux[0][first + shift] * dir;
 
       if (tmp > 0) {
         int c1 = cells[k];
