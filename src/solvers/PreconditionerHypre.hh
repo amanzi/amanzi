@@ -106,6 +106,9 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #include "Preconditioner.hh"
 
 namespace Amanzi {
+
+class VerboseObject;
+
 namespace AmanziSolvers {
 
 class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
@@ -118,7 +121,7 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
       returned_code_(0)
   {}
 
-  virtual void InitInverse(Teuchos::ParameterList& list) override final;
+  virtual void set_parameters(Teuchos::ParameterList& list) override final;
   virtual void UpdateInverse() override final;
   virtual void ComputeInverse() override final;
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
@@ -136,7 +139,8 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   void InitEuclid_();
   
   Teuchos::ParameterList plist_;
-
+  Teuchos::RCP<VerboseObject> vo_;
+  
   Hypre_Solver method_;
   std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
   Teuchos::RCP<std::vector<int> > block_indices_;

@@ -35,7 +35,7 @@ class InverseIterativeMethod :
       : inited_(false),
         Inverse<Matrix,Preconditioner,Vector,VectorSpace>() {}
 
-  virtual void InitInverse(Teuchos::ParameterList& plist) override;
+  virtual void set_parameters(Teuchos::ParameterList& plist) override;
   virtual void UpdateInverse() override {
     h_->UpdateInverse();
   }
@@ -110,7 +110,7 @@ template<class Matrix,
          class Vector,
          class VectorSpace>
 void inline
-InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>::InitInverse(
+InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>::set_parameters(
     Teuchos::ParameterList& plist)
 {
   this->set_name(Keys::cleanPListName(plist.name()));

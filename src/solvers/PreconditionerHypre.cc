@@ -16,6 +16,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "VerboseObject.hh"
 #include "PreconditionerHypre.hh"
 
 namespace Amanzi {
@@ -37,9 +38,12 @@ int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 /* ******************************************************************
 * Initialize the preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitInverse(Teuchos::ParameterList& list)
+void PreconditionerHypre::set_parameters(Teuchos::ParameterList& list)
 {
   plist_ = list;
+
+  std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
+  vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
 
   std::string method_name = list.get<std::string>("method");
   if (method_name == "boomer amg") InitBoomer_();
@@ -64,8 +68,16 @@ void PreconditionerHypre::InitBoomer_()
     
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
                                                       plist_.get<double>("tolerance", 0.0))));
-  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
-                                                      plist_.get<int>("verbosity", 0))));
+
+  std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
+  if (vlevel == "high") {
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,1)));
+  } else if (vlevel == "extreme") {
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,3)));
+  } else {
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,0)));
+  }
+  
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter,
                                                       plist_.get<int>("cycle applications", 5))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType,

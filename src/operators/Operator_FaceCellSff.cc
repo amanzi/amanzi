@@ -104,10 +104,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
 
       // Solve the Schur complement system Sff * Yf = Tf.
       {
-        const Epetra_MultiVector& Tf_short = *T.ViewComponent("face", false);
-        Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
-
-        ierr = preconditioner_->ApplyInverse(Tf_short, Yf_short);
+        ierr = preconditioner_->ApplyInverse(T, Y);
         AMANZI_ASSERT(ierr >= 0);
       }
 

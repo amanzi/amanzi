@@ -28,7 +28,6 @@
 
 // Amanzi
 #include "Mesh_MSTK.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -897,20 +896,15 @@ std::pair<double,double> RunInverseProblem(
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioner type", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
-  // pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op->InitPreconditioner(pc_list);
-
-  Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "pcg");
-  lin_list.sublist("pcg parameters").sublist("verbose object").set("verbosity level", "medium");
-  AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
-      fac.Create(lin_list, problem->op);
+  pc_list.set("iterative method", "pcg");
+  pc_list.sublist("verbose object").set("verbosity level", "high");
+  problem->op->InitializePreconditioner(pc_list);
+  problem->op->UpdatePreconditioner();
 
   X.PutScalar(0.);
-  int ierr = lin_op->ApplyInverse(B,X);
+  int ierr = problem->op->ApplyInverse(B,X);
   CHECK(ierr >= 0);
-  CHECK(lin_op->num_itrs() < 100);
+  CHECK(problem->op->num_itrs() < 100);
 
   // subtract off true solution
   X.SubVector(0)->Data()->Update(-1., *u, 1.);
@@ -1115,23 +1109,18 @@ std::pair<double,double> RunNonlinearProblem(
       EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *problem->pc->A());
     }
     
-    // create the preconditioner, linear solver
     Teuchos::ParameterList pc_list;
     pc_list.set("preconditioner type", "boomer amg");
     pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-    problem->pc->InitPreconditioner(pc_list);
-
-    Teuchos::ParameterList lin_list;
-    lin_list.set("iterative method", "gmres");
-    lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-    AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
-        fac.Create(lin_list, problem->pc);
+    pc_list.set("iterative method", "gmres");
+    pc_list.sublist("verbose object").set("verbosity level", "medium");
+    problem->op->InitializePreconditioner(pc_list);
+    problem->op->UpdatePreconditioner();
 
     // invert the preconditioner to get a correction
     DX.PutScalar(0.);
-    int converged_reason = lin_op->ApplyInverse(R, DX);
+    int converged_reason = problem->op->ApplyInverse(R, DX);
     CHECK(converged_reason >= 0);
 
     // apply the correction
@@ -1244,7 +1233,6 @@ std::pair<double,double> RunInverseProblem_Diag(
   pc_list11.sublist("boomer amg parameters").set("number of functions", 2);
   problem->op11->global_operator()->InitPreconditioner(pc_list11);
 
-  
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "gmres");
   lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");

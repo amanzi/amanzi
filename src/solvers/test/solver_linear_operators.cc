@@ -78,7 +78,7 @@ class Matrix {
   int AssembleMatrix() { return 0;}
   
   // partial consistency with Operators'interface
-  Teuchos::RCP<Epetra_CrsMatrix> A() const { return A_; }
+  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<Amanzi::Operators::SuperMap> getSuperMap() const { return Teuchos::null; }  
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }
@@ -104,7 +104,7 @@ TEST(PCG_SOLVER) {
   AmanziSolvers::IterativeMethodPCG<Matrix, Matrix, Epetra_Vector, Epetra_Map> pcg;
   pcg.set_matrices(m,h);
   Teuchos::ParameterList plist;
-  pcg.InitInverse(plist);
+  pcg.set_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -131,7 +131,7 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
     Teuchos::ParameterList plist;
-    gmres.InitInverse(plist);
+    gmres.set_parameters(plist);
     gmres.set_matrices(m,m);
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
@@ -163,7 +163,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
-    gmres.InitInverse(plist);
+    gmres.set_parameters(plist);
     gmres.set_matrices(m,m);
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
@@ -201,7 +201,7 @@ TEST(GMRES_SOLVER_DEFLATION) {
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
   gmres.set_matrices(m, m);
-  gmres.InitInverse(plist);
+  gmres.set_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -231,7 +231,7 @@ TEST(NKA_SOLVER) {
   plist.set("error tolerance", 1.e-13);
   plist.set("maximum number of iterations", 200);
   plist.sublist("verbose object").set("verbosity level", "high");
-  nka.InitInverse(plist);
+  nka.set_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -301,7 +301,7 @@ TEST(AMESOS_SOLVER) {
   // Amesos1
   {
     AmanziSolvers::DirectMethodAmesos klu;
-    klu.InitInverse(plist);
+    klu.set_parameters(plist);
     klu.set_matrix(m->A());
     klu.UpdateInverse();
     klu.ComputeInverse();
@@ -318,7 +318,7 @@ TEST(AMESOS_SOLVER) {
     AmanziSolvers::DirectMethodAmesos2 klu;
     plist.set<std::string>("solver name", "Klu2")
          .set<int>("amesos version", 2);
-    klu.InitInverse(plist);
+    klu.set_parameters(plist);
     klu.set_matrix(m->A());
     klu.UpdateInverse();
     klu.ComputeInverse();

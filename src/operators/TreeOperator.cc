@@ -18,7 +18,6 @@
 // Amanzi
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "VerboseObject.hh"
 
@@ -106,14 +105,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
   int code(0);
   if (!block_diagonal_) {
-    Epetra_Vector Xcopy(A_->RowMap());
-    Epetra_Vector Ycopy(A_->RowMap());
-
-    int ierr = copyToSuperVector(*smap_, X, Xcopy);
-    code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
-    ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
-
-    AMANZI_ASSERT(!ierr);
+    code = preconditioner_->ApplyInverse(X, Y);
   } else {
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
@@ -121,7 +113,6 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
       code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
     }
   }
-
   return code;
 }
 
@@ -183,6 +174,9 @@ void TreeOperator::SymbolicAssembleMatrix()
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+
+  // check for existing preconditioner
+  if (preconditioner_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -218,9 +212,9 @@ void TreeOperator::AssembleMatrix() {
 void TreeOperator::InitPreconditioner(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
+  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(prec_name, plist,
+          Teuchos::rcpFromRef(*this));
+  if (Amat_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -230,18 +224,16 @@ void TreeOperator::InitPreconditioner(
 void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
   // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
-
-    auto block_ids = smap_->BlockIndices();
-    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  if (plist.isParameter("preconditioning method")) {
+    auto method_name = plist.get<std::string>("preconditioning method");
+    if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
+      auto block_ids = smap_->BlockIndices();
+      plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
+      plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
+    }
   }
-
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(plist, Teuchos::rcpFromRef(*this));
+  if (Amat_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -255,8 +247,8 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
   AMANZI_ASSERT(smap_.get());
 
   // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+  if (plist.isParameter("preconditioning method") &&
+      plist.get<std::string>("preconditioning method") == "boomer amg" &&
       plist.isSublist("boomer amg parameters")) {
 
     // NOTE: Hypre frees this
@@ -269,8 +261,9 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
     plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
   }
 
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
+  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(plist,
+          Teuchos::rcpFromRef(*this));
+  if (Amat_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -280,9 +273,9 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void TreeOperator::UpdatePreconditioner()
 {
-  AMANZI_ASSERT(preconditioner_.get());
-  AMANZI_ASSERT(A_.get());
-  preconditioner_->Update(A_);
+  AMANZI_ASSERT(preconditioner_.get()); // created
+  AMANZI_ASSERT(A_.get()); // update already called
+  preconditioner_->ComputeInverse();
 }
 
 

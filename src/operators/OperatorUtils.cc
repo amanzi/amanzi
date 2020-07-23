@@ -113,7 +113,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
 /* ******************************************************************
 * Estimate size of the matrix graph: general version
 ****************************************************************** */
-unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();

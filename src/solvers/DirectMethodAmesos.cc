@@ -29,7 +29,7 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos::InitInverse(Teuchos::ParameterList& plist)
+void DirectMethodAmesos::set_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
@@ -41,7 +41,7 @@ void DirectMethodAmesos::InitInverse(Teuchos::ParameterList& plist)
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "InitInverse()" << std::endl;
+    *vo_->os() << "set_parameters()" << std::endl;
   
   inited_ = true;
 }

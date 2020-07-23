@@ -139,7 +139,7 @@ namespace Amanzi {
 
 class CompositeVector {
  public:
-  using Space_t = CompositeVectorSpace;
+  using VectorSpace_t = CompositeVectorSpace;
   // -- Constructors --
 
   // Constructor from a CompositeVectorSpace (which is like a VectorSpace).

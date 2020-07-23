@@ -41,8 +41,8 @@ class Operator_Diagonal : public Operator {
 
   // required methods
   // -- global methods that cannot be aplied to this operator
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override { AMANZI_ASSERT(false); return 0; } 
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override { AMANZI_ASSERT(false); }
+  // virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override { AMANZI_ASSERT(false); return 0; } 
+  // virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override { AMANZI_ASSERT(false); }
 
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Diagonal& op,

@@ -25,8 +25,8 @@
 #include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
+#include "InverseFactory.hh"
 
 // Operators
 #include "Op.hh"
@@ -159,7 +159,7 @@ void Operator::SymbolicAssembleMatrix()
   smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
-  int row_size = MaxRowSize(*mesh_, schema(), 1);
+  int row_size = MaxRowSize(*mesh_, schema_col());
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
       smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
@@ -186,6 +186,8 @@ void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
   for (auto& it : *this) {
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
+
+  if (preconditioner_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -403,20 +405,8 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
-
-  Epetra_Vector Xcopy(*smap_->Map());
-  Epetra_Vector Ycopy(*smap_->Map());
-
-  int ierr = copyToSuperVector(*smap_, X, Xcopy);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
-
-  if (ierr) {
-    Errors::Message msg("Operator: ApplyInverse failed.\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  return ierr;
+  return preconditioner_->ApplyInverse(X, Y);
+  
 }
 
 
@@ -453,9 +443,9 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
 void Operator::InitPreconditioner(const std::string& prec_name,
                                   const Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
- 
-  preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_ = AmanziSolvers::createInverse(prec_name, plist,
+          Teuchos::rcpFromRef(*this));
+  preconditioner_->UpdateInverse();
   UpdatePreconditioner();
 }
 
@@ -467,9 +457,9 @@ void Operator::InitPreconditioner(const std::string& prec_name,
 ****************************************************************** */
 void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+  preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+  preconditioner_->UpdateInverse();
+  UpdatePreconditioner();
 }
 
 
@@ -481,8 +471,8 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
   if (smap_.get() == NULL) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
+    if (plist.isParameter("preconditioning method") &&
+        plist.get<std::string>("preconditioning method") == "identity") {
       smap_ = createSuperMap(*cvs_col_);
     } else {
       Errors::Message msg("Operator has no super map to be initialized.\n");
@@ -491,22 +481,17 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
   }
 
   // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
-
-    // NOTE: Hypre frees this
-    auto block_ids = smap_->BlockIndices();
-
-    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-
-    // Note, this passes a raw pointer through a ParameterList.  I was surprised
-    // this worked too, but ParameterList is a boost::any at heart... --etc
-    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  if (plist.isParameter("preconditioning method")) {
+    auto method_name = plist.get<std::string>("preconditioning method");
+    if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
+      auto block_ids = smap_->BlockIndices();
+      plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
+      plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
+    }
   }
 
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
+  preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+  if (Amat_.get()) preconditioner_->UpdateInverse(); // SymbolicAssemble already called
 }
 
 
@@ -522,7 +507,7 @@ void Operator::UpdatePreconditioner()
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
-  preconditioner_->Update(A_);
+  preconditioner_->ComputeInverse();
 }
 
 

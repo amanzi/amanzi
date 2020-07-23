@@ -37,7 +37,7 @@ int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& s
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs = 1);
-unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema);
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema);
 
 // Nonmember helper function
 std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >

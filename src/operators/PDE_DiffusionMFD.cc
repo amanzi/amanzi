@@ -16,12 +16,9 @@
 
 // Amanzi
 #include "errors.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
@@ -1438,21 +1435,9 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   consistent_face_op_->AssembleMatrix();
   consistent_face_op_->UpdatePreconditioner();
 
-  int ierr = 0;
-  if (plist_.sublist("consistent faces").isSublist("linear solver")) {
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
-    Teuchos::RCP<Operator> lin_solver = fac.Create(
-        plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
-
-    CompositeVector u_f_copy(y);
-    ierr = lin_solver->ApplyInverse(y, u_f_copy);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  } else {
-    CompositeVector u_f_copy(y);
-    ierr = consistent_face_op_->ApplyInverse(y, u);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  }
-  
+  CompositeVector u_f_copy(y);
+  int ierr = consistent_face_op_->ApplyInverse(y, u);
+  *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   return (ierr > 0) ? 0 : 1;
 }
   

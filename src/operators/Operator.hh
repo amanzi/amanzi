@@ -114,6 +114,7 @@ Note on implementation for discretization/framework developers:
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
+#include "Inverse.hh"
 
 namespace Amanzi {
 
@@ -147,7 +148,7 @@ class Op_SurfaceFace_SurfaceCell;
 class Operator {
  public:
   using Vector_t = CompositeVector;
-  using Space_t = CompositeVector::Space_t;
+  using VectorSpace_t = CompositeVector::VectorSpace_t;
   
   // constructors
   // At the moment CVS is the domain and range of the operator
@@ -177,33 +178,44 @@ class Operator {
 
   // main members
   // -- virtual methods potentially altered by the schema
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
+  int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  int Apply(const CompositeVector& X, CompositeVector& Y) const {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
+  // Inverse application
+  // -- deprecated methods -- one stop (do not call Update)
+  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void InitPreconditioner(Teuchos::ParameterList& plist);
+
+  // -- preferred methods -- two stages for init and update
+  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void UpdatePreconditioner();
+      
+      
   // symbolic assembly:
   // -- wrapper
-  virtual void SymbolicAssembleMatrix();
+  void SymbolicAssembleMatrix();
   // -- first dispatch
-  virtual void SymbolicAssembleMatrix(const SuperMap& map,
+  void SymbolicAssembleMatrix(const SuperMap& map,
         GraphFE& graph, int my_block_row, int my_block_col) const;
   
   // actual assembly:
   // -- wrapper
-  virtual void AssembleMatrix();
+  void AssembleMatrix();
   // -- first dispatch
-  virtual void AssembleMatrix(const SuperMap& map,
+  void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
-  virtual void Rescale(double scaling);
-  virtual void Rescale(const CompositeVector& scaling);
-  virtual void Rescale(const CompositeVector& scaling, int iops);
+  void Rescale(double scaling);
+  void Rescale(const CompositeVector& scaling);
+  void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_col_; }
@@ -419,7 +431,15 @@ class Operator {
 
   // diagnostics
   std::string PrintDiagnostics() const;
-
+  double residual() const {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->residual();
+  }
+  int num_itrs() const {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->num_itrs();
+  }
+  
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
 
@@ -436,6 +456,8 @@ class Operator {
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
  
   Teuchos::RCP<Epetra_CrsMatrix> A_;
+  Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
+  
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 

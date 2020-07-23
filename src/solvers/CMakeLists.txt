@@ -47,6 +47,7 @@ set(solvers_source_files ResidualDebugger.cc
   PreconditionerIfpack.cc
   PreconditionerHypre.cc
   PreconditionerML.cc
+  SolverFactory.cc
   )
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
@@ -87,6 +88,11 @@ if (BUILD_TESTS)
     # Add the solvers directory to the include paths
     include_directories(${SOLVERS_SOURCE_DIR})
 
+    add_amanzi_test(solver_static_asserts solver_static_asserts
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_static_asserts.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
@@ -96,29 +102,29 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_preconditioners.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_preconditioner_noncontiguous.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_preconditioner_noncontiguous.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_linear_jfnk.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_linear_jfnk.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
                     
-    # add_amanzi_test(solver_linear_nox_jfnk solver_linear_nox_jfnk
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_linear_nox_jfnk solver_linear_nox_jfnk
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_nka solver_nka
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_nka.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_nka solver_nka
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_nka.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_continuation solver_continuation
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_continuation.cc
-    #                 LINK_LIBS  ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_continuation solver_continuation
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_continuation.cc
+                    LINK_LIBS  ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 endif()

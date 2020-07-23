@@ -53,7 +53,8 @@ preconditioner(const std::string& name,
     tmp.set("cycle applications", 1);
   }
 
-  auto pc = createPreconditioner<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>(plist);
+  static_assert(Amanzi::AmanziSolvers::Impl::is_assembled<Epetra_CrsMatrix>::value, "Epetra_CrsMatrix is assembled?");
+  auto pc = createAssembledMethod<>(name, plist);
   pc->set_matrix(mat);
   return pc;
 };    
@@ -67,7 +68,7 @@ inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::P
   plist.set("error tolerance", 1.e-12);
   plist.set("maximum number of iterations", 200);
   auto inv = Teuchos::rcp(new IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::Preconditioner,Epetra_Vector,Epetra_Map>());
-  inv->InitInverse(plist);
+  inv->set_parameters(plist);
   inv->set_matrices(m, pc);
   inv->UpdateInverse();
   inv->ComputeInverse();

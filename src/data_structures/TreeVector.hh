@@ -39,7 +39,7 @@ namespace Amanzi {
 class TreeVector {
 
  public:
-  using Space_t = TreeVectorSpace;
+  using VectorSpace_t = TreeVectorSpace;
   // -- Constructors --
 
   // Basic constructors of a TreeVector

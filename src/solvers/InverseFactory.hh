@@ -1,14 +1,49 @@
 /*
-  Solvers
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
+*/
 
-  Factory of linear operators.
+/*
+
+Factory functions for creating Inverse objects which implement the
+ApplyInverse() method.
+
+
+Note that we split these into three approaches --
+
+- direct methods, e.g. LU, which expect an assembled matrix, provide a true
+  inverse, and do not use a preconditioner
+
+- iterative methods, e.g. GMRES, which do not need an assembled matrix, provide
+  a true inverse, and require a preconditioner (even if just the identity)
+
+- preconditioning methods, e.g. ILU, which sometimes but not always use an
+  assembled matrix, provide an approximate inverse, and do not use a
+  preconditioner themselves
+
+From an implementation perspective, we split this factory into three cases,
+depending upon the supplied Preconditioner.  Traits are provided for both
+is_assembled (e.g. Epetra_CrsMatrix is itself an assembled matrix, and
+therefore provides access methods) and is_assembling (e.g. Operator is
+self-assembling, and therefore provides AssembleMatrix() and A() access
+methods).  These traits are used to write factories that supply the correct set
+of options depending upon whether the template argument is_assembled or
+is_assembling.
+
+NOTE: we are currently punting on the case that both is_assembled and
+is_assembling, but this should never be true?
+
+Finally, there are two approaches to supplying ParameterLists to this factory.
+Amanzi prefers a global list of available methods, which can be indexed with a
+name.  As these may be used multiple times, the global list is copied, then
+passed in to allow multiple uses each getting their own copy of the list.  ATS
+prefers that this copy is already in the input spec -- there is no global list
+of methods.
+  
 */
 
 #ifndef AMANZI_LINEAR_OPERATOR_FACTORY_HH_
@@ -21,8 +56,9 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
+#include "InverseHelpers.hh"
 #include "Inverse.hh"
-#include "InverseAssembled.hh"
+#include "InverseAssembled_decl.hh"
 #include "IterativeMethodPCG.hh"
 #include "IterativeMethodGMRES.hh"
 //#include "InverseBelosGMRES.hh"
@@ -39,9 +75,24 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
+namespace Impl {
+
 //
-// Helper function
+// Helper functions
 //
+
+inline void
+warn(const std::string& warning)
+{
+  Teuchos::ParameterList vlist;
+  auto vo = Teuchos::rcp(new VerboseObject("Solvers::Factory", vlist));
+  Teuchos::OSTab tab = vo->getOSTab();
+  if (vo->os_OK(Teuchos::VERB_LOW)) {
+      *vo->os() << vo->color("yellow") << warning << vo->reset() << std::endl;
+  }  
+}  
+
+
 inline Teuchos::ParameterList&
 getMethodSublist(Teuchos::ParameterList& inv_list,
         const std::string& method_name)
@@ -50,13 +101,9 @@ getMethodSublist(Teuchos::ParameterList& inv_list,
 
   // check for optional list of parameters, warn if not found
   if (!inv_list.isSublist(method_name_pars)) {
-    Teuchos::ParameterList vlist;
-    Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("Solvers::Factory", vlist));
-    if (vo->os_OK(Teuchos::VERB_LOW)) {
-      Teuchos::OSTab tab = vo->getOSTab();
-      *vo->os() << vo->color("yellow") << "Parameter sublist \"" << method_name_pars 
-                << "\" is missing, using defaults." << vo->reset() << std::endl;
-    }
+    std::string warning = std::string("Parameter sublist \"")
+                          + method_name_pars + "\" is missing, using defaults.";
+    warn(warning);
   }
   auto& method_list = inv_list.sublist(method_name_pars);
 
@@ -70,153 +117,63 @@ getMethodSublist(Teuchos::ParameterList& inv_list,
   return method_list;  
 }
 
+} // namespace Impl
+  
+
+
 
 //
 // Low level factory -- just make the object
 // -----------------------------------------------------------------------------
 
 //
-// Low level factory for Iterative methods
+// Iterative methods work with preconditioners
 //
-template<class Matrix,
-         class Preconditioner,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
-Teuchos::RCP<Inverse<Matrix,Preconditioner,Vector,VectorSpace>>
-createIterativeMethod(Teuchos::ParameterList& inv_list)
+template<class Operator,
+         class Preconditioner=Operator,
+         class Vector=typename Operator::Vector_t,
+         class VectorSpace=typename Operator::VectorSpace_t>         
+Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>>
+createPreconditionedMethod(const std::string& method_name,
+                           Teuchos::ParameterList& inv_list)
 {
-  if (!inv_list.isParameter("iterative method")) {
-    Errors::Message msg("InverseFactory: parameter `\"iterative method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
-  std::string method_name = inv_list.get<std::string>("iterative method");
-  auto& method_list = getMethodSublist(inv_list, method_name);
+  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
 
-  Teuchos::RCP<Inverse<Matrix,Preconditioner,Vector,VectorSpace>> inv;
+  Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>> inv;
   if (method_name == "gmres") {
-    inv = Teuchos::rcp(new IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>());
+    inv = Teuchos::rcp(new IterativeMethodGMRES<Operator,Preconditioner,Vector,VectorSpace>());
   } else if (method_name == "pcg") {
-    inv = Teuchos::rcp(new IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>());
+    inv = Teuchos::rcp(new IterativeMethodPCG<Operator,Preconditioner,Vector,VectorSpace>());
   } else if (method_name == "nka") {
-    inv = Teuchos::rcp(new IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>());
-  // } else if (method_name == "belos gmres") {
-  //   inv = Teuchos::rcp(new InverseBelosGMRES<Matrix,Preconditioner,Vector,VectorSpace>());
+    inv = Teuchos::rcp(new IterativeMethodNKA<Operator,Preconditioner,Vector,VectorSpace>());
   } else {
     Errors::Message msg;
-    msg << "Iterative method \"" << method_name << "\" is not a valid name.";
+    msg << "Preconditioned method \"" << method_name << "\" is not a valid name.";
     Exceptions::amanzi_throw(msg);
   }
 
-  if (inv.get()) inv->InitInverse(method_list);
+  if (inv.get()) inv->set_parameters(method_list);
   return inv;
 }
 
 
 //
-// Low level factory for Direct methods on matrices that can self-assemble.
+// Assembled methods work on matrices.
 //
-template<class Matrix,
-         class Preconditioner,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
-Teuchos::RCP<Inverse<Matrix,Preconditioner,Vector,VectorSpace>>
-createDirectMethod(Teuchos::ParameterList& inv_list)
+template<class Matrix=Epetra_CrsMatrix,
+         class Vector=Epetra_Vector,
+         class VectorSpace=Epetra_Map>
+Teuchos::RCP<Inverse<Matrix,Matrix,Vector,VectorSpace>>
+createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& inv_list)
 {
-  if (!inv_list.isParameter("direct method")) {
-    Errors::Message msg("InverseFactory: parameter `\"direct method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
-  std::string method_name = inv_list.get<std::string>("direct method");
+  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
 
-  // -- currently all direct methods require an assembled matrix
-  // -- direct methods are parsed first, so we can just use list as-is
-  auto inv = Teuchos::rcp(new InverseAssembled<Matrix,Preconditioner,Vector,VectorSpace>());
-  inv->InitInverse(inv_list);
-  return inv;
-}
-
-
-//
-// Low level factory for Direct methods on Epetra_CrsMatrix
-//
-template<>
-Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>>
-inline
-createDirectMethod(Teuchos::ParameterList& inv_list)
-{
-  if (!inv_list.isParameter("direct method")) {
-    Errors::Message msg("InverseFactory: parameter `\"direct method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::string method_name = inv_list.get<std::string>("direct method");
-  auto& method_list = getMethodSublist(inv_list, method_name);
-
-  Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> inv = Teuchos::null;
+  Teuchos::RCP<Inverse<Matrix,Matrix,Vector,VectorSpace>> inv = Teuchos::null;
   if (Keys::starts_with(method_name, "amesos")) {
     inv = Teuchos::rcp(new DirectMethodAmesos());
   } else if (Keys::starts_with(method_name, "amesos2")) {
     inv = Teuchos::rcp(new DirectMethodAmesos2());
-  } else {
-    Errors::Message msg;
-    msg << "Direct method \"" << method_name << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: *\" are valid options.";
-    Exceptions::amanzi_throw(msg);
-  }
-  if (inv.get()) inv->InitInverse(method_list);
-  return inv;
-}
-
-
-//
-// Low level factory for preconditioning methods on matrices that can self-assemble
-//
-template<class Matrix,
-         class Preconditioner,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
-Teuchos::RCP<Inverse<Matrix,Preconditioner,Vector,VectorSpace>>
-createPreconditioner(Teuchos::ParameterList& inv_list)
-{
-  if (!inv_list.isParameter("preconditioning method")) {
-    Errors::Message msg("PreconditionerFactory: parameter `\"preconditioning method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
-  std::string method_name = inv_list.get<std::string>("preconditioning method");
-
-  Teuchos::RCP<Inverse<Matrix,Preconditioner,Vector,VectorSpace>> inv = Teuchos::null;
-  if (method_name == "identity") {
-    // NOTE: add diagonal to this once operators have been refactored to
-    // provide their diagonal without assembly, see #455
-    auto& method_list = getMethodSublist(inv_list, method_name);
-    inv = Teuchos::rcp(new PreconditionerIdentity<Matrix,Preconditioner,Vector,VectorSpace>());
-    inv->InitInverse(method_list);
-  } else {
-    // other preconditioners require assembly
-    inv = Teuchos::rcp(new InverseAssembled<Matrix,Preconditioner,Vector,VectorSpace>());
-    inv->InitInverse(inv_list);
-  }
-  return inv;
-}
-
-
-//
-// Low level factory for preconditioning methods on Epetra_CrsMatrix
-//
-template<>
-Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>>
-inline
-createPreconditioner(Teuchos::ParameterList& inv_list)
-{
-  if (!inv_list.isParameter("preconditioning method")) {
-    Errors::Message msg("PreconditionerFactory: parameter `\"preconditioning method`\" is missing");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::string method_name = inv_list.get<std::string>("preconditioning method");
-  auto& method_list = getMethodSublist(inv_list, method_name);
-
-  Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> inv = Teuchos::null;
-  if (method_name == "diagonal") {
+  } else if (method_name == "diagonal") {
     inv = Teuchos::rcp(new PreconditionerDiagonal());
   } else if (method_name == "block ilu") {
     method_list.set<std::string>("method", "ILU");
@@ -235,14 +192,16 @@ createPreconditioner(Teuchos::ParameterList& inv_list)
   } else if (method_name == "ml") {
     inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "identity") {
-    inv = Teuchos::rcp(new PreconditionerIdentity<Epetra_CrsMatrix,Epetra_CrsMatrix,
-                       Epetra_Vector,Epetra_Map>());
+    inv = Teuchos::rcp(new PreconditionerIdentity<Matrix,Matrix,Vector,VectorSpace>());
+  // } else if (Keys::starts_with(method_name, "belos")) {
+  //   inv = Teuchos::rcp(new MethodBelos());
+
   } else {
     Errors::Message msg;
-    msg << "Preconditioning method \"" << method_name << "\" is not a valid name.";
+    msg << "Direct method \"" << method_name << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: *\" are valid options.";
     Exceptions::amanzi_throw(msg);
   }
-  if (inv.get()) inv->InitInverse(method_list);
+  if (inv.get()) inv->set_parameters(method_list);
   return inv;
 }
 
@@ -251,43 +210,85 @@ createPreconditioner(Teuchos::ParameterList& inv_list)
 // Higher level method that parses all of iterative, direct, and precondioners,
 // and generates a single object that does both forward and inverse apply.
 //
+//
+// Factory style preferred in ATS -- a local list modified in place to preserve
+// changes.
+//
 // NOTE: the return type of this is the more general one!
 template<class Operator,
-         class Preconditioner,
+         class Assembler=Operator,
          class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-Teuchos::RCP<Matrix<Vector,VectorSpace>>
+         class VectorSpace=typename Operator::VectorSpace_t>
+typename std::enable_if<Impl::is_assembling<Assembler>::value,
+                        Teuchos::RCP<Matrix<Vector,VectorSpace>>>::type
 createInverse(Teuchos::ParameterList& inv_list,
               const Teuchos::RCP<Operator>& m,
-              const Teuchos::RCP<Preconditioner>& h)
+              const Teuchos::RCP<Assembler>& h)
 {
-  Teuchos::RCP<Matrix<Vector,VectorSpace>> inv;
+  // deal with deprecated option
+  if (inv_list.isParameter("preconditioner type")) {
+    Impl::warn("InverseFactory: DEPRECATION -- please rename \"preconditioner type\" to \"preconditioning method\".  \"preconditioner type\" may silently be ignored in the future.");
+    if (!inv_list.isParameter("preconditioning method"))
+      inv_list.set<std::string>("preconditioning method", inv_list.get<std::string>("preconditioner type"));
+  }
+    
+  
+  using Matrix_t = Matrix<Vector,VectorSpace>;
+  using Inverse_t = Inverse<Operator,Assembler,Vector,VectorSpace>;
+
+  Teuchos::RCP<Matrix_t> inv;
+
+  std::string method_name;
   if (inv_list.isParameter("direct method")) {
-    auto dir_inv = createDirectMethod<Operator,Preconditioner,Vector,VectorSpace>(inv_list);
-    dir_inv->set_matrices(m,h);
-    inv = dir_inv;
-    return inv;
+    method_name = inv_list.get<std::string>("direct method");
+  } else if (inv_list.isParameter("iterative method") &&
+             Keys::starts_with(inv_list.get<std::string>("iterative method"), "belos")) {
+    method_name = inv_list.get<std::string>("iterative method");
+  } else if (inv_list.isParameter("preconditioning method")) {
+    method_name = inv_list.get<std::string>("preconditioning method");
+  } else if (inv_list.isParameter("iterative method")) {
+    method_name = "identity";
+    Impl::warn(std::string("InverseFactory: WARNING -- iterative method \"")+
+         inv_list.get<std::string>("iterative method")+
+         "\" requires a preconditioner, but no parameter \"preconditioning method\" was supplied: using \"identity\"");
+  } else {
+    Errors::Message msg("InverseFactory (Assembler): at least one of \"direct method\" or \"iterative method\" must be supplied.");
+    Exceptions::amanzi_throw(msg);
   }
 
-  if (inv_list.isParameter("preconditioning method")) {
-    auto pc_inv = createPreconditioner<Operator,Preconditioner,Vector,VectorSpace>(inv_list);
-    pc_inv->set_matrices(m,h);
-    inv = pc_inv;
-  
-    if (inv_list.isParameter("iterative method")) {
-      auto inv_iter = createIterativeMethod<Operator,typeof(*inv),Vector,VectorSpace>(inv_list);
-      inv_iter->set_matrices(m, inv);
-      inv = inv_iter;
-    }
-    
+  Teuchos::RCP<Inverse_t> dir_inv;
+  // only "identity" is a valid "direct method" that is not assembled
+  if (method_name == "identity") {
+    dir_inv = Teuchos::rcp(new PreconditionerIdentity<Operator,Assembler,Vector,VectorSpace>());
   } else {
-    if (inv_list.isParameter("iterative method")) {
-      auto inv_iter = createIterativeMethod<Operator,Preconditioner,Vector,VectorSpace>(inv_list);
-      inv_iter->set_matrices(m, h);
-      inv = inv_iter;
+    dir_inv = Teuchos::rcp(new InverseAssembled<Operator,Assembler,Vector,VectorSpace>(method_name));
+  }
+  dir_inv->set_parameters(inv_list);
+  dir_inv->set_matrices(m,h);
+  inv = dir_inv;
+
+  if (inv_list.isParameter("iterative method")) {
+    std::string iter_method_name = inv_list.get<std::string>("iterative method");
+    if (inv_list.isParameter("direct method")) {
+      Impl::warn("InverseFactory: WARNING -- both \"direct method\" and \"iterative method\" were supplied -- using the direct method.");
+    } else if (!Keys::starts_with(iter_method_name, "belos")) {
+      auto iter_inv = createPreconditionedMethod<Operator,Inverse_t,Vector,VectorSpace>(iter_method_name, inv_list);
+      iter_inv->set_matrices(m,dir_inv);
+      inv = iter_inv;
     }
   }
   return inv;
+}
+
+
+template<class Operator,
+         class Vector=typename Operator::Vector_t,
+         class VectorSpace=typename Operator::VectorSpace_t>         
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
+createInverse(Teuchos::ParameterList& inv_list,
+              const Teuchos::RCP<Operator>& m)
+{
+  return createInverse<Operator,Operator,Vector,VectorSpace>(inv_list, m, m);
 }
 
 
@@ -298,7 +299,7 @@ createInverse(Teuchos::ParameterList& inv_list,
 template<class Operator,
          class Preconditioner,
          class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
+         class VectorSpace=typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,
@@ -319,7 +320,7 @@ createInverse(const std::string& name,
 
 template<class Operator,
          class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
+         class VectorSpace=typename Operator::VectorSpace_t>         
 Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,
@@ -330,36 +331,9 @@ createInverse(const std::string& name,
 }
 
 
-//
-// Factory style preferred in ATS -- a local list modified in place to preserve
-// changes.
-//
-template<class Operator,
-         class Preconditioner,
-         class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
-Teuchos::RCP<Matrix<Vector,VectorSpace>>
-createInverse(Teuchos::ParameterList& inv_list,
-              const Teuchos::RCP<const Operator>& m,
-              const Teuchos::RCP<const Preconditioner>& h)
-{
-  auto inv = createInverse<Operator,Preconditioner,Vector,VectorSpace>(inv_list);
-  inv->set_matrices(m,h);
-  return inv;
-}  
-    
-template<class Operator,
-         class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>         
-Teuchos::RCP<Matrix<Vector,VectorSpace>>
-createInverse(Teuchos::ParameterList& inv_list,
-              const Teuchos::RCP<const Operator>& m)
-{
-  return createInverse<Operator,Operator,Vector,VectorSpace>(inv_list, m, m);
-}
-
-
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
+
+#include "InverseAssembled_impl.hh"
 
 #endif

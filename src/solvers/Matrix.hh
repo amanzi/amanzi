@@ -20,7 +20,7 @@
 namespace Amanzi {
 
 template<class Vector,
-         class VectorSpace=typename Vector::Space_t>
+         class VectorSpace=typename Vector::VectorSpace_t>
 class Matrix {
  public:
   using Vector_t = Vector;
@@ -30,7 +30,7 @@ class Matrix {
 
   virtual int Apply(const Vector& x, Vector& y) const = 0;
 
-  virtual void InitInverse(Teuchos::ParameterList& inv_list) = 0;
+  virtual void set_parameters(Teuchos::ParameterList& inv_list) = 0;
   virtual void UpdateInverse() = 0;
   virtual void ComputeInverse() = 0;
   virtual int ApplyInverse(const Vector& y, Vector& x) const = 0;

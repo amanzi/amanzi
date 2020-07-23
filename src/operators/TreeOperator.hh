@@ -21,6 +21,7 @@
 #include "TreeVectorSpace.hh"
 #include "VerboseObject.hh"
 
+#include "InverseFactory.hh"
 #include "Operator.hh"
 
 /* ******************************************************************
@@ -48,7 +49,7 @@ class MatrixFE;
 class TreeOperator {
  public:
   using Vector_t = TreeVector;
-  using Space_t = TreeVector::Space_t;
+  using VectorSpace_t = TreeVector::VectorSpace_t;
 
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
@@ -89,7 +90,7 @@ class TreeOperator {
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  Teuchos::RCP<Matrix<TreeVector>> preconditioner_;
   bool block_diagonal_;
 
   Teuchos::RCP<VerboseObject> vo_;

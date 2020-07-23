@@ -98,8 +98,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
 
   // Solve the Schur complement system Scc * Yc = Tc.
   {
-    Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-    preconditioner_->ApplyInverse(Tc, Yc);
+    preconditioner_->ApplyInverse(T, Y);
   }
 
   // BACKWARD SUBSTITUTION:  Yf = inv(Aff) (Xf - Afc Yc)

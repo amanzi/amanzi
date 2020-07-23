@@ -37,7 +37,7 @@ int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) co
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerML::InitInverse(Teuchos::ParameterList& list)
+void PreconditionerML::set_parameters(Teuchos::ParameterList& list)
 {
   list_ = list;
   list_.remove("verbose object", false); // note, ML validates parameter lists...

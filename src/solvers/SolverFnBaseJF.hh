@@ -24,7 +24,7 @@
 
 #include "MatrixJF.hh"
 #include "Matrix.hh"
-#include "MatrixFactory.hh"
+#include "InverseFactory.hh"
 
 #include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
@@ -81,7 +81,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
  protected:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<MatrixJF<Vector, VectorSpace> > jf_mat_;
-  Teuchos::RCP<Matrix<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> > lin_op_;
+  Teuchos::RCP<Matrix<Vector,VectorSpace>> lin_op_;
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
 
   double typical_u_;
@@ -102,10 +102,18 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
   Teuchos::ParameterList jf_plist = plist_.sublist("JF matrix parameters");
   jf_mat_ = Teuchos::rcp(new MatrixJF<Vector, VectorSpace>(jf_plist, fn_, map));
 
-  // Create the linear solver for that linear operator
+  // Create the linear solver for that linear operator, which must be an
+  // iterative method.
   Teuchos::ParameterList lin_plist = plist_.sublist("linear operator");
-  MatrixFactory<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> fac;
-  lin_op_ = fac.Create(lin_plist, jf_mat_);
+  if (!lin_plist.isParameter("iterative method")) {
+    Errors::Message msg("JFNK \"linear operator\" sublist requires parameter \"iterative method\"");
+    Exceptions::amanzi_throw(msg);
+  }
+  auto lin_op = AmanziSolvers::createPreconditionedMethod<MatrixJF<Vector,VectorSpace>>(
+      lin_plist.get<std::string>("iterative method"),
+      lin_plist);
+  lin_op->set_matrix(jf_mat_);
+  lin_op_ = lin_op;
 }
 
 

@@ -53,7 +53,7 @@ namespace AmanziSolvers {
 template<class Operator,
          class Preconditioner=Operator,
          class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::Space_t>
+         class VectorSpace=typename Vector::VectorSpace_t>
 class Inverse : public Matrix<Vector,VectorSpace> {
  public:
   Inverse() = default;
@@ -82,7 +82,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   int Apply(const Vector& x, Vector& y) const {
     return m_->Apply(x,y);
   }
-  virtual void InitInverse(Teuchos::ParameterList& plist) = 0;
+  virtual void set_parameters(Teuchos::ParameterList& plist) = 0;
   virtual void UpdateInverse() = 0;
   virtual void ComputeInverse() = 0;
 
