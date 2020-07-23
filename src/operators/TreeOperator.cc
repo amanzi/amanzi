@@ -404,7 +404,6 @@ std::string TreeOperator::PrintDiagnostics() const
   return msg.str();
 }
 
-
 }  // namespace Operators
 }  // namespace Amanzi
 

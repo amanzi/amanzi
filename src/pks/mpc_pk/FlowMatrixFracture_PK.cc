@@ -121,8 +121,9 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // we assume that 0 and 1 correspond to matrix and fracture, respectively
-  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
-  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+  // to avoid modifying original operators, we clone them.
+  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
   op_tree_matrix_->SetOperatorBlock(0, 0, op0);
   op_tree_matrix_->SetOperatorBlock(1, 1, op1);

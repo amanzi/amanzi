@@ -91,6 +91,9 @@ class TreeOperator {
   // i/o
   std::string PrintDiagnostics() const;
 
+  // i/o
+  std::string PrintDiagnostics() const;
+
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;

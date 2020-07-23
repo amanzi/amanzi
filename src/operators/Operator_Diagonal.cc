@@ -122,6 +122,14 @@ void Operator_Diagonal::AssembleMatrixOp(
   AMANZI_ASSERT(!ierr);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Diagonal::Clone() const {
+  return Teuchos::rcp(new Operator_Diagonal(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

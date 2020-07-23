@@ -26,13 +26,15 @@ namespace Operators {
 
 class Operator_ConsistentFace : public Operator {
  public:
-  // main constructor
-  //   The CVS is the domain and range of the operator
+  // The CVS is the domain and range of the operator
   Operator_ConsistentFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                           Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE) {
     cell_max_faces = mesh_->cell_get_max_faces();
   }
+
+  // copy constructor
+  virtual Teuchos::RCP<Operator> Clone() const;
 
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
@@ -40,13 +42,13 @@ class Operator_ConsistentFace : public Operator {
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+      const SuperMap& map, GraphFE& graph,
+      int my_block_row, int my_block_col) const;
   
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+      const SuperMap& map, MatrixFE& mat,
+      int my_block_row, int my_block_col) const;
 
  protected:
   int cell_max_faces;

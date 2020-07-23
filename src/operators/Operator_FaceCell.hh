@@ -36,11 +36,13 @@ class Operator_FaceCell : public Operator_Cell {
     set_schema_string("FACE+CELL");
   }
 
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-      const CompositeVector& X, CompositeVector& Y) const ;
+      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
-      const CompositeVector& X, CompositeVector& Y) const ;
+      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
