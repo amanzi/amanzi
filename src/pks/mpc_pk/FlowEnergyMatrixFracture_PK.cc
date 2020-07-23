@@ -476,14 +476,12 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
-  std::string der_name = Keys::getDerivKey("enthalpy", "temperature");
-  S_->GetFieldEvaluator("enthalpy")->HasFieldDerivativeChanged(S_.ptr(), "thermal", "temperature");
-  const auto& dHdT_m = *S_->GetFieldData(der_name, "enthalpy")->ViewComponent("cell", true);
+  S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "enthalpy");
+  const auto& H_m = *S_->GetFieldData("enthalpy", "enthalpy")->ViewComponent("cell", true);
   const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 
-  der_name = Keys::getDerivKey("fracture-enthalpy", "fracture-temperature");
-  S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldDerivativeChanged(S_.ptr(), "thermal", "fracture-temperature");
-  const auto& dHdT_f = *S_->GetFieldData(der_name, "fracture-enthalpy")->ViewComponent("cell", true);
+  S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldChanged(S_.ptr(), "fracture-enthalpy");
+  const auto& H_f = *S_->GetFieldData("fracture-enthalpy", "fracture-enthalpy")->ViewComponent("cell", true);
   const auto& n_l_f = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell", true);
 
   // update coupling terms for advection
@@ -511,10 +509,10 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
       if (tmp > 0) {
         int c1 = cells[k];
-        double factor = dHdT_m[0][c1] * n_l_m[0][c1];
+        double factor = H_m[0][c1] * n_l_m[0][c1];
         (*values1)[np] = tmp * factor;
       } else {
-        double factor = dHdT_f[0][c] * n_l_f[0][c];
+        double factor = H_f[0][c] * n_l_f[0][c];
         (*values2)[np] = -tmp * factor;
       }
 
