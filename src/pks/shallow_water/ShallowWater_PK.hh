@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "Key.hh"
 #include "PK.hh"
