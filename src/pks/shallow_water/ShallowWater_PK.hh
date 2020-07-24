@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "BCs.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -31,11 +32,9 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-
 #include "WhetStoneMeshUtils.hh"
 
-#include "Function.hh"
-#include "FunctionFactory.hh"
+#include "ShallowWaterBoundaryFunction.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -89,7 +88,7 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<double> NumSrc(std::vector<double>,int);
 
-  void BJ_lim(WhetStone::DenseMatrix,WhetStone::DenseMatrix&,int,Key);
+  void BJ_lim(const WhetStone::DenseMatrix&,WhetStone::DenseMatrix&,int,const Key&);
 
   void ComputeGradients(Key,Key,Key);
 
@@ -135,6 +134,11 @@ class ShallowWater_PK : public PK_Physical,
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+
+ private:
+  // boundary conditions
+  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_; 
+  std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
  private:
   // factory registration

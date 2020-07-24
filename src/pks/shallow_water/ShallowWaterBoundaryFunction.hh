@@ -7,7 +7,7 @@
  provided in the top-level COPYRIGHT file.
  
  Author: Svetlana Tokareva (tokareva@lanl.gov)
- */
+*/
 
 #ifndef AMANZI_SHALLOW_WATER_BOUNDARY_FUNCTION_HH_
 #define AMANZI_SHALLOW_WATER_BOUNDARY_FUNCTION_HH_
@@ -28,24 +28,24 @@ namespace Amanzi {
 namespace ShallowWater {
         
 class ShallowWaterBoundaryFunction : public PK_DomainFunction {
-  public:
-    ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
-    ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
+ public:
+  ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
+  ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
 
-    void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-    // modifiers and access
-    void set_bc_name(const std::string& name) { bc_name_ = name; }
-    std::string bc_name() { return bc_name_; }
+  // modifiers and access
+  void set_bc_name(const std::string& name) { bc_name_ = name; }
+  std::string bc_name() { return bc_name_; }
 
-    void set_type(WhetStone::DOF_Type type) { type_ = type; }
-    WhetStone::DOF_Type type() { return type_; }
+  void set_type(WhetStone::DOF_Type type) { type_ = type; }
+  WhetStone::DOF_Type type() { return type_; }
 
-  private:
-    std::string bc_name_;
-    WhetStone::DOF_Type type_;  // type of dofs related to this bc
+ private:
+  std::string bc_name_;
+  WhetStone::DOF_Type type_;  // type of dofs related to this bc
 
-    std::vector<std::string> regions_;
+  std::vector<std::string> regions_;
 };
         
 }  // namespace ShallowWater
