@@ -30,6 +30,7 @@ infiltration and Tc-99 contamination (:math:`C_{Tc-99}`) to the subsurface:
 | General site, post-1956| 47                |  N/A                                     |
 +------------------------+-------------------+------------------------------------------+
 | B-17, Jan 1956         |  8025             |  1.88e-6                                 |
+          <aqueous_conc name="Tc-99" start="B-17_release_begin" function="constant" value="1.881389E-06"/>
 +------------------------+-------------------+------------------------------------------+
 | B-18, Feb-Mar 1956     |  10439            |  2.27e-6                                 |
 +------------------------+-------------------+------------------------------------------+
@@ -100,7 +101,7 @@ a STOMP code model. The boundary conditions
 at the top surface are defined in the problem statement as a volumetric fluxes 
 [m\ :sup:`3`\ /m\ :sup:`2`\ d = m/d]. *Amanzi* currently requires boundary 
 conditions of this type to be specified as mass fluxes, 
-:math:`\rho U` [kg\ :sup:`3`\ /m\ :sup:`2`\ s]. The ``inward_mass_flux`` values
+:math:`\rho U` [kg /m\ :sup:`2`\ s]. The ``inward_mass_flux`` values
 in the XML input have these units.
 
 
