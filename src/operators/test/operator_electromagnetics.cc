@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
 
@@ -179,37 +178,29 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "default", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(1e-12, true, true);
 
-  // Solve the problem.
-  ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector& rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-10);
 
-  int num_itrs = solver.num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "electric solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute electric error
@@ -220,7 +211,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   if (MyPID == 0) {
     el2_err /= enorm;
     printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver.num_itrs(), rhs.GlobalLength());
+            global_op->num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }

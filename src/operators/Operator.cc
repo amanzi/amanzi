@@ -434,32 +434,19 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
   return 0;
 }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name,
-                                  const Teuchos::ParameterList& plist)
-{
-  preconditioner_ = AmanziSolvers::createInverse(prec_name, plist,
-          Teuchos::rcpFromRef(*this));
-  preconditioner_->UpdateInverse();
-  UpdatePreconditioner();
+void Operator::InitializeInverse(const std::string& prec_name,
+        const Teuchos::ParameterList& plist) {
+  Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
+  InitializeInverse(inner_plist);
 }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
-  preconditioner_->UpdateInverse();
-  UpdatePreconditioner();
+void Operator::InitializeInverse(const std::string& prec_name,
+        const Teuchos::ParameterList& prec_list,
+        const std::string& iter_name,
+        const Teuchos::ParameterList& iter_list) {
+  Teuchos::ParameterList inner_plist(prec_list.sublist(prec_name));
+  inner_plist.setParameters(iter_list.sublist(iter_name));
+  InitializeInverse(inner_plist);
 }
 
 
@@ -468,49 +455,44 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 * Create the preconditioner and set options. Symbolic assemble of 
 * operator's matrix must have been called.
 ****************************************************************** */
-void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void Operator::InitializeInverse(Teuchos::ParameterList& plist)
 {
-  if (smap_.get() == NULL) {
-    if (plist.isParameter("preconditioning method") &&
-        plist.get<std::string>("preconditioning method") == "identity") {
-      smap_ = createSuperMap(*cvs_col_);
-    } else {
-      Errors::Message msg("Operator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
+  // if (smap_.get() == nullptr) smap_ = createSuperMap(*cvs_col_);
 
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioning method")) {
-    auto method_name = plist.get<std::string>("preconditioning method");
-    if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
-      auto block_ids = smap_->BlockIndices();
-      plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
-      plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
-    }
-  }
+  // // provide block ids for block strategies.
+  // if (plist.isParameter("preconditioning method")) {
+  //   auto method_name = plist.get<std::string>("preconditioning method");
+  //   if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
+  //     auto block_ids = smap_->BlockIndices();
+  //     plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
+  //     plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
+  //   }
+  // }
 
   preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
-  if (Amat_.get()) preconditioner_->UpdateInverse(); // SymbolicAssemble already called
 }
 
 
 /* ******************************************************************
-* Two-stage initialization of preconditioner, part 2.
-* Set the preconditioner structure. Operator's matrix must have been
-* assembled.
+* Three-stage initialization of preconditioner, part 2.
+* Set the preconditioner structure. Operator must have been
+* given all Ops by now.
 ****************************************************************** */
-void Operator::UpdatePreconditioner()
+void Operator::UpdateInverse()
 {
-  if (preconditioner_.get() == NULL) {
-    Errors::Message msg("Operator has no preconditioner, nothing to update.");
+  if (preconditioner_.get() == nullptr) {
+    Errors::Message msg("Developer error: InitializeInverse() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
-  preconditioner_->ComputeInverse();
+  preconditioner_->UpdateInverse(); // NOTE: calls this->SymbolicAssembleMatrix()
 }
 
-
+void Operator::ComputeInverse()
+{
+  // assembly must be possible now
+  preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
+}
 
 /* ******************************************************************
 * Update the RHS with this vector.

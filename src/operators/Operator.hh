@@ -185,15 +185,17 @@ class Operator {
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  // Inverse application
-  // -- deprecated methods -- one stop (do not call Update)
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-
-  // -- preferred methods -- two stages for init and update
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
-      
+  // versions that make it easier to deal with Amanzi input spec format
+  void InitializeInverse(const std::string& prec_name,
+                         const Teuchos::ParameterList& plist);
+  void InitializeInverse(const std::string& prec_name,
+                         const Teuchos::ParameterList& prec_list,
+                         const std::string& iter_name,
+                         const Teuchos::ParameterList& iter_list);
+  // -- preferred methods -- three stages for init, update, and compute.
+  void InitializeInverse(Teuchos::ParameterList& plist);
+  void UpdateInverse();
+  void ComputeInverse();
       
   // symbolic assembly:
   // -- wrapper
@@ -438,6 +440,10 @@ class Operator {
   int num_itrs() const {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->num_itrs();
+  }
+  int returned_code() const { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code();
   }
   
  protected:

@@ -455,7 +455,7 @@
 
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
+      <Parameter name="preconditioning type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
@@ -476,7 +476,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning type" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0e+00"/>
@@ -490,7 +490,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning type" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0e+00"/>

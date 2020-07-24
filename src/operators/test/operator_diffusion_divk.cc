@@ -24,7 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -150,28 +149,19 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                         .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -188,10 +178,10 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver.num_itrs() < 10);
+    CHECK(global_op->num_itrs() < 10);
   }
 }
 
@@ -302,28 +292,19 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                         .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -340,10 +321,10 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver.num_itrs() < 10);
+    CHECK(global_op->num_itrs() < 10);
   }
 }
 

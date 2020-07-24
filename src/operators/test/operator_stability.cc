@@ -24,7 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -144,21 +143,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // solve the problem
-    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
-    solution->PutScalar(0.0);
-    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-    solver->Init(lop_list);
+    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+    global_op->UpdateInverse();
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
-    solver->ApplyInverse(rhs, *solution);
+    global_op->ApplyInverse(rhs, *solution);
 
     // calculate pressure errors
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -177,7 +168,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       pl2_err /= pnorm;
       ul2_err /= unorm;
       printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n", 
-          factor, pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs()); 
+          factor, pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs()); 
     
       CHECK(pl2_err < 0.15 && ul2_err < 0.15);
     }
@@ -294,22 +285,14 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // solve the problem
-    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
-    solution.PutScalar(0.0);
-    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-    solver->Init(lop_list);
+    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+    global_op->UpdateInverse();
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
     solution.PutScalar(0.0);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = global_op->ApplyInverse(rhs, solution);
     CHECK(ierr > 0);
 
     // calculate errors
@@ -326,7 +309,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
       ph1_err /= hnorm;
       double tmp = op2.nfailed_primary() * 100.0 / ncells_owned; 
       printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  H1(p)=%9.6g  itr=%3d  nfailed=%4.1f\n", 
-          factor, pl2_err, pinf_err, ph1_err, solver->num_itrs(), tmp); 
+          factor, pl2_err, pinf_err, ph1_err, global_op->num_itrs(), tmp); 
 
       CHECK(pl2_err < 0.1 && ph1_err < 0.15);
     }

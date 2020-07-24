@@ -27,7 +27,6 @@
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
-#include "LinearOperatorGMRES.hh"
 
 // Operators
 #include "Analytic06.hh"
@@ -276,21 +275,13 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
     }
   }
 
-  // assemble, invert
-  op->global_operator()->SymbolicAssembleMatrix();
-  op->global_operator()->AssembleMatrix();
-
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("preconditioning type", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
-  op->global_operator()->InitializePreconditioner(pc_list);
-  op->global_operator()->UpdatePreconditioner();
-
-  Teuchos::ParameterList lin_list;
-  lin_list.sublist("verbose object").set("verbosity level", "low");
-  auto lin_op = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
-      Operator, CompositeVector, CompositeVectorSpace>(op->global_operator(), op->global_operator()));
-  lin_op->Init(lin_list); 
+  pc_list.set("iterative method", "gmres");
+  op->global_operator()->InitializeInverse(pc_list);
+  op->global_operator()->UpdateInverse();
+  op->global_operator()->ComputeInverse();
 
   if (write_matrix) {
     std::stringstream fname;
@@ -302,9 +293,9 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   }
   
   error.PutScalar(0.0);
-  int ierr = lin_op->ApplyInverse(*op->global_operator()->rhs(), error);
+  int ierr = op->global_operator()->ApplyInverse(*op->global_operator()->rhs(), error);
   CHECK(ierr >= 0);
-  CHECK(lin_op->num_itrs() < 10);
+  CHECK(op->global_operator()->num_itrs() < 10);
 
   error.Update(-1.0, u, 1.0);
   

@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -145,38 +144,30 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // BCs and assemble
   op_diff->ApplyBCs(true, true, true);
   op_adv->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // Create a preconditioner.
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true);
   ver.CheckPreconditionerSPD(1e-12, false, true);
 
-  // Solve the problem.
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("gmres parameters");
-  AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-     solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector& rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
-  int num_itrs = solver.num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 15);
 
   ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");

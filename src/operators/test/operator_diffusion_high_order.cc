@@ -117,17 +117,10 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  slist.set("iterative method", "pcg");
-  slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
-  slist.sublist("verbose object").set<std::string>("verbosity level", "high");
-
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // solve the problem
   CompositeVector rhs = *global_op->rhs();
@@ -245,9 +238,6 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
   ParameterList slist;
   slist.set<std::string>("preconditioner type", "diagonal");
@@ -255,8 +245,9 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
   slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse(slist);
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
@@ -441,17 +432,15 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   slist.set("iterative method", "pcg");
   slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
   slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse(slist);
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);

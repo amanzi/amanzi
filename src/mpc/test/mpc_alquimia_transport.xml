@@ -386,7 +386,7 @@
 
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -400,7 +400,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning type" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
         <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>

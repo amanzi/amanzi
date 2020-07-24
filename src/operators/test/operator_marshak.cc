@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -165,27 +164,16 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // apply BCs and assemble
     op->ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
-
-    // create preconditoner
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // solve the problem
-    ParameterList lop_list = plist.sublist("solvers")
-                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
+    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->UpdateInverse();
+    global_op->ComputeInverse();
 
     Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    solver.ApplyInverse(rhs, *solution);
+    //    global_op->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    global_op->ApplyInverse(rhs, *solution);
 
     step++;
     t += dt;
@@ -194,7 +182,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
-          step, solver.residual(), solver.num_itrs(), snorm, t, dt);
+          step, global_op->residual(), global_op->num_itrs(), snorm, t, dt);
     }
 
     // Change time step based on solution change.

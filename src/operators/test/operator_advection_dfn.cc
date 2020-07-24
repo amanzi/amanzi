@@ -134,8 +134,6 @@ void RunTest(double gravity) {
 
   // apply BCs and assemble
   op_adv->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
     
   // create inverse
   Teuchos::ParameterList inv_list;
@@ -145,8 +143,8 @@ void RunTest(double gravity) {
   inv_list.sublist("hypre: boomer amg parameters") = plist->sublist("preconditioners").sublist("Hypre AMG");
   inv_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   
-  global_op->InitializePreconditioner(inv_list);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse(inv_list);
+  global_op->UpdateInverse();
 
   // initialize I/O
   Teuchos::ParameterList iolist;

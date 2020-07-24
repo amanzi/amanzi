@@ -88,6 +88,12 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
   virtual int ApplyInverse(const Vector& y, Vector& x) const = 0;
 
+  // This ensures that anything that is an Inverse can be used as a
+  // preconditioner.
+  int ApplyInverseUserSupplied(const Vector& y, Vector& x) const {
+    return ApplyInverse(y,x);
+  }
+
   double TrueResidual(const Vector& x, const Vector& y) const {
     Vector r(y);
     m_->Apply(x, r);  // r = y - M * x

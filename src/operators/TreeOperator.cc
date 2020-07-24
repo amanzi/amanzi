@@ -45,14 +45,14 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 
   // resize the blocks
   int n_blocks = tvs_->size();
-  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
+  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<Operator> >(n_blocks, Teuchos::null));
 }
 
 
 /* ******************************************************************
 * Populate block matrix with pointers to operators.
 ****************************************************************** */
-void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
+void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& op) {
   blocks_[i][j] = op;
 }
 
@@ -103,18 +103,24 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
-  int code(0);
-  if (!block_diagonal_) {
-    code = preconditioner_->ApplyInverse(X, Y);
-  } else {
-    for (int n = 0; n < tvs_->size(); ++n) {
-      const CompositeVector& Xn = *X.SubVector(n)->Data();
-      CompositeVector& Yn = *Y.SubVector(n)->Data();
-      code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
-    }
+  return preconditioner_->ApplyInverse(X, Y);
+}
+
+
+/* ******************************************************************
+* Calculate Y = inv(A) * X using the block diagonal
+****************************************************************** */
+int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const
+{
+  int code = 0;
+  for (int n = 0; n < tvs_->size(); ++n) {
+    const CompositeVector& Xn = *X.SubVector(n)->Data();
+    CompositeVector& Yn = *Y.SubVector(n)->Data();
+    code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
   }
   return code;
 }
+    
 
     
 /* ******************************************************************
@@ -206,42 +212,17 @@ void TreeOperator::AssembleMatrix() {
 }
 
 
-/* ******************************************************************
-* Create preconditioner using name and a factory.
-****************************************************************** */
-void TreeOperator::InitPreconditioner(
-    const std::string& prec_name, const Teuchos::ParameterList& plist)
-{
-  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(prec_name, plist,
-          Teuchos::rcpFromRef(*this));
-  if (Amat_.get()) preconditioner_->UpdateInverse();
-}
-
-
-/* ******************************************************************
-* Create preconditioner using name and a factory.
-****************************************************************** */
-void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioning method")) {
-    auto method_name = plist.get<std::string>("preconditioning method");
-    if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
-      auto block_ids = smap_->BlockIndices();
-      plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
-      plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
-    }
-  }
-  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(plist, Teuchos::rcpFromRef(*this));
-  if (Amat_.get()) preconditioner_->UpdateInverse();
-}
-
+void TreeOperator:: InitializeInverse(const std::string& prec_name,
+        const Teuchos::ParameterList& plist) {
+  Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
+  InitializeInverse(inner_plist);
+}  
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
 * Create the PC and set options.  SymbolicAssemble() must have been called.
 ****************************************************************** */
-void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void TreeOperator::InitializeInverse(Teuchos::ParameterList& plist)
 {
   AMANZI_ASSERT(A_.get());
   AMANZI_ASSERT(smap_.get());
@@ -261,9 +242,28 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
     plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
   }
 
-  preconditioner_ = AmanziSolvers::createInverse<TreeOperator>(plist,
-          Teuchos::rcpFromRef(*this));
-  if (Amat_.get()) preconditioner_->UpdateInverse();
+  // create the inverse
+  if (plist.isParameter("preconditioning method")) {
+    if (plist.get<std::string>("preconditioning method") == "block diagonal") {
+      // are we using block diagonal preconditioning?
+      if (plist.isParameter("iterative method")) {
+        // are we wrapping it in an iterative method?
+        auto iterative_method = plist.get<std::string>("iterative method");
+        auto pc = Teuchos::rcp(new Impl::TreeOperator_BlockPreconditioner(*this));
+        auto inv = 
+            AmanziSolvers::createPreconditionedMethod<TreeOperator,
+                                                      Impl::TreeOperator_BlockPreconditioner,
+                                                      Vector_t, VectorSpace_t>(iterative_method, plist);
+        inv->set_matrices(Teuchos::rcpFromRef(*this), pc);
+        preconditioner_ = inv;
+      } else {
+        block_diagonal_ = true;
+      }
+    } else {
+      // probably an assembled inverse method, with or without an iterative method on top
+      preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+    }
+  }
 }
 
 
@@ -271,21 +271,18 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
 * Two-stage initialization of preconditioner, part 2.
 * Set the matrix in the preconditioner.  Assemble() must have been called.
 ****************************************************************** */
-void TreeOperator::UpdatePreconditioner()
+void TreeOperator::UpdateInverse()
 {
   AMANZI_ASSERT(preconditioner_.get()); // created
-  AMANZI_ASSERT(A_.get()); // update already called
-  preconditioner_->ComputeInverse();
+  preconditioner_->UpdateInverse(); // calls SymbolicAssemble if needed
 }
 
-
-/* ******************************************************************
-* Init block-diagonal preconditioner
-****************************************************************** */
-void TreeOperator::InitBlockDiagonalPreconditioner()
+void TreeOperator::ComputeInverse()
 {
-  block_diagonal_ = true;
+  AMANZI_ASSERT(preconditioner_.get()); // created
+  preconditioner_->ComputeInverse(); // calls SymbolicAssemble if needed
 }
+
 
 }  // namespace Operators
 }  // namespace Amanzi

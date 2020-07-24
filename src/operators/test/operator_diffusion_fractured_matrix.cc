@@ -24,7 +24,6 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -126,33 +125,26 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   // apply BCs (primary=true, eliminate=true) and assemble
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   // ParameterList slist = plist.sublist("preconditioners").sublist("identity");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution->ViewComponent("cell");
@@ -162,7 +154,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
     GMV::close_data_file();
   }
 
-  CHECK(solver.num_itrs() < 200);
+  CHECK(global_op->num_itrs() < 200);
 
   // compute pressure error
   Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -187,7 +179,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   if (MyPID == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 1e-10);
     CHECK(ul2_err < 1e-10);

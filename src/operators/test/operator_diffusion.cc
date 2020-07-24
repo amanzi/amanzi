@@ -25,7 +25,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -137,38 +136,29 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  if (pc_name != "identity") {
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
-  }
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse(pc_name, plist.sublist("preconditioners"),
+          "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the preconditioner.
   VerificationCV ver(global_op);
   ver.CheckPreconditionerSPD();
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -187,10 +177,10 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    if (pc_name != "identity") CHECK(solver.num_itrs() < 10);
+    if (pc_name != "identity") CHECK(global_op->num_itrs() < 10);
   }
 }
 
@@ -288,31 +278,23 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
   
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -322,10 +304,10 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   if (MyPID == 0) {
     pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 1e-5);
-    CHECK(solver.num_itrs() < 10);
+    CHECK(global_op->num_itrs() < 10);
   }
 }
 

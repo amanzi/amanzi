@@ -27,8 +27,8 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="diagonal"/>
-      <!--Parameter name="preconditioner type" type="string" value="boomer amg"/-->
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
+      <!--Parameter name="preconditioning method" type="string" value="boomer amg"/-->
       <ParameterList name="boomer amg parameters">
         <Parameter name="use block indices" type="bool" value="true"/>
         <Parameter name="cycle applications" type="int" value="2"/>
@@ -41,7 +41,7 @@
     </ParameterList>
 
     <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
+      <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>

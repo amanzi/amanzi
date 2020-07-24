@@ -36,6 +36,7 @@ class InverseAssembled :
   InverseAssembled(const std::string& method_name) :
       method_name_(method_name),
       updated_(false),
+      computed_once_(false),
       Inverse<Operator,Assembler,Vector,VectorSpace>()
   {}
 
@@ -66,7 +67,7 @@ class InverseAssembled :
   }
 
  protected:
-  bool updated_;
+  bool updated_, computed_once_;
   std::string method_name_;
 
   using Inverse<Operator,Assembler,Vector,VectorSpace>::m_;

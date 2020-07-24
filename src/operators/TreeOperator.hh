@@ -46,6 +46,10 @@ namespace Operators {
 class SuperMap;
 class MatrixFE;
 
+namespace Impl {
+class TreeOperator_BlockPreconditioner;
+}
+
 class TreeOperator {
  public:
   using Vector_t = TreeVector;
@@ -56,35 +60,54 @@ class TreeOperator {
   virtual ~TreeOperator() = default;
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& op);
   
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
 
-  void SymbolicAssembleMatrix();
-  void AssembleMatrix();
-
   const TreeVectorSpace& DomainMap() const { return *tvs_; }
   const TreeVectorSpace& RangeMap() const { return *tvs_; }
   Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
   
+  void SymbolicAssembleMatrix();
+  void AssembleMatrix();
 
-  // preconditioners
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitBlockDiagonalPreconditioner();
+  void InitializeInverse(const std::string& prec_name,
+                         const Teuchos::ParameterList& plist);
+  void InitializeInverse(Teuchos::ParameterList& plist);
+  void UpdateInverse();
+  void ComputeInverse();
 
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
+  // Inverse diagnostics... these may change
+  double residual() const {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->residual();
+  }
+  int num_itrs() const {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->num_itrs();
+  }
+  int returned_code() const { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code();
+  }
 
+  
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
 
+
+  
+ protected:
+  int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
+  
  private:
+  friend Impl::TreeOperator_BlockPreconditioner;
+  
   Teuchos::RCP<const TreeVectorSpace> tvs_;
-  Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
+  Teuchos::Array<Teuchos::Array<Teuchos::RCP<Operator> > > blocks_;
   
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
@@ -95,6 +118,48 @@ class TreeOperator {
 
   Teuchos::RCP<VerboseObject> vo_;
 };
+
+
+namespace Impl {
+//
+// This class simply wraps TreeOperator with ApplyInverse() calling
+// ApplyInverseBlockDiagonal() so that it can be used as a preconditioner.  To
+// provide the common interface to the client, TreeOperator's ApplyInverse must
+// call the linear solver's ApplyInverse(), which wants a preconditioner, which
+// might here be the block diagonal case.  This would be circular without
+// introducing a separate object.
+//
+class TreeOperator_BlockPreconditioner {
+ public:
+  using Vector_t = TreeOperator::Vector_t;
+  using VectorSpace_t = TreeOperator::VectorSpace_t;
+  
+  TreeOperator_BlockPreconditioner(TreeOperator& op) :
+      op_(op) {}
+
+
+  int ApplyInverse(const TreeVector& X, TreeVector& Y) const {
+    return op_.ApplyInverseBlockDiagonal_(X,Y);
+  }
+  void UpdateInverse() {
+    for (int n=0; n!=op_.tvs_->size(); ++n) {
+      op_.blocks_[n][n]->UpdateInverse();
+    }
+  }
+  void ComputeInverse() {
+    for (int n=0; n!=op_.tvs_->size(); ++n) {
+      op_.blocks_[n][n]->ComputeInverse();
+    }
+  }
+  
+ private:
+  TreeOperator& op_;
+};
+
+} // namespace Impl  
+
+
+
 
 }  // namespace Operators
 }  // namespace Amanzi

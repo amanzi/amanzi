@@ -24,7 +24,6 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"
-#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -211,35 +210,28 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // apply BCs (primary=true, eliminate=true) and assemble
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
+
+  // create preconditoner using the base operator class
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), solver_name, plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true, 1);
 
-  // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> solverfactory;
-  auto solver = solverfactory.Create(solver_name, lop_list, global_op, global_op);
-
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver->ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-11);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
-              << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() 
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() 
               << " dofs=" << global_op->A()->NumGlobalRows() << std::endl;
 
     // visualization
@@ -252,7 +244,7 @@ void OperatorDiffusionDG(std::string solver_name,
     GMV::close_data_file();
   }
 
-  CHECK(solver->num_itrs() < 200);
+  CHECK(global_op->num_itrs() < 200);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -262,7 +254,7 @@ void OperatorDiffusionDG(std::string solver_name,
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
-    printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
+    printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, global_op->num_itrs());
     printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%9.6f\n", pl2_int);
 

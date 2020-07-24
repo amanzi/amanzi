@@ -24,8 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
-#include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -144,35 +142,26 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, true);  // FIXME
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(1e-12, true, true);
 
-  // solve the problem
-  Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                         .sublist("PCG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      pcg(global_op, global_op);
-  pcg.Init(lop_list);
-
   CompositeVector& rhs = *global_op->rhs();
-  pcg.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-14);
 
   if (MyPID == 0) {
-    std::cout << "elasticity solver (pcg): ||r||=" << pcg.residual() 
-              << " itr=" << pcg.num_itrs()
-              << " code=" << pcg.returned_code() << std::endl;
+    std::cout << "elasticity solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute velocity error
@@ -182,10 +171,10 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, pcg.num_itrs());
+        ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(ul2_err < 0.1);
-    CHECK(pcg.num_itrs() < 15);
+    CHECK(global_op->num_itrs() < 15);
   }
 }
 

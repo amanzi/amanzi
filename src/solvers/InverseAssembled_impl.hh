@@ -125,15 +125,16 @@ assembleMatrix(const Teuchos::RCP<Operator>& m) {
 template<class Operator>
 typename std::enable_if<is_assembling<Operator>::value,
                         Teuchos::RCP<Epetra_CrsMatrix>>::type
-getMatrix(const Teuchos::RCP<Operator>& m) {
-  return m->A();
+getMatrix(const Teuchos::RCP<Operator>& h) {
+  h->SymbolicAssembleMatrix();
+  return h->A();
 }
 
 template<class Operator>
 typename std::enable_if<is_assembled<Operator>::value,
                         Teuchos::RCP<Epetra_CrsMatrix>>::type
-getMatrix(const Teuchos::RCP<Operator>& m) {
-  return m;
+getMatrix(const Teuchos::RCP<Operator>& h) {
+  return h;
 }
 
 } // namespace Impl
@@ -161,7 +162,8 @@ template<class Operator,
 void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
-  AMANZI_ASSERT(solver_.get());
+  AMANZI_ASSERT(solver_.get()); // set_parameters was called
+
   Teuchos::RCP<Epetra_CrsMatrix> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);
   solver_->UpdateInverse();
@@ -169,6 +171,7 @@ void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse
   if (!updated_) {
     std::tie(smap_,x_,y_) = Impl::getSuperMap(*m_);
     updated_ = true;
+    computed_once_ = false;
   }
 }
 
@@ -179,8 +182,11 @@ template<class Operator,
          class VectorSpace>
 void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ComputeInverse()
 {
-  AMANZI_ASSERT(updated_);
+  AMANZI_ASSERT(updated_); // note, we could call Update here, but would prefer
+                           // that developers to the right thing.
+  Impl::assembleMatrix(h_);
   solver_->ComputeInverse();
+  computed_once_ = true;
 }
 
 
@@ -191,6 +197,10 @@ template<class Operator,
 int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(const Vector& y, Vector& x) const
 {
   AMANZI_ASSERT(updated_);
+  AMANZI_ASSERT(computed_once_); // see above, could also call Compute here, but
+                            // would prefer that developers do the right thing,
+                            // especially since they might change values
+                            // between calls and forget to call compute.
   Impl::copyToSuperVector(smap_, y, y_);
   int returned_code = solver_->ApplyInverse(*y_, *x_);
   Impl::copyFromSuperVector(smap_, *x_, x);

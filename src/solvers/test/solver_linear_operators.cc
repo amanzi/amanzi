@@ -75,6 +75,7 @@ class Matrix {
     A_->FillComplete(*map_, *map_);
   }
 
+  int SymbolicAssembleMatrix() { return 0; }
   int AssembleMatrix() { return 0;}
   
   // partial consistency with Operators'interface

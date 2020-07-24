@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
 
@@ -184,26 +183,14 @@ void AdvectionDiffusion2D(int nx, double* error)
   op_adv->UpdateMatrices(u.ptr());
   op_adv->ApplyBCs(false, true, false);
 
-  // assemble global matrix and creare preconditioner
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
-  ParameterList slist = plist.sublist("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
-
-  // solve the problem
-  CompositeVector& rhs = *global_op->rhs();
-  rhs.Update(1.0, source, 1.0);
-
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("gmres parameters");
-  AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-     solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "AztecOO CG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(*global_op->rhs(), solution);
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
@@ -213,17 +200,17 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   if (MyPID == 0) {
     pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 3e-2);
-    CHECK(solver.num_itrs() < 10);
+    CHECK(global_op->num_itrs() < 10);
   }
 
   // visualization
   if (MyPID == 0) {
-    std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& pc = *solution.ViewComponent("cell");

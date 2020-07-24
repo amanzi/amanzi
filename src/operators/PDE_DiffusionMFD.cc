@@ -1405,8 +1405,8 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
     consistent_face_op_->OpPushBack(local_op_);
-    consistent_face_op_->SymbolicAssembleMatrix();
-    consistent_face_op_->InitializePreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
+    consistent_face_op_->InitializeInverse(plist_.sublist("consistent faces").sublist("preconditioner"));
+    consistent_face_op_->UpdateInverse();
   }
 
   // calculate the rhs, given by y_f - Afc * x_c
@@ -1432,8 +1432,7 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   y.GatherGhostedToMaster("face", Add);
 
   // x_f = Aff^-1 * ...
-  consistent_face_op_->AssembleMatrix();
-  consistent_face_op_->UpdatePreconditioner();
+  consistent_face_op_->ComputeInverse();
 
   CompositeVector u_f_copy(y);
   int ierr = consistent_face_op_->ApplyInverse(y, u);

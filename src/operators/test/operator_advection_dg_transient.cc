@@ -27,7 +27,6 @@
 #include "Explicit_TI_RK.hh"
 #include "CompositeVector.hh"
 #include "DG_Modal.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"

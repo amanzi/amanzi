@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -117,38 +116,29 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op->ApplyBCs(true, true, true);
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
-  // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "PCG", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
-  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<
-      Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-  solver->Init(lop_list);
-
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver->ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
   if (diff_op == "diffusion operator") 
       ver.CheckResidual(solution, 1.0e-12);
 
-  int num_itrs = solver->num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 10);
  
   // check bounds of cell-based solution
@@ -158,8 +148,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   } 
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() << " itr=" << num_itrs
+              << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");

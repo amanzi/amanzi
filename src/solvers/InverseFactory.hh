@@ -231,7 +231,6 @@ createInverse(Teuchos::ParameterList& inv_list,
     if (!inv_list.isParameter("preconditioning method"))
       inv_list.set<std::string>("preconditioning method", inv_list.get<std::string>("preconditioner type"));
   }
-    
   
   using Matrix_t = Matrix<Vector,VectorSpace>;
   using Inverse_t = Inverse<Operator,Assembler,Vector,VectorSpace>;

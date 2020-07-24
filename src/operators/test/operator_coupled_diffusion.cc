@@ -400,7 +400,6 @@ struct Problem {
       pc->SetOperatorBlock(0,1,pc01->global_operator());
       pc->SetOperatorBlock(1,0,pc10->global_operator());
     }
-    pc->SymbolicAssembleMatrix();
   }
   
   
@@ -879,7 +878,6 @@ std::pair<double,double> RunInverseProblem(
   TreeVector X(*problem->tvs);
   TreeVector AX(*problem->tvs);
 
-  // apply inverse
   problem->op->SymbolicAssembleMatrix();
   problem->op->AssembleMatrix();
 
@@ -898,8 +896,9 @@ std::pair<double,double> RunInverseProblem(
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list.set("iterative method", "pcg");
   pc_list.sublist("verbose object").set("verbosity level", "high");
-  problem->op->InitializePreconditioner(pc_list);
-  problem->op->UpdatePreconditioner();
+  problem->op->InitializeInverse(pc_list);
+  problem->op->UpdateInverse();
+  problem->op->ComputeInverse();
 
   X.PutScalar(0.);
   int ierr = problem->op->ApplyInverse(B,X);
@@ -1115,8 +1114,9 @@ std::pair<double,double> RunNonlinearProblem(
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
     pc_list.set("iterative method", "gmres");
     pc_list.sublist("verbose object").set("verbosity level", "medium");
-    problem->op->InitializePreconditioner(pc_list);
-    problem->op->UpdatePreconditioner();
+    problem->op->InitializeInverse(pc_list);
+    problem->op->UpdateInverse();
+    problem->op->ComputeInverse();
 
     // invert the preconditioner to get a correction
     DX.PutScalar(0.);
@@ -1217,36 +1217,24 @@ std::pair<double,double> RunInverseProblem_Diag(
   problem->op11->ApplyBCs(true,true,true);
 
   // assemble, invert
-  problem->op00->global_operator()->SymbolicAssembleMatrix();
-  problem->op00->global_operator()->AssembleMatrix();
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("iterative method", "gmres");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op00->global_operator()->InitPreconditioner(pc_list);
+  problem->op00->global_operator()->InitializeInverse(pc_list);
+  problem->op00->global_operator()->UpdateInverse();
+  problem->op00->global_operator()->ComputeInverse();
 
-  problem->op11->global_operator()->SymbolicAssembleMatrix();
-  problem->op11->global_operator()->AssembleMatrix();
   Teuchos::ParameterList pc_list11;
   pc_list11.set("preconditioner type", "boomer amg");
+  pc_list11.set("iterative method", "gmres");
   pc_list11.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list11.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op11->global_operator()->InitPreconditioner(pc_list11);
+  problem->op11->global_operator()->InitializeInverse(pc_list11);
+  problem->op11->global_operator()->UpdateInverse();
+  problem->op11->global_operator()->ComputeInverse();
 
-  Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-  AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
-      fac.Create(lin_list, problem->op00->global_operator());
-
-
-  Teuchos::ParameterList lin_list11;
-  lin_list11.set("iterative method", "gmres");
-  lin_list11.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op11 =
-      fac.Create(lin_list, problem->op11->global_operator());
-  
   TreeVector B(*problem->tvs);
   *B.SubVector(0)->Data() = *problem->op00->global_operator()->rhs();
   *B.SubVector(1)->Data() = *problem->op11->global_operator()->rhs();
@@ -1254,10 +1242,10 @@ std::pair<double,double> RunInverseProblem_Diag(
   TreeVector X(*problem->tvs);
   X.PutScalar(0.);
 
-  int ierr = lin_op->ApplyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
+  int ierr = problem->op00->global_operator()->ApplyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
   CHECK(ierr >= 0);
 
-  ierr = lin_op11->ApplyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
+  ierr = problem->op11->global_operator()->ApplyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
   CHECK(ierr >= 0);
 
   //  std::cout << "Ran inverse with nitrs = " << lin_op->num_itrs() << std::endl;
