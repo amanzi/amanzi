@@ -279,6 +279,13 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 		      surf.unfrozen_fraction * params.Le + (1-surf.unfrozen_fraction) * params.Ls,
 		      vapor_pressure_air, vapor_pressure_skin, params.Apa);
 
+  //This is a numerical fix to turnoff condensation when ground is not unfrozen.
+  if (!params.condensation_frozen) {
+    if (surf.unfrozen_fraction != 1 && eb.fQe > 0) eb.fQe = 0;
+  }
+  if (!params.evaporation_frozen) {
+    if (surf.unfrozen_fraction < 1) eb.fQe *= surf.unfrozen_fraction;
+  }
   // fQc is the energy conducted between surface and snow layers, but there is no snow here
   eb.fQc = 0.;
   return eb;
@@ -407,8 +414,12 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   //
   // This is fine because diffusion of energy always works, and doing otherwise
   // sets up local minima for energy in the top cell, which breaks code.
-  flux.E_surf += eb.fQe;
+  //flux.E_surf += eb.fQe; // v1.0
 
+  // enthalpy of evap/condensation -- v0.88
+  flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
+  flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
+  
   // snow mass change
   flux.M_snow = met.Ps - mb.Mm;
   return flux;
