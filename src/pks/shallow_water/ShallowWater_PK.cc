@@ -1131,6 +1131,10 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   }
 
+  S[0] = 0.;
+  S[1] = 0.5*g/vol*S1;
+  S[2] = 0.5*g/vol*S2;
+
   return S;
 }
 
