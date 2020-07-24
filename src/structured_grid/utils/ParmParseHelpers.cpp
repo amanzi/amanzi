@@ -45,9 +45,9 @@ bldTable (Teuchos::ParameterList& params,
   for (Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); ++i)
     {
       const std::string& name = params.name(i);
-      const Teuchos::ParameterEntry& val = params.getEntry(name);
+      const Teuchos::ParameterEntry& entry = params.getEntry(name);
 
-      if (val.isList() )
+      if (entry.isList() )
         {
           prefix.push(name);
           bldTable(params.sublist(name), tab);          

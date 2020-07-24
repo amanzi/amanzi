@@ -9,18 +9,13 @@
  Author: Svetlana Tokareva (tokareva@lanl.gov)
  */
 
-#include <algorithm>
-
-#include "ReconstructionCell.hh"
-#include "OperatorDefs.hh"
 #include "ShallowWater_PK.hh"
-#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
     
 void ShallowWater_PK::FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                                 Epetra_Vector& f_component) {};
+                                               Epetra_Vector& f_component) {};
 
 } // namespace ShallowWater
 } // namespace Amanzi

@@ -523,6 +523,7 @@ public:
   //
   // Virtual function get fluxes out of the advection routines.
   //
+  /*
   virtual void pullFluxes (int        gridno,
 			   int        start_ind,
 			   int        ncomp,
@@ -532,6 +533,7 @@ public:
 			   FArrayBox& zflux,
 #endif
 			   Real       dt);
+  */
   //
   // Compute viscous terms.
   //

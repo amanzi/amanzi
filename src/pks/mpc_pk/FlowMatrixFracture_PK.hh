@@ -46,7 +46,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // virtual void CommitStep(double t_old, double t_new);
 
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) ;
+                                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
   
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);

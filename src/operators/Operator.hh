@@ -170,6 +170,10 @@ class Operator {
 
   virtual ~Operator() = default;
   
+  // a specialized copy constructor is used to extend the operator, e.g.
+  // by adding more operators to it.
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   void Init();
 
   // main members
@@ -445,8 +449,6 @@ class Operator {
 
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
-  Teuchos::RCP<VerboseObject> vo_;
-
   int schema_old_;
   Schema schema_row_, schema_col_;
   std::string schema_string_;
@@ -455,7 +457,7 @@ class Operator {
   mutable int apply_calls_;
 
  private:
-  Operator(const Operator& op);
+  // Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 

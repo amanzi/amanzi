@@ -65,32 +65,34 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   domain_ = cp_list_->get<std::string>("domain name", "domain");
 
   // obtain key of fields
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
+  tcc_key_ = Keys::readKey(*cp_list_,domain_, "total component concentration", "total_component_concentration"); 
 
-  min_vol_frac_key_ = Keys::getKey(domain_, "mineral_volume_fractions");
-  min_ssa_key_ = Keys::getKey(domain_, "mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::getKey(domain_, "sorption_sites");
-  surf_cfsc_key_ = Keys::getKey(domain_, "surface_complex_free_site_conc");
-  total_sorbed_key_ = Keys::getKey(domain_, "total_sorbed");
-  isotherm_kd_key_ = Keys::getKey(domain_, "isotherm_kd");
-  isotherm_freundlich_n_key_ = Keys::getKey(domain_, "isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = Keys::getKey(domain_, "isotherm_langmuir_b");
-  free_ion_species_key_ = Keys::getKey(domain_, "free_ion_species");
-  primary_activity_coeff_key_ = Keys::getKey(domain_, "primary_activity_coeff");
+  poro_key_ = Keys::readKey(*cp_list_, domain_, "porosity", "porosity");
+  saturation_key_ = Keys::readKey(*cp_list_, domain_, "saturation liquid", "saturation_liquid");
+  fluid_den_key_ = Keys::readKey(*cp_list_, domain_, "mass density liquid", "mass_density_liquid");
+  
 
-  ion_exchange_sites_key_ = Keys::getKey(domain_, "ion_exchange_sites");
-  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_, "ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::getKey(domain_, "secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::getKey(domain_, "alquimia_aux_data");
+  min_vol_frac_key_ = Keys::readKey(*cp_list_, domain_, "mineral volume fractions", "mineral_volume_fractions");
+  min_ssa_key_ = Keys::readKey(*cp_list_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::readKey(*cp_list_, domain_, "sorption sites", "sorption_sites");
+  surf_cfsc_key_ = Keys::readKey(*cp_list_, domain_, "surface complex free site conc", "surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::readKey(*cp_list_, domain_, "total sorbed", "total_sorbed");
+  isotherm_kd_key_ = Keys::readKey(*cp_list_, domain_, "isotherm_kd", "isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::readKey(*cp_list_, domain_, "isotherm freundlich_n", "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::readKey(*cp_list_, domain_, "isotherm langmuir_b", "isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::readKey(*cp_list_, domain_, "free ion species", "free_ion_species");
+  primary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "primary activity coeff", "primary_activity_coeff");
 
-  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::getKey(domain_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::getKey(domain_,"alquimia_aux_data");
-  mineral_rate_constant_key_ = Keys::getKey(domain_,"mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::getKey(domain_,"first_order_decay_constant");
+  ion_exchange_sites_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange sites", "ion_exchange_sites");
+  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "secondary activity coeff", "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_, "alquimia aux data", "alquimia_aux_data");
+
+  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_,"ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_,"secondary activity coeff", "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_,"alquimia aux data", "alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::readKey(*cp_list_, domain_,"mineral rate constant", "mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::readKey(*cp_list_, domain_,"first order decay constant", "first_order_decay_constant");
 
 
   // collect high-level information about the problem
@@ -216,7 +218,6 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     
     // InitializeField_(S, aux_names[i], 0.0);
     InitializeField(S, passwd_, aux_names[i], 0.0);
-    
   }
 
   // Read XML parameters from our input file.
@@ -434,7 +435,7 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  Key geochemical_list_key = Keys::getKey(domain_,"geochemical conditions");
+  Key geochemical_list_key =  Keys::readKey(initial_conditions, domain_, "geochemical conditions","geochemical conditions");
   if (initial_conditions.isSublist(geochemical_list_key)) {
     Teuchos::ParameterList geochem_conditions = initial_conditions.sublist(geochemical_list_key);
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
@@ -621,6 +622,8 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
                    aqueous_components);
 
   // Auxiliary output.
+  std::string full_name;
+
   if (aux_output_ != Teuchos::null) {
     std::vector<std::string> mineralNames, primaryNames;
     chem_engine_->GetMineralNames(mineralNames);
@@ -630,65 +633,57 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 
     for (unsigned int i = 0; i < aux_names_.size(); i++) {
       if (aux_names_.at(i) == "pH") {
-        double* cell_aux_output = (*aux_output_)[i];
-        cell_aux_output[cell] = aux_output.pH;
-        //std::cout<<domain_<<" cell "<<cell<<" pH "<< aux_output.pH<<"\n";
+        (*aux_output_)[i][cell] = aux_output.pH;
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_saturation_index_") + mineralNames[j];
+          full_name = "mineral_saturation_index_" + mineralNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.mineral_saturation_index.data[j];
+            (*aux_output_)[i][cell] = aux_output.mineral_saturation_index.data[j];
           }
         }
       }
       else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_reaction_rate_") + mineralNames[j];
+          full_name = "mineral_reaction_rate_" + mineralNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.mineral_reaction_rate.data[j];
+            (*aux_output_)[i][cell] = aux_output.mineral_reaction_rate.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == "primary_free_ion_concentration") {
+      else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
         for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_free_ion_concentration_") + primaryNames[j];
+          full_name = "primary_free_ion_concentration_" + primaryNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.primary_free_ion_concentration.data[j];
+            (*aux_output_)[i][cell] = aux_output.primary_free_ion_concentration.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == primary_activity_coeff_key_) {
+      else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
         for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_activity_coeff_") + primaryNames[j];
+          full_name = "primary_activity_coeff_" + primaryNames[j];
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.primary_activity_coeff.data[j];
+            (*aux_output_)[i][cell] = aux_output.primary_activity_coeff.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == "secondary_free_ion_concentration") {
+      else if (aux_names_.at(i).find("secondary_free_ion_concentration") != std::string::npos) {
         for (int j = 0; j < numAqueousComplexes; ++j) {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_free_ion_concentration_") + std::string(num_str);
+          full_name = "secondary_free_ion_concentration_" + std::string(num_str);
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.secondary_free_ion_concentration.data[j];
+            (*aux_output_)[i][cell] = aux_output.secondary_free_ion_concentration.data[j];
           }
         }
       }
-      else if (aux_names_.at(i) == secondary_activity_coeff_key_) {
+      else if (aux_names_.at(i).find(secondary_activity_coeff_key_) != std::string::npos) {
         for (int j = 0; j < numAqueousComplexes; ++j) {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_activity_coeff_") + std::string(num_str);
+          full_name = "secondary_activity_coeff_" + std::string(num_str);
           if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell] = aux_output.secondary_activity_coeff.data[j];
+            (*aux_output_)[i][cell] = aux_output.secondary_activity_coeff.data[j];
           }
         }
       }
@@ -713,7 +708,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   // (this->porosity())[cell] = state.porosity;
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
+    (*aqueous_components)[i][cell] = state.total_mobile.data[i];
     // if (convert2mole_fraction_) {
     //   if (S_->HasField(molar_fluid_den_key_)) {
     //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);

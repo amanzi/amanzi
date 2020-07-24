@@ -217,6 +217,7 @@ Amanzi's internal default units are SI units except for the concentration.
     <Parameter name="length" type="string" value="m"/>
     <Parameter name="time" type="string" value="s"/>
     <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
     <Parameter name="concentration" type="string" value="molar"/>
   </ParameterList>
   </ParameterList>
@@ -411,17 +412,16 @@ Primary and derived fields
   * total component concentration [mol/L] or [mol/m^3]
   * temperature [K]
 
-* Derived fields
+* Secondary fields
 
   * saturation [-]
   * hydraulic_head [m]
   * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
-  * porosity [-]
-  * transport_porosity [-] 
-
-* Static fields
-
   * permeability [m^2]
+  * porosity [-]
+  * specific_storage [m^-1]
+  * specific_yield [-]
+  * transport_porosity [-] 
 
 
 Field evaluators
@@ -1644,7 +1644,7 @@ The boolen parameter `"use area fractions`" instructs the code to use all availa
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
-are `"area`" or `"none`". 
+are `"volume`", `"permeability`", `"domain coupling`", `"subgrid`", `"simple well`", or `"none`". 
 For instance, for a given boundary function :math:`g(x)`, these options correspond to 
 different boundary conditions for the Darcy velocity in the original PDE:
 
@@ -1674,7 +1674,7 @@ specified regions calculated using the folume fraction function.
     <ParameterList name="mass flux">
       <ParameterList name="_BC 1">
         <Parameter name="regions" type="Array(string)" value="{_NORTH_SIDE, _SOUTH_SIDE}"/>
-        <Parameter name="spatial distribution method" type="string" value="area"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
         <Parameter name="rainfall" type="bool" value="false"/>
         <ParameterList name="outward mass flux">
           <ParameterList name="function-constant">
@@ -3961,6 +3961,8 @@ Diffusion is the most frequently used operator. It employs the old schema.
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
+  * `"gravity magnitude`" [double] defined magnitude of the gravity vector.
+
   * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
     that must be added to the preconditioner. These terms approximate some Jacobian terms.
     Available options are `"true Jacobian`" and `"approximate Jacobian`".
@@ -3995,6 +3997,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
     <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     <Parameter name="gravity" type="bool" value="true"/>
     <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="gravity magnitude" type="double" value="9.81"/>
     <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
     <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
@@ -4491,6 +4494,25 @@ and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
 The parameter *x coordinate* defines whether the *x values* refers to time *t*,
 x-coordinate *x*, y-coordinate *y*, or z-coordinate *z*.
 
+It is possible to populate *x values* and *y values* parameters in a tabular 
+function from an HDF5 file. The parameter *forms* is optional.
+
+* `"file`" [string] is the path to hdf5 file containing tabulr function information. 
+
+* `"x header`" [string] name of the dataset containing *x values*.
+
+* `"y header`" [string] name of the dataset containing *y values*.
+
+.. code-block:: xml
+
+  <ParameterList name="function-tabular">
+    <Parameter name="file" type="string" value="surface.h5"/>
+    <Parameter name="x header" type="string" value="times"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
+    <Parameter name="y header" type="string" value="recharge"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, constant}"/>
+  </ParameterList>
+  
 
 Bilinear function
 .................
@@ -6219,6 +6241,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
     `"region`", `"times`", and TSPS (see below).
 
+    * `"domain name`" [string] name of the domain. Typically, it is either `"domain`" for
+      the matrix/subsurface or `"fracture`" for the fracture network.
+
     * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
@@ -6234,12 +6259,15 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * water table [m]
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
+      * SOLUTE sorbed concentration [mol/kg] 
+      * SOLUTE free ion concentration
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
+      * pH [-] 
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
     registered at the first time it was requested.
@@ -6312,17 +6340,23 @@ All of them operate on the variables identified.
       <Parameter name="region" type="string" value="_REGION"/>
       <Parameter name="functional" type="string" value="observation data: point"/>
       <Parameter name="variable" type="string" value="volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
       <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
 
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    </ParameterList>
+
+    <ParameterList name="_ANY OBSERVATION NAME B">  <!-- another observation -->
+      ...
     </ParameterList>
   </ParameterList>
   </ParameterList>
+
+In this example, we collect `"volumetric water content`" on four selected cycles,
+every 100 cycles, three selected times, every 10 seconds from 0 to 100, and every 25 seconds after that.
 
 
 Checkpoint file

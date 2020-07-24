@@ -32,12 +32,12 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create energy list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergy_()
+Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating energy" << std::endl;
+    *vo_->os() << "Translating energy, domain=" << domain << std::endl;
 
   MemoryManager mm;
   DOMNode* node;
@@ -46,6 +46,9 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls", flag);
+
+  // create flow header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");

@@ -24,13 +24,14 @@ namespace Operators {
 
 class Operator_FaceCellScc : public Operator_Cell {
  public:
-  // main constructor
   // The input CVS is the domain and range of the operator
   Operator_FaceCellScc(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                        Teuchos::ParameterList& plist) :
       Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL) {
     set_schema_string("FACE+CELL Schur to CELL");
   }
+
+  virtual Teuchos::RCP<Operator> Clone() const;
 
   // Special Apply Inverse required to deal with schur complement
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;

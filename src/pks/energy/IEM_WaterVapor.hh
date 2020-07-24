@@ -24,8 +24,6 @@ class IEM_WaterVapor {
  public:
   IEM_WaterVapor(Teuchos::ParameterList& plist);
 
-  bool IsMolarBasis() { return molar_basis_; }
-
   double InternalEnergy(double temp, double mol_frac_gas);
   double DInternalEnergyDT(double temp, double mol_frac_gas);
   double DInternalEnergyDomega(double temp, double mol_frac_gas);
@@ -37,7 +35,6 @@ class IEM_WaterVapor {
 
   double Cv_air_; // units: J/(mol-K)
   double heat_vaporization_; // units: J/mol
-  bool molar_basis_;
 };
 
 }  // namespace Energy

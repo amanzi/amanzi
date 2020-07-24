@@ -48,6 +48,11 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   // Function of geochemical conditions and the associates regions.
   f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
+
+  ats_units_ = false;
+  if (plist.isParameter("ats units [moles/m^3]")) {
+    ats_units_ = true;
+  }
 }
 
 
@@ -106,11 +111,16 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
 
     // Enforce the condition.
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    
+    double factor = 1.0;
+    if (ats_units_) {
+      factor = 1.0/((*mol_dens_data_)[0][cell] / 1000.);
+    }
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
-      values[i] = alq_state_.total_mobile.data[i];
+      values[i] = alq_state_.total_mobile.data[i] * factor;
     }
   }
 }

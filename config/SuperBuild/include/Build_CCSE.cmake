@@ -58,7 +58,9 @@ set(CCSE_CMAKE_CACHE_ARGS
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch
                     ccse-1.3.4-tools-plot1d.patch
                     ccse-1.3.5-cmake.patch
-                    ccse-1.3.5-rvalue.patch)
+                    ccse-1.3.5-rvalue.patch
+                    ccse-16.10-f90.patch
+                    ccse-mpi4.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
@@ -82,6 +84,11 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${CCSE_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
+                    # GIT_REPOSITORY ${CCSE_GIT_REPOSITORY}              
+                    # GIT_TAG        ${CCSE_GIT_TAG}      
+                    # -- Update (one way to skip this step is use null command)
+                    UPDATE_COMMAND ""
+                    # -- Patch
 		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory

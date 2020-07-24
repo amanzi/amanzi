@@ -13,22 +13,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX ASCEMIO
   VERSION ${ASCEMIO_VERSION_MAJOR} ${ASCEMIO_VERSION_MINOR} ${ASCEMIO_VERSION_PATCH})  
 
-# --- Patch the original code
-set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch
-                       ascemio-2.2-CMakeLists.txt.patch
-                       ascemio-2.2-hdf5.patch)
-set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
-               ${ASCEMIO_sh_patch}
-               @ONLY)
-# configure the CMake patch step
-set(ASCEMIO_cmake_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.cmake.in
-               ${ASCEMIO_cmake_patch}
-               @ONLY)
-# set the patch command
-set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})     
-
 # --- Define the arguments passed to CMake.
 set(ASCEMIO_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
@@ -50,8 +34,6 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${ASCEMIO_URL}                   # URL may be a web site OR a local file
                     URL_MD5      ${ASCEMIO_MD5_SUM}               # md5sum of the archive file
-                    # -- Patch 
-                    PATCH_COMMAND ${ASCEMIO_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR  ${ASCEMIO_source_dir} 
                     CMAKE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}        # Ensure uniform build

@@ -101,12 +101,14 @@ if (BUILD_TESTS)
     # Test: transient 1D flow 
     add_amanzi_test(shallow_water_1D shallow_water_1D
                     KIND int
+                    NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_1D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
                     
     # Test: smooth 2D travelling vortex 
     add_amanzi_test(shallow_water_2D_smooth shallow_water_2D_smooth
                     KIND int
+                    NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_2D_smooth.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
 endif()

@@ -48,7 +48,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators (MFD)." << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_commute.xml";
@@ -173,7 +173,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators (FV)." << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_commute.xml";

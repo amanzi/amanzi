@@ -26,13 +26,8 @@
 #include "OutputXDMF.hh"
 
 //--------------------------------------------------------------
-// bottom topography
+// Analytic solution
 //--------------------------------------------------------------
-double Bathymetry(double x, double y)
-{
-  return 0.;
-}
-
 double hf(double x)
 {
   return 2.*cos(x) + 2.*x*sin(x) + 1./8.*cos(2.*x) + x/4.*sin(2.*x) + 12./16.*x*x;
@@ -46,7 +41,6 @@ void vortex_2D_exact(double t, double x, double y, double &h, double &u, double 
   double u_inf = 6., v_inf = 0.;
   double H_inf = 10.;
   double xc = 5., yc = 5.;
-  double H0;
 
   double xt = x - xc - u_inf*t;
   double yt = y - yc - v_inf*t;
@@ -65,15 +59,17 @@ void vortex_2D_exact(double t, double x, double y, double &h, double &u, double 
   }
 }
 
-void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, Epetra_MultiVector& vy_ex, double t)
+
+void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                           Epetra_MultiVector& hh_ex,
+                           Epetra_MultiVector& vx_ex, Epetra_MultiVector& vy_ex, double t)
 {
   double x, y, h, u, v;
 
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-
-    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
 
     x = xc[0];
     y = xc[1];
@@ -82,32 +78,26 @@ void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Ep
     hh_ex[0][c] = h;
     vx_ex[0][c] = u;
     vy_ex[0][c] = v;
-
   }
 }
 
-void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuchos::RCP<Amanzi::State>& S_)
+
+void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S)
 {
-  int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-  std::string passwd_ = "state";
+  std::string passwd = "state";
 
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-    B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
-  }
-
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData("surface-velocity-x",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData("surface-velocity-y",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& qx_vec_c = *S_->GetFieldData("surface-discharge-x",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& qy_vec_c = *S_->GetFieldData("surface-discharge-y",passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& vx_vec_c = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& vy_vec_c = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& qx_vec_c = *S->GetFieldData("surface-discharge-x",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& qy_vec_c = *S->GetFieldData("surface-discharge-y",passwd)->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
     double h, u, v;
     vortex_2D_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
@@ -171,9 +161,9 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   if (MyPID == 0) std::cout << "Geometric model created." << std::endl;
 
   // create a mesh
-  bool request_faces = true, request_edges = true;
+  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   double order = 1.;
@@ -205,8 +195,16 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     S->InitializeFields();
     S->InitializeEvaluators();
     SWPK.Initialize(S.ptr());
-    vortex_2D_setIC(mesh,S);
-    if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
+    vortex_2D_setIC(mesh, S);
+
+    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x")->ViewComponent("cell");
+    const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y")->ViewComponent("cell");
+    const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x")->ViewComponent("cell");
+    const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y")->ViewComponent("cell");
+    const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+    const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID")->ViewComponent("cell");
 
     // create screen io
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
@@ -224,25 +222,11 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     std::string passwd("state");
 
-    auto& h_vec = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-    auto& u_vec = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-    auto& v_vec = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-
     int iter = 0;
-    bool flag = true;
 
     while (t_new < 0.001) {
       // cycle 1, time t
       double t_out = t_new;
-
-      const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-      const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
       Epetra_MultiVector hh_ex(hh);
       Epetra_MultiVector vx_ex(vx);
@@ -250,19 +234,21 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
       vortex_2D_exact_field(mesh, hh_ex, vx_ex, vy_ex, t_out);
 
-      io.InitializeCycle(t_out, iter);
-      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-      io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-      io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
-      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-      io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-      io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-      io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
-      io.WriteVector(*vy_ex(0), "vy_ex", AmanziMesh::CELL);
-      io.FinalizeCycle();
+      if (iter % 5 == 0) {
+        io.InitializeCycle(t_out, iter);
+        io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+        io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
+        io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
+        io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
+        io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
+        io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
+        io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+        io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+        io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
+        io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+        io.WriteVector(*vy_ex(0), "vy_ex", AmanziMesh::CELL);
+        io.FinalizeCycle();
+      }
 
       dt = SWPK.get_dt();
 
@@ -281,15 +267,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     // cycle 1, time t
     double t_out = t_new;
-
-    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-    const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID",passwd)->ViewComponent("cell");
 
     Epetra_MultiVector hh_ex(hh);
     Epetra_MultiVector vx_ex(vx);
