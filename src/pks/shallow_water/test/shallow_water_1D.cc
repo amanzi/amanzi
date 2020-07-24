@@ -25,32 +25,21 @@
 #include "OutputXDMF.hh"
 
 //--------------------------------------------------------------
-// bottom topography
+// analytic solution
 //--------------------------------------------------------------
-double Bathymetry(double x, double y)
+void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                        Teuchos::RCP<Amanzi::State>& S)
 {
-  return 0.;
-}
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuchos::RCP<Amanzi::State>& S_)
-{
-  int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  std::string passwd = "state";
 
-  std::string passwd_ = "state";
-
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData("surface-bathymetry",passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
-    B_vec_c[0][c] = Bathymetry(xc[0],xc[1]);
-  }
-
-
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData("surface-ponded_depth",passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData("surface-total_depth",passwd_)->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh_->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
     if (xc[0] < 1000.) {
       h_vec_c[0][c] = 10.;
     } else {
@@ -59,14 +48,12 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_, Teuc
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
   }
 
-  S_->GetFieldData("surface-velocity-x", passwd_)->PutScalar(0.0);
-
-  S_->GetFieldData("surface-velocity-y", passwd_)->PutScalar(0.0);
-
-  S_->GetFieldData("surface-discharge-x", passwd_)->PutScalar(0.0);
-
-  S_->GetFieldData("surface-discharge-y", passwd_)->PutScalar(0.0);
+  S->GetFieldData("surface-velocity-x", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-velocity-y", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-discharge-x", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-discharge-y", passwd)->PutScalar(0.0);
 }
+
 
 void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, double &u)
 {
@@ -88,7 +75,9 @@ void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, dou
   }
 }
 
-void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, double t)
+
+void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                              Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, double t)
 {
   double hL, x0, x, h, u;
 
@@ -106,11 +95,14 @@ void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     dam_break_1D_exact(hL, x0, t, x, h, u);
     hh_ex[0][c] = h;
     vx_ex[0][c] = u;
-
   }
 }
 
-void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex, const Epetra_MultiVector& hh, const Epetra_MultiVector& vx, double& err_max, double& err_L1, double& hmax)
+
+void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vx_ex,
+           const Epetra_MultiVector& hh, const Epetra_MultiVector& vx,
+           double& err_max, double& err_L1, double& hmax)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -124,46 +116,37 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Epetra_MultiVector
     hmax = std::sqrt(mesh->cell_volume(c));
   }
 
-  double err_max_tmp;
-  double err_L1_tmp;
+  double err_max_tmp(err_max);
+  double err_L1_tmp(err_L1);
 
-  mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
+  mesh->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
+  mesh->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
 
-  err_max = err_max_tmp;
-  err_L1  = err_L1_tmp;
-
-  std::cout << "err_max = " << err_max << std::endl;
-  std::cout << "err_L1  = " << err_L1 << std::endl;
+  if (mesh->get_comm()->MyPID() == 0) {
+    std::cout << "err_max = " << err_max << std::endl;
+    std::cout << "err_L1  = " << err_L1 << std::endl;
+  }
 }
 
-void conservation_check(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const Epetra_MultiVector& hh,
-                        const Epetra_MultiVector& ht,
-                        const Epetra_MultiVector& vx, const Epetra_MultiVector& vy,
-                        const Epetra_MultiVector& B, double& TE)
+
+void ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const Epetra_MultiVector& hh,
+                       const Epetra_MultiVector& ht,
+                       const Epetra_MultiVector& vx, const Epetra_MultiVector& vy,
+                       const Epetra_MultiVector& B, double& TE)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   double g = 9.81;
-
-  TE = 0.;
-
   double KE = 0., IE = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    KE += 0.5*hh[0][c]*(vx[0][c]*vx[0][c] + vy[0][c]*vy[0][c])*mesh->cell_volume(c);
-    IE += 0.5*g*hh[0][c]*hh[0][c]*mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c);
+    KE += 0.5*hh[0][c]*(vx[0][c]*vx[0][c] + vy[0][c]*vy[0][c])*volume;
+    IE += 0.5*g*hh[0][c]*hh[0][c]*volume;
   }
 
-  TE = KE+IE;
-
-  double TE_tmp;
-
-  mesh->get_comm()->SumAll(&TE, &TE_tmp, 1);
-
-  TE  = TE_tmp;
-
-  std::cout << "TE = " << TE << std::endl;
+  double TE_tmp = KE + IE;
+  mesh->get_comm()->SumAll(&TE_tmp, &TE, 1);
 }
 
 
@@ -216,7 +199,6 @@ TEST(SHALLOW_WATER_1D) {
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
   dam_break_1D_setIC(mesh,S);
-  if (MyPID == 0) std::cout << "Shallow water PK created." << std::endl;
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
@@ -244,6 +226,7 @@ TEST(SHALLOW_WATER_1D) {
   std::string passwd("state");
 
   int iter = 0;
+  double TEini, TEfin;
 
   while (t_new < 10.) {
     // cycle 1, time t
@@ -271,7 +254,7 @@ TEST(SHALLOW_WATER_1D) {
 
     dt = SWPK.get_dt();
 
-    if (iter < 10) dt = 0.01*dt;
+    if (iter < 10) dt *= 0.01;
 
     t_new = t_old + dt;
 
@@ -281,25 +264,26 @@ TEST(SHALLOW_WATER_1D) {
     t_old = t_new;
     iter++;
 
-    double TE;
-
-    conservation_check(mesh, hh, ht, vx, vy, B, TE);
+    ConservationCheck(mesh, hh, ht, vx, vy, B, TEini);
+    if (MyPID == 0 && iter == 1) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
   }
 
-  if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
+  ConservationCheck(mesh, hh, ht, vx, vy, B, TEfin);
+  if (MyPID == 0) std::cout << "cycle= " << iter << "  final TE=" << TEfin << "  dt=" << dt << std::endl;
+  CHECK_CLOSE(TEini, TEfin, 2e-5 * TEini);
 
-  // cycle 1, time t
+  // error calculation at the time time
   double t_out = t_new;
-
-  Epetra_MultiVector hh_ex(hh);
-  Epetra_MultiVector vx_ex(vx);
+  double err_max, err_L1, hmax;
+  Epetra_MultiVector hh_ex(hh), vx_ex(vx);
 
   dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
 
-  double err_max, err_L1, hmax;
-
   error(mesh, hh_ex, vx_ex, hh, vx, err_max, err_L1, hmax);
 
+  CHECK_CLOSE(1./hmax, err_max, 0.5);
+
+  // save final state values into HDF5 file
   io.InitializeCycle(t_out, iter);
   io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
@@ -313,14 +297,14 @@ TEST(SHALLOW_WATER_1D) {
   io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
 
+  /*
   std::ofstream myfile;
-  myfile.open("solution_"+std::to_string(MyPID)+".txt");
+  myfile.open("solution_" + std::to_string(MyPID) + ".txt");
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
       AmanziGeometry::Point xc = mesh->cell_centroid(c);
       myfile << xc[0] << " " << hh[0][c] << "\n";
   }
   myfile.close();
-
-  CHECK_CLOSE(1./hmax, err_max, 0.5);
+  */
 }

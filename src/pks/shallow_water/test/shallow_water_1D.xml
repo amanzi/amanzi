@@ -88,14 +88,14 @@
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
 
-      <ParameterList name="pressure">
+      <ParameterList name="surface-bathymetry">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0."/>
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

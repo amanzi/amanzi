@@ -88,12 +88,11 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<double> NumSrc(std::vector<double>,int);
 
-  void BJ_lim(const WhetStone::DenseMatrix&,WhetStone::DenseMatrix&,int,const Key&);
+  void BJ_lim(const WhetStone::DenseMatrix&,WhetStone::DenseMatrix&,int,const Epetra_MultiVector&);
 
-  void ComputeGradients(Key,Key,Key);
+  void ComputeGradients(const Key&,const Key&);
 
-  double Reconstruction(double,double,int,const Key&,const Key&,const Key&);
-  double Reconstruction(double,double,int,const Key&);
+  double Reconstruction(const AmanziGeometry::Point&,int,const Key&,const Key&);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -114,20 +113,12 @@ class ShallowWater_PK : public PK_Physical,
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key velocity_x_dx_key_;
-  Key velocity_x_dy_key_;
-  Key velocity_y_dx_key_;
-  Key velocity_y_dy_key_;
-  Key discharge_x_dx_key_;
-  Key discharge_x_dy_key_;
-  Key discharge_y_dx_key_;
-  Key discharge_y_dy_key_;
-  Key ponded_depth_dx_key_;
-  Key ponded_depth_dy_key_;
-  Key total_depth_dx_key_;
-  Key total_depth_dy_key_;
-  Key bathymetry_dx_key_;
-  Key bathymetry_dy_key_;
+  Key velocity_x_grad_key_;
+  Key velocity_y_grad_key_;
+  Key discharge_x_grad_key_;
+  Key discharge_y_grad_key_;
+  Key total_depth_grad_key_;
+  Key bathymetry_grad_key_;
   Key myPID_;
 
   std::string passwd_;
