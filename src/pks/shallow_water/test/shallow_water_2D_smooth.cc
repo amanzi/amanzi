@@ -157,32 +157,26 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2));
-  if (MyPID == 0) std::cout << "Geometric model created." << std::endl;
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // create a mesh
   bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
-
-  double order = 1.;
 
   std::vector<double> dx, Linferror, L1error, L2error;
 
   for (int NN = 10; NN <= 80; NN *= 2) {
 
-    RCP<const Mesh> mesh;
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
+    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
     // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); 
     // works only with first order, no reconstruction
-    if (MyPID == 0) std::cout << "Mesh created." << std::endl;
 
     // create a state
     RCP<State> S = rcp(new State());
-    S->RegisterMesh("surface",rcp_const_cast<Mesh>(mesh));
+    S->RegisterMesh("surface", mesh);
     S->set_time(0.0);
-    if (MyPID == 0) std::cout << "State created." << std::endl;
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
@@ -297,7 +291,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     io.FinalizeCycle();
   } // NN
 
-  order = Amanzi::Utils::bestLSfit(dx, L1error);
+  double order = Amanzi::Utils::bestLSfit(dx, L1error);
 
   std::cout << "computed order = " << order << std::endl;
 

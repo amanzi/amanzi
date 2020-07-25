@@ -32,8 +32,6 @@ class ShallowWaterBoundaryFunction : public PK_DomainFunction {
   ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
   ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
 
-  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-
   // modifiers and access
   void set_bc_name(const std::string& name) { bc_name_ = name; }
   std::string bc_name() { return bc_name_; }

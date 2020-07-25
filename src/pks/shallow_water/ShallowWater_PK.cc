@@ -9,6 +9,7 @@
  Author: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
+#include <algorithm>
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
@@ -191,8 +192,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "no slip", AmanziMesh::CELL, Teuchos::null);
+        bc = bc_factory.Create(spec, "velocity", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("velocity");
+        bc->set_type(WhetStone::DOF_Type::VECTOR);
         bcs_.push_back(bc);
       }
     }
@@ -307,26 +309,21 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
-  std::vector<double> U_new;
+  AmanziMesh::Entity_ID_List cfaces, edcells, fcells;
+  std::vector<double> U_new(3);
 
   // Simplest first-order form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
-  U_new.resize(3);
-
   for (int c = 0; c < ncells_owned; c++) {
-
-    Amanzi::AmanziMesh::Entity_ID_List cfaces, fedges, edcells, fcells;
 
     mesh_->cell_get_faces(c,&cfaces);
 
-    Amanzi::AmanziMesh::Entity_ID_List adjcells;
-    mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
-
-    Amanzi::AmanziGeometry::Point normal(2);
-    double farea;
+    AmanziMesh::Entity_ID_List adjcells;
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::OWNED,&adjcells);
 
     // cell volume
+    double farea;
     double vol = mesh_->cell_volume(c);
 
     std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
@@ -337,7 +334,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     UR.resize(3);
 
     FS.resize(3);
-
     FNum.resize(3);
 
     for (int i = 0; i < 3; i++) FS[i] = 0.;
@@ -345,12 +341,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (int f = 0; f < cfaces.size(); f++) {
 
       int orientation;
-      normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
-      mesh_->face_get_cells(cfaces[f],Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+      AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+      mesh_->face_get_cells(cfaces[f],AmanziMesh::Parallel_type::OWNED,&fcells);
       farea = mesh_->face_area(cfaces[f]);
       normal /= farea;
-
-      double vn, vt;
 
       const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
 
@@ -381,6 +375,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
       vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
 
+      double vn, vt;
       vn =  vx_rec*normal[0] + vy_rec*normal[1];
       vt = -vx_rec*normal[1] + vy_rec*normal[0];
 
@@ -532,7 +527,7 @@ void ShallowWater_PK::BJ_lim(
 
   AmanziGeometry::Point xv(2);
 
-  AmanziMesh::Entity_ID_List cfaces, cnodes, fedges, edcells, fcells;
+  AmanziMesh::Entity_ID_List cfaces, cnodes, edcells, fcells;
 
   mesh_->cell_get_faces(c,&cfaces);
   mesh_->cell_get_nodes(c,&cnodes);
@@ -547,8 +542,8 @@ void ShallowWater_PK::BJ_lim(
     u_av[f] = field[0][cn];
   }
 
-  umin = *min_element(u_av.begin(),u_av.end());
-  umax = *max_element(u_av.begin(),u_av.end());
+  umin = *std::min_element(u_av.begin(),u_av.end());
+  umax = *std::max_element(u_av.begin(),u_av.end());
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -571,7 +566,7 @@ void ShallowWater_PK::BJ_lim(
     }
   } // k
 
-  Phi = *min_element(Phi_k.begin(),Phi_k.end());
+  Phi = *std::min_element(Phi_k.begin(),Phi_k.end());
 
   // temporary fix to reduce the gradient
   // for better robustness on wet/dry front
@@ -596,12 +591,12 @@ void ShallowWater_PK::ComputeGradients(const Key& field_key_, const Key& field_g
 
   for (int c = 0; c < ncells_owned; c++) {
 
-    Amanzi::AmanziMesh::Entity_ID_List cfaces, fedges, edcells, fcells;
+    AmanziMesh::Entity_ID_List cfaces, edcells, fcells;
 
     mesh_->cell_get_faces(c,&cfaces);
 
-    Amanzi::AmanziMesh::Entity_ID_List adjcells;
-    mesh_->cell_get_face_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
+    AmanziMesh::Entity_ID_List adjcells;
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::OWNED,&adjcells);
 
     WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size());
     WhetStone::DenseMatrix b(cfaces.size(),1);
@@ -715,9 +710,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U)
 //--------------------------------------------------------------
 std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 {
-  std::vector<double> G;
-
-  G.resize(3);
+  std::vector<double> G(3);
 
   double h, u, v, qx, qy, g = 9.81;
   double eps = 1.e-6;
@@ -745,9 +738,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 //--------------------------------------------------------------
 std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
 {
-  std::vector<double> S;
-
-  S.resize(3);
+  std::vector<double> S(3);
 
   double h, u, v, qx, qy, g = 9.81;
   double eps = 1.e-6;
@@ -776,7 +767,7 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
 // numerical flux in x-direction
 // note that the SW system has a rotational invariance property
 //--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vector<double> UR)
+std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double>& UL, std::vector<double>& UR)
 {
   return NumFlux_x_Rus(UL,UR);
   // return NumFlux_x_central_upwind(UL,UR);
@@ -786,9 +777,9 @@ std::vector<double> ShallowWater_PK::NumFlux_x(std::vector<double> UL,std::vecto
 //--------------------------------------------------------------
 // Rusanov numerical flux -- very simple but very diffusive
 //--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::vector<double> UR)
+std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double>& UL, std::vector<double>& UR)
 {
-  std::vector<double> FL, FR, F;
+  std::vector<double> FL, FR, F(3);
 
   double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
   double eps = 1.e-6;
@@ -806,8 +797,6 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::v
   qyR = UR[2];
   uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
   vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
-
-  F.resize(3);
 
   FL = PhysFlux_x(UL);
   FR = PhysFlux_x(UR);
@@ -830,7 +819,7 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double> UL,std::v
 //--------------------------------------------------------------
 // Central-upwind numerical flux (Kurganov, Acta Numerica 2018)
 //--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double> UL,std::vector<double> UR)
+std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double>& UL, std::vector<double>& UR)
 {
   std::vector<double> FL, FR, F, U_star, dU;
 
@@ -900,7 +889,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   mesh_->cell_get_faces(c,&cfaces);
 
-  double S1, S2;
+  double S1, S2, g(9.81);
+  double vol = mesh_->cell_volume(c);
 
   S1 = 0.;
   S2 = 0.;
