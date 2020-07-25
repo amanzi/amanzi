@@ -39,6 +39,9 @@ class ShallowWaterBoundaryFunction : public PK_DomainFunction {
   void set_type(WhetStone::DOF_Type type) { type_ = type; }
   WhetStone::DOF_Type type() { return type_; }
 
+  std::vector<double> bc_value(int f) { return value_[f]; }
+  bool bc_find(int f) { return value_.find(f) != value_.end(); }
+
  private:
   std::string bc_name_;
   WhetStone::DOF_Type type_;  // type of dofs related to this bc

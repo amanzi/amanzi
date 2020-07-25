@@ -6,7 +6,7 @@
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2000.0,50.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left">
@@ -36,7 +36,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="10.0"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">

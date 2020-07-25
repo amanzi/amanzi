@@ -153,7 +153,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   if (MyPID == 0) std::cout << "Test: 1D shallow water" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/shallow_water_1D.xml";
+  std::string xmlFileName = "test/shallow_water_2D_smooth.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */

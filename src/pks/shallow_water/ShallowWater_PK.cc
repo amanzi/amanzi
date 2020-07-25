@@ -249,7 +249,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
 //--------------------------------------------------------------
-// Upwind scheme
+// Advance conservative variables: (h, hu, hv)
 //--------------------------------------------------------------
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
@@ -305,6 +305,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldData(velocity_y_grad_key_)->ScatterMasterToGhosted("cell");
   S_->GetFieldData(discharge_x_grad_key_)->ScatterMasterToGhosted("cell");
   S_->GetFieldData(discharge_y_grad_key_)->ScatterMasterToGhosted("cell");
+
+  // update boundary conditions
+  if (bcs_.size() > 0)
+      bcs_[0]->Compute(t_old, t_new);
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
@@ -386,11 +390,12 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
 
       if (cn == -1) {
-        UR[0] = UL[0];
-        UR[1] = UL[1];
-        UR[2] = UL[2];
-      } else {
+        if (bcs_.size() > 0 && bcs_[0]->bc_find(cfaces[f]))
+          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(cfaces[f])[i];
+        else
+          UR = UL;
 
+      } else {
         ht_rec = Reconstruction(xcf,cn,total_depth_key_,total_depth_grad_key_);
         B_rec  = Reconstruction(xcf,cn,bathymetry_key_,bathymetry_grad_key_);
 
