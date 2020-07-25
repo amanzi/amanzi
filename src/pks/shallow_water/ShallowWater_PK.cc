@@ -76,6 +76,14 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   bathymetry_grad_key_  = Keys::getKey(domain_, "bathymetry_grad");
 
   //-------------------------------
+  // constant fields
+  //-------------------------------
+
+  if (!S->HasField("gravity")) {
+    S->RequireConstantVector("gravity", passwd_, 2);
+  } 
+
+  //-------------------------------
   // primary fields
   //-------------------------------
 
@@ -192,6 +200,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
     }
   }
+
+  // gravity
+  Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
+  g_ = std::fabs(gvec[1]);
 
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -668,7 +680,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U)
 
   F.resize(3);
 
-  double h, u, v, qx, qy, g = 9.81;
+  double h, u, v, qx, qy;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -682,7 +694,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U)
   // Form vector of x-fluxes F(U) = (hu, hu^2 + 1/2 gh^2, huv)
 
   F[0] = h*u;
-  F[1] = h*u*u+0.5*g*h*h;
+  F[1] = h*u*u+0.5*g_*h*h;
   F[2] = h*u*v;
 
   return F;
@@ -696,7 +708,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 {
   std::vector<double> G(3);
 
-  double h, u, v, qx, qy, g = 9.81;
+  double h, u, v, qx, qy;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -711,7 +723,7 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
 
   G[0] = h*v;
   G[1] = h*u*v;
-  G[2] = h*v*v+0.5*g*h*h;
+  G[2] = h*v*v+0.5*g_*h*h;
 
   return G;
 }
@@ -724,7 +736,7 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
 {
   std::vector<double> S(3);
 
-  double h, u, v, qx, qy, g = 9.81;
+  double h, u, v, qx, qy;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -740,8 +752,8 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
   double dBathx = 0.0, dBathy = 0.;
 
   S[0] = 0.;
-  S[1] = -g*h*dBathx;
-  S[2] = -g*h*dBathy;
+  S[1] = -g_*h*dBathx;
+  S[2] = -g_*h*dBathy;
 
   return S;
 }
@@ -765,7 +777,7 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double>& UL, std:
 {
   std::vector<double> FL, FR, F(3);
 
-  double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
+  double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -787,8 +799,8 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double>& UL, std:
 
   double SL, SR, Smax;
 
-  SL = std::max(std::fabs(uL) + std::sqrt(g*hL),std::fabs(vL) + std::sqrt(g*hL));
-  SR = std::max(std::fabs(uR) + std::sqrt(g*hR),std::fabs(vR) + std::sqrt(g*hR));
+  SL = std::max(std::fabs(uL) + std::sqrt(g_*hL),std::fabs(vL) + std::sqrt(g_*hL));
+  SR = std::max(std::fabs(uR) + std::sqrt(g_*hR),std::fabs(vR) + std::sqrt(g_*hR));
 
   Smax = std::max(SL,SR);
 
@@ -807,7 +819,7 @@ std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double
 {
   std::vector<double> FL, FR, F, U_star, dU;
 
-  double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR, g = 9.81;
+  double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR;
   double apx, amx, apy, amy;
   double ap, am;
   double eps = 1.e-6;
@@ -826,12 +838,12 @@ std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double
   uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
   vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
 
-  apx = std::max(std::max(std::fabs(uL)+std::sqrt(g*hL),std::fabs(uR)+std::sqrt(g*hR)),0.);
-  apy = std::max(std::max(std::fabs(vL)+std::sqrt(g*hL),std::fabs(vR)+std::sqrt(g*hR)),0.);
+  apx = std::max(std::max(std::fabs(uL)+std::sqrt(g_*hL),std::fabs(uR)+std::sqrt(g_*hR)),0.);
+  apy = std::max(std::max(std::fabs(vL)+std::sqrt(g_*hL),std::fabs(vR)+std::sqrt(g_*hR)),0.);
   ap  = std::max(apx,apy);
 
-  amx = std::min(std::min(std::fabs(uL)-std::sqrt(g*hL),std::fabs(uR)-std::sqrt(g*hR)),0.);
-  amy = std::min(std::min(std::fabs(vL)-std::sqrt(g*hL),std::fabs(vR)-std::sqrt(g*hR)),0.);
+  amx = std::min(std::min(std::fabs(uL)-std::sqrt(g_*hL),std::fabs(uR)-std::sqrt(g_*hR)),0.);
+  amy = std::min(std::min(std::fabs(vL)-std::sqrt(g_*hL),std::fabs(vR)-std::sqrt(g_*hR)),0.);
   am  = std::min(amx,amy);
 
   F.resize(3);
@@ -873,7 +885,7 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 
   mesh_->cell_get_faces(c,&cfaces);
 
-  double S1, S2, g(9.81);
+  double S1, S2;
   double vol = mesh_->cell_volume(c);
 
   S1 = 0.;
@@ -901,8 +913,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
   }
 
   S[0] = 0.;
-  S[1] = 0.5*g/vol*S1;
-  S[2] = 0.5*g/vol*S2;
+  S[1] = 0.5*g_/vol*S1;
+  S[2] = 0.5*g_/vol*S2;
 
   return S;
 }
@@ -913,7 +925,7 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double h, u, v, g = 9.81;
+  double h, u, v;
   double S;
   double vol, dx;
   double dt;
@@ -931,7 +943,7 @@ double ShallowWater_PK::get_dt()
     h = h_vec_c[0][c];
     u = vx_vec_c[0][c];
     v = vy_vec_c[0][c];
-    S = std::max(std::fabs(u) + std::sqrt(g*h),std::fabs(v) + std::sqrt(g*h)) + eps;
+    S = std::max(std::fabs(u) + std::sqrt(g_*h),std::fabs(v) + std::sqrt(g_*h)) + eps;
     vol = mesh_->cell_volume(c);
     dx = std::sqrt(vol);
     dt = std::min(dt,dx/S);

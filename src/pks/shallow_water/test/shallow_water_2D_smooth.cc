@@ -174,7 +174,8 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     // works only with first order, no reconstruction
 
     // create a state
-    RCP<State> S = rcp(new State());
+    Teuchos::ParameterList state_list = plist->sublist("state");
+    RCP<State> S = rcp(new State(state_list));
     S->RegisterMesh("surface", mesh);
     S->set_time(0.0);
 

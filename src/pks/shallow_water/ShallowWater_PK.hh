@@ -100,23 +100,16 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
 
-  double dummy_dt;
-  int step_count;
-
   Key domain_;
 
   // names of state fields
-  Key velocity_x_key_;
-  Key velocity_y_key_;
-  Key discharge_x_key_;
-  Key discharge_y_key_;
+  Key velocity_x_key_, velocity_y_key_;
+  Key discharge_x_key_, discharge_y_key_;
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key velocity_x_grad_key_;
-  Key velocity_y_grad_key_;
-  Key discharge_x_grad_key_;
-  Key discharge_y_grad_key_;
+  Key velocity_x_grad_key_, velocity_y_grad_key_;
+  Key discharge_x_grad_key_, discharge_y_grad_key_;
   Key total_depth_grad_key_;
   Key bathymetry_grad_key_;
 
@@ -129,6 +122,9 @@ class ShallowWater_PK : public PK_Physical,
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_; 
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
+
+  // gravity magnitude
+  double g_;
 
  private:
   // factory registration

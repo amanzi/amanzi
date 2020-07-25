@@ -179,7 +179,8 @@ TEST(SHALLOW_WATER_1D) {
   // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
 
   // create a state
-  RCP<State> S = rcp(new State());
+  Teuchos::ParameterList state_list = plist->sublist("state");
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
   S->set_time(0.0);
 
@@ -194,7 +195,7 @@ TEST(SHALLOW_WATER_1D) {
   S->InitializeFields();
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
-  dam_break_1D_setIC(mesh,S);
+  dam_break_1D_setIC(mesh, S);
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
