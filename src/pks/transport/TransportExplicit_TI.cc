@@ -36,8 +36,8 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component_tmp, false);
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
-  lifting_->Init(component_rcp, plist);
-  lifting_->ComputeGradient();
+  lifting_->Init(plist);
+  lifting_->ComputeGradient(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -177,8 +177,8 @@ void TransportExplicit_PK::DudtOld(double t,
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
-  lifting_->Init(component_rcp, plist);
-  lifting_->ComputeGradient();
+  lifting_->Init(plist);
+  lifting_->ComputeGradient(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);

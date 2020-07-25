@@ -40,20 +40,21 @@ class ReconstructionCell : public Reconstruction {
   ~ReconstructionCell() {};
 
   // save pointer to the already distributed field.
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
-                    Teuchos::ParameterList& plist, int component = 0) override;
+  virtual void Init(Teuchos::ParameterList& plist) override;
 
   // unlimited gradient
   // -- compute gradient and keep it internally
-  virtual void ComputeGradient() override {
+  virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                               int component = 0) override {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
-    ComputeGradient(ids);
+    ComputeGradient(ids, field, component);
   }
 
   // -- compute gradient only in specified cells
-  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids);
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
+                       const Teuchos::RCP<const Epetra_MultiVector>& field, int component);
 
   // calculate value of a linear function at point p
   double getValue(int c, const AmanziGeometry::Point& p);

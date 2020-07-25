@@ -133,8 +133,8 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -259,8 +259,8 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field); 
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -393,8 +393,8 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
 
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
-      lifting.Init(field, plist);
-      lifting.ComputeGradient(); 
+      lifting.Init(plist);
+      lifting.ComputeGradient(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
@@ -519,8 +519,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
 
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
-      lifting.Init(field, plist);
-      lifting.ComputeGradient(); 
+      lifting.Init(plist);
+      lifting.ComputeGradient(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
@@ -658,8 +658,8 @@ void SmoothField2DPoly(double extension)
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -772,8 +772,8 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;

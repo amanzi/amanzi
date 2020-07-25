@@ -297,8 +297,8 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
   Teuchos::ParameterList plist;
   Operators::ReconstructionCell lifting(mesh_);
 
-  lifting.Init(pressure, plist);
-  lifting.ComputeGradient(ids);
+  lifting.Init(plist);
+  lifting.ComputeGradient(ids, pressure, 0);
 
   // set up extreme values for water table
   int dim = mesh_->space_dimension();
