@@ -212,9 +212,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (!S_->GetField(ponded_depth_key_, passwd_)->initialized()) {
 
-    Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_key_,passwd_)->ViewComponent("cell",true);
-    Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_,passwd_)->ViewComponent("cell",true);
-    Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_key_,passwd_)->ViewComponent("cell",true);
+    Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_key_,passwd_)->ViewComponent("cell");
+    Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_,passwd_)->ViewComponent("cell");
+    Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_key_,passwd_)->ViewComponent("cell");
 
     S_->GetFieldData(ponded_depth_key_, passwd_)->PutScalar(1.0);
 
@@ -304,7 +304,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
-  AmanziMesh::Entity_ID_List cfaces, edcells, fcells;
+  AmanziMesh::Entity_ID_List cfaces, fcells;
   std::vector<double> U_new(3);
 
   // Simplest first-order form
@@ -313,9 +313,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int c = 0; c < ncells_owned; c++) {
 
     mesh_->cell_get_faces(c,&cfaces);
-
-    AmanziMesh::Entity_ID_List adjcells;
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::OWNED,&adjcells);
 
     // cell volume
     double farea;
@@ -523,7 +520,7 @@ void ShallowWater_PK::BJ_lim(
 
   AmanziGeometry::Point xv(2);
 
-  AmanziMesh::Entity_ID_List cfaces, cnodes, edcells, fcells;
+  AmanziMesh::Entity_ID_List cfaces, cnodes;
 
   mesh_->cell_get_faces(c,&cfaces);
   mesh_->cell_get_nodes(c,&cnodes);
@@ -587,12 +584,9 @@ void ShallowWater_PK::ComputeGradients(const Key& field_key_, const Key& field_g
 
   for (int c = 0; c < ncells_owned; c++) {
 
-    AmanziMesh::Entity_ID_List cfaces, edcells, fcells;
+    AmanziMesh::Entity_ID_List cfaces;
 
     mesh_->cell_get_faces(c,&cfaces);
-
-    AmanziMesh::Entity_ID_List adjcells;
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::OWNED,&adjcells);
 
     WhetStone::DenseMatrix A(cfaces.size(),2), At(2,cfaces.size());
     WhetStone::DenseMatrix b(cfaces.size(),1);
