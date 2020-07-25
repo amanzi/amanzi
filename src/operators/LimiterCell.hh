@@ -172,7 +172,7 @@ class LimiterCell {
   std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
   std::vector<std::vector<int> > downwind_cells_;
 
-  int type_, stencil_id_;
+  int type_, stencil_id_, location_;
   bool limiter_correction_, external_bounds_;
 
   int limiter_points_;  // number of Gauss points on faces where limiting occurs

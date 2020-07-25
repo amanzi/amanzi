@@ -101,16 +101,30 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
     stencil = plist.get<std::string>("limiter stencil", "node to cells");
   }
 
-  if (stencil == "node to cells")
+  if (stencil == "node to cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_N2C;
-  else if (stencil == "face to cells") 
+    location_ = AmanziMesh::NODE;
+  } else if (stencil == "face to cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_F2C;
-  else if (stencil == "edge to cells") 
+    location_ = AmanziMesh::FACE;
+  } else if (stencil == "edge to cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_E2C;
-  else if (stencil == "cell to closest cells")
+    location_ = AmanziMesh::EDGE;
+  } else if (stencil == "cell to closest cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_C2C_CLOSEST;
-  else if (stencil == "cell to all cells")
+    location_ = AmanziMesh::FACE;
+  } else if (stencil == "cell to all cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_C2C_ALL;
+    location_ = AmanziMesh::FACE;
+  } 
+
+  if (plist.isParameter("limiter location")) {
+    name = plist.get<std::string>("limiter location");
+    int tmp = AmanziMesh::entity_kind(name); 
+    AMANZI_ASSERT((location_ == tmp) || 
+                  (location_ == AmanziMesh::FACE && tmp == AmanziMesh::NODE));
+    location_ = tmp;
+  }
 
   external_bounds_ = plist.get<bool>("use external bounds", false);
   limiter_points_ = plist.get<int>("limiter points", 1);
@@ -367,16 +381,16 @@ void LimiterCell::LimiterScalar_(
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
-  double u1, u1f, umin, umax;
-  AmanziGeometry::Point gradient_c(dim);
-  AmanziMesh::Entity_ID_List faces;
+  double u1, u1x, u1_add, umin, umax;
+  AmanziGeometry::Point gradient_c(dim), xv(dim);
+  AmanziMesh::Entity_ID_List ents;
 
-  // Step 1: limiting gradient inside domain
+  // limiting gradient inside domain
   if (!external_bounds_) {
-  if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-    bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
-  else 
-    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+    if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
+      bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
+    else 
+      bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
   }
   
   for (int n = 0; n < ids.size(); ++n) {
@@ -385,22 +399,32 @@ void LimiterCell::LimiterScalar_(
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
+    for (int k = 0; k < dim; ++k) gradient_c[k] = grad[k][c];
 
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    // only two options for control points are supported
+    if (location_ == AmanziMesh::FACE) 
+      mesh_->cell_get_faces(c, &ents);
+    else 
+      mesh_->cell_get_nodes(c, &ents);
 
-      for (int k = 0; k < dim; ++k) gradient_c[k] = grad[k][c];
-      double u1_add = gradient_c * (xf - xc);
-      u1f = u1 + u1_add;
+    int nents = ents.size();
+    for (int i = 0; i < nents; i++) {
+      int x = ents[i];
+      if (location_ == AmanziMesh::FACE) {
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(x);
+        u1_add = gradient_c * (xf - xc);
+      } else {
+        mesh_->node_get_coordinates(x, &xv);
+        u1_add = gradient_c * (xv - xc);
+      }
 
-      getBounds(c, f, stencil_id_, &umin, &umax);
+      u1x = u1 + u1_add;
 
-      if (u1f < u1 - tol) {
+      getBounds(c, x, stencil_id_, &umin, &umax);
+
+      if (u1x < u1 - tol) {
         (*limiter)[c] = std::min((*limiter)[c], func((umin - u1) / u1_add));
-      } else if (u1f > u1 + tol) {
+      } else if (u1x > u1 + tol) {
         (*limiter)[c] = std::min((*limiter)[c], func((umax - u1) / u1_add));
       }
     }

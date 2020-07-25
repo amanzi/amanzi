@@ -4223,6 +4223,11 @@ and their extensions for various PKs.
  * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
    on face where limiting occurs. Default is 1. Limited to 2D.
 
+ * `"limiter location`" [string] defines geometry entity where the *limiter points*
+   are located. Available options are `"node`", `"face`", and `"cell`".
+   Option `"node`" is default for `"node to cells`" stencil.
+   Option `"face`" is default for other stencils.
+
  * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
    the hosting application. Default is `"false`".`
 

@@ -33,7 +33,7 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
-const std::string LIMITERS[7] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all"};
+const std::string LIMITERS[8] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all", "B-J node"};
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in two dimensions
@@ -72,7 +72,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
   }
 
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 8; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -98,6 +98,10 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     } else if (i == 6) {
       plist.set<std::string>("limiter", "Michalak-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
+    } else if (i == 7) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells")
+           .set<std::string>("limiter location", "node");
     }
 
     if (i != 3) {
