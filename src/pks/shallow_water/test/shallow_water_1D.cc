@@ -203,7 +203,10 @@ TEST(SHALLOW_WATER_1D) {
   const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x")->ViewComponent("cell");
   const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y")->ViewComponent("cell");
   const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
-  const Epetra_MultiVector& pid = *S->GetFieldData("surface-PID")->ViewComponent("cell");
+
+  // create pid vector
+  Epetra_MultiVector pid(B);
+  for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));

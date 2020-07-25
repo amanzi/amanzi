@@ -119,7 +119,6 @@ class ShallowWater_PK : public PK_Physical,
   Key discharge_y_grad_key_;
   Key total_depth_grad_key_;
   Key bathymetry_grad_key_;
-  Key myPID_;
 
   std::string passwd_;
 

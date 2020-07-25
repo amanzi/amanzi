@@ -74,7 +74,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   discharge_y_grad_key_ = Keys::getKey(domain_, "discharge-y_grad");
   total_depth_grad_key_ = Keys::getKey(domain_, "total_depth_grad");
   bathymetry_grad_key_  = Keys::getKey(domain_, "bathymetry_grad");
-  myPID_                = Keys::getKey(domain_, "PID");
 
   //-------------------------------
   // primary fields
@@ -119,12 +118,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   // bathymetry
   if (!S->HasField(bathymetry_key_)) {
     S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // PID
-  if (!S->HasField(myPID_)) {
-    S->RequireField(myPID_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -225,20 +218,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField(S_.ptr(), passwd_, velocity_y_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, discharge_x_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, discharge_y_key_, 0.0);
-
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-
-  if (!S_->GetField("surface-PID", passwd_)->initialized()) {
-
-    Epetra_MultiVector& PID_c = *S_->GetFieldData("surface-PID",passwd_)->ViewComponent("cell",true);
-
-    for (int c = 0; c < ncells_owned; c++) {
-      PID_c[0][c] = double(MyPID);
-    }
-
-    S_->GetField("surface-PID", passwd_)->set_initialized();
-  }
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
