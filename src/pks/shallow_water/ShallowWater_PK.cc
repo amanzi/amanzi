@@ -160,11 +160,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   g_ = std::fabs(gvec[1]);
 
   // reconstruction
-  Teuchos::ParameterList plist;
-  plist.set<std::string>("limiter", "Barth-Jespersen")
-       .set<std::string>("limiter stencil", "cell to closest cells")
-       .set<std::string>("limiter location", "node")
-       .set<double>("limiter cfl", 0.1);
+  Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
 
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   total_depth_grad_->Init(plist);

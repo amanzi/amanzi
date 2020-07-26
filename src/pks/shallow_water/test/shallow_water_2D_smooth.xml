@@ -26,6 +26,14 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="reconstruction">
+        <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+        <Parameter name="limiter location" type="string" value="node"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
+      </ParameterList>
+
       <ParameterList name="boundary conditions"/>
     </ParameterList>
   </ParameterList>
