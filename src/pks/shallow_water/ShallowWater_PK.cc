@@ -10,6 +10,7 @@
 */
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
@@ -133,7 +134,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create BC objects
   Teuchos::RCP<ShallowWaterBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(sw_list_->sublist("boundary conditions", true)));
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(sw_list_->sublist("boundary conditions", false)));
 
   bcs_.clear();
 
@@ -358,8 +359,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       double qx_rec = discharge_x_grad_->getValue(c, xcf);
       double qy_rec = discharge_y_grad_->getValue(c, xcf);
 
-      vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
-      vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+      vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+      vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
 
       double vn, vt;
       vn =  vx_rec*normal[0] + vy_rec*normal[1];
@@ -402,8 +403,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         qx_rec = discharge_x_grad_->getValue(cn, xcf);
         qy_rec = discharge_y_grad_->getValue(cn, xcf);
 
-        vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
-        vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + fmax(h_rec*h_rec,eps*eps));
+        vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+        vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
 
         vn =  vx_rec*normal[0] + vy_rec*normal[1];
         vt = -vx_rec*normal[1] + vy_rec*normal[0];
@@ -432,8 +433,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     h  = h_vec_c[0][c];
     qx = qx_vec_c[0][c];
     qy = qy_vec_c[0][c];
-    u = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
-    v = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+    u = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+    v = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
     U[0] = h;
     U[1] = h*u;
@@ -450,8 +451,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     qy = U_new[2];
 
     h_vec_c_tmp[0][c] = h;
-    u = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
-    v = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+    u = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+    v = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
     vx_vec_c_tmp[0][c] = u;
     vy_vec_c_tmp[0][c] = v;
     qx_vec_c_tmp[0][c] = h*u;
@@ -516,8 +517,8 @@ std::vector<double> ShallowWater_PK::PhysFlux_x(std::vector<double> U)
   h  = U[0];
   qx = U[1];
   qy = U[2];
-  u  = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
-  v  = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+  u  = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+  v  = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
   // Form vector of x-fluxes F(U) = (hu, hu^2 + 1/2 gh^2, huv)
 
@@ -544,8 +545,8 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
   h  = U[0];
   qx = U[1];
   qy = U[2];
-  u  = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
-  v  = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+  u  = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+  v  = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
   // Form vector of y-fluxes G(U) = (hv, huv, hv^2 + 1/2 gh^2)
 
@@ -572,8 +573,8 @@ std::vector<double> ShallowWater_PK::PhysSrc(std::vector<double> U)
   h  = U[0];
   qx = U[1];
   qy = U[2];
-  u  = 2.*h*qx/(h*h + fmax(h*h,eps*eps));
-  v  = 2.*h*qy/(h*h + fmax(h*h,eps*eps));
+  u  = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+  v  = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
   // Form vector of sources Sr(U) = (0, -ghB_x, -ghB_y)
 
@@ -613,14 +614,14 @@ std::vector<double> ShallowWater_PK::NumFlux_x_Rus(std::vector<double>& UL, std:
   hL  = UL[0];
   qxL = UL[1];
   qyL = UL[2];
-  uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
-  vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
+  uL  = 2.*hL*qxL/(hL*hL + std::fmax(hL*hL,eps*eps));
+  vL  = 2.*hL*qyL/(hL*hL + std::fmax(hL*hL,eps*eps));
 
   hR  = UR[0];
   qxR = UR[1];
   qyR = UR[2];
-  uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
-  vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
+  uR  = 2.*hR*qxR/(hR*hR + std::fmax(hR*hR,eps*eps));
+  vR  = 2.*hR*qyR/(hR*hR + std::fmax(hR*hR,eps*eps));
 
   FL = PhysFlux_x(UL);
   FR = PhysFlux_x(UR);
@@ -657,14 +658,14 @@ std::vector<double> ShallowWater_PK::NumFlux_x_central_upwind(std::vector<double
   hL  = UL[0];
   qxL = UL[1];
   qyL = UL[2];
-  uL  = 2.*hL*qxL/(hL*hL + fmax(hL*hL,eps*eps));
-  vL  = 2.*hL*qyL/(hL*hL + fmax(hL*hL,eps*eps));
+  uL  = 2.*hL*qxL/(hL*hL + std::fmax(hL*hL,eps*eps));
+  vL  = 2.*hL*qyL/(hL*hL + std::fmax(hL*hL,eps*eps));
 
   hR  = UR[0];
   qxR = UR[1];
   qyR = UR[2];
-  uR  = 2.*hR*qxR/(hR*hR + fmax(hR*hR,eps*eps));
-  vR  = 2.*hR*qyR/(hR*hR + fmax(hR*hR,eps*eps));
+  uR  = 2.*hR*qxR/(hR*hR + std::fmax(hR*hR,eps*eps));
+  vR  = 2.*hR*qyR/(hR*hR + std::fmax(hR*hR,eps*eps));
 
   apx = std::max(std::max(std::fabs(uL)+std::sqrt(g_*hL),std::fabs(uR)+std::sqrt(g_*hR)),0.);
   apy = std::max(std::max(std::fabs(vL)+std::sqrt(g_*hL),std::fabs(vR)+std::sqrt(g_*hR)),0.);

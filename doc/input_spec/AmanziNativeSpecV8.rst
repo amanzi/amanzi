@@ -3543,7 +3543,6 @@ The mathematical model describing two-dimensional shallow water flow is
   \end{align*}  
 
 Here
-
 :math:`h` [m] is water depth, 
 :math:`g` [m/s^2] is gravity acceleration,
 :math:`u` [m/s] is depth averaged velocity in x direction,
@@ -3551,7 +3550,37 @@ Here
 :math:`B` [m] is bottom elevation (bathymetry),
 :math:`H = h + B` [m] is water surface elevation.
 
-Bathymetry function and initial conditions must be explicitly implemented in the test.
+
+Global parameters
+.................
+
+Global parameters are placed in the sublist `"shallow water`". 
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+
+Reconstruction and limiters
+...........................
+
+The control of the second-order numerical scheme is done via `"reconstruction`"
+sublist, described in Reconstruction_. Here is the example:
+
+
+.. code-block:: xml
+
+  <ParameterList name="shallow water">  <!-- parent list -->
+  <ParameterList name="reconstruction">
+    <Parameter name="method" type="string" value="cell-based"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+    <Parameter name="limiter location" type="string" value="node"/>
+    <Parameter name="limiter points" type="int" value="0"/>
+    <Parameter name="limiter cfl" type="double" value="0.1"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Coupled process kernels
@@ -4190,8 +4219,10 @@ required by this factory and/or particular method in it.
   </ParameterList>
 
 
-
 Diffusion is the most frequently used operator.
+
+
+.. _Reconstruction:
 
 Reconstruction and limiters
 ...........................
