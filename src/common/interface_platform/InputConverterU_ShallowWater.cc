@@ -53,7 +53,8 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
 
   // boundary conditions
   out_list.sublist("boundary conditions");
-std::cout << out_list << std::endl;
+
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }

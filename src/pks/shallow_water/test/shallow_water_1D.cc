@@ -186,10 +186,10 @@ TEST(SHALLOW_WATER_1D) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
-  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
+  Teuchos::ParameterList sw_list = plist->sublist("PKs").sublist("shallow water");
 
   // create a shallow water PK
-  ShallowWater_PK SWPK(pk_tree,plist,S,soln);
+  ShallowWater_PK SWPK(sw_list,plist,S,soln);
   SWPK.Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
@@ -210,7 +210,7 @@ TEST(SHALLOW_WATER_1D) {
   for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
   // create screen io
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", sw_list));
   WriteStateStatistics(S.ptr(), vo);
 
   // advance in time

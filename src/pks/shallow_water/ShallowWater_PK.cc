@@ -61,7 +61,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   dim_ = mesh_->space_dimension();
 
   // domain name
-  domain_ = "surface";
   velocity_x_key_   = Keys::getKey(domain_, "velocity-x");
   velocity_y_key_   = Keys::getKey(domain_, "velocity-y");
   discharge_x_key_  = Keys::getKey(domain_, "discharge-x");
@@ -188,20 +187,17 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   InitializeField(S_.ptr(), passwd_, bathymetry_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
 
-  if (!S_->GetField(ponded_depth_key_, passwd_)->initialized()) {
-
-    Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_key_,passwd_)->ViewComponent("cell");
-    Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_,passwd_)->ViewComponent("cell");
-    Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_key_,passwd_)->ViewComponent("cell");
-
-    S_->GetFieldData(ponded_depth_key_, passwd_)->PutScalar(1.0);
+  if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
+    const Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+    const Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
+    Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
-      ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
+      ht_c[0][c] = h_c[0][c] + B_c[0][c];
     }
 
-    S_->GetField(ponded_depth_key_, passwd_)->set_initialized();
     S_->GetField(total_depth_key_, passwd_)->set_initialized();
   }
 
