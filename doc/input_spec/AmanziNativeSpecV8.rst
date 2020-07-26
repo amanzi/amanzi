@@ -4228,6 +4228,9 @@ and their extensions for various PKs.
    Option `"node`" is default for `"node to cells`" stencil.
    Option `"face`" is default for other stencils.
 
+ * `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
+   Default value is 1.
+
  * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
    the hosting application. Default is `"false`".`
 

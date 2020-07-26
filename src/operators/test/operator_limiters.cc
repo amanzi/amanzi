@@ -528,13 +528,20 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
-      double err_int, err_glb, gnorm;
+      double err_int, err_glb, err_int_nobc, err_glb_nobc, gnorm;
       Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
 
       ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
+      // skip boundary data
+      limiter.ApplyLimiter(field, 0, lifting.gradient());
+
+      Epetra_MultiVector& grad_test = *lifting.gradient()->ViewComponent("cell");
+      ComputeGradError(mesh, grad_test, grad_exact, err_int_nobc, err_glb_nobc, gnorm);
+
       if (MyPID == 0)
-          printf("n=%d  %9s: rel errors: %9.5f %9.5f\n", n, LIMITERS[i].c_str(), err_int, err_glb);
+          printf("n=%d  %9s: rel errors: %9.5f %9.5f  no_bc: %9.5f %9.5f\n",
+                 n, LIMITERS[i].c_str(), err_int, err_glb, err_int_nobc, err_glb_nobc);
 
       CHECK(err_int + err_glb < 1.0 / n);
     }

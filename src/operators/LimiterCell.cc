@@ -46,6 +46,7 @@ LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
     flux_(Teuchos::null),
     gradient_(Teuchos::null),
     component_(0),
+    cfl_(1.0),
     external_bounds_(false)
 {
   dim = mesh_->space_dimension();
@@ -126,6 +127,7 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
     location_ = tmp;
   }
 
+  cfl_ = plist.get<double>("limiter cfl", 1.0);
   external_bounds_ = plist.get<bool>("use external bounds", false);
   limiter_points_ = plist.get<int>("limiter points", 1);
   limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
@@ -169,6 +171,12 @@ void LimiterCell::ApplyLimiter(
   } else {
     Errors::Message msg("Unknown limiter");
     Exceptions::amanzi_throw(msg);
+  }
+
+  // apply safety factor
+  if (cfl_ != 1.0) {
+    limiter_->Scale(cfl_);
+    gradient_->Scale(cfl_);
   }
 }
 
@@ -1018,14 +1026,16 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
   }
 
   // add boundary conditions to the bounds
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  if (bc_model.size() > 0) {
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-      for (int n = 0; n < cells.size(); ++n) {
-        int c = cells[n];
-        bounds_c[0][c] = std::min(bounds_c[0][c], bc_value[f]);
-        bounds_c[1][c] = std::max(bounds_c[1][c], bc_value[f]);
+        for (int n = 0; n < cells.size(); ++n) {
+          int c = cells[n];
+          bounds_c[0][c] = std::min(bounds_c[0][c], bc_value[f]);
+          bounds_c[1][c] = std::max(bounds_c[1][c], bc_value[f]);
+        }
       }
     }
   }
@@ -1068,10 +1078,12 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForFaces(
   }
 
   // add boundary conditions to the bounds
-  for (int f = 0; f < nfaces_owned_; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      bounds_f[0][f] = std::min(bounds_f[0][f], bc_value[f]);
-      bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
+  if (bc_model.size() > 0) {
+    for (int f = 0; f < nfaces_owned_; ++f) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        bounds_f[0][f] = std::min(bounds_f[0][f], bc_value[f]);
+        bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
+      }
     }
   }
 
@@ -1113,10 +1125,12 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForEdges(
   }
 
   // add boundary conditions to the bounds
-  for (int e = 0; e < nedges_owned_; ++e) {
-    if (bc_model[e] == OPERATOR_BC_DIRICHLET) {
-      bounds_e[0][e] = std::min(bounds_e[0][e], bc_value[e]);
-      bounds_e[1][e] = std::max(bounds_e[1][e], bc_value[e]);
+  if (bc_model.size() > 0) {
+    for (int e = 0; e < nedges_owned_; ++e) {
+      if (bc_model[e] == OPERATOR_BC_DIRICHLET) {
+        bounds_e[0][e] = std::min(bounds_e[0][e], bc_value[e]);
+        bounds_e[1][e] = std::max(bounds_e[1][e], bc_value[e]);
+      }
     }
   }
 
@@ -1158,10 +1172,12 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForNodes(
   }
 
   // add boundary conditions to the bounds
-  for (int v = 0; v < nnodes_wghost_; ++v) {
-    if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-      bounds_v[0][v] = std::min(bounds_v[0][v], bc_value[v]);
-      bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
+  if (bc_model.size() > 0) {
+    for (int v = 0; v < nnodes_wghost_; ++v) {
+      if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+        bounds_v[0][v] = std::min(bounds_v[0][v], bc_value[v]);
+        bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
+      }
     }
   }
 

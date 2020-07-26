@@ -24,10 +24,12 @@
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "Key.hh"
+#include "LimiterCell.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
+#include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -88,12 +90,6 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<double> NumSrc(std::vector<double>,int);
 
-  void BJ_lim(const WhetStone::DenseMatrix&,WhetStone::DenseMatrix&,int,const Epetra_MultiVector&);
-
-  void ComputeGradients(const Key&,const Key&);
-
-  double Reconstruction(const AmanziGeometry::Point&,int,const Key&,const Key&);
-
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
@@ -108,10 +104,7 @@ class ShallowWater_PK : public PK_Physical,
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key velocity_x_grad_key_, velocity_y_grad_key_;
-  Key discharge_x_grad_key_, discharge_y_grad_key_;
-  Key total_depth_grad_key_;
-  Key bathymetry_grad_key_;
+  Key discharge_y_grad_key_;
 
   std::string passwd_;
 
@@ -125,6 +118,12 @@ class ShallowWater_PK : public PK_Physical,
 
   // gravity magnitude
   double g_;
+
+  // limited reconstruction
+  Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCell> velocity_x_grad_, velocity_y_grad_;
+  Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
+  Teuchos::RCP<Operators::LimiterCell> limiter_;
 
  private:
   // factory registration
