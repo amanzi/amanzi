@@ -235,11 +235,11 @@ void ObservableAqueous::ComputeObservation(
 	int sign, c = cells[0];
         const auto& normal = mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
-        int g = fmap.FirstPointInElement(f);
         double scale = 1.;
         if (domain_ == "fracture")
           scale = (*aperture_rcp)[0][c];
             
+        int g = fmap.FirstPointInElement(f);
         *value  += sign * darcy_flux[0][g] * density * scale;
         *volume += area * scale;
       }
@@ -247,9 +247,8 @@ void ObservableAqueous::ComputeObservation(
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f);
-        int g = fmap.FirstPointInElement(f);        
-        double area = mesh_->face_area(g);
-        double sign = reg_normal_ * face_normal / area;
+        double area = mesh_->face_area(f);
+        double sign = (reg_normal_ * face_normal) / area;
         double scale = 1.;
         if (domain_ == "fracture") {
           mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
@@ -257,6 +256,7 @@ void ObservableAqueous::ComputeObservation(
           scale = (*aperture_rcp)[0][c];
         }
     
+        int g = fmap.FirstPointInElement(f);        
         *value  += sign * darcy_flux[0][g] * density * scale;
         *volume += area * scale;
       }
