@@ -22,6 +22,8 @@ include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
 
 set(ats_lake_src_files
   lake_thermo_pk.cc
+  lake_thermo_physics.cc
+  lake_thermo_ti.cc
   )
 
 set(ats_lake_inc_files
