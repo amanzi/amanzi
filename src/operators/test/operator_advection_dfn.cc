@@ -136,15 +136,10 @@ void RunTest(double gravity) {
   op_adv->ApplyBCs(true, true, true);
     
   // create inverse
-  Teuchos::ParameterList inv_list;
-  inv_list.set("iterative method", "gmres");
-  inv_list.sublist("gmres parameters") = plist->sublist("solvers").sublist("GMRES").sublist("gmres parameters");
-  inv_list.set("preconditioning method", "hypre: boomer amg");
-  inv_list.sublist("hypre: boomer amg parameters") = plist->sublist("preconditioners").sublist("Hypre AMG");
-  inv_list.sublist("verbose object").set<std::string>("verbosity level", "high");
-  
-  global_op->InitializeInverse(inv_list);
+  global_op->InitializeInverse("Hypre AMG", plist->sublist("preconditioners"),
+                               "GMRES", plist->sublist("solvers"));
   global_op->UpdateInverse();
+  global_op->ComputeInverse();
 
   // initialize I/O
   Teuchos::ParameterList iolist;

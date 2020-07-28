@@ -109,11 +109,7 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
     Errors::Message msg("JFNK \"linear operator\" sublist requires parameter \"iterative method\"");
     Exceptions::amanzi_throw(msg);
   }
-  auto lin_op = AmanziSolvers::createPreconditionedMethod<MatrixJF<Vector,VectorSpace>>(
-      lin_plist.get<std::string>("iterative method"),
-      lin_plist);
-  lin_op->set_matrix(jf_mat_);
-  lin_op_ = lin_op;
+  lin_op_ = AmanziSolvers::createIterativeMethod(lin_plist, jf_mat_);
 }
 
 

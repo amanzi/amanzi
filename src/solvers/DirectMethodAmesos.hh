@@ -65,11 +65,11 @@ class DirectMethodAmesos :
   using Inv::m_;
   using Inv::h_;
 
-  Teuchos::ParameterList plist_;
+  mutable Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Teuchos::RCP<Epetra_LinearProblem> problem_;
-  Teuchos::RCP<Amesos_BaseSolver> solver_;
+  mutable Teuchos::RCP<Epetra_LinearProblem> problem_;
+  mutable Teuchos::RCP<Amesos_BaseSolver> solver_;
   
   std::string solver_name_;
   mutable int returned_code_;

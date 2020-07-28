@@ -33,7 +33,7 @@ void DirectMethodAmesos2::set_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
-  this->set_name(Keys::cleanPListName(plist.name()));
+  this->set_name(plist.get<std::string>("method"));
   solver_name_ = plist.get<std::string>("solver name", "Klu2");
 
   std::string vo_name = this->name()+" (Amesos " + solver_name_ + ")";

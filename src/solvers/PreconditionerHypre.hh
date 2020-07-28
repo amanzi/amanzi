@@ -135,6 +135,7 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
 
  private:
 
+  void Init_();
   void InitBoomer_();
   void InitEuclid_();
   

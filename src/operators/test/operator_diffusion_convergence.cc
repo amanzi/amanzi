@@ -276,7 +276,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   }
 
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioning type", "boomer amg");
+  pc_list.set("preconditioning method", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
   pc_list.set("iterative method", "gmres");
   op->global_operator()->InitializeInverse(pc_list);

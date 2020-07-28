@@ -186,8 +186,6 @@ void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
   for (auto& it : *this) {
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
-
-  if (preconditioner_.get()) preconditioner_->UpdateInverse();
 }
 
 
@@ -401,7 +399,7 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  if (preconditioner_.get() == nullptr) {
+  if (preconditioner_ == Teuchos::null) {
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
@@ -457,18 +455,16 @@ void Operator::InitializeInverse(const std::string& prec_name,
 ****************************************************************** */
 void Operator::InitializeInverse(Teuchos::ParameterList& plist)
 {
-  // if (smap_.get() == nullptr) smap_ = createSuperMap(*cvs_col_);
-
   // // provide block ids for block strategies.
   // if (plist.isParameter("preconditioning method")) {
   //   auto method_name = plist.get<std::string>("preconditioning method");
   //   if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
+  //     SymbolicAssembleMatrix();
   //     auto block_ids = smap_->BlockIndices();
   //     plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
   //     plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
   //   }
   // }
-
   preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
 }
 
@@ -480,7 +476,7 @@ void Operator::InitializeInverse(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::UpdateInverse()
 {
-  if (preconditioner_.get() == nullptr) {
+  if (preconditioner_ == Teuchos::null) {
     Errors::Message msg("Developer error: InitializeInverse() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
@@ -490,6 +486,11 @@ void Operator::UpdateInverse()
 
 void Operator::ComputeInverse()
 {
+  if (preconditioner_ == Teuchos::null) {
+    Errors::Message msg("Developer error: InitializeInverse() has not been called.");
+    msg << " ref: " << typeid(*this).name() << "\n";
+    Exceptions::amanzi_throw(msg);
+  }
   // assembly must be possible now
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
 }

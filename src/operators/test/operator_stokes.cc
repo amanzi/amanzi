@@ -201,6 +201,12 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   pc->SetOperatorBlock(0, 0, op00->global_operator());
   pc->SetOperatorBlock(1, 1, pc11->global_operator());
 
+  Teuchos::ParameterList solver_list;
+  solver_list.set("preconditioning method", "block diagonal");
+  pc->InitializeInverse(solver_list);
+  pc->UpdateInverse();
+  pc->ComputeInverse();
+
   // Assemble global matrix for tesing purposes
   // Test SPD properties of the matrix and preconditioner.
   VerificationTV ver1(op), ver2(pc);
@@ -208,11 +214,15 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   ver1.CheckMatrixSPD(true, false, true);
   ver2.CheckPreconditionerSPD();
 
-  Teuchos::ParameterList solver_list = plist.sublist("solvers").sublist("GMRES");
-  solver_list.set("preconditioning type", "block diagonal");
-  op->InitializeInverse(solver_list);
-  op->UpdateInverse();
-  op->ComputeInverse();
+  // now set up a full solver
+  //
+  // NOTE: this cannot be done in any TreeOperator, as we are using _different
+  // structure_ for the forward operator and preconditioner.  Instead we
+  // directly call the factory.
+  solver_list.setParameters(plist.sublist("solvers").sublist("GMRES"));
+  auto solver = AmanziSolvers::createIterativeMethod(solver_list, op, pc);
+  solver->UpdateInverse();
+  solver->ComputeInverse();
   
   // -- copy right-hand sides inside two operators to the global rhs.
   TreeVector rhs(*tvs);
@@ -220,15 +230,15 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
   // -- execute GMRES solver
-  op->ApplyInverse(rhs, solution);
+  solver->ApplyInverse(rhs, solution);
 
-  // op->AssembleMatrix();
+  // solver->AssembleMatrix();
   // ver1.CheckResidual(solution, rhs, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "elasticity solver (gmres): ||r||=" << op->residual() 
-              << " itr=" << op->num_itrs()
-              << " code=" << op->returned_code() << std::endl;
+    std::cout << "elasticity solver (gmres): ||r||=" << solver->residual() 
+              << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
   }
 
   // Post-processing
@@ -243,11 +253,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, pl2_err, pinf_err, op->num_itrs());
+        ul2_err, uinf_err, pl2_err, pinf_err, solver->num_itrs());
 
     CHECK(ul2_err < 0.01);
     CHECK(pl2_err < 0.05);
-    CHECK(op->num_itrs() < 60);
+    CHECK(solver->num_itrs() < 60);
   }
 
   if (MyPID == 0) {

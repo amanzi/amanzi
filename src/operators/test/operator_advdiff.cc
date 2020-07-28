@@ -188,9 +188,12 @@ void AdvectionDiffusion2D(int nx, double* error)
   global_op->UpdateInverse();
   global_op->ComputeInverse();
 
+  CompositeVector& rhs = *global_op->rhs();
+  rhs.Update(1.0, source, 1.0);
+  
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
-  global_op->ApplyInverse(*global_op->rhs(), solution);
+  global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);

@@ -132,7 +132,7 @@ void RunTest(std::string op_list_name) {
   op.ApplyBCs(true, true, true);
 
   // create preconditoner
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->UpdateInverse();
   global_op->ComputeInverse();
 

@@ -57,33 +57,7 @@ void DirectMethodAmesos::UpdateInverse() {
 
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
-
-  returned_code_ = 0;
-  problem_ = Teuchos::rcp(new Epetra_LinearProblem());
-  problem_->SetOperator(&*h_);
-
-  Amesos factory;
-  solver_ = Teuchos::rcp(factory.Create(solver_name_, *problem_));
-  if (!solver_.get()) {
-    Errors::Message msg;
-    msg << "DirectMethodAmesos: solver \"" << solver_name_ << "\" is not available";
-    Exceptions::amanzi_throw(msg);
-  }
-  solver_->SetParameters(plist_);
-
-  int ierr = solver_->SymbolicFactorization();
-  if (ierr > 0) {
-    returned_code_ = -ierr;
-
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "SymbolicFactorization() failed with error code: " <<
-          this->returned_code_string() << std::endl;
-
-    // throw on this error?
-    Errors::Message msg("DirectMethodAmesos: SymbolicFactorization failed");
-    Exceptions::amanzi_throw(msg);
-  }
-  updated_ = true;
+  updated_ = false;
 }
 
 
@@ -95,22 +69,66 @@ void DirectMethodAmesos::ComputeInverse() {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "ComputeInverse()" << std::endl;
 
-  AMANZI_ASSERT(updated_);
+  if (!updated_) {
+    // NOTE, this appears to be a bug in Klu, where if it has not been actually
+    // assembled once, then there are some odd memory allocations that mask the
+    // structure.  Therefore this code cannot be in update, even though the
+    // symbolic structure is known at that point.
+    // BEGIN UPDATE
+    returned_code_ = 0;
+    problem_ = Teuchos::rcp(new Epetra_LinearProblem());
+    problem_->SetOperator(&*h_);
 
+    Amesos factory;
+    solver_ = Teuchos::rcp(factory.Create(solver_name_, *problem_));
+    if (!solver_.get()) {
+      Errors::Message msg;
+      msg << "DirectMethodAmesos: solver \"" << solver_name_ << "\" is not available";
+      Exceptions::amanzi_throw(msg);
+    }
+    solver_->SetParameters(plist_);
+
+    int ierr = solver_->SymbolicFactorization();
+    if (ierr != 0) {
+      // Amesos manual says it should only return positive codes, but maybe
+      // that is only for the solve?  The factorizations certainly can return
+      // meaningful negative error codes that indicate errors... in particular
+      // -22 is singular matrix error.
+      returned_code_ = ierr;
+      
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "SymbolicFactorization() failed with error code: " <<
+            this->returned_code_string() << std::endl;
+
+      // throw on this error?
+      Errors::Message msg("DirectMethodAmesos: SymbolicFactorization failed");
+      Exceptions::amanzi_throw(msg);
+    }    
+    // END UPDATE
+    updated_ = true;
+  }
+  
+  AMANZI_ASSERT(updated_);
+  // BEGIN COMPUTE
   if (returned_code_ == 0) {
     int ierr = solver_->NumericFactorization();
-    if (ierr > 0) {
-      returned_code_ = -ierr;
+    if (ierr != 0) {
+      // Amesos manual says it should only return positive codes, but maybe
+      // that is only for the solve?  The factorizations certainly can return
+      // meaningful negative error codes that indicate errors... in particular
+      // -22 is singular matrix error.
+      returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "SymbolicFactorization() failed with error code: " <<
             this->returned_code_string() << std::endl;
 
-      // don't throw on this error?
-      //Errors::Message msg("DirectMethodAmesos: NumericFactorization failed");
-      //Exceptions::amanzi_throw(msg);
+      // throw on this error?
+      Errors::Message msg("DirectMethodAmesos: NumericFactorization failed");
+      Exceptions::amanzi_throw(msg);
     }
   }
+  // END COMPUTE
   computed_ = true;
 }
 
@@ -118,7 +136,7 @@ void DirectMethodAmesos::ComputeInverse() {
 int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   AMANZI_ASSERT(computed_);
-
+  
   // is this a mistake, or can Amesos change RHS?  That could be bad...
   Epetra_Vector* vv = const_cast<Epetra_Vector*>(&v);
   problem_->SetRHS(vv);
@@ -157,6 +175,8 @@ std::string DirectMethodAmesos::returned_code_string() const
       return "non-positive-definite matrix";
     case (-4) :
       return "insufficient memory";
+    case (-22) :
+      return "singular matrix found on NumericFactorization";
   }
   return "unknown error";
 }

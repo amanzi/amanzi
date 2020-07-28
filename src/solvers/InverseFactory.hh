@@ -61,7 +61,7 @@ of methods.
 #include "InverseAssembled_decl.hh"
 #include "IterativeMethodPCG.hh"
 #include "IterativeMethodGMRES.hh"
-//#include "InverseBelosGMRES.hh"
+#include "IterativeMethodBelos.hh"
 #include "DirectMethodAmesos.hh"
 #include "DirectMethodAmesos2.hh"
 #include "IterativeMethodNKA.hh"
@@ -134,7 +134,7 @@ template<class Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>         
 Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>>
-createPreconditionedMethod(const std::string& method_name,
+createIterativeMethod(const std::string& method_name,
                            Teuchos::ParameterList& inv_list)
 {
   auto& method_list = Impl::getMethodSublist(inv_list, method_name);
@@ -146,6 +146,8 @@ createPreconditionedMethod(const std::string& method_name,
     inv = Teuchos::rcp(new IterativeMethodPCG<Operator,Preconditioner,Vector,VectorSpace>());
   } else if (method_name == "nka") {
     inv = Teuchos::rcp(new IterativeMethodNKA<Operator,Preconditioner,Vector,VectorSpace>());
+  } else if (Keys::starts_with(method_name, "belos")) {
+    inv = Teuchos::rcp(new IterativeMethodBelos<Operator,Preconditioner,Vector,VectorSpace>());
   } else {
     Errors::Message msg;
     msg << "Preconditioned method \"" << method_name << "\" is not a valid name.";
@@ -155,6 +157,38 @@ createPreconditionedMethod(const std::string& method_name,
   if (inv.get()) inv->set_parameters(method_list);
   return inv;
 }
+
+//
+// This also potentially gets used by client code...
+//
+template<class Operator,
+         class Preconditioner,
+         class Vector=typename Operator::Vector_t,
+         class VectorSpace=typename Operator::VectorSpace_t>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
+createIterativeMethod(Teuchos::ParameterList& inv_list,
+              const Teuchos::RCP<Operator>& m,
+              const Teuchos::RCP<Preconditioner>& h)
+{
+  auto method_name = inv_list.get<std::string>("iterative method");
+  auto inv = createIterativeMethod<Operator,Preconditioner,Vector,VectorSpace>(method_name, inv_list);
+  inv->set_matrices(m, h);
+  return inv;
+}
+
+template<class Operator,
+         class Vector=typename Operator::Vector_t,
+         class VectorSpace=typename Operator::VectorSpace_t>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
+createIterativeMethod(Teuchos::ParameterList& inv_list,
+                      const Teuchos::RCP<Operator>& m)
+{
+  auto method_name = inv_list.get<std::string>("iterative method");
+  auto inv = createIterativeMethod<Operator,Operator,Vector,VectorSpace>(method_name, inv_list);
+  inv->set_matrices(m, m);
+  return inv;
+}
+
 
 
 //
@@ -170,9 +204,21 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
 
   Teuchos::RCP<Inverse<Matrix,Matrix,Vector,VectorSpace>> inv = Teuchos::null;
   if (Keys::starts_with(method_name, "amesos")) {
-    inv = Teuchos::rcp(new DirectMethodAmesos());
-  } else if (Keys::starts_with(method_name, "amesos2")) {
-    inv = Teuchos::rcp(new DirectMethodAmesos2());
+    int amesos_version = 0;
+    // figure out the version
+    // -- old style -- from a parameter
+    if (method_list.isParameter("amesos version")) {
+      amesos_version = method_list.get<int>("amesos version");
+    } else if (Keys::starts_with(method_name, "amesos2")) {
+      amesos_version = 2;
+    } else {
+      amesos_version = 1;
+    }
+    if (amesos_version == 1) {
+      inv = Teuchos::rcp(new DirectMethodAmesos());
+    } else {
+      inv = Teuchos::rcp(new DirectMethodAmesos2());
+    }
   } else if (method_name == "diagonal") {
     inv = Teuchos::rcp(new PreconditionerDiagonal());
   } else if (method_name == "block ilu") {
@@ -193,8 +239,6 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "identity") {
     inv = Teuchos::rcp(new PreconditionerIdentity<Matrix,Matrix,Vector,VectorSpace>());
-  // } else if (Keys::starts_with(method_name, "belos")) {
-  //   inv = Teuchos::rcp(new MethodBelos());
 
   } else {
     Errors::Message msg;
@@ -240,9 +284,6 @@ createInverse(Teuchos::ParameterList& inv_list,
   std::string method_name;
   if (inv_list.isParameter("direct method")) {
     method_name = inv_list.get<std::string>("direct method");
-  } else if (inv_list.isParameter("iterative method") &&
-             Keys::starts_with(inv_list.get<std::string>("iterative method"), "belos")) {
-    method_name = inv_list.get<std::string>("iterative method");
   } else if (inv_list.isParameter("preconditioning method")) {
     method_name = inv_list.get<std::string>("preconditioning method");
   } else if (inv_list.isParameter("iterative method")) {
@@ -267,12 +308,10 @@ createInverse(Teuchos::ParameterList& inv_list,
   inv = dir_inv;
 
   if (inv_list.isParameter("iterative method")) {
-    std::string iter_method_name = inv_list.get<std::string>("iterative method");
     if (inv_list.isParameter("direct method")) {
       Impl::warn("InverseFactory: WARNING -- both \"direct method\" and \"iterative method\" were supplied -- using the direct method.");
-    } else if (!Keys::starts_with(iter_method_name, "belos")) {
-      auto iter_inv = createPreconditionedMethod<Operator,Inverse_t,Vector,VectorSpace>(iter_method_name, inv_list);
-      iter_inv->set_matrices(m,dir_inv);
+    } else {
+      auto iter_inv = createIterativeMethod<Operator,Inverse_t,Vector,VectorSpace>(inv_list, m, dir_inv);
       inv = iter_inv;
     }
   }

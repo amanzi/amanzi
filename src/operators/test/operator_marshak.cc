@@ -239,9 +239,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for heat conduction solvers.
 * **************************************************************** */
-TEST(MARSHAK_NONLINEAR_WAVE_NLFV) {
-  RunTestMarshak("diffusion operator nlfv", 0.02);
-}
+// TEST(MARSHAK_NONLINEAR_WAVE_NLFV) {
+//   RunTestMarshak("diffusion operator nlfv", 0.02);
+// }
 
 TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
   RunTestMarshak("diffusion operator Sff", 0.0);

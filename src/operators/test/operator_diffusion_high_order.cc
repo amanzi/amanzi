@@ -240,7 +240,7 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
 
   // create preconditioner using the base operator class
   ParameterList slist;
-  slist.set<std::string>("preconditioner type", "diagonal");
+  slist.set<std::string>("preconditioning method", "diagonal");
   slist.set("iterative method", "pcg");
   slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
   slist.sublist("verbose object").set<std::string>("verbosity level", "high");

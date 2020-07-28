@@ -18,6 +18,7 @@
 
 #include "DenseMatrix.hh"
 #include "Operator_FaceCell.hh"
+#include "InverseSchurComplement.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -36,34 +37,34 @@ class Operator_FaceCellSff : public Operator_FaceCell {
     set_schema_string("FACE+CELL Schur to FACE");
   }
 
-  // Special Apply Inverse required to deal with schur complement
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
-
+  virtual void InitializeInverse(Teuchos::ParameterList& solver_list) override;
+  
   // Special AssembleMatrix required to deal with schur complement
   virtual void AssembleMatrix(const SuperMap& map,
-                              MatrixFE& matrix, int my_block_row, int my_block_col) const;
+                              MatrixFE& matrix, int my_block_row, int my_block_col) const override;
   
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+      const CompositeVector& X, CompositeVector& Y) const override;
 
   // driver symbolic assemble creates the face-only supermap
-  virtual void SymbolicAssembleMatrix();
+  virtual void SymbolicAssembleMatrix() override;
 
   // visit method for sparsity structure of Schur complement
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col) const override;
 
   // visit method for sparsity structure of Schur complement
   // handled in Schur complement -- no cell dofs.
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const {};
+          int my_block_row, int my_block_col) const override {};
 
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Face> > schur_ops_;
+  Teuchos::RCP<AmanziSolvers::InverseSchurComplement> schur_inv_;
 };
 
 }  // namespace Operators

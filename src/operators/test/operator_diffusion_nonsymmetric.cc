@@ -120,7 +120,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Belos GMRES", plist.sublist("solvers"));
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "Belos GMRES", plist.sublist("solvers"));
   global_op->UpdateInverse();
   global_op->ComputeInverse();
 

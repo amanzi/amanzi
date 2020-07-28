@@ -262,7 +262,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "GMRES", plist.sublist("GMRES"));
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "GMRES", plist.sublist("solvers"));
   global_op->UpdateInverse();
   global_op->ComputeInverse();
 

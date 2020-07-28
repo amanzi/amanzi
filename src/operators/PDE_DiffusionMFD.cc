@@ -1405,7 +1405,11 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
     consistent_face_op_->OpPushBack(local_op_);
-    consistent_face_op_->InitializeInverse(plist_.sublist("consistent faces").sublist("preconditioner"));
+    Teuchos::ParameterList lin_solver = plist_.sublist("consistent faces").sublist("preconditioner");
+    if (plist_.sublist("consistent faces").isSublist("linear solver")) {
+      lin_solver.setParameters(plist_.sublist("consistent faces").sublist("linear solver"));
+    }
+    consistent_face_op_->InitializeInverse(lin_solver);
     consistent_face_op_->UpdateInverse();
   }
 
@@ -1435,7 +1439,7 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   consistent_face_op_->ComputeInverse();
 
   CompositeVector u_f_copy(y);
-  int ierr = consistent_face_op_->ApplyInverse(y, u);
+  int ierr = consistent_face_op_->ApplyInverse(y, u_f_copy);
   *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   return (ierr > 0) ? 0 : 1;
 }

@@ -118,7 +118,6 @@ Note on implementation for discretization/framework developers:
 
 namespace Amanzi {
 
-namespace AmanziPreconditioners { class Preconditioner; }
 class CompositeVector;
 
 namespace Operators {
@@ -177,9 +176,9 @@ class Operator {
   void Init();
 
   // main members
-  // -- virtual methods potentially altered by the schema
-  int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  int Apply(const CompositeVector& X, CompositeVector& Y) const {
+  // -- virtual methods potentially altered by the schema, Schur complements
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
@@ -193,31 +192,31 @@ class Operator {
                          const std::string& iter_name,
                          const Teuchos::ParameterList& iter_list);
   // -- preferred methods -- three stages for init, update, and compute.
-  void InitializeInverse(Teuchos::ParameterList& plist);
+  virtual void InitializeInverse(Teuchos::ParameterList& plist);
   void UpdateInverse();
   void ComputeInverse();
       
   // symbolic assembly:
   // -- wrapper
-  void SymbolicAssembleMatrix();
+  virtual void SymbolicAssembleMatrix();
   // -- first dispatch
-  void SymbolicAssembleMatrix(const SuperMap& map,
+  virtual void SymbolicAssembleMatrix(const SuperMap& map,
         GraphFE& graph, int my_block_row, int my_block_col) const;
   
   // actual assembly:
   // -- wrapper
-  void AssembleMatrix();
+  virtual void AssembleMatrix();
   // -- first dispatch
-  void AssembleMatrix(const SuperMap& map,
+  virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   // modifiers
   // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
-  void Rescale(double scaling);
-  void Rescale(const CompositeVector& scaling);
-  void Rescale(const CompositeVector& scaling, int iops);
+  virtual void Rescale(double scaling);
+  virtual void Rescale(const CompositeVector& scaling);
+  virtual void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
   const CompositeVectorSpace& DomainMap() const { return *cvs_col_; }

@@ -139,8 +139,6 @@ void RunTest(int icase, double gravity) {
   // populate diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // apply BCs and assemble
   op->ApplyBCs(true, true, true);
     
   // create preconditoner

@@ -212,7 +212,7 @@ void OperatorDiffusionDG(std::string solver_name,
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), solver_name, plist.sublist("solvers"));
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"));
   global_op->UpdateInverse();
   global_op->ComputeInverse();
 
@@ -220,6 +220,11 @@ void OperatorDiffusionDG(std::string solver_name,
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true, 1);
 
+  // create preconditoner with iterative method
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), solver_name, plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  global_op->ComputeInverse();
+  
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);

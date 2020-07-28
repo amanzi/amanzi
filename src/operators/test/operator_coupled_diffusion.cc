@@ -892,9 +892,11 @@ std::pair<double,double> RunInverseProblem(
 
   
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("preconditioning method", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
+  //  pc_list.sublist("boomer amg parameters").set("number of functions", 2);
   pc_list.set("iterative method", "pcg");
+  pc_list.sublist("pcg parameters").set("maximum number of iterations", 200);
   pc_list.sublist("verbose object").set("verbosity level", "high");
   problem->op->InitializeInverse(pc_list);
   problem->op->UpdateInverse();
@@ -1109,7 +1111,7 @@ std::pair<double,double> RunNonlinearProblem(
     }
     
     Teuchos::ParameterList pc_list;
-    pc_list.set("preconditioner type", "boomer amg");
+    pc_list.set("preconditioning method", "boomer amg");
     pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
     pc_list.set("iterative method", "gmres");
@@ -1218,7 +1220,7 @@ std::pair<double,double> RunInverseProblem_Diag(
 
   // assemble, invert
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("preconditioning method", "boomer amg");
   pc_list.set("iterative method", "gmres");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list.sublist("boomer amg parameters").set("number of functions", 2);
@@ -1227,7 +1229,7 @@ std::pair<double,double> RunInverseProblem_Diag(
   problem->op00->global_operator()->ComputeInverse();
 
   Teuchos::ParameterList pc_list11;
-  pc_list11.set("preconditioner type", "boomer amg");
+  pc_list11.set("preconditioning method", "boomer amg");
   pc_list11.set("iterative method", "gmres");
   pc_list11.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list11.sublist("boomer amg parameters").set("number of functions", 2);

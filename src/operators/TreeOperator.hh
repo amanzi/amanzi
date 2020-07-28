@@ -137,7 +137,11 @@ class TreeOperator_BlockPreconditioner {
   TreeOperator_BlockPreconditioner(TreeOperator& op) :
       op_(op) {}
 
-
+  int Apply(const TreeVector& X, TreeVector& Y) const {
+    Exceptions::amanzi_throw("TreeOperator Preconditioner does not implement Apply()");
+    return 1;
+  }
+  
   int ApplyInverse(const TreeVector& X, TreeVector& Y) const {
     return op_.ApplyInverseBlockDiagonal_(X,Y);
   }

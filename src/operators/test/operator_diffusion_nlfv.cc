@@ -124,7 +124,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     op->ApplyBCs(true, true, true);
 
     // create preconditoner using the base operator class
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Belos GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+            "Belos GMRES", plist.sublist("solvers"));
     global_op->UpdateInverse();
     global_op->ComputeInverse();
 
@@ -246,6 +247,11 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
+
+  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+          "Belos GMRES", plist.sublist("solvers"));
+  global_op->UpdateInverse();
+  
   for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
@@ -254,8 +260,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     op->ApplyBCs(true, true, true);
 
     // create preconditoner using the base operator class
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Belos GMRES", plist.sublist("solvers"));
-    global_op->UpdateInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();

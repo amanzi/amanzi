@@ -7,44 +7,28 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Provides ApplyInverse() using assembled methods.
-
+//! Provides ApplyInverse() using a Schur complement.
 #pragma once
 
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-
-#include "SuperMap.hh"
-#include "InverseHelpers.hh"
 #include "Inverse.hh"
+#include "Operator.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
 
-
 //
 // Class for assembled inverse methods.
 //
-template<class Operator,
-         class Assembler=Operator,
-         class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-class InverseAssembled :
-      public Inverse<Operator,Assembler,Vector,VectorSpace> {
+class InverseSchurComplement :
+      public Inverse<Operators::Operator,Operators::Operator,CompositeVector,CompositeVectorSpace> {
  public:
-  InverseAssembled(const std::string& method_name) :
-      method_name_(method_name),
-      updated_(false),
-      computed_once_(false),
-      Inverse<Operator,Assembler,Vector,VectorSpace>()
-  {}
+  InverseSchurComplement() {}
 
   virtual void set_parameters(Teuchos::ParameterList& plist) override final;
 
   virtual void UpdateInverse() override final;
   virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Vector& y, Vector& x) const override final;
+  virtual int ApplyInverse(const CompositeVector& y, CompositeVector& x) const override final;
 
   virtual double residual() const override final {
     return solver_->residual();
@@ -67,17 +51,13 @@ class InverseAssembled :
   }
 
  protected:
-  bool updated_, computed_once_;
-  std::string method_name_;
-
-  using Inverse<Operator,Assembler,Vector,VectorSpace>::m_;
-  using Inverse<Operator,Assembler,Vector,VectorSpace>::h_;
+  using Inverse<Operators::Operator,Operators::Operator,CompositeVector,CompositeVectorSpace>::h_;
 
   Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> solver_;
-  Teuchos::RCP<Operators::SuperMap> smap_;
-  mutable Teuchos::RCP<Epetra_Vector> x_, y_;
 };
   
     
 } // namespace AmanziSolvers
 } // namespace Amanzi
+
+

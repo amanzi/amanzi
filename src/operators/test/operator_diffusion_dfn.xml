@@ -76,6 +76,11 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="GMRES">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
