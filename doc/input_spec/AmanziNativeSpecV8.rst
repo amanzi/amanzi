@@ -5695,13 +5695,11 @@ This specification format uses and describes the unstructured mesh only.
      
       * `"format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
-    * `"generate mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
+    * `"generate mesh`" [list] accepts parameters of generated mesh
 
-      * `"uniform structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
-
-        * `"domain low coordinate`" [Array(double)] Location of low corner of domain
-        * `"domain high coordinate`" [Array(double)] Location of high corner of domain
-        * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
+      * `"domain low coordinate`" [Array(double)] Location of low corner of domain
+      * `"domain high coordinate`" [Array(double)] Location of high corner of domain
+      * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
     * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -5737,12 +5735,10 @@ Example of *Unstructured* mesh generated internally:
   <ParameterList>  <!-- parent list -->
   <ParameterList name="mesh">
     <ParameterList name="unstructured"/>
-      <ParameterList name="generate mesh"/>
-        <ParameterList name="uniform structured"/>
-          <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
-          <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-          <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
-        </ParameterList>   
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+        <Parameter name="domain low cooordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
       </ParameterList>   
 
       <ParameterList name="expert">
