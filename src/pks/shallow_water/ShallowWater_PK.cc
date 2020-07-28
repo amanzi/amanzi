@@ -893,6 +893,8 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
 {
   std::vector<double> S(3);
 
+  double g = 9.81;
+
   Epetra_MultiVector& B_vec_c  = *S_->GetFieldData(bathymetry_key_,passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_,passwd_)->ViewComponent("cell",true);
 
