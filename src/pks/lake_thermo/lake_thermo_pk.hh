@@ -318,6 +318,7 @@ public:
   bool coupled_to_surface_via_flux_;
 
   // Keys
+  Key temperature_key_;
   Key energy_key_;
   Key wc_key_;
   Key enthalpy_key_;

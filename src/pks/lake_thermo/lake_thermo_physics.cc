@@ -26,18 +26,22 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the energy at both the old and new times.
-  S_next_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get the energy at each time
-  Teuchos::RCP<const CompositeVector> e1 = S_next_->GetFieldData(energy_key_);
-  Teuchos::RCP<const CompositeVector> e0 = S_inter_->GetFieldData(energy_key_);
+  Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
+  Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
+
+  // get c and rho
+  c = 4184.;
+  rho = 1000.;
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
   g->ViewComponent("cell", false)
-    ->Update(1.0/dt, *e1->ViewComponent("cell", false),
-          -1.0/dt, *e0->ViewComponent("cell", false), 1.0);
+    ->Update(c*rho/dt, *T1->ViewComponent("cell", false),
+          -c*rho/dt, *T0->ViewComponent("cell", false), 1.0);
 };
 
 
