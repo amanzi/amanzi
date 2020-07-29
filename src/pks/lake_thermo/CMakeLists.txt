@@ -28,6 +28,7 @@ set(ats_lake_src_files
 
 set(ats_lake_inc_files
   lake_thermo_pk.hh
+  energy_bc_factory.hh
   )
 
 
