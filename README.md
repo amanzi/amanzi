@@ -30,4 +30,4 @@ Please see the [LICENSE](https://github.com/amanzi/ats/blob/master/LICENSE) and 
 Citation
 --------
 
-E.T. Coon, M. Berndt, A. Jan, D. Svyatsky, A.L. Atchley, E. Kikinzon, D.R. Harp, G. Manzini, E. Shelef, K. Lipnikov, R. Garimella, C. Xu, J.D. Moulton, S. Karra, S.L. Painter, E. Jafarov, and S. Molins. 2019. Advanced Terrestrial Simulator. U.S. Department of Energy, USA. Version 1.0. 2020. DOI: 10.11578/dc.20190911.1
+E.T. Coon, M. Berndt, A. Jan, D. Svyatsky, A.L. Atchley, E. Kikinzon, D.R. Harp, G. Manzini, E. Shelef, K. Lipnikov, R. Garimella, C. Xu, J.D. Moulton, S. Karra, S.L. Painter, E. Jafarov, and S. Molins. 2020. Advanced Terrestrial Simulator. U.S. Department of Energy, USA. Version 1.0. DOI: 10.11578/dc.20190911.1
