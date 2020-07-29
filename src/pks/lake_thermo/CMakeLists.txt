@@ -11,7 +11,7 @@
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/pks)
 include_directories(${ATS_SOURCE_DIR}/operators/advection)
-#include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
 #include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/enthalpy)
 #include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/energy)
 #include_directories(${ATS_SOURCE_DIR}/pks/energy/constitutive_relations/internal_energy)
@@ -28,7 +28,7 @@ set(ats_lake_src_files
 
 set(ats_lake_inc_files
   lake_thermo_pk.hh
-  energy_bc_factory.hh
+  lake_thermo_bc_factory.hh
   )
 
 

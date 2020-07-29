@@ -8,7 +8,7 @@ Author: Svetlana Tokareva
 ------------------------------------------------------------------------- */
 #include "boost/algorithm/string/predicate.hpp"
 
-#include "energy_bc_factory.hh"
+#include "lake_thermo_bc_factory.hh"
 #include "advection_factory.hh"
 
 #include "PDE_DiffusionFactory.hh"
@@ -102,7 +102,7 @@ void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up Operators
   // -- boundary conditions
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
-  EnergyBCFactory bc_factory(mesh_, bc_plist);
+  LakeThermoBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
   bc_flux_ = bc_factory.CreateTotalFlux();
@@ -120,7 +120,7 @@ void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
             conductivity_key_, uw_conductivity_key_));
   } else {
     std::stringstream messagestream;
-    messagestream << "Energy PK has no upwinding method named: " << method_name;
+    messagestream << "Lake_Thermo PK has no upwinding method named: " << method_name;
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
@@ -281,7 +281,7 @@ void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // -- Make sure coupling isn't flagged multiple ways.
   if (coupled_to_surface_via_flux_ && coupled_to_surface_via_temp_) {
-    Errors::Message message("Energy PK requested both flux and temperature coupling -- choose one.");
+    Errors::Message message("Lake Thermo PK requested both flux and temperature coupling -- choose one.");
     Exceptions::amanzi_throw(message);
   }
 
