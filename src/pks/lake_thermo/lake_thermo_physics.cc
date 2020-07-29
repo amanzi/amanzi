@@ -34,8 +34,8 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
   // get c and rho
-  c = 4184.;
-  rho = 1000.;
+  double c = 4184.;
+  double rho = 1000.;
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
