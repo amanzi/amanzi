@@ -329,5 +329,3 @@ std::string TreeOperator::PrintDiagnostics() const
 
 }  // namespace Operators
 }  // namespace Amanzi
-
-

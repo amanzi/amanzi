@@ -467,8 +467,8 @@ void Operator::InitializeInverse(Teuchos::ParameterList& plist)
 void Operator::InitializeInverse()
 {
   // Initialize based on plist provided
-  if (plist_.isSublist("inverse")) {
-    auto& inv_list = plist_.sublist("inverse");
+  if (plist_.isSublist("preconditioner")) {
+    auto& inv_list = plist_.sublist("preconditioner");
     AmanziSolvers::setMakeOneIterationCriteria(inv_list);
     InitializeInverse(inv_list);
   }

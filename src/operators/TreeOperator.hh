@@ -107,7 +107,7 @@ class TreeOperator {
 
  private:
   friend Impl::TreeOperator_BlockPreconditioner;
-  
+
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<Operator> > > blocks_;
   
