@@ -168,6 +168,19 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
+
+  if (ep_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    auto src_list = ep_list_->sublist("source terms");
+    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+      std::string name = it->first;
+      if (src_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = src_list.sublist(name);
+        srcs_.push_back(factory.Create(spec, "source", AmanziMesh::CELL, Teuchos::null));
+      }
+    }
+  }
+
   // initialized fields
   InitializeFields_();
 
@@ -238,7 +251,27 @@ void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Compo
     bc_flux_[i]->Compute(t_old, t_new);
   }
 
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
+
   ComputeBCs(u);
+}
+
+
+/* ******************************************************************
+* Add source and sink terms.                                   
+****************************************************************** */
+void Energy_PK::AddSourceTerms(CompositeVector& rhs)
+{
+  Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
+
+  for (int i = 0; i < srcs_.size(); ++i) {
+    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+      int c = it->first;
+      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
+    }
+  }
 }
 
 
