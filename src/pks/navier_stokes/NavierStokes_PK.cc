@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
-#include "LinearOperatorFactory.hh"
 
 // Amanzi::NavierStokes
 #include "NavierStokes_PK.hh"
@@ -311,7 +310,6 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     if (tmp_solver != "none") {
-      AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> sfactory;
       op_pc_solver_ = sfactory.Create(tmp_solver, *linear_solver_list_, op_preconditioner_);
     }
   }

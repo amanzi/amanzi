@@ -24,8 +24,6 @@
 #include "BCs.hh"
 #include "errors.hh"
 #include "FieldEvaluator.hh"
-#include "LinearOperatorDefs.hh"
-#include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"

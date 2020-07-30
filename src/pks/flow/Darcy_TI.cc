@@ -9,7 +9,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "LinearOperatorFactory.hh"
 
 #include "Darcy_PK.hh"
 

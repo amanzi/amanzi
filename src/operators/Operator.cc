@@ -62,7 +62,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     cvs_col_(cvs),
     schema_row_(schema),
     schema_col_(schema),
-    shift_(0.0)
+    shift_(0.0),
+    plist_(plist)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -83,11 +84,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     nedges_wghost = 0;
   }
 
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
-
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-
   apply_calls_ = 0; 
 }
 
@@ -105,7 +103,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     cvs_col_(cvs_col),
     schema_row_(schema_row),
     schema_col_(schema_col),
-    shift_(0.0)
+    shift_(0.0),
+    plist_(plist)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -126,11 +125,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     nedges_wghost = 0;
   }
 
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
-
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-
   apply_calls_ = 0; 
 }
 
@@ -442,9 +438,9 @@ void Operator::InitializeInverse(const std::string& prec_name,
         const Teuchos::ParameterList& prec_list,
         const std::string& iter_name,
         const Teuchos::ParameterList& iter_list) {
-  Teuchos::ParameterList inner_plist(prec_list.sublist(prec_name));
-  inner_plist.setParameters(iter_list.sublist(iter_name));
-  InitializeInverse(inner_plist);
+  auto inv_plist = AmanziSolvers::mergePreconditionerSolverLists(
+      prec_name, prec_list, iter_name, iter_list);
+  InitializeInverse(inv_plist);
 }
 
 
@@ -466,6 +462,16 @@ void Operator::InitializeInverse(Teuchos::ParameterList& plist)
   //   }
   // }
   preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+}
+
+void Operator::InitializeInverse()
+{
+  // Initialize based on plist provided
+  if (plist_.isSublist("inverse")) {
+    auto& inv_list = plist_.sublist("inverse");
+    AmanziSolvers::setMakeOneIterationCriteria(inv_list);
+    InitializeInverse(inv_list);
+  }
 }
 
 

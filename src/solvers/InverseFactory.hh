@@ -118,7 +118,64 @@ getMethodSublist(Teuchos::ParameterList& inv_list,
 }
 
 } // namespace Impl
-  
+
+
+//
+// Helper function that ensures that "make one iteration" is in the parameter
+// list.
+//
+inline void
+setMakeOneIterationCriteria(Teuchos::ParameterList& plist) {
+  if (plist.isParameter("iterative method")) {
+    auto& method_list = Impl::getMethodSublist(plist,
+            plist.get<std::string>("iterative method"));
+    Teuchos::Array<std::string> criteria;
+    criteria = plist.get<Teuchos::Array<std::string>>("convergence criteria", criteria);
+    if (std::find(criteria.begin(), criteria.end(), "make one iteration") == criteria.end()) {
+      criteria.push_back("make one iteration");
+    }
+    if (criteria.size() == 1) {
+      // has only make one iteration
+      criteria.push_back("relative rhs");
+    }
+    plist.set("convergence criteria", criteria);
+  }
+}
+
+//
+// Helper function to merge Amanzi-style "solvers" and "preconditioners" lists
+// options.
+//
+inline Teuchos::ParameterList
+mergePreconditionerSolverLists(
+    const std::string& pc_name, const Teuchos::ParameterList& pc_list,
+    const std::string& ls_name, const Teuchos::ParameterList& ls_list,
+    bool make_one_iteration=false)
+{
+  Teuchos::ParameterList inv_list;
+  if (!ls_name.empty()) {
+    if (!ls_list.isSublist(ls_name)) {
+      Errors::Message msg;
+      msg << "Requested solver method: \"" << ls_name
+          << "\" is not a valid name provided in the \"solvers\" list.";
+      Exceptions::amanzi_throw(msg);
+    } else {
+      inv_list.setParameters(ls_list.sublist(ls_name));
+    }
+  }
+  if (!pc_name.empty()) {
+    if (!pc_list.isSublist(pc_name)) {
+      Errors::Message msg;
+      msg << "Requested preconditioner method: \"" << pc_name
+          << "\" is not a valid name provided in the \"preconditioners\" list.";
+      Exceptions::amanzi_throw(msg);
+    } else {
+      inv_list.setParameters(pc_list.sublist(pc_name));
+    }
+  }
+  if (make_one_iteration) setMakeOneIterationCriteria(inv_list);
+  return inv_list;
+}
 
 
 
@@ -279,7 +336,7 @@ createInverse(Teuchos::ParameterList& inv_list,
   using Matrix_t = Matrix<Vector,VectorSpace>;
   using Inverse_t = Inverse<Operator,Assembler,Vector,VectorSpace>;
 
-  Teuchos::RCP<Matrix_t> inv;
+  Teuchos::RCP<Matrix_t> inv = Teuchos::null;
 
   std::string method_name;
   if (inv_list.isParameter("direct method")) {

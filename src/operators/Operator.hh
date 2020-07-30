@@ -114,7 +114,7 @@ Note on implementation for discretization/framework developers:
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
-#include "Inverse.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 
@@ -191,8 +191,13 @@ class Operator {
                          const Teuchos::ParameterList& prec_list,
                          const std::string& iter_name,
                          const Teuchos::ParameterList& iter_list);
+
+  // versions that make it easier to deal with ATS input spec format
+  void InitializeInverse();
+
   // -- preferred methods -- three stages for init, update, and compute.
   virtual void InitializeInverse(Teuchos::ParameterList& plist);
+  
   void UpdateInverse();
   void ComputeInverse();
       
@@ -444,6 +449,10 @@ class Operator {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->returned_code();
   }
+  std::string returned_code_string() const { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
+  }
   
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
@@ -452,6 +461,7 @@ class Operator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_row_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
+  Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;

@@ -272,7 +272,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     // create solver
     Teuchos::ParameterList slist = glist_->sublist("solvers")
                                           .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
         solver(op_tree_, op_tree_);
     solver.Init(slist);
     solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);

@@ -9,7 +9,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -49,9 +48,7 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_->AssembleMatrix();
   op_preconditioner_->UpdatePreconditioner();
 
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
 
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
       solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, op_preconditioner_);
   
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
@@ -133,8 +130,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   op_preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
       solver = factory.Create(solver_name_constraint_, *linear_operator_list_, op_matrix_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();

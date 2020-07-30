@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "RemapUtils.hh"
-#include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -104,8 +103,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create(linear_solver, *linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);

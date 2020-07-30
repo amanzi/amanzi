@@ -25,8 +25,6 @@
 #include "BCs.hh"
 #include "errors.hh"
 #include "FieldEvaluator.hh"
-#include "LinearOperatorDefs.hh"
-#include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -35,6 +33,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 #include "WhetStoneDefs.hh"
+#include "InverseFactory.hh"
 
 // Amanzi::Transport
 #include "MultiscaleTransportPorosityFactory.hh"
@@ -112,10 +111,9 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   Operators::PDE_AdvectionUpwindFactory adv_factory;
   op_adv_ = adv_factory.Create(oplist, mesh_);
-
-  op_ = op_adv_->global_operator();
   op_adv_->SetBCs(op_bc_, op_bc_);
-
+  op_ = op_adv_->global_operator();
+  
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
@@ -130,21 +128,17 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   acc_term_prev_ = Teuchos::rcp(new CompositeVector(*cvs));
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
 
-  op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
-  // op_->AssembleMatrix(); 
 
-  // generic linear solver
+  // generic linear solver or preconditioner
   if (ti_list_ != Teuchos::null) {
-    // preconditioner
-    if (ti_list_->isParameter("linear solver"))
-      solver_name_ = ti_list_->get<std::string>("linear solver");
-
-    if (ti_list_->isParameter("preconditioner")) {
-      std::string name = ti_list_->get<std::string>("preconditioner");
-      Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-      op_->InitializePreconditioner(pc_list);
-    }
+    solver_name_ = ti_list_->get<std::string>("linear solver", "");
+    auto pc_name = ti_list_->get<std::string>("preconditioner", "");
+    auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+        pc_name, *preconditioner_list_,
+        solver_name_, *linear_solver_list_, true);
+    op_->InitializeInverse(inv_list);
+    op_->UpdateInverse();
   }
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -170,7 +164,6 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector tcc_aux(*acc_term_);
 
   int icount(0);
-  std::string name;
 
   for (int i = 0; i < num_aqueous; i++) {
     op_->RestoreCheckPoint();
@@ -201,23 +194,13 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // add sources
     ComputeSources_(t_new, t_new - t_old, rhs_cell, *tcc->ViewComponent("cell"), i, i);
   
-    // assemble matrix
-    op_->AssembleMatrix();
-    op_->UpdatePreconditioner();
-
-    // create linear solver and calculate new pressure
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(solver_name_, *linear_operator_list_, op_);
-
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    solver->ApplyInverse(rhs, tcc_aux);
+    op_->ComputeInverse();
+    op_->ApplyInverse(rhs, tcc_aux);
 
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*tcc_aux.ViewComponent("cell"))(0);
 
     // statistics
-    icount += solver->num_itrs();
-    name = solver->name();
+    icount += op_->num_itrs();
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -225,7 +208,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     tcc_tmp->Norm2(&sol_norm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "transport solver (" << name
+    *vo_->os() << "transport solver (" << solver_name_
                << "): ||sol||=" << sol_norm 
                << "  avg itrs=" << icount / num_aqueous << std::endl;
       VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new - t_old, "");

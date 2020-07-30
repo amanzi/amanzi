@@ -20,7 +20,6 @@
 #include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "LinearOperatorFactory.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -541,8 +540,6 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // create linear solver and calculate new pressure
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(solver_name_, *linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);

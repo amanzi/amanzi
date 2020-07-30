@@ -31,7 +31,6 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
-#include "LinearOperatorFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
@@ -596,7 +595,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     if (tmp_solver != "none") {
       AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
 
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
       op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);
     }
   }

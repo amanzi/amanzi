@@ -15,7 +15,6 @@
 #include "PDE_Diffusion.hh"
 
 #include "Darcy_PK.hh"
-#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -42,8 +41,6 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   op_->AssembleMatrix();
   op_->UpdatePreconditioner();
 
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
      solver = sfactory.Create(solver_name_, *linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration

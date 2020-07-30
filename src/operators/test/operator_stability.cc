@@ -44,7 +44,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
-  using namespace Amanzi::AmanziSolvers;
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -193,7 +192,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
-  using namespace Amanzi::AmanziSolvers;
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();

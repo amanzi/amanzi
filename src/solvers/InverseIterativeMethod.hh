@@ -53,6 +53,13 @@ class InverseIterativeMethod :
   }
   void set_criteria(int criteria) {
     criteria_ = criteria;
+    if (!(criteria & LIN_SOLVER_RELATIVE_RHS
+          & LIN_SOLVER_RELATIVE_RESIDUAL
+          & LIN_SOLVER_ABSOLUTE_RESIDUAL)) {
+      // need at least one of these three
+      Errors::Message msg("InverseIterativeMethod: criteria must include one of RELATIVE_RHS, RELATIVE_RESIDUAL, or ABSOLUTE_RESIDUAL");
+      Exceptions::amanzi_throw(msg);
+    }      
   }
 
   virtual int returned_code() const override { return returned_code_; }
@@ -138,7 +145,7 @@ InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>::set_parameters
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       } else {
 	Errors::Message msg;
-	msg << "MatrixGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	msg << "InverseIterativeMethod: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
 	Exceptions::amanzi_throw(msg);
       }
     }
