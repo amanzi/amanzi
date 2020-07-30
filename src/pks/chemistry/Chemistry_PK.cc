@@ -187,18 +187,13 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
-
     if (!S->GetField(tcc_key_, passwd_)->initialized()) {
-      //InitializeField_(S,  tcc_key_, 0.0);
       InitializeField(S, passwd_, tcc_key_, 0.0);
     }
  
-    //InitializeField_(S,  primary_activity_coeff_key_, 1.0);
     InitializeField(S, passwd_, primary_activity_coeff_key_, 1.0);    
-
 
     // special initialization of free ion concentration
     if (S_->HasField(free_ion_species_key_)) {
@@ -225,23 +220,14 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      // InitializeField_(S,  isotherm_kd_key_, -1.0);
-      // InitializeField_(S,  isotherm_freundlich_n_key_, 1.0);
-      // InitializeField_(S,  isotherm_langmuir_b_key_, 1.0);
-
       InitializeField(S, passwd_, isotherm_kd_key_, -1.0);
       InitializeField(S, passwd_, isotherm_freundlich_n_key_, 1.0);
       InitializeField(S, passwd_, isotherm_langmuir_b_key_, 1.0);
-
     }
   }
 
   // Minerals: vol frac and surface areas
   if (number_minerals_ > 0) {
-
-    // InitializeField_(S,  min_vol_frac_key_, 0.0);
-    // InitializeField_(S,  min_ssa_key_, 1.0);
-
     InitializeField(S, passwd_, min_vol_frac_key_, 0.0);
     InitializeField(S, passwd_, min_ssa_key_, 1.0);
 
@@ -249,31 +235,22 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-
-    // InitializeField_(S,  first_order_decay_constant_key_, 0.0);
     InitializeField(S, passwd_, first_order_decay_constant_key_, 0.0);
-
   }
   
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    // InitializeField_(S,  ion_exchange_sites_key_, 1.0);
-    // InitializeField_(S,  ion_exchange_ref_cation_conc_key_, 1.0);
     InitializeField(S, passwd_, ion_exchange_sites_key_, 1.0);
     InitializeField(S, passwd_, ion_exchange_ref_cation_conc_key_, 1.0);    
   }
 
   if (number_sorption_sites_ > 0) {
-    // InitializeField_(S,  sorp_sites_key_, 1.0);
-    // InitializeField_(S,  surf_cfsc_key_, 1.0);
     InitializeField(S, passwd_, sorp_sites_key_, 1.0);
     InitializeField(S, passwd_, surf_cfsc_key_, 1.0);
   }
 
   // auxiliary fields
-  // InitializeField_(S,  alquimia_aux_data_key_, 0.0);
   InitializeField(S, passwd_, alquimia_aux_data_key_, 0.0);
-
 
   // miscaleneous controls
   initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());

@@ -59,6 +59,16 @@ class LimiterCell {
     ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
   }
 
+  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
+                    const Teuchos::RCP<CompositeVector>& gradient) {
+    std::vector<int> bc_model;
+    std::vector<double> bc_value;
+    AmanziMesh::Entity_ID_List ids(ncells_owned_);
+    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
+    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+  }
+
+  // -- apply limiter in specified cells
   // -- apply limiter in specified cells
   void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
                     Teuchos::RCP<const Epetra_MultiVector> field, int component,
@@ -172,8 +182,9 @@ class LimiterCell {
   std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
   std::vector<std::vector<int> > downwind_cells_;
 
-  int type_, stencil_id_;
+  int type_, stencil_id_, location_;
   bool limiter_correction_, external_bounds_;
+  double cfl_;
 
   int limiter_points_;  // number of Gauss points on faces where limiting occurs
 };

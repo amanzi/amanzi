@@ -29,13 +29,8 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field, 
-                              Teuchos::ParameterList& plist,
-                              int component)
+void ReconstructionCell::Init(Teuchos::ParameterList& plist)
 {
-  field_ = field;
-  component_ = component;
-
   dim = mesh_->space_dimension();
 
   CompositeVectorSpace cv_space;
@@ -54,8 +49,13 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCell::ComputeGradient(const AmanziMesh::Entity_ID_List& ids)
+void ReconstructionCell::ComputeGradient(
+    const AmanziMesh::Entity_ID_List& ids,
+    const Teuchos::RCP<const Epetra_MultiVector>& field, int component)
 {
+  field_ = field;
+  component_ = component;
+
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);

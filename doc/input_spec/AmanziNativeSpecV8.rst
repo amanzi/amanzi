@@ -3531,6 +3531,59 @@ This section to be written.
   </ParameterList>
 
 
+Shallow water PK
+----------------
+
+The mathematical model describing two-dimensional shallow water flow is
+
+.. math::
+  \begin{align*}
+  & h_t + (hu)_x + (hv)_y = 0, \\
+  & (hu)_t + (hu^2 + \frac{1}{2} gh^2)_x + (huv)_y = -ghB_x \\
+  & (hv)_t + (huv)_x + (hv^2 + \frac{1}{2} gh^2)_y = -ghB_y
+  \end{align*}  
+
+Here
+:math:`h` [m] is water depth, 
+:math:`g` [m/s^2] is gravity acceleration,
+:math:`u` [m/s] is depth averaged velocity in x direction,
+:math:`v` [m/s] is depth averaged velocity in y direction,
+:math:`B` [m] is bottom elevation (bathymetry),
+:math:`H = h + B` [m] is water surface elevation.
+
+
+Global parameters
+.................
+
+Global parameters are placed in the sublist `"shallow water`". 
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+
+Reconstruction and limiters
+...........................
+
+The control of the second-order numerical scheme is done via `"reconstruction`"
+sublist, described in Reconstruction_. Here is the example:
+
+
+.. code-block:: xml
+
+  <ParameterList name="shallow water">  <!-- parent list -->
+  <ParameterList name="reconstruction">
+    <Parameter name="method" type="string" value="cell-based"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+    <Parameter name="limiter location" type="string" value="node"/>
+    <Parameter name="limiter points" type="int" value="0"/>
+    <Parameter name="limiter cfl" type="double" value="0.1"/>
+  </ParameterList>
+  </ParameterList>
+
+
 Coupled process kernels
 =======================
 
@@ -4161,8 +4214,10 @@ required by this factory and/or particular method in it.
   </ParameterList>
 
 
-
 Diffusion is the most frequently used operator.
+
+
+.. _Reconstruction:
 
 Reconstruction and limiters
 ...........................
@@ -4193,6 +4248,14 @@ and their extensions for various PKs.
 
  * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
    on face where limiting occurs. Default is 1. Limited to 2D.
+
+ * `"limiter location`" [string] defines geometry entity where the *limiter points*
+   are located. Available options are `"node`", `"face`", and `"cell`".
+   Option `"node`" is default for `"node to cells`" stencil.
+   Option `"face`" is default for other stencils.
+
+ * `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
+   Default value is 1.
 
  * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
    the hosting application. Default is `"false`".`

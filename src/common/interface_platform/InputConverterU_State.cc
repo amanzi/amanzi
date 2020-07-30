@@ -534,6 +534,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
       }
+
+      // surface fields
+      // -- ponded_depth 
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "ponded_depth", "m", reg_str, regions, out_ic, out_ev);
+      }
     }
   }
 
