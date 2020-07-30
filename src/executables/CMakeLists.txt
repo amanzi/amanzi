@@ -45,10 +45,11 @@ include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+include_directories(${SHALLOW_WATER_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
-include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 # Chemistry includes directory
@@ -93,7 +94,8 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 
 add_amanzi_library(udriv
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
-                   LINK_LIBS mesh mesh_audit mesh_factory state mpc eos flow energy multiphase
+                   LINK_LIBS mesh mesh_audit mesh_factory state mpc eos 
+                             flow transport energy shallow_water multiphase
                              interface error_handling
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})

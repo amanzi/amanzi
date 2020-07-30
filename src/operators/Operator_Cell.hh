@@ -37,6 +37,8 @@ class Operator_Cell : public Operator {
     cell_max_faces = mesh_->cell_get_max_faces();
   }
 
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
   

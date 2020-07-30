@@ -83,9 +83,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     nedges_wghost = 0;
   }
 
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
-
   shift_ = plist.get<double>("diagonal shift", 0.0);
 
   apply_calls_ = 0; 
@@ -125,9 +122,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     nedges_owned = 0;
     nedges_wghost = 0;
   }
-
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
 
   shift_ = plist.get<double>("diagonal shift", 0.0);
 
@@ -1101,6 +1095,16 @@ void Operator::AssembleVectorNodeOp(int n, const Schema& schema,
                                     const WhetStone::DenseVector& v, CompositeVector& X) const {
   Errors::Message msg("Assembly fo local node-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator::Clone() const {
+  Errors::Message msg("Cloning of a derived Operator class is missing");
+  Exceptions::amanzi_throw(msg);
+  return Teuchos::null;
 }
 
 }  // namespace Operators

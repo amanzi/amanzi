@@ -153,6 +153,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
   void Init_(Teuchos::ParameterList& plist);
 
  protected:
+  bool gravity_term_initialized_;
   bool gravity_special_projection_;
   int gravity_method_;
 };

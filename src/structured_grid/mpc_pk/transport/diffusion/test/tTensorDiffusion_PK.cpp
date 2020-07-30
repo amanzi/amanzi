@@ -528,7 +528,6 @@ main (int   argc,
   MultiFab fineg(BoxArray(bs).grow(Nghost+2),Ncomp,0);
 
   fine.FillBoundary();
-  geom.FillPeriodicBoundary(fine);
   TensorDiffusionBndry bd(bs,Ncomp,geom);
   loadBndryData(bd,fine,0,&crse,0,pbcarray,geom,ratio,Ncomp);
 

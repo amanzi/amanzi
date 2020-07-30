@@ -121,8 +121,8 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
-    lifting.Init(vector, plist, tcc_index_);
-    lifting.ComputeGradient(ids);
+    lifting.Init(plist);
+    lifting.ComputeGradient(ids, vector, tcc_index_);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");

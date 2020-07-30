@@ -121,8 +121,9 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // we assume that 0 and 1 correspond to matrix and fracture, respectively
-  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
-  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+  // to avoid modifying original operators, we clone them.
+  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
   op_tree_->SetOperatorBlock(0, 0, op0);
   op_tree_->SetOperatorBlock(1, 1, op1);
@@ -222,6 +223,15 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
     double dt(-1e+98), dt_solver;
     bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green")
+               << "matrix:" << std::endl
+               << op_tree_->PrintDiagnostics() << std::endl
+               << "Initialization of PK is complete: my dT=" << get_dt() 
+               << vo_->reset() << std::endl << std::endl;
   }
 }
 

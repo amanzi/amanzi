@@ -507,12 +507,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 8;
 
+      } else if (strcmp(tagname, "shallow_water") == 0) {
+        GetAttributeValueS_(jnode, "state", "on");
+        transient_model += 16;
+
       } else if (strcmp(tagname, "multiphase") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         model = GetAttributeValueS_(jnode, "model");
         pk_model_["multiphase"] = model;
         pk_master_["multiphase"] = true;
-        transient_model += 16;
+        transient_model += 32;
       } 
     }
 
@@ -583,7 +587,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       else 
         PopulatePKTree_(pk_tree_list, "coupled flow and energy");
       break;
-    case 16: 
+    case 16:
+      PopulatePKTree_(pk_tree_list, "shallow water");
+      break;
+    case 32: 
       pk_master_["multiphase"] = true;
       PopulatePKTree_(pk_tree_list, "multiphase");
       break;
@@ -634,6 +641,9 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "energy") {
     pk_tree.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
+  }
+  else if (pk_name == "shallow water") {
+    pk_tree.sublist("shallow water").set<std::string>("PK type", "shallow water");
   }
   else if (pk_name == "multiphase") {
     pk_tree.sublist("multiphase").set<std::string>("PK type", pk_model_["multiphase"]);    
@@ -924,6 +934,11 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
       }
       else if (it->first == "chemistry fracture") {
         out_list.sublist(it->first) = TranslateChemistry_("fracture");
+      }
+      // -- surface PKs
+      else if (it->first == "shallow water") {
+        // temporarily, we run only stand-along SW
+        out_list.sublist(it->first) = TranslateShallowWater_("matrix");
       }
       // -- multiphase PKs
       else if (it->first == "multiphase") {

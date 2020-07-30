@@ -26,6 +26,12 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  // optimize div[K k(grad u + b g u)] to div[K1 (grad u + b1 g u)]
+  if (!gravity_term_initialized_) {
+    if (is_scalar_) rho_ *= const_k_;
+    gravity_term_initialized_ = true;
+  }
+
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
   AddGravityToRHS_();
 }
@@ -62,6 +68,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
     Kc(0, 0) = 1.0;
+    if (const_K_.rank() > 0) Kc = const_K_;
 
     // gravity discretization
     bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
@@ -188,6 +195,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   // gravity discretization
   bool fv_flag = (gravity_method_ == OPERATOR_GRAVITY_FV) ||
@@ -303,6 +311,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -368,6 +377,8 @@ void PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
     gravity_method_ = OPERATOR_GRAVITY_HH;
   else
     gravity_method_ = OPERATOR_GRAVITY_FV;
+
+  gravity_term_initialized_ = false;
 }
 
 
@@ -403,6 +414,8 @@ double PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 
   if (K_.get()) {
     gflux = (((*K_)[c] * g_) * normal);
+  } else if (const_K_.rank() > 0) {
+    gflux = (const_K_ * g_) * normal;
   } else {
     gflux = g_ * normal;
   }

@@ -173,6 +173,9 @@ class InputConverterU : public InputConverter {
                                               Teuchos::ParameterList& state_list);
   Teuchos::ParameterList TranslateMultiphaseBCs_();
 
+  // -- shallow water
+  Teuchos::ParameterList TranslateShallowWater_(const std::string& domain);
+
   // -- mpc pks
   bool coupled_flow_, coupled_transport_, coupled_energy_;
   std::vector<std::string> fracture_regions_;

@@ -55,10 +55,6 @@ void PDE_DiffusionMFD::SetTensorCoefficient(
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
-
-    if (!mass_matrices_initialized_) {
-      CreateMassMatrices_();
-    }
   }
 }
 
@@ -87,11 +83,6 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("twin"));
     }
   }
-
-  // verify that mass matrices were initialized.
-  if (!mass_matrices_initialized_) {
-    CreateMassMatrices_();
-  }
 }
 
 
@@ -102,6 +93,14 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  // verify that mass matrices were initialized.
+  if (!mass_matrices_initialized_) {
+    CreateMassMatrices_();
+    // optimize div[K k(nabla u)] to div[K1 (nabla u)]
+    if (k_ == Teuchos::null && const_k_ != 1.0)
+      ScaleMassMatrices(const_k_);
+  }
+
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
@@ -340,8 +339,9 @@ void PDE_DiffusionMFD::UpdateMatricesNodal_()
 
   nfailed_primary_ = 0;
 
-  WhetStone::Tensor K(2, 1);
+  WhetStone::Tensor K(mesh_->space_dimension(), 1);
   K(0, 0) = 1.0;
+  if (const_K_.rank() > 0) K = const_K_;
   
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) K = (*K_)[c];
@@ -397,6 +397,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   AmanziMesh::Entity_ID_List cells, faces;
   Ttmp.PutScalar(0.0);
@@ -1087,6 +1088,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
@@ -1473,6 +1475,7 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
   } else {
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
     Kc(0, 0) = 1.0;
+    if (const_K_.rank() > 0) Kc = const_K_;
     return mfd.Transmissibility(f, c, Kc);
   }
 }

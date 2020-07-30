@@ -118,8 +118,8 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
-    lifting.Init(vector, plist);
-    lifting.ComputeGradient(ids);
+    lifting.Init(plist);
+    lifting.ComputeGradient(ids, vector, 0);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");

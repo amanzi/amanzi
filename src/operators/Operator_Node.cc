@@ -221,6 +221,14 @@ void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
   AMANZI_ASSERT(!ierr);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Node::Clone() const {
+  return Teuchos::rcp(new Operator_Node(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

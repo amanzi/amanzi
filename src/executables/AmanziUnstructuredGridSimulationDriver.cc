@@ -51,6 +51,7 @@
 #include "pks_transport_registration.hh"
 #include "pks_energy_registration.hh"
 #include "pks_multiphase_registration.hh"
+#include "pks_shallow_water_registration.hh"
 #include "wrm_flow_registration.hh"
 #include "wrmmp_registration.hh"
 

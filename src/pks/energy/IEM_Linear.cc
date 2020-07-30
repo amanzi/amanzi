@@ -30,12 +30,10 @@ double IEM_Linear::InternalEnergy(double temp) {
 
 void IEM_Linear::InitializeFromPlist_()
 {
-  if (plist_.isParameter("heat capacity [J/kg-K]")) {
-    cv_ = plist_.get<double>("heat capacity [J/kg-K]");
-    molar_basis_ = false;
+  if (plist_.isParameter("heat capacity")) {
+    cv_ = plist_.get<double>("heat capacity");
   } else {
-    cv_ = plist_.get<double>("heat capacity [J/mol-K]");
-    molar_basis_ = true;
+    cv_ = plist_.get<double>("molar heat capacity");
   }
 
   Tref_ = plist_.get<double>("reference temperature", 273.15);

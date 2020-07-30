@@ -68,7 +68,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("internal energy key", "internal_energy_rock");
     elist.sublist("internal_energy_rock").sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
-         .set<double>("heat capacity [J/mol-K]", 620.0);
+         .set<double>("heat capacity", 620.0);
   }
 
   // Fields for gas
@@ -112,7 +112,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist("internal_energy_liquid")
          .sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
-         .set<double>("heat capacity [J/mol-K]", 76.0);
+         .set<double>("molar heat capacity", 76.0);
   }
 
   // -- molar and mass density
