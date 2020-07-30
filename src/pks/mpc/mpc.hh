@@ -114,15 +114,11 @@ public:
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-
   virtual Teuchos::RCP<PK_t> get_subpk(int i);
 
- protected: // data
-
-
  protected:
-  // this does not work.  fail etc
-  void init_(const Teuchos::RCP<State>& S);
+  // constructs sub-pks
+  void init_(const Teuchos::RCP<State>& S, Comm_ptr_type comm=Teuchos::null);
 
  protected:
   
@@ -300,15 +296,17 @@ Teuchos::RCP<PK_t> MPC<PK_t>::get_subpk(int i){
 
 // protected constructor of subpks
 template <class PK_t>
-void MPC<PK_t>::init_(const Teuchos::RCP<State>& S)
+void MPC<PK_t>::init_(const Teuchos::RCP<State>& S,
+                      Comm_ptr_type comm)
 {
   PKFactory pk_factory;
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-
+  if (comm == Teuchos::null) comm = solution_->Comm();
+  
   int npks = pk_order.size();
   for (int i=0; i!=npks; ++i) {
     // create the solution vector
-    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(solution_->Comm()));
+    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(comm));
     solution_->PushBack(pk_soln);
 
     // create the PK

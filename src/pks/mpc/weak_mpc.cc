@@ -22,7 +22,7 @@ WeakMPC::WeakMPC(Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& solution)
     : PK(FElist, plist, S, solution),
       MPC<PK>(FElist, plist, S, solution) {
-  init_(S);
+  MPC<PK>::init_(S, solution_->Comm());
 };
 
 
