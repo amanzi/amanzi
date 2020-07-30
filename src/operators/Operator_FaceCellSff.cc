@@ -216,6 +216,12 @@ void Operator_FaceCellSff::InitializeInverse(Teuchos::ParameterList& plist)
   }
 }
 
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_FaceCellSff::Clone() const {
+  return Teuchos::rcp(new Operator_FaceCellSff(*this));
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

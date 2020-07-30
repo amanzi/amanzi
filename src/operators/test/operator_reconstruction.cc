@@ -74,8 +74,8 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   plist.set<bool>("limiter extension for transport", false);
 
   ReconstructionCell lifting(mesh);
-  lifting.Init(field, plist);
-  lifting.ComputeGradient(); 
+  lifting.Init(plist);
+  lifting.ComputeGradient(field); 
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
@@ -132,8 +132,8 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   plist.set<bool>("limiter extension for transport", false);
 
   ReconstructionCell lifting(mesh);
-  lifting.Init(field, plist);
-  lifting.ComputeGradient(); 
+  lifting.Init(plist);
+  lifting.ComputeGradient(field);
 
   // calculate gradient error
   double err_int, err_glb, gnorm;

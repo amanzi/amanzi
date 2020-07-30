@@ -67,7 +67,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   plamb.set<bool>("inflow krel correction", true);
   plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);
 
-  // time stepping method
+  // time stepping method for high-level PK only
   out_list.set<std::string>("time integration method", "BDF1");
   Teuchos::ParameterList& bdf1 = out_list.sublist("BDF1");
 

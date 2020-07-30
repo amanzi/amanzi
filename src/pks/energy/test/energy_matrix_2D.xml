@@ -201,7 +201,7 @@
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/mol-K]" type="double" value="76.0"/>
+          <Parameter name="molar heat capacity" type="double" value="76.0"/>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -213,7 +213,7 @@
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
           <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+          <Parameter name="heat capacity" type="double" value="620.0"/>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

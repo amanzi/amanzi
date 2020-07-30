@@ -138,6 +138,14 @@ void Operator_ConsistentFace::AssembleMatrixOp(
   AMANZI_ASSERT(!ierr);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_ConsistentFace::Clone() const {
+  return Teuchos::rcp(new Operator_ConsistentFace(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

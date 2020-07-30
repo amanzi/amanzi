@@ -217,6 +217,7 @@ Amanzi's internal default units are SI units except for the concentration.
     <Parameter name="length" type="string" value="m"/>
     <Parameter name="time" type="string" value="s"/>
     <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
     <Parameter name="concentration" type="string" value="molar"/>
   </ParameterList>
   </ParameterList>
@@ -411,17 +412,16 @@ Primary and derived fields
   * total component concentration [mol/L] or [mol/m^3]
   * temperature [K]
 
-* Derived fields
+* Secondary fields
 
   * saturation [-]
   * hydraulic_head [m]
   * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
-  * porosity [-]
-  * transport_porosity [-] 
-
-* Static fields
-
   * permeability [m^2]
+  * porosity [-]
+  * specific_storage [m^-1]
+  * specific_yield [-]
+  * transport_porosity [-] 
 
 
 Field evaluators
@@ -3530,6 +3530,59 @@ This section to be written.
   </ParameterList>
 
 
+Shallow water PK
+----------------
+
+The mathematical model describing two-dimensional shallow water flow is
+
+.. math::
+  \begin{align*}
+  & h_t + (hu)_x + (hv)_y = 0, \\
+  & (hu)_t + (hu^2 + \frac{1}{2} gh^2)_x + (huv)_y = -ghB_x \\
+  & (hv)_t + (huv)_x + (hv^2 + \frac{1}{2} gh^2)_y = -ghB_y
+  \end{align*}  
+
+Here
+:math:`h` [m] is water depth, 
+:math:`g` [m/s^2] is gravity acceleration,
+:math:`u` [m/s] is depth averaged velocity in x direction,
+:math:`v` [m/s] is depth averaged velocity in y direction,
+:math:`B` [m] is bottom elevation (bathymetry),
+:math:`H = h + B` [m] is water surface elevation.
+
+
+Global parameters
+.................
+
+Global parameters are placed in the sublist `"shallow water`". 
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+
+Reconstruction and limiters
+...........................
+
+The control of the second-order numerical scheme is done via `"reconstruction`"
+sublist, described in Reconstruction_. Here is the example:
+
+
+.. code-block:: xml
+
+  <ParameterList name="shallow water">  <!-- parent list -->
+  <ParameterList name="reconstruction">
+    <Parameter name="method" type="string" value="cell-based"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+    <Parameter name="limiter location" type="string" value="node"/>
+    <Parameter name="limiter points" type="int" value="0"/>
+    <Parameter name="limiter cfl" type="double" value="0.1"/>
+  </ParameterList>
+  </ParameterList>
+
+
 Coupled process kernels
 =======================
 
@@ -3937,6 +3990,8 @@ Diffusion is the most frequently used operator. It employs the old schema.
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
+  * `"gravity magnitude`" [double] defined magnitude of the gravity vector.
+
   * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
     that must be added to the preconditioner. These terms approximate some Jacobian terms.
     Available options are `"true Jacobian`" and `"approximate Jacobian`".
@@ -3971,6 +4026,7 @@ Diffusion is the most frequently used operator. It employs the old schema.
     <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     <Parameter name="gravity" type="bool" value="true"/>
     <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="gravity magnitude" type="double" value="9.81"/>
     <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
     <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
@@ -4163,8 +4219,10 @@ required by this factory and/or particular method in it.
   </ParameterList>
 
 
-
 Diffusion is the most frequently used operator.
+
+
+.. _Reconstruction:
 
 Reconstruction and limiters
 ...........................
@@ -4195,6 +4253,14 @@ and their extensions for various PKs.
 
  * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
    on face where limiting occurs. Default is 1. Limited to 2D.
+
+ * `"limiter location`" [string] defines geometry entity where the *limiter points*
+   are located. Available options are `"node`", `"face`", and `"cell`".
+   Option `"node`" is default for `"node to cells`" stencil.
+   Option `"face`" is default for other stencils.
+
+ * `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
+   Default value is 1.
 
  * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
    the hosting application. Default is `"false`".`
@@ -5629,13 +5695,11 @@ This specification format uses and describes the unstructured mesh only.
      
       * `"format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
-    * `"generate mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
+    * `"generate mesh`" [list] accepts parameters of generated mesh
 
-      * `"uniform structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
-
-        * `"domain low coordinate`" [Array(double)] Location of low corner of domain
-        * `"domain high coordinate`" [Array(double)] Location of high corner of domain
-        * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
+      * `"domain low coordinate`" [Array(double)] Location of low corner of domain
+      * `"domain high coordinate`" [Array(double)] Location of high corner of domain
+      * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
     * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -5671,12 +5735,10 @@ Example of *Unstructured* mesh generated internally:
   <ParameterList>  <!-- parent list -->
   <ParameterList name="mesh">
     <ParameterList name="unstructured"/>
-      <ParameterList name="generate mesh"/>
-        <ParameterList name="uniform structured"/>
-          <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
-          <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-          <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
-        </ParameterList>   
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+        <Parameter name="domain low cooordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
       </ParameterList>   
 
       <ParameterList name="expert">
@@ -6233,6 +6295,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * SOLUTE sorbed concentration [mol/kg] 
+      * SOLUTE free ion concentration
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")

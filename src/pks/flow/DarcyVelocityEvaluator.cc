@@ -12,6 +12,7 @@
 */
 
 #include "MFD3D_Diffusion.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "DarcyVelocityEvaluator.hh"
 
@@ -85,7 +86,7 @@ void DarcyVelocityEvaluator::EvaluateField_(
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 2) {
           int gid = cmap.GID(c);
-          g += (gid == std::min(cmap.GID(cells[0]), cmap.GID(cells[1]))) ? 0 : 1;
+          g += Operators::UniqueIndexFaceToCells(*mesh, f, c);
         }
       }
       solution[n].Reshape(dim, 0);

@@ -80,6 +80,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   int mat(0);
 
   // primary continuum
+  int nmat(0);
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   DOMNodeList* children = node_list->item(0)->getChildNodes();
 
@@ -88,6 +89,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(inode, "name");
       int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
+      nmat++;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -222,6 +224,42 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
         TranslateFieldEvaluator_(node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+      }
+
+      // -- liquid heat capacity
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
+      if (flag) {
+        if (nmat > 1) {
+          msg << "Heat capacity is supported for problems with one material";
+          Exceptions::amanzi_throw(msg);
+        }
+        double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
+        field_ev.set<std::string>("field evaluator type", "iem")
+            .set<std::string>("internal energy key", "internal_energy_liquid");
+        field_ev.sublist("IEM parameters")
+            .set<std::string>("iem type", model)
+            .set<double>("heat capacity", cv);
+      }
+
+      // -- rock heat capacity
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
+      if (flag) {
+        if (nmat > 1) {
+          msg << "Heat capacity is supported for problems with one material";
+          Exceptions::amanzi_throw(msg);
+        }
+        double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
+        field_ev.set<std::string>("field evaluator type", "iem")
+            .set<std::string>("internal energy key", "internal_energy_rock");
+        field_ev.sublist("IEM parameters")
+            .set<std::string>("iem type", model)
+            .set<double>("heat capacity", cv);
       }
     }
   }
@@ -477,6 +515,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions);
 
         TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
+      }
+
+      // surface fields
+      // -- ponded_depth 
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "ponded_depth", "m", reg_str, regions, out_ic, out_ev);
       }
     }
   }

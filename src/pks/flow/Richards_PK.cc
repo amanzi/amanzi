@@ -514,7 +514,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Conditional initialization of lambdas from pressures.
   CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
 
-  if (pressure.HasComponent("face")) {
+  if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
   }

@@ -122,7 +122,7 @@ inline bool ends_with(const std::string& key, const std::string& substr) {
       key.substr(key.length()-substr.length(), key.length()) == substr;
 }
 
-} // namespace Key
+} // namespace Keys
 } // namespace Amanzi
 
 #endif

@@ -142,6 +142,7 @@
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
 #   0.97.7       - update ASCEMIO
+#   0.97.8       - update BoxLib (CCSE) to version 17.05.1
 
 include(CMakeParseArguments)
 
@@ -194,7 +195,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 7)
+set(AMANZI_TPLS_VERSION_PATCH 8)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -268,15 +269,18 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 # TPL: CCSE
 #
-set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 5)
+set(CCSE_VERSION_MAJOR 17)
+set(CCSE_VERSION_MINOR 05)
+set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
-set(CCSE_ARCHIVE_FILE   v${CCSE_VERSION}.tar.gz) 
+set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        b1e0cfb99db6665ba70bb5e9ae56e14e) 
+set(CCSE_MD5_SUM        97c3e1615cc649e2748fa9a7291724fa)
+set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
+set(CCSE_GIT_TAG        "a15e0ee6b043cb87dc99c8fe902b10217eb4fe94")
+
 
 #
 # TPL: UnitTest
@@ -385,10 +389,10 @@ set(HYPRE_VERSION_MAJOR  2)
 set(HYPRE_VERSION_MINOR  14)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
-set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
+set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
+set(HYPRE_MD5_SUM        270a6e4620622516655dd9903a36d314)
 
 #
 # TPL: ParMetis
@@ -409,10 +413,10 @@ set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
 set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
-set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
-set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
+set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive")
+set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
+set(SuperLU_MD5_SUM        4a1a602d9335f1da4ba786cccc7873cd)
 
 #
 # TPL: SuperLU_Dist

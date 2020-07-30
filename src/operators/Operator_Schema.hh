@@ -48,6 +48,9 @@ class Operator_Schema : public Operator {
     set_schema_string(schema.CreateUniqueName());
   }
 
+  // copy constructor
+  virtual Teuchos::RCP<Operator> Clone() const override;
+
   // required methods
   // -- global methods
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;

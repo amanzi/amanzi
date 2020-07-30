@@ -26,7 +26,6 @@ namespace Operators {
 
 class Operator_Diagonal : public Operator {
  public:
-  // main constructor
   // The input CVSs define the domain and range of the operator.
   Operator_Diagonal(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                     const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
@@ -37,7 +36,9 @@ class Operator_Diagonal : public Operator {
     col_compname_ = *(cvs_col->begin());
     set_schema_string("INDICES");
   }
-  ~Operator_Diagonal() {};
+
+  // copy constructor
+  virtual Teuchos::RCP<Operator> Clone() const override;
 
   // required methods
   // -- global methods that cannot be aplied to this operator

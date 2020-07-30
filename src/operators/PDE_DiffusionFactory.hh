@@ -35,7 +35,7 @@ and potentially not that valid, this also supports and implementation with an ad
 source, i.e.:
 
 .. math::
-  \nabla \cdot k (\nabla u + \hat{z})
+  \nabla \cdot K k (\nabla u + b g z)
 
 for gravitational terms in Richards equations.
 
@@ -82,9 +82,39 @@ namespace Operators {
 
 class BCs;
 
-struct PDE_DiffusionFactory {
-  // Diffusion-type PDEs with optional gravity.
-  // Decision is made based on data in the parameter list.
+class PDE_DiffusionFactory {
+ public:
+  PDE_DiffusionFactory() {};
+  PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
+  // Lazy setup requires minimum input or none.
+  // Multiple operator can be generated using a common setup
+  void SetConstantTensorCoefficient(const WhetStone::Tensor& K);
+  void SetVariableTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+
+  void SetConstantScalarCoefficient(double k);
+  void SetVariableScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+                                    const Teuchos::RCP<const CompositeVector>& dkdu = Teuchos::null) {
+    k_ = k;
+    dkdu_ = dkdu;
+  }
+
+  void SetConstantGravitationalTerm(const AmanziGeometry::Point& g, double b = 1.0);
+  void SetVariableGravitationalTerm(const AmanziGeometry::Point& g,
+                                    const Teuchos::RCP<const CompositeVector>& b,
+                                    const Teuchos::RCP<const CompositeVector>& dbdu = Teuchos::null) {
+    g_ = g;
+    b_ = b;
+    dbdu_ = dbdu;
+  }
+
+  Teuchos::RCP<PDE_Diffusion> Create();
+
+  // Backward compatibility
+  // -- Diffusion-type PDEs with optional gravity.
+  //    Decision is made based on data in the parameter list.
   Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -99,7 +129,7 @@ struct PDE_DiffusionFactory {
          const Teuchos::RCP<const CompositeVector>& rho,
          const AmanziGeometry::Point& g);
 
-  // Diffusion operators without gravity.
+  // -- Diffusion operators without gravity.
   Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -131,10 +161,23 @@ struct PDE_DiffusionFactory {
   Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<Operator>& global_op);
-  
+
  private:
-  inline void SetCellSchema_(Teuchos::ParameterList& oplist);
-  inline void SetCellFaceSchema_(Teuchos::ParameterList& oplist);
+  Teuchos::ParameterList oplist_;
+  const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  // diffusivity
+  WhetStone::Tensor const_K_;
+  Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
+
+  double const_k_;
+  Teuchos::RCP<const CompositeVector> k_, dkdu_;
+
+  // gravity
+  bool gravity_;
+  AmanziGeometry::Point g_;
+  double const_b_;
+  Teuchos::RCP<const CompositeVector> b_, dbdu_;
 };
 
 }  // namespace Operators

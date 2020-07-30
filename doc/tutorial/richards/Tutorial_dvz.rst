@@ -100,7 +100,7 @@ a STOMP code model. The boundary conditions
 at the top surface are defined in the problem statement as a volumetric fluxes 
 [m\ :sup:`3`\ /m\ :sup:`2`\ d = m/d]. *Amanzi* currently requires boundary 
 conditions of this type to be specified as mass fluxes, 
-:math:`\rho U` [kg\ :sup:`3`\ /m\ :sup:`2`\ s]. The ``inward_mass_flux`` values
+:math:`\rho U` [kg /m\ :sup:`2`\ s]. The ``inward_mass_flux`` values
 in the XML input have these units.
 
 

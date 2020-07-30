@@ -112,7 +112,6 @@ void InputAnalysis::RegionAnalysis()
       AmanziMesh::Entity_ID_List cells;
 
       for (int n = 0; n < nblock; ++n) {
-        area += mesh_->face_area(block[n]) * frac;
         mesh_->face_get_cells(block[n], AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() != 1) bc_flag = 0;
       }

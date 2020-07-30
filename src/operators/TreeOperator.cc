@@ -22,6 +22,7 @@
 #include "VerboseObject.hh"
 
 // Operators
+#include "Op.hh"
 #include "Operator.hh"
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
@@ -303,6 +304,28 @@ void TreeOperator::ComputeInverse()
   }
 }
 
+
+/* ******************************************************************
+* Populates matrix entries.
+****************************************************************** */
+std::string TreeOperator::PrintDiagnostics() const
+{
+  std::stringstream msg;
+  int n_blocks = blocks_.size();
+  for (int i = 0; i < n_blocks; ++i) {
+    for (int j = 0; j < n_blocks; ++j) {
+      auto block = blocks_[i][j];
+      if (block != Teuchos::null) {
+        msg << " block " << i << " " << j << ": ";
+        for (auto it = block->begin(); it != block->end(); ++it) {
+          msg << "<" << (*it)->schema_string << "> ";
+        }
+        msg << "\n";
+      }
+    }
+  }
+  return msg.str();
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

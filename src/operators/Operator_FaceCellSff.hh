@@ -38,7 +38,8 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   }
 
   virtual void InitializeInverse(Teuchos::ParameterList& solver_list) override;
-  
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   // Special AssembleMatrix required to deal with schur complement
   virtual void AssembleMatrix(const SuperMap& map,
                               MatrixFE& matrix, int my_block_row, int my_block_col) const override;
