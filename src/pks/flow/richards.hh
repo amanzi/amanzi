@@ -62,12 +62,6 @@ Solves Richards equation:
       is only needed to set Jacobian options, as all others probably should
       match those in `"diffusion`", and default to those values.
 
-    * `"preconditioner`" ``[preconditioner-typed-spec]`` Preconditioner for the solve.
-
-    * `"linear solver`" ``[linear-solver-typed-spec]`` **optional** May be used
-      to improve the inverse of the diffusion preconditioner.  Only used if this
-      PK is not implicitly coupled.  See LinearOperator_.
-
     * `"surface rel perm strategy`" ``[string]`` **none** Approach for
       specifying the relative permeabiilty on the surface face.  `"clobber`" is
       frequently used for cases where a surface rel perm will be provided.  One
@@ -400,7 +394,6 @@ protected:
   Teuchos::RCP<Operators::PDE_DiffusionWithGravity> preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_DiffusionWithGravity> face_matrix_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
-  Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // flag to do jacobian and therefore coef derivs
   bool jacobian_;

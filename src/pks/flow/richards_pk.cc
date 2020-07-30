@@ -24,7 +24,6 @@ Authors: Neil Carlson (version 1)
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
-#include "LinearOperatorFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
@@ -305,22 +304,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //   matrix_vapor_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   // }
 
-  //    symbolic assemble
-  precon_used_ = plist_->isSublist("preconditioner");
-  if (precon_used_) {
-    preconditioner_->SymbolicAssembleMatrix();
-    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
-    //    Potentially create a linear solver
-    if (plist_->isSublist("linear solver")) {
-      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-    } else {
-      lin_solver_ = preconditioner_;
-    }
-  }
-
+  preconditioner_->InitializeInverse();
+  preconditioner_->UpdateInverse();
+  
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
@@ -362,7 +348,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Errors::Message message("Richards PK requested both flux and head coupling -- choose one.");
     Exceptions::amanzi_throw(message);
   }
-
 
   // predictors for time integration
   modify_predictor_with_consistent_faces_ =
@@ -486,9 +471,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
  
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
-  
-  
-
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -540,7 +522,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   preconditioner_diff_->SetGravity(g);
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(K_);
-  //  preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
   face_matrix_diff_->SetBCs(bc_, bc_);
@@ -553,8 +534,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   //   // residual vector for vapor diffusion
   //   res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData(key_))); 
   // }
-
-
 };
 
 

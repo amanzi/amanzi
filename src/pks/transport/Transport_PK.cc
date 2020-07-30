@@ -24,8 +24,6 @@
 #include "Explicit_TI_RK.hh"
 #include "FieldEvaluator.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorDefs.hh"
-#include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -981,8 +979,6 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     zero.PutScalar(0.0);
   
     // instantiale solver
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
         solver = sfactory.Create(dispersion_solver, *linear_solver_list_, op);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration

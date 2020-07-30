@@ -14,11 +14,11 @@ Author: Ethan Coon
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_AdvectionUpwind.hh"
-#include "LinearOperatorFactory.hh"
+
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
-#include "upwind_gravity_flux.hh"
+
 #include "enthalpy_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
@@ -171,9 +171,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   //    derivative.
   jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
-    // if (preconditioner_->RangeMap().HasComponent("face")) {
     if (mfd_pc_plist.get<std::string>("discretization primary") != "fv: default"){
-      // MFD -- upwind required
+      // MFD or NLFV -- upwind required
       dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
       duw_conductivity_key_ = Keys::getDerivKey(uw_conductivity_key_, key_);
         
@@ -181,12 +180,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
 
-      // upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
-      //                                 dconductivity_key_, duw_conductivity_key_));
       upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                                       dconductivity_key_, duw_conductivity_key_,
                                       energy_flux_key_, 1.e-8));
-
     } else {
       // FV -- no upwinding
       dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
@@ -196,7 +192,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     dconductivity_key_ = "";
     duw_conductivity_key_ = "";
   }
-  
 
   // -- accumulation terms
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
@@ -215,21 +210,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  //    symbolic assemble
-  precon_used_ = plist_->isSublist("preconditioner");
-  if (precon_used_) {
-    preconditioner_->SymbolicAssembleMatrix();
-    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
-    //    Potentially create a linear solver
-    if (plist_->isSublist("linear solver")) {
-      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-    } else {
-      lin_solver_ = preconditioner_;
-    }
-  }  
+  preconditioner_->InitializeInverse();
+  preconditioner_->UpdateInverse();
 
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)

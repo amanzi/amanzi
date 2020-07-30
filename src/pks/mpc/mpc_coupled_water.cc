@@ -1,7 +1,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "LinearOperatorFactory.hh"
 
 #include "mpc_surface_subsurface_helpers.hh"
 #include "mpc_coupled_water.hh"
@@ -68,7 +67,6 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   // Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
     lin_solver_ = fac.Create(linsolve_sublist, precon_);
   } else {
     lin_solver_ = precon_;

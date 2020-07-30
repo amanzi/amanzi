@@ -15,7 +15,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "FunctionFactory.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
-#include "LinearOperatorFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "PDE_DiffusionFV.hh"
@@ -136,7 +135,6 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   //    Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
     lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
   } else {
     lin_solver_ = preconditioner_;

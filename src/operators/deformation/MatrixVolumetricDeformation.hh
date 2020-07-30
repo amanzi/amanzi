@@ -68,9 +68,6 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   void PreAssemble_();
 
  protected:
-  // solver methods
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> prec_;
-
   // local data
   Teuchos::RCP<CompositeVectorSpace> range_;
   Teuchos::RCP<CompositeVectorSpace> domain_;

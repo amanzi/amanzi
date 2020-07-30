@@ -34,7 +34,6 @@
 #include <fstream>
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "LinearOperatorFactory.hh"
 #include "FieldEvaluator.hh"
 #include "Operator.hh"
 #include "TreeOperator.hh"
@@ -111,7 +110,6 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
     if (!linsolve_sublist.isSublist("verbose object"))
       linsolve_sublist.set("verbose object", plist_->sublist("verbose object"));
-    AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator,TreeVector,TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create(linsolve_sublist, preconditioner_);
   } else {
     linsolve_preconditioner_ = preconditioner_;

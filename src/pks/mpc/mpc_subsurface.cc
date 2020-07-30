@@ -17,7 +17,6 @@ with freezing.
 #include "PDE_Advection.hh"
 #include "PDE_Accumulation.hh"
 #include "Operator.hh"
-#include "LinearOperatorFactory.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_arithmetic_mean.hh"
 
@@ -363,7 +362,6 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList& lin_solver_list = plist_->sublist("linear solver");
     if (!lin_solver_list.isSublist("verbose object"))
       lin_solver_list.set("verbose object", plist_->sublist("verbose object"));
-    AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create(lin_solver_list, preconditioner_);
   } else {
     linsolve_preconditioner_ = preconditioner_;
