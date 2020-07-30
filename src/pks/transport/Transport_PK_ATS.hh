@@ -93,7 +93,7 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
                           const Teuchos::RCP<State>& S_next);
 
   virtual std::string name() { return "transport_ats"; }
-  Key get_domain_name() {return domain_name_;}
+  Key domain_name() {return domain_name_;}
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
@@ -122,7 +122,9 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
   double VV_SoluteVolumeChangePerSecond(int idx_solute);
+
   double ComputeSolute(const Epetra_MultiVector& tcc, int idx);
+
   double ComputeSolute(const Epetra_MultiVector& tcc,
                        const Epetra_MultiVector& ws,
                        const Epetra_MultiVector& den,
@@ -133,6 +135,9 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   // -- sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
+
+  void MixingSolutesWthSources(double told, double tnew);
+    
 
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
@@ -146,6 +151,7 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   const std::vector<std::string>  component_names(){return component_names_;};
     int num_aqueous_component() {return num_aqueous;};
     int num_gaseous_component() {return num_gaseous;};    
+
 
  private:
   void InitializeFields_(const Teuchos::Ptr<State>& S);
@@ -234,23 +240,24 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
     Key molar_density_key_;
     Key solid_residue_mass_key_;
     Key water_content_key_;
-  
+    Key mass_src_key_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
-  bool subcycling_;
+  bool subcycling_, special_source_, water_source_in_meters_;
   int dim;
   int saturation_name_;
   bool vol_flux_conversion_;
 
+  Teuchos::RCP<CompositeVector> tcc_w_src;
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux_;
-  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_;
+  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_,mass_src_;
   Teuchos::RCP<Epetra_MultiVector> flux_copy_;
     
 #ifdef ALQUIMIA_ENABLED
@@ -284,7 +291,6 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
 
   bool flag_dispersion_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
-  std::string dispersion_preconditioner, dispersion_solver;
 
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
@@ -312,7 +318,8 @@ class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   std::vector<std::string> component_names_;  // details of components
   std::vector<double> mol_masses_;
   int num_aqueous, num_gaseous;
-  double water_tolerance_, max_tcc_;  
+  double water_tolerance_, max_tcc_;
+  bool dissolution_;
 
   // io
   Utils::Units units_;

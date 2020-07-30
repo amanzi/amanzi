@@ -13,7 +13,6 @@
    is calculated at equilibrium with ground/surface water and Air.
 
    ------------------------------------------------------------------------- */
-
 #include "surface_balance_base.hh"
 
 namespace Amanzi {

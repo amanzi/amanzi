@@ -30,8 +30,9 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
   
-  domain_ss_ = plist_->get<std::string>("subsurface domain name","domain");
-  domain_surf_ = plist_->get<std::string>("surface domain name","surface");
+  domain_ss_ = plist_->get<std::string>("domain name","domain");
+  domain_surf_ = (domain_ss_.empty() || domain_ss_ == "domain") ? "surface" : std::string("surface_")+domain_ss_;
+  domain_surf_ = plist_->get<std::string>("surface domain name",domain_surf_);
   // grab the meshes 
   surf_mesh_ = S->GetMesh(domain_surf_);
   domain_mesh_ = S->GetMesh(domain_ss_);
@@ -59,18 +60,8 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
     precon_->OpPushBack(*op);
   }
 
-  // -- must re-symbolic assemble subsurf operators, now that they have a surface operator
-  precon_->SymbolicAssembleMatrix();
-  precon_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
-
-  // Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    lin_solver_ = fac.Create(linsolve_sublist, precon_);
-  } else {
-    lin_solver_ = precon_;
-  }
+  // -- reset the symbolic structure of the domain inverse, now that it has a new Op
+  precon_->UpdateInverse();
   
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
@@ -150,7 +141,7 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   // call the precon's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying subsurface operator." << std::endl;
-  int ierr = lin_solver_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
+  int ierr = precon_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying  CopySubsurfaceToSurface." << std::endl;
@@ -197,8 +188,7 @@ MPCCoupledWater::UpdatePreconditioner(double t,
   // refill them).  This is why subsurface is first
   StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
   
-  precon_->AssembleMatrix();
-  precon_->UpdatePreconditioner();
+  precon_->ComputeInverse();
   
 }
 

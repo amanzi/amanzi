@@ -126,19 +126,8 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
   // symbolic assemble, get PC
-  precon_used_ = plist_->isSublist("preconditioner");
-  if (precon_used_) {
-    preconditioner_->SymbolicAssembleMatrix();
-    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
-  }
-  
-  //    Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-  } else {
-    lin_solver_ = preconditioner_;
-  }
+  preconditioner_->InitializeInverse();
+  preconditioner_->UpdateInverse();
 }
 
 

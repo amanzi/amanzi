@@ -98,22 +98,8 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // setup and initialize the preconditioner
-  precon_used_ = plist_->isSublist("preconditioner");
-  if (precon_used_) {
-    preconditioner_->SymbolicAssembleMatrix();
-    Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
-    preconditioner_->InitializePreconditioner(pc_sublist);
-  }
-
-  // setup and initialize the linear solver for the preconditioner
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    if (!linsolve_sublist.isSublist("verbose object"))
-      linsolve_sublist.set("verbose object", plist_->sublist("verbose object"));
-    linsolve_preconditioner_ = fac.Create(linsolve_sublist, preconditioner_);
-  } else {
-    linsolve_preconditioner_ = preconditioner_;
-  }
+  preconditioner_->InitializeInverse(plist_->sublist("preconditioner"));
+  preconditioner_->UpdateInverse();
 }
 
 
@@ -146,10 +132,7 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     dB_dy1_->AddAccumulationTerm(*dB_dy1_v, h, "cell", false);
   }
 
-  if (precon_used_) {
-    preconditioner_->AssembleMatrix();
-    preconditioner_->UpdatePreconditioner();
-  }
+  preconditioner_->ComputeInverse();
 }
 
 
@@ -166,7 +149,7 @@ int MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuch
     db_->WriteVectors(vnames, vecs, true);
   }
   
-  int ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+  int ierr = preconditioner_->ApplyInverse(*u, *Pu);
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "PC * residuals:" << std::endl;

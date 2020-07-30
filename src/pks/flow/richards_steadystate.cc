@@ -55,12 +55,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_diff_->ApplyBCs(true, true, true);
-
-  if (precon_used_) {
-    preconditioner_->AssembleMatrix();
-    preconditioner_->UpdatePreconditioner();
-  }      
-  
+  preconditioner_->ComputeInverse();
   
   // // TEST
   // if (S_next_->cycle() == 0 && niter_ == 0) {

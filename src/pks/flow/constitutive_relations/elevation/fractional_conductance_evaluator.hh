@@ -1,6 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FractionalConductanceEvaluator: calculates a fractional conductance.
-
+//! FractionalConductanceEvaluator: an obstruction-drag factor.
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -11,6 +10,13 @@
 
 /*!
 
+This implements the term,
+
+.. math:
+    \frac{\Phi(\delta) - \Phi(\delta_d)}{\delta - \delta_d}
+
+from Jan et al WRR 2018.
+ 
 */
 
 #ifndef AMANZI_FLOWRELATIONS_FRACTIONAL_CONDUCTANCE_EVALUATOR_
@@ -28,8 +34,7 @@ class FractionalConductanceEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   explicit
   FractionalConductanceEvaluator(Teuchos::ParameterList& plist);
-
-  FractionalConductanceEvaluator(const FractionalConductanceEvaluator& other);
+  FractionalConductanceEvaluator(const FractionalConductanceEvaluator& other) = default;
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
   

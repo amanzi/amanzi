@@ -29,20 +29,6 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
   InitializeFromPlist_();
 }
 
-RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    wrms_(other.wrms_),
-    sat_key_(other.sat_key_),
-    dens_key_(other.dens_key_),
-    visc_key_(other.visc_key_),
-    surf_rel_perm_key_(other.surf_rel_perm_key_),
-    is_dens_visc_(other.is_dens_visc_),
-    boundary_krel_(other.boundary_krel_),
-    surf_domain_(other.surf_domain_),
-    perm_scale_(other.perm_scale_),
-    min_val_(other.min_val_) {}
-
-
 Teuchos::RCP<FieldEvaluator>
 RelPermEvaluator::Clone() const {
   return Teuchos::rcp(new RelPermEvaluator(*this));
@@ -172,7 +158,9 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 
 
 void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& result) {
+        const Teuchos::Ptr<CompositeVector>& result)
+{
+  result->PutScalar(0.);
 
   // Initialize the MeshPartition
   if (!wrms_->first->initialized()) {

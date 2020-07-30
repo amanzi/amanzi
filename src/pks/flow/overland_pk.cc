@@ -29,8 +29,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_model.hh"
 
 #include "UpwindFluxFactory.hh"
-#include "PDE_DiffusionFactory.hh"
 
+#include "PDE_DiffusionFactory.hh"
 #include "overland.hh"
 
 namespace Amanzi {

@@ -706,7 +706,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating permeability?";
 
-  Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData(uw_coef_key_, name_);
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData(coef_key_);
   bool update_perm = S->GetFieldEvaluator(coef_key_)
       ->HasFieldChanged(S, name_);
@@ -757,6 +756,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   if (update_perm) {
+    Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData(uw_coef_key_, name_);
+
     // Move rel perm on boundary_faces into uw_rel_perm on faces
     const Epetra_Import& vandelay = mesh_->exterior_face_importer();
     const Epetra_MultiVector& rel_perm_bf =
@@ -1332,6 +1333,17 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 
 }
 
+
+/* ******************************************************************
+* Clip pressure using pressure threshold.
+****************************************************************** */
+void Richards::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  for (int c = 0; c < ncells_owned; c++) p[0][c] = std::max(p[0][c], pmin);
+}
+
+
 // -----------------------------------------------------------------------------
 // Check admissibility of the solution guess.
 // -----------------------------------------------------------------------------
@@ -1422,9 +1434,13 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = pres_f.Map().GID(max_f);
         
+
         MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
         MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
-        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value;
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+        *vo_->os() << "   faces (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }
     }
@@ -1643,6 +1659,9 @@ double Richards::BoundaryFaceValue(int f, const CompositeVector& u)
 //   }
 
 // }
+
+
+
 
 } // namespace
 } // namespace

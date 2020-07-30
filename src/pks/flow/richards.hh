@@ -211,9 +211,9 @@ Solves Richards equation:
 #include "BoundaryFunction.hh"
 #include "upwinding.hh"
 
+
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_Accumulation.hh"
-
 #include "PK_Factory.hh"
 //#include "PK_PhysicalBDF_ATS.hh"
 // #include "pk_factory_ats.hh"
@@ -349,7 +349,7 @@ protected:
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-
+  void  ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p);
 
 
   

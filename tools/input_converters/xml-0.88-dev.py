@@ -35,6 +35,41 @@ def vanGenuchtenParams(xml):
             changeName(region, "van Genuchten residual saturation", "residual saturation [-]")
             changeName(region, "residual saturation", "residual saturation [-]")
 
+def checkManning(xml):
+    for fe_list in asearch.generateElementByNamePath(xml, "state/field evaluators"):
+        for eval in fe_list:
+            if eval.get('name').endswith('manning_coefficient'):
+                eval_type = asearch.childByName(eval, 'field evaluator type')
+                if eval_type.value == 'independent variable':
+                    func_reg = asearch.childByName(eval, 'function')
+
+                    for reg in func_reg:
+                        fixed = False
+                        if not fixed:
+                            try:
+                                comp = asearch.childByName(reg, 'component')
+                            except aerrors.MissingXMLError:
+                                pass
+                            else:
+                                reg.pop('component')
+                                reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
+                                fixed = True
+
+                        if not fixed:
+                            try:
+                                comp = asearch.childByName(reg, 'components')
+                            except aerrors.MissingXMLError:
+                                pass
+                            else:
+                                reg.pop('components')
+                                reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
+                                fixed = True
+
+                        if not fixed:
+                            print(reg.__str__().decode('utf-8'))
+                            raise aerrors.MissingXMLError('Missing "component" or "components"')
+
+
 def fixSnow(xml):
     # todo: remove "include dt factor"
     # todo: rename "dt factor" --> "dt factor [s]"
@@ -51,6 +86,7 @@ def fixSubgrid(xml):
 
 def update(xml):
     vanGenuchtenParams(xml)
+    checkManning(xml)
     # NOTE: these will get added when subgrid pull request is done
     #fixSnow(xml)
     #fixSubgrid(xml)
