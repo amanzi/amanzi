@@ -304,8 +304,9 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_tidal_;
-  Teuchos::RCP<Functions::DynamicBoundaryFunction> bc_dynamic_;
-  
+  Teuchos::RCP<Functions::DynamicBoundaryFunction> bc_dynamic_; 
+  Teuchos::RCP<Functions::BoundaryFunction> bc_level_flux_lvl_, bc_level_flux_vel_ ;
+
   // needed physical models
   Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;
 

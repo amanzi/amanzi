@@ -68,8 +68,6 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
   limiter_->gradient()->ScatterMasterToGhosted("cell");
   
 
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.

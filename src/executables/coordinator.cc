@@ -24,7 +24,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziTypes.hh"
 
 #include "InputAnalysis.hh"
+
 #include "Units.hh"
+
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
 #include "Checkpoint.hh"
@@ -102,11 +104,13 @@ void Coordinator::coordinator_init() {
 
     // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
+
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
       analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
       analysis.RegionAnalysis();
       analysis.OutputBCs();
     }
+
   }
   
   // create the time step manager
@@ -156,21 +160,22 @@ void Coordinator::initialize() {
   // Initialize the state (initializes all dependent variables).
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
-  S_->InitializeFields();
-
-  WriteStateStatistics(S_.ptr(), vo_);
+  S_->InitializeFields();  
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
 
-  // Not sure what these may be?
+  // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
-
-  // Initialize secondaries, etc
   S_->InitializeEvaluators();
+  S_->CheckAllFieldsInitialized();
+ 
+  // Write dependency graph.
+  S_->WriteDependencyGraph();
+  // Reset io_vis flags using blacklist and whitelist
+  //S_->InitializeIOFlags(); 
 
   // Check final initialization
-  S_->CheckAllFieldsInitialized();
   WriteStateStatistics(S_.ptr(), vo_);
 
   // commit the initial conditions.
@@ -328,7 +333,7 @@ void Coordinator::report_memory() {
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
           << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
           << " Bytes" << std::endl;
-    *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
+    *vo_->os() << "  Minimum per core:   " << std::setw(7) << min_mem 
           << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
          << " Bytes" << std::endl;
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
@@ -538,7 +543,7 @@ void Coordinator::cycle_driver() {
    
   }
 
-  //  exit(0);
+  ////exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -565,7 +570,7 @@ void Coordinator::cycle_driver() {
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
         *vo_->os() << "Cycle = " << S_->cycle();
-        *vo_->os() << std::setprecision(15) << ",  Time [days] = "<< S_->time() / (60*60*24);
+        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
         *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
         *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;
