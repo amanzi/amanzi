@@ -72,7 +72,7 @@ int NavierStokes_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                          Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_pc_solver_->ApplyInverse(*X, *Y);
+  return op_preconditioner_->ApplyInverse(*X, *Y);
 }
 
 
@@ -102,19 +102,7 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_preconditioner_acc_->AddAccumulationTerm(one, dtp, "node");
   op_preconditioner_acc_->ApplyBCs();
 
-  global_op->AssembleMatrix();
-  global_op->UpdatePreconditioner();
-
-  // populate pressure operator
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist("Diagonal");
-
-  global_op = op_mass_->global_operator();
-  global_op->AssembleMatrix();
-  global_op->InitializePreconditioner(pc_list);
-  global_op->UpdatePreconditioner();
-
-  // finalize global preconditioner
-  op_preconditioner_->InitBlockDiagonalPreconditioner();
+  op_preconditioner_->ComputeInverse();
 }
 
 

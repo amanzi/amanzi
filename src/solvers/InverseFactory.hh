@@ -153,7 +153,7 @@ mergePreconditionerSolverLists(
     bool make_one_iteration=false)
 {
   Teuchos::ParameterList inv_list;
-  if (!ls_name.empty()) {
+  if (!ls_name.empty() && ls_name != "none") {
     if (!ls_list.isSublist(ls_name)) {
       Errors::Message msg;
       msg << "Requested solver method: \"" << ls_name
@@ -163,7 +163,7 @@ mergePreconditionerSolverLists(
       inv_list.setParameters(ls_list.sublist(ls_name));
     }
   }
-  if (!pc_name.empty()) {
+  if (!pc_name.empty() && pc_name != "none") {
     if (!pc_list.isSublist(pc_name)) {
       Errors::Message msg;
       msg << "Requested preconditioner method: \"" << pc_name

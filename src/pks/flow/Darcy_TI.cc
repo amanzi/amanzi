@@ -75,8 +75,7 @@ int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 ****************************************************************** */
 void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
+  op_->ComputeInverse();
 }
 
 

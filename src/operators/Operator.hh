@@ -194,10 +194,11 @@ class Operator {
   void InitializeInverse(const std::string& prec_name,
                          const Teuchos::ParameterList& prec_list,
                          const std::string& iter_name,
-                         const Teuchos::ParameterList& iter_list);
+                         const Teuchos::ParameterList& iter_list,
+                         bool make_one_iteration=true);
 
   // versions that make it easier to deal with ATS input spec format
-  void InitializeInverse();
+  void InitializeInverse(bool make_one_iteration=true);
 
   // -- preferred methods -- three stages for init, update, and compute.
   virtual void InitializeInverse(Teuchos::ParameterList& plist);

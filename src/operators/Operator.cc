@@ -437,9 +437,10 @@ void Operator::InitializeInverse(const std::string& prec_name,
 void Operator::InitializeInverse(const std::string& prec_name,
         const Teuchos::ParameterList& prec_list,
         const std::string& iter_name,
-        const Teuchos::ParameterList& iter_list) {
+        const Teuchos::ParameterList& iter_list,
+        bool make_one_iteration) {
   auto inv_plist = AmanziSolvers::mergePreconditionerSolverLists(
-      prec_name, prec_list, iter_name, iter_list);
+      prec_name, prec_list, iter_name, iter_list, make_one_iteration);
   InitializeInverse(inv_plist);
 }
 
@@ -464,12 +465,12 @@ void Operator::InitializeInverse(Teuchos::ParameterList& plist)
   preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
 }
 
-void Operator::InitializeInverse()
+void Operator::InitializeInverse(bool make_one_iteration)
 {
   // Initialize based on plist provided
   if (plist_.isSublist("preconditioner")) {
     auto& inv_list = plist_.sublist("preconditioner");
-    AmanziSolvers::setMakeOneIterationCriteria(inv_list);
+    if (make_one_iteration) AmanziSolvers::setMakeOneIterationCriteria(inv_list);
     InitializeInverse(inv_list);
   }
 }
