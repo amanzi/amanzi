@@ -45,6 +45,7 @@ def downloadFile(tmp, bounds, year, var, force=False):
     filename : str
       Path to the data file.
     """
+    
     if year > VALID_YEARS[1] or year < VALID_YEARS[0]:
         raise ValueError("DayMet data is available from {} to {} (does not include {})".format(VALID_YEARS[0], VALID_YEARS[1], year))
     if var not in VALID_VARIABLES:
@@ -112,8 +113,9 @@ def initData(d, vars, num_days, nx, ny):
 
 def collectDaymet(tmpdir, bounds, start, end, vars=None, force=False):
     """Calls the DayMet Rest API to get data and save raw data."""
-    if vars is None:
-        vars = VALID_VARIABLES
+
+#    if vars is None:
+    vars = VALID_VARIABLES
 
     dat = dict()
     d_inited = False
@@ -135,9 +137,9 @@ def collectDaymet(tmpdir, bounds, start, end, vars=None, force=False):
                 dat[var][-end.doy:,:,:] = np.transpose(v[-end.doy:,:,:], (0,2,1))
             else:
                 my_start = 365 * (year - start.year) - start.doy + 1
-                dat[var][my_start:my_start+365,:,:] = np.tranpose(v, (0,2,1))
+                dat[var][my_start:my_start+365,:,:] = np.transpose(v, (0,2,1))
 
-    return dat
+    return dat, x, y
 
 def daymetToATS(dat):
     """Accepts a numpy named array of DayMet data and returns a dictionary ATS data."""
@@ -173,12 +175,13 @@ def getAttrs(bounds, start, end):
     attrs['DayMet end date'] = str(end)
     return attrs    
 
-def writeATS(time, dat, attrs, filename):
+def writeATS(time, dat, x, y, attrs, filename):
     """Accepts a dictionary of ATS data and writes it to HDF5 file."""
     logging.info('Writing ATS file: {}'.format(filename))
     with h5py.File(filename, 'w') as fid:
         fid.create_dataset('time [s]', data=time)
-        
+        fid.create_dataset('row coordinate', data=x)        
+        fid.create_dataset('col coordinate', data=y)
         for key in dat.keys():
             grp = fid.create_group(key)
             for i in range(len(time)):
@@ -224,20 +227,21 @@ def getArgumentParser():
 
 if __name__ == '__main__':
     parser = getArgumentParser()
-    args = parser.parseArgs()
+    args = parser.parse_args()
 
     validBounds(args.bounds)
     
     if args.outfile is None:
-        args.outfile = './daymet_{}_{}_{}.h5'.format(arstart, end, boundsStr(args.bounds))
+        args.outfile = './daymet_{}_{}_{}.h5'.format(args.start, args.end, boundsStr(args.bounds))
 
     tmpdir = args.outfile+".tmp"
-    os.mkdirs(tmpdir, exist_ok=True)
-    raw = collectDaymet(tmpdir, args.bounds, args.start, args.end, args.force_download)
+    os.makedirs(tmpdir, exist_ok=True)
+
+    raw, x, y = collectDaymet(tmpdir, args.bounds, args.start, args.end, args.force_download)
 
     if not args.download_only:
         time, dout = daymetToATS(raw)
-        writeATS(time, dout, getAttrs(bounds, start, end), args.outfile)
+        writeATS(time, dout, x, y, getAttrs(args.bounds, args.start, args.end), args.outfile)
 
     sys.exit(0)
     
