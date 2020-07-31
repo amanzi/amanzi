@@ -1,96 +1,135 @@
-from . import errors
+""" Includes functions for searching xml objects by name and path."""
 
+from . import errors
+import warnings
 
 #
-# Functions for finding and find & replace on XML
+# Functions for finding elements based on their own attributes
+# ---------------------------------------------------------------------------
+def children_by_attr(xml, attr, value):
+    """Find all matches, at depth 1."""
+    return xml.findall('./[@{}="{}"]'.format(attr, value))
+
+def children_by_name(xml, name):
+    """Find children by name."""
+    return children_by_attr(xml, 'name', name)
+
+def child_by_name(xml, name):
+    """Find unique child by name.  Note names should always be unique."""
+    matches = children_by_name(xml, name)
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have child '{}'".format(name))
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one child '{}'".format(name))
+    return matches[0]
+
 # ---------------------------------------------------------------------------
 def findall_attr(xml, attr, value):
-    """Find all matches, recursively."""
-    return xml.findall('.//*/[@%s="%s"]'%(attr,value))
+    """Find all matches, at any depth, in the xml tree."""
+    return xml.findall('.//*/[@{}="{}"]'.format(attr,value))
 
 def find_attr(xml, attr, value):
-    """Find a match, recursively"""
-    findall = findall_attr(xml, attr, value)
-    assert len(findall) == 1
-    return findall[0]
+    """Find a unique xml object, at any depth, in the xml tree."""
+    matches = findall_attr(xml, attr, value)
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have grandchild '{}={}'".format(attr,value))
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one grandchild '{}={}'".format(attr,value))
+    return matches[0]
 
-def findall_name(xml,name):
-    """Find all xml objects with the given 'name'"""
+def findall_name(xml, name):
+    """Find all xml objects with the given 'name' at any depth."""
     return findall_attr(xml, "name", name)
-def find_name(xml,name):
-    """Find an xml objects with the given 'name'"""
+
+def find_name(xml, name):
+    """Find a unique xml object with the given 'name' at any depth."""
     return find_attr(xml, "name", name)
 
-def findall_value(xml,value):
+def findall_value(xml, value):
     """Find all xml objects with the given 'value'"""
     return findall_attr(xml, "value", value)
+
 def find_value(xml,value):
     """Find an xml objects with the given 'value'"""
     return find_attr(xml, "value", value)
 
-def findall_name_value(xml,name,value):
-    """Find all xml objects with the given 'name' and 'value'"""
+def findall_name_value(xml, name, value):
+    """Find all xml objects at any depth with the given 'name' and 'value'"""
     return xml.findall('.//*/[@name="'+str(name)+'"]/[@value="'+str(value)+'"]')
-def find_name_value(xml,name,value):
-    """Find an xml object with the given 'name' and 'value'"""
-    findall = findall_name_value(xml, name, value)
-    assert len(findall) == 1
-    return findall[0]
 
-def gen_by_path(xml, names):
-    assert len(names) > 0
-    if len(names) == 1:
-        for m in findall_name(xml,names[0]):
-            yield m
-
-    else:
-        for m in findall_name(xml, names[0]):
-            for n in gen_by_path(m, names[1:]): yield n
-
-def find_by_path(xml,names):
-    """Find an xml object with name path defined by list of name strings in decending hierarchical order.
-    
-    """
-    matches = [m for m in gen_by_path(xml, names)]
-    assert len(matches) == 1, "Path has %d matches"%len(matches)
+def find_name_value(xml, name, value):
+    """Find a unique xml object at any depth with the given 'name' and 'value'"""
+    matches = findall_name_value(xml, name, value)
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have grandchild '{},{}'".format(name,value))
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one grandchild '{},{}'".format(name,value))
     return matches[0]
-  
-def replace_by_value(xml,oldvalue,newvalue):
-    """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
-    for r in findall_value(xml, oldvalue):
-        r.setValue(newvalue)
 
+#
+# Finds by path, a list of names for nesting
+# ---------------------------------------------------------------------------
+def gen_by_path(xml, names, no_skip=False):
+    """Generator that takes a list of names and returns matching elements.
 
-def replace_by_name(xml,name,value):
-    """Replace all matches of a given 'name' with 'newvalue'"""
-    for r in findall_name(xml, name):
-        r.setValue(value)
+    If no_skip is True, successive names must be direct children.
+    """
+    if skip_levels:
+        findall = findall_name
+    else:
+        findall = children_by_name
 
-def replace_by_path(xml,names,value):
-    """Replace value at end of path defined by list of name strings in decending hierarchical order."""
-    find_by_path(xml,names).set('value',str(value))
+    assert(type(names) is not str)
+    assert(len(names) > 0)
+    if len(names) == 1:
+        for m in findall(xml,names[0]):
+            yield m
+    else:
+        for m in findall(xml, names[0]):
+            for n in gen_by_path(m, names[1:], skip_levels):
+                yield n
 
-def depth(xml):
-    """Return depth of xml object"""
-    return max([0] + [depth(child) + 1 for child in xml])
- 
+def find_path(xml, names, no_skip=False):
+    """Find a unique xml object with a list of names."""
+    matches = list(gen_by_path(xml, names, no_skip))
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+    return matches[0]
+
+def findall_path(xml, names, no_skip=False):
+    """Find a list of matching elements."""
+    return list(gen_by_path(xml, names, no_skip))
+
+    
 #
 # parent map functionality
 # ---------------------------------------------------------------------------
-def create_parent_map(xml):
-    """Creates the parent map dictionary, a map from child to parent in the XML hierarchy."""
-    return {c:p for p in xml.iter() for c in p}
+def global_depth(xml):
+    """Return maximal depth of an xml tree."""
+    return max([0] + [global_depth(child) + 1 for child in xml])
 
-def replace_elem(xml, elem_sink, elem_src):
-    """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""    
-    pm = create_parent_map(xml)
-    p_elem_sink = pm[elem_sink]
-    i = next((i for i in range(len(p_elem_sink)) if p_elem_sink[i] == elem_sink))
-    p_elem_sink[i] = elem_src
+def depth(xml1, xml2):
+    """Assuming xml2 is a child of xml1, calculates how deep."""
+    pm = parent_map(xml1)
+    d = 0
+    while xml2 is not xml1:
+        d += 1
+        xml2 = pm[xml2]
+    return d
+ 
+def parent_map(xml):
+    """Creates the parent map dictionary, a map from child to parent in the XML hierarchy."""
+    try:
+        return xml.pm
+    except AttributeError:
+        xml.pm = {c:p for p in xml.iter() for c in p}
+    return xml.pm
 
 def get_parent(xml,elem,level=1):
     """Parses up the parent map by 'level'"""
-    pm = create_parent_map(xml)
+    pm = parent_map(xml)
     parent = elem
     for i in range(level):
         parent = pm[parent]
@@ -101,7 +140,7 @@ def get_path(xml, elem, level=None):
 
     Returns a list, [xml, ..., elem_parent, elem]
     """
-    pm = create_parent_map(xml)
+    pm = parent_map(xml)
     parent = elem
     path = []
     path.append(parent)
@@ -116,206 +155,165 @@ def get_path(xml, elem, level=None):
             path.append(parent)
             counter += 1
     
-    path.reverse()
-    return path
+    return list(reversed(path))
 
 def get_path_namelist(xml, elem, level=None):
     """Parses up the parent map through the entire hierarchy and returns list of path names.
 
     Returns a list, [xml, ..., elem_parent, elem]
     """
-    return [e.attrib['name'] for e in get_path(xml,elem,level)]
+    return [e.get('name') for e in get_path(xml, elem, level)]
 
-def print_path(xml,elem,level=None):
-    """Parses up the parent map through the entire hierarchy and prints to terminal.
-    """
-    elems = get_path(xml,elem,level)
-    ind = ''
-    s = ''
-    for e in elems:
-        s += "\n"+ind+e.attrib['name']
-        ind += '    '
-    print(s)
-
-def get_value(xml, name):
-    """Return value associated with name
-
-    Returns a single value if there is one occurrence of name,
-    a list if there is more than one.
-    """
-    out = []
-    for r in findall_name(xml,name):
-        out.append(r.attrib['value'])
-    if len(out) > 1: return out
-    else: return out[0]
-
-def global_remove(xml, elem):
-    """Removes the xml 'elem' wherever it is locaed in 'xml'"""
-    pm = create_parent_map(xml)
-    pm[elem].remove(elem)
-
-
-
-
+    
 #
-# FIX AND REMOVE ME!
-# --------------------
-# Searches based upon the "name" attribute as the unique identifier.
-def generateChildByName(elem, name):
-    """Generator for children of a given name"""
-    #print "generateChildByName(%s, %s)"%(elem.get("name"), name)
-    for subel in elem:
-        if (name == subel.get("name")):
-            yield subel
+# high level search and replace
+#
+def change_value(xml, name_or_names, value, allow_multiple=False, no_skip=False):
+    """Changes the value of an element in xml.
 
-def generateChildByNamePath(elem, path):
-    """Generator for (grand)children of a given path"""
-    #print "generateChildByNamePath(%s, %s)"%(elem.get("name"), path)
-    enames = path.strip("/").split("/")
-    assert len(enames) > 0
-    if len(enames) == 1:
-        for match in generateChildByName(elem, enames[0]):
-            yield match
-    else:
-        for match in generateChildByName(elem, enames[0]):
-            for submatch in generateChildByNamePath(match, "/".join(enames[1:])):
-                yield submatch
-
-
-def childByName(elem, name):
-    """Gets child of a given name"""
-    children = [el for el in generateChildByName(elem, name)]
-    if len(children) == 0:
-        raise errors.MissingXMLError()
-    elif len(children) > 1:
-        raise errors.NonUniqueXMLError()
-    else:
-        return children[0]
-
-def childByNamePath(elem, path):
-    """Gets a (grand)child of a given name"""
-    children = [el for el in generateChildByNamePath(elem, path)]
-    if len(children) == 0:
-        raise errors.MissingXMLError()
-    elif len(children) > 1:
-        raise errors.NonUniqueXMLError()
-    else:
-        return children[0]
-
-def getElementByNamePath(elem, path):
-    """Wrapper for childByNamePath which checks the current elem"""
-    enames = path.strip("/").split("/")
-    assert len(enames) > 0
-    if elem.get("name") == enames[0]:
-        enames.pop(0)
-    if len(enames) == 0:
-        return elem
-    else:
-        return childByNamePath(elem, "/".join(enames))
-
-def generateElementByNamePath(elem, path):
-    """Searches for all (grand)children that match the relative namepath"""
-    #print "generateElementByNamePath(%s, %s)"%(elem.get("name"), path)
-    enames = path.strip("/").split("/")
-    assert len(enames) > 0
-
-    def generateSingleElementByName(elem, name):
-        #print "generateSingleElementByName(%s, %s)"%(elem.get("name"), name)
-        if elem.get("name") == name:
-            yield elem
-        else:
-            for el in elem:
-                for match in generateSingleElementByName(el, name):
-                    yield match
-
-    if len(enames) == 1:
-        for match in generateSingleElementByName(elem, enames[0]):
-            yield match
-    else:
-        for match in generateSingleElementByName(elem, enames[0]):
-            for submatch in generateChildByNamePath(match, "/".join(enames[1:])):
-                yield submatch
-
-
-# Searches based upon tags -- no uniqueness!
-def generateChildByTag(elem, tag):
-    for subel in elem:
-        if tag == subel.tag:
-            yield subel
-
-
-def getElementByTagPath(elem, path):
-    """Get element by tag, which is the amanzi_xml-aware ParameterList used for creating specs"""
-    if elem.tag == "ParameterList":
-        return getElementByNamePath(elem, path)
-
-    etagnames = path.strip("/").split("/")
-    mytagname = etagnames[0].strip().strip("}").strip("{").split(",")
-
-    if len(mytagname) > 0:
-        assert elem.tag == mytagname[0]
-    if len(mytagname) > 1:
-        assert elem.get("name") == mytagname[1]
-    etagnames.pop(0)
-
-    if len(etagnames) == 0:
-        return elem
-    else:
-        childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
-        for child in generateChildByTag(elem, childtagname[0]):
-            if len(childtagname) == 1:
-                return getElementByNamePath(child, "/".join(etagnames))
-            else:
-                if child.get("name") == childtagname[1]:
-                    return getElementByNamePath(child, "/".join(etagnames))
-
-
-def getElementByTags(elem, path):
-    """Get element by tags only, which is for v2 XML specs"""
-    etagnames = path.strip("/").split("/")
-    mytagname = etagnames[0].strip().strip("}").strip("{").split(",")
-
-    if len(mytagname) > 0:
-        assert elem.tag == mytagname[0]
-    etagnames.pop(0)
-
-    if len(etagnames) == 0:
-        return elem
-    else:
-        childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
-        for child in generateChildByTag(elem, childtagname[0]):
-            if len(childtagname) == 1:
-                return getElementByTags(child, "/".join(etagnames))
-            else:
-                if child.get("name") == childtagname[1]:
-                    return getElementByTags(child, "/".join(etagnames))
-
-
-# def searchAndRemoveByName(pl, abspath):
-#     """Search for an absolute path and remove the parameter."""
-#     subpath = abspath.split("/")
-#     containing_path = "/".join(subpath[:-1])
-#     container = getElementByName(pl, containing_path)
-#     container.remove(container.getElement(subpath[-1]))
-
-def searchAndReplaceByName(pl, changeset):
-    """Search for a path and replace the value.
-
-    Changeset is expected of the form:
-      path/to/my/parameter=newvalue
-
-    or
-      /abs/path/to/my/parameter=newvalue
+    Parameters
+    ----------
+    xml : etree.Element
+      The parent list to search.
+    name_or_names : str or list(str)
+      Either a single name or list of names defining a path to the object to
+      change.
+    value : str,int,float,list,etc
+      The new value.
+    allow_multiple : bool, optional=False
+      Allow and change multiple matches.
+    no_skip : bool, optional=False
+      If True, successive names must be direct children.
     """
-    split = changeset.split("=")
-    if len(split) != 2:
-        raise RuntimeError("Invalid changeset %s not of form path=val"%changeset)
+    if type(name_or_names) is str:
+        name_or_names = [name_or_names,]
 
-    path,val = tuple(split)
-    if path.startswith("/"):
-        elem = getElementByNamePath(pl, path)
-        elem.setValue(val)
+    matches = findall_by_path(xml, name_or_names, no_skip))
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+
+    if not allow_multiple and len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+
+    for match in matches:
+        match.setValue(value)
+
+
+def change_name(xml, old_name_or_names, new_name, allow_multiple=False, no_skip=False):
+    """Changes the name of an element in xml.
+
+    Parameters
+    ----------
+    xml : etree.Element
+      The parent list to search.
+    old_name_or_names : str or list(str)
+      Either a single name or list of names defining a path to the elemnt(s) to
+      change.
+    new_name : str
+      The new name of the found element(s).
+    allow_multiple : bool, optional=False
+      Allow and change multiple matches.
+    no_skip : bool, optional=False
+      If True, successive names must be direct children.
+    """
+    if type(old_name_or_names) is str:
+        old_name_or_names = [old_name_or_names,]
+
+    matches = findall_by_path(xml, old_name_or_names, no_skip))
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+
+    if not allow_multiple and len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+
+    for match in matches:
+        match.setName(new_name)
+        
+
+def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
+    """Removes an element by mame or path.
+
+    Parameters
+    ----------
+    xml : etree.Element
+      The parent list to search.
+    name_or_names : str or list(str)
+      Either a single name or list of names defining a path to the object to
+      change.
+    allow_multiple : bool, optional=False
+      Allow and change multiple matches.
+    no_skip : bool, optional=False
+      If True, successive names must be direct children.
+
+    Returns
+    -------
+    old_el : the removed element(s)
+    """
+    if type(name_or_names) is str:
+        name_or_names = [name_or_names,]
+
+    matches = findall_by_path(xml, name_or_names, no_skip))
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+
+    if not allow_multiple and len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+
+    pm = parent_map(xml)
+    removed = []
+    for match in matches:
+        parent = pm[match]
+        removed.append(parent.getchildren().pop(match))
+    if allow_multiple:
+        return removed
     else:
-        for elem in generateElementByNamePath(pl,path):
-            elem.setValue(val)
+        assert(len(removed) is 1)
+        return removed[0]
 
+def replace_element(xml, name_or_names, new_el_or_els, allow_multiple=False, no_skip=False):
+    """Replaces an element with another 
+
+    Parameters
+    ----------
+    xml : etree.Element
+      The parent list to search.
+    name_or_names : str or list(str)
+      Either a single name or list of names defining a path to the object to
+      change.
+    new_el_or_els : etree.Element or list(etree.Element)
+      The new element(s) to add.
+    allow_multiple : bool, optional=False
+      Allow and change multiple matches.
+    no_skip : bool, optional=False
+      If True, successive names must be direct children.
+
+    Returns
+    -------
+    old_el : the removed element(s)
+    """
+    if type(name_or_names) is str:
+        name_or_names = [name_or_names,]
+    if type(new_el_or_els) is not list:
+        new_el_or_els = [new_el_or_els,]
+
+    matches = findall_by_path(xml, name_or_names, no_skip))
+    if len(matches) is 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+
+    if not allow_multiple and len(matches) > 1:
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+
+    pm = parent_map(xml)
+    removed = []
+    for match in matches:
+        parent = pm[match]
+        removed.append(parent.pop(match))
+        parent.extend(new_el_or_els)
+    if allow_multiple:
+        return removed
+    else:
+        assert(len(removed) is 1)
+        return removed[0]
+        
+    
+    

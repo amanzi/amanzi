@@ -172,6 +172,9 @@ class ParameterList(base.TeuchosBaseXML):
             assert isinstance(val, ParameterList)
             return val
 
+    def setName(self, name):
+        self.set("name", name)
+        
     def setParameter(self, name, ptype, val):
         """Set parameter name of type ptype to value, creating a new Parameter if necessary."""
         try:
@@ -184,16 +187,12 @@ class ParameterList(base.TeuchosBaseXML):
 
         self.append(parameter.Parameter(name, ptype, val))
 
-
     def getElement(self, name):
         """Get Parameter/sublist from the ParameterList"""
-        return search.childByName(self, name)
+        return search.child_by_name(self, name)
 
     def pop(self, name):
-        return self.getchildren().pop(self.getchildren().index(self.getElement(name)))
-
-    def setName(self, name):
-        self.set("name", name)
+        return search.remove_element(self, name, False, True)
     
 # register
 parser.objects['ParameterList'] = ParameterList
