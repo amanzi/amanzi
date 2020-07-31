@@ -235,11 +235,11 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 bool
 TranspirationDistributionEvaluator::TranspirationPeriod_(double time) {
   double time_of_year = fmod(time, year_duration_);
-  if (leaf_on_time_ <= time < leaf_off_time_) {
+  if (leaf_on_time_ <= time_of_year && time_of_year < leaf_off_time_) {
     return true;
   } else if (leaf_on_time_ < leaf_off_time_) {
     return false;
-  } else if (leaf_off_time_ <= time < leaf_on_time_) {
+  } else if (leaf_off_time_ <= time_of_year || time_of_year < leaf_on_time_) {
     return false;
   } else {
     return true;
