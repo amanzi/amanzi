@@ -17,57 +17,48 @@ from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
 
 
-def changeName(parent_list, old_name, new_name):
-    try:
-        p = asearch.childByName(parent_list, old_name)
-    except aerrors.MissingXMLError:
-        pass
-    else:
-        p.setName(new_name)
-
 def vanGenuchtenParams(xml):
     """Can turn off derivative of source terms"""
     for wrm in asearch.generateElementByNamePath(xml, "WRM parameters"):
         for region in wrm:
-            changeName(region, "van Genuchten alpha", "van Genuchten alpha [Pa^-1]")
-            changeName(region, "van Genuchten m", "van Genuchten m [-]")
-            changeName(region, "van Genuchten n", "van Genuchten n [-]")
-            changeName(region, "van Genuchten residual saturation", "residual saturation [-]")
-            changeName(region, "residual saturation", "residual saturation [-]")
+            asearch.change_name(region, "van Genuchten alpha", "van Genuchten alpha [Pa^-1]")
+            asearch.change_name(region, "van Genuchten m", "van Genuchten m [-]")
+            asearch.change_name(region, "van Genuchten n", "van Genuchten n [-]")
+            asearch.change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
+            asearch.change_name(region, "residual saturation", "residual saturation [-]")
 
 def checkManning(xml):
-    for fe_list in asearch.generateElementByNamePath(xml, "state/field evaluators"):
-        for eval in fe_list:
-            if eval.get('name').endswith('manning_coefficient'):
-                eval_type = asearch.childByName(eval, 'field evaluator type')
-                if eval_type.value == 'independent variable':
-                    func_reg = asearch.childByName(eval, 'function')
+    fe_list = asearch.find_path(xml, ["state","field evaluators"])
+    for eval in fe_list:
+        if eval.getName().endswith('manning_coefficient'):
+            eval_type = eval.getElement('field evaluator type')
+            if eval_type.getValue() == 'independent variable':
+                func_reg = eval.getElement("function")
+                for reg in func_reg:
+                    fixed = False
+                    if not fixed:
+                        try:
+                            comp = reg.getElement('component')
+                        except aerrors.MissingXMLError:
+                            pass
+                        else:
+                            reg.pop('component')
+                            reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
+                            fixed = True
 
-                    for reg in func_reg:
-                        fixed = False
-                        if not fixed:
-                            try:
-                                comp = asearch.childByName(reg, 'component')
-                            except aerrors.MissingXMLError:
-                                pass
-                            else:
-                                reg.pop('component')
-                                reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
-                                fixed = True
+                    if not fixed:
+                        try:
+                            comp = reg.getElement('components')
+                        except aerrors.MissingXMLError:
+                            pass
+                        else:
+                            reg.pop('components')
+                            reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
+                            fixed = True
 
-                        if not fixed:
-                            try:
-                                comp = asearch.childByName(reg, 'components')
-                            except aerrors.MissingXMLError:
-                                pass
-                            else:
-                                reg.pop('components')
-                                reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
-                                fixed = True
-
-                        if not fixed:
-                            print(reg.__str__().decode('utf-8'))
-                            raise aerrors.MissingXMLError('Missing "component" or "components"')
+                    if not fixed:
+                        print(reg.__str__().decode('utf-8'))
+                        raise aerrors.MissingXMLError('Missing "component" or "components"')
 
 
 def fixSnow(xml):
