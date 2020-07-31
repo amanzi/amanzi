@@ -901,9 +901,9 @@ protected:
 
   // -- column information, only created if columns are requested
   mutable Entity_ID_List cell_cellabove_, cell_cellbelow_, node_nodeabove_;
-  mutable std::vector<Entity_ID_List> column_cells_;
-  mutable std::vector<Entity_ID_List> column_faces_;
-  mutable std::vector<Entity_ID> columnID_;
+  mutable std::vector<Entity_ID_List> columns_cells_;
+  mutable std::vector<Entity_ID_List> columns_faces_;
+  mutable std::vector<Entity_ID> columnsID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
   
