@@ -1177,7 +1177,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       }
     }
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "dispersion solver ||r||=" << residual / num_components
                  << " itrs=" << num_itrs / num_components << std::endl;
