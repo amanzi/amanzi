@@ -114,8 +114,8 @@ def initData(d, vars, num_days, nx, ny):
 def collectDaymet(tmpdir, bounds, start, end, vars=None, force=False):
     """Calls the DayMet Rest API to get data and save raw data."""
 
-#    if vars is None:
-    vars = VALID_VARIABLES
+    if vars is None:
+        vars = VALID_VARIABLES
 
     dat = dict()
     d_inited = False
@@ -180,8 +180,16 @@ def writeATS(time, dat, x, y, attrs, filename):
     logging.info('Writing ATS file: {}'.format(filename))
     with h5py.File(filename, 'w') as fid:
         fid.create_dataset('time [s]', data=time)
-        fid.create_dataset('row coordinate', data=x)        
-        fid.create_dataset('col coordinate', data=y)
+        assert(len(x.shape) == 1)
+        assert(len(y.shape) == 1)
+
+        fid.create_dataset('row coordinate [m]', data=x)        
+        fid.create_dataset('col coordinate [m]', data=y)
+
+        assert(dat[key].shape[0] == time.shape[0])
+        assert(dat[key].shape[1] == x.shape[0])
+        assert(dat[key].shape[2] == y.shape[0])
+
         for key in dat.keys():
             grp = fid.create_group(key)
             for i in range(len(time)):
