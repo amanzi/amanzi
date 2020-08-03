@@ -186,11 +186,10 @@ def writeATS(time, dat, x, y, attrs, filename):
         fid.create_dataset('row coordinate [m]', data=x)        
         fid.create_dataset('col coordinate [m]', data=y)
 
-        assert(dat[key].shape[0] == time.shape[0])
-        assert(dat[key].shape[1] == x.shape[0])
-        assert(dat[key].shape[2] == y.shape[0])
-
         for key in dat.keys():
+            assert(dat[key].shape[0] == time.shape[0])
+            assert(dat[key].shape[1] == x.shape[0])
+            assert(dat[key].shape[2] == y.shape[0])
             grp = fid.create_group(key)
             for i in range(len(time)):
                 grp.create_dataset(str(i), data=dat[key][i,:,:])
