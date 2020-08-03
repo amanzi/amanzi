@@ -49,7 +49,7 @@ set(ats_lake_link_libs
   ats_operators
   ats_eos
   ats_pks
- # ats_lake_relations
+  ats_lake_thermo_relations
   )
 
 
