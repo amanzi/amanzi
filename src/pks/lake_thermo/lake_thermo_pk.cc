@@ -20,6 +20,7 @@ Author: Svetlana Tokareva
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 #include "enthalpy_evaluator.hh"
+#include "density_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
