@@ -6,7 +6,7 @@
 #
 
 # additional common components
-#add_subdirectory(constitutive_relations)
+add_subdirectory(constitutive_relations)
 
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/pks)
