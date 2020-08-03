@@ -24,7 +24,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "AmanziTypes.hh"
 
 #include "InputAnalysis.hh"
+
 #include "Units.hh"
+
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
 #include "Checkpoint.hh"
@@ -78,17 +80,8 @@ void Coordinator::coordinator_init() {
   Amanzi::PKFactory pk_factory;
   pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
-  int rank = comm_->MyPID();
-  int size = comm_->NumProc();
-  std::stringstream check;
-  
-  if(parameter_list_->sublist("mesh").isSublist("column"))  
-    check << "checkpoint " << rank;
-  else
-    check << "checkpoint";
-  
   // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
 
   // create the observations
@@ -100,38 +93,28 @@ void Coordinator::coordinator_init() {
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
 
-    if (S_->IsDeformableMesh(mesh->first) ){
-      if (mesh->first.find("column") != std::string::npos) {
-        std::string node_key = mesh->first+std::string("-vertex_coordinate");
-        S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
-          ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
-      }
-      else if (!parameter_list_->sublist("mesh").isSublist("column") && !(mesh->first == "snow")){
-        std::string node_key;
-        if (mesh->first != "domain")
-          node_key= mesh->first+std::string("-vertex_coordinate");
-        else
-          node_key = std::string("vertex_coordinate");
+    if (S_->IsDeformableMesh(mesh->first) && S_->IsAliasedMesh(mesh->first)) {
+      std::string node_key;
+      if (mesh->first != "domain") node_key= mesh->first+std::string("-vertex_coordinate");
+      else node_key = std::string("vertex_coordinate");
 
-        S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
+      S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension()); 
-      }
     }
 
     // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
+
       Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
       analysis.Init(parameter_list_->sublist("analysis").sublist(mesh->first));
       analysis.RegionAnalysis();
       analysis.OutputBCs();
     }
-  }
 
+  }
   
   // create the time step manager
   tsm_ = Teuchos::rcp(new Amanzi::TimeStepManager());
-  
-
 }
 
 void Coordinator::setup() {
@@ -156,78 +139,44 @@ void Coordinator::initialize() {
   // Currently not a true restart -- for a true restart this should also get:
   // -- timestep size dt
   // -- BDF history to allow projection to continue correctly.
-
-  int size = comm_->NumProc();
   Teuchos::OSTab tab = vo_->getOSTab();
-
-  //---
-  if (restart_) {
-    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-    //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-    //   t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
-    //   S_->set_time(t0_);
-    // }
-    // else{
-    t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
-    S_->set_time(t0_);
-    // }
-  }
+  int size = comm_->NumProc();
+  int rank = comm_->MyPID();
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-    //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-    //   ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
-    //   t0_ = S_->time();
-    //   cycle0_ = S_->cycle();
-    // }
-    // else{
     ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
-    //}
     
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
-      if (boost::starts_with(mesh->first, "column")){
-        DeformCheckpointMesh(S_.ptr(), mesh->first);
-      }
-    }
-    
-  }
-  
-  // double check columns
-  if(restart_){
-    for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
-         mesh!=S_->mesh_end(); ++mesh) {
-      if (boost::starts_with(mesh->first, "column")){
+      if (S_->IsDeformableMesh(mesh->first)) {
         DeformCheckpointMesh(S_.ptr(), mesh->first);
       }
     }
   }
-
   
   // Initialize the state (initializes all dependent variables).
-  //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
-
-  S_->InitializeFields();
-
-  WriteStateStatistics(S_.ptr(), vo_);
+  S_->InitializeFields();  
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
 
+  // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->InitializeEvaluators();
-
-
   S_->CheckAllFieldsInitialized();
-  WriteStateStatistics(S_.ptr(), vo_);
+ 
+  // Write dependency graph.
+  S_->WriteDependencyGraph();
+  // Reset io_vis flags using blacklist and whitelist
+  //S_->InitializeIOFlags(); 
 
+  // Check final initialization
+  WriteStateStatistics(S_.ptr(), vo_);
 
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
@@ -384,7 +333,7 @@ void Coordinator::report_memory() {
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
           << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
           << " Bytes" << std::endl;
-    *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
+    *vo_->os() << "  Minimum per core:   " << std::setw(7) << min_mem 
           << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
          << " Bytes" << std::endl;
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
@@ -445,20 +394,7 @@ void Coordinator::read_parameter_list() {
 
   // restart control
   restart_ = coordinator_list_->isParameter("restart from checkpoint file");
-  if (restart_) {
-    restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
-    // likely should ensure the file exists here? --etc
-  }
-
-  int rank = comm_->MyPID();
-  
-  if (coordinator_list_->isSublist("restart from checkpoint columns")){
-    restart_ = true;
-    Teuchos::ParameterList list = coordinator_list_->sublist("restart from checkpoint columns");
-    std::stringstream name;
-    name << list.get<std::string>("checkpoint file") << "checkpoint_" << rank << "_" << list.get<std::string>("cycles") << ".h5";
-    restart_filename_  = name.str();
-  }
+  if (restart_) restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
 }
 
 
@@ -531,62 +467,31 @@ bool Coordinator::advance(double t_old, double t_new) {
          mesh!=S_->mesh_end(); ++mesh) {
       bool surf = boost::starts_with(mesh->first, "surface_");
 
-      if (S_->IsDeformableMesh(mesh->first) && !(mesh->first == "snow")){
-        if (mesh->first.find("column") != std::string::npos) {
+      if (S_->IsDeformableMesh(mesh->first) && !S_->IsAliasedMesh(mesh->first)) {
         // collect the old coordinates
-          
-          std::string node_key = mesh->first+std::string("-vertex_coordinate");
-          
-          Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
-          vc_vec->ScatterMasterToGhosted();
-          const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
-          std::vector<int> node_ids(vc.MyLength());
-          Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
-          for (int n=0;n!=vc.MyLength();++n) {
-            node_ids[n] = n;
-            if (mesh->second.first->space_dimension() == 2) {
-              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
-            } else {
-              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
-            }
-          }
-          
-          // undeform the mesh
-          Amanzi::AmanziGeometry::Point_List final_positions;
-          mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
-        }
-        
-        else if (!parameter_list_->sublist("mesh").isSublist("column")) {
-          // collect the old coordinates
-          
-          std::string node_key;
-          if (mesh->first != "domain")
-            node_key= mesh->first+std::string("-vertex_coordinate");
-          else
-            node_key = std::string("vertex_coordinate");
+        std::string node_key;
+        if (mesh->first != "domain") node_key= mesh->first+std::string("-vertex_coordinate");
+        else node_key = std::string("vertex_coordinate");
 
-          Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
-          vc_vec->ScatterMasterToGhosted();
-          const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
-          std::vector<int> node_ids(vc.MyLength());
-          Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
-          for (int n=0;n!=vc.MyLength();++n) {
-            node_ids[n] = n;
-            if (mesh->second.first->space_dimension() == 2) {
-              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
-            } else {
-              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
-            }
+        Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
+        vc_vec->ScatterMasterToGhosted();
+        const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
+
+        std::vector<int> node_ids(vc.MyLength());
+        Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
+        for (int n=0; n!=vc.MyLength(); ++n) {
+          node_ids[n] = n;
+          if (mesh->second.first->space_dimension() == 2) {
+            old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
+          } else {
+            old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
           }
-          
-          // undeform the mesh
-          Amanzi::AmanziGeometry::Point_List final_positions;
-          mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
         }
-        
+          
+        // undeform the mesh
+        Amanzi::AmanziGeometry::Point_List final_positions;
+        mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
       }
-      
-
     }
   }
   return fail;
@@ -638,7 +543,7 @@ void Coordinator::cycle_driver() {
    
   }
 
-  //  exit(0);
+  ////exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -665,7 +570,7 @@ void Coordinator::cycle_driver() {
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
         *vo_->os() << "Cycle = " << S_->cycle();
-        *vo_->os() << std::setprecision(15) << ",  Time [days] = "<< S_->time() / (60*60*24);
+        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
         *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
         *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;

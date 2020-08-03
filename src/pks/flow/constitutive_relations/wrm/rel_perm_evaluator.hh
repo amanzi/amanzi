@@ -80,7 +80,7 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   RelPermEvaluator(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<WRMPartition>& wrms);
 
-  RelPermEvaluator(const RelPermEvaluator& other);
+  RelPermEvaluator(const RelPermEvaluator& other) = default;
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
