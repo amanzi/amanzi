@@ -29,7 +29,7 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos2::set_parameters(Teuchos::ParameterList& plist)
+void DirectMethodAmesos2::InitializeInverse(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 

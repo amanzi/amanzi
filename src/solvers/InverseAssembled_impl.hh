@@ -148,7 +148,7 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::set_parameters(
+void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::InitializeInverse(
     Teuchos::ParameterList& plist)
 {
   solver_ = createAssembledMethod<>(method_name_, plist);
@@ -162,7 +162,7 @@ template<class Operator,
 void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
-  AMANZI_ASSERT(solver_.get()); // set_parameters was called
+  AMANZI_ASSERT(solver_.get()); // InitializeInverse was called
 
   Teuchos::RCP<Epetra_CrsMatrix> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);

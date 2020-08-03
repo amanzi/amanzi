@@ -37,11 +37,14 @@ int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) co
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerML::set_parameters(Teuchos::ParameterList& list)
+void PreconditionerML::InitializeInverse(Teuchos::ParameterList& list)
 {
+  std::cout << std::endl << "CALLED INITIALIZE INV" << std::endl << std::endl;
   list_ = list;
   list_.remove("verbose object", false); // note, ML validates parameter lists...
   list_.remove("method", false); // note, ML validates parameter lists...
+  if (list_.isParameter("max levels") && list_.get<int>("max levels") > 10)
+    list_.set("max levels", 10);
   initialized_ = true;
 }
 
@@ -51,13 +54,21 @@ void PreconditionerML::set_parameters(Teuchos::ParameterList& list)
  ****************************************************************** */
 void PreconditionerML::UpdateInverse()
 {
+  std::cout << std::endl << "CALLED UPDATE INV" << std::endl << std::endl;
   AMANZI_ASSERT(initialized_);
   AMANZI_ASSERT(h_.get());
+  std::cout << "Updating ML with list:" << std::endl;
+  list_.print(std::cout);
+  if (ML_.get()) {
+    ML_->DestroyPreconditioner();
+    std::cout << std::endl << "CALLED UPDATE DESTROY INV" << std::endl << std::endl;
+  }
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*h_, list_, false));
 }
 
 void PreconditionerML::ComputeInverse()
 {
+  std::cout << std::endl << "CALLED COMPUTE INV" << std::endl << std::endl;
   AMANZI_ASSERT(ML_.get());
   ML_->ComputePreconditioner();
 }

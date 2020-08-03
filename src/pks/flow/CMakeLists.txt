@@ -2,7 +2,6 @@
 #  Amanzi
 #   Flow process kernel
 #
-
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)

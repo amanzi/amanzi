@@ -108,7 +108,7 @@ class PreconditionerIfpack : public Preconditioner {
       Preconditioner(),
       initialized_(false) {};
 
-  virtual void set_parameters(Teuchos::ParameterList& list) override final;
+  virtual void InitializeInverse(Teuchos::ParameterList& list) override final;
   virtual void UpdateInverse() override final;
   virtual void ComputeInverse() override final;
 

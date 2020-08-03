@@ -82,7 +82,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   int Apply(const Vector& x, Vector& y) const {
     return m_->Apply(x,y);
   }
-  virtual void set_parameters(Teuchos::ParameterList& plist) = 0;
+  virtual void InitializeInverse(Teuchos::ParameterList& plist) = 0;
   virtual void UpdateInverse() = 0;
   virtual void ComputeInverse() = 0;
 

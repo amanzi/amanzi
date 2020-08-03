@@ -31,7 +31,7 @@ int PreconditionerIfpack::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerIfpack::set_parameters(Teuchos::ParameterList& plist)
+void PreconditionerIfpack::InitializeInverse(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";

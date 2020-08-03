@@ -206,7 +206,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 void Operator_FaceCellSff::InitializeInverse(Teuchos::ParameterList& plist)
 {
   schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
-  schur_inv_->set_parameters(plist);
+  schur_inv_->InitializeInverse(plist);
   schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
   
   if (plist.isParameter("iterative method")) {

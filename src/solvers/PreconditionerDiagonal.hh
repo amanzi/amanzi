@@ -37,7 +37,7 @@ namespace AmanziSolvers {
 
 class PreconditionerDiagonal : public Preconditioner {
  public:
-  virtual void set_parameters(Teuchos::ParameterList& plist) override final {};
+  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final {};
   virtual void UpdateInverse() override final {}
   virtual void ComputeInverse() override final {
     AMANZI_ASSERT(h_.get());

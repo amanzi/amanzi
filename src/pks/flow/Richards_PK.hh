@@ -173,6 +173,7 @@ class Richards_PK : public Flow_PK {
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Matrix<CompositeVector,CompositeVectorSpace>> op_pc_solver_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;

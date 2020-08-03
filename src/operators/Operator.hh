@@ -144,7 +144,7 @@ class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
 
 
-class Operator {
+class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
  public:
   using Vector_t = CompositeVector;
   using VectorSpace_t = CompositeVector::VectorSpace_t;
@@ -182,11 +182,11 @@ class Operator {
   // main members
   // -- virtual methods potentially altered by the schema, Schur complements
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // versions that make it easier to deal with Amanzi input spec format
   void InitializeInverse(const std::string& prec_name,
@@ -201,10 +201,9 @@ class Operator {
   void InitializeInverse(bool make_one_iteration=true);
 
   // -- preferred methods -- three stages for init, update, and compute.
-  virtual void InitializeInverse(Teuchos::ParameterList& plist);
-  
-  void UpdateInverse();
-  void ComputeInverse();
+  virtual void InitializeInverse(Teuchos::ParameterList& plist) override;
+  virtual void UpdateInverse() override;
+  virtual void ComputeInverse() override;
       
   // symbolic assembly:
   // -- wrapper
@@ -229,8 +228,8 @@ class Operator {
   virtual void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
-  const CompositeVectorSpace& DomainMap() const { return *cvs_col_; }
-  const CompositeVectorSpace& RangeMap() const { return *cvs_row_; }
+  const CompositeVectorSpace& DomainMap() const override { return *cvs_col_; }
+  const CompositeVectorSpace& RangeMap() const override { return *cvs_row_; }
 
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
@@ -242,6 +241,7 @@ class Operator {
   int CopyShadowToMaster(int iops);
 
   // access
+  virtual std::string name() const override { return std::string("Operator (") + schema_string() + ")"; }
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
@@ -442,19 +442,19 @@ class Operator {
 
   // diagnostics
   std::string PrintDiagnostics() const;
-  double residual() const {
+  double residual() const override {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->residual();
   }
-  int num_itrs() const {
+  int num_itrs() const override {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->num_itrs();
   }
-  int returned_code() const { 
+  int returned_code() const override { 
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->returned_code();
   }
-  std::string returned_code_string() const { 
+  std::string returned_code_string() const override { 
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->returned_code_string();
   }

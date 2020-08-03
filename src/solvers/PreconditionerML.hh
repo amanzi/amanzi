@@ -66,12 +66,13 @@ class PreconditionerML : public Preconditioner {
       Preconditioner(),
       initialized_(false) {};
 
-  ~PreconditionerML() {
+  virtual ~PreconditionerML() {
     // unclear whether this is needed or not...
+    std::cout << std::endl << "CALLED DESTRUCTOR DESTROY INV" << std::endl << std::endl;
     if (ML_.get()) ML_->DestroyPreconditioner();
   }
   
-  virtual void set_parameters(Teuchos::ParameterList& list) override final;
+  virtual void InitializeInverse(Teuchos::ParameterList& list) override final;
   virtual void UpdateInverse() override final;
   virtual void ComputeInverse() override final;
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;

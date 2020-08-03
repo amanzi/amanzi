@@ -30,7 +30,7 @@ class Matrix {
 
   virtual int Apply(const Vector& x, Vector& y) const = 0;
 
-  virtual void set_parameters(Teuchos::ParameterList& inv_list) = 0;
+  virtual void InitializeInverse(Teuchos::ParameterList& inv_list) = 0;
   virtual void UpdateInverse() = 0;
   virtual void ComputeInverse() = 0;
   virtual int ApplyInverse(const Vector& y, Vector& x) const = 0;
@@ -38,13 +38,13 @@ class Matrix {
   virtual const VectorSpace& DomainMap() const = 0;
   virtual const VectorSpace& RangeMap() const = 0;
 
-  virtual double TrueResidual(const Vector& x, const Vector& y) const = 0;
+  //  virtual double TrueResidual(const Vector& x, const Vector& y) const = 0;
 
   // control and statistics -- must be valid for both iterative and
   // non-iterative methods, approximate and exact methods.
   virtual double residual() const = 0;
   virtual int num_itrs() const = 0;
-  virtual void add_criteria(int criteria) = 0;
+  //  virtual void add_criteria(int criteria) = 0;
 
   virtual int returned_code() const = 0;
   virtual std::string returned_code_string() const = 0;

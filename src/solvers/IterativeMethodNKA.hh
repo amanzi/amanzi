@@ -67,7 +67,7 @@ class IterativeMethodNKA :
   IterativeMethodNKA() :
       InvIt() {}
 
-  virtual void set_parameters(Teuchos::ParameterList& plist) override final;
+  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final;
 
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
@@ -182,10 +182,10 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
 template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
-void IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::set_parameters(
+void IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::InitializeInverse(
     Teuchos::ParameterList& plist)
 {
-  InvIt::set_parameters(plist);
+  InvIt::InitializeInverse(plist);
 
   // parameters for NKA
   nka_dim_ = plist.get<int>("max nka vectors", krylov_dim_);

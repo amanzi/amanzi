@@ -38,7 +38,7 @@ int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 /* ******************************************************************
 * Initialize the preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::set_parameters(Teuchos::ParameterList& list)
+void PreconditionerHypre::InitializeInverse(Teuchos::ParameterList& list)
 {
   plist_ = list;
 

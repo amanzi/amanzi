@@ -85,7 +85,7 @@ class MatrixJF {
   int Apply(const Vector& x, Vector& b) const;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr = 0 if success, !0 otherwise
-  void set_parameters(Teuchos::ParameterList& inv_list) {}
+  void InitializeInverse(Teuchos::ParameterList& inv_list) {}
   void UpdateInverse() {}
   void ComputeInverse() {}
   int ApplyInverse(const Vector& b, Vector& x) const;

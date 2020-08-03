@@ -289,7 +289,7 @@ int Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                       Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
+  return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -355,7 +355,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // has been already populated during functional evaluation.
  
   // finalize preconditioner
-  op_preconditioner_->ComputeInverse();
+  op_pc_solver_->ComputeInverse();
 }
 
 
