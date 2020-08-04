@@ -49,10 +49,10 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 //          -c*rho/dt, *T0->ViewComponent("cell", false), 1.0);
 
 
-  const Epetra_MultiVector& T1_c = S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
-  const Epetra_MultiVector& T0_c = S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& T0_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
 
-  const Epetra_MultiVector& g_c = g->ViewComponent("cell", false);
+  const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
