@@ -58,13 +58,7 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
   // Virtual destructor
   virtual ~MPCPermafrostSplitFluxColumnsSubcycled() = default;
 
-  // PK methods
-  // -- dt is the minimum of the sub pks
-  /*
-  virtual double get_dt() {
-    return sub_pks_[0]->get_dt();
-  }    
-  */
+  virtual double get_dt();
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
@@ -74,9 +68,10 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
                           const Teuchos::RCP<State>& S);
   
  private:
+  std::string subcycled_timestep_;
   // factory registration
   static RegisteredPKFactory<MPCPermafrostSplitFluxColumnsSubcycled> reg_;
-
+  
 
 };
 } // close namespace Amanzi

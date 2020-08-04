@@ -126,7 +126,9 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   snow_death_rate_key_ = Keys::readKey(plist, domain_snow_, "snow death rate", "death_rate");
   dependencies_.insert(snow_death_rate_key_);
 
-  // -- skin properties  
+  // -- skin properties
+  ponded_depth_key_ = Keys::readKey(plist, domain_, "volumetric ponded depth", "volumetric_ponded_depth");
+  dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
   sg_albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
@@ -187,6 +189,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
   
   // collect skin properties
+  const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
   const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_)->ViewComponent("cell",false);
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
@@ -271,7 +274,21 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.dz = dessicated_zone_thickness_;
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
-
+      /*
+      if (area_fracs[1][c] == 0) {
+        if (ponded_depth[0][c] > params.water_ground_transition_depth) {
+          surf.porosity = 1.;
+          surf.saturation_gas = 0.;
+        } else {
+          double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
+          surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
+          surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
+        }
+      } else {
+        surf.porosity = poro[0][cells[0]];
+        surf.saturation_gas = sat_gas[0][cells[0]];
+      }
+      */
       surf.porosity = poro[0][cells[0]];
       surf.saturation_gas = sat_gas[0][cells[0]];
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
@@ -343,7 +360,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.porosity = 1.;
       surf.saturation_gas = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
-
+      /*
+      if (ponded_depth[0][c] > params.water_ground_transition_depth) {
+        surf.porosity = 1.;
+        surf.saturation_gas = 0.;
+      } else {
+        double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
+        surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
+        surf.saturation_gas = (1-factor)
+ * sat_gas[0][cells[0]];
+      }
+      surf.unfrozen_fraction = unfrozen_fraction[0][c];
+      */
+      
       // must ensure that energy is put into melting snow precip, even if it
       // all melts so there is no snow column
       if (area_fracs[2][c] == 0.) {
