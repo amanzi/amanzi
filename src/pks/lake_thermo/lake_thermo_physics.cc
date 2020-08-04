@@ -57,7 +57,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-      g_c[0][i] = c*rho[0][c]/dt*(T1_c[0][i] - T0_c[0][i]);
+      g_c[0][c] = c*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
   }
 
 };
