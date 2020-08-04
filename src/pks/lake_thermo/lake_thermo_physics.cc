@@ -36,7 +36,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   // get c and rho
   double c = 4184.;
 
-  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(*S_inter_, name_);
+  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // evaluate density
   const Epetra_MultiVector& rho =
