@@ -243,6 +243,17 @@ void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S->SetFieldEvaluator(enthalpy_key_, enth);
 
+  // density evaluator
+  S->RequireField(density_key_)->SetMesh(mesh_)
+      ->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    Teuchos::ParameterList density_plist = plist_->sublist("density evaluator");
+    density_plist.set("density key", density_key_);
+    Teuchos::RCP<DensityEvaluator> den =
+      Teuchos::rcp(new DensityEvaluator(density_plist));
+    S->SetFieldEvaluator(density_key_, den);
+
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
   is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
