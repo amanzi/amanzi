@@ -319,6 +319,10 @@ public:
 
   // Keys
   Key temperature_key_;
+  Key density_key_;
+
+
+
   Key energy_key_;
   Key wc_key_;
   Key enthalpy_key_;

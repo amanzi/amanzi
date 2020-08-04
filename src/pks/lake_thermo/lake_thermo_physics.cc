@@ -35,7 +35,12 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   // get c and rho
   double c = 4184.;
-  double rho = 1000.;
+
+  S->GetFieldEvaluator(density_key_)->HasFieldChanged(S, name_);
+
+  // evaluate density
+  const Epetra_MultiVector& rho =
+  *S->GetFieldData(density_key_)->ViewComponent("cell",false);
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
