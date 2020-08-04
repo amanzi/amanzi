@@ -44,9 +44,22 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
-  g->ViewComponent("cell", false)
-    ->Update(c*rho/dt, *T1->ViewComponent("cell", false),
-          -c*rho/dt, *T0->ViewComponent("cell", false), 1.0);
+//  g->ViewComponent("cell", false)
+//    ->Update(c*rho/dt, *T1->ViewComponent("cell", false),
+//          -c*rho/dt, *T0->ViewComponent("cell", false), 1.0);
+
+
+  const Epetra_MultiVector& T1_c = S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& T0_c = S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+
+  const Epetra_MultiVector& g_c = g->ViewComponent("cell", false);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  for (int c = 0; c < ncells_owned; c++) {
+      g_c[0][i] = c*rho[0][c]/dt*(T1_c[0][i] - T0_c[0][i]);
+  }
+
 };
 
 
