@@ -429,33 +429,33 @@ class State {
 // Non-member functions for I/O of a State.
 // -----------------------------------------------------------------------------
 // Visualization of State.
-void WriteVis(const Teuchos::Ptr<Visualization>& vis,
-              const Teuchos::Ptr<State>& S);
+void WriteVis(Visualization& vis,
+              State& S);
 
 // Checkpointing State.
-void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
-                     const Teuchos::Ptr<State>& S,
+void WriteCheckpoint(Checkpoint& ckp,
+                     State& S,
                      double dt,
                      bool final = false,
                      Amanzi::ObservationData* obs_data = NULL);
 
 double ReadCheckpoint(const Comm_ptr_type& comm,
-                      const Teuchos::Ptr<State>& S,
+                      State& S,
                       std::string filename);
 
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename);
+                                 const std::string& filename);
 
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           std::string filename);
+                           const std::string& filename);
 
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                std::string filename,
+                                const std::string& filename,
                                 Amanzi::ObservationData& obs_data);
 
-void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
+void DeformCheckpointMesh(State& S, Key domain);
 
-void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo);
+void WriteStateStatistics(State& S, const VerboseObject& vo);
 
 
 }  // namespace Amanzi

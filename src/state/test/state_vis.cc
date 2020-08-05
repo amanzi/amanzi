@@ -28,17 +28,13 @@
 
 SUITE(VISUALIZATION) {
   TEST(DUMP_MESH_AND_DATA) {
-    // here we just check that the code does not crash when 
-    // the mesh and data files are written
-    Teuchos::ParameterList plist;
-
     auto comm = Amanzi::getDefaultComm();
 
     std::string xmlFileName = "test/state_vis.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    plist = xmlreader.getParameters();
+    Teuchos::ParameterList plist = xmlreader.getParameters();
 
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+    Teuchos::ParameterList region_list = plist.sublist("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
@@ -50,8 +46,8 @@ SUITE(VISUALIZATION) {
     meshfactory.set_preference(pref);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
-    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
-    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list));
+    Teuchos::ParameterList state_list = plist.sublist("state");
+    Teuchos::RCP<Amanzi::State> S0 = Teuchos::rcp(new Amanzi::State(state_list));
 
     S0->RegisterMesh("domain",Mesh);
     S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
@@ -60,12 +56,11 @@ SUITE(VISUALIZATION) {
     
     S0->set_time(1.02);
 
-    Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
-    Teuchos::Ptr<Amanzi::Visualization> V = Teuchos::ptr( new Amanzi::Visualization(visualization_list));
+    Teuchos::ParameterList visualization_list = plist.sublist("visualization");
+    auto V = Teuchos::rcp(new Amanzi::Visualization(visualization_list));
     V->set_mesh(Mesh);
     V->CreateFiles();
-
-    WriteVis(V, S0);
+    WriteVis(*V, *S0);
   }
 }
 

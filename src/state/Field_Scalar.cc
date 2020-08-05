@@ -92,16 +92,10 @@ void Field_Scalar::Initialize(Teuchos::ParameterList& plist) {
 };
 
 // visualization
-void Field_Scalar::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
-  if (io_vis_) {
-  }
-};
+void Field_Scalar::WriteVis(Visualization& vis) {};
 
 // checkpoint
-void Field_Scalar::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
-  if (io_checkpoint_) {
-  }
-};
+void Field_Scalar::WriteCheckpoint(Checkpoint& chk) {}
 
 // Compute from a function
 void Field_Scalar::Compute(double time) {
