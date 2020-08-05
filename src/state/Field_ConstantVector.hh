@@ -62,10 +62,10 @@ public:
   virtual void Initialize(Teuchos::ParameterList& plist);
 
   // visualization
-  void WriteVis(const Teuchos::Ptr<Visualization>& vis);
+  void WriteVis(Visualization& vis);
 
   // checkpoint
-  void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp);
+  void WriteCheckpoint(Checkpoint& ckp);
 
 protected:
 

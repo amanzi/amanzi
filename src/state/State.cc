@@ -1002,12 +1002,12 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
 
 void State::InitializeEvaluators() {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+  VerboseObject vo("State", state_plist_); 
 
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo->getOSTab();
-      *vo->os() << "processing evaluator \"" << f_it->first << "\"\n";
+    if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = vo.getOSTab();
+      *vo.os() << "processing evaluator \"" << f_it->first << "\"\n";
     }
 
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
@@ -1017,33 +1017,29 @@ void State::InitializeEvaluators() {
 
 
 void State::InitializeFields() {
-
   bool pre_initialization = false;
-
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+  VerboseObject vo("State", state_plist_); 
 
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
     std::string filename = state_plist_.get<std::string>("initialization filename");
-    Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI((GetMesh()->get_comm()), filename));
-    file_input->open_h5file();
+    Amanzi::HDF5_MPI file_input(GetMesh()->get_comm(), filename);
+    file_input.open_h5file();
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        bool read_complete = f_it->second->ReadCheckpoint(file_input.ptr());
+        bool read_complete = f_it->second->ReadCheckpoint(file_input);
         if (read_complete)
           f_it->second->set_initialized();
       }
     }
-    file_input->close_h5file();
+    file_input.close_h5file();
   }
    
   // Initialize through initial condition
- 
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo->getOSTab();
-      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = vo.getOSTab();
+      *vo.os() << "processing field \"" << f_it->first << "\"\n";
     }
 
     if (pre_initialization || (!f_it->second->initialized())) {
@@ -1280,79 +1276,79 @@ void State::InitializeIOFlags_() {
 
 
 // Non-member function for vis.
-void WriteVis(const Teuchos::Ptr<Visualization>& vis,
-              const Teuchos::Ptr<State>& S) {
-  if (!vis->is_disabled()) {
+void WriteVis(Visualization& vis,
+              State& S) {
+  if (!vis.is_disabled()) {
     // Create the new time step
-    vis->CreateTimestep(S->time(), S->cycle());
+    vis.CreateTimestep(S.time(), S.cycle());
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
-    for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
       field->second->WriteVis(vis);
     }
     
-    vis->WriteRegions();
-    vis->WritePartition();
+    vis.WriteRegions();
+    vis.WritePartition();
 
     // Finalize i/o.
-    vis->FinalizeTimestep();
+    vis.FinalizeTimestep();
   }
 };
 
 
 // Non-member function for checkpointing.
-void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
-                     const Teuchos::Ptr<State>& S,
+void WriteCheckpoint(Checkpoint& chk,
+                     State& S,
                      double dt,
                      bool final,
                      Amanzi::ObservationData* obs_data) {
-  if ( !chk->is_disabled() ) {
-    chk->CreateFile(S->cycle());
+  if ( !chk.is_disabled() ) {
+    chk.CreateFile(S.cycle());
 
     // create hard link to the final file
-    if (final && S->GetMesh()->get_comm()->MyPID() == 0)
-      chk->CreateFinalFile(S->cycle());
+    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
+      chk.CreateFinalFile(S.cycle());
 
-    for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
       field->second->WriteCheckpoint(chk);
     }
 
-    chk->WriteAttributes(S->time(), dt, S->cycle(), S->position());
-    chk->WriteObservations(obs_data);
+    chk.WriteAttributes(S.time(), dt, S.cycle(), S.position());
+    chk.WriteObservations(obs_data);
     
-    chk->Finalize();
+    chk.Finalize();
   }
 };
 
 
 // Non-member function for checkpointing.
 double ReadCheckpoint(const Comm_ptr_type& comm,
-                      const Teuchos::Ptr<State>& S,
+                      State& S,
                       std::string filename) {
-  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
-  checkpoint->open_h5file();
+  HDF5_MPI checkpoint(comm, filename);
+  checkpoint.open_h5file();
 
   // load the attributes
   double time(0.);
-  checkpoint->readAttrReal(time, "time");
-  S->set_time(time);
+  checkpoint.readAttrReal(time, "time");
+  S.set_time(time);
 
   double dt(0.);
-  checkpoint->readAttrReal(dt, "dt");
+  checkpoint.readAttrReal(dt, "dt");
 
   int cycle(0);
-  checkpoint->readAttrInt(cycle, "cycle");
-  S->set_cycle(cycle);
+  checkpoint.readAttrInt(cycle, "cycle");
+  S.set_cycle(cycle);
 
   int pos(0);
-  checkpoint->readAttrInt(pos, "position");
-  S->set_position(pos);
+  checkpoint.readAttrInt(pos, "position");
+  S.set_position(pos);
 
   // load the number of processes and ensure they are the same -- otherwise
   // the below just gives crap.
   int rank(-1);
-  checkpoint->readAttrInt(rank, "mpi_comm_world_rank");
+  checkpoint.readAttrInt(rank, "mpi_comm_world_rank");
   if (comm->NumProc() != rank) {
     std::stringstream messagestream;
     messagestream << "Requested checkpoint file " << filename << " was created on "
@@ -1363,41 +1359,41 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
   }
 
   // load the data
-  for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+  for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      bool read_complete = field->second->ReadCheckpoint(checkpoint.ptr());
+      bool read_complete = field->second->ReadCheckpoint(checkpoint);
       if (read_complete) field->second->set_initialized();
     }
   }
   
-  checkpoint->close_h5file();
+  checkpoint.close_h5file();
   return dt;
 };
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
                                  std::string filename) {
-  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
+  HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
   double time(0.);
-  checkpoint->open_h5file();
-  checkpoint->readAttrReal(time, "time");
-  checkpoint->close_h5file();
+  checkpoint.open_h5file();
+  checkpoint.readAttrReal(time, "time");
+  checkpoint.close_h5file();
   return time;
 };
 
 // Non-member function for checkpointing position.
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           std::string filename) {
-  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
+                           const std::string& filename) {
+  HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
   int pos = 0;
-  checkpoint->open_h5file();
-  checkpoint->readAttrInt(pos, "position");
-  checkpoint->close_h5file();
+  checkpoint.open_h5file();
+  checkpoint.readAttrInt(pos, "position");
+  checkpoint.close_h5file();
   return pos;
 };
 
@@ -1405,8 +1401,8 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data) {
-  Teuchos::RCP<HDF5_MPI> checkpoint = Teuchos::rcp(new HDF5_MPI(comm, filename));
-  checkpoint->open_h5file();
+  HDF5_MPI checkpoint(comm, filename);
+  checkpoint.open_h5file();
 
   // read observations
   int nlabels, ndata;
@@ -1414,12 +1410,12 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   char **tmp_labels;
   double *tmp_data;
 
-  checkpoint->readDataString(&tmp_labels, &nlabels, "obs_names");
+  checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
   if (nlabels > 0) { 
-    checkpoint->readAttrInt(&nobs, &nlabels, "obs_numbers");
-    checkpoint->readAttrReal(&tmp_data, &ndata, "obs_values");
+    checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
+    checkpoint.readAttrReal(&tmp_data, &ndata, "obs_values");
   }
-  checkpoint->close_h5file();
+  checkpoint.close_h5file();
 
   // populated observations
   int m(0);
@@ -1446,12 +1442,12 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
-  void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain) {
-    if (S->HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
+  void DeformCheckpointMesh(State& S, Key domain) {
+    if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
       // only deform mesh if vertex coordinate field exists
-    AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S->GetMesh(domain));
+    AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S.GetMesh(domain));
     // get vertex coordinates state
-    Teuchos::RCP<const CompositeVector> vc = S->GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
+    Teuchos::RCP<const CompositeVector> vc = S.GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
     vc->ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc->ViewComponent("node",true);
 
@@ -1481,13 +1477,13 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 
 // Non-member function for statistics
-void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo)
+void WriteStateStatistics(const State& S, const VerboseObject& vo)
 {
-  if (vo->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
+  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo.getOSTab();
+    *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
 
-    for (auto f_it = S->field_begin(); f_it != S->field_end(); ++f_it) {
+    for (auto f_it = S.field_begin(); f_it != S.field_end(); ++f_it) {
       std::string name(f_it->first);
 
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
@@ -1500,13 +1496,13 @@ void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObje
           std::string namedot(name), name_comp(c_it->first);
           if (vmin.size() != 1) namedot.append("." + name_comp);
           namedot.resize(40, '.');
-          *vo->os() << namedot << " " << c_it->second << " / " 
+          *vo.os() << namedot << " " << c_it->second << " / " 
                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
         }
       } else if (f_it->second->type() == CONSTANT_SCALAR) {
         double vmin = *f_it->second->GetScalarData();
         name.resize(40, '.');
-        *vo->os() << name << " " << vmin << std::endl;
+        *vo.os() << name << " " << vmin << std::endl;
       }
     }
   }

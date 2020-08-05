@@ -35,6 +35,7 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
     std::string function_type = list.name(it);
     if (list.isSublist(function_type)) { // process the function sublist
       if (f) { // error: already processed a function sublist
+	delete f;
         Errors::Message m;
         m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
