@@ -166,6 +166,7 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 
   // create a global problem
   pk_matrix->op_adv()->ApplyBCs(true, true, true);
+  pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
   op_tree_matrix_->SymbolicAssembleMatrix();
 
@@ -250,6 +251,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     // assemble the operators
     pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
+
+    pk_fracture->op_adv()->UpdateMatrices(S_->GetFieldData("fracture-darcy_flux").ptr());
+    pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
     op_coupling00_->Setup(values1, 1.0);
     op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);

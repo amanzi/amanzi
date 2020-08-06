@@ -703,6 +703,7 @@ void Darcy_PK::FractureConservationLaw_()
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
       flux_sum += fracture_flux[0][g] * dirs[i];
+      flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
     }
 
     // sum into fluxes from matrix

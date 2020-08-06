@@ -34,7 +34,8 @@ class ObservableAqueous : public virtual Observable {
  protected:
   double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& ids);
 
-  bool obs_boundary_, obs_planar_;
+  int obs_boundary_;
+  bool obs_planar_;
   std::vector<double> vofs_;
   AmanziGeometry::Point reg_normal_;
 };

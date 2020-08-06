@@ -736,7 +736,7 @@ std::vector<double> ShallowWater_PK::NumSrc(std::vector<double> U, int c)
     S1 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[0];
     S2 += (-2.*B_rec*ht_rec + B_rec*B_rec)*normal[1];
   }
-
+    
   S[0] = 0.;
   S[1] = 0.5*g_/vol*S1;
   S[2] = 0.5*g_/vol*S2;

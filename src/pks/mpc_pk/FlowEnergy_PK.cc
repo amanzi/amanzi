@@ -241,6 +241,8 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
                << "Initialization of PK is complete: my dT=" << get_dt() 
                << vo_->reset() << std::endl << std::endl;
   }
+
+  AMANZI_ASSERT(sub_pks_.size() == 2);
 }
   
 
