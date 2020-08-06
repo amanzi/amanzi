@@ -60,7 +60,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   Inverse(const Inverse& other) = delete;
   virtual ~Inverse() = default;
 
-  void set_matrices(const Teuchos::RCP<Operator>& m,
+  virtual void set_matrices(const Teuchos::RCP<Operator>& m,
                     const Teuchos::RCP<Preconditioner>& h) {
     m_ = m;
     h_ = h;

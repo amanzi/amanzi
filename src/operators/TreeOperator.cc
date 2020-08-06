@@ -27,6 +27,8 @@
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
 
+#define TEST_MAPS 0
+
 namespace Amanzi {
 namespace Operators {
 
@@ -63,15 +65,21 @@ void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& 
 ****************************************************************** */
 int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 {
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+#endif  
   Y.PutScalar(0.0);
-
-  int ierr(0), n(0);
-  for (TreeVector::iterator yN_tv = Y.begin(); yN_tv != Y.end(); ++yN_tv, ++n) {
-    CompositeVector& yN = *(*yN_tv)->Data();
-    int m(0);
-    for (TreeVector::const_iterator xM_tv = X.begin(); xM_tv != X.end(); ++xM_tv, ++m) {
+  
+  int ierr(0);
+  for (int n=0; n!=Y.size(); ++n) {
+    AMANZI_ASSERT(Y.SubVector(n)->Data() != Teuchos::null); // only works on 1-level heirarchy currently, see #453
+    CompositeVector& yN = *Y.SubVector(n)->Data();
+    for (int m=0; m!=X.size(); ++m) {
       if (blocks_[n][m] != Teuchos::null) {
-        ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
+	AMANZI_ASSERT(X.SubVector(m)->Data() != Teuchos::null); // only works on 1-level heirarchy currently, see #453
+	const CompositeVector& xM = *X.SubVector(m)->Data();
+        ierr |= blocks_[n][m]->Apply(xM, yN, 1.0);
       }
     }
   }
@@ -102,16 +110,20 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 /* ******************************************************************
 * Calculate Y = inv(A) * X using global matrix.
 ****************************************************************** */
-int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
+int TreeOperator::ApplyInverse(const TreeVector& Y, TreeVector& X) const
 {
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+#endif
   if (preconditioner_.get()) {
-    return preconditioner_->ApplyInverse(X, Y);
+    return preconditioner_->ApplyInverse(Y, X);
   } else {
     AMANZI_ASSERT(block_diagonal_);  // this assertion shouldn't be possible --
                                      // in all cases where block_diagonal_
                                      // isn't true, a preconditioner_ should
                                      // have been created.
-    return ApplyInverseBlockDiagonal_(X,Y);
+    return ApplyInverseBlockDiagonal_(Y,X);
   }
 }
 
@@ -119,13 +131,13 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 /* ******************************************************************
 * Calculate Y = inv(A) * X using the block diagonal
 ****************************************************************** */
-int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const
+int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& Y, TreeVector& X) const
 {
   int code = 0;
   for (int n = 0; n < tvs_->size(); ++n) {
-    const CompositeVector& Xn = *X.SubVector(n)->Data();
-    CompositeVector& Yn = *Y.SubVector(n)->Data();
-    code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
+    const CompositeVector& Yn = *Y.SubVector(n)->Data();
+    CompositeVector& Xn = *X.SubVector(n)->Data();
+    code |= blocks_[n][n]->ApplyInverse(Yn, Xn);
   }
   return code;
 }

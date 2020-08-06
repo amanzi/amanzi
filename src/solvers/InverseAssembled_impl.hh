@@ -164,6 +164,10 @@ void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse
   AMANZI_ASSERT(h_.get()); // set_matrices was called
   AMANZI_ASSERT(solver_.get()); // InitializeInverse was called
 
+  // note, this step is critical if the solver needs to destroy things
+  // using the old matrix.
+  solver_->set_matrix(Teuchos::null);
+
   Teuchos::RCP<Epetra_CrsMatrix> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);
   solver_->UpdateInverse();

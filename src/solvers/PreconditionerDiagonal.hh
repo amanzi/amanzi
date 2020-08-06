@@ -13,7 +13,7 @@
 Simply applys the pointwise inverse of the diagonal of the matrix as an
 extremely cheap matrix.
 
-This is provided when using the `"preconditioner type`"=`"diagonal`" in the
+This is provided when using the `"preconditioning method`"=`"diagonal`" in the
 `Preconditioner`_ spec.
 
 No parameters are required.

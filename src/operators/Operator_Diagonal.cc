@@ -31,26 +31,35 @@ namespace Operators {
 int Operator_Diagonal::ApplyMatrixFreeOp(
     const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
 {
-  const Epetra_MultiVector& Xi = *X.ViewComponent(op.row_compname(), true);
-  Epetra_MultiVector& Yi = *Y.ViewComponent(op.col_compname(), true);
+  const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
  
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
+  AMANZI_ASSERT(row_lids.size() == op.matrices.size());
+  AMANZI_ASSERT(col_lids.size() == op.matrices.size());
 
   for (int n = 0; n != row_lids.size(); ++n) {
     const WhetStone::DenseMatrix& Acell = op.matrices[n];
     int nrows = Acell.NumRows();
     int ncols = Acell.NumCols();
 
+    AMANZI_ASSERT(col_lids[n].size() == ncols);
+    AMANZI_ASSERT(row_lids[n].size() == nrows);
+
     WhetStone::DenseVector v(ncols), av(nrows);
     for (int i = 0; i != ncols; ++i) {
-      v(i) = Xi[0][col_lids[n][i]];
+      int col_lid = col_lids[n][i];
+      AMANZI_ASSERT(col_lid >= 0 && col_lid < Xi.MyLength());
+      v(i) = Xi[0][col_lid];
     }
 
     Acell.Multiply(v, av, false);
 
     for (int i = 0; i != nrows; ++i) {
-      Yi[0][row_lids[n][i]] += av(i);
+      int row_lid = row_lids[n][i];
+      AMANZI_ASSERT(row_lid >= 0 && row_lid < Yi.MyLength());
+      Yi[0][row_lid] += av(i);
     }
   }
 

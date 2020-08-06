@@ -28,6 +28,7 @@ InverseSchurComplement::UpdateInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
   AMANZI_ASSERT(solver_.get()); // InitializeInverse was called
+  solver_->set_matrix(Teuchos::null);
   h_->SymbolicAssembleMatrix();
   solver_->set_matrix(h_->A());
   solver_->UpdateInverse();

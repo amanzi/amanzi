@@ -303,7 +303,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   Teuchos::ParameterList inv_list;
-  inv_list.set("preconditioning type", "block diagonal");
+  inv_list.set("preconditioning method", "block diagonal");
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     inv_list.setParameters(linear_solver_list_->sublist(tmp_solver));

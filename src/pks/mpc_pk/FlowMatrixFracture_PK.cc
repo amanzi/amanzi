@@ -143,7 +143,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
             ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
 
-  cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
+  cvs_fracture->SetMesh(mesh_fracture)->SetGhosted(true)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
@@ -207,8 +207,13 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create a global problem
   sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
-  op_tree_->SymbolicAssembleMatrix();
-  op_tree_->AssembleMatrix();
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  std::string ls_name = ti_list_->get<std::string>("linear solver", "none");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
+								ls_name, *linear_operator_list_,
+								true);
+  op_tree_->InitializeInverse(inv_list);
+  op_tree_->UpdateInverse();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -225,7 +230,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
     if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green")
                << "matrix:" << std::endl
@@ -288,22 +293,19 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
                                                  double h)
 {
+  op_tree_->ComputeInverse();
   // EpetraExt::RowMatrixToMatlabFile("FlowMatrixFracture_PC_.txt", *op_tree_->A());
-  std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-
-  op_tree_->InitPreconditioner(pc_list);
 }
 
 
 /* ******************************************************************* 
 * Application of preconditioner
 ******************************************************************* */
-int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
-                                               Teuchos::RCP<TreeVector> Y)
+int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> Y, 
+                                               Teuchos::RCP<TreeVector> X)
 {
-  Y->PutScalar(0.0);
-  return op_tree_->ApplyInverse(*X, *Y);
+  X->PutScalar(0.0);
+  return op_tree_->ApplyInverse(*Y, *X);
 }
 
 }  // namespace Amanzi

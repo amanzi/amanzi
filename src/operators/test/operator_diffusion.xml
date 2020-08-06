@@ -71,7 +71,7 @@
 
     <ParameterList name="Amesos2: basker">
       <Parameter name="direct method" type="string" value="amesos2: basker"/>
-      <ParameterList name="amesos parameters">
+      <ParameterList name="amesos2: basker parameters">
         <Parameter name="solver name" type="string" value="basker"/>
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>

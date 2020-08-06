@@ -269,6 +269,9 @@
         <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Diagonal">
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
 

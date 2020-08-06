@@ -12,7 +12,7 @@
 
 /*!
 
-This is provided when using the `"preconditioner type`"=`"ml`" in the
+This is provided when using the `"preconditioning method`"=`"ml`" in the
 `Preconditioner`_ spec.
 
 .. warning:: no input spec defined
@@ -67,10 +67,13 @@ class PreconditionerML : public Preconditioner {
       initialized_(false) {};
 
   virtual ~PreconditionerML() {
-    // unclear whether this is needed or not...
-    std::cout << std::endl << "CALLED DESTRUCTOR DESTROY INV" << std::endl << std::endl;
-    if (ML_.get()) ML_->DestroyPreconditioner();
+    // unclear whether this is needed or not...  It seems that it
+    // ought to be, but destructors crash occassionally if it is used.
+    //    if (ML_.get()) ML_->DestroyPreconditioner();
   }
+
+  virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
+			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
   
   virtual void InitializeInverse(Teuchos::ParameterList& list) override final;
   virtual void UpdateInverse() override final;

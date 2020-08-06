@@ -13,7 +13,7 @@
 Simply copies the input vector to the output -- uses the Identity matrix as a
 preconditioner.
 
-This is provided when using the `"preconditioner type`"=`"identity`" in the
+This is provided when using the `"preconditioning method`"=`"identity`" in the
 `Preconditioner`_ spec.
 
 No parameters are required.

@@ -706,10 +706,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
     Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(tmp_solver);
     op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
-    op_pc_solver_->UpdateInverse();
   } else {
     op_pc_solver_ = op_preconditioner_;
   }
+  op_pc_solver_->UpdateInverse();
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();

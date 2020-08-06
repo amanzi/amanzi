@@ -318,7 +318,8 @@ TEST(AMESOS_SOLVER) {
   {
     AmanziSolvers::DirectMethodAmesos2 klu;
     plist.set<std::string>("solver name", "Klu2")
-         .set<int>("amesos version", 2);
+      .set<int>("amesos version", 2)
+      .set("method", "amesos2: klu");
     klu.InitializeInverse(plist);
     klu.set_matrix(m->A());
     klu.UpdateInverse();

@@ -49,6 +49,8 @@
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
 
+#define TEST_MAPS 0
+
 namespace Amanzi {
 namespace Operators {
 
@@ -333,6 +335,11 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
 ******************************************************************* */
 int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+#endif  
+
   X.ScatterMasterToGhosted();
 
   // initialize ghost elements
@@ -393,13 +400,17 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
 ******************************************************************* */
-int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+int Operator::ApplyInverse(const CompositeVector& Y, CompositeVector& X) const
 {
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+#endif  
   if (preconditioner_ == Teuchos::null) {
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
-  return preconditioner_->ApplyInverse(X, Y);
+  return preconditioner_->ApplyInverse(Y, X);
   
 }
 

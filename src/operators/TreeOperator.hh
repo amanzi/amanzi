@@ -98,12 +98,12 @@ class TreeOperator {
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
 
+  // i/o
+  std::string PrintDiagnostics() const;
 
  protected:
   int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
   
-  // i/o
-  std::string PrintDiagnostics() const;
 
  private:
   friend Impl::TreeOperator_BlockPreconditioner;
