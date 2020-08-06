@@ -81,6 +81,18 @@ def fixSubgrid(xml):
     # todo: ponded_depth_minus_depression_depth --> mobile_depth
     raise NotImplementedError("fix subgrid")
 
+def mergePreconditionerLinearSolver(xml):
+    pc_list = xml.getElement("main").getElement("PKs")
+    for pk in pc_list.getchildren():
+        if pk.isElement("preconditioner"):
+            pc = pk.getElement("preconditioner")
+            pc.setName("inverse")
+            if pk.isElement("linear solver"):
+                pc.extend(pk.getElement("linear solver").getchildren())
+        elif pk.isElement("linear solver"):
+            ls = pk.getElement("linear solver")
+            ls.setName("inverse")
+    
 
             
 
@@ -90,7 +102,8 @@ def update(xml):
     # NOTE: these will get added when subgrid pull request is done
     #fixSnow(xml)
     #fixSubgrid(xml)
-            
+    mergePreconditionerLinearSolver(xml)
+    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Fix a number of changes from ATS input spec 0.88 to master")
