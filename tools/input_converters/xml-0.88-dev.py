@@ -37,7 +37,6 @@ def checkManning(xml):
     fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
         if eval.getName().endswith('manning_coefficient'):
-            print(eval)
             eval_type = eval.getElement('field evaluator type')
             if eval_type.getValue() == 'independent variable':
                 func_reg = eval.getElement("function")
@@ -81,12 +80,12 @@ def fixSubgrid(xml):
 
 def mergePreconditionerLinearSolver(xml):
     pc_list = xml.getElement("PKs")
-    for pk in pc_list.getchildren():
+    for pk in pc_list:
         if pk.isElement("preconditioner"):
             pc = pk.getElement("preconditioner")
             pc.setName("inverse")
             if pk.isElement("linear solver"):
-                pc.extend(pk.getElement("linear solver").getchildren())
+                pc.extend(list(pk.getElement("linear solver")))
         elif pk.isElement("linear solver"):
             ls = pk.getElement("linear solver")
             ls.setName("inverse")
