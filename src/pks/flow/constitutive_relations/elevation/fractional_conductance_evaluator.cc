@@ -15,8 +15,8 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
   vpd_key_ = Keys::readKey(plist_, domain, "volumetric ponded depth", "volumetric_ponded_depth");
   dependencies_.insert(vpd_key_); 
 
-  pdd_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
-  dependencies_.insert(pdd_key_);
+  mobile_depth_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
+  dependencies_.insert(mobile_depth_key_);
   
   delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief");
   dependencies_.insert(delta_max_key_);
@@ -42,7 +42,7 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& del_max = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& depr_depth = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
-  const Epetra_MultiVector& mobile_depth = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& mobile_depth = *S->GetFieldData(mobile_depth_key_)->ViewComponent("cell",false);
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   
   int ncells = res.MyLength();
@@ -65,10 +65,10 @@ FractionalConductanceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
   const Epetra_MultiVector& del_max = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& depr_depth = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
-  const Epetra_MultiVector& mobile_depth = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& mobile_depth = *S->GetFieldData(mobile_depth_key_)->ViewComponent("cell",false);
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   
-  if (wrt_key == pdd_key_) {
+  if (wrt_key == mobile_depth_key_) {
     int ncells = res.MyLength();
     for (int c=0; c!=ncells; ++c) {
       if (mobile_depth[0][c] <= 0.0) {

@@ -26,8 +26,8 @@ OverlandConductivitySubgridEvaluator::OverlandConductivitySubgridEvaluator(Teuch
     Exceptions::amanzi_throw(message);
   }
 
-  depth_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
-  dependencies_.insert(depth_key_);
+  mobile_depth_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
+  dependencies_.insert(mobile_depth_key_);
 
   slope_key_ = Keys::readKey(plist_, domain, "slope", "slope_magnitude");
   dependencies_.insert(slope_key_);
@@ -60,7 +60,7 @@ OverlandConductivitySubgridEvaluator::Clone() const {
 void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
+  Teuchos::RCP<const CompositeVector> mobile_depth = S->GetFieldData(mobile_depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
 
@@ -70,7 +70,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
   
   for (const auto& comp : *result) {
-    const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
+    const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
     const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
     const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
@@ -81,7 +81,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
     
     int ncomp = result->size(comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
       result_v[0][i] *= dens_v[0][i] * std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
     }
   }
@@ -92,7 +92,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
+  Teuchos::RCP<const CompositeVector> mobile_depth = S->GetFieldData(mobile_depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
 
@@ -101,9 +101,9 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
 
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
   
-  if (wrt_key == depth_key_) {
+  if (wrt_key == mobile_depth_key_) {
     for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
+      const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
@@ -114,14 +114,14 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        result_v[0][i] = model_->DConductivityDDepth(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         result_v[0][i] *= dens_v[0][i] * std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
       }
     }
 
   } else if (wrt_key == dens_key_) {
     for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
+      const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
@@ -132,14 +132,14 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         result_v[0][i] *= std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
       }
     }
 
   } else if (wrt_key == frac_cond_key_) {
     for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
+      const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
@@ -150,7 +150,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         result_v[0][i] *= dens_v[0][i] * (drag_v[0][i] + 1) *
                           std::pow(frac_cond_v[0][i], drag_v[0][i]);
       }
