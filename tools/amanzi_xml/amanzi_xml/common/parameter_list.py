@@ -122,7 +122,11 @@ class ParameterList(base.TeuchosBaseXML):
 
     def sort(self):
         """Sorts mychildren() by params first, then lists."""
-        self.getchildren().sort(key=lambda x: x.tag)
+        children = list(self)
+        for child in children:
+            self.remove(child)
+        sorted_children = sorted(children, key=lambda x: x.tag)
+        self.extend(sorted_children)
 
     def indent(self, ntabs, doublespace=False, doublespace_two=False):
         """Properly indent this list (and its Parameters/sublists) with [ntabs] tabs."""
