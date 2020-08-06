@@ -36,6 +36,10 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
+  // add sources
+  CompositeVector& rhs = *op_matrix_->rhs();
+  AddSourceTerms(rhs);
+  
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term

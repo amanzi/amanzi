@@ -95,6 +95,7 @@ class Energy_PK : public PK_PhysicalBDF {
   bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
   void ComputeBCs(const CompositeVector& u);
+  void AddSourceTerms(CompositeVector& rhs);
 
   // access 
   virtual Teuchos::RCP<Operators::Operator>
@@ -141,6 +142,9 @@ class Energy_PK : public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<PK_DomainFunction> > bc_flux_; 
   int dirichlet_bc_faces_;
 
+  // source terms
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
