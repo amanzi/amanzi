@@ -8,7 +8,7 @@ import warnings
 # ---------------------------------------------------------------------------
 def children_by_attr(xml, attr, value):
     """Find all matches, at depth 1."""
-    return xml.findall('./[@{}="{}"]'.format(attr, value))
+    return xml.findall('./*[@{}="{}"]'.format(attr, value))
 
 def children_by_name(xml, name):
     """Find children by name."""
@@ -74,10 +74,10 @@ def gen_by_path(xml, names, no_skip=False):
 
     If no_skip is True, successive names must be direct children.
     """
-    if skip_levels:
-        findall = findall_name
-    else:
+    if no_skip:
         findall = children_by_name
+    else:
+        findall = findall_name
 
     assert(type(names) is not str)
     assert(len(names) > 0)
@@ -86,7 +86,7 @@ def gen_by_path(xml, names, no_skip=False):
             yield m
     else:
         for m in findall(xml, names[0]):
-            for n in gen_by_path(m, names[1:], skip_levels):
+            for n in gen_by_path(m, names[1:], no_skip):
                 yield n
 
 def find_path(xml, names, no_skip=False):
@@ -188,12 +188,12 @@ def change_value(xml, name_or_names, value, allow_multiple=False, no_skip=False)
     if type(name_or_names) is str:
         name_or_names = [name_or_names,]
 
-    matches = findall_by_path(xml, name_or_names, no_skip))
+    matches = findall_path(xml, name_or_names, no_skip)
     if len(matches) is 0:
-        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+        raise errors.MissingXMLError("Object does not have path '{}'".format(name_or_names))
 
     if not allow_multiple and len(matches) > 1:
-        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(name_or_names))
 
     for match in matches:
         match.setValue(value)
@@ -219,19 +219,19 @@ def change_name(xml, old_name_or_names, new_name, allow_multiple=False, no_skip=
     if type(old_name_or_names) is str:
         old_name_or_names = [old_name_or_names,]
 
-    matches = findall_by_path(xml, old_name_or_names, no_skip))
+    matches = findall_path(xml, old_name_or_names, no_skip)
     if len(matches) is 0:
-        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+        raise errors.MissingXMLError("Object does not have path '{}'".format(old_name_or_names))
 
     if not allow_multiple and len(matches) > 1:
-        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
+        raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(old_name_or_names))
 
     for match in matches:
         match.setName(new_name)
         
 
 def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
-    """Removes an element by mame or path.
+    """Removes an element by name or path.
 
     Parameters
     ----------
@@ -252,7 +252,7 @@ def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
     if type(name_or_names) is str:
         name_or_names = [name_or_names,]
 
-    matches = findall_by_path(xml, name_or_names, no_skip))
+    matches = findall_path(xml, name_or_names, no_skip)
     if len(matches) is 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(names))
 
@@ -263,7 +263,8 @@ def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
     removed = []
     for match in matches:
         parent = pm[match]
-        removed.append(parent.getchildren().pop(match))
+        removed.append(match)
+        parent.remove(match)
     if allow_multiple:
         return removed
     else:
@@ -296,7 +297,7 @@ def replace_element(xml, name_or_names, new_el_or_els, allow_multiple=False, no_
     if type(new_el_or_els) is not list:
         new_el_or_els = [new_el_or_els,]
 
-    matches = findall_by_path(xml, name_or_names, no_skip))
+    matches = findall_path(xml, name_or_names, no_skip)
     if len(matches) is 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(names))
 

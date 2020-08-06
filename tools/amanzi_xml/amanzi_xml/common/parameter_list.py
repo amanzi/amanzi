@@ -172,6 +172,9 @@ class ParameterList(base.TeuchosBaseXML):
             assert isinstance(val, ParameterList)
             return val
 
+    def getName(self):
+        return self.get("name")
+    
     def setName(self, name):
         self.set("name", name)
         
