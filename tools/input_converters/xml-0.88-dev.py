@@ -16,21 +16,28 @@ from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
 
+def change_name(xml, old, new):
+    try:
+        asearch.change_name(xml, old, new)
+    except aerrors.MissingXMLError:
+        pass
+
 
 def vanGenuchtenParams(xml):
     """Can turn off derivative of source terms"""
-    for wrm in asearch.generateElementByNamePath(xml, "WRM parameters"):
+    for wrm in asearch.gen_by_path(xml, ["WRM parameters"]):
         for region in wrm:
-            asearch.change_name(region, "van Genuchten alpha", "van Genuchten alpha [Pa^-1]")
-            asearch.change_name(region, "van Genuchten m", "van Genuchten m [-]")
-            asearch.change_name(region, "van Genuchten n", "van Genuchten n [-]")
-            asearch.change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
-            asearch.change_name(region, "residual saturation", "residual saturation [-]")
+            change_name(region, "van Genuchten alpha", "van Genuchten alpha [Pa^-1]")
+            change_name(region, "van Genuchten m", "van Genuchten m [-]")
+            change_name(region, "van Genuchten n", "van Genuchten n [-]")
+            change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
+            change_name(region, "residual saturation", "residual saturation [-]")
 
 def checkManning(xml):
     fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
         if eval.getName().endswith('manning_coefficient'):
+            print(eval)
             eval_type = eval.getElement('field evaluator type')
             if eval_type.getValue() == 'independent variable':
                 func_reg = eval.getElement("function")
@@ -72,6 +79,18 @@ def fixSubgrid(xml):
     # todo: ponded_depth_minus_depression_depth --> mobile_depth
     raise NotImplementedError("fix subgrid")
 
+def mergePreconditionerLinearSolver(xml):
+    pc_list = xml.getElement("PKs")
+    for pk in pc_list.getchildren():
+        if pk.isElement("preconditioner"):
+            pc = pk.getElement("preconditioner")
+            pc.setName("inverse")
+            if pk.isElement("linear solver"):
+                pc.extend(pk.getElement("linear solver").getchildren())
+        elif pk.isElement("linear solver"):
+            ls = pk.getElement("linear solver")
+            ls.setName("inverse")
+    
 
             
 
@@ -81,6 +100,7 @@ def update(xml):
     # NOTE: these will get added when subgrid pull request is done
     #fixSnow(xml)
     #fixSubgrid(xml)
+    mergePreconditionerLinearSolver(xml)
             
 if __name__ == "__main__":
     import argparse
