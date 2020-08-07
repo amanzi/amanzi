@@ -235,25 +235,25 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 bool
 TranspirationDistributionEvaluator::TranspirationPeriod_(double time) {
   double time_of_year = fmod(time, year_duration_);
-
-  if (leaf_on_time < leaf_off_time) {
+  if (leaf_on_time_ < leaf_off_time_) {
   // northern hemisphere
-    if (leaf_on_time_ <= time_of_year) && (time_of_year < leaf_off_time)) {
+    if ((leaf_on_time_ <= time_of_year) && (time_of_year < leaf_off_time_)) {
     //summer
       return true;
     } else {
       return false;
-    }
-  } 
+    }   
+  }   
   else {
   // southern hemisphere
-    if ((leaf_off_time <= time_of_year) && (time_of_year < leaf_on_time)) {
+    if ((leaf_off_time_ <= time_of_year) && (time_of_year < leaf_on_time_)) {
     // southern hemisphere summer
       return true;
     } else {
       return false;
-    }
-  }
+    }   
+
+}
 }
 
 
