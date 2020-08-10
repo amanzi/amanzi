@@ -21,6 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -1247,7 +1248,15 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
     Exceptions::amanzi_throw(msg);
   }
 
-  controls << "  DATABASE " << datfilename.c_str() << "\n";
+  // add relative path from xmlfilename_ to datfilename (simplified code)
+  size_t pos0;
+  std::string path(xmlfilename_);
+  if ((pos0 = path.find_last_of('/')) == std::string::npos) 
+    path = "./";
+  else
+    path.erase(path.begin() + pos0, path.end());
+
+  controls << "  DATABASE " << boost::filesystem::relative(datfilename, path).string().c_str() << "\n";
 
   base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
   if (flag) {

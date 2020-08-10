@@ -28,7 +28,7 @@ Mesh::num_columns(bool ghosted) const
     Errors::Message mesg("num_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return ghosted ? column_cells_.size() : num_owned_cols_; // number of vector of vectors
+  return ghosted ? columns_cells_.size() : num_owned_cols_; // number of vector of vectors
 }
 
 
@@ -40,7 +40,7 @@ Mesh::cells_of_column(const int columnID) const
     Errors::Message mesg("cells_of_column called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_cells_[columnID];
+  return columns_cells_[columnID];
 }
 
 
@@ -52,7 +52,7 @@ Mesh::faces_of_column(const int columnID) const
     Errors::Message mesg("faces_of_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_faces_[columnID];
+  return columns_faces_[columnID];
 }
 
 
@@ -64,7 +64,7 @@ Mesh::column_ID(const Entity_ID cellid) const
     Errors::Message mesg("column_ID called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return columnID_[cellid];
+  return columnsID_[cellid];
 }
 
 
