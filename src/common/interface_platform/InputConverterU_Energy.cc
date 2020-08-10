@@ -91,6 +91,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateEnergyBCs_();
+  out_list.sublist("source terms") = TranslateSources_(domain, "energy");
 
   // insert internal evaluators
   out_list.sublist("energy evaluator")
