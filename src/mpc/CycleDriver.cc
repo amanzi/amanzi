@@ -302,7 +302,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics(S_);
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true, &observations_data_);
+    Amanzi::WriteCheckpoint(*checkpoint_, *S_, 0.0, true, &observations_data_);
   }
 }
 
@@ -711,7 +711,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
       final = true;
     }
 
-    Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final, &observations_data_);
+    Amanzi::WriteCheckpoint(*checkpoint_, *S_, dt, final, &observations_data_);
     
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "writing checkpoint file" << std::endl;
@@ -786,7 +786,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
-    restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
+    restart_dT = ReadCheckpoint(comm_, *S_, restart_filename_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -832,7 +832,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   Visualize();
   Observations();
   WriteCheckpoint(dt);
-  WriteStateStatistics(S_.ptr(), vo_);
+  WriteStateStatistics(*S_, *vo_);
 
   // Amanzi::timer_manager.stop("I/O");
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -856,7 +856,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
-            WriteStateStatistics(S_.ptr(), vo_);
+            WriteStateStatistics(*S_, *vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
             *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
@@ -880,7 +880,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
-        WriteStateStatistics(S_.ptr(), vo_);
+        WriteStateStatistics(*S_, *vo_);
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
@@ -898,13 +898,13 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("error_checkpoint");
-    WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+    WriteCheckpoint(*checkpoint_, *S_, dt);
     throw e;
   }
 #endif
   
   // finalizing simulation
-  WriteStateStatistics(S_.ptr(), vo_);
+  WriteStateStatistics(*S_, *vo_);
   ReportMemory();
   // Finalize();
  
@@ -978,7 +978,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->CalculateDiagnostics(S_);
   Observations();
-  WriteStateStatistics(S_.ptr(), vo_);
+  WriteStateStatistics(*S_, *vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];
