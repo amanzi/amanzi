@@ -1,8 +1,4 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <misc>
-    <echo_translated_input format="unstructured_native" file_name="test/convert_u_test7_native_v8.xml"/>
-  </misc>
-
   <model_description name="Fractured Rock 3D">
     <comments>Example input file</comments>
     <author>Konstantin Lipnikov</author>
@@ -218,6 +214,15 @@
         <uniform_temperature function="uniform" value="298.0 K"/>
       </initial_condition>
     </initial_conditions>
+
+    <sources>
+      <source name="Extraction Well">
+        <assigned_regions>Well</assigned_regions>
+        <thermal_component>
+          <volume_weighted function="constant" start="0.0" value="1200.0 J/s"/>
+        </thermal_component>
+      </source>
+    </sources>
   </fracture_network>
 
   <output>

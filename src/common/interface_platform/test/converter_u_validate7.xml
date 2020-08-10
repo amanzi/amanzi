@@ -880,6 +880,18 @@
         </ParameterList>
         <Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
+      <ParameterList name="source terms">
+        <ParameterList name="Extraction Well">
+          <Parameter name="regions" type="Array(string)" value="{Well}"/>
+          <Parameter name="spatial distribution method" type="string" value="volume"/>
+          <Parameter name="use volume fractions" type="bool" value="false"/>
+          <ParameterList name="well">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="1.2e+03"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="energy evaluator">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -992,7 +1004,7 @@
   <ParameterList name="analysis">
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Bottom Surface, Crib, Bottom Surface, Crib}"/>
-      <Parameter name="used source regions" type="Array(string)" value="{}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{Well, Well}"/>
       <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">

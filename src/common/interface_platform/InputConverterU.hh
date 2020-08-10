@@ -112,6 +112,10 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
 
+  // -- general
+  Teuchos::ParameterList TranslateSources_(
+      const std::string& domain, const std::string& pkname);
+
   // -- state
   void TranslateFieldEvaluator_(
       DOMNode* node, const std::string& field, const std::string& unit,
@@ -130,7 +134,6 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
-  Teuchos::ParameterList TranslateFlowSources_();
   Teuchos::ParameterList TranslateFlowFractures_(const std::string& domain);
 
   // -- transport
