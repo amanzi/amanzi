@@ -103,7 +103,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
                                   -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                                  -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                                  -DHYPRE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
