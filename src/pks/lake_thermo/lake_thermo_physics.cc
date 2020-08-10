@@ -34,7 +34,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
   // get c and rho
-  double c = 4184.;
+  double cp = 4184.;
 
   S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
@@ -57,7 +57,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-      g_c[0][c] = c*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+      g_c[0][c] = cp*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
   }
 
 };
@@ -80,21 +80,49 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   // but for now we'll leave it there and assume it has been updated. --etc
   //  S->GetFieldEvaluator(flux_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
+
+  // get c and rho
+  double cp = 4184.;
+
+  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+
+  // evaluate density
+  const Epetra_MultiVector& rho =
+  *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
+
+  double dhdt = r_ - E_ - R_s_ - R_b_;
+  double B_w  = r_ - E_;
+
+  const Epetra_MultiVector& flux_c = *flux->ViewComponent("cell", false);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  double dt = S_next_->time() - S_inter_->time();
+
+  // GENERALLY, DON'T UPDATE HERE
+  // update h
+  h += dhdt*dt;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    flux_c[0][c] = cp*rho[0][c]*(dhdt*xc[0] - B_w)/h;
+  }
+
   db_->WriteVector(" adv flux", flux.ptr(), true);
   matrix_adv_->global_operator()->Init();
   matrix_adv_->Setup(*flux);
   matrix_adv_->SetBCs(bc_adv_, bc_adv_);
   matrix_adv_->UpdateMatrices(flux.ptr());
 
-  // apply to enthalpy
-  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
+  // apply to temperature
+  S->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
   ApplyDirichletBCsToEnthalpy_(S.ptr());
   matrix_adv_->ApplyBCs(false, true, false);
 
 
   // apply
-  matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);
+  matrix_adv_->global_operator()->ComputeNegativeResidual(*temp, *g, false);
 }
 
 // -------------------------------------------------------------

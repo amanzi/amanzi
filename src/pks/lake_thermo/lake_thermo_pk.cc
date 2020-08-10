@@ -346,6 +346,23 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PK_PhysicalBDF_Default::Initialize(S);
 
+  // read parameters
+  // precipitation rate
+  Epetra_Vector& rvec = *S_->GetConstantVectorData("precipitation", "state");
+  r_ = std::fabs(rvec[1]);
+
+  // precipitation rate
+  Epetra_Vector& Evec = *S_->GetConstantVectorData("evaporation", "state");
+  E_ = std::fabs(Evec[1]);
+
+  // surface runoff
+  Epetra_Vector& Rsvec = *S_->GetConstantVectorData("surface runoff", "state");
+  R_s_ = std::fabs(Rsvec[1]);
+
+  // bottom runoff
+  Epetra_Vector& Rbvec = *S_->GetConstantVectorData("bottom runoff", "state");
+  R_b_ = std::fabs(Rbvec[1]);
+
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;

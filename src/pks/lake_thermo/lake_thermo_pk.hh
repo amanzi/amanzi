@@ -325,6 +325,17 @@ public:
   Key dconductivity_key_;
   Key duw_conductivity_key_;
 
+  // precipitation and evaporation rates
+  double r_;
+  double E_;
+
+  // surface and bottom runoff
+  double R_s_;
+  double R_b_;
+
+  // water depth
+  double h;
+
 
 
   Key energy_key_;
