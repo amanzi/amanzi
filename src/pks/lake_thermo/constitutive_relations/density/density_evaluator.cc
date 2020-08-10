@@ -18,33 +18,21 @@ DensityEvaluator::DensityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_.empty()) {
 
-    my_key_ = plist_.get<std::string>("enthalpy key", "surface-enthalpy_liquid");
+    my_key_ = plist_.get<std::string>("density key", "surface-density");
   }
 
   // Set up my dependencies.
   std::string domain_name = Keys::getDomain(my_key_);
-  include_work_ = plist_.get<bool>("include work term", true);
 
-  // -- pressure
-  if (include_work_) {
-    pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
-    dependencies_.insert(pres_key_);
-
-    dens_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
-    dependencies_.insert(dens_key_);
-  }
-
-  ie_key_ = Keys::readKey(plist_, domain_name, "internal energy liquid", "internal_energy_liquid");
-  dependencies_.insert(ie_key_);
+  // -- temperature
+  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
+  dependencies_.insert(temperature_key_);
 
 };
 
 DensityEvaluator::DensityEvaluator(const DensityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    pres_key_(other.pres_key_),
-    dens_key_(other.dens_key_),
-    ie_key_(other.ie_key_),
-    include_work_(other.include_work_) {};
+    temperature_key_(other.temperature_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 DensityEvaluator::Clone() const {

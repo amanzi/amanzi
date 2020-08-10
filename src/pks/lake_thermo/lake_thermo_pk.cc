@@ -21,6 +21,7 @@ Author: Svetlana Tokareva
 #include "upwind_gravity_flux.hh"
 #include "enthalpy_evaluator.hh"
 #include "density_evaluator.hh"
+#include "thermal_conductivity_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
@@ -243,16 +244,25 @@ void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S->SetFieldEvaluator(enthalpy_key_, enth);
 
-  // density evaluator
+  // -- density evaluator
   S->RequireField(density_key_)->SetMesh(mesh_)
-      ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-    Teuchos::ParameterList density_plist = plist_->sublist("density evaluator");
-    density_plist.set("density key", density_key_);
-    Teuchos::RCP<DensityEvaluator> den =
-      Teuchos::rcp(new DensityEvaluator(density_plist));
-    S->SetFieldEvaluator(density_key_, den);
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList den_plist =
+    plist_->sublist("density evaluator");
+  den_plist.set("evaluator name", density_key_);
+  Teuchos::RCP<LakeThermo::DensityEvaluator> den =
+    Teuchos::rcp(new LakeThermo::DensityEvaluator(den_plist));
+  S->SetFieldEvaluator(density_key_, den);
+
+  // -- thermal conductivity evaluator
+  S->RequireField(density_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList tcm_plist =
+    plist_->sublist("thermal conductivity evaluator");
+  tcm_plist.set("evaluator name", conductivity_key_);
+  Teuchos::RCP<LakeThermo::ThermalConductivityEvaluator> tcm =
+    Teuchos::rcp(new LakeThermo::ThermalConductivityEvaluator(tcm_plist));
+  S->SetFieldEvaluator(conductivity_key_, tcm);
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term");

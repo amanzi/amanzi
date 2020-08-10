@@ -320,6 +320,10 @@ public:
   // Keys
   Key temperature_key_;
   Key density_key_;
+  Key conductivity_key_;
+  Key uw_conductivity_key_;
+  Key dconductivity_key_;
+  Key duw_conductivity_key_;
 
 
 
@@ -329,10 +333,7 @@ public:
   Key flux_key_;
   Key energy_flux_key_;
   Key adv_energy_flux_key_;
-  Key conductivity_key_;
-  Key uw_conductivity_key_;
-  Key dconductivity_key_;
-  Key duw_conductivity_key_;
+
   Key source_key_;
   //  Key mass_source_key_;
   Key ss_flux_key_;

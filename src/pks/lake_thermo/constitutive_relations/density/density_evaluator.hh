@@ -38,10 +38,6 @@ class DensityEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
 
   Key temperature_key_;
-  Key pres_key_;
-  Key dens_key_;
-  Key ie_key_;
-  bool include_work_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,DensityEvaluator> factory_;

@@ -1,32 +1,27 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  Interface for a thermal conductivity model with three phases.
+  Interface for a thermal conductivity model with two phases.
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_TC_THREEPHASE_EVALUATOR_HH_
-#define AMANZI_ENERGY_RELATIONS_TC_THREEPHASE_EVALUATOR_HH_
+#ifndef AMANZI_LAKE_TC_EVALUATOR_HH_
+#define AMANZI_LAKE_TC_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "thermal_conductivity_threephase.hh"
 
 namespace Amanzi {
-namespace Energy {
+namespace LakeThermo {
 
-// Equation of State model
-class ThermalConductivityThreePhaseEvaluator :
+class ThermalConductivityEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
-
-  typedef std::pair<std::string,Teuchos::RCP<ThermalConductivityThreePhase> > RegionModelPair;
-
   // constructor format for all derived classes
-  ThermalConductivityThreePhaseEvaluator(Teuchos::ParameterList& plist);
-  ThermalConductivityThreePhaseEvaluator(const ThermalConductivityThreePhaseEvaluator& other);
+  ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
+  ThermalConductivityEvaluator(const ThermalConductivityEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -37,15 +32,22 @@ class ThermalConductivityThreePhaseEvaluator :
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  
-  std::vector<RegionModelPair> tcs_;
-
-  // Keys for fields
   // dependencies
-  Key poro_key_;
-  Key sat_key_;
-  Key sat2_key_;
-  Key temp_key_;
+
+  bool ice_cover_;
+
+  double V_wind_;
+  double V_wind_0_;
+  double K_max_;
+  double K_0_;
+
+
+//  Key uf_key_;
+//  Key height_key_;
+
+//  double K_liq_;
+//  double K_ice_;
+//  double min_K_;
 };
 
 } // namespace
