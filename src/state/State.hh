@@ -455,7 +455,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 void DeformCheckpointMesh(State& S, Key domain);
 
-void WriteStateStatistics(State& S, const VerboseObject& vo);
+void WriteStateStatistics(const State& S, const VerboseObject& vo);
 
 
 }  // namespace Amanzi

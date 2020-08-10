@@ -83,7 +83,7 @@ TEST(ENERGY_ONE_PHASE) {
   S->CheckAllFieldsInitialized();
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
-  WriteStateStatistics(S.ptr(), vo);
+  WriteStateStatistics(*S, *vo);
 
   // constant time stepping 
   int itrs(0);
@@ -111,7 +111,7 @@ TEST(ENERGY_ONE_PHASE) {
   }
 
   EPK->CommitStep(0.0, 1.0, S);
-  WriteStateStatistics(S.ptr(), vo);
+  WriteStateStatistics(*S, *vo);
 
   auto temp = *S->GetFieldData("temperature")->ViewComponent("cell");
   for (int c = 0; c < 20; ++c) { 

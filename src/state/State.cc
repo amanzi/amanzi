@@ -1373,7 +1373,7 @@ double ReadCheckpoint(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename) {
+                                 const std::string& filename) {
   HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
@@ -1399,7 +1399,7 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing observations.
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                std::string filename,
+                                const std::string& filename,
                                 Amanzi::ObservationData& obs_data) {
   HDF5_MPI checkpoint(comm, filename);
   checkpoint.open_h5file();
