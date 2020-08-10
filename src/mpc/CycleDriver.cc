@@ -645,9 +645,8 @@ double CycleDriver::Advance(double dt) {
     dt_new = get_dt(fail);
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
-    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
-         vis != failed_visualization_.end(); ++vis) {
-      WriteVis((*vis).ptr(), S_.ptr());
+    for (auto& vis : failed_visualization_) {
+      WriteVis(*vis, *S_);
     }
     // The timestep sizes have been updated, so copy back old soln and try again.
     // NOT YET IMPLEMENTED, requires PKs to deal with failure.  Fortunately
@@ -689,10 +688,9 @@ void CycleDriver::Visualize(bool force) {
 
   //if (dump || force) //pk_->CalculateDiagnostics();
   
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    if (force || (*vis)->DumpRequested(S_->cycle(), S_->time())) {
-      WriteVis((*vis).ptr(), S_.ptr());
+  for (const auto& vis : visualization_) {
+    if (force || vis->DumpRequested(S_->cycle(), S_->time())) {
+      WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "writing visualization file" << std::endl;
     }
