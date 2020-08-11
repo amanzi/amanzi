@@ -627,8 +627,16 @@ The *eos* evaluator requires one-parameter list to select the proper model for e
     <Parameter name="field evaluator type" type="string" value="iem"/>
     <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
     <ParameterList name="IEM parameters">
-      <Parameter name="iem type" type="string" value="linear"/>
-      <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+      <ParameterList name="SOIL1">
+        <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="SOIL2">
+        ...
+      </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>

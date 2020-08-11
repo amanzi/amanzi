@@ -236,7 +236,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
 
-        field_ev.sublist("internal_energy_liquid").sublist("IEM parameters").sublist(reg_str)
+        field_ev.sublist("IEM parameters").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
@@ -252,7 +252,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
 
-        field_ev.sublist("internal_energy_rock").sublist("IEM parameters").sublist(reg_str)
+        field_ev.sublist("IEM parameters").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
