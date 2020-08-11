@@ -44,6 +44,8 @@ class LakeThermoSourceEvaluator : public SecondaryVariableFieldEvaluator {
   Key conducted_source_key_;
   Key cell_vol_key_;
 
+  double h_;
+
   bool include_conduction_;
   enum SourceUnits {
     SOURCE_UNITS_METERS_PER_SECOND,

@@ -245,7 +245,7 @@ public:
   virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
 
   // Standard methods
-  virtual void SetupEnergy_(const Teuchos::Ptr<State>& S);
+  virtual void SetupLakeThermo_(const Teuchos::Ptr<State>& S);
 
   // Upwinding conductivities
   virtual bool UpdateConductivityData_(const Teuchos::Ptr<State>& S);

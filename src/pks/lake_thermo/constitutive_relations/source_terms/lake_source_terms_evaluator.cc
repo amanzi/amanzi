@@ -74,12 +74,19 @@ LakeThermoSourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Epetra_Vector& alpha_e_vec = *S->GetConstantVectorData("extinction coefficient", "state");
   double alpha_e_ = std::fabs(alpha_e_vec[1]);
 
+  // heat capacity of water
+  Epetra_Vector& cp_vec = *S->GetConstantVectorData("heat capacity", "state");
+  double cp_ = std::fabs(cp_vec[1]);
+  cp_ = 4184.;
+
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double S0 = 1.;
 
+  // THIS WON"T WORK BECAUSE EVALUATOR DOESN"T KNOW THE MESH
+
   unsigned int ncells = res.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc; // = mesh_->cell_centroid(c);
     res[0][c] = S0*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
   }
 }

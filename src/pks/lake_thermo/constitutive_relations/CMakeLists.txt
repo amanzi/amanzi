@@ -18,7 +18,7 @@ generate_evaluators_registration_header(
   )
 
 # collect all sources
-list(APPEND subdirs density energy enthalpy internal_energy source_terms thermal_conductivity)
+list(APPEND subdirs density energy enthalpy internal_energy thermal_conductivity)
 set(ats_lake_thermo_relations_src_files "")
 set(ats_lake_thermo_relations_inc_files "")
 

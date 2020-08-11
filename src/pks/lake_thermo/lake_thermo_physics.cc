@@ -158,16 +158,31 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Update the source term
-    S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-    const Epetra_MultiVector& source1 =
-        *S->GetFieldData(source_key_)->ViewComponent("cell",false);
+//    S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+//    const Epetra_MultiVector& source1 =
+//        *S->GetFieldData(source_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& cv =
       *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
+    double dhdt = r_ - E_ - R_s_ - R_b_;
+
+    S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), name_);
+
+    // evaluate density
+    const Epetra_MultiVector& rho =
+    *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+
+    // get temperature
+    const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
+          ->ViewComponent("cell",false);
+
+    double S0 = 1.;  // DEFINE IN xml
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= source1[0][c] * cv[0][c];
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      g_c[0][c] = S0*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
