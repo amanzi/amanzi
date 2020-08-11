@@ -17,7 +17,7 @@ include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/den
 include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/enthalpy)
 #include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/thermal_conductivity)
-#include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/source_terms)
+include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/source_terms)
 include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
 
 

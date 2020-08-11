@@ -2,11 +2,11 @@
 
 #
 #  ATS
-#    internal energy constitutive relations
+#    lake model source terms
 #
 
-add_library(energy_relations_source_terms
-  advected_energy_source_evaluator.cc
+add_library(lake_thermo_relations_source_terms
+  lake_source_terms_evaluator.cc
              )
 
-install(TARGETS energy_relations_source_terms DESTINATION lib)
+install(TARGETS lake_thermo_relations_source_terms DESTINATION lib)

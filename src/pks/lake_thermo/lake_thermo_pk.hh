@@ -333,8 +333,14 @@ public:
   double R_s_;
   double R_b_;
 
+  // extinction coefficient
+  double alpha_e_;
+
   // water depth
-  double h;
+  double h_;
+
+  // heat capacity
+  double cp_;
 
 
 

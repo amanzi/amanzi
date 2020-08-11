@@ -1,24 +1,24 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  Source term evaluator for enthalpy of mass source.
+  Source term evaluator for the lake temperature model.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
-#include "advected_energy_source_evaluator.hh"
+#include "lake_source_terms_evaluator.hh"
 
 namespace Amanzi {
-namespace Energy {
+namespace LakeThermo {
 
 // constructor format for all derived classes
-AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(Teuchos::ParameterList& plist) :
+  LakeThermoSourceEvaluator::LakeThermoSourceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   InitializeFromPlist_();
 }
 
-AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(const AdvectedEnergySourceEvaluator& other) :
+  LakeThermoSourceEvaluator::LakeThermoSourceEvaluator(const LakeThermoSourceEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     internal_enthalpy_key_(other.internal_enthalpy_key_),
     external_enthalpy_key_(other.external_enthalpy_key_),
@@ -32,76 +32,60 @@ AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(const AdvectedEnerg
 {}
 
 Teuchos::RCP<FieldEvaluator>
-AdvectedEnergySourceEvaluator::Clone() const {
-  return Teuchos::rcp(new AdvectedEnergySourceEvaluator(*this));
+LakeThermoSourceEvaluator::Clone() const {
+  return Teuchos::rcp(new LakeThermoSourceEvaluator(*this));
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
 void
-AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+LakeThermoSourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
-  const Epetra_MultiVector& int_enth = *S->GetFieldData(internal_enthalpy_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& ext_enth = *S->GetFieldData(external_enthalpy_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& mass_source = *S->GetFieldData(mass_source_key_)
+
+  const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   
-  if (source_units_ == SOURCE_UNITS_METERS_PER_SECOND) {
-    const Epetra_MultiVector& int_dens = *S->GetFieldData(internal_density_key_)
-                                         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& ext_dens = *S->GetFieldData(external_density_key_)
-                                         ->ViewComponent("cell",false);
+  //S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), name_);
 
-    unsigned int ncells = res.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
-        // upwind, take external values
-        res[0][c] = mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
-      } else {
-        // upwind, take internal values
-        res[0][c] = mass_source[0][c] * int_dens[0][c] * int_enth[0][c];
-      }
-    }
+  // evaluate density
+  const Epetra_MultiVector& rho =
+  *S->GetFieldData(density_key_)->ViewComponent("cell",false);
 
-  } else {
-    unsigned int ncells = res.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
-        // upwind, take external values
-        res[0][c] = mass_source[0][c] * ext_enth[0][c];
-      } else {
-        // upwind, take internal values
-        res[0][c] = mass_source[0][c] * int_enth[0][c];
-        //std::cout << "Advected E-source air-surf = " << mass_source[0][c] << " * " << int_enth[0][c] << " = " << res[0][c] << std::endl;
-      }
-    }
-  }
+  // precipitation rate
+  Epetra_Vector& rvec = *S->GetConstantVectorData("precipitation", "state");
+  double r_ = std::fabs(rvec[1]);
 
-  if (source_units_ == SOURCE_UNITS_MOLS_PER_SECOND) {
-    unsigned int ncells = res.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      res[0][c] /= cv[0][c];
-    }
-  }
-  
+  // precipitation rate
+  Epetra_Vector& Evec = *S->GetConstantVectorData("evaporation", "state");
+  double E_ = std::fabs(Evec[1]);
 
-  if (include_conduction_) {
-    const Epetra_MultiVector& cond = *S->GetFieldData(conducted_source_key_)
-        ->ViewComponent("cell",false);
-    unsigned int ncells = res.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      res[0][c] += cond[0][c];
-    }
+  // surface runoff
+  Epetra_Vector& Rsvec = *S->GetConstantVectorData("surface runoff", "state");
+  double R_s_ = std::fabs(Rsvec[1]);
+
+  // bottom runoff
+  Epetra_Vector& Rbvec = *S->GetConstantVectorData("bottom runoff", "state");
+  double R_b_ = std::fabs(Rbvec[1]);
+
+  // extinction coefficient
+  Epetra_Vector& alpha_e_vec = *S->GetConstantVectorData("extinction coefficient", "state");
+  double alpha_e_ = std::fabs(alpha_e_vec[1]);
+
+  double dhdt = r_ - E_ - R_s_ - R_b_;
+  double S0 = 1.;
+
+  unsigned int ncells = res.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    res[0][c] = S0*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
   }
 }
 
 void
-AdvectedEnergySourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+LakeThermoSourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   if (include_conduction_ && wrt_key == conducted_source_key_) {
     *result->ViewComponent("cell",false) = *S->GetFieldData(cell_vol_key_)
@@ -112,7 +96,7 @@ AdvectedEnergySourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Pt
 }
 
 void
-AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
+LakeThermoSourceEvaluator::InitializeFromPlist_() {
 
   if (my_key_.empty()) {
     if (include_conduction_) {
@@ -144,7 +128,7 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
     source_units_ = SOURCE_UNITS_MOLS_PER_SECOND_PER_METERSD;
   } else {
     Errors::Message message;
-    message << "AdvectedEnergySourceEvaluator: "
+    message << "LakeThermoSourceEvaluator: "
             << my_key_
             << ": invalid units \""
             << source_units
@@ -152,7 +136,7 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
             << " and \"mol m^-3 s^-1\".";
     Exceptions::amanzi_throw(message);
   }
-    
+
   if (source_units_ == SOURCE_UNITS_METERS_PER_SECOND) {
     internal_density_key_ = plist_.get<std::string>("internal density key",
             Keys::getKey(domain, "molar_density_liquid"));

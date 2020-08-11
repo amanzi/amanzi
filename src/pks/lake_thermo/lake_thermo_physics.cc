@@ -33,9 +33,6 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
-  // get c and rho
-  double cp = 4184.;
-
   S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // evaluate density
@@ -57,7 +54,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-      g_c[0][c] = cp*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+      g_c[0][c] = cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
   }
 
 };
@@ -81,9 +78,6 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   //  S->GetFieldEvaluator(flux_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
 
-  // get c and rho
-  double cp = 4184.;
-
   S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // evaluate density
@@ -101,11 +95,11 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 
   // GENERALLY, DON'T UPDATE HERE
   // update h
-  h += dhdt*dt;
+  h_ += dhdt*dt;
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    flux_c[0][c] = cp*rho[0][c]*(dhdt*xc[0] - B_w)/h;
+    flux_c[0][c] = cp_*rho[0][c]*(dhdt*xc[0] - B_w)/h_;
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);

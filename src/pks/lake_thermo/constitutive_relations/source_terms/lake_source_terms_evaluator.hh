@@ -3,25 +3,25 @@
 /*
   Source term evaluator for enthalpy of mass source.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_ADVECTED_ENERGY_SOURCE_EVALUATOR_
-#define AMANZI_ENERGY_RELATIONS_ADVECTED_ENERGY_SOURCE_EVALUATOR_
+#ifndef AMANZI_LAKE_THERMO_RELATIONS_SOURCE_TERMS_EVALUATOR_
+#define AMANZI_LAKE_THERMO_RELATIONS_SOURCE_TERMS_EVALUATOR_
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace Energy {
+namespace LakeThermo {
 
-class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
+class LakeThermoSourceEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  AdvectedEnergySourceEvaluator(Teuchos::ParameterList& plist);
-  AdvectedEnergySourceEvaluator(const AdvectedEnergySourceEvaluator& other);
+  LakeThermoSourceEvaluator(Teuchos::ParameterList& plist);
+  LakeThermoSourceEvaluator(const LakeThermoSourceEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -34,6 +34,8 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   void InitializeFromPlist_();
 
+  Key temperature_key_;
+  Key density_key_;
   Key internal_enthalpy_key_;
   Key external_enthalpy_key_;
   Key mass_source_key_;
@@ -52,7 +54,7 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
   SourceUnits source_units_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AdvectedEnergySourceEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,LakeThermoSourceEvaluator> factory_;
 
 };
 

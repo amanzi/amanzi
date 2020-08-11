@@ -78,13 +78,13 @@ Lake_Thermo_PK::Lake_Thermo_PK(Teuchos::ParameterList& FElist,
 void Lake_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
 
-  SetupEnergy_(S);
+  SetupLakeThermo_(S);
   SetupPhysicalEvaluators_(S);
 
 };
 
 
-void Lake_Thermo_PK::SetupEnergy_(const Teuchos::Ptr<State>& S) {
+void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
   wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
@@ -362,6 +362,15 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // bottom runoff
   Epetra_Vector& Rbvec = *S_->GetConstantVectorData("bottom runoff", "state");
   R_b_ = std::fabs(Rbvec[1]);
+
+  // extinction coefficient
+  Epetra_Vector& alpha_e_vec = *S_->GetConstantVectorData("extinction coefficient", "state");
+  alpha_e_ = std::fabs(alpha_e_vec[1]);
+
+  // heat capacity of water
+  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
+  cp_ = std::fabs(cp_vec[1]);
+  cp_ = 4184.;
 
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
