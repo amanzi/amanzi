@@ -47,7 +47,7 @@
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="ALL">
+    <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
@@ -143,7 +143,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -157,7 +157,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -172,9 +172,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="molar heat capacity" type="double" value="75.2"/>
-          <Parameter name="reference temperature" type="double" value="290.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="75.2"/>
+              <Parameter name="reference temperature" type="double" value="290.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -184,9 +189,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="molar heat capacity" type="double" value="75.2"/>
-          <Parameter name="reference temperature" type="double" value="290.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="75.2"/>
+              <Parameter name="reference temperature" type="double" value="290.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -197,7 +207,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -211,7 +221,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -251,7 +261,7 @@
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -264,7 +274,7 @@
       <ParameterList name="fracture-temperature">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -278,7 +288,7 @@
       <ParameterList name="specific_storage">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -291,7 +301,7 @@
       <ParameterList name="fracture-specific_storage">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -305,7 +315,7 @@
       <ParameterList name="fracture-normal_permeability">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -318,7 +328,7 @@
       <ParameterList name="fracture-normal_conductivity">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -382,7 +392,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{ALL}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
 	      <ParameterList name="function-static-head">
@@ -403,7 +413,7 @@
       <ParameterList name="fracture-pressure">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{ALL}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
 	      <ParameterList name="function-static-head">
@@ -425,7 +435,7 @@
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -439,7 +449,7 @@
       <ParameterList name="fracture-saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="ALL"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -690,7 +700,7 @@
       </ParameterList>
       <ParameterList name="fracture permeability models">
 	<ParameterList name="FPM for Entire Domain">
-	  <Parameter name="region" type="string" value="ALL"/>
+	  <Parameter name="region" type="string" value="All"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
 	  <Parameter name="aperture" type="double" value="1.0"/>
 	</ParameterList>

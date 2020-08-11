@@ -306,9 +306,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="molar heat capacity" type="double" value="0.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="0.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -318,9 +323,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity" type="double" value="0.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="0.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
