@@ -100,6 +100,8 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
+  AMANZI_ASSERT(pk_matrix->domain() == "domain");
+
   auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
