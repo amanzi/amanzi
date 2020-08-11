@@ -3415,6 +3415,57 @@ This section to be written.
   </ParameterList>
 
 
+Sources and sinks
+.................
+
+The sources and sinks for injecting and removing energy from the system. 
+Negative source removes energy. 
+Positive source inject energy.
+The structure of list *source terms* mimics that of list *boundary conditions*. 
+Again, constant functions can be replaced by any of the available functions.
+
+* `"regions`" [Array(string)] is the list of regions where the source is defined.
+
+* `"spatial distribution method`" [string] is the method for distributing
+  source Q over the specified regions. The available options are `"volume`" and
+  `"none`".
+  For option `"none`", the source term function Q is measured in [J/m^3/s]. 
+  For option `"volume`", it is measured in [J/s]. 
+  When the source function is defined over a few regions, Q is distributed over their union.
+  Option `"volume fraction`" can be used when the region geometric
+  model support volume fractions. 
+
+* `"use volume fractions`" instructs the code to use all available volume fractions. 
+  Note that the region geometric model supports volume fractions only for a few regions.
+
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
+  `"integrated source`". The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  Default is `"rate`". 
+
+.. code-block:: xml
+
+  <ParameterList name="energy">  <!-- parent list -->
+
+    <ParameterList name="source terms">
+      <ParameterList name="_SRC 0">
+        <Parameter name="regions" type="Array(string)" value="{_WELL_EAST}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="submodel" type="string" value="rate"/>
+        <ParameterList name="source">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="-0.1"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+   </ParameterList>
+
+
+  
+
 Navier Stokes PK
 ----------------
 
