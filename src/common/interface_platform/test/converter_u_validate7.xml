@@ -111,21 +111,19 @@
       <ParameterList name="internal_energy_liquid">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
-        <ParameterList name="internal_energy_liquid">
-          <ParameterList name="IEM parameters">
-            <ParameterList name="TopRegion">
-              <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
-              <ParameterList name="IEM parameters">
-                <Parameter name="iem type" type="string" value="linear"/>
-                <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
-              </ParameterList>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="TopRegion">
+            <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
             </ParameterList>
-            <ParameterList name="BottomRegion">
-              <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
-              <ParameterList name="IEM parameters">
-                <Parameter name="iem type" type="string" value="linear"/>
-                <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
-              </ParameterList>
+          </ParameterList>
+          <ParameterList name="BottomRegion">
+            <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -133,21 +131,19 @@
       <ParameterList name="internal_energy_rock">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
-        <ParameterList name="internal_energy_rock">
-          <ParameterList name="IEM parameters">
-            <ParameterList name="TopRegion">
-              <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
-              <ParameterList name="IEM parameters">
-                <Parameter name="iem type" type="string" value="linear"/>
-                <Parameter name="heat capacity" type="double" value="6.20100000000000023e+02"/>
-              </ParameterList>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="TopRegion">
+            <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="6.20100000000000023e+02"/>
             </ParameterList>
-            <ParameterList name="BottomRegion">
-              <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
-              <ParameterList name="IEM parameters">
-                <Parameter name="iem type" type="string" value="linear"/>
-                <Parameter name="heat capacity" type="double" value="6.20200000000000045e+02"/>
-              </ParameterList>
+          </ParameterList>
+          <ParameterList name="BottomRegion">
+            <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="6.20200000000000045e+02"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
