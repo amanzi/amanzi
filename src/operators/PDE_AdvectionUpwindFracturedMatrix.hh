@@ -26,13 +26,15 @@ class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
  public:
   PDE_AdvectionUpwindFracturedMatrix(Teuchos::ParameterList& plist,
                                      Teuchos::RCP<Operator> global_op) :
-      PDE_AdvectionUpwind(plist, global_op) {
+      PDE_AdvectionUpwind(plist, global_op)
+  {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionUpwindFracturedMatrix(Teuchos::ParameterList& plist,
                                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_AdvectionUpwind(plist, mesh) {
+      PDE_AdvectionUpwind(plist, mesh)
+  {
     InitAdvection_(plist);
   }
 

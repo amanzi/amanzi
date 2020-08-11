@@ -52,8 +52,7 @@ IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     temp_key_(other.temp_key_) {};
 
 
-Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const
-{
+Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const {
   return Teuchos::rcp(new IEMEvaluator(*this));
 }
 
@@ -68,17 +67,8 @@ void IEMEvaluator::InitializeFromPlist_()
   }
 
   // Set up my dependencies.
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("internal") ||
-      domain_name == std::string("energy")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
-
-  // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key", domain_name+std::string("temperature"));
+  std::string domain = Keys::getDomain(my_key_);
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 }
 

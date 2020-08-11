@@ -160,7 +160,7 @@ class InputConverterU : public InputConverter {
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
-  Teuchos::ParameterList TranslateEnergyBCs_();
+  Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
 
   // -- shallow water
   Teuchos::ParameterList TranslateShallowWater_(const std::string& domain);
