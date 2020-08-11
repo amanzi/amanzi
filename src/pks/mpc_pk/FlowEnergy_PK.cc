@@ -63,10 +63,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField("internal_energy_rock")) {
+    Teuchos::Array<std::string> regions({ "All" });
     elist.sublist("internal_energy_rock")
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", "internal_energy_rock");
-    elist.sublist("internal_energy_rock").sublist("IEM parameters")
+    elist.sublist("internal_energy_rock").sublist("IEM parameters").sublist("Material 1")
+         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
          .set<double>("heat capacity", 620.0);
   }
@@ -106,11 +108,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // Fields for liquid
   // -- internal energy
   if (!S->HasField("internal_energy_liquid")) {
+    Teuchos::Array<std::string> regions({ "All" });
     elist.sublist("internal_energy_liquid")
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", "internal_energy_liquid");
-    elist.sublist("internal_energy_liquid")
-         .sublist("IEM parameters")
+    elist.sublist("internal_energy_liquid").sublist("IEM parameters").sublist("Material 1")
+         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
          .set<std::string>("iem type", "linear")
          .set<double>("molar heat capacity", 76.0);
   }

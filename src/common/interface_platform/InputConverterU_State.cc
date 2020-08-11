@@ -229,17 +229,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- liquid heat capacity
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
       if (flag) {
-        if (nmat > 1) {
-          msg << "Heat capacity is supported for problems with one material";
-          Exceptions::amanzi_throw(msg);
-        }
         double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
-        field_ev.sublist("IEM parameters")
+
+        field_ev.sublist("internal_energy_liquid").sublist("IEM parameters").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
       }
@@ -247,17 +245,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- rock heat capacity
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
       if (flag) {
-        if (nmat > 1) {
-          msg << "Heat capacity is supported for problems with one material";
-          Exceptions::amanzi_throw(msg);
-        }
         double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
-        field_ev.sublist("IEM parameters")
+
+        field_ev.sublist("internal_energy_rock").sublist("IEM parameters").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
       }

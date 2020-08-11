@@ -19,26 +19,18 @@ namespace Amanzi {
 namespace Energy {
 
 /* ******************************************************************
-* Constructor.
+* Constructors.
 ****************************************************************** */
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
+  /*
   AMANZI_ASSERT(plist_.isSublist("IEM parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("IEM parameters");
   IEMFactory fac;
   iem_ = fac.CreateIEM(sublist);
+  */
 
-  InitializeFromPlist_();
-}
-
-
-/* ******************************************************************
-* Copy constructor with initialization.
-****************************************************************** */
-IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem) :
-    SecondaryVariableFieldEvaluator(plist),
-    iem_(iem) {
   InitializeFromPlist_();
 }
 
@@ -52,8 +44,10 @@ IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     temp_key_(other.temp_key_) {};
 
 
-Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const
-{
+/* ******************************************************************
+* Copy constructor
+****************************************************************** */
+Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const {
   return Teuchos::rcp(new IEMEvaluator(*this));
 }
 
@@ -68,17 +62,9 @@ void IEMEvaluator::InitializeFromPlist_()
   }
 
   // Set up my dependencies.
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("internal") ||
-      domain_name == std::string("energy")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  domain_ = Keys::getDomainPrefix(my_key_);
 
-  // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key", domain_name+std::string("temperature"));
+  temp_key_ = plist_.get<std::string>("temperature key", domain_ + "temperature");
   dependencies_.insert(temp_key_);
 }
 
@@ -89,15 +75,19 @@ void IEMEvaluator::InitializeFromPlist_()
 void IEMEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
+  if (iem_ == Teuchos::null) {
+    CreateIEMPartition_(S->GetMesh(domain_), plist_);
+  }
+
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
-  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
-    int ncomp = result->size(*comp, false);
+    int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
-      result_v[0][i] = iem_->InternalEnergy(temp_v[0][i]);
+      result_v[0][i] = iem_->second[(*iem_->first)[i]]->InternalEnergy(temp_v[0][i]);
     }
   }
 }
@@ -110,18 +100,56 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
+  if (iem_ == Teuchos::null) {
+    CreateIEMPartition_(S->GetMesh(domain_), plist_);
+  }
+
   AMANZI_ASSERT(wrt_key == temp_key_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
-  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp, false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
-    int ncomp = result->size(*comp, false);
+    int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
-      result_v[0][i] = iem_->DInternalEnergyDT(temp_v[0][i]);
+      result_v[0][i] = iem_->second[(*iem_->first)[i]]->DInternalEnergyDT(temp_v[0][i]);
     }
   }
+}
+
+
+/* ******************************************************************
+* Create partition
+****************************************************************** */
+void IEMEvaluator::CreateIEMPartition_(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::ParameterList& plist)
+{
+  std::vector<Teuchos::RCP<IEM> > iem_list;
+  std::vector<std::vector<std::string> > region_list;
+
+  IEMFactory fac;
+  const Teuchos::ParameterList& tmp = plist.sublist("IEM parameters");
+
+  for (auto lcv = tmp.begin(); lcv != tmp.end(); ++lcv) {
+    std::string name = lcv->first;
+    if (tmp.isSublist(name)) {
+      const Teuchos::ParameterList& aux = tmp.sublist(name);
+      region_list.push_back(aux.get<Teuchos::Array<std::string> >("regions").toVector());
+
+      Teuchos::ParameterList model_list = aux.sublist("IEM parameters");
+      iem_list.push_back(fac.CreateIEM(model_list));
+    } else {
+      AMANZI_ASSERT(0);
+    }
+  }
+
+  auto partition = Teuchos::rcp(new Functions::MeshPartition());
+  partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
+  partition->Verify();
+
+  iem_ = Teuchos::rcp(new IEMPartition(partition, iem_list));
 }
 
 }  // namespace Energy
