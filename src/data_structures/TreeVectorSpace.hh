@@ -69,6 +69,15 @@ class TreeVectorSpace {
   Comm_ptr_type comm_;
 };
 
+
+// non-member functions 
+inline
+Teuchos::RCP<TreeVectorSpace> CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs) {
+  auto tvs = Teuchos::rcp(new TreeVectorSpace());
+  tvs->SetData(Teuchos::rcpFromRef(cvs));
+  return tvs;
+}
+
 } // namespace Amanzi
 
 #endif

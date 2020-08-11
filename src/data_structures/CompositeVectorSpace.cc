@@ -115,7 +115,7 @@ CompositeVectorSpace::SetMesh(
   if (mesh_ == Teuchos::null) {
     mesh_ = mesh;
   } else if (mesh_ != mesh) {
-    Errors::Message message("CompositeVectorSpace: SetMesh called on space that already has a mesh with a different mesh.");
+    Errors::Message message("CompositeVectorSpace: SetMesh called on space that already has a different mesh.");
     throw(message);
   }
   return this;

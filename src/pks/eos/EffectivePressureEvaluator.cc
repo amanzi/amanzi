@@ -20,29 +20,21 @@ namespace AmanziEOS {
 * Constructor.
 ******************************************************************* */
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    SecondaryVariableFieldEvaluator(plist)
+{
   if (my_key_ == std::string("")) {
     my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
   }
-
-  std::size_t end = my_key_.find_first_of("_");
-  std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("effective")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
+  std::string domain = Keys::getDomain(my_key_);
 
   // -- pressure
-  pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string("pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
   dependencies_.insert(pres_key_);
 
   // -- logging
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (KeySet::const_iterator dep=dependencies_.begin();
-         dep!=dependencies_.end(); ++dep) {
+    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
       *vo_->os() << " dep: " << *dep << std::endl;
     }
   }
@@ -76,8 +68,8 @@ void EffectivePressureEvaluator::EvaluateField_(
   // evaluate effective pressure as max(pres, p_atm)
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp, false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {

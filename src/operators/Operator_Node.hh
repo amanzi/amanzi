@@ -33,7 +33,7 @@ class Operator_Node : public Operator {
   }
 
   // copy constructor
-  virtual Teuchos::RCP<Operator> Clone() const;
+  virtual Teuchos::RCP<Operator> Clone() const override;
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;

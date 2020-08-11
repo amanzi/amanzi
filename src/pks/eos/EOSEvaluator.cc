@@ -48,32 +48,18 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
     my_keys_.push_back(key);
   }
 
-  // Set up my dependencies.
-  std::size_t end = key.find_first_of("_");
-  std::string domain_name = key.substr(0,end);
-  if (domain_name == std::string("density") ||
-      domain_name == std::string("molar") ||
-      domain_name == std::string("mass")) {
-    domain_name = std::string("");
-  } else {
-    domain_name = domain_name+std::string("_");
-  }
-
-  // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          domain_name+std::string("temperature"));
+  // set up my dependencies
+  std::string domain = Keys::getDomain(key);
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 
-  // -- pressure
-  pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string("effective_pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "effective_pressure"));
   dependencies_.insert(pres_key_);
 
-  // -- logging
+  // logging
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (KeySet::const_iterator dep=dependencies_.begin();
-         dep!=dependencies_.end(); ++dep) {
+    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
       *vo_->os() << " dep: " << *dep << std::endl;
     }
   }
@@ -127,8 +113,7 @@ void EOSEvaluator::EvaluateField_(
 
   if (molar_dens != Teuchos::null) {
     // evaluate MolarDensity()
-    for (CompositeVector::name_iterator comp=molar_dens->begin();
-         comp!=molar_dens->end(); ++comp) {
+    for (CompositeVector::name_iterator comp=molar_dens->begin(); comp!=molar_dens->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
@@ -136,14 +121,14 @@ void EOSEvaluator::EvaluateField_(
       int count = dens_v.MyLength();
       for (int id = 0; id != count; ++id) {
         dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
-        AMANZI_ASSERT(dens_v[0][id] > 0.0);
+        if (dens_v[0][id] <= 0.0)
+            Exceptions::amanzi_throw(Errors::CutTimeStep());
       }
     }
   }
 
   if (mass_dens != Teuchos::null) {
-    for (CompositeVector::name_iterator comp=mass_dens->begin();
-         comp!=mass_dens->end(); ++comp) {
+    for (CompositeVector::name_iterator comp=mass_dens->begin(); comp!=mass_dens->end(); ++comp) {
       if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
           molar_dens->HasComponent(*comp)) {
         // calculate MassDensity from MolarDensity and molar mass.

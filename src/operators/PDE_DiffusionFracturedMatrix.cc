@@ -42,14 +42,20 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 
   global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs_, plist));
 
-  std::string name = "DiffusionFracturedMatrix: CELL_FACE+CELL";
+  std::string name("DiffusionFracturedMatrix: CELL_FACE+CELL");
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
   global_op_->OpPushBack(local_op_);
+
+  // little-k options
+  name = plist.get<std::string>("nonlinear coefficient", "none");
+  little_k_ = OPERATOR_LITTLE_K_NONE;
+  if (name == "standard: cell") {
+    little_k_ = OPERATOR_LITTLE_K_STANDARD;  // cell-centered scheme.
+  }
 
   // other parameters
   gravity_ = plist.get<bool>("gravity");
   scaled_constraint_ = false;
-  little_k_ = OPERATOR_LITTLE_K_NONE;
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   exclude_primary_terms_ = false;
   mass_matrices_initialized_ = false;

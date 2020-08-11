@@ -45,7 +45,7 @@ IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
 
 
 /* ******************************************************************
-* Copy constructor
+* Copy assinement
 ****************************************************************** */
 Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const {
   return Teuchos::rcp(new IEMEvaluator(*this));
@@ -62,9 +62,14 @@ void IEMEvaluator::InitializeFromPlist_()
   }
 
   // Set up my dependencies.
+<<<<<<< HEAD
   domain_ = Keys::getDomainPrefix(my_key_);
 
   temp_key_ = plist_.get<std::string>("temperature key", domain_ + "temperature");
+=======
+  std::string domain = Keys::getDomain(my_key_);
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
+>>>>>>> de61d687ff05d34ef530a04a605f3ef43ba2cf9a
   dependencies_.insert(temp_key_);
 }
 
