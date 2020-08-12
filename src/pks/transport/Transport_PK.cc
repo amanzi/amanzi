@@ -837,7 +837,10 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
 
-
+  if (S_next_->HasFieldEvaluator(molar_density_key_)){
+    S_next_->GetFieldEvaluator(molar_density_key_)->HasFieldChanged(S_next_.ptr(), molar_density_key_);
+  }
+   
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
@@ -1349,6 +1352,12 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
+  int rank = mesh_->get_comm()->MyPID();
+  
+  // if (domain_name_ == "surface"){
+  //   std::cout<<tcc_prev<<"\n";
+  //   //    exit(0);
+  // }
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
@@ -1449,9 +1458,10 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+    
     for (int i = 0; i < num_advect; i++) {
 
-      if (vol_phi_ws_den > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+      if ((*ws_end)[0][c] > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
       }
       else  {
@@ -1459,6 +1469,9 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
         tcc_next[i][c] = 0.;
       }
     }
+    // if ((domain_name_=="surface")&&(rank==1)&&(c > 47)&&(c<53)){
+    //   std::cout<<c<<" : "<< vol_phi_ws_den<<" "<<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<(*conserve_qty_)[0][c]<<" tcc "<<tcc_next[0][c]<<"\n";
+    // }
   }
   
   double mass_final = 0;
