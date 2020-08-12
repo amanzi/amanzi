@@ -147,6 +147,7 @@
 #                - update PFloTran to v3.0 (Jul 17, 2020)
 #                - update PETSc to 3.13
 #                - update SuperLU_DIST to 6.1.1
+#                - update CLM to 0.1.1
 
 include(CMakeParseArguments)
 
@@ -552,12 +553,12 @@ set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
 #
 set(CLM_VERSION_MAJOR 0)
 set(CLM_VERSION_MINOR 1)
-set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION_PATCH 1)
 set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
 set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
 set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
 set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
-set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
+set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 
 #
 # TPL: exprtk
