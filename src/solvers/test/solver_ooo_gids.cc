@@ -1,13 +1,14 @@
+#include "UnitTest++.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "UnitTest++.h"
 #include "Ifpack_Hypre.h"
 
-TEST(OUT_OF_ORDER_GIDS) {
-  // This tests our patches of Ifpack for Hypre.
+SUITE(SOLVERS) {
 
+TEST(GIDS_OUT_OF_ORDER) {
+  // This tests our patches of Ifpack for Hypre.
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int numProcs = comm.NumProc();
   int myRank = comm.MyPID();
@@ -40,7 +41,7 @@ TEST(OUT_OF_ORDER_GIDS) {
   //
   const double tol = 1e-7;
   Teuchos::ParameterList list("Preconditioner List");
-  Teuchos::RCP<FunctionParameter> functs[5];
+  std::vector<Teuchos::RCP<FunctionParameter>> functs(5, Teuchos::null);
   functs[0] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 100));               // max iterations
   functs[1] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
   functs[2] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
@@ -50,7 +51,7 @@ TEST(OUT_OF_ORDER_GIDS) {
   list.set("SolveOrPrecondition", Solver);
   list.set("SetPreconditioner", false);
   list.set("NumFunctions", 5);
-  list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
+  list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs.data());
 
   //
   // Create the preconditioner (which is actually a PCG solver)
@@ -72,7 +73,7 @@ TEST(OUT_OF_ORDER_GIDS) {
 
   //
   // Solve the linear system
-  // It should not like that the vectors are not contiguous
+  // It may not like that the vectors are not contiguous
   //
   CHECK_EQUAL(0, prec.ApplyInverse(B,X));
 
@@ -80,4 +81,7 @@ TEST(OUT_OF_ORDER_GIDS) {
     CHECK_CLOSE(KnownX[0][i], X[0][i], tol*10*pow(10.0,numProcs));
   }
   
+
+  
+}
 }
