@@ -226,7 +226,6 @@ void CycleDriver::Setup() {
     }
   }
 
-
   pk_->Setup(S_.ptr());
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();

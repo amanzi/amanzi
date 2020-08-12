@@ -20,14 +20,18 @@
 namespace Amanzi {
 namespace Energy {
 
-// constructor
+/* ******************************************************************
+* Simple constructor
+****************************************************************** */
 TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) :
     plist_(plist) {
   InitializeFromPlist_();
 }
 
 
-// do the physics
+/* ******************************************************************
+* Equation of state
+****************************************************************** */
 double TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
 {
   double kersten = pow(sat_liq + eps_, alpha_);
@@ -35,7 +39,9 @@ double TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
 };
 
 
-// initialization
+/* ******************************************************************
+* Initialization
+****************************************************************** */
 void TCM_WetDry_TwoPhase::InitializeFromPlist_()
 {
   eps_ = plist_.get<double>("epsilon", 1.e-10);

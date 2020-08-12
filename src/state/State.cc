@@ -425,9 +425,12 @@ State::RequireFieldEvaluator(Key key) {
 
   // cannot find the evaluator, error
   if (evaluator == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Model for field \"" << key << "\" cannot be created in State.";
-    Errors::Message message(messagestream.str());
+    std::stringstream msg;
+    msg << "\nModel for field \"" << key << "\" cannot be created in State.\n";
+    // for (auto fe = field_evaluator_begin(); fe != field_evaluator_end(); ++fe) {
+    //   msg << fe->first << ":\n" << fe->second;
+    // }
+    Errors::Message message(msg.str());
     Exceptions::amanzi_throw(message);
   }
   return evaluator;
@@ -890,7 +893,7 @@ void State::Setup() {
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
+      *vo->os() << "Ensure compatibility for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
@@ -1009,7 +1012,7 @@ void State::InitializeEvaluators() {
       Teuchos::OSTab tab = vo.getOSTab();
       *vo.os() << "processing evaluator \"" << f_it->first << "\"\n";
     }
-
+ 
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
     fields_[f_it->first]->set_initialized();
   }

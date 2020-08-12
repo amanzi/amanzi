@@ -32,6 +32,8 @@
 #include "PK_MPC.hh"
 #include "State.hh"
 #include "PK_Factory.hh"
+#include "TreeOperator.hh"
+
 
 namespace Amanzi {
 
@@ -85,15 +87,16 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);
 
-  // virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  // virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
-
   // -- Modify the correction.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
+  Teuchos::RCP<Operators::TreeOperator> op_tree_matrix() { return op_tree_matrix_; }
+  Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_tree_pc_; }
+  Teuchos::RCP<TreeVector> op_tree_rhs() { return op_tree_rhs_; }
+  
  protected:
   using PK_MPC<PK_Base>::sub_pks_;
   using PK_MPC<PK_Base>::S_;
@@ -108,6 +111,9 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   double dt_;
   Teuchos::RCP<Amanzi::BDF1_TI<TreeVector, TreeVectorSpace> > time_stepper_;
 
+  Teuchos::RCP<Operators::TreeOperator> op_tree_matrix_, op_tree_pc_;
+  Teuchos::RCP<TreeVector> op_tree_rhs_;
+  
  private:
   // factory registration
   static RegisteredPKFactory<PK_MPCStrong> reg_;
@@ -413,17 +419,6 @@ bool PK_MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVec
   }
   return modified;
 }
-
-// template <class PK_Base>
-// void PK_MPCStrong<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-//   PK_MPC<PK_Base>::CommitStep(t_old, t_new, S);
-// }
-
-
-// template<class PK_Base>
-// void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
-//   PK_MPC<PK_Base>::CalculateDiagnostics(S);
-// };
 
 
 // -----------------------------------------------------------------------------

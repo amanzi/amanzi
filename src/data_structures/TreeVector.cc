@@ -192,13 +192,13 @@ int TreeVector::Norm2(double* n2) const {
   return ierr;
 };
 
-void TreeVector::Print(std::ostream &os) const {
+void TreeVector::Print(std::ostream &os, bool data_io) const {
   // Print data to ostream for this node and all children.
-  if (data_ != Teuchos::null) data_->Print(os);
+  if (data_ != Teuchos::null) data_->Print(os, data_io);
 
   for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
-    (*subvec)->Print(os);
+    (*subvec)->Print(os, data_io);
   }
 };
 

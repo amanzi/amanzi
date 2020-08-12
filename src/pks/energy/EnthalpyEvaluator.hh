@@ -36,9 +36,7 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key pres_key_;
-  Key dens_key_;
-  Key ie_key_;
+  Key pressure_key_, mol_density_liquid_key_, ie_liquid_key_;
   bool include_work_;
 
  private:

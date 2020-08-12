@@ -324,7 +324,10 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("DarcyPK-" + domain_, vlist)); 
+
+  std::string ioname = "DarcyPK";
+  if (domain_ != "domain") ioname += "-" + domain_;
+  vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);
@@ -493,7 +496,7 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
+               << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
 }
 

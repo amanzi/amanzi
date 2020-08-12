@@ -693,7 +693,7 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "coupled flow and energy") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and energy");
-    tmp_list.set<std::string>("PK type", "coupled thermal flow");
+    tmp_list.set<std::string>("PK type", "thermal flow matrix fracture");
     PopulatePKTree_(tmp_list, "flow and energy");
     PopulatePKTree_(tmp_list, "flow and energy fracture");
   }
@@ -999,8 +999,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("flow");
         pk_names.push_back("energy");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(it->first)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0)
+            .set<std::string>("domain name", "domain");
 
         err_options = "pressure, temperature";
       }
@@ -1008,8 +1010,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("flow fracture");
         pk_names.push_back("energy fracture");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(it->first)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0)
+            .set<std::string>("domain name", "fracture");
 
         err_options = "pressure, temperature";
       }
@@ -1101,6 +1105,42 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
     if (name == "coupled transport" && transport_implicit_) {
       pk_list.sublist("transport matrix").sublist("operators").sublist("advection operator")
              .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+    }
+
+    if (name == "coupled flow and energy") {
+      std::vector<std::string> name_pks = { "flow and energy", "flow and energy fracture",
+                                            "flow", "energy", "flow fracture", "energy fracture"};
+
+      for (auto&& pk : name_pks) {
+        auto& tmp = pk_list.sublist(pk).sublist("time integrator");
+        tmp.set<std::string>("time integration method", "none");
+        tmp.remove("BDF1", false);
+        tmp.remove("initialization", false);
+
+        if (pk.find("fracture") == std::string::npos) {
+          if (pk_list.sublist(pk).isSublist("operators")) {
+            auto& oplist = pk_list.sublist(pk).sublist("operators").sublist("diffusion operator");
+            oplist.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+            oplist.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+            oplist.sublist("vapor matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+          }
+        }
+
+        if (pk == "flow" || pk == "flow fracture") {
+          tmp.sublist("pressure-lambda constraints").set<std::string>("method", "none");
+        }
+
+        if (pk == "energy") {
+          auto& oplist = pk_list.sublist(pk).sublist("operators").sublist("advection operator");
+          oplist.set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+        }
+      }
+
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
     }
   }
 }
