@@ -308,6 +308,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     const Teuchos::RCP<BCs>& bc)
 {
   std::string name = oplist.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist.isParameter("fracture");
   
   // FV methods
   if (name == "fv: default") {
@@ -322,6 +323,14 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 
   } else if (name == "nlfv: bnd_faces") {
     auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+    return op;
+
+  // MFD methods with non-uniform DOFs
+  } else if (fractured_matrix) {
+    AmanziGeometry::Point g(mesh->space_dimension());  // gravity should be turned-off in PList
+    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
     return op;
 

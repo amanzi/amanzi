@@ -29,8 +29,12 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
   svp_model_ = svp_fac.CreateVaporPressure(plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
-  my_key_ = plist_.get<std::string>("molar fraction key");
-  temp_key_ = plist_.get<std::string>("temperature key", "temperature");
+  if (my_key_ == "")
+    my_key_ = plist_.get<std::string>("molar fraction key");
+
+  // set up dependencies
+  std::string domain = Keys::getDomain(my_key_);
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 }
 

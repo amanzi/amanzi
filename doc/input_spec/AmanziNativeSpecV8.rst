@@ -627,8 +627,16 @@ The *eos* evaluator requires one-parameter list to select the proper model for e
     <Parameter name="field evaluator type" type="string" value="iem"/>
     <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
     <ParameterList name="IEM parameters">
-      <Parameter name="iem type" type="string" value="linear"/>
-      <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+      <ParameterList name="SOIL1">
+        <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+        <ParameterList name="IEM parameters">
+          <Parameter name="iem type" type="string" value="linear"/>
+          <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="SOIL2">
+        ...
+      </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -1044,7 +1052,7 @@ Fully saturated flow
 The conceptual PDE model for the fully saturated flow is
 
 .. math::
-  \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
+  \phi \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)\frac{\partial p_l}{\partial t} 
   =
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \quad
@@ -1054,7 +1062,8 @@ The conceptual PDE model for the fully saturated flow is
 
 where 
 :math:`\phi` is porosity [-],
-:math:`s_s` and :math:`s_y` are specific storage and specific yield, respectively,
+:math:`s_s` and :math:`s_y` are specific storage [m] and specific yield [-], respectively,
+:math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
 :math:`Q` is source or sink term [:math:`kg / m^3 / s`],
 :math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
@@ -1126,8 +1135,12 @@ We define
 
 where :math:`s_l` is liquid saturation [-],
 :math:`\phi` is porosity [-],
+<<<<<<< HEAD
 :math:`\eta_g` is molar density of water vapor [:math:`mol/m^3`],
 and :math:`X_g` is molar fraction of water vapor.
+=======
+and :math:`X_l` is molar fraction of water vapor [-].
+>>>>>>> master
 The effective diffusion coefficient of the water vapor is given by
 
 .. math::
@@ -1135,7 +1148,7 @@ The effective diffusion coefficient of the water vapor is given by
 
 where :math:`s_g` is gas saturation [-],
 :math:`\tau_g` is the tortuosity of the gas phase [-],
-:math:`\eta_g` is the molar density of gas,
+:math:`\eta_g` is the molar density of gas [:math:`kg/m^3`],
 and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase [:math:`m^2/s`],
 The gas pressure :math:`p_g` is set to the atmosperic pressure and the vapor pressure
 model assumes thermal equlibrium of liquid and gas phases:
@@ -1144,7 +1157,7 @@ model assumes thermal equlibrium of liquid and gas phases:
   p_v = P_{sat}(T) \exp\left(\frac{P_{cgl}}{\eta_l R T}\right)
 
 where
-:math:`R` is the ideal gas constant,
+:math:`R` is the ideal gas constant [:math:`kg m^2/K/mol/s^2`],
 :math:`P_{cgl}` is the liquid-gas capillary pressure [Pa],
 :math:`P_{sat}` is the saturated vapor pressure [Pa],
 and :math:`T` is the temperature [K].
@@ -1154,7 +1167,7 @@ The diffusion coefficient is based of TOUGHT2 model
    D_g = D_0 \frac{P_{ref}}{p} \left(\frac{T}{273.15}\right)^a
 
 where
-:math:`D_0 = 2.14e-5`,
+:math:`D_0 = 2.14 \cdot 10^{-5}`,
 :math:`P_{ref}` is atmospheric pressure,
 and :math:`a = 1.8`. 
 finally we need a model for the gas tortuosity. We use the Millington and Quirk model:
@@ -1189,9 +1202,9 @@ term :math:`\Sigma_w`:
   (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g})
 
 where 
-:math:`p_f` is fracture pressure,
-:math:`p_m` is matrix pressure,
-:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block,
+:math:`p_f` is fracture pressure [Pa],
+:math:`p_m` is matrix pressure [Pa],
+:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block [m],
 and :math:`Q_f` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
 The equation for water balance in the matrix is
 
@@ -1201,7 +1214,7 @@ The equation for water balance in the matrix is
     +\nabla\cdot \left(\frac{K_m\, k_{rm}\,\eta_l}{\mu}\, \nabla p_{m}\right),
 
 where 
-:math:`Q_m` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
+:math:`Q_m` is source or sink term [:math:`kg / m^3 / s`].
 The volumetric volumetric water contents are defined as
 
 .. math::
@@ -2080,14 +2093,14 @@ The conceptual PDE model for the transport in partially saturated media is
   + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
-:math:`\phi` is total porosity,
-:math:`\phi_e` is effective transport porosity,
-:math:`s_l` is liquid saturation, 
+:math:`\phi` is total porosity [-],
+:math:`\phi_e` is effective transport porosity [-],
+:math:`s_l` is liquid saturation [-], 
 :math:`Q` is source or sink term,
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\boldsymbol{D}_l` is dispersion tensor,
 :math:`\boldsymbol{M}_l` is diffusion coefficient,
-and :math:`\tau` is tortuosity.
+and :math:`\tau` is tortuosity [-].
 For an isotropic medium with no preferred axis of symmetry the dispersion 
 tensor has the following form:
 
@@ -2099,9 +2112,9 @@ tensor has the following form:
   \boldsymbol{v} = \frac{\boldsymbol{q}}{\phi_e}
 
 where
-:math:`\alpha_l` is longitudinal dispersivity,
-:math:`\alpha_t` is  transverse dispersivity,
-and :math:`\boldsymbol{v}` is average pore velocity.
+:math:`\alpha_l` is longitudinal dispersivity [m],
+:math:`\alpha_t` is  transverse dispersivity [m],
+and :math:`\boldsymbol{v}` is average pore velocity [m/s].
 Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
@@ -2120,15 +2133,15 @@ In the fracture region, we have \citep{simunek-vangenuchten_2008}
   - \frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m - \Sigma_w C^* + Q_f,
 
 where 
-:math:`\phi_f` is fracture porosity,
-:math:`\phi_m` is matrix porosity,
-:math:`s_{lf}` is liquid saturation in fracture, 
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\phi_f` is fracture porosity [-],
+:math:`\phi_m` is matrix porosity [-],
+:math:`s_{lf}` is liquid saturation in fracture [-], 
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\boldsymbol{D}_l` is dispersion tensor,
-:math:`\tau_f` is fracture tortuosity,
-:math:`\tau_m` is matrix tortuosity,
-:math:`M` is molecular diffusion coefficient, and
-:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block,
+:math:`\tau_f` is fracture tortuosity [-],
+:math:`\tau_m` is matrix tortuosity [-],
+:math:`M` is molecular diffusion coefficient [:math:`m^2/s`], and
+:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block [m],
 :math:`\Sigma_w` is transfer rate due to flow from the matrix to the fracture, 
 :math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`,
 and :math:`Q_f` is source or sink term.
@@ -2139,8 +2152,8 @@ In the matrix region, we have
   = \nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_{lm}) + \Sigma_w C^* + Q_m,
 
 where 
-:math:`\phi_m` is matrix porosity,
-:math:`s_{lm}` is liquid saturation in matrix, 
+:math:`\phi_m` is matrix porosity [-],
+:math:`s_{lm}` is liquid saturation in matrix [-], 
 :math:`Q_m` is source or sink term.
 The simplified one-node dual porosity model uses a finite difference approximation of the 
 solute gradient:
@@ -3178,12 +3191,12 @@ The conceptual PDE model for the energy equation is
   \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
 
 where 
-:math:`\varepsilon` is the internal energy,
-:math:`\eta_l` is molar density of liquid,
-:math:`Q` is source or sink term,
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\varepsilon` is the energy density [:math:`J/m^3`],
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`Q` is heat source term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\kappa` is thermal conductivity,
-and :math:`H_l` is molar enthalpy of liquid.
+and :math:`H_l` is molar enthalpy of liquid [J/mol].
 We define 
 
 .. math::
@@ -3191,16 +3204,16 @@ We define
    (1 - \phi) \rho_r c_r T
 
 where
-:math:`s_l` is liquid saturation,
+:math:`s_l` is liquid saturation [-],
 :math:`s_g` is gas saturation (water vapor),
-:math:`\eta_l` is molar density of liquid,
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`\eta_g` is molar density of gas,
-:math:`U_l` is molar internal energy of liquid,
-:math:`U_g` is molar internal energy of gas (water vapor),
-:math:`\phi` is porosity,
-:math:`\rho_r` is rock density,
-:math:`c_r` is specific heat of rock,
-and :math:`T` is temperature.
+:math:`U_l` is molar internal energy of liquid [J/mol],
+:math:`U_g` is molar internal energy of gas (water vapor) [J/mol],
+:math:`\phi` is porosity [-],
+:math:`\rho_r` is rock density [:math:`kg/m^3`],
+:math:`c_r` is specific heat of rock [J/kg/K],
+and :math:`T` is temperature [K].
 
 
 Physical models and assumptions
@@ -3415,6 +3428,57 @@ This section to be written.
   </ParameterList>
 
 
+Sources and sinks
+.................
+
+The sources and sinks for injecting and removing energy from the system. 
+Negative source removes energy. 
+Positive source inject energy.
+The structure of list *source terms* mimics that of list *boundary conditions*. 
+Again, constant functions can be replaced by any of the available functions.
+
+* `"regions`" [Array(string)] is the list of regions where the source is defined.
+
+* `"spatial distribution method`" [string] is the method for distributing
+  source Q over the specified regions. The available options are `"volume`" and
+  `"none`".
+  For option `"none`", the source term function Q is measured in [J/m^3/s]. 
+  For option `"volume`", it is measured in [J/s]. 
+  When the source function is defined over a few regions, Q is distributed over their union.
+  Option `"volume fraction`" can be used when the region geometric
+  model support volume fractions. 
+
+* `"use volume fractions`" instructs the code to use all available volume fractions. 
+  Note that the region geometric model supports volume fractions only for a few regions.
+
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
+  `"integrated source`". The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  Default is `"rate`". 
+
+.. code-block:: xml
+
+  <ParameterList name="energy">  <!-- parent list -->
+
+    <ParameterList name="source terms">
+      <ParameterList name="_SRC 0">
+        <Parameter name="regions" type="Array(string)" value="{_WELL_EAST}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="submodel" type="string" value="rate"/>
+        <ParameterList name="source">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="-0.1"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+   </ParameterList>
+
+
+  
+
 Navier Stokes PK
 ----------------
 
@@ -3429,10 +3493,10 @@ The conceptual PDE model for the incompressible Navier Stokes equations are
   + \rho \boldsymbol{g}
 
 where 
-:math:`\rho` is the fluid density,
-:math:`p` is the pressure,
+:math:`\rho` is the fluid density [kg/m^3],
+:math:`p` is the pressure [Pa],
 :math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
-:math:`\boldsymbol{g}` is the gravity vector, 
+:math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`], 
 and :math:`u \otimes v = u \times v^T`.
 The Stokes stress contitutive law for incompressible viscous fluid is
 
@@ -3442,7 +3506,7 @@ The Stokes stress contitutive law for incompressible viscous fluid is
             \boldsymbol{\nabla} \boldsymbol{u}^{T}\right),
 
 where 
-:math:`\mu` is the dynamic viscosity. It can depend on density and pressure. 
+:math:`\mu` is the dynamic viscosity [:math:`Pa \cdot s`]. It can depend on density and pressure. 
 
 
 Physical models and assumptions
@@ -3686,8 +3750,8 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
   </ParameterList>
 
 
-Thermal Richards PK
--------------------
+Thermal flow PK
+---------------
 
 The conceptual PDE model of the coupled flow and energy equations is
 
@@ -3709,33 +3773,33 @@ The conceptual PDE model of the coupled flow and energy equations is
   \end{array}
 
 In the first equation,
-:math:`\theta` is total water content,
-:math:`\eta_l` is molar density of liquid,
-:math:`\rho_l` is fluid density,
+:math:`\theta` is total water content (we use non-conventional definition) [:math:`mol/m^3`],
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q_1` is source or sink term,
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
-:math:`k_r` is relative permeability,
-:math:`\boldsymbol{g}` is gravity,
-:math:`\phi` is porosity,
-:math:`s_g` is gas saturation (water vapor),
-:math:`\tau_g` is tortuosity of gas,
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
+:math:`k_r` is relative permeability [-],
+:math:`\boldsymbol{g}` is gravity [:math:`m/s^2`],
+:math:`\phi` is porosity [-],
+:math:`s_g` is gas saturation (water vapor) [-],
+:math:`\tau_g` is tortuosity of gas [-],
 :math:`D_g` is diffusion coefficient,
-and :math:`X_g` is molar fraction of water in the gas phase.
+and :math:`X_g` is molar fraction of water in the gas phase [-].
 We define 
 
 .. math::
    \theta = \phi (s_g \eta_g X_g + s_l \eta_l)
 
 where
-:math:`s_l` is liquid saturation,
+:math:`s_l` is liquid saturation [-],
 and :math:`\eta_g` is molar density of gas.
 
 In the second equation,
-:math:`\varepsilon` is the internal energy,
+:math:`\varepsilon` is the energy density [:math:`J/mol^3`],
 :math:`Q_2` is source or sink term,
-:math:`\kappa` is thermal conductivity,
-:math:`H_l` is molar enthalphy of liquid,
-and :math:`T` is temperature.
+:math:`\kappa` is thermal conductivity [W/m/K],
+:math:`H_l` is molar enthalphy of liquid [J/mol],
+and :math:`T` is temperature [K].
 We define 
 
 .. math::
@@ -3743,10 +3807,10 @@ We define
    (1 - \phi) \rho_r c_r T
 
 where
-:math:`U_l` is molar internal energy of liquid,
-:math:`U_g` is molar internal energy of gas (water vapor),
-:math:`\rho_r` is rock density,
-and :math:`c_r` is specific heat of rock.
+:math:`U_l` is molar internal energy of liquid [J/mol],
+:math:`U_g` is molar internal energy of gas (water vapor) [J/mol],
+:math:`\rho_r` is rock density [kg/m^3],
+and :math:`c_r` is specific heat of rock [J/kg/K].
 
 
 
@@ -3771,12 +3835,6 @@ Diffusion operator
    </ParameterList>
    </ParameterList>
 
-
-Saturated flow and energy PK
-----------------------------
-
-This is a simplication of the thermal Richards PK. The water remains in the liquid phase,
-i.e. :math:`X_g=0`. 
 
 
 Coupled matrix-fracture Darcy flow PK
@@ -3818,7 +3876,7 @@ Here
 :math:`\boldsymbol{q}` is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
 :math:`k` is effective normal premeability [m/s/Pa],
 and
-:math:`\boldsymbol{g}` is gravity.
+:math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
 
 
 Main parameters and sublists 
@@ -5705,13 +5763,11 @@ This specification format uses and describes the unstructured mesh only.
      
       * `"format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
-    * `"generate mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
+    * `"generate mesh`" [list] accepts parameters of generated mesh
 
-      * `"uniform structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
-
-        * `"domain low coordinate`" [Array(double)] Location of low corner of domain
-        * `"domain high coordinate`" [Array(double)] Location of high corner of domain
-        * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
+      * `"domain low coordinate`" [Array(double)] Location of low corner of domain
+      * `"domain high coordinate`" [Array(double)] Location of high corner of domain
+      * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
     * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -5747,12 +5803,10 @@ Example of *Unstructured* mesh generated internally:
   <ParameterList>  <!-- parent list -->
   <ParameterList name="mesh">
     <ParameterList name="unstructured"/>
-      <ParameterList name="generate mesh"/>
-        <ParameterList name="uniform structured"/>
-          <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
-          <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-          <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
-        </ParameterList>   
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+        <Parameter name="domain low cooordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
       </ParameterList>   
 
       <ParameterList name="expert">

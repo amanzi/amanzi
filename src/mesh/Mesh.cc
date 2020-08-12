@@ -1372,7 +1372,7 @@ Mesh::build_columns(const std::string& setname) const
   int nn = num_entities(NODE,Parallel_type::ALL);
   int nc = num_entities(CELL,Parallel_type::ALL);
 
-  columnID_.resize(nc);
+  columnsID_.resize(nc);
   cell_cellbelow_.resize(nc);
   cell_cellbelow_.assign(nc,-1);
   cell_cellabove_.resize(nc);
@@ -1441,7 +1441,7 @@ Mesh::build_columns() const
   int nf_owned = num_entities(FACE,Parallel_type::OWNED);
   int nc = num_entities(CELL,Parallel_type::ALL);
 
-  columnID_.resize(nc);
+  columnsID_.resize(nc);
   cell_cellbelow_.resize(nc);
   cell_cellbelow_.assign(nc,-1);
   cell_cellabove_.resize(nc);
@@ -1522,7 +1522,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       break;
 
     }
-    columnID_[cur_cell] = colnum;
+    columnsID_[cur_cell] = colnum;
     colcells.push_back(cur_cell);
     colfaces.push_back(top_face);
 
@@ -1663,8 +1663,8 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 
   if (success) {
     colfaces.push_back(bot_face);
-    column_cells_.push_back(colcells);
-    column_faces_.push_back(colfaces);
+    columns_cells_.push_back(colcells);
+    columns_faces_.push_back(colfaces);
   }
 
   return success;

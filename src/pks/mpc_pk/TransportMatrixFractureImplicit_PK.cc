@@ -100,11 +100,13 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  AMANZI_ASSERT(pk_matrix->domain() == "domain");
 
-  op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
-  op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
+  auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+  op_tree_matrix_->SetOperatorBlock(0, 0, pk_matrix->op());
+  op_tree_matrix_->SetOperatorBlock(1, 1, pk_fracture->op());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -112,7 +114,7 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
 
   cvs_matrix->SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-  cvs_fracture->SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs_fracture->SetMesh(mesh_fracture_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- indices are fluxes on matrix-fracture interface
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -161,13 +163,14 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   op_coupling11_->Setup(values, 1.0);
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
-  op_tree_->SetOperatorBlock(0, 1, op_coupling01_->global_operator());
-  op_tree_->SetOperatorBlock(1, 0, op_coupling10_->global_operator());
+  op_tree_matrix_->SetOperatorBlock(0, 1, op_coupling01_->global_operator());
+  op_tree_matrix_->SetOperatorBlock(1, 0, op_coupling10_->global_operator());
 
   // create a global problem
   pk_matrix->op_adv()->ApplyBCs(true, true, true);
+  pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
-  op_tree_->SymbolicAssembleMatrix();
+  op_tree_matrix_->SymbolicAssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -251,6 +254,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
 
+    pk_fracture->op_adv()->UpdateMatrices(S_->GetFieldData("fracture-darcy_flux").ptr());
+    pk_fracture->op_adv()->ApplyBCs(true, true, true);
+
     op_coupling00_->Setup(values1, 1.0);
     op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -263,17 +269,17 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     op_coupling11_->Setup(values2, 1.0);
     op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_tree_->AssembleMatrix();
+    op_tree_matrix_->AssembleMatrix();
 
     // create preconditioner
     auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
-    op_tree_->InitPreconditioner(pc_list);
+    op_tree_matrix_->InitPreconditioner(pc_list);
 
     // create solver
     Teuchos::ParameterList slist = glist_->sublist("solvers")
                                           .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
     AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
-        solver(op_tree_, op_tree_);
+        solver(op_tree_matrix_, op_tree_matrix_);
     solver.Init(slist);
     solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
 

@@ -30,6 +30,7 @@
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Key.hh"
+#include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"

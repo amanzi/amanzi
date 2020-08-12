@@ -1068,6 +1068,18 @@ void Richards_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateLocalFields_(S.ptr());
 }
 
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Richards_PK::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
+  return Teuchos::null;
+}
+
 }  // namespace Flow
 }  // namespace Amanzi
 

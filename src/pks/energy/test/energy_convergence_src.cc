@@ -30,7 +30,7 @@
 #include "State.hh"
 
 // Energy
-#include "Analytic01.hh"
+#include "Analytic00.hh"
 #include "EnergyOnePhase_PK.hh"
 
 using namespace Amanzi;
@@ -64,7 +64,7 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
     int ncomp = result->size("cell", false);
     for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = std::pow(temp_c[0][i], 3.0);
+      result_c[0][i] = 0.;//temp_c[0][i];
     }
   }
 
@@ -76,7 +76,7 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
     int ncomp = result->size("cell", false);
     for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 3.0 * std::pow(temp_c[0][i], 2.0);
+      result_c[0][i] = 0.;
     }
   }
 
@@ -87,17 +87,18 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 }  // namespace Amanzi
 
 
-TEST(ENERGY_CONVERGENCE) {
+TEST(ENERGY_CONVERGENCE_SRC) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
 
-  std::string xmlFileName = "test/energy_convergence.xml";
+  std::string xmlFileName = "test/energy_convergence_src.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  // convergence estimate: Use n=3 for the full test.
   int nmeshes = plist->get<int>("number of meshes", 1);
   std::vector<double> h, error;
+
+  Teuchos::RCP<VerboseObject> vo_ = Teuchos::rcp(new VerboseObject("", *plist));
 
   int nx(20);
   double dt(0.04);
@@ -148,7 +149,7 @@ TEST(ENERGY_CONVERGENCE) {
 
     EPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
-
+       
     // constant time stepping 
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
@@ -176,9 +177,10 @@ TEST(ENERGY_CONVERGENCE) {
 
     EPK->CommitStep(0.0, 1.0, S);
 
+    
     // calculate errors
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-    Analytic01 ana(temp, mesh);
+    Analytic00 ana(temp, mesh);
 
     double l2_norm, l2_err, inf_err;  // error checks
     ana.ComputeCellError(*temp->ViewComponent("cell"), t1, l2_norm, l2_err, inf_err);
@@ -188,7 +190,8 @@ TEST(ENERGY_CONVERGENCE) {
 
     printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
-
+    //WriteStateStatistics(S.ptr(), vo_);
+    
     // save solution
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");
     GMV::start_data();
@@ -196,91 +199,11 @@ TEST(ENERGY_CONVERGENCE) {
     GMV::close_data_file();
   }
 
+  
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
-  CHECK(l2_rate > 0.81);
+  CHECK(l2_rate > 1.81);
 }
 
-
-TEST(ENERGY_PRECONDITIONER) {
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nImpact of advection term in the preconditioner" << std::endl;
-
-  std::string xmlFileName = "test/energy_convergence.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
-
-  // preconditioner with (loop=0) and without (loop=1) enthalpy term.
-  int num_itrs[2];
-  for (int loop = 0; loop < 2; loop++) {
-    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
-    
-    Preference pref;
-    pref.clear();
-    pref.push_back(Framework::MSTK);
-
-    MeshFactory meshfactory(comm,gm);
-    meshfactory.set_preference(pref);
-    Teuchos::RCP<const Mesh> mesh;
-    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 30, 30);
-    // mesh = meshfactory.create("test/random_mesh1.exo");
-
-    // create a simple state and populate it
-    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
-    Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
-    S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
-
-    Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
-    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
-
-    // overwrite enthalpy with a different model
-    Teuchos::ParameterList ev_list;
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetFieldEvaluator("enthalpy", enthalpy);
-
-    EPK->Setup(S.ptr());
-    S->Setup();
-    S->InitializeFields();
-    S->InitializeEvaluators();
-
-    EPK->Initialize(S.ptr());
-    S->CheckAllFieldsInitialized();
-
-    // constant time stepping 
-    int itrs(0);
-    double t(0.0), t1(0.5), dt(0.02), dt_next;
-    while (t < t1) {
-      // swap conserved quntity (no backup, we check dt_next instead)
-      const CompositeVector& e = *S->GetFieldData("energy");
-      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
-      e_prev = e;
-
-      if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-        udot->PutScalar(0.0);
-        EPK->bdf1_dae()->SetInitialState(t, soln, udot);
-        EPK->UpdatePreconditioner(t, soln, dt);
-      }
-
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
-      CHECK(dt_next >= dt);
-      EPK->bdf1_dae()->CommitSolution(dt, soln);
-      EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
-
-      t += dt;
-      itrs++;
-    }
-
-    EPK->CommitStep(0.0, 1.0, S);
-    num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
-    printf("number of nonlinear steps: %d\n", num_itrs[loop]);
-    plist->sublist("PKs").sublist("energy").sublist("operators")
-        .set<bool>("include enthalpy in preconditioner", false);
-  }
-  CHECK(num_itrs[1] > num_itrs[0]);
-}
 

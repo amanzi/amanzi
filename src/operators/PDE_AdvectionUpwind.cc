@@ -28,6 +28,8 @@ namespace Operators {
 ****************************************************************** */
 void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 {
+  name_ = plist.get<std::string>("name", "Advection: FACE_CELL");
+
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
     global_schema_row_.set_base(AmanziMesh::FACE);
@@ -38,12 +40,10 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
     global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
 
-    std::string name("FACE_CELL");
-
     if (plist.get<bool>("surface operator", false)) {
-      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name_, mesh_));
     } else {
-      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      local_op_ = Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
     }
 
   } else {
@@ -58,12 +58,10 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
     } else {
       mesh_ = global_op_->DomainMap().Mesh();
 
-      std::string name("FACE_CELL");
-
       if (plist.get<bool>("surface operator", false)) {
-        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name_, mesh_));
       } else {
-        local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+        local_op_ = Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
       }
     }
   }

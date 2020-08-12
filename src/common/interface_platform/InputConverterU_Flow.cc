@@ -183,7 +183,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_(domain);
-  flow_list->sublist("source terms") = TranslateFlowSources_();
+  flow_list->sublist("source terms") = TranslateSources_(domain, "flow");
 
   // models and default assumptions. 
   // Note that MPC/PKs may overwrite these parameters
@@ -781,21 +781,26 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 /* ******************************************************************
 * Create list of flow sources.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
+Teuchos::ParameterList InputConverterU::TranslateSources_(
+    const std::string& domain, const std::string& pkname)
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
+  bool flag;
   char *text;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode *node, *phase;
   DOMElement* element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("sources"));
-  if (node_list->getLength() == 0) return out_list;
+  if (domain == "fracture")
+    node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
+  else
+    node = GetUniqueElementByTagsString_("sources", flag);
 
-  children = node_list->item(0)->getChildNodes();
+  if (!flag) return out_list;
+  children = node->getChildNodes();
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
@@ -803,7 +808,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
@@ -811,7 +815,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
 
     // process flow sources for liquid saturation
-    phase = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
+    if (pkname == "flow") {
+      phase = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
+    } else if (pkname == "energy") {
+      phase = GetUniqueElementByTagsString_(inode, "thermal_component", flag);
+    } else {
+      flag = false;
+    }
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
@@ -821,7 +831,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     if (srctype == "volume_weighted") {
       weight = "volume";
-      unit = "kg/s";
+      if (pkname == "flow") unit = "kg/s";
+      else if (pkname == "energy") unit = "J/s";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
       unit = "kg/s";

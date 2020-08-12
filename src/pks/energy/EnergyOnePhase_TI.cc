@@ -9,8 +9,11 @@
   Author: Konstantin Lipnikov
 */
 
-#include "FieldEvaluator.hh"
+// Amanzi
+#include "Key.hh"
 
+// Amanzi::Energy
+#include "FieldEvaluator.hh"
 #include "EnergyOnePhase_PK.hh"
 
 namespace Amanzi {
@@ -35,6 +38,10 @@ void EnergyOnePhase_PK::FunctionalResidual(
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
+  // add sources
+  CompositeVector& rhs = *op_matrix_->rhs();
+  AddSourceTerms(rhs);
+ 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term
@@ -53,9 +60,9 @@ void EnergyOnePhase_PK::FunctionalResidual(
   // advect tmp = molar_density_liquid * enthalpy 
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
-  const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
+  const CompositeVector& n_l = *S_->GetFieldData(mol_density_liquid_key_);
 
-  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
+  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
@@ -93,8 +100,9 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
-  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-  CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
+  auto der_name = Keys::getDerivKey(energy_key_, temperature_key_);
+  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
+  CompositeVector& dEdT = *S_->GetFieldData(der_name, energy_key_);
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
@@ -102,12 +110,13 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData(darcy_flux_key_);
 
-    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-    auto dHdT = S_->GetFieldData("denthalpy_dtemperature", enthalpy_key_);
+    der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
+    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
+    auto dHdT = S_->GetFieldData(der_name, enthalpy_key_);
 
-    const CompositeVector& n_l = *S_->GetFieldData(molar_density_liquid_key_);
+    const CompositeVector& n_l = *S_->GetFieldData(mol_density_liquid_key_);
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*darcy_flux);

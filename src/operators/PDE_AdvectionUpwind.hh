@@ -76,11 +76,12 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
-
  protected:
-  void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
   Teuchos::RCP<Epetra_IntVector> upwind_cell_, downwind_cell_;
+
+ private:
+  void InitAdvection_(Teuchos::ParameterList& plist);
 };
 
 }  // namespace Operators

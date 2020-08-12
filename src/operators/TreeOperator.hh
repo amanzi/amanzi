@@ -49,6 +49,7 @@ class TreeOperator {
  public:
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
+  TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
   virtual ~TreeOperator() = default;
 
   // main members
@@ -57,6 +58,7 @@ class TreeOperator {
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
 
   virtual void SymbolicAssembleMatrix();
   virtual void AssembleMatrix();
@@ -67,6 +69,8 @@ class TreeOperator {
   // preconditioners
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
+  void InitPreconditioner(Teuchos::ParameterList& plist,
+                          const std::pair<int, Teuchos::RCP<std::vector<int> > >& block_ids);
   void InitBlockDiagonalPreconditioner();
 
   void InitializePreconditioner(Teuchos::ParameterList& plist);
@@ -79,10 +83,13 @@ class TreeOperator {
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
   Teuchos::RCP<const Operator> GetBlock(int i, int j) { return blocks_[i][j]; }
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
   // deep copy for building interfaces to TPLs, mainly to solvers
   void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
   void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
+  Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
+  int GetNumberBlocks() const {return blocks_.size();}
 
   // i/o
   std::string PrintDiagnostics() const;

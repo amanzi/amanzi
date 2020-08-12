@@ -19,7 +19,6 @@
 
 // Amanzi
 #include "FnBaseDefs.hh"
-#include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
 #include "PK_Factory.hh"
@@ -103,8 +102,6 @@ class Darcy_PK : public Flow_PK {
 
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
       my_pde(const Operators::PDEType& type) override { return op_diff_; } 
-
-  Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
 
  private:
   void InitializeFields_();

@@ -230,17 +230,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- liquid heat capacity
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
       if (flag) {
-        if (nmat > 1) {
-          msg << "Heat capacity is supported for problems with one material";
-          Exceptions::amanzi_throw(msg);
-        }
         double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
-        field_ev.sublist("IEM parameters")
+
+        field_ev.sublist("IEM parameters").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
       }
@@ -248,17 +246,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- rock heat capacity
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
       if (flag) {
-        if (nmat > 1) {
-          msg << "Heat capacity is supported for problems with one material";
-          Exceptions::amanzi_throw(msg);
-        }
         double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
         field_ev.set<std::string>("field evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
-        field_ev.sublist("IEM parameters")
+
+        field_ev.sublist("IEM parameters").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
       }
@@ -314,6 +310,24 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);
+      }
+
+      // -- particle density
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+      }
+ 
+      // -- specific storage
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+      }
+
+      // -- thermal conductivity
+      node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, out_ev, "normal");
       }
     }
   }
@@ -604,6 +618,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
+      }
+
+      // -- uniform temperature
+      node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
+      if (flag) {
+        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
+
+        Teuchos::ParameterList& temperature_ic = out_ic.sublist("fracture-temperature");
+        temperature_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
       }
     }
   }

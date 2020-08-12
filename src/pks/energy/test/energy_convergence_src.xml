@@ -17,7 +17,12 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>    
-   
+
+  <ParameterList name="verbose object">
+    <Parameter name="verbosity level" type="string" value="extreme"/>
+  </ParameterList>
+
+  
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
@@ -76,10 +81,10 @@
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="thermal conductivity parameters">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+	  <Parameter name="thermal conductivity of rock" type="double" value="0."/>
 	  <Parameter name="thermal conductivity of liquid" type="double" value="2.0"/>
 	  <Parameter name="reference temperature" type="double" value="1.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
+	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
 	</ParameterList>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
@@ -157,64 +162,36 @@
 	    <Parameter name="regions" type="Array(string)" value="{Left side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-composition">
-		<ParameterList name="function1">
-		  <ParameterList name="function-standard-math">
-		    <Parameter name="operator" type="string" value="pow"/>
-		    <Parameter name="parameter" type="double" value="-1.0"/>
-		  </ParameterList>
-		</ParameterList>
-		<ParameterList name="function2">
-		  <ParameterList name="function-composition">
-		    <ParameterList name="function1">
-		      <ParameterList name="function-standard-math">
-			<Parameter name="operator" type="string" value="tan"/>
-		      </ParameterList>
-		    </ParameterList>
-		    <ParameterList name="function2">
-		      <ParameterList name="function-linear">
-			<Parameter name="y0" type="double" value="0.5"/>
-			<Parameter name="gradient" type="Array(double)" value="{-0.5, 0.0, 0.0}"/>
-			<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-		      </ParameterList>
-		    </ParameterList>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1."/>
+              </ParameterList>              
 	    </ParameterList>
 	  </ParameterList>
 	  <ParameterList name="BC 2">
 	    <Parameter name="regions" type="Array(string)" value="{Right side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-composition">
-		<ParameterList name="function1">
-		  <ParameterList name="function-standard-math">
-		    <Parameter name="operator" type="string" value="pow"/>
-		    <Parameter name="parameter" type="double" value="-1.0"/>
-		  </ParameterList>
-		</ParameterList>
-		<ParameterList name="function2">
-		  <ParameterList name="function-composition">
-		    <ParameterList name="function1">
-		      <ParameterList name="function-standard-math">
-			<Parameter name="operator" type="string" value="tan"/>
-		      </ParameterList>
-		    </ParameterList>
-		    <ParameterList name="function2">
-		      <ParameterList name="function-linear">
-			<Parameter name="y0" type="double" value="1.0"/>
-			<Parameter name="gradient" type="Array(double)" value="{-0.5, 0.0, 0.0}"/>
-			<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-		      </ParameterList>
-		    </ParameterList>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="4."/>
+              </ParameterList>                            
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="source terms">
+        <ParameterList name="_SRC 0">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="source">            
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="-4.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      
     </ParameterList>
   </ParameterList>
 
@@ -333,7 +310,7 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="molar heat capacity" type="double" value="0.0"/>
               <Parameter name="reference temperature" type="double" value="1.0"/>
             </ParameterList>
           </ParameterList>
@@ -350,7 +327,7 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="1.0"/>
+              <Parameter name="heat capacity" type="double" value="0.0"/>
               <Parameter name="reference temperature" type="double" value="1.0"/>
             </ParameterList>
           </ParameterList>
@@ -362,10 +339,10 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="const_fluid_density">
+      <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
+      <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
       <ParameterList name="gravity">
@@ -380,31 +357,10 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-composition">
-                <ParameterList name="function1">
-                  <ParameterList name="function-standard-math">
-                    <Parameter name="operator" type="string" value="pow"/>
-                    <Parameter name="parameter" type="double" value="-1.0"/>
-                  </ParameterList>
-                </ParameterList>
-                <ParameterList name="function2">
-                  <ParameterList name="function-composition">
-                    <ParameterList name="function1">
-                      <ParameterList name="function-standard-math">
-                        <Parameter name="operator" type="string" value="tan"/>
-                      </ParameterList>
-                    </ParameterList>
-                    <ParameterList name="function2">
-                      <ParameterList name="function-linear">
-                        <Parameter name="y0" type="double" value="0.0"/>
-                        <Parameter name="gradient" type="Array(double)" value="{0.0, 0.5, 0.0}"/>
-                        <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                      </ParameterList>
-                    </ParameterList>
-                  </ParameterList>
-                </ParameterList>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1."/>
               </ParameterList>
-            </ParameterList>
+            </ParameterList>              
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -419,7 +375,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-1.0"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">

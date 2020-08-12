@@ -83,8 +83,9 @@ void RegionPolygon::Init_() {
     int dmax = -1; 
     double maxlen = -1;
     for (int i = 0; i < 3; i++) {
-      if (normal_[i] > maxlen) {
-        maxlen = normal_[i];
+      double tmp = std::fabs(normal_[i]);
+      if (tmp > maxlen) {
+        maxlen = tmp;
         dmax = i;
       }
     }
