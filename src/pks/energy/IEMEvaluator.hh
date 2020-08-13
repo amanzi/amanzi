@@ -15,19 +15,25 @@
 #ifndef AMANZI_ENERGY_IEM_EVALUATOR_HH_
 #define AMANZI_ENERGY_IEM_EVALUATOR_HH_
 
+// Amanzi
+#include "Key.hh"
 #include "Factory.hh"
-#include "IEM.hh"
 #include "secondary_variable_field_evaluator.hh"
+
+// Amanzi::Energy
+#include "IEM.hh"
 
 namespace Amanzi {
 namespace Energy {
+
+typedef std::vector<Teuchos::RCP<IEM> > IEMList;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, IEMList> IEMPartition;
 
 class IEMEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
   IEMEvaluator(Teuchos::ParameterList& plist);
-  IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem);
   IEMEvaluator(const IEMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -38,13 +44,19 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
 
-  Teuchos::RCP<IEM> get_IEM() { return iem_; }
+   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
  protected:
   void InitializeFromPlist_();
 
+ private:
+  void CreateIEMPartition_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                           const Teuchos::ParameterList& plist);
+
+ protected:
   Key temp_key_;
-  Teuchos::RCP<IEM> iem_;
+  Key domain_;
+  Teuchos::RCP<IEMPartition> iem_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;

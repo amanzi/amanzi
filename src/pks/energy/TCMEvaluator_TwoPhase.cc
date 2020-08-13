@@ -24,14 +24,13 @@ namespace Energy {
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
-  }
+  my_key_ = plist_.get<std::string>("thermal conductivity key");
+  auto prefix = Keys::getDomainPrefix(my_key_);
 
-  porosity_key_ = plist_.get<std::string>("porosity key", "porosity");
+  porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
   dependencies_.insert(porosity_key_);
 
-  saturation_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
+  saturation_key_ = plist_.get<std::string>("saturation key", prefix + "saturation_liquid");
   dependencies_.insert(saturation_key_);
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
@@ -69,13 +68,13 @@ void TCMEvaluator_TwoPhase::EvaluateField_(
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(porosity_key_);
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(saturation_key_);
 
-  for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
     // much more efficient to pull out vectors first
-    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp, false);
-    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp, false);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp, false);
+    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp);
+    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
-    int ncomp = result->size(*comp, false);
+    int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
       result_v[0][i] = tc_->ThermalConductivity(poro_v[0][i], sat_v[0][i]);
     }

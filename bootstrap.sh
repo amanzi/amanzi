@@ -1789,7 +1789,7 @@ cmd_configure="${cmake_binary} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 

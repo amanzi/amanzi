@@ -44,7 +44,7 @@ class InverseAssembled :
 
   virtual void UpdateInverse() override final;
   virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Vector& y, Vector& x) const override final;
+  virtual int ApplyInverse(const Vector& X, Vector& Y) const override final;
 
   virtual double residual() const override final {
     return solver_->residual();

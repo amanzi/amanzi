@@ -26,6 +26,7 @@ message(DEBUG "Including GEOCHEM_SOURCE_DIR = ${GEOCHEM_SOURCE_DIR} ")
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
@@ -61,6 +62,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
       FlowEnergy_PK.hh
+      FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
@@ -74,6 +76,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
       FlowEnergy_PK.cc
+      FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc

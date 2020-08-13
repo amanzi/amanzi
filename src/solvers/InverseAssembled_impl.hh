@@ -198,16 +198,16 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(const Vector& y, Vector& x) const
+int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(const Vector& X, Vector& Y) const
 {
   AMANZI_ASSERT(updated_);
   AMANZI_ASSERT(computed_once_); // see above, could also call Compute here, but
                             // would prefer that developers do the right thing,
                             // especially since they might change values
                             // between calls and forget to call compute.
-  Impl::copyToSuperVector(smap_, y, y_);
-  int returned_code = solver_->ApplyInverse(*y_, *x_);
-  Impl::copyFromSuperVector(smap_, *x_, x);
+  Impl::copyToSuperVector(smap_, X, X_);
+  int returned_code = solver_->ApplyInverse(*X_, *Y_);
+  Impl::copyFromSuperVector(smap_, *Y_, Y);
   return returned_code;
 }
 

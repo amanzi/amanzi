@@ -31,17 +31,13 @@ RegionLogical::RegionLogical(const std::string& name,
                              const std::string& operation_str,
                              const std::vector<std::string>& component_regions,
                              const LifeCycleType lifecycle)
-  : Region(name, id, false, LOGICAL, 3, lifecycle),
-    operation_(NOBOOLEAN)
+  : Region(name, id, false, LOGICAL, 0, lifecycle),
+    operation_(NOBOOLEAN),
+    component_regions_(component_regions)
 {
-  for (std::vector<std::string>::const_iterator it=component_regions.begin();
-         it!=component_regions.end(); ++it) {
-    component_regions_.push_back(*it);
-  }
-       
-  
-  // Region dimension is set arbitrarily as 3 since the set of
-  // entities in the mesh will determine the dimension
+  // Region dimension is set arbitrarily as 0 since the set of
+  // entities in the mesh will determine the dimension.
+  // 0 should trigger potential errors in the future.
 
   if (operation_str == "complement")
     operation_ = COMPLEMENT;

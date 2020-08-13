@@ -553,6 +553,7 @@
     <ParameterList name="flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>

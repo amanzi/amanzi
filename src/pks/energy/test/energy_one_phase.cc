@@ -70,7 +70,7 @@ TEST(ENERGY_ONE_PHASE) {
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::ParameterList pk_tree;
+  Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("energy");
   auto soln = Teuchos::rcp(new TreeVector());
   auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 

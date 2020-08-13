@@ -26,6 +26,7 @@
 #include "Operator.hh"
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
+#include "TreeVector_Utils.hh"
 
 #define TEST_MAPS 0
 
@@ -49,6 +50,17 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   // resize the blocks
   int n_blocks = tvs_->size();
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<Operator> >(n_blocks, Teuchos::null));
+}
+
+
+/* ******************************************************************
+* Constructor from a tree vector and number of blocks
+****************************************************************** */
+TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks) :
+    tvs_(tvs),
+    block_diagonal_(false)
+{
+  blocks_.resize(nblocks, Teuchos::Array<Teuchos::RCP<const Operator> >(nblocks, Teuchos::null));
 }
 
 
@@ -80,6 +92,30 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 	AMANZI_ASSERT(X.SubVector(m)->Data() != Teuchos::null); // only works on 1-level heirarchy currently, see #453
 	const CompositeVector& xM = *X.SubVector(m)->Data();
         ierr |= blocks_[n][m]->Apply(xM, yN, 1.0);
+      }
+    }
+  }
+  return ierr;
+}
+
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int TreeOperator::ApplyFlattened(const TreeVector& X, TreeVector& Y) const
+{
+  Y.PutScalar(0.0);
+
+  auto Xtv = collectTreeVectorLeaves_const(X);
+  auto Ytv = collectTreeVectorLeaves(Y);
+
+  int ierr(0), n(0);
+  for (auto jt = Ytv.begin(); jt != Ytv.end(); ++jt, ++n) {
+    CompositeVector& yN = *(*jt)->Data();
+    int m(0);
+    for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
+      if (blocks_[n][m] != Teuchos::null) {
+        ierr |= blocks_[n][m]->Apply(*(*it)->Data(), yN, 1.0);
       }
     }
   }
@@ -235,6 +271,28 @@ void TreeOperator:: InitializeInverse(const std::string& prec_name,
   Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
   InitializeInverse(inner_plist);
 }  
+
+/* ******************************************************************
+* Create preconditioner using name and a factory.
+****************************************************************** */
+void TreeOperator::InitPreconditioner(
+    Teuchos::ParameterList& plist,
+    const std::pair<int, Teuchos::RCP<std::vector<int> > >& block_ids)
+{
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+  preconditioner_->Update(A_);
+}
+
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.

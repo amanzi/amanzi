@@ -400,17 +400,17 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
 ******************************************************************* */
-int Operator::ApplyInverse(const CompositeVector& Y, CompositeVector& X) const
+int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
 #if TEST_MAPS
-  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
-  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif  
   if (preconditioner_ == Teuchos::null) {
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
-  return preconditioner_->ApplyInverse(Y, X);
+  return preconditioner_->ApplyInverse(X, Y);
   
 }
 

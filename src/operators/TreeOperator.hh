@@ -57,6 +57,7 @@ class TreeOperator {
 
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
+  TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
   virtual ~TreeOperator() = default;
 
   // main members
@@ -65,6 +66,7 @@ class TreeOperator {
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
 
   const TreeVectorSpace& DomainMap() const { return *tvs_; }
   const TreeVectorSpace& RangeMap() const { return *tvs_; }
@@ -92,11 +94,14 @@ class TreeOperator {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->returned_code();
   }
-
   
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
+
+  Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
+  int GetNumberBlocks() const {return blocks_.size();}
 
   // i/o
   std::string PrintDiagnostics() const;

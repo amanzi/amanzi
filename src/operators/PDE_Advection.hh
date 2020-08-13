@@ -47,10 +47,11 @@ class PDE_Advection : public PDE_HelperDiscretization {
                           const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::RCP<BCs>& bc, 
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
-  
  protected:
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
+
+  std::string name_;
 };
 
 }  // namespace Operators
