@@ -173,7 +173,7 @@ void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse
   solver_->UpdateInverse();
 
   if (!updated_) {
-    std::tie(smap_,x_,y_) = Impl::getSuperMap(*m_);
+    std::tie(smap_,Y_,X_) = Impl::getSuperMap(*m_);
     updated_ = true;
     computed_once_ = false;
   }

@@ -65,7 +65,12 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     schema_row_(schema),
     schema_col_(schema),
     shift_(0.0),
-    plist_(plist)
+    plist_(plist),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false),
+    updated_(false),
+    computed_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -106,7 +111,10 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     schema_row_(schema_row),
     schema_col_(schema_col),
     shift_(0.0),
-    plist_(plist)
+    plist_(plist),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -154,7 +162,7 @@ void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = createSuperMap(*cvs_col_);
+  if (!smap_.get()) smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema_col());
@@ -406,12 +414,14 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif  
-  if (preconditioner_ == Teuchos::null) {
-    Errors::Message msg("Operator did not initialize a preconditioner.\n");
+  if (!computed_) {
+    Errors::Message msg("Developer error: ComputeInverse() was not called.\n");
     Exceptions::amanzi_throw(msg);
   }
+  // this is created in Update, so if this doesn't exist, the previous test for
+  // computed_ should have failed.
+  AMANZI_ASSERT(preconditioner_.get());
   return preconditioner_->ApplyInverse(X, Y);
-  
 }
 
 
@@ -463,17 +473,10 @@ void Operator::InitializeInverse(const std::string& prec_name,
 ****************************************************************** */
 void Operator::InitializeInverse(Teuchos::ParameterList& plist)
 {
-  // // provide block ids for block strategies.
-  // if (plist.isParameter("preconditioning method")) {
-  //   auto method_name = plist.get<std::string>("preconditioning method");
-  //   if (method_name == "boomer amg" || method_name == "hypre: boomer amg") {
-  //     SymbolicAssembleMatrix();
-  //     auto block_ids = smap_->BlockIndices();
-  //     plist.sublist(method_name+" parameters").set("number of unique block indices", block_ids.first);
-  //     plist.sublist(method_name+" parameters").set("block indices", block_ids.second);
-  //   }
-  // }
-  preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+  // delay pc construction until we know we have structure and can create the
+  // coloring.
+  inv_plist_ = plist;
+  inited_ = true; updated_ = false; computed_ = false;
 }
 
 void Operator::InitializeInverse(bool make_one_iteration)
@@ -494,23 +497,43 @@ void Operator::InitializeInverse(bool make_one_iteration)
 ****************************************************************** */
 void Operator::UpdateInverse()
 {
-  if (preconditioner_ == Teuchos::null) {
+  if (!inited_) {
     Errors::Message msg("Developer error: InitializeInverse() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
+
+  smap_ = createSuperMap(DomainMap());
+
+  // provide block ids for block strategies.
+  if (inv_plist_.isParameter("preconditioning method") &&
+      inv_plist_.get<std::string>("preconditioning method") == "boomer amg" &&
+      inv_plist_.isSublist("boomer amg parameters") &&
+      inv_plist_.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+    if (coloring_ == Teuchos::null || num_colors_ == 0) {
+      auto block_ids = smap_->BlockIndices();
+      set_coloring(block_ids.first, block_ids.second);
+    }
+    inv_plist_.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    inv_plist_.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
+  preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
   preconditioner_->UpdateInverse(); // NOTE: calls this->SymbolicAssembleMatrix()
+  updated_ = true;
+  computed_ = false;
 }
 
 void Operator::ComputeInverse()
 {
-  if (preconditioner_ == Teuchos::null) {
-    Errors::Message msg("Developer error: InitializeInverse() has not been called.");
+  if (!updated_) {
+    Errors::Message msg("Developer error: UpdateInverse() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
   // assembly must be possible now
+  AMANZI_ASSERT(preconditioner_.get());
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
+  computed_ = true;
 }
 
 /* ******************************************************************

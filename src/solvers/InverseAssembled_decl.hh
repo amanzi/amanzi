@@ -75,7 +75,7 @@ class InverseAssembled :
 
   Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> solver_;
   Teuchos::RCP<Operators::SuperMap> smap_;
-  mutable Teuchos::RCP<Epetra_Vector> x_, y_;
+  mutable Teuchos::RCP<Epetra_Vector> X_, Y_;
 };
   
     

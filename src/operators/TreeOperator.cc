@@ -38,7 +38,10 @@ namespace Operators {
 ****************************************************************** */
 TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
     tvs_(tvs),
-    block_diagonal_(false)
+    block_diagonal_(false),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false)
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
@@ -53,15 +56,15 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 }
 
 
-/* ******************************************************************
-* Constructor from a tree vector and number of blocks
-****************************************************************** */
-TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks) :
-    tvs_(tvs),
-    block_diagonal_(false)
-{
-  blocks_.resize(nblocks, Teuchos::Array<Teuchos::RCP<const Operator> >(nblocks, Teuchos::null));
-}
+// /* ******************************************************************
+// * Constructor from a tree vector and number of blocks
+// ****************************************************************** */
+// TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks) :
+//     tvs_(tvs),
+//     block_diagonal_(false)
+// {
+//   blocks_.resize(nblocks, Teuchos::Array<Teuchos::RCP<Operator> >(nblocks, Teuchos::null));
+// }
 
 
 /* ******************************************************************
@@ -213,7 +216,7 @@ void TreeOperator::SymbolicAssembleMatrix()
   }
 
   // create the supermap and graph
-  smap_ = createSuperMap(DomainMap());
+  if (!smap_.get()) smap_ = createSuperMap(DomainMap());
 
   // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
@@ -272,55 +275,43 @@ void TreeOperator:: InitializeInverse(const std::string& prec_name,
   InitializeInverse(inner_plist);
 }  
 
-/* ******************************************************************
-* Create preconditioner using name and a factory.
-****************************************************************** */
-void TreeOperator::InitPreconditioner(
-    Teuchos::ParameterList& plist,
-    const std::pair<int, Teuchos::RCP<std::vector<int> > >& block_ids)
-{
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
 
-    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 2.
+* Set the matrix in the preconditioner.  Assemble() must have been called.
+****************************************************************** */
+void TreeOperator::UpdateInverse()
+{
+  if (!inited_) {
+    Errors::Message msg("Developer error: InitializeInverse() has not been called.");
+    msg << " ref: " << typeid(*this).name() << "\n";
+    Exceptions::amanzi_throw(msg);
   }
 
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
-}
+  // Must do initialization here, because the parameter list carries the block
+  // indices, which ned structure.  Since not guaranteed structure until Update
+  // is called, we cannot set block indicies until now.
+  // provide block ids for block strategies.
+  smap_ = createSuperMap(DomainMap());
 
-
-/* ******************************************************************
-* Two-stage initialization of preconditioner, part 1.
-* Create the PC and set options.  SymbolicAssemble() must have been called.
-****************************************************************** */
-void TreeOperator::InitializeInverse(Teuchos::ParameterList& plist)
-{
-  // // provide block ids for block strategies.
-  // if (plist.isParameter("preconditioning method") &&
-  //     plist.get<std::string>("preconditioning method") == "boomer amg" &&
-  //     plist.isSublist("boomer amg parameters")) {
-
-  //   // NOTE: Hypre frees this
-  //   auto block_ids = smap_->BlockIndices();
-
-  //   plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-
-  //   // Note, this passes a raw pointer through a ParameterList.  I was surprised
-  //   // this worked too, but ParameterList is a boost::any at heart... --etc
-  //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
-  // }
+  if (inv_plist_.isParameter("preconditioning method") &&
+      inv_plist_.get<std::string>("preconditioning method") == "boomer amg" &&
+      inv_plist_.isSublist("boomer amg parameters") &&
+      inv_plist_.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+    if (coloring_ == Teuchos::null || num_colors_ == 0) {
+      auto block_ids = smap_->BlockIndices();
+      set_coloring(block_ids.first, block_ids.second);
+    }
+    inv_plist_.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    inv_plist_.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
 
   // create the inverse
-  if (plist.isParameter("preconditioning method")) {
-    if (plist.get<std::string>("preconditioning method") == "block diagonal") {
+  if (inv_plist_.isParameter("preconditioning method")) {
+    if (inv_plist_.get<std::string>("preconditioning method") == "block diagonal") {
       // are we using block diagonal preconditioning?  If so, this provides the
       // preconditioner...
-      if (plist.isParameter("iterative method")) {
+      if (inv_plist_.isParameter("iterative method")) {
         // are we wrapping it in an iterative method?
         //
         // If so, we have to wrap this so that there are two accessible
@@ -329,7 +320,7 @@ void TreeOperator::InitializeInverse(Teuchos::ParameterList& plist)
         // which is used by the iterative method, is the wrapped one which just
         // calls this's ApplyInverseBlockDiagional_ method.
         auto pc = Teuchos::rcp(new Impl::TreeOperator_BlockPreconditioner(*this));
-        preconditioner_ = AmanziSolvers::createIterativeMethod(plist, Teuchos::rcpFromRef(*this), pc);
+        preconditioner_ = AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), pc);
       } else {
         block_diagonal_ = true;
         preconditioner_ = Teuchos::null;
@@ -338,21 +329,13 @@ void TreeOperator::InitializeInverse(Teuchos::ParameterList& plist)
       // probably an assembled inverse method, with or without an iterative
       // method on top.  Call the factory, which assumes this is an assembler
       // factory.
-      preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+      preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
     }
   } else {
     // probably a direct method...
-    preconditioner_ = AmanziSolvers::createInverse(plist, Teuchos::rcpFromRef(*this));
+    preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
   }
-}
 
-
-/* ******************************************************************
-* Two-stage initialization of preconditioner, part 2.
-* Set the matrix in the preconditioner.  Assemble() must have been called.
-****************************************************************** */
-void TreeOperator::UpdateInverse()
-{
   if (preconditioner_.get()) {
     preconditioner_->UpdateInverse(); // calls SymbolicAssemble if needed
   } else if (block_diagonal_) {

@@ -257,6 +257,10 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
   void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
 
   int apply_calls() { return apply_calls_; }
 
@@ -474,6 +478,11 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_, updated_, computed_;
  
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;

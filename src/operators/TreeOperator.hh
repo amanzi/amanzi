@@ -57,7 +57,7 @@ class TreeOperator {
 
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
-  TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
+  // TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
   virtual ~TreeOperator() = default;
 
   // main members
@@ -77,7 +77,10 @@ class TreeOperator {
 
   void InitializeInverse(const std::string& prec_name,
                          const Teuchos::ParameterList& plist);
-  void InitializeInverse(Teuchos::ParameterList& plist);
+  void InitializeInverse(Teuchos::ParameterList& plist) {
+    inv_plist_ = plist;
+    inited_ = true;
+  }
   void UpdateInverse();
   void ComputeInverse();
 
@@ -102,6 +105,10 @@ class TreeOperator {
 
   Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
   int GetNumberBlocks() const {return blocks_.size();}
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
 
   // i/o
   std::string PrintDiagnostics() const;
@@ -122,6 +129,11 @@ class TreeOperator {
 
   Teuchos::RCP<Matrix<TreeVector>> preconditioner_;
   bool block_diagonal_;
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_;
 
   Teuchos::RCP<VerboseObject> vo_;
 };
@@ -167,15 +179,9 @@ class TreeOperator_BlockPreconditioner {
   TreeOperator& op_;
 };
 
-} // namespace Impl  
-
-
-
-
+} // namespace Impl
+  
 }  // namespace Operators
 }  // namespace Amanzi
 
-
 #endif
-
-
