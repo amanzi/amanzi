@@ -96,7 +96,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     }
   }
 
-  // Solve the Schur complement system Scc * Yc = Tc.
+  // Solve the Schur complement system Yc = inv(Scc) * Tc.
   {
     preconditioner_->ApplyInverse(T, Y);
   }

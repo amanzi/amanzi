@@ -149,20 +149,20 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 /* ******************************************************************
 * Calculate Y = inv(A) * X using global matrix.
 ****************************************************************** */
-int TreeOperator::ApplyInverse(const TreeVector& Y, TreeVector& X) const
+int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
 #if TEST_MAPS
-  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
-  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif
   if (preconditioner_.get()) {
-    return preconditioner_->ApplyInverse(Y, X);
+    return preconditioner_->ApplyInverse(X,Y);
   } else {
     AMANZI_ASSERT(block_diagonal_);  // this assertion shouldn't be possible --
                                      // in all cases where block_diagonal_
                                      // isn't true, a preconditioner_ should
                                      // have been created.
-    return ApplyInverseBlockDiagonal_(Y,X);
+    return ApplyInverseBlockDiagonal_(X,Y);
   }
 }
 
@@ -170,13 +170,13 @@ int TreeOperator::ApplyInverse(const TreeVector& Y, TreeVector& X) const
 /* ******************************************************************
 * Calculate Y = inv(A) * X using the block diagonal
 ****************************************************************** */
-int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& Y, TreeVector& X) const
+int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const
 {
   int code = 0;
   for (int n = 0; n < tvs_->size(); ++n) {
-    const CompositeVector& Yn = *Y.SubVector(n)->Data();
-    CompositeVector& Xn = *X.SubVector(n)->Data();
-    code |= blocks_[n][n]->ApplyInverse(Yn, Xn);
+    const CompositeVector& Xn = *X.SubVector(n)->Data();
+    CompositeVector& Yn = *Y.SubVector(n)->Data();
+    code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
   }
   return code;
 }
