@@ -268,7 +268,6 @@ SUITE(bilinear_factory) {
    FunctionFactory fact;
    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
  }
- /*
  TEST(not_enough_points)
  {
    Teuchos::ParameterList list;
@@ -295,7 +294,6 @@ SUITE(bilinear_factory) {
    FunctionFactory fact;
    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
  }
- */
 }
 
 SUITE(smooth_step_factory) {
