@@ -80,8 +80,5 @@ TEST(GIDS_OUT_OF_ORDER) {
   for (int i=0; i!=KnownX.MyLength(); ++i) {
     CHECK_CLOSE(KnownX[0][i], X[0][i], tol*10*pow(10.0,numProcs));
   }
-  
-
-  
 }
 }
