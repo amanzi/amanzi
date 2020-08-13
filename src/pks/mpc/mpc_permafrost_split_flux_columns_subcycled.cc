@@ -23,18 +23,29 @@ MPCPermafrostSplitFluxColumnsSubcycled::MPCPermafrostSplitFluxColumnsSubcycled(T
     : PK(FElist, plist, S, solution),
       MPCPermafrostSplitFluxColumns(FElist, plist, S, solution)
 {
-  std::string subcycled_timestep_ = plist_->get<std::string>("subcycled timestep","surface star timestep");
+  subcycled_timestep_type_ = plist_->get<std::string>("subcycled timestep type","surface star timestep");
+  subcycled_timestep_target_ = plist_->get<double>("subcycled timestep target",2.0);
 };
 
 double MPCPermafrostSplitFluxColumnsSubcycled::get_dt() {
-  
-  if (subcycled_timestep_ == "global minimum") {
+  if (subcycled_timestep_type_ == "global minimum") {
     double dt_l = 1.e99;
     for (auto pk : sub_pks_) {
       dt_l = std::min(pk->get_dt(), dt_l);
     }    
     double dt_g;
     S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
+    return dt_g;
+  }
+  else if (subcycled_timestep_type_ == "global target") {
+    double dt_l = 1.e99;
+    for (auto pk : sub_pks_) {
+      dt_l = std::min(pk->get_dt(), dt_l);
+    }    
+    double dt_g;
+    S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
+    
+    dt_g = std::min(dt_g*subcycled_timestep_target_, sub_pks_[0]->get_dt());
     return dt_g;
   }
   else {

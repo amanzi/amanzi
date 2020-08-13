@@ -68,7 +68,8 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
                           const Teuchos::RCP<State>& S);
   
  private:
-  std::string subcycled_timestep_;
+  std::string subcycled_timestep_type_;
+  double  subcycled_timestep_target_;
   // factory registration
   static RegisteredPKFactory<MPCPermafrostSplitFluxColumnsSubcycled> reg_;
   

@@ -243,7 +243,6 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     qE_cond->PutScalar(0.);
   }
 
-  int cycle = S->cycle();
   unsigned int ncells = mass_source.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     // get the top cell
@@ -266,7 +265,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = std::min(surf_pres[0][c], 101325.);
+      surf.pressure = std::min<double>(surf_pres[0][c], 101325.);
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
@@ -348,7 +347,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[1][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = surf_pres[0][c];
+      //surf.pressure = surf_pres[0][c];
+      surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
@@ -356,10 +356,6 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[1][c];
       surf.albedo = sg_albedo[1][c];
-
-      surf.porosity = 1.;
-      surf.saturation_gas = 0.;
-      surf.unfrozen_fraction = unfrozen_fraction[0][c];
       /*
       if (ponded_depth[0][c] > params.water_ground_transition_depth) {
         surf.porosity = 1.;
@@ -367,11 +363,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       } else {
         double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
         surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
-        surf.saturation_gas = (1-factor)
- * sat_gas[0][cells[0]];
-      }
-      surf.unfrozen_fraction = unfrozen_fraction[0][c];
+        surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
+        }
       */
+      surf.porosity = 1.;
+      surf.saturation_gas = 0.;
+      surf.unfrozen_fraction = unfrozen_fraction[0][c];
       
       // must ensure that energy is put into melting snow precip, even if it
       // all melts so there is no snow column
@@ -428,7 +425,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[2][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = surf_pres[0][c];
+      //surf.pressure = surf_pres[0][c];
+      surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
