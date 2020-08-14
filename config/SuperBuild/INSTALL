@@ -230,7 +230,7 @@ Read the ``ATLAS`` documentation on how to build ``ATLAS`` with a full ``LAPACK`
 
 
 Building TPLs and Amanzi Using ``Bootstrap.sh``
-----------------------------------------------
+-----------------------------------------------
 
 The script ``bootstrap.sh`` is located in the ``config`` directory.  See ``bootstrap.sh --help`` for a full list of options and default settings.  The script will create two subdirectories in the currect directory.  The first is TPL_BUILD used for downloading and builing the TPLs.  The second is amanzi-build used for building Amanzi.  The TPLs and Amanzi will be installed in the directory specified by the option ``--prefix``.
 

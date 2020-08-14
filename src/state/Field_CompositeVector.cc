@@ -216,8 +216,8 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 };
 
 
-void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
-  Key name = vis->name();
+void Field_CompositeVector::WriteVis(Visualization& vis) {
+  Key name = vis.name();
   if (name == "domain") name = "";
   if (io_vis_ && (name == Keys::getDomain(fieldname_))) {
     EnsureSubfieldNames_();
@@ -238,7 +238,7 @@ void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
           vis_names[j] = fieldname_ + std::string(".") + *compname
             + std::string(".") + subfield_names_[i][j];
         }
-        vis->WriteVector(*v, vis_names);
+        vis.WriteVector(*v, vis_names);
       }
       i++;
     }
@@ -246,7 +246,7 @@ void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
 };
 
 
-void Field_CompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
+void Field_CompositeVector::WriteCheckpoint(Checkpoint& chk) {
   if (io_checkpoint_) {
     EnsureSubfieldNames_();
 
@@ -262,14 +262,14 @@ void Field_CompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk)
       for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
         chkp_names[j] = fieldname_ + "." + *compname + "." + subfield_names_[i][j];
       }
-      chk->WriteVector(*v, chkp_names);
+      chk.WriteVector(*v, chkp_names);
       i++;
     }
   }
 };
 
 
-void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
+void Field_CompositeVector::ReadCellsFromCheckpoint_(const std::string& filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
   file_input->open_h5file();
@@ -298,18 +298,17 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
 
 
 bool Field_CompositeVector::ReadCheckpoint_(std::string filename) {
-  Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
-  file_input->open_h5file();
-  bool read_complete = ReadCheckpoint(file_input.ptr());
-  file_input->close_h5file();
+  Amanzi::HDF5_MPI file_input(data_->Comm(), filename);
+  file_input.open_h5file();
+  bool read_complete = ReadCheckpoint(file_input);
+  file_input.close_h5file();
   return read_complete;
 }
 
 
 // modify methods
 // -- set data from file
-bool Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_input) {
+bool Field_CompositeVector::ReadCheckpoint(HDF5_MPI& file_input) {
   EnsureSubfieldNames_();
 
   // loop over the components and read them from the checkpoint file if possible
@@ -325,7 +324,7 @@ bool Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_in
       chkp_names[j] = fieldname_ + "." + *compname + "." + subfield_names_[i][j];
     }
     for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
-      bool read = file_input->readData(*(*vec)(j), chkp_names[j]);
+      bool read = file_input.readData(*(*vec)(j), chkp_names[j]);
       if (!read) 
         return false;     
     }
