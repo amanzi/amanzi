@@ -112,15 +112,6 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
 
 /* ******************************************************************
-* Clean memory.
-****************************************************************** */
-Richards_PK::~Richards_PK()
-{
-  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
-}
-
-
-/* ******************************************************************
 * Define structure of this PK. We request physical fields and their
 * evaluators. Selection of a few models is available and driven by
 * model factories, evaluator factories, and parameters of the list

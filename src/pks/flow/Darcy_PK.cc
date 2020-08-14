@@ -96,15 +96,6 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
 
 /* ******************************************************************
-* Clean memory.
-****************************************************************** */
-Darcy_PK::~Darcy_PK()
-{
-  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
-}
-
-
-/* ******************************************************************
 * Define structure of this PK.
 ****************************************************************** */
 void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)

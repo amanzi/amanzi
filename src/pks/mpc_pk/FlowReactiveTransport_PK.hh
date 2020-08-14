@@ -29,8 +29,7 @@ class FlowReactiveTransport_PK : public PK_MPCSubcycled {
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln);
 
-  ~FlowReactiveTransport_PK() {
-  }
+  ~FlowReactiveTransport_PK() {};
 
   // PK methods
   // -- dt is the minimum of the sub pks

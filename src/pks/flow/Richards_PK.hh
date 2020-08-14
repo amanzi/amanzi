@@ -51,7 +51,7 @@ class Richards_PK : public Flow_PK {
               Teuchos::RCP<State> S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  ~Richards_PK();
+  ~Richards_PK() {};
 
   // methods required for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
