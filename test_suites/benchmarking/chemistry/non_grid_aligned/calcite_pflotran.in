@@ -13,7 +13,7 @@ CHEMISTRY
   MINERALS
     Calcite
   /
-  GAS_SPECIES
+  PASSIVE_GAS_SPECIES
   /
   MINERAL_KINETICS
     Calcite
