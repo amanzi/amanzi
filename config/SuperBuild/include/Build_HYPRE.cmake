@@ -56,6 +56,8 @@ set(hypre_superlu_opt "-DSUPERLU_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include"
 set(hypre_shared_opt)
 if (BUILD_SHARED_LIBS)
   set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=TRUE")
+else()
+  set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=FALSE")
 endif()
 
 set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
