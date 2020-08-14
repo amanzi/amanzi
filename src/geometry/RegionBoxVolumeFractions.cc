@@ -325,7 +325,7 @@ void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
 
   // clip polyhedron using the second polyhedron.
   int nfaces2 = xyz2.size();
-  double d1, d2, tmp, eps(1e-7);
+  double d1, d2, tmp(0.), eps(1e-7);
   Point v1(xyz1[0]);
   std::list<int>::iterator itv, itv_prev, itv_next, itv2;
 

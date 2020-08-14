@@ -126,16 +126,6 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
 
 /* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
-****************************************************************** */
-Transport_PK::~Transport_PK()
-{ 
-  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
-}
-
-
-/* ******************************************************************
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED

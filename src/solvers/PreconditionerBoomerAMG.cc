@@ -46,7 +46,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
     Exceptions::amanzi_throw(msg);
   }
-    
+  funcs_.clear();
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
                                                       plist_.get<double>("tolerance", 0.0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
@@ -88,8 +88,15 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     // Block indices is an array of integers, indicating what unknowns are
     // coarsened as a system.  For now just put in a placeholder.
     block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
-    block_index_function_index_ = funcs_.size();
-    funcs_.push_back(Teuchos::null);
+
+    // Must new the index array, as it gets freed by Hypre on cleanup.
+    int* indices = new int[block_indices_->size()];
+    for (int i=0; i!=block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
+
+    funcs_.push_back(
+        Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices)));
   }
 
   if (plist_.isParameter("number of functions")) {
@@ -179,40 +186,25 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 {
 #ifdef HAVE_HYPRE
-  // if (!IfpHypre_.get()) { // this should be sufficient, but since
-  // Ifpack_Hypre destroys the Hypre instance in each Compute(), which
-  // destroys block indices, we MUST new the block indices every time
-  // Compute() is called.  Nominally we shouldn't have to recreate this whole
-  // object each time, only the block data, but Ifpack doesn't allow that.
-  // For now, we'll comment this out and regenerate, but the next step is a
-  // reimplemented Ifpack_Hypre. --etc
-  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
+  if (A_ != A) {
+    // New matrix, must recreate
+  
+    // hypre no longer destroys on compute, so as long as the structure is the
+    // same we are ok to use the same Ifpack object
+    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 
-  // must reset the paramters every time to reset the block index
-  Teuchos::ParameterList hypre_list("Preconditioner List");
-  hypre_list.set("Preconditioner", BoomerAMG);
-  hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
-  hypre_list.set("SetPreconditioner", true);
-  hypre_list.set("NumFunctions", (int)funcs_.size());
+    // must reset the paramters every time to reset the block index
+    Teuchos::ParameterList hypre_list("Preconditioner List");
+    hypre_list.set("Preconditioner", BoomerAMG);
+    hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", (int)funcs_.size());
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", funcs_.data());
+    IfpHypre_->SetParameters(hypre_list);
+    IfpHypre_->Initialize();
 
-  if (block_indices_.get()) {
-    // must NEW the index array EVERY time, as it gets freed every time by
-    // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
-    //
-    // Note this is not a memory leak -- this gets freed the second time
-    // IfpHypre_::Compute() gets called (for every call but the last) and when
-    // IfpHypre_ gets destroyed (for the last call).
-    int* indices = new int[block_indices_->size()];
-    for (int i=0; i!=block_indices_->size(); ++i) {
-      indices[i] = (*block_indices_)[i];
-    }
-    funcs_[block_index_function_index_] = 
-        Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
-  }
-  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
-  IfpHypre_->SetParameters(hypre_list);
-  IfpHypre_->Initialize();
-  // } // see above --etc
+    A_ = A;
+  } // see above --etc
     
   IfpHypre_->Compute();
 #endif

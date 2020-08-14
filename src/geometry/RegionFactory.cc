@@ -94,8 +94,8 @@ createRegion(const std::string reg_name,
     int dim = p0_vec.size();
     Point p0, p1;
       
-    p0.set(dim, &(p0_vec[0]));
-    p1.set(dim, &(p1_vec[0]));
+    p0.set(dim, p0_vec.data());
+    p1.set(dim, p1_vec.data());
 
     region = Teuchos::rcp(new RegionBox(reg_name, reg_id,
                                         p0, p1, lifecycle));
@@ -247,12 +247,13 @@ createRegion(const std::string reg_name,
         }
       }
     }
+    AMANZI_ASSERT(normals_vec.size() == dim*dim);
 
     Point p0, p1, p2;
     std::vector<Point> normals;
       
-    p0.set(dim, &(p0_vec[0]));
-    p1.set(dim, &(p1_vec[0]));
+    p0.set(dim, p0_vec.data());
+    p1.set(dim, p1_vec.data());
     for (int i = 0; i < dim; ++i) {
       p2.set(dim, &(normals_vec[i*dim]));
       normals.push_back(p2);
@@ -268,8 +269,8 @@ createRegion(const std::string reg_name,
     int dim = p0_vec.size();
 
     Point p0, p1;
-    p0.set(dim, &(p0_vec[0]));
-    p1.set(dim, &(p1_vec[0]));
+    p0.set(dim, p0_vec.data());
+    p1.set(dim, p1_vec.data());
 
     region = Teuchos::rcp(new RegionLineSegment(reg_name, reg_id, p0, p1, lifecycle));
 

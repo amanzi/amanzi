@@ -90,6 +90,7 @@ set(flow_inc_files
   WRM.hh
   WRM_BrooksCorey.hh
   WRM_fake.hh
+  WRM_saturated.hh
   WRM_vanGenuchten.hh
   WRMEvaluator.hh
   WRMFactory.hh

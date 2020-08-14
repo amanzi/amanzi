@@ -43,7 +43,7 @@ class Darcy_PK : public Flow_PK {
            Teuchos::RCP<State> S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  ~Darcy_PK();
+  ~Darcy_PK() {};
 
   // methods required for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;

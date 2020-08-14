@@ -52,8 +52,8 @@ public:
   virtual void Initialize(Teuchos::ParameterList& plist);
 
   // vis writing
-  void WriteVis(const Teuchos::Ptr<Visualization>& vis);
-  void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp);
+  virtual void WriteVis(Visualization& vis);
+  virtual void WriteCheckpoint(Checkpoint& ckp);
 
   // Compute from a function
   virtual void Compute(double time);
