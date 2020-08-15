@@ -186,24 +186,34 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
+  int flag(0);
   double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
   double rho_g = rho_ * fabs(gravity_[dim - 1]);
+
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       double z = mesh_->face_centroid(f)[dim - 1]; 
       double h = z + (bc_value[f] - atm_pressure_) / rho_g;
       hmax = std::max(hmax, h);
       hmin = std::min(hmin, h);
+      flag = 1;
     }
   }
-  double tmp = hmin;  // global extrema
-  mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
-  tmp = hmax;
-  mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
-
+  int flag_tmp(flag);
+  mesh_->get_comm()->MinAll(&flag_tmp, &flag, 1);
+  
+  double tmp;
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin) 
-             << ", max=" << units_.OutputLength(hmax) << std::endl;
+
+  if (flag) {
+    tmp = hmin;  // global extrema
+    mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
+    tmp = hmax;
+    mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
+
+    *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin) 
+               << ", max=" << units_.OutputLength(hmax) << std::endl;
+  }
 
   // process cell-based quantaties
   const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");

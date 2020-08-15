@@ -73,7 +73,7 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   //      parameter that enforces symmetry for a symmetric tree  operators.
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick.
+  //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  protected:
