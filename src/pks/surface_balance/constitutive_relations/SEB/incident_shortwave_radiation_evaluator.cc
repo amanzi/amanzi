@@ -1,5 +1,14 @@
 /*
-  The incident shortwave radiation evaluator is an algebraic evaluator of a given model.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Evaluates shortwave as a function of slope/aspect/etc.
+
+/*!
+
 Aspect modified shortwave radiation is determined by a factor which
 is multiplied by the 'incoming radiation incident on a flat surface'
 to determine the 'incoming radiation incident on a sloping surface of
@@ -13,8 +22,19 @@ product of the hourly incident radiation and the hourly aspect
 modifier.  It is notably better than the daily average radiation times
 the daily average aspect modifier.
 
-  
-  Generated via evaluator_generator.
+Derived from LandLab code, which is released under the MIT license:
+https://github.com/landlab/landlab/blob/master/landlab/components/radiation/radiation.py
+
+.. _incident_shortwave_radiation_evaluator-spec:
+.. admonition:: incident_shortwave_radiation_evaluator-spec
+
+    * `"incident shortwave radiation parameters`" ``[incident_shortwave_radiation_model-spec]``
+
+    KEYS:
+    * `"slope`"
+    * `"aspect`"
+    * `"incoming shortwave radiation`"
+
 */
 
 #include "incident_shortwave_radiation_evaluator.hh"
@@ -28,7 +48,7 @@ namespace Relations {
 IncidentShortwaveRadiationEvaluator::IncidentShortwaveRadiationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  Teuchos::ParameterList& sublist = plist_.sublist("incident_shortwave_radiation parameters");
+  Teuchos::ParameterList& sublist = plist_.sublist("incident shortwave radiation parameters");
   model_ = Teuchos::rcp(new IncidentShortwaveRadiationModel(sublist));
   InitializeFromPlist_();
 }

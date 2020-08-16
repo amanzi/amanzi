@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -23,8 +22,8 @@ product of the hourly incident radiation and the hourly aspect
 modifier.  It is notably better than the daily average radiation times
 the daily average aspect modifier.
 
-
-
+Derived from LandLab code, which is released under the MIT license:
+https://github.com/landlab/landlab/blob/master/landlab/components/radiation/radiation.py
 */
 
 #pragma once

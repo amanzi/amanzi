@@ -42,9 +42,9 @@ IncidentShortwaveRadiationModel::IncidentShortwaveRadiationModel(Teuchos::Parame
 void
 IncidentShortwaveRadiationModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 {
-  daily_avg_ = plist.get<bool>("estimate factor for a daily averaged radiation");
+  daily_avg_ = plist.get<bool>("daily averaged", true);
 
-  lat_ = plist.get<double>("domain-averaged latitude [degrees]");
+  lat_ = plist.get<double>("latitude [degrees]");
   if (lat_ < -90 || lat_ > 90) {
     Errors::Message msg("IncidentShortwaveRadiationModel: \"domain-averaged latitude [degrees]\" not in valid range [-90,90]");
     Exceptions::amanzi_throw(msg);

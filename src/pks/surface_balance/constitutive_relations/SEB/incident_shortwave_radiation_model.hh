@@ -1,7 +1,14 @@
 /*
-  The incident shortwave radiation model is an algebraic model with dependencies.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Evaluates shortwave as a function of slope/aspect/etc.
+
+/*!
+
 Aspect modified shortwave radiation is determined by a factor which
 is multiplied by the 'incoming radiation incident on a flat surface'
 to determine the 'incoming radiation incident on a sloping surface of
@@ -15,9 +22,16 @@ product of the hourly incident radiation and the hourly aspect
 modifier.  It is notably better than the daily average radiation times
 the daily average aspect modifier.
 
+Derived from LandLab code, which is released under the MIT license:
+https://github.com/landlab/landlab/blob/master/landlab/components/radiation/radiation.py
 
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
+.. _incident_shortwave_radiation_model-spec:
+.. admonition:: incident_shortwave_radiation_model-spec
+
+    * `"daily averaged`" ``[bool]`` **true** Calculate daily averaged values (used for daily averaged input shortwave radiation).
+    * `"latitude [degrees]`" ``[double]`` Domain averaged latitude, in degrees.  Must be in the range [-90,90]
+    * `"day of year at time 0 [Julian days]`" ``[int]`` **0** Day of the year that the simulation began.  Defaults to 0, or Jan 1.
+
 */
 
 #ifndef AMANZI_SURFACEBALANCE_INCIDENT_SHORTWAVE_RADIATION_MODEL_HH_
@@ -36,7 +50,6 @@ namespace Impl {
   double SlopeGeometry(double slope, double aspect, double alpha, double phi_sun);
   std::pair<double,double> GeometricRadiationFactors(double slope, double aspect, int doy, double hour, double lat);
   double Radiation(double slope, double aspect, int doy, double hr, double lat, double qSWin);
-
 }
   
 
