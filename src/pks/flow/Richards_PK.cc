@@ -170,8 +170,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", pressure_key_);
-    pressure_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(pressure_key_, pressure_eval_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(pressure_key_, eval);
   }
 
   // Require conserved quantity.
@@ -265,8 +265,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", darcy_flux_key_);
-    darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(darcy_flux_key_, eval);
   }
 
   // -- porosity
@@ -375,6 +375,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
+
+  // Since high-level PK may own some fields, we have to populate 
+  // frequently used evaluators outside of field registration
+  pressure_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(pressure_key_));
+  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(darcy_flux_key_));
 }
 
 
@@ -535,13 +540,17 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  AMANZI_ASSERT(ti_method_name == "BDF1");
-  Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+  if (ti_method_name == "BDF1") {
+    Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  if (! bdf1_list.isSublist("verbose object"))
-      bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
+    if (! bdf1_list.isSublist("verbose object"))
+        bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-  bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  } else {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
+  }
 
   // Initialize boundary conditions and source terms.
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
@@ -844,6 +853,8 @@ void Richards_PK::InitializeStatistics_()
 ******************************************************************* */
 bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  AMANZI_ASSERT(bdf1_dae_ != Teuchos::null);
+
   dt_ = t_new - t_old;
 
   // initialize statistics
@@ -895,7 +906,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (num_itrs_ == 0) {
     Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
     udot->PutScalar(0.0);
-    bdf1_dae->SetInitialState(t_old, soln_, udot);
+    bdf1_dae_->SetInitialState(t_old, soln_, udot);
 
     UpdatePreconditioner(t_old, soln_, dt_);
     num_itrs_++;
@@ -903,7 +914,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -929,7 +940,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // commit solution (should we do it here ?)
-  bdf1_dae->CommitSolution(dt_, soln_);
+  bdf1_dae_->CommitSolution(dt_, soln_);
   pressure_eval_->SetFieldAsChanged(S_.ptr());
 
   dt_tuple times(t_old, dt_);

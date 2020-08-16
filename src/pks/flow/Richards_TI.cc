@@ -347,7 +347,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     // estimate CNLS limiters
     if (algebraic_water_content_balance_) {
       const CompositeVector& wc = *S_->GetFieldData("water_content");
-      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae->tol_solver());
+      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae_->tol_solver());
     }
   }
 

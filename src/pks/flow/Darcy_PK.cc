@@ -208,11 +208,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     }
   }
 
-  {
+  if (!S->HasFieldEvaluator(darcy_flux_key_)) {
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", darcy_flux_key_);
-    darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator(darcy_flux_key_, eval);
   }
 
   // Require additional field evaluators for this PK.
@@ -293,6 +293,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       }
     }
   }
+
+  // save frequently used evaluators 
+  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(darcy_flux_key_));
 }
 
 

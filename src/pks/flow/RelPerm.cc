@@ -37,7 +37,7 @@ RelPerm::RelPerm(Teuchos::ParameterList& plist,
 void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
                       const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value,
-                      Teuchos::RCP<CompositeVector> krel)
+                      const Teuchos::RCP<CompositeVector>& krel)
 {
   const Epetra_MultiVector& p_c = *p->ViewComponent("cell", false);
   Epetra_MultiVector& krel_c = *krel->ViewComponent("cell", false);
@@ -72,7 +72,7 @@ void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
 void RelPerm::ComputeDerivative(Teuchos::RCP<const CompositeVector> p,
                                 const std::vector<int>& bc_model,
                                 const std::vector<double>& bc_value,
-                                Teuchos::RCP<CompositeVector> dKdP)
+                                const Teuchos::RCP<CompositeVector>& dKdP)
 {
   const Epetra_MultiVector& pres_c = *p->ViewComponent("cell", false);
   Epetra_MultiVector& derv_c = *dKdP->ViewComponent("cell", false);

@@ -85,8 +85,8 @@
         <ParameterList name="PK tree">
           <ParameterList name="coupled flow">
             <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
-            <ParameterList name="flow matrix steady">
-              <Parameter name="PK type" type="string" value="darcy"/>
+            <ParameterList name="flow matrix">
+              <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="flow fracture">
               <Parameter name="PK type" type="string" value="darcy"/>
@@ -125,7 +125,7 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="3.0e+7"/>
-        <Parameter name="maximum cycle number" type="int" value="100"/>
+        <Parameter name="maximum cycle number" type="int" value="10"/>
         <Parameter name="initial time step" type="double" value="1.0e+2"/>
       </ParameterList>
     </ParameterList>
@@ -516,7 +516,7 @@
 
   <ParameterList name="PKs">
     <ParameterList name="coupled flow">
-      <Parameter name="PKs order" type="Array(string)" value="{flow matrix steady, flow fracture}"/>
+      <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="maximum number of iterations" type="int" value="100"/>
       <Parameter name="error tolerance" type="double" value="1e-6"/>
@@ -725,11 +725,16 @@
 	<Parameter name="upwind method" type="string" value="upwind: amanzi"/>
 	<Parameter name="upwind frequency" type="string" value="every timestep"/>
 	<ParameterList name="upwind parameters">
-	  <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+	  <Parameter name="tolerance" type="double" value="1e-12"/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+      <ParameterList name="time integrator">
+        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
       </ParameterList>
       <ParameterList name="water retention models">
 	<ParameterList name="WRM for All">

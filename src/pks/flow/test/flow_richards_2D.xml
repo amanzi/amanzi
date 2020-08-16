@@ -87,11 +87,11 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="linear solver" type="string" value="none"/>
-	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
-	<ParameterList name="initialization">
+        <ParameterList name="initialization">
 	  <Parameter name="method" type="string" value="saturated solver"/>
 	  <Parameter name="linear solver" type="string" value="AmanziPCG"/>
 	  <Parameter name="clipping saturation value" type="double" value="0.6"/>

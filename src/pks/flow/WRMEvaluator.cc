@@ -26,7 +26,7 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           Teuchos::RCP<WRMPartition> wrm) :
+                           const Teuchos::RCP<WRMPartition>& wrm) :
     SecondaryVariablesFieldEvaluator(plist),
     wrm_(wrm)
 {
