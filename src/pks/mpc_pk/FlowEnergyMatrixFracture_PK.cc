@@ -74,20 +74,12 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "pressure");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("pressure", eval);
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   if (!S->HasField("temperature")) {
     *S->RequireField("temperature", "thermal")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "temperature");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("temperature", eval);
+    AddDefaultPrimaryEvaluator("temperature");
   }
 
   // -- darcy flux
@@ -97,6 +89,8 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
@@ -150,7 +144,8 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // diagonal blocks (0,0) and (2,2) in tree operator must be Darcy PKs
   // one reason is that Darcy_PK combines matrix and preconditioner
   for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT((*Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i])->begin())->name() == "darcy");
+    std::string pk_name = (*Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i])->begin())->name();
+    AMANZI_ASSERT(pk_name == "darcy" || pk_name == "richards");
   }
 
   // diagonal blocks in the 4x4 tree operator are the FlowEnergy PKs.
@@ -566,6 +561,7 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
   // fracture
   ev_key = "fracture-" + key;
   fd_key = "fracture-prev_" + key;
+  if (!S_->HasField(ev_key)) return;
 
   S_->GetFieldEvaluator(ev_key)->HasFieldChanged(S_.ptr(), passwd);
   {

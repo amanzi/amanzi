@@ -89,7 +89,7 @@
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
             <ParameterList name="flow fracture">
-              <Parameter name="PK type" type="string" value="darcy"/>
+              <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -114,7 +114,7 @@
             </ParameterList>
             <ParameterList name="thermal flow fracture">
               <Parameter name="PK type" type="string" value="thermal flow"/>
-              <ParameterList name="flow fracture">
+              <ParameterList name="flow fracture steady">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
               <ParameterList name="energy fracture">
@@ -794,6 +794,49 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="flow fracture steady">
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <ParameterList name="physical models and assumptions">
+	<Parameter name="flow in fractures" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture permeability models">
+	<ParameterList name="FPM for Entire Domain">
+	  <Parameter name="region" type="string" value="All"/>
+	  <Parameter name="model" type="string" value="cubic law"/>
+	  <Parameter name="aperture" type="double" value="1.0"/>
+	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+	<ParameterList name="diffusion operator">
+	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+      </ParameterList>
+
+      <ParameterList name="time integrator">
+	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="time integration method" type="string" value="none"/>
+	<ParameterList name="verbose object">
+	  <Parameter name="verbosity level" type="string" value="high"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
@@ -804,6 +847,12 @@
 	  <Parameter name="region" type="string" value="All"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
 	  <Parameter name="aperture" type="double" value="1.0"/>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+	<ParameterList name="WRM for All">
+	  <Parameter name="water retention model" type="string" value="saturated"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
 	</ParameterList>
       </ParameterList>
 

@@ -152,6 +152,10 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
+  // DFN model
+  bool flow_on_manifold_;  // true for the DFN model
+  bool coupled_to_matrix_, coupled_to_fracture_;
+
   // names of state fields 
   Key pressure_key_;
   Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;

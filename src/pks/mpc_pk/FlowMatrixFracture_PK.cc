@@ -66,10 +66,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "pressure");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("pressure", eval);
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   // -- darcy flux
@@ -80,16 +77,15 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "darcy_flux");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("darcy_flux", eval);
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
   if (!S->HasField("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
+
+    AddDefaultPrimaryEvaluator("fracture-darcy_flux");
   }
 
   // Require additional fields and evaluators

@@ -127,10 +127,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   pressure_key_ = Keys::getKey(domain_, "pressure"); 
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
 
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
-
-  permeability_key_ = Keys::getKey(domain_, "permeability"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
@@ -168,10 +165,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", pressure_key_);
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(pressure_key_, eval);
+    AddDefaultPrimaryEvaluator(pressure_key_);
   }
 
   // Require conserved quantity.
@@ -252,23 +246,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Require additional fields and evaluators for this PK.
-  // -- absolute permeability
-  if (!S->HasField(permeability_key_)) {
-    S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-  }
-
-  // -- darcy flux
-  if (!S->HasField(darcy_flux_key_)) {
-    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", darcy_flux_key_);
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(darcy_flux_key_, eval);
-  }
-
   // -- porosity
   if (!S->HasField(porosity_key_)) {
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -457,9 +434,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   multiscale_porosity_ = (physical_models->get<std::string>(
       "multiscale model", "single continuum") != "single continuum");
 
-  // Process other fundamental structures.
-  SetAbsolutePermeabilityTensor();
-
   // Select a proper matrix class. 
   const Teuchos::ParameterList& tmp_list = fp_list_->sublist("operators")
                                                     .sublist("diffusion operator");
@@ -468,7 +442,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   std::string name = fp_list_->sublist("relative permeability").get<std::string>("upwind method");
   std::string nonlinear_coef("standard: cell");
-  if (name == "upwind: darcy velocity") {
+  if (flow_on_manifold_) {
+    nonlinear_coef = "standard: cell";
+  } else if (name == "upwind: darcy velocity") {
     nonlinear_coef = "upwind: face";
   } else if (name == "upwind: gravity") {
     nonlinear_coef = "upwind: face";
@@ -481,11 +457,26 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
   oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
-  Operators::PDE_DiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
+  Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
+  if (!flow_on_manifold_) {
+    SetAbsolutePermeabilityTensor();
+    Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+    opfactory.SetVariableTensorCoefficient(Kptr);
+    opfactory.SetVariableScalarCoefficient(krel_, dKdP_);
+    opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+  } else {
+    S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
+    auto kptr = S_->GetFieldData(permeability_key_);
+    opfactory.SetVariableScalarCoefficient(kptr);
+  }
+
+  op_matrix_diff_ = opfactory.Create();
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
+
+  opfactory.SetPList(oplist_pc);
+  op_preconditioner_diff_ = opfactory.Create();
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
+
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
@@ -556,21 +547,14 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
 
   // Initialize matrix and preconditioner operators.
-  // -- setup phase
   // -- molar density requires to rescale gravity later.
   op_matrix_->Init();
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
-  op_matrix_diff_->Setup(Kptr, krel_, dKdP_);
-
-  op_preconditioner_->Init();
-  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_);
-
-  // -- assemble phase
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
+  op_preconditioner_->Init();
+  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
@@ -967,9 +951,14 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  // calculate Darcy flux.
-  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData(darcy_flux_key_, passwd_);
-  op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
+  // calculate Darcy mass flux
+  auto darcy_flux = S->GetFieldData(darcy_flux_key_, passwd_);
+
+  if (coupled_to_matrix_ || flow_on_manifold_) {
+    op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), darcy_flux.ptr());
+  } else {
+    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
+  }
 
   Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
