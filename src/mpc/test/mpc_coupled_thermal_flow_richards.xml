@@ -408,7 +408,7 @@
 		<Parameter name="space dimension" type="int" value="3"/>
 		<ParameterList name="water table elevation">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.0"/>
+		    <Parameter name="value" type="double" value="103.0"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -429,7 +429,7 @@
 		<Parameter name="space dimension" type="int" value="3"/>
 		<ParameterList name="water table elevation">
 		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.0"/>
+		    <Parameter name="value" type="double" value="103.0"/>
 		  </ParameterList>
 		</ParameterList>
 	      </ParameterList>
@@ -722,7 +722,7 @@
 
     <ParameterList name="flow matrix">
       <ParameterList name="relative permeability">
-	<Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+	<Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
 	<Parameter name="upwind frequency" type="string" value="every timestep"/>
 	<ParameterList name="upwind parameters">
 	  <Parameter name="tolerance" type="double" value="1e-12"/>
@@ -735,6 +735,7 @@
         <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	<Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="water retention models">
 	<ParameterList name="WRM for All">
@@ -849,6 +850,13 @@
 	  <Parameter name="aperture" type="double" value="1.0"/>
 	</ParameterList>
       </ParameterList>
+      <ParameterList name="relative permeability">
+	<Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+	<Parameter name="upwind frequency" type="string" value="every timestep"/>
+	<ParameterList name="upwind parameters">
+	  <Parameter name="tolerance" type="double" value="1e-12"/>
+	</ParameterList>
+      </ParameterList>
       <ParameterList name="water retention models">
 	<ParameterList name="WRM for All">
 	  <Parameter name="water retention model" type="string" value="saturated"/>
@@ -863,6 +871,14 @@
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">
+	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	  </ParameterList>
+	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>

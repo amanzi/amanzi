@@ -25,7 +25,7 @@ namespace AmanziMesh {
 *
 *  Input:
 *  mesh - pointer to Amanzi mesh 
-*  parent_maps - pair of consituous master and ghosted maps
+*  parent_maps - pair of continuous master and ghosted maps
 *  subset_maps - pair of discontinuous master and ghosted maps
 *                this must be a subset of parent_maps
 *

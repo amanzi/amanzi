@@ -61,7 +61,6 @@ using namespace Amanzi::AmanziGeometry;
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
   auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
       mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
 

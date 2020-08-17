@@ -164,7 +164,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(pressure_key_)) {
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-
     AddDefaultPrimaryEvaluator(pressure_key_);
   }
 
@@ -310,7 +309,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("saturation key", saturation_liquid_key_);
+    elist.set<std::string>("saturation key", saturation_liquid_key_)
+         .set<std::string>("pressure key", pressure_key_);
     // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S->SetFieldEvaluator(saturation_liquid_key_, eval);
@@ -385,7 +385,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
+
+  std::string ioname = "RichardsPK";
+  if (domain_ != "domain") ioname += "-" + domain_;
+  vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist)); 
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
