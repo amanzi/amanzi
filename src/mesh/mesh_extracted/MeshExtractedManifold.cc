@@ -12,6 +12,9 @@
 #include <set>
 #include <utility>
 
+// TPLs
+#include "Epetra_IntVector.h"
+
 // Amanzi
 #include "dbc.hh"
 #include "errors.hh"
@@ -49,6 +52,7 @@ MeshExtractedManifold::MeshExtractedManifold(
 
   InitParentMaps(setname); 
   InitEpetraMaps(); 
+  InitExteriorEpetraMaps();
 
   PrintSets_();
 }
@@ -778,6 +782,49 @@ void MeshExtractedManifold::InitEpetraMaps()
     ent_map_owned_[kind_d] = tmp.first;
     ent_map_wghost_[kind_d] = tmp.second;
   }
+}
+
+
+/* ******************************************************************
+* Exterior Epetra maps are cannot be alway extracted from a
+* parent mesh, so we build them explicitly.
+****************************************************************** */
+void MeshExtractedManifold::InitExteriorEpetraMaps()
+{
+  int nents = nents_owned_[FACE];
+  Entity_ID_List cells;
+
+  const auto& fmap_owned = face_map(false);
+  const auto& fmap_wghost = face_map(true);
+  
+  std::vector<int> gids;
+  Epetra_IntVector counts(fmap_wghost);
+
+  for (int n = 0; n < nents; ++n) {
+    face_get_cells_internal_(n, Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    if (ncells == 1) gids.push_back(fmap_owned.GID(n));
+    counts[n] = ncells; 
+  }
+
+  ent_extmap_owned_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
+
+#ifdef HAVE_MPI
+  auto importer_ = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
+
+  int* vdata;
+  counts.ExtractView(&vdata);
+  Epetra_IntVector tmp(View, fmap_owned, vdata);
+
+  counts.Import(tmp, *importer_, Insert);
+#endif
+
+  int nents_wghost = nents + nents_ghost_[FACE];
+  for (int n = nents; n < nents_wghost; ++n) {
+    if (counts[n] == 1) gids.push_back(fmap_wghost.GID(n));
+  }
+
+  ent_extmap_wghost_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
 }
 
 

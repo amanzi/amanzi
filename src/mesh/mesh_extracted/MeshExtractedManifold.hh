@@ -54,6 +54,7 @@ class MeshExtractedManifold : public Mesh {
   // initialization
   void InitParentMaps(const std::string& setname);
   void InitEpetraMaps();
+  void InitExteriorEpetraMaps();
 
   virtual Teuchos::RCP<const Mesh> parent() const override { return parent_mesh_; }
 
