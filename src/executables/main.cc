@@ -31,6 +31,8 @@
 #include "ats_surface_balance_registration.hh"
 #include "ats_mpc_registration.hh"
 #include "ats_sediment_transport_registration.hh"
+#include "ats_lake_pks_registration.hh"
+#include "ats_lake_thermo_relations_registration.hh"
 #ifdef ALQUIMIA_ENABLED
 #include "pks_chemistry_registration.hh"
 #endif

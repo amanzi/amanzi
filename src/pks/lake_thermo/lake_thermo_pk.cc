@@ -367,6 +367,10 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   Epetra_Vector& alpha_e_vec = *S_->GetConstantVectorData("extinction coefficient", "state");
   alpha_e_ = std::fabs(alpha_e_vec[1]);
 
+  // solar radiation maximum S(0)
+  Epetra_Vector& S0_vec = *S_->GetConstantVectorData("solar radiation max", "state");
+  S0_ = std::fabs(S0_vec[1]);
+
   // heat capacity of water
   Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
   cp_ = std::fabs(cp_vec[1]);

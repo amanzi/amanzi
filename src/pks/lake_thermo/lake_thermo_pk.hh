@@ -152,8 +152,8 @@ Solves an advection-diffusion equation for energy:
  */
 
 
-#ifndef PKS_ENERGY_BASE_HH_
-#define PKS_ENERGY_BASE_HH_
+#ifndef PKS_LAKE_THERMO_HH_
+#define PKS_LAKE_THERMO_HH_
 
 #include "PK_Factory.hh"
 
@@ -269,7 +269,6 @@ public:
 
   virtual int BoundaryFaceGetCell(int f) const;
 
-
  protected:
   int niter_;
 
@@ -336,6 +335,9 @@ public:
   // extinction coefficient
   double alpha_e_;
 
+  // solar radiation maximum
+  double S0_;
+
   // water depth
   double h_;
 
@@ -354,6 +356,11 @@ public:
   Key source_key_;
   //  Key mass_source_key_;
   Key ss_flux_key_;
+
+private:
+  // factory registration
+  static RegisteredPKFactory<Lake_Thermo_PK> reg_;
+
 };
 
 } // namespace LakeThermo

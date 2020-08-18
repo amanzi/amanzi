@@ -176,13 +176,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
           ->ViewComponent("cell",false);
 
-    double S0 = 1.;  // DEFINE IN xml
-
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      g_c[0][c] = S0*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
+      g_c[0][c] = S0_*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))

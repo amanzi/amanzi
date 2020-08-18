@@ -34,6 +34,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations/surface_subsurface_fluxes)
 #include_directories(${ATS_SOURCE_DIR}/constitutive_relations/generic_evaluators)
 include_directories(${ATS_SOURCE_DIR}/pks)
+include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo)
 #include_directories(${ATS_SOURCE_DIR}/pks/mpc)
 #include_directories(${ATS_SOURCE_DIR}/pks/energy)
 #include_directories(${ATS_SOURCE_DIR}/pks/flow)
@@ -121,6 +122,8 @@ set(ats_link_libs
   ats_surface_balance
   ats_mpc
   ats_mpc_relations
+  ats_lake
+  ats_lake_thermo_relations
   )
 
 # note, we can be inclusive here, because if they aren't enabled,
