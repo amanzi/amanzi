@@ -133,6 +133,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
+  water_content_key_ = Keys::getKey(domain_, "water_content"); 
+  prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
+
+  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
+
   // set up the base class 
   Flow_PK::Setup(S);
 
@@ -169,24 +174,25 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Require conserved quantity.
   // -- water content
-  if (!S->HasField("water_content")) {
-    S->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(water_content_key_)) {
+    S->RequireField(water_content_key_, water_content_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList vwc_list;
-    vwc_list.set<std::string>("pressure key", pressure_key_)
+    vwc_list.set<std::string>("water content key", water_content_key_)
+            .set<std::string>("pressure key", pressure_key_)
             .set<std::string>("saturation key", saturation_liquid_key_)
             .set<std::string>("porosity key", porosity_key_);
     VWContentEvaluatorFactory fac;
     Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
-    S->SetFieldEvaluator("water_content", eval);
+    S->SetFieldEvaluator(water_content_key_, eval);
   }
 
   // -- water content from the previous time step
-  if (!S->HasField("prev_water_content")) {
-    S->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_water_content_key_)) {
+    S->RequireField(prev_water_content_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_water_content", passwd_)->set_io_vis(false);
+    S->GetField(prev_water_content_key_, passwd_)->set_io_vis(false);
   }
 
   // -- multiscale extension: secondary (immobile water content)
@@ -269,13 +275,13 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S->HasField("viscosity_liquid")) {
+  if (!S->HasField(viscosity_liquid_key_)) {
     if (!S->HasField("fluid_viscosity")) {
       S->RequireScalar("fluid_viscosity", passwd_);
     }
-    S->RequireField("viscosity_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField(viscosity_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("viscosity_liquid", passwd_)->set_io_vis(false);
+    S->GetField(viscosity_liquid_key_, passwd_)->set_io_vis(false);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
@@ -640,9 +646,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     CompositeVector& s_l_prev = *S->GetFieldData(prev_saturation_liquid_key_, passwd_);
     s_l_prev = s_l;
 
-    S->GetFieldEvaluator("water_content")->HasFieldChanged(S.ptr(), "flow");
-    CompositeVector& wc = *S->GetFieldData("water_content", "water_content");
-    CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", passwd_);
+    S->GetFieldEvaluator(water_content_key_)->HasFieldChanged(S.ptr(), "flow");
+    CompositeVector& wc = *S->GetFieldData(water_content_key_, water_content_key_);
+    CompositeVector& wc_prev = *S->GetFieldData(prev_water_content_key_, passwd_);
     wc_prev = wc;
 
     // We start with pressure equilibrium
@@ -710,15 +716,15 @@ void Richards_PK::InitializeFields_()
 
   // set popular default values for missed fields.
   // -- viscosity: if not initialized, we constant value from state.
-  if (S_->GetField("viscosity_liquid")->owner() == passwd_) {
+  if (S_->GetField(viscosity_liquid_key_)->owner() == passwd_) {
     double mu = *S_->GetScalarData("fluid_viscosity");
 
-    if (!S_->GetField("viscosity_liquid", passwd_)->initialized()) {
-      S_->GetFieldData("viscosity_liquid", passwd_)->PutScalar(mu);
-      S_->GetField("viscosity_liquid", passwd_)->set_initialized();
+    if (!S_->GetField(viscosity_liquid_key_, passwd_)->initialized()) {
+      S_->GetFieldData(viscosity_liquid_key_, passwd_)->PutScalar(mu);
+      S_->GetField(viscosity_liquid_key_, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized viscosity_liquid to input value " << mu << std::endl;  
+          *vo_->os() << "initialized " << viscosity_liquid_key_ << " to input value " << mu << std::endl;  
     }
   }
 
@@ -735,7 +741,7 @@ void Richards_PK::InitializeFields_()
   }
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
-  InitializeFieldFromField_("prev_water_content", "water_content", true);
+  InitializeFieldFromField_(prev_water_content_key_, water_content_key_, true);
 
   // set matrix fields assuming presure equilibrium
   // -- pressure
@@ -861,9 +867,9 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sat_prev = sat;
 
   // -- water_conten, swap prev <- current
-  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-  CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
-  CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
+  S_->GetFieldEvaluator(water_content_key_)->HasFieldChanged(S_.ptr(), "flow");
+  CompositeVector& wc = *S_->GetFieldData(water_content_key_, water_content_key_);
+  CompositeVector& wc_prev = *S_->GetFieldData(prev_water_content_key_, passwd_);
 
   CompositeVector wc_prev_copy(wc_prev);
   wc_prev = wc;
@@ -911,7 +917,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // revover the original fields
     *S_->GetFieldData(prev_saturation_liquid_key_, passwd_) = sat_prev_copy;
-    *S_->GetFieldData("prev_water_content", passwd_) = wc_prev_copy;
+    *S_->GetFieldData(prev_water_content_key_, passwd_) = wc_prev_copy;
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Reverted pressure, prev_saturation_liquid, prev_water_content" << std::endl;
@@ -1006,7 +1012,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
   if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc_value[f];
   } else {
-    const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
+    const Epetra_MultiVector& mu_cell = *S_->GetFieldData(viscosity_liquid_key_)->ViewComponent("cell");
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);

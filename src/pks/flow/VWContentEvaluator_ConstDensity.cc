@@ -32,7 +32,7 @@ VWContentEvaluator_ConstDensity::VWContentEvaluator_ConstDensity(Teuchos::Parame
 ****************************************************************** */
 void VWContentEvaluator_ConstDensity::Init_()
 {
-  my_key_ = std::string("water_content");
+  my_key_ = plist_.get<std::string>("water content key");
   pressure_key_ = plist_.get<std::string>("pressure key");
   saturation_key_ = plist_.get<std::string>("saturation key");
   porosity_key_ = plist_.get<std::string>("porosity key");

@@ -163,6 +163,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_;
   Key darcy_velocity_key_;
+  Key water_content_key_, prev_water_content_key_;
+  Key viscosity_liquid_key_;
 
   // io
   Utils::Units units_;
