@@ -828,11 +828,11 @@ void MeshExtractedManifold::InitExteriorEpetraMaps()
 
 #ifdef HAVE_MPI
   {
-    auto importer_ = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
+    exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
     int* vdata;
     counts.ExtractView(&vdata);
     Epetra_IntVector tmp(View, fmap_owned, vdata);
-    counts.Import(tmp, *importer_, Insert);
+    counts.Import(tmp, *exterior_face_importer_, Insert);
   }
 #endif
 
