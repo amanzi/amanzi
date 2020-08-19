@@ -64,12 +64,12 @@ add_amanzi_library(ats_lake
 # register evaluators/factories/pks
 register_evaluator_with_factory(
   HEADERFILE lake_thermo_pk_reg.hh
-  LISTNAME   ATS_LAKE_PKS_REG
+  LISTNAME   ATS_LAKE_THERMO_PKS_REG
   )
 
 generate_evaluators_registration_header(
   HEADERFILE ats_lake_pks_registration.hh
-  LISTNAME   ATS_LAKE_PKS_REG
+  LISTNAME   ATS_LAKE_THERMO_PKS_REG
   INSTALL    True
   )
 
