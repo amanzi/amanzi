@@ -23,8 +23,9 @@ MPCPermafrostSplitFluxColumnsSubcycled::MPCPermafrostSplitFluxColumnsSubcycled(T
     : PK(FElist, plist, S, solution),
       MPCPermafrostSplitFluxColumns(FElist, plist, S, solution)
 {
-  subcycled_timestep_type_ = plist_->get<std::string>("subcycled timestep type","surface star timestep");
-  subcycled_timestep_target_ = plist_->get<double>("subcycled timestep target",2.0);
+  subcycled_timestep_type_ = plist_->get<std::string>("subcycling timestep type","surface star timestep");
+  //  subcycled_timestep_target_ = plist_->get<double>("subcycling timestep target",2.0);
+  subcycled_target_time_ = plist_->get<double>("subcycling timestep target",3600);
 };
 
 double MPCPermafrostSplitFluxColumnsSubcycled::get_dt() {
@@ -45,7 +46,7 @@ double MPCPermafrostSplitFluxColumnsSubcycled::get_dt() {
     double dt_g;
     S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
     
-    dt_g = std::min(dt_g*subcycled_timestep_target_, sub_pks_[0]->get_dt());
+    dt_g = std::max(subcycled_target_time_, dt_g);
     return dt_g;
   }
   else {

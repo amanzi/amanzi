@@ -54,7 +54,13 @@ SubgridAggregateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   for (int c =0; c < ncells; c++) {
     std::stringstream name;
     int id = S->GetMesh(domain_)->cell_map(false).GID(c);
-    name << "surface_column_"<< id;
+    if (boost::starts_with(source_domain_, "surface_")) {
+      name << "surface_column_"<< id;
+    }
+    else if (boost::starts_with(source_domain_,"snow_")) {
+      name << "snow_column_"<< id;
+    }
+    
     Key source_key = Keys::getKey(name.str(),var_key_);
 
     const auto& source = *S->GetFieldData(source_key)->ViewComponent("cell",false);
@@ -84,7 +90,12 @@ SubgridAggregateEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   for (int c =0; c < ncells; c++){
     std::stringstream name;
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-    name << "surface_column_"<< id;
+    if (boost::starts_with(source_domain_, "surface_")) {
+      name << "surface_column_"<< id;
+    }
+    else if (boost::starts_with(source_domain_,"snow_")) {
+      name << "snow_column_"<< id;
+    }
     Key temp_key = Keys::getKey(name.str(),var_key_);
     dependencies_.insert(temp_key);
   }

@@ -69,7 +69,7 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
   
  private:
   std::string subcycled_timestep_type_;
-  double  subcycled_timestep_target_;
+  double  subcycled_timestep_target_, subcycled_target_time_;
   // factory registration
   static RegisteredPKFactory<MPCPermafrostSplitFluxColumnsSubcycled> reg_;
   
