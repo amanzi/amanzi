@@ -19,7 +19,7 @@ Author: Svetlana Tokareva
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
-#include "enthalpy_evaluator.hh"
+#include "lake_enthalpy_evaluator.hh"
 #include "density_evaluator.hh"
 #include "thermal_conductivity_evaluator.hh"
 
@@ -240,8 +240,8 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth =
-    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  Teuchos::RCP<LakeEnthalpyEvaluator> enth =
+    Teuchos::rcp(new LakeEnthalpyEvaluator(enth_plist));
   S->SetFieldEvaluator(enthalpy_key_, enth);
 
   // -- density evaluator

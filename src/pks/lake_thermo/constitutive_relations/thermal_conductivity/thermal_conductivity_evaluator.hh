@@ -10,6 +10,9 @@
 #ifndef AMANZI_LAKE_TC_EVALUATOR_HH_
 #define AMANZI_LAKE_TC_EVALUATOR_HH_
 
+#include "Teuchos_ParameterList.hpp"
+
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -48,6 +51,10 @@ class ThermalConductivityEvaluator :
 //  double K_liq_;
 //  double K_ice_;
 //  double min_K_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,ThermalConductivityEvaluator> factory_;
+
 };
 
 } // namespace

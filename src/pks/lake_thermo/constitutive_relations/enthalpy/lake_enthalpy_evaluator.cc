@@ -3,18 +3,18 @@
 /* -----------------------------------------------------------------------------
 ATS
 
-Authors: Ethan Coon (ecoon@lanl.gov)
+Authors: Svetlana Tokareva (tokareva@lanl.gov)
 
 FieldEvaluator for enthalpy.
 ----------------------------------------------------------------------------- */
 
 
-#include "enthalpy_evaluator.hh"
+#include "lake_enthalpy_evaluator.hh"
 
 namespace Amanzi {
 namespace LakeThermo {
 
-EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
+LakeEnthalpyEvaluator::LakeEnthalpyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_.empty()) {
 
@@ -39,7 +39,7 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
 
 };
 
-EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
+LakeEnthalpyEvaluator::LakeEnthalpyEvaluator(const LakeEnthalpyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pres_key_(other.pres_key_),
     dens_key_(other.dens_key_),
@@ -47,12 +47,12 @@ EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
     include_work_(other.include_work_) {};
 
 Teuchos::RCP<FieldEvaluator>
-EnthalpyEvaluator::Clone() const {
-  return Teuchos::rcp(new EnthalpyEvaluator(*this));
+LakeEnthalpyEvaluator::Clone() const {
+  return Teuchos::rcp(new LakeEnthalpyEvaluator(*this));
 };
 
 
-void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void LakeEnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_key_);
@@ -79,7 +79,7 @@ void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 };
 
 
-void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void LakeEnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // not implemented
   if (wrt_key == ie_key_) {
