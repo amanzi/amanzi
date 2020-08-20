@@ -51,7 +51,7 @@ IncidentShortwaveRadiationModel::InitializeFromPlist_(Teuchos::ParameterList& pl
   }
 
   doy0_ = plist.get<int>("day of year at time 0 [Julian days]", 0);
-  if (doy0_ < 1 || doy0_ > 365) {
+  if (doy0_ < 0 || doy0_ > 364) {
     Errors::Message msg("IncidentShortwaveRadiationModel: \"day of year at time 0 [Julian days]\" not in valid range [0,364]");
     Exceptions::amanzi_throw(msg);
   }
@@ -92,6 +92,10 @@ IncidentShortwaveRadiationModel::IncidentShortwaveRadiation(double slope, double
     double hour = 12.0 + 24 * (doy - doy_i);
     rad = Impl::Radiation(slope, aspect, doy_i, hour, lat_, qSWin);
   }
+  if (qSWin > 200) {
+    std::cout << "slope = " << slope << ", aspect = " << aspect << ", doy = " << doy_i << " qSWin = " << qSWin << ", rad = " << rad << std::endl;
+  }
+
   return rad;
 }
 
@@ -320,7 +324,7 @@ double Radiation(double slope, double aspect, int doy, double hour, double lat, 
   double fac = facs.first / facs.second;
   if (fac > 6.) fac = 6.;
   else if (fac < 0.) fac = 0.;
-  return qSWin * facs.second * fac;
+  return qSWin * fac;
 }
 
 } //namespace Impl

@@ -548,7 +548,7 @@ class RegressionTest(object):
         reg_files = self.filenames(reg_dirname)
 
         # check that at least one gold file exists
-        if len(gold_files) is 0:
+        if len(gold_files) == 0:
             message = self._txtwrap.fill(
                 "FAIL: could not find checkpoint files in regression "
                 "test gold directory "
