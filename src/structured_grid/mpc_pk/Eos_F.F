@@ -315,8 +315,7 @@ c ::: -----------------------------------------------------------
       REAL_T  js,m
       REAL_T  sat(ncomps)
 
-      print *,'Should not be in get_cpl'
-      call bl_abort()
+      call bl_abort('Should not be in get_cpl')
 
       call get_st(sat,s,rho,sres,ncomps)
 
@@ -373,8 +372,7 @@ c ::: -----------------------------------------------------------
       REAL_T  m
       REAL_T  sat(ncomps)
 
-      print *,'Should not be in get_invcpl'
-      call bl_abort()
+      call bl_abort('Should not be in get_invcpl')
 
       if (cpl_type .eq. 0) then 
          sat = zero
@@ -460,8 +458,7 @@ c ::: -----------------------------------------------------------
       REAL_T  js,m,n
       REAL_T  sat(ncomps)
 
-      print *,'Should not bin in get_dcplds'
-      call bl_abort()
+      call bl_abort('Should not bin in get_dcplds')
 
       call get_st(sat,s,rho,sres,ncomps)
 
@@ -528,8 +525,7 @@ c ::: -----------------------------------------------------------
 
       vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2.d0
 
-      print *,'Should not be in get_kr'
-      call bl_abort()
+      call bl_abort('Should not be in get_kr')
 
       call get_st(sat,s,rho,sres,nc)
 
@@ -627,8 +623,7 @@ c ::: ---------------------------------------------------------------
       REAL_T  rho(ncomps)
       REAL_T  sres
 
-      print *,'Should not be in get_st'
-      call bl_abort()
+      call bl_abort('Should not be in get_st')
       s(1) = min(rho(1),s(1))
       s(1) = max(zero,s(1))
 
@@ -658,8 +653,7 @@ c ::: ---------------------------------------------------------------
 
       integer n
 
-      print *,'Should not be in get_invst'
-      call bl_abort()
+      call bl_abort('Should not be in get_invst')
 
       s(1) = st(1)*(one-sres)+sres
       s(1) = max(sres,s(1))
@@ -698,8 +692,7 @@ c ::: -----------------------------------------------------------
 
       integer i
 
-      print *,'Should not be in get_ld'
-      call bl_abort()
+      call bl_abort('Should not be in get_ld')
 
       if (kr_type .ge. 0) then
          call get_kr(kr,s,rho,ncomps,kr_type,kr_coef,sres)
