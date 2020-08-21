@@ -53,6 +53,9 @@ void PDE_DiffusionMFD::SetTensorCoefficient(
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
+
+  // changing the tensor coefficient invalidates the mass matrices
+  mass_matrices_initialized_ = false;  
 }
 
 
