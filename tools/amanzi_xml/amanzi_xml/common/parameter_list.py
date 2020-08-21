@@ -122,7 +122,11 @@ class ParameterList(base.TeuchosBaseXML):
 
     def sort(self):
         """Sorts mychildren() by params first, then lists."""
-        self.getchildren().sort(key=lambda x: x.tag)
+        children = list(self)
+        for child in children:
+            self.remove(child)
+        sorted_children = sorted(children, key=lambda x: x.tag)
+        self.extend(sorted_children)
 
     def indent(self, ntabs, doublespace=False, doublespace_two=False):
         """Properly indent this list (and its Parameters/sublists) with [ntabs] tabs."""
@@ -172,6 +176,12 @@ class ParameterList(base.TeuchosBaseXML):
             assert isinstance(val, ParameterList)
             return val
 
+    def getName(self):
+        return self.get("name")
+    
+    def setName(self, name):
+        self.set("name", name)
+        
     def setParameter(self, name, ptype, val):
         """Set parameter name of type ptype to value, creating a new Parameter if necessary."""
         try:
@@ -184,16 +194,12 @@ class ParameterList(base.TeuchosBaseXML):
 
         self.append(parameter.Parameter(name, ptype, val))
 
-
     def getElement(self, name):
         """Get Parameter/sublist from the ParameterList"""
-        return search.childByName(self, name)
+        return search.child_by_name(self, name)
 
     def pop(self, name):
-        return self.getchildren().pop(self.getchildren().index(self.getElement(name)))
-
-    def setName(self, name):
-        self.set("name", name)
+        return search.remove_element(self, name, False, True)
     
 # register
 parser.objects['ParameterList'] = ParameterList
