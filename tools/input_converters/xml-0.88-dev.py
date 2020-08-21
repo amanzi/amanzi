@@ -84,7 +84,7 @@ def mergePreconditionerLinearSolver(xml):
         if pk.isElement("preconditioner"):
             pc = pk.getElement("preconditioner")
             pc.setName("inverse")
-            change_name(pc, "preconditioner type", "preconditioner method")
+            change_name(pc, "preconditioner type", "preconditioning method")
             if pk.isElement("linear solver"):
                 pc.extend(list(pk.getElement("linear solver")))
         elif pk.isElement("linear solver"):
@@ -93,7 +93,7 @@ def mergePreconditionerLinearSolver(xml):
         elif pk.isElement("inverse"):
             # already done, but check that preconditioning method is set
             pc = pk.getElement("inverse")
-            change_name(pc, "preconditioner type", "preconditioner method")
+            change_name(pc, "preconditioner type", "preconditioning method")
             
 
 def update(xml):
