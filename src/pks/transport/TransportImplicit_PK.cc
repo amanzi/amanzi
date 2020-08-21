@@ -137,8 +137,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
     auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
         pc_name, *preconditioner_list_,
         solver_name_, *linear_solver_list_, true);
-    op_->InitializeInverse(inv_list);
-    op_->UpdateInverse();
+    op_->set_inverse_parameters(inv_list);
+    op_->InitializeInverse();
   }
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

@@ -164,8 +164,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // apply BCs and assemble
     op->ApplyBCs(true, true, true);
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");

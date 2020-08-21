@@ -210,7 +210,7 @@ createIterativeMethod(const std::string& method_name,
     Exceptions::amanzi_throw(msg);
   }
 
-  if (inv.get()) inv->InitializeInverse(method_list);
+  if (inv.get()) inv->set_inverse_parameters(method_list);
   return inv;
 }
 
@@ -301,7 +301,7 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     msg << "Direct method \"" << method_name << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: *\" are valid options.";
     Exceptions::amanzi_throw(msg);
   }
-  if (inv.get()) inv->InitializeInverse(method_list);
+  if (inv.get()) inv->set_inverse_parameters(method_list);
   return inv;
 }
 
@@ -359,7 +359,7 @@ createInverse(Teuchos::ParameterList& inv_list,
   } else {
     dir_inv = Teuchos::rcp(new InverseAssembled<Operator,Assembler,Vector,VectorSpace>(method_name));
   }
-  dir_inv->InitializeInverse(inv_list);
+  dir_inv->set_inverse_parameters(inv_list);
   dir_inv->set_matrices(m,h);
   inv = dir_inv;
 

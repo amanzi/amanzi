@@ -577,7 +577,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- preconditioner or encapsulated preconditioner
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
-  op_preconditioner_->InitializeInverse(pc_name, *preconditioner_list_);
+  op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_);
   
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
@@ -692,7 +692,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // They can be... and so I kept them separate for now.  But this means that
   // all of flow PK cannot have linear solver in the Operator. --etc
   // solver_name_ = ti_list_->get<std::string>("linear solver");
-  // op_preconditioner_->InitializeInverse(pc_name, *preconditioner_list_,
+  // op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_,
   //         solver_name_, *linear_operator_list_, true);
   std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement", "none");
   if (tmp_solver != "none") {
@@ -702,7 +702,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     op_pc_solver_ = op_preconditioner_;
   }
-  op_pc_solver_->UpdateInverse();
+  op_pc_solver_->InitializeInverse();
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();

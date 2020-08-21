@@ -129,8 +129,8 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   // ParameterList slist = plist.sublist("preconditioners").sublist("identity");
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
 

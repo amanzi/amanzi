@@ -186,8 +186,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
   Teuchos::ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
-  op->InitializeInverse(slist);
-  op->UpdateInverse();
+  op->set_inverse_parameters(slist);
+  op->InitializeInverse();
   op->ComputeInverse();
 
   if (MyPID == 0) {

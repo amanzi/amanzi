@@ -75,7 +75,7 @@ class IterativeMethodGMRES :
   IterativeMethodGMRES() :
       InvIt() {}
 
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     AMANZI_ASSERT(inited_ && h_.get());
@@ -508,9 +508,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
 * "convergence criteria" Array(string) default = "{relative rhs}"
 ****************************************************************** */
 template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
-void IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::InitializeInverse(Teuchos::ParameterList& plist)
+void IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
-  InvIt::InitializeInverse(plist);
+  InvIt::set_inverse_parameters(plist);
 
   controller_start_ = plist.get<int>("controller training start", 0);
   controller_end_ = plist.get<int>("controller training end", 3);

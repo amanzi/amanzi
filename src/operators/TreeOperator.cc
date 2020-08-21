@@ -41,7 +41,7 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
     block_diagonal_(false),
     num_colors_(0),
     coloring_(Teuchos::null),
-    inited_(false)
+    inited_(false), updated_(false), computed_(false)
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
@@ -72,6 +72,7 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 ****************************************************************** */
 void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& op) {
   blocks_[i][j] = op;
+  updated_ = false;
 }
 
 
@@ -155,6 +156,10 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif
+  if (!computed_) {
+    Errors::Message msg("Developer error: TreeOperator::ComputeInverse() was not called.\n");
+    Exceptions::amanzi_throw(msg);
+  }    
   if (preconditioner_.get()) {
     return preconditioner_->ApplyInverse(X,Y);
   } else {
@@ -269,10 +274,10 @@ void TreeOperator::AssembleMatrix() {
 }
 
 
-void TreeOperator:: InitializeInverse(const std::string& prec_name,
+void TreeOperator:: set_inverse_parameters(const std::string& prec_name,
         const Teuchos::ParameterList& plist) {
   Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
-  InitializeInverse(inner_plist);
+  set_inverse_parameters(inner_plist);
 }  
 
 
@@ -280,10 +285,10 @@ void TreeOperator:: InitializeInverse(const std::string& prec_name,
 * Two-stage initialization of preconditioner, part 2.
 * Set the matrix in the preconditioner.  Assemble() must have been called.
 ****************************************************************** */
-void TreeOperator::UpdateInverse()
+void TreeOperator::InitializeInverse()
 {
   if (!inited_) {
-    Errors::Message msg("Developer error: InitializeInverse() has not been called.");
+    Errors::Message msg("Developer error: set_inverse_parameters() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -337,17 +342,19 @@ void TreeOperator::UpdateInverse()
   }
 
   if (preconditioner_.get()) {
-    preconditioner_->UpdateInverse(); // calls SymbolicAssemble if needed
+    preconditioner_->InitializeInverse(); // calls SymbolicAssemble if needed
   } else if (block_diagonal_) {
     for (int n=0; n!=tvs_->size(); ++n) {
-      blocks_[n][n]->UpdateInverse();
+      blocks_[n][n]->InitializeInverse();
     }
   }
-    
+  updated_ = true;
+  computed_ = false;
 }
 
 void TreeOperator::ComputeInverse()
 {
+  if (!updated_) InitializeInverse();
   if (preconditioner_.get()) {
     preconditioner_->ComputeInverse(); // calls SymbolicAssemble if needed
   } else if (block_diagonal_) {
@@ -355,6 +362,7 @@ void TreeOperator::ComputeInverse()
       blocks_[n][n]->ComputeInverse();
     }
   }
+  computed_ = true;
 }
 
 

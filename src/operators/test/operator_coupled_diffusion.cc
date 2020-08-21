@@ -898,8 +898,8 @@ std::pair<double,double> RunInverseProblem(
   pc_list.set("iterative method", "pcg");
   pc_list.sublist("pcg parameters").set("maximum number of iterations", 200);
   pc_list.sublist("verbose object").set("verbosity level", "high");
-  problem->op->InitializeInverse(pc_list);
-  problem->op->UpdateInverse();
+  problem->op->set_inverse_parameters(pc_list);
+  problem->op->InitializeInverse();
   problem->op->ComputeInverse();
 
   X.PutScalar(0.);
@@ -1116,8 +1116,8 @@ std::pair<double,double> RunNonlinearProblem(
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
     pc_list.set("iterative method", "gmres");
     pc_list.sublist("verbose object").set("verbosity level", "medium");
-    problem->op->InitializeInverse(pc_list);
-    problem->op->UpdateInverse();
+    problem->op->set_inverse_parameters(pc_list);
+    problem->op->InitializeInverse();
     problem->op->ComputeInverse();
 
     // invert the preconditioner to get a correction
@@ -1224,8 +1224,8 @@ std::pair<double,double> RunInverseProblem_Diag(
   pc_list.set("iterative method", "gmres");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op00->global_operator()->InitializeInverse(pc_list);
-  problem->op00->global_operator()->UpdateInverse();
+  problem->op00->global_operator()->set_inverse_parameters(pc_list);
+  problem->op00->global_operator()->InitializeInverse();
   problem->op00->global_operator()->ComputeInverse();
 
   Teuchos::ParameterList pc_list11;
@@ -1233,8 +1233,8 @@ std::pair<double,double> RunInverseProblem_Diag(
   pc_list11.set("iterative method", "gmres");
   pc_list11.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list11.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op11->global_operator()->InitializeInverse(pc_list11);
-  problem->op11->global_operator()->UpdateInverse();
+  problem->op11->global_operator()->set_inverse_parameters(pc_list11);
+  problem->op11->global_operator()->InitializeInverse();
   problem->op11->global_operator()->ComputeInverse();
 
   TreeVector B(*problem->tvs);

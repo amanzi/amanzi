@@ -148,7 +148,7 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::InitializeInverse(
+void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
     Teuchos::ParameterList& plist)
 {
   solver_ = createAssembledMethod<>(method_name_, plist);
@@ -159,10 +159,10 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse()
+void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::InitializeInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
-  AMANZI_ASSERT(solver_.get()); // InitializeInverse was called
+  AMANZI_ASSERT(solver_.get()); // set_inverse_parameters was called
 
   // note, this step is critical if the solver needs to destroy things
   // using the old matrix.
@@ -170,7 +170,7 @@ void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::UpdateInverse
 
   Teuchos::RCP<Epetra_CrsMatrix> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);
-  solver_->UpdateInverse();
+  solver_->InitializeInverse();
 
   if (!updated_) {
     std::tie(smap_,Y_,X_) = Impl::getSuperMap(*m_);

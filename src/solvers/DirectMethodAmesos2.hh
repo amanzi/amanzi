@@ -54,8 +54,8 @@ class DirectMethodAmesos2 :
   {};
 
 
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override;
-  virtual void UpdateInverse() override;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
+  virtual void InitializeInverse() override;
   virtual void ComputeInverse() override;
   virtual int ApplyInverse(const Epetra_Vector&, Epetra_Vector&) const override;
 

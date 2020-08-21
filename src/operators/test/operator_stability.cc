@@ -143,8 +143,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
     
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
@@ -284,8 +284,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
     
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();

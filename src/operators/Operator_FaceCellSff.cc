@@ -203,11 +203,11 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 }
 
-void Operator_FaceCellSff::UpdateInverse()
+void Operator_FaceCellSff::InitializeInverse()
 {
   AMANZI_ASSERT(inited_);
   schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
-  schur_inv_->InitializeInverse(inv_plist_);
+  schur_inv_->set_inverse_parameters(inv_plist_);
   schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
   
   if (inv_plist_.isParameter("iterative method")) {
@@ -215,7 +215,7 @@ void Operator_FaceCellSff::UpdateInverse()
   } else {
     preconditioner_ = schur_inv_;
   }
-  preconditioner_->UpdateInverse();
+  preconditioner_->InitializeInverse();
   updated_ = true;
   computed_ = false;
 }

@@ -136,9 +136,9 @@ void RunTest(double gravity) {
   op_adv->ApplyBCs(true, true, true);
     
   // create inverse
-  global_op->InitializeInverse("Hypre AMG", plist->sublist("preconditioners"),
+  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"),
                                "GMRES", plist->sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // initialize I/O

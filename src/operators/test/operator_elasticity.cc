@@ -144,8 +144,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.

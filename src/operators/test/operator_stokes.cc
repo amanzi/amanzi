@@ -192,10 +192,10 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // solver. The second block is simply a diagonal matrix. The off-diagonal
   // blocks are empty and require no setup.
   Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global00->InitializeInverse(slist);
+  global00->set_inverse_parameters(slist);
 
   slist = plist.sublist("preconditioners").sublist("Diagonal");
-  global11->InitializeInverse(slist); 
+  global11->set_inverse_parameters(slist); 
 
   Teuchos::RCP<TreeOperator> pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
   pc->SetOperatorBlock(0, 0, op00->global_operator());
@@ -203,8 +203,8 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   Teuchos::ParameterList solver_list;
   solver_list.set("preconditioning method", "block diagonal");
-  pc->InitializeInverse(solver_list);
-  pc->UpdateInverse();
+  pc->set_inverse_parameters(solver_list);
+  pc->InitializeInverse();
   pc->ComputeInverse();
 
   // Assemble global matrix for tesing purposes
@@ -221,7 +221,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // directly call the factory.
   solver_list.setParameters(plist.sublist("solvers").sublist("GMRES"));
   auto solver = AmanziSolvers::createIterativeMethod(solver_list, op, pc);
-  solver->UpdateInverse();
+  solver->InitializeInverse();
   solver->ComputeInverse();
   
   // -- copy right-hand sides inside two operators to the global rhs.

@@ -342,8 +342,8 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
         dispersion_preconditioner, *preconditioner_list_,
         dispersion_solver, *linear_solver_list_, true);
-    op->InitializeInverse(inv_list);
-    op->UpdateInverse();
+    op->set_inverse_parameters(inv_list);
+    op->InitializeInverse();
 
     const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);

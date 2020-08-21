@@ -37,7 +37,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
     set_schema_string("FACE+CELL Schur to FACE");
   }
 
-  virtual void UpdateInverse() override;
+  virtual void InitializeInverse() override;
   virtual Teuchos::RCP<Operator> Clone() const override;
 
   // Special AssembleMatrix required to deal with schur complement

@@ -189,20 +189,17 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // versions that make it easier to deal with Amanzi input spec format
-  void InitializeInverse(const std::string& prec_name,
+  void set_inverse_parameters(const std::string& prec_name,
                          const Teuchos::ParameterList& plist);
-  void InitializeInverse(const std::string& prec_name,
+  void set_inverse_parameters(const std::string& prec_name,
                          const Teuchos::ParameterList& prec_list,
                          const std::string& iter_name,
                          const Teuchos::ParameterList& iter_list,
                          bool make_one_iteration=true);
 
-  // versions that make it easier to deal with ATS input spec format
-  void InitializeInverse(bool make_one_iteration=true);
-
-  // -- preferred methods -- three stages for init, update, and compute.
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override;
-  virtual void UpdateInverse() override;
+  // -- preferred methods -- set_parameters, initialize, compute
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
+  virtual void InitializeInverse() override;
   virtual void ComputeInverse() override;
       
   // symbolic assembly:

@@ -30,8 +30,8 @@ class Matrix {
 
   virtual int Apply(const Vector& x, Vector& y) const = 0;
 
-  virtual void InitializeInverse(Teuchos::ParameterList& inv_list) = 0;
-  virtual void UpdateInverse() = 0;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& inv_list) = 0;
+  virtual void InitializeInverse() = 0;
   virtual void ComputeInverse() = 0;
   virtual int ApplyInverse(const Vector& y, Vector& x) const = 0;
   

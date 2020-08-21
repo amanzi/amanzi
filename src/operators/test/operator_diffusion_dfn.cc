@@ -145,8 +145,8 @@ void RunTest(int icase, double gravity) {
   op->ApplyBCs(true, true, true);
     
   // create preconditoner
-  global_op->InitializeInverse("Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();

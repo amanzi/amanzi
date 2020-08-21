@@ -151,8 +151,8 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();
@@ -294,8 +294,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();

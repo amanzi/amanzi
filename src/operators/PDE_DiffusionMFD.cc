@@ -1414,8 +1414,8 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     if (plist_.sublist("consistent faces").isSublist("linear solver")) {
       lin_solver.setParameters(plist_.sublist("consistent faces").sublist("linear solver"));
     }
-    consistent_face_op_->InitializeInverse(lin_solver);
-    consistent_face_op_->UpdateInverse();
+    consistent_face_op_->set_inverse_parameters(lin_solver);
+    consistent_face_op_->InitializeInverse();
   }
 
   // calculate the rhs, given by y_f - Afc * x_c

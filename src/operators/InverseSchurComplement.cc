@@ -17,21 +17,21 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 void
-InverseSchurComplement::InitializeInverse(Teuchos::ParameterList& plist)
+InverseSchurComplement::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   std::string method_name = plist.get<std::string>("preconditioning method");
   solver_ = createAssembledMethod<>(method_name, plist);
 }
 
 void
-InverseSchurComplement::UpdateInverse()
+InverseSchurComplement::InitializeInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
-  AMANZI_ASSERT(solver_.get()); // InitializeInverse was called
+  AMANZI_ASSERT(solver_.get()); // set_inverse_parameters was called
   solver_->set_matrix(Teuchos::null);
   h_->SymbolicAssembleMatrix();
   solver_->set_matrix(h_->A());
-  solver_->UpdateInverse();
+  solver_->InitializeInverse();
 }
 
 void

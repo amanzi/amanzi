@@ -118,8 +118,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   op->ApplyBCs(true, true, true);
 
   // create preconditioner using the base operator class
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // solve the problem
@@ -245,8 +245,8 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
   slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  global_op->InitializeInverse(slist);
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters(slist);
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
@@ -438,8 +438,8 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
   slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  global_op->InitializeInverse(slist);
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters(slist);
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();

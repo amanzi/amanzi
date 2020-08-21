@@ -40,9 +40,9 @@ class InverseAssembled :
       Inverse<Operator,Assembler,Vector,VectorSpace>()
   {}
 
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual void UpdateInverse() override final;
+  virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
   virtual int ApplyInverse(const Vector& X, Vector& Y) const override final;
 

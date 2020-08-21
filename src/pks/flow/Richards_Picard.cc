@@ -57,7 +57,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);
   AmanziSolvers::setMakeOneIterationCriteria(lin_solve_list);
   auto solver = AmanziSolvers::createIterativeMethod(lin_solve_list, op_preconditioner_);
-  solver->UpdateInverse();
+  solver->InitializeInverse();
   
   Teuchos::ParameterList& tmp_list = plist.sublist("picard parameters");
   int max_itrs_nonlinear = tmp_list.get<int>("maximum number of iterations", 400);

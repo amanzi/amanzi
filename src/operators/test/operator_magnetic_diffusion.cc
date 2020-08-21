@@ -176,8 +176,8 @@ void MagneticDiffusion2D(double dt, double tend,
     op_mag->ApplyBCs(true, true, true);
     op_acc->ApplyBCs();
 
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
@@ -438,8 +438,8 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     op_mag->ApplyBCs(true, true, true);
 
     // Solve the problem.
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();

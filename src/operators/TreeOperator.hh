@@ -75,13 +75,15 @@ class TreeOperator {
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
-  void InitializeInverse(const std::string& prec_name,
+  void set_inverse_parameters(const std::string& prec_name,
                          const Teuchos::ParameterList& plist);
-  void InitializeInverse(Teuchos::ParameterList& plist) {
+  void set_inverse_parameters(Teuchos::ParameterList& plist) {
     inv_plist_ = plist;
     inited_ = true;
+    updated_ = false;
+    computed_ = false;
   }
-  void UpdateInverse();
+  void InitializeInverse();
   void ComputeInverse();
 
   // Inverse diagnostics... these may change
@@ -133,8 +135,7 @@ class TreeOperator {
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;
   Teuchos::ParameterList inv_plist_;
-  bool inited_;
-
+  bool inited_, updated_, computed_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 
@@ -164,9 +165,9 @@ class TreeOperator_BlockPreconditioner {
   int ApplyInverse(const TreeVector& X, TreeVector& Y) const {
     return op_.ApplyInverseBlockDiagonal_(X,Y);
   }
-  void UpdateInverse() {
+  void InitializeInverse() {
     for (int n=0; n!=op_.tvs_->size(); ++n) {
-      op_.blocks_[n][n]->UpdateInverse();
+      op_.blocks_[n][n]->InitializeInverse();
     }
   }
   void ComputeInverse() {

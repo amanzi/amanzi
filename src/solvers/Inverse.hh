@@ -21,10 +21,10 @@ Developer notes:
 Matrix takes a four-stage approach, following the more modern Trilinos
 packages (init(), update(), compute(), apply()):
 
-- InitializeInverse() processes the ParameterList, parsing options.
+- set_inverse_parameters() processes the ParameterList, parsing options.
 
-- UpdateInverse() implies that the symbolic structure is now known.  Changes to
-  symbolic structure require calling UpdateInverse() again.  All work that can
+- InitializeInverse() implies that the symbolic structure is now known.  Changes to
+  symbolic structure require calling InitializeInverse() again.  All work that can
   leverage this, e.g. allocation of work space, etc, can now be done.
 
 - ComputeInverse() requires that values in the operator have now been set.
@@ -82,8 +82,8 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   int Apply(const Vector& x, Vector& y) const {
     return m_->Apply(x,y);
   }
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) = 0;
-  virtual void UpdateInverse() = 0;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) = 0;
+  virtual void InitializeInverse() = 0;
   virtual void ComputeInverse() = 0;
 
   virtual int ApplyInverse(const Vector& X, Vector& Y) const = 0;

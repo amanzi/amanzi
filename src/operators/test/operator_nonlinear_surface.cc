@@ -194,8 +194,8 @@ void RunTest(std::string op_list_name) {
     op.ApplyBCs(true, true, true);
     
     // create preconditoner
-    global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
-    global_op->UpdateInverse();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     // Test SPD properties of the matrix and preconditioner.

@@ -120,9 +120,9 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
           "PCG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.

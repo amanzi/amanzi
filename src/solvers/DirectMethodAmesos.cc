@@ -29,7 +29,7 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos::InitializeInverse(Teuchos::ParameterList& plist)
+void DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
@@ -41,7 +41,7 @@ void DirectMethodAmesos::InitializeInverse(Teuchos::ParameterList& plist)
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "InitializeInverse()" << std::endl;
+    *vo_->os() << "set_inverse_parameters()" << std::endl;
   
   inited_ = true;
 }
@@ -50,10 +50,10 @@ void DirectMethodAmesos::InitializeInverse(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Update sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos::UpdateInverse() {
+void DirectMethodAmesos::InitializeInverse() {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "UpdateInverse()" << std::endl;
+    *vo_->os() << "InitializeInverse()" << std::endl;
 
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());

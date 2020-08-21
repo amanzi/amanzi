@@ -31,7 +31,7 @@ int PreconditionerIfpack::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerIfpack::InitializeInverse(Teuchos::ParameterList& plist)
+void PreconditionerIfpack::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
@@ -50,7 +50,7 @@ void PreconditionerIfpack::ComputeInverse()
 /* ******************************************************************
  * Rebuild the preconditioner using the given matrix A.
  ****************************************************************** */
-void PreconditionerIfpack::UpdateInverse()
+void PreconditionerIfpack::InitializeInverse()
 {
   AMANZI_ASSERT(initialized_);
   AMANZI_ASSERT(h_.get());

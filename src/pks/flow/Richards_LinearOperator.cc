@@ -50,7 +50,7 @@ void Richards_PK::SolveFullySaturatedProblem(
   Teuchos::ParameterList plist = linear_operator_list_->sublist(solver_name);
   AmanziSolvers::setMakeOneIterationCriteria(plist);
   auto solver = AmanziSolvers::createIterativeMethod(plist, op_matrix_, op_preconditioner_);
-  solver->UpdateInverse();
+  solver->InitializeInverse();
   solver->ComputeInverse();
 
   CompositeVector& rhs = *op_matrix_->rhs();
@@ -133,7 +133,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // solve non-symmetric problem
   Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name_constraint_);
   auto solver = AmanziSolvers::createIterativeMethod(lin_op_list, op_matrix_, op_preconditioner_);
-  solver->UpdateInverse();
+  solver->InitializeInverse();
   solver->ComputeInverse();
 
   CompositeVector& rhs = *op_preconditioner_->rhs();

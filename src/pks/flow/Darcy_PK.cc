@@ -356,8 +356,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- preconditioner. There is no need to enhance it for Darcy
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
-  op_->InitializeInverse(name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
-  op_->UpdateInverse();
+  op_->set_inverse_parameters(name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
+  op_->InitializeInverse();
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.

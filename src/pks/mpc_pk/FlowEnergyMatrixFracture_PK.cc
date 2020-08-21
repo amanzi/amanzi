@@ -396,8 +396,8 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   auto block_ids = std::make_pair(2, block_indices);
 
   op_tree_pc_->set_coloring(2, block_indices);
-  op_tree_pc_->InitializeInverse(pc_list);
-  op_tree_pc_->UpdateInverse();
+  op_tree_pc_->set_inverse_parameters(pc_list);
+  op_tree_pc_->InitializeInverse();
   op_tree_pc_->ComputeInverse();
 }
 

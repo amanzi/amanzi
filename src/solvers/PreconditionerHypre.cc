@@ -38,7 +38,7 @@ int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 /* ******************************************************************
 * Initialize the preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitializeInverse(Teuchos::ParameterList& list)
+void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 {
   plist_ = list;
 
@@ -230,7 +230,7 @@ void PreconditionerHypre::InitEuclid_()
 }
 
 
-void PreconditionerHypre::UpdateInverse()
+void PreconditionerHypre::InitializeInverse()
 {
   funcs_.clear();
   std::string method_name = plist_.get<std::string>("method");

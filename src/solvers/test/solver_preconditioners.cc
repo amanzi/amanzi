@@ -68,9 +68,9 @@ inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::P
   plist.set("error tolerance", 1.e-12);
   plist.set("maximum number of iterations", 200);
   auto inv = Teuchos::rcp(new IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::Preconditioner,Epetra_Vector,Epetra_Map>());
-  inv->InitializeInverse(plist);
+  inv->set_inverse_parameters(plist);
   inv->set_matrices(m, pc);
-  inv->UpdateInverse();
+  inv->InitializeInverse();
   inv->ComputeInverse();
   return inv;
 }

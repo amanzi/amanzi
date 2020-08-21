@@ -279,8 +279,8 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   pc_list.set("preconditioning method", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
   pc_list.set("iterative method", "gmres");
-  op->global_operator()->InitializeInverse(pc_list);
-  op->global_operator()->UpdateInverse();
+  op->global_operator()->set_inverse_parameters(pc_list);
+  op->global_operator()->InitializeInverse();
   op->global_operator()->ComputeInverse();
 
   if (write_matrix) {

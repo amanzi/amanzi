@@ -72,7 +72,6 @@ add_amanzi_library(solvers
 		   LINK_LIBS data_structures output whetstone atk
                              ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
 
-
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
 

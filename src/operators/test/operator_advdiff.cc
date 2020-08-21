@@ -183,9 +183,9 @@ void AdvectionDiffusion2D(int nx, double* error)
   op_adv->UpdateMatrices(u.ptr());
   op_adv->ApplyBCs(false, true, false);
 
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
           "AztecOO CG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();

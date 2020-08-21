@@ -165,8 +165,8 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
-  op_preconditioner_->InitializeInverse(slist);
-  op_preconditioner_->UpdateInverse();
+  op_preconditioner_->set_inverse_parameters(slist);
+  op_preconditioner_->InitializeInverse();
   
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");

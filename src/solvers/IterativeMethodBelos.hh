@@ -46,7 +46,7 @@ class IterativeMethodBelos :
   IterativeMethodBelos() :
       InvIt() {}
 
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final;
 
  protected:
@@ -80,10 +80,10 @@ template<class Matrix,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::InitializeInverse(
+void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
     Teuchos::ParameterList& plist)
 {
-  InvIt::InitializeInverse(plist);
+  InvIt::set_inverse_parameters(plist);
 
   belos_list_ = Teuchos::rcp(new Teuchos::ParameterList());
   belos_list_->set("Num Blocks", krylov_dim_);
@@ -128,7 +128,7 @@ IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
   typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> > LinearProblem;
   typedef Belos::PseudoBlockGmresSolMgr<double,Belos::MultiVec<double>,Belos::Operator<double> > GmresSolver;
 
-  AMANZI_ASSERT(belos_list_.get()); // InitializeInverse() called
+  AMANZI_ASSERT(belos_list_.get()); // set_inverse_parameters() called
   AMANZI_ASSERT(m_.get()); // set_matrices() called
 
   // NOTE: this is not efficiently implemented and should get fixed.  The

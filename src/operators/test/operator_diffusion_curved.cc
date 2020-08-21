@@ -113,8 +113,8 @@ void RunTestDiffusionCurved() {
   Teuchos::RCP<Operator> global_op = op->global_operator();
 
   // create a preconditoner using the global matrix
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // Test SPD properties of the preconditioner.
@@ -122,9 +122,9 @@ void RunTestDiffusionCurved() {
   ver.CheckPreconditionerSPD();
 
   // create a preconditoner using the global matrix
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
           "PCG", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
   
   CompositeVector rhs = *global_op->rhs();

@@ -29,7 +29,7 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos2::InitializeInverse(Teuchos::ParameterList& plist)
+void DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
@@ -48,7 +48,7 @@ void DirectMethodAmesos2::InitializeInverse(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Update sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos2::UpdateInverse() {
+void DirectMethodAmesos2::InitializeInverse() {
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
 

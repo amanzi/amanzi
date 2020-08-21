@@ -217,8 +217,8 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
 								ls_name, *linear_operator_list_,
 								true);
-  op_tree_matrix_->InitializeInverse(inv_list);
-  op_tree_matrix_->UpdateInverse();
+  op_tree_matrix_->set_inverse_parameters(inv_list);
+  op_tree_matrix_->InitializeInverse();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);

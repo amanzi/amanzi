@@ -292,12 +292,12 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_elas_->ApplyBCs(true, true, true);
 
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
-  op_preconditioner_elas_->global_operator()->InitializeInverse(pc_name, *preconditioner_list_);
+  op_preconditioner_elas_->global_operator()->set_inverse_parameters(pc_name, *preconditioner_list_);
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
   vol.PutScalar(1.0 / mu);
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
-  op_mass_->global_operator()->InitializeInverse("Diagonal", *preconditioner_list_);
+  op_mass_->global_operator()->set_inverse_parameters("Diagonal", *preconditioner_list_);
 
   // -- generic linear solver for most cases
   solver_name_ = ti_list_->get<std::string>("linear solver");
@@ -308,7 +308,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     inv_list.setParameters(linear_solver_list_->sublist(tmp_solver));
   }
-  op_preconditioner_->InitializeInverse(inv_list);
+  op_preconditioner_->set_inverse_parameters(inv_list);
 }
 
 

@@ -180,8 +180,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   op_curlcurl->ApplyBCs(true, true, true);
   global_op->UpdateRHS(source, false);
 
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
@@ -190,8 +190,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   ver.CheckPreconditionerSPD(1e-12, true, true);
 
   // re init with a solver...
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"), "default", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "default", plist.sublist("solvers"));
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
   
   CompositeVector& rhs = *global_op->rhs();

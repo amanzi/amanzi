@@ -48,7 +48,7 @@ int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) co
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerML::InitializeInverse(Teuchos::ParameterList& list)
+void PreconditionerML::set_inverse_parameters(Teuchos::ParameterList& list)
 {
   list_ = list;
   list_.remove("verbose object", false); // note, ML validates parameter lists...
@@ -62,7 +62,7 @@ void PreconditionerML::InitializeInverse(Teuchos::ParameterList& list)
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerML::UpdateInverse()
+void PreconditionerML::InitializeInverse()
 {
   AMANZI_ASSERT(initialized_);
   AMANZI_ASSERT(h_.get());

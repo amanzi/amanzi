@@ -37,8 +37,8 @@ namespace AmanziSolvers {
 
 class PreconditionerDiagonal : public Preconditioner {
  public:
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final {};
-  virtual void UpdateInverse() override final {}
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final {};
+  virtual void InitializeInverse() override final {}
   virtual void ComputeInverse() override final {
     AMANZI_ASSERT(h_.get());
     diagonal_ = Teuchos::rcp(new Epetra_Vector(h_->DomainMap()));

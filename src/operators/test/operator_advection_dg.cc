@@ -262,9 +262,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
-  global_op->InitializeInverse("Hypre AMG", plist.sublist("preconditioners"),
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
           "GMRES", plist.sublist("solvers"));
-  global_op->UpdateInverse();
+  global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();

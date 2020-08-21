@@ -24,9 +24,9 @@ class InverseSchurComplement :
  public:
   InverseSchurComplement() {}
 
-  virtual void InitializeInverse(Teuchos::ParameterList& plist) override final;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual void UpdateInverse() override final;
+  virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
   virtual int ApplyInverse(const CompositeVector& y, CompositeVector& x) const override final;
 
