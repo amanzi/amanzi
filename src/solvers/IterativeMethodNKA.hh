@@ -95,6 +95,7 @@ class IterativeMethodNKA :
   using InvIt::krylov_dim_;
   using InvIt::inited_;
   using InvIt::criteria_;
+  using InvIt::rnorm0_;
 
   Teuchos::RCP<NKA_Base<Vector,VectorSpace> > nka_;
   int nka_dim_;
@@ -130,16 +131,15 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
   AMANZI_ASSERT(!ierr);
   r->Update(1.0, f, -1.0);
 
-  double rnorm0;
-  r->Norm2(&rnorm0);
-  residual_ = rnorm0;
+  r->Norm2(&rnorm0_);
+  residual_ = rnorm0_;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
   }
 
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
-    ierr = this->CheckConvergence_(rnorm0, fnorm);
+    ierr = this->CheckConvergence_(rnorm0_, fnorm);
     if (ierr) return ierr;
   }
 

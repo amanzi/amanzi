@@ -78,6 +78,7 @@ class IterativeMethodPCG :
   using InvIt::returned_code_;
   using InvIt::CheckConvergence_;
   using InvIt::inited_;
+  using InvIt::rnorm0_;
 
 };
 
@@ -116,18 +117,17 @@ int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
 
   m_->Apply(x, r);  // r = f - M * x
   r.Update(1.0, f, -1.0);
-  double rnorm0;
-  r.Norm2(&rnorm0);
-  residual_ = rnorm0;
+  r.Norm2(&rnorm0_);
+  residual_ = rnorm0_;
 
   // Ignore all criteria if one iteration is enforced.
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
-    int ierr = CheckConvergence_(rnorm0, fnorm);
+    int ierr = CheckConvergence_(rnorm0_, fnorm);
     if (ierr != 0) return ierr;
   }
 
   // rare case that can happen in practise
-  if (rnorm0 == 0.0) {
+  if (rnorm0_ == 0.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
     return criteria;  // Convergence for all criteria

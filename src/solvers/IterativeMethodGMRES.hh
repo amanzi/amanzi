@@ -110,12 +110,12 @@ class IterativeMethodGMRES :
   using InvIt::CheckConvergence_;
   using InvIt::krylov_dim_;
   using InvIt::inited_;
+  using InvIt::rnorm0_;
 
   mutable std::vector<Teuchos::RCP<Vector> > v_;
   mutable WhetStone::DenseMatrix Hu_;  // upper Hessenberg matrix
 
-  mutable double rnorm0_, fnorm_;
-  
+  mutable double fnorm_;
   mutable int num_itrs_inner_;
   int controller_start_, controller_end_;
   mutable double controller_[2];

@@ -99,7 +99,7 @@ class InverseIterativeMethod :
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
   mutable int num_itrs_, returned_code_;
-  mutable double residual_, fnorm_, rnorm0_;
+  mutable double residual_, rnorm0_;
   bool inited_;
 
   using Inverse<Matrix,Preconditioner,Vector,VectorSpace>::m_;
