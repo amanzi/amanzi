@@ -131,7 +131,6 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     dB_dy1_->AddAccumulationTerm(*dB_dy1_v, h, "cell", false);
   }
 
-  preconditioner_->ComputeInverse();
 }
 
 

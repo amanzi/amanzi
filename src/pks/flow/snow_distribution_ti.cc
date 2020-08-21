@@ -187,7 +187,6 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   preconditioner_acc_->AddAccumulationTerm(cv_times_10, "cell");
 
   preconditioner_diff_->ApplyBCs(true, true, true);
-  preconditioner_->ComputeInverse();
 };
 
 double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,

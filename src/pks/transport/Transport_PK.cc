@@ -1072,7 +1072,6 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         }
         op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
         op1->ApplyBCs(true, true, true);
-        op->ComputeInverse();
 
       } else {
         Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
@@ -1157,7 +1156,6 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         if ((*ws_)[0][c] == 1.0) fac1[0][c] = 1.0 * (*mol_dens_)[0][c];  // hack so far
       }
       op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
-      op->ComputeInverse();
   
       CompositeVector& rhs = *op->rhs();
       int ierr = op->ApplyInverse(rhs, sol);

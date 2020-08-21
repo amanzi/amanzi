@@ -239,10 +239,18 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  mfd_pc_plist.set("inverse", plist_->sublist("inverse"));
-  // old style... deprecate me!
-  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
-  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
+  //    this needs to get some better logic now that symbolic doesn't use this. --etc
+  precon_used_ = plist_->isSublist("preconditioner") ||
+    plist_->isSublist("inverse") ||
+    plist_->isSublist("linear solver");
+
+  if (precon_used_) {
+    auto& inv_list = mfd_pc_plist.sublist("inverse");
+    inv_list.setParameters(plist_->sublist("inverse"));
+    // old style... deprecate me!
+    inv_list.setParameters(plist_->sublist("preconditioner"));
+    inv_list.setParameters(plist_->sublist("linear solver"));
+  }
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
@@ -286,8 +294,6 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
   
-  //    symbolic assemble
-
   // primary variable
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted()
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);

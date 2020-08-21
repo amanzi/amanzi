@@ -160,7 +160,6 @@ public:
   // control switches
   Operators::UpwindMethod upwind_method_;
 
-  bool precon_used_;
   double dt_factor_;
   double my_next_time_;
 

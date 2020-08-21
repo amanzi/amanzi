@@ -366,7 +366,6 @@ protected:
   bool is_source_term_;
   bool source_term_is_differentiable_;
   bool explicit_source_;
-  bool precon_used_;
   std::string clobber_policy_;
   bool clobber_boundary_flux_dir_;
   

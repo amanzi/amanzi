@@ -208,7 +208,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
-  preconditioner_->ComputeInverse();
 
   // increment the iterator count
   iter_++;

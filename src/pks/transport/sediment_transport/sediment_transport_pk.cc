@@ -932,7 +932,6 @@ void SedimentTransport_PK :: Advance_Diffusion(double t_old, double t_new) {
       op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
       op1->ApplyBCs(true, true, true);
-      op->ComputeInverse();
   
       CompositeVector& rhs = *op->rhs();
       int ierr = op->ApplyInverse(rhs, sol);

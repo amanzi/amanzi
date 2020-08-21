@@ -351,7 +351,6 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     db_->WriteVector("    dh_dp", dh0_dp.ptr());
   }
 
-  preconditioner_->ComputeInverse();
   /*
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();

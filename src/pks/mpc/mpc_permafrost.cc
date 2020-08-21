@@ -386,7 +386,6 @@ MPCPermafrost::UpdatePreconditioner(double t,
   sub_pks_[0]->preconditioner()->Rescale(scaling);
   dE_dp_block_->Rescale(scaling);
   
-  preconditioner_->ComputeInverse();
 
   if (dump_) {
     std::stringstream filename;

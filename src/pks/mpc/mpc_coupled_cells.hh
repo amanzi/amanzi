@@ -94,8 +94,6 @@ class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
   Teuchos::RCP<Operators::PDE_Accumulation> dA_dy2_;
   Teuchos::RCP<Operators::PDE_Accumulation> dB_dy1_;
   
-  bool precon_used_;
-
   // cruft for easier global debugging
   Teuchos::RCP<Debugger> db_;
 

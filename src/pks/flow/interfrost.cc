@@ -163,7 +163,6 @@ Interfrost::UpdatePreconditioner(double t,
   
   // -- apply BCs
   preconditioner_diff_->ApplyBCs(true, true, true);
-  preconditioner_->ComputeInverse();      
 }
 
 

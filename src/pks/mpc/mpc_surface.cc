@@ -439,7 +439,6 @@ void MPCSurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     db_->WriteVector("  de_dp", dE_dp.ptr(), false);
 
     // finally assemble the full system, dump if requested, and form the inverse
-    preconditioner_->ComputeInverse();
   }
   update_pcs_++;
 }

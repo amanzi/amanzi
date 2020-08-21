@@ -98,7 +98,6 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   bool modify_predictor_positivity_preserving_;
 
-  bool precon_used_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
   
  private:

@@ -716,7 +716,6 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
     db_->WriteVectors(vnames, vecs, false);
     
-    preconditioner_->ComputeInverse();
   }
 
   if (precon_type_ == PRECON_EWC) {

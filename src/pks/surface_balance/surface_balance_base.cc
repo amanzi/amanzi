@@ -202,7 +202,6 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
       preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0/theta_, "cell", true);
     }
 
-    preconditioner_->ComputeInverse();
   }
 }
 

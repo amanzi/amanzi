@@ -162,10 +162,18 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
-  mfd_pc_plist.set("inverse", plist_->sublist("inverse"));
-  // old style... deprecate me!
-  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
-  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
+  //    this needs to get some better logic now that symbolic doesn't use this. --etc
+  precon_used_ = plist_->isSublist("preconditioner") ||
+    plist_->isSublist("inverse") ||
+    plist_->isSublist("linear solver");
+
+  if (precon_used_) {
+    auto& inv_list = mfd_pc_plist.sublist("inverse");
+    inv_list.setParameters(plist_->sublist("inverse"));
+    // old style... deprecate me!
+    inv_list.setParameters(plist_->sublist("preconditioner"));
+    inv_list.setParameters(plist_->sublist("linear solver"));
+  }
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);

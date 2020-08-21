@@ -206,7 +206,6 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   preconditioner_acc_->AddAccumulationTerm(dwc_dh, "cell");
 
   preconditioner_diff_->ApplyBCs(true, true, true);
-  preconditioner_->ComputeInverse();
 };
 
 

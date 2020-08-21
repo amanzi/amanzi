@@ -50,17 +50,20 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
 
   // Create the preconditioner.
   // -- collect the preconditioners
- 
   precon_ = domain_flow_pk_->preconditioner();
   precon_surf_ = surf_flow_pk_->preconditioner();
+
+  // -- set parameters for an inverse
+  Teuchos::ParameterList inv_list = plist_->sublist("inverse");
+  inv_list.setParameters(plist_->sublist("preconditioner"));
+  inv_list.setParameters(plist_->sublist("linear solver"));
+  precon_->set_inverse_parameters(inv_list);
 
   // -- push the surface local ops into the subsurface global operator
   for (Operators::Operator::op_iterator op = precon_surf_->begin();
        op != precon_surf_->end(); ++op) {
     precon_->OpPushBack(*op);
   }
-
-  // -- reset the symbolic structure of the domain inverse, now that it has a new Op
   
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
@@ -186,9 +189,6 @@ MPCCoupledWater::UpdatePreconditioner(double t,
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
   StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
-  
-  precon_->ComputeInverse();
-  
 }
 
 // -- Modify the predictor.

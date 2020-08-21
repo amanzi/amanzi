@@ -130,7 +130,6 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
 
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
-  preconditioner_->ComputeInverse();
 };
 
 
