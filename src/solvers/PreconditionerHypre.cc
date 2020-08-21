@@ -44,15 +44,6 @@ void PreconditionerHypre::InitializeInverse(Teuchos::ParameterList& list)
 
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
-
-  std::string method_name = list.get<std::string>("method");
-  if (method_name == "boomer amg") InitBoomer_();
-  else if (method_name == "euclid") InitEuclid_();
-  else {
-    Errors::Message msg;
-    msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 void PreconditionerHypre::Init_()
@@ -72,7 +63,7 @@ void PreconditionerHypre::Init_()
 }
   
 void PreconditionerHypre::InitBoomer_()
-{  
+{
   Init_();
 
 #ifdef HAVE_HYPRE
@@ -83,7 +74,7 @@ void PreconditionerHypre::InitBoomer_()
     Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
     Exceptions::amanzi_throw(msg);
   }
-  funcs_.clear();
+    
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
                                                       plist_.get<double>("tolerance", 0.0))));
 
@@ -125,15 +116,8 @@ void PreconditionerHypre::InitBoomer_()
     // Block indices is an array of integers, indicating what unknowns are
     // coarsened as a system.  For now just put in a placeholder.
     block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
-
-    // Must new the index array, as it gets freed by Hypre on cleanup.
-    int* indices = new int[block_indices_->size()];
-    for (int i=0; i!=block_indices_->size(); ++i) {
-      indices[i] = (*block_indices_)[i];
-    }
-
-    funcs_.push_back(
-        Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices)));
+    block_index_function_index_ = funcs_.size();
+    funcs_.push_back(Teuchos::null);
   }
 
   if (plist_.isParameter("number of functions")) {
@@ -248,8 +232,43 @@ void PreconditionerHypre::InitEuclid_()
 
 void PreconditionerHypre::UpdateInverse()
 {
-  // NOTE BELOW
-  // -- pass for now...
+  funcs_.clear();
+  std::string method_name = plist_.get<std::string>("method");
+  if (method_name == "boomer amg") InitBoomer_();
+  else if (method_name == "euclid") InitEuclid_();
+  else {
+    Errors::Message msg;
+    msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*h_));
+
+  // must reset the parameters every time to reset the block index
+  Teuchos::ParameterList hypre_list("Preconditioner List");
+  hypre_list.set("Preconditioner", method_);
+  hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
+  hypre_list.set("SetPreconditioner", true);
+  hypre_list.set("NumFunctions", (int)funcs_.size());
+
+  if (block_indices_.get()) {
+    // must NEW the index array EVERY time, as it gets freed every time by
+    // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
+    //
+    // Note this is not a memory leak -- this gets freed the second time
+    // IfpHypre_::Compute() gets called (for every call but the last) and when
+    // IfpHypre_ gets destroyed (for the last call).
+    int* indices = new int[block_indices_->size()];
+    for (int i=0; i!=block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
+    funcs_[block_index_function_index_] = 
+        Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
+  }
+
+  if (funcs_.size() > 0) hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_.front());
+  IfpHypre_->SetParameters(hypre_list);
+  IfpHypre_->Initialize();
 }
   
 /* ******************************************************************
@@ -258,26 +277,7 @@ void PreconditionerHypre::UpdateInverse()
 void PreconditionerHypre::ComputeInverse()
 {
 #ifdef HAVE_HYPRE
-  if (A_ != A) {
-    // New matrix, must recreate
-  
-    // hypre no longer destroys on compute, so as long as the structure is the
-    // same we are ok to use the same Ifpack object
-    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
-
-    // must reset the paramters every time to reset the block index
-    Teuchos::ParameterList hypre_list("Preconditioner List");
-    hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", (int)funcs_.size());
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", funcs_.data());
-    IfpHypre_->SetParameters(hypre_list);
-    IfpHypre_->Initialize();
-
-    A_ = A;
-  } // see above --etc
-    
+  AMANZI_ASSERT(IfpHypre_.get());
   IfpHypre_->Compute();
 #endif
 }
