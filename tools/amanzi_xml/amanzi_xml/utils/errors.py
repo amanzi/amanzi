@@ -13,4 +13,13 @@ class NonUniqueXMLError(XMLError):
 class NotNativeSpecError(RuntimeError):
     """Error for attempting to read a non-native spec file."""
     pass
-    
+
+
+def deprecated(msg):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            warnings.warn(msg, warnings.DeprecatedWarning)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
