@@ -158,6 +158,7 @@ void Operator::Init()
     if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
        ops_[i]->Init();
   }
+  computed_ = false;
 }
 
 
@@ -194,8 +195,14 @@ void Operator::SymbolicAssembleMatrix()
 void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
                                       int my_block_row, int my_block_col) const
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Symbolic Assembling..." << std::endl;
+
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
 }
@@ -257,7 +264,7 @@ void Operator::AssembleMatrix()
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-  //exit(0);
+  // exit(0);
 }
 
 
@@ -267,8 +274,15 @@ void Operator::AssembleMatrix()
 void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
                               int my_block_row, int my_block_col) const
 {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Assembling block " << my_block_row << "," << my_block_col << std::endl;
+  }
+
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
 }
@@ -416,14 +430,11 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
+  if (!computed_) const_cast<Operator*>(this)->ComputeInverse();
 #if TEST_MAPS
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif  
-  if (!computed_) {
-    Errors::Message msg("Developer error: Operator::ComputeInverse() was not called.\n");
-    Exceptions::amanzi_throw(msg);
-  }    
   AMANZI_ASSERT(preconditioner_.get());
   return preconditioner_->ApplyInverse(X, Y);
 }
