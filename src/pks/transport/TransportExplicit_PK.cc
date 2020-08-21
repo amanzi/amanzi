@@ -336,12 +336,9 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // Create the preconditioner and solver.
     //
-    // Both the previous and current implementation re-create the Ops each
-    // timestep.  Is it necessary to "new" the PDE_Diffusion every timestep?
-    // Effectively this means that everything must be allocated and destroyed
-    // every timestep (local matrices, global matrices/vectors, Krylov vectors,
-    // preconditioner workspace).  --etc
-    //
+    // This implementation re-create the Ops each timestep.  This could be
+    // updated to re-use them, but would require mass matrices to be
+    // recalculated. --etc
     auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
         dispersion_preconditioner, *preconditioner_list_,
         dispersion_solver, *linear_solver_list_, true);

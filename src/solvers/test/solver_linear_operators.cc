@@ -12,7 +12,7 @@
 #include "IterativeMethodPCG.hh"
 #include "IterativeMethodGMRES.hh"
 #include "IterativeMethodNKA.hh"
-// #include "InverseBelosGMRES.hh"
+#include "IterativeMethodBelos.hh"
 #include "DirectMethodAmesos.hh"
 #include "DirectMethodAmesos2.hh"
 
@@ -248,36 +248,39 @@ TEST(NKA_SOLVER) {
   delete comm;
 };
 
-// TEST(BELOS_GMRES_SOLVER) {
-//   std::cout << "\nChecking Belos GMRES solver..." << std::endl;
+TEST(BELOS_GMRES_SOLVER) {
+  std::cout << "\nChecking Belos GMRES solver..." << std::endl;
 
-//   Teuchos::ParameterList plist;
-//   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
-//   vo.set("Verbosity Level", "high");
-//   plist.set<int>("size of Krylov space", 15);
-//   plist.set<double>("error tolerance", 1e-12);
+  Teuchos::ParameterList plist;
+  Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+  vo.set("Verbosity Level", "high");
+  plist.set<int>("size of Krylov space", 15);
+  plist.set<double>("error tolerance", 1e-12);
   
-//   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-//   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
-//   // create the operator
-//   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-//   AmanziSolvers::InverseBelosGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-//   gmres.Init(plist);
+  // create the operator
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  AmanziSolvers::IterativeMethodBelos<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
+  gmres.set_matrices(m, m);
+  gmres.InitializeInverse(plist);
+  gmres.UpdateInverse();
+  gmres.ComputeInverse();
 
-//   // initial guess
-//   Epetra_Vector u(*map);
-//   u[55] = 1.0;
+  // initial guess
+  Epetra_Vector u(*map);
+  u[55] = 1.0;
 
-//   // solve
-//   Epetra_Vector v(*map);
-//   int ierr = gmres.ApplyInverse(u, v);
-//   CHECK(ierr > 0);
+  // solve
+  Epetra_Vector v(*map);
+  int ierr = gmres.ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
-//   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
-//   delete comm;
-// };
+  delete comm;
+};
 
 TEST(AMESOS_SOLVER) {
   std::cout << "\nChecking Amesos solver..." << std::endl;

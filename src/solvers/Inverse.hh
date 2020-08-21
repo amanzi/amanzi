@@ -21,13 +21,13 @@ Developer notes:
 Matrix takes a four-stage approach, following the more modern Trilinos
 packages (init(), update(), compute(), apply()):
 
-- Init() processes the ParameterList, parsing options.
+- InitializeInverse() processes the ParameterList, parsing options.
 
-- Update() implies that the symbolic structure is now known.  Changes to
-  symbolic structure require calling Update() again.  All work that can
+- UpdateInverse() implies that the symbolic structure is now known.  Changes to
+  symbolic structure require calling UpdateInverse() again.  All work that can
   leverage this, e.g. allocation of work space, etc, can now be done.
 
-- Compute() requires that values in the operator have now been set.
+- ComputeInverse() requires that values in the operator have now been set.
   Work such as calculating L and U, etc, can now be done.
 
 - ApplyInverse() accepts vectors and applies the inverse.
