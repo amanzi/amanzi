@@ -76,10 +76,13 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
   // operator for inverse
   Teuchos::ParameterList& acc_plist = plist_->sublist("accumulation preconditioner");
   acc_plist.set("entity kind", "cell");
+  acc_plist.set("inverse", plist_->sublist("inverse"));
+  // old style... deprecate me!
+  acc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
+  acc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
+  
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_plist, mesh_));
   preconditioner_ = preconditioner_acc_->global_operator();
-  preconditioner_->InitializeInverse();
-  preconditioner_->UpdateInverse();
 }
 
 

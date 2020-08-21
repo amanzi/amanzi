@@ -353,8 +353,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // set up sparsity structure
-  preconditioner_->InitializeInverse(plist_->sublist("preconditioner"));
-  preconditioner_->UpdateInverse();
+  preconditioner_->set_inverse_parameters(plist_->sublist("preconditioner"));
 
   // create the EWC delegate
   if (plist_->isSublist("ewc delegate")) {

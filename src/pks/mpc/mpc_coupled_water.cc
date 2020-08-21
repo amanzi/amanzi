@@ -61,7 +61,6 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // -- reset the symbolic structure of the domain inverse, now that it has a new Op
-  precon_->UpdateInverse();
   
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");

@@ -225,8 +225,7 @@ void MPCSurface::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // set up sparsity structure
-  preconditioner_->InitializeInverse(plist_->sublist("preconditioner"));
-  preconditioner_->UpdateInverse();
+  preconditioner_->set_inverse_parameters(plist_->sublist("preconditioner"));
 }
 
 void MPCSurface::Initialize(const Teuchos::Ptr<State>& S) {

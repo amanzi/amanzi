@@ -1029,8 +1029,6 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);
     zero.PutScalar(0.0);
-    op->InitializeInverse();
-    op->UpdateInverse();
   
     // populate the dispersion operator (if any)
     if (flag_dispersion_) {

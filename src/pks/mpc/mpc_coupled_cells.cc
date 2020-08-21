@@ -98,8 +98,7 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // setup and initialize the preconditioner
-  preconditioner_->InitializeInverse(plist_->sublist("preconditioner"));
-  preconditioner_->UpdateInverse();
+  preconditioner_->set_inverse_parameters(plist_->sublist("preconditioner"));
 }
 
 

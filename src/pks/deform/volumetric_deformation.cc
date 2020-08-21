@@ -175,7 +175,7 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
       // // NOTE: this doesn't work because ATS operators are not supported, and
       // // this isn't based on Amanzi::Operators::Operator.  But this code branch
       // // is fairly dead anyway.... --etc
-      // def_matrix_->InitializeInverse();
+      // def_matrix_->set_inverse_parameters();
       
       // // create storage for the nodal deformation
       // S->RequireField(Keys::getKey(domain_,"nodal_dz"), name_)->SetMesh(mesh_)->SetGhosted()

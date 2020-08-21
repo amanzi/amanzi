@@ -899,8 +899,6 @@ void SedimentTransport_PK :: Advance_Diffusion(double t_old, double t_new) {
     zero.PutScalar(0.0);
   
     // instantiate solver
-    op->InitializeInverse();
-    op->UpdateInverse();
 
     S_inter_->GetFieldEvaluator(horiz_mixing_key_)->HasFieldChanged(S_.ptr(),  horiz_mixing_key_);
 

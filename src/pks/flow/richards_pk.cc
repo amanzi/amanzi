@@ -252,6 +252,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     }
   }
 
+  mfd_pc_plist.set("inverse", plist_->sublist("inverse"));
+  // old style... deprecate me!
+  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
+  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
+
   preconditioner_diff_ = opfactory.CreateWithGravity(mfd_pc_plist, mesh_, bc_);
   preconditioner_ = preconditioner_diff_->global_operator();
   
@@ -304,8 +309,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //   matrix_vapor_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   // }
 
-  preconditioner_->InitializeInverse();
-  preconditioner_->UpdateInverse();
   
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);

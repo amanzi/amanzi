@@ -173,8 +173,7 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
     }
 
     // must now re-symbolic assemble the matrix to get the updated surface parts
-    preconditioner_->InitializeInverse(plist_->sublist("preconditioner"));
-    preconditioner_->UpdateInverse();
+    preconditioner_->set_inverse_parameters(plist_->sublist("preconditioner"));
   }
       
   // grab the debuggers

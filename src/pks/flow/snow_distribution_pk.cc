@@ -114,6 +114,11 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
 
   // -- preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
+  mfd_pc_plist.set("inverse", plist_->sublist("inverse"));
+  // old style... deprecate me!
+  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
+  mfd_pc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
+  
   preconditioner_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mfd_pc_plist, mesh_));
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
@@ -126,8 +131,6 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
   // symbolic assemble, get PC
-  preconditioner_->InitializeInverse();
-  preconditioner_->UpdateInverse();
 }
 
 
