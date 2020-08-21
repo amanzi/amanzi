@@ -145,7 +145,7 @@ def surface_rel_perm_one(xml):
             continue
         else:
             if pres_above is not None:
-                surf_rel_perm.append(parameter.DoubleParameter("unfrozen rel pres cutoff pressure [Pa]", pres_above)
+                surf_rel_perm.append(parameter.DoubleParameter("unfrozen rel pres cutoff pressure [Pa]", pres_above))
             
             
             
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print "Converting file: %s"%args.infile
+    print("Converting file: %s", args.infile)
     xml = aio.fromFile(args.infile, True)
     update(xml)
     if args.inplace:
