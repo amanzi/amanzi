@@ -74,20 +74,12 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "pressure");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("pressure", eval);
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   if (!S->HasField("temperature")) {
     *S->RequireField("temperature", "thermal")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "temperature");
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("temperature", eval);
+    AddDefaultPrimaryEvaluator("temperature");
   }
 
   // -- darcy flux
@@ -97,6 +89,8 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
@@ -150,7 +144,8 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // diagonal blocks (0,0) and (2,2) in tree operator must be Darcy PKs
   // one reason is that Darcy_PK combines matrix and preconditioner
   for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT((*Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i])->begin())->name() == "darcy");
+    std::string pk_name = (*Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[i])->begin())->name();
+    AMANZI_ASSERT(pk_name == "darcy" || pk_name == "richards");
   }
 
   // diagonal blocks in the 4x4 tree operator are the FlowEnergy PKs.
@@ -496,10 +491,12 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   // extract enthalpy fields
   S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "enthalpy");
   const auto& H_m = *S_->GetFieldData("enthalpy", "enthalpy")->ViewComponent("cell", true);
+  const auto& T_m = *S_->GetFieldData("temperature")->ViewComponent("cell", true);
   const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 
   S_->GetFieldEvaluator("fracture-enthalpy")->HasFieldChanged(S_.ptr(), "fracture-enthalpy");
   const auto& H_f = *S_->GetFieldData("fracture-enthalpy", "fracture-enthalpy")->ViewComponent("cell", true);
+  const auto& T_f = *S_->GetFieldData("fracture-temperature")->ViewComponent("cell", true);
   const auto& n_l_f = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell", true);
 
   // update coupling terms for advection
@@ -522,15 +519,16 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
     shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
 
     for (int k = 0; k < ncells; ++k) {
-      // since cells are ordered differenty than points, we need a map
       double tmp = flux[0][first + shift] * dir;
 
+      // since we multiply by temperatur, the model for the flux is 
+      // q (\eta H / T) * T for both matrix and preconditioner
       if (tmp > 0) {
         int c1 = cells[k];
-        double factor = H_m[0][c1] * n_l_m[0][c1];
+        double factor = H_m[0][c1] * n_l_m[0][c1] / T_m[0][c1];
         (*values1)[np] = tmp * factor;
       } else {
-        double factor = H_f[0][c] * n_l_f[0][c];
+        double factor = H_f[0][c] * n_l_f[0][c] / T_f[0][c];
         (*values2)[np] = -tmp * factor;
       }
 
@@ -581,6 +579,7 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
   // fracture
   ev_key = "fracture-" + key;
   fd_key = "fracture-prev_" + key;
+  if (!S_->HasField(ev_key)) return;
 
   S_->GetFieldEvaluator(ev_key)->HasFieldChanged(S_.ptr(), passwd);
   {

@@ -99,7 +99,7 @@ TEST(ENERGY_CONVERGENCE) {
   int nmeshes = plist->get<int>("number of meshes", 1);
   std::vector<double> h, error;
 
-  int nx(20);
+  int nx(20), ny(5);
   double dt(0.04);
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
     dt /= 2.0;
@@ -115,16 +115,13 @@ TEST(ENERGY_CONVERGENCE) {
     MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
-    if (n == 0) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10);
-      // mesh = meshfactory.create("test/random_mesh1.exo");
-    } else if (n == 1) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10);
-      // mesh = meshfactory.create("test/random_mesh2.exo");
-    } else if (n == 2) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10);
-      // mesh = meshfactory.create("test/random_mesh3.exo");
-    }
+    // if (n == 0)
+    //   mesh = meshfactory.create("test/random_mesh1.exo");
+    // else if (n == 1)
+    //   mesh = meshfactory.create("test/random_mesh2.exo");
+    // else if (n == 2)
+    //   mesh = meshfactory.create("test/random_mesh3.exo");
+    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, nx, ny);
 
     // create a simple state and populate it
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -152,7 +149,7 @@ TEST(ENERGY_CONVERGENCE) {
     // constant time stepping 
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
-    while (t < t1) {
+    while (std::fabs(t - t1) > 1e-6) {
       // swap conserved quntity (no backup, we check dt_next instead)
       const CompositeVector& e = *S->GetFieldData("energy");
       CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
@@ -165,7 +162,8 @@ TEST(ENERGY_CONVERGENCE) {
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      bool failed = EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      CHECK(!failed);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
@@ -199,7 +197,7 @@ TEST(ENERGY_CONVERGENCE) {
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
-  CHECK(l2_rate > 0.81);
+  CHECK(l2_rate > 0.85);
 }
 
 

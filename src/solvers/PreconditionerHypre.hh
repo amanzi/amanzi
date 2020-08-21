@@ -150,6 +150,7 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   
   mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
+  Teuchos::RCP<Epetra_RowMatrix> A_;
 };
 
 }  // namespace AmanziSolvers

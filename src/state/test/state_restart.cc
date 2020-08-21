@@ -206,7 +206,7 @@ SUITE(RESTART) {
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     // now populate the parameter list...
-    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list) );
+    auto S0 = Teuchos::rcp(new Amanzi::State(state_list) );
 
     S0->RegisterDomainMesh(Mesh);
 
@@ -218,11 +218,11 @@ SUITE(RESTART) {
     S0->set_time(1.02);
 
     Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
-    Teuchos::Ptr<Amanzi::Checkpoint> R = Teuchos::ptr( new Amanzi::Checkpoint(checkpoint_list, comm));
+    auto R = Teuchos::rcp( new Amanzi::Checkpoint(checkpoint_list, comm));
 
-    WriteCheckpoint(R, S0, 0.0);
+    WriteCheckpoint(*R, *S0, 0.0);
 
-    Teuchos::Ptr<Amanzi::State> S1 = Teuchos::ptr(new Amanzi::State(state_list) );
+    auto S1 = Teuchos::rcp(new Amanzi::State(state_list) );
     S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S1->Setup();
@@ -232,7 +232,7 @@ SUITE(RESTART) {
     Epetra_MultiVector& s1p = *S1->GetFieldData("celldata", "state")->ViewComponent("cell", false); 
     s1p.Random();
 
-    ReadCheckpoint(comm, S1, "restartdump00000.h5");
+    ReadCheckpoint(comm, *S1, "restartdump00000.h5");
 
     Epetra_MultiVector& s0p = *S0->GetFieldData("celldata", "state")->ViewComponent("cell", false);     
 

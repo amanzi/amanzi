@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "Key.hh"
 #include "CommonDefs.hh"
 #include "RemapUtils.hh"
 
@@ -38,10 +39,10 @@ void Richards_PK::FunctionalResidual(
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  if (S_->HasFieldEvaluator("viscosity_liquid")) {
-    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "flow");
+  if (S_->HasFieldEvaluator(viscosity_liquid_key_)) {
+    S_->GetFieldEvaluator(viscosity_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
   }
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   // refresh data
   // -- BCs and source terms
@@ -81,9 +82,9 @@ void Richards_PK::FunctionalResidual(
   S_->GetFieldEvaluator(porosity_key_)->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi_c = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
-  S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
-  const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
+  S_->GetFieldEvaluator(water_content_key_)->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& wc_c = *S_->GetFieldData(water_content_key_)->ViewComponent("cell");
+  const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData(prev_water_content_key_)->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
     double wc1 = wc_c[0][c];
@@ -173,6 +174,8 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapor_pres,
                                                  Teuchos::RCP<CompositeVector>& kvapor_temp)
 {
+  AMANZI_ASSERT(domain_ == "domain");
+
   S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
 
@@ -300,7 +303,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 {
   double t_old = tp - dtp;
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -339,15 +342,16 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // add time derivative
   if (dtp > 0.0) {
-    S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
+    std::string der_name = Keys::getDerivKey(water_content_key_, pressure_key_);
+    S_->GetFieldEvaluator(water_content_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
+    CompositeVector& dwc_dp = *S_->GetFieldData(der_name, water_content_key_);
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  
     // estimate CNLS limiters
     if (algebraic_water_content_balance_) {
-      const CompositeVector& wc = *S_->GetFieldData("water_content");
-      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae->tol_solver());
+      const CompositeVector& wc = *S_->GetFieldData(water_content_key_);
+      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae_->tol_solver());
     }
   }
 

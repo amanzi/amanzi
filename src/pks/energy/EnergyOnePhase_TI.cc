@@ -72,7 +72,6 @@ void EnergyOnePhase_PK::FunctionalResidual(
   tmp.Multiply(1.0, tmp, n_l, 0.0);
 
   CompositeVector g_adv(g->Data()->Map());
-  // op_advection_->Apply(tmp, g_adv);
   op_advection_->ComputeNegativeResidual(tmp, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
@@ -114,7 +113,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
     der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
     S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
-    auto dHdT = S_->GetFieldData(der_name, enthalpy_key_);
+    auto dHdT = Teuchos::rcp(new CompositeVector(*S_->GetFieldData(der_name, enthalpy_key_)));
 
     const CompositeVector& n_l = *S_->GetFieldData(mol_density_liquid_key_);
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);

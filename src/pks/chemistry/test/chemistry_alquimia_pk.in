@@ -63,7 +63,7 @@ CHEMISTRY
     Fe+++
   /
 
-  GAS_SPECIES
+  PASSIVE_GAS_SPECIES
     CO2(g)
   /
 
@@ -80,7 +80,7 @@ CHEMISTRY
 
   GENERAL_REACTION
     REACTION Tritium <-> 
-    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
+    FORWARD_RATE 1.78577e-09
     BACKWARD_RATE 0.d0
   /
 

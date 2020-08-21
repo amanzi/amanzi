@@ -43,7 +43,7 @@ class Darcy_PK : public Flow_PK {
            Teuchos::RCP<State> S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  ~Darcy_PK();
+  ~Darcy_PK() {};
 
   // methods required for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
@@ -129,9 +129,6 @@ class Darcy_PK : public Flow_PK {
   std::string solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
-
-  bool flow_on_manifold_;  // true for the DFN model
-  bool coupled_to_matrix_, coupled_to_fracture_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

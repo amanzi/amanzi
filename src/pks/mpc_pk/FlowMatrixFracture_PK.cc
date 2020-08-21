@@ -12,7 +12,6 @@
   Process kernel that couples Darcy flow in matrix and fracture network.
 */
 
-#include "Darcy_PK.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -66,6 +65,8 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   // -- darcy flux
@@ -75,12 +76,16 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
   if (!S->HasField("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
+
+    AddDefaultPrimaryEvaluator("fracture-darcy_flux");
   }
 
   // Require additional fields and evaluators
@@ -276,7 +281,8 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
   
   // diagonal blocks in tree operator must be Darcy PKs
   for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy");
+    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy" || 
+                  sub_pks_[i]->name() == "richards");
   }
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);

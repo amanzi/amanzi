@@ -137,11 +137,11 @@ class Field {
   virtual void Initialize(Teuchos::ParameterList& plist) = 0;
 
   // Initialize from a checkpoint file
-  virtual bool ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file) { return true;}
+  virtual bool ReadCheckpoint(HDF5_MPI& file) { return true; }
 
   // write data to the visualization file
-  virtual void WriteVis(const Teuchos::Ptr<Visualization>& vis) = 0;
-  virtual void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) = 0;
+  virtual void WriteVis(Visualization& vis) = 0;
+  virtual void WriteCheckpoint(Checkpoint& chk) = 0;
 
   // Compute from a function, if implemented by a subclass
   virtual void Compute(double time) {};

@@ -89,6 +89,7 @@ set(flow_inc_files
   WRM.hh
   WRM_BrooksCorey.hh
   WRM_fake.hh
+  WRM_saturated.hh
   WRM_vanGenuchten.hh
   WRMEvaluator.hh
   WRMFactory.hh
@@ -234,6 +235,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_darcy_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                     NPROCS 4)
+
+    add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
 

@@ -1755,7 +1755,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       in_file << "  /\n";
     }
     if (!gases.str().empty()) {
-      in_file << "  GAS_SPECIES\n";
+      in_file << "  PASSIVE_GAS_SPECIES\n";
       in_file << gases.str();
       in_file << "  /\n";
     }

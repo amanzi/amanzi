@@ -63,7 +63,7 @@ CHEMISTRY
     Fe+++
   /
 
-  GAS_SPECIES
+  PASSIVE_GAS_SPECIES
     CO2(g)
   /
 
