@@ -348,7 +348,7 @@ createInverse(Teuchos::ParameterList& inv_list,
          inv_list.get<std::string>("iterative method")+
          "\" requires a preconditioner, but no parameter \"preconditioning method\" was supplied: using \"identity\"");
   } else {
-    Errors::Message msg("InverseFactory (Assembler): at least one of \"direct method\" or \"iterative method\" must be supplied.");
+    Errors::Message msg("InverseFactory (Assembler): at least one of \"direct method\", \"iterative method\", or \"preconditioning method\" must be supplied.");
     Exceptions::amanzi_throw(msg);
   }
 
