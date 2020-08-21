@@ -95,7 +95,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
-  AMANZI_ASSERT(false);
+  // AMANZI_ASSERT(false);
 }
 
 

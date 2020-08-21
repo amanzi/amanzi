@@ -18,9 +18,11 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BDFFnBase.hh"
+#include "Key.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_HelperDiscretization.hh"
+#include "primary_variable_field_evaluator.hh"
 
 #include "PK.hh"
 
@@ -43,7 +45,22 @@ class PK_BDF : virtual public PK,
 
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
       my_pde(const Operators::PDEType& type) { return Teuchos::null; }
+
+ protected:
+  // This is used quite often, so I placed here
+  void AddDefaultPrimaryEvaluator(const Key& key);
 };
+
+
+inline
+void PK_BDF::AddDefaultPrimaryEvaluator(const Key& key)
+{
+  Teuchos::ParameterList elist;
+  elist.set<std::string>("evaluator name", key);
+  auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+  AMANZI_ASSERT(S_ != Teuchos::null);
+  S_->SetFieldEvaluator(key, eval);
+}
 
 }  // namespace Amanzi
 

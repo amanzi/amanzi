@@ -1663,7 +1663,7 @@
                      call locate(vrtr,ntr,1,ntr,vrr,j)
                      j=min(max(1,j),(ntr-1))
                      vrg =powint(vrtr(j),vrtr(j+1),vrgtr(j),&
-                                 vrgtr(j+1),vrr,1.0)
+                                 vrgtr(j+1),vrr,1.0d0)
                      if(vrg.lt.vrgtr(1)  ) vrg = vrgtr(1)
                      if(vrg.gt.vrgtr(ntr)) vrg = vrgtr(nd)
                      lvm(index) = vrg

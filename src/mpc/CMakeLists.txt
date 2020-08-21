@@ -156,7 +156,7 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: mpc driver for coupled matrix-fracture flow and transport
+    # Test: mpc driver for coupled matrix-fracture flow, energy, and transport
     add_amanzi_test(mpc_coupled_flow mpc_coupled_flow
                     KIND      int
                     NPROCS    2
@@ -181,6 +181,18 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_coupled_reactive_transport mpc_coupled_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_coupled_thermal_flow mpc_coupled_thermal_flow
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_coupled_thermal_flow.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_coupled_thermal_flow_richards mpc_coupled_thermal_flow_richards
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_coupled_thermal_flow_richards.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for coupled matrix-fracture flow and transport: benchmark

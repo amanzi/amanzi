@@ -30,6 +30,7 @@
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Key.hh"
+#include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -151,6 +152,10 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
+  // DFN model
+  bool flow_on_manifold_;  // true for the DFN model
+  bool coupled_to_matrix_, coupled_to_fracture_;
+
   // names of state fields 
   Key pressure_key_;
   Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
@@ -158,6 +163,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_;
   Key darcy_velocity_key_;
+  Key water_content_key_, prev_water_content_key_;
+  Key viscosity_liquid_key_;
 
   // io
   Utils::Units units_;

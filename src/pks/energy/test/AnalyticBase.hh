@@ -40,10 +40,11 @@ class AnalyticBase {
       double tmp = temperature_exact(xc, t);
       double volume = mesh_->cell_volume(c);
 
-      // std::cout << c << " " << tmp << " " << temp[0][c] << std::endl;
-      l2_err += std::pow(tmp - temp[0][c], 2.0) * volume;
-      inf_err = std::max(inf_err, fabs(tmp - temp[0][c]));
+      double err = std::fabs(tmp - temp[0][c]);
+      l2_err += std::pow(err, 2.0) * volume;
+      inf_err = std::max(inf_err, err);
       l2_norm += std::pow(tmp, 2.0) * volume;
+      // std::cout << c << " " << tmp << " " << temp[0][c] << " err=" << err << std::endl;
     }
 #ifdef HAVE_MPI
     double tmp = l2_norm;

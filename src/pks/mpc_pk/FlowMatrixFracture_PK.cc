@@ -9,10 +9,9 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Flow flow in matrix and fractures.
+  Process kernel that couples Darcy flow in matrix and fracture network.
 */
 
-#include "Darcy_PK.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -35,7 +34,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ =  Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_); 
@@ -66,6 +65,8 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   // -- darcy flux
@@ -75,12 +76,16 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
   if (!S->HasField("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
+
+    AddDefaultPrimaryEvaluator("fracture-darcy_flux");
   }
 
   // Require additional fields and evaluators
@@ -118,15 +123,15 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   PK_MPCStrong<PK_BDF>::Initialize(S);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // we assume that 0 and 1 correspond to matrix and fracture, respectively
   // to avoid modifying original operators, we clone them.
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
-  op_tree_->SetOperatorBlock(0, 0, op0);
-  op_tree_->SetOperatorBlock(1, 1, op1);
+  op_tree_matrix_->SetOperatorBlock(0, 0, op0);
+  op_tree_matrix_->SetOperatorBlock(1, 1, op1);
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -143,7 +148,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
             ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
 
-  cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
+  cvs_fracture->SetMesh(mesh_fracture)->SetGhosted(true)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
@@ -201,14 +206,14 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_coupling11->Setup(values, 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
-  op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
-  op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
+  op_tree_matrix_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
+  op_tree_matrix_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
   // create a global problem
   sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
-  op_tree_->SymbolicAssembleMatrix();
-  op_tree_->AssembleMatrix();
+  op_tree_matrix_->SymbolicAssembleMatrix();
+  op_tree_matrix_->AssembleMatrix();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -229,7 +234,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green")
                << "matrix:" << std::endl
-               << op_tree_->PrintDiagnostics() << std::endl
+               << op_tree_matrix_->PrintDiagnostics() << std::endl
                << "Initialization of PK is complete: my dT=" << get_dt() 
                << vo_->reset() << std::endl << std::endl;
   }
@@ -265,13 +270,14 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
 
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
-  op_tree_->AssembleMatrix();
-  int ierr = op_tree_->ApplyAssembled(*u_new, *f);
+  op_tree_matrix_->AssembleMatrix();
+  int ierr = op_tree_matrix_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
   // diagonal blocks in tree operator must be Darcy PKs
   for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy");
+    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy" || 
+                  sub_pks_[i]->name() == "richards");
   }
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
@@ -292,7 +298,7 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-  op_tree_->InitPreconditioner(pc_list);
+  op_tree_matrix_->InitPreconditioner(pc_list);
 }
 
 
@@ -303,7 +309,7 @@ int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                                Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_tree_->ApplyInverse(*X, *Y);
+  return op_tree_matrix_->ApplyInverse(*X, *Y);
 }
 
 }  // namespace Amanzi

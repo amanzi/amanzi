@@ -447,18 +447,8 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_2">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <ParameterList name="output">
-            <Parameter name="file" type="string" value="WRM_2.txt"/>
-            <Parameter name="number of points" type="int" value="1000"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="operators">
@@ -809,18 +799,8 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_2">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <ParameterList name="output">
-            <Parameter name="file" type="string" value="WRM_2.txt"/>
-            <Parameter name="number of points" type="int" value="1000"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="operators">

@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Flow flow in matrix and fractures.
+  Process kernel that couples Darcy flow in matrix and fracture network.
 */
 
 #ifndef AMANZI_DARCY_MATRIX_FRACTURE_PK_HH_
@@ -29,9 +29,9 @@ namespace Amanzi {
 class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
   FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVector>& soln);
+                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                        const Teuchos::RCP<State>& S,
+                        const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -64,12 +64,6 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
-
-  Teuchos::RCP<Operators::TreeOperator> op_tree_;
-  Teuchos::RCP<TreeVector> op_tree_rhs_;
-
-  // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
-  // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
 
   // factory registration
   static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;

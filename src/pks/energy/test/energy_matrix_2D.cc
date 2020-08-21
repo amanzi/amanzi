@@ -77,7 +77,7 @@ TEST(ENERGY_2D_MATRIX) {
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   // initialize the Energy process kernel 
-  Teuchos::ParameterList pk_tree;
+  Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
   EPK->Setup(S.ptr());

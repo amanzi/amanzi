@@ -51,7 +51,7 @@ class Richards_PK : public Flow_PK {
               Teuchos::RCP<State> S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  ~Richards_PK();
+  ~Richards_PK() {};
 
   // methods required for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
@@ -132,7 +132,13 @@ class Richards_PK : public Flow_PK {
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
 
   // -- access methods
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae; }
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override;
+
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+      my_pde(const Operators::PDEType& type) override { return op_matrix_diff_; } 
+
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae_; }
 
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);
@@ -189,7 +195,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
   int error_control_, num_itrs_;
   double dt_desirable_;
   std::vector<std::pair<double, double> > dT_history_;

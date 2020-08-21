@@ -114,14 +114,7 @@ void Field_ConstantVector::Initialize(Teuchos::ParameterList& plist) {
   set_initialized();
 };
 
-void Field_ConstantVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
-  if (io_vis_) {
-  }
-};
-
-void Field_ConstantVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
-  if (io_checkpoint_) {
-  }
-};
+void Field_ConstantVector::WriteVis(Visualization& vis) {}
+void Field_ConstantVector::WriteCheckpoint(Checkpoint& chk) {}
 
 } // namespace

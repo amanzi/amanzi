@@ -37,7 +37,7 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
 ****************************************************************** */
 void VWContentEvaluator::Init_()
 {
-  my_key_ = std::string("water_content");
+  my_key_ = plist_.get<std::string>("water content key");
   saturation_key_ = plist_.get<std::string>("saturation key");
   porosity_key_ = plist_.get<std::string>("porosity key");
 

@@ -29,13 +29,31 @@ namespace Energy {
 /* ******************************************************************
 * Default constructor for Energy PK.
 ****************************************************************** */
-Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<State> S) :
+Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                     const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<TreeVector>& soln) :
+    PK_PhysicalBDF(pk_tree, glist, S, soln),
     glist_(glist),
     passwd_("thermal")
 {
+  std::string pk_name = pk_tree.name();
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
+
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  ep_list_ = Teuchos::sublist(pk_list, pk_name, true);
+
+  // We also need miscaleneous sublists
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
+   
+  // domain name
+  domain_ = ep_list_->get<std::string>("domain name", "domain");
+
+  // create verbosity object
   S_ = S;
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -43,6 +61,20 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // keys
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
+
+  energy_key_ = Keys::getKey(domain_, "energy"); 
+  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
+  enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
+  conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
+  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
+
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
 
 
@@ -51,31 +83,22 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  //keys 
-  energy_key_ = "energy";
-  prev_energy_key_ = "prev_energy";
-  enthalpy_key_ = "enthalpy";
-  conductivity_key_ = "thermal_conductivity";
-  molar_density_liquid_key_ = "molar_density_liquid";
-
   // require first-requested state variables
   if (!S->HasField("atmospheric_pressure")) {
     S->RequireScalar("atmospheric_pressure", passwd_);
   }
 
   // require primary state variables
-  std::vector<std::string> names(2);
-  names[0] = "cell";
-  names[1] = "face";
- 
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL;
-  locations[1] = AmanziMesh::FACE;
- 
-  std::vector<int> ndofs(2, 1);
-  
-  temperature_key_ = Keys::getKey(domain_, "temperature"); 
   if (!S->HasField(temperature_key_)) {
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+ 
+    std::vector<int> ndofs(2, 1);
+    std::vector<AmanziMesh::Entity_kind> locations(2);
+    locations[0] = AmanziMesh::CELL;
+    locations[1] = AmanziMesh::FACE;
+ 
     S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
@@ -83,18 +106,21 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S->SetFieldEvaluator(temperature_key_, temperature_eval_);
+  } else {
+    temperature_eval_ = 
+        Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(temperature_key_));
   }
 
   // conserved quantity from the last time step.
-  if (!S->HasField("prev_energy")) {
-    S->RequireField("prev_energy", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_energy_key_)) {
+    S->RequireField(prev_energy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_energy", passwd_)->set_io_vis(false);
+    S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
   }
 
-  // Fields for energy as independent PK
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  // -- darcy flux
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
@@ -105,17 +131,12 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 ****************************************************************** */
 void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  // Energy list has only one sublist
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(pk_list, "energy", true);
-
   // Create BCs objects
   // -- memory
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_enth_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
-  Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
@@ -147,11 +168,24 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
+
+  if (ep_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    auto src_list = ep_list_->sublist("source terms");
+    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+      std::string name = it->first;
+      if (src_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = src_list.sublist(name);
+        srcs_.push_back(factory.Create(spec, "source", AmanziMesh::CELL, Teuchos::null));
+      }
+    }
+  }
+
   // initialized fields
   InitializeFields_();
 
   // other parameters
-  prec_include_enthalpy_ = ep_list->sublist("operators")
+  prec_include_enthalpy_ = ep_list_->sublist("operators")
                                    .get<bool>("include enthalpy in preconditioner", true);
 }
 
@@ -172,10 +206,10 @@ void Energy_PK::InitializeFields_()
         *vo_->os() << "initialized temperature to default value 298 K." << std::endl;  
   }
 
-  if (S_->GetField("darcy_flux")->owner() == passwd_) {
-    if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
-      S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
-      S_->GetField("darcy_flux", passwd_)->set_initialized();
+  if (S_->GetField(darcy_flux_key_)->owner() == passwd_) {
+    if (!S_->GetField(darcy_flux_key_, passwd_)->initialized()) {
+      S_->GetFieldData(darcy_flux_key_, passwd_)->PutScalar(0.0);
+      S_->GetField(darcy_flux_key_, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized darcy_flux to default value 0.0" << std::endl;  
@@ -217,7 +251,27 @@ void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Compo
     bc_flux_[i]->Compute(t_old, t_new);
   }
 
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
+
   ComputeBCs(u);
+}
+
+
+/* ******************************************************************
+* Add source and sink terms.                                   
+****************************************************************** */
+void Energy_PK::AddSourceTerms(CompositeVector& rhs)
+{
+  Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
+
+  for (int i = 0; i < srcs_.size(); ++i) {
+    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+      int c = it->first;
+      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
+    }
+  }
 }
 
 
@@ -265,7 +319,8 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  if (! flag_essential_bc &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
@@ -274,7 +329,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   AmanziMesh::Entity_ID_List cells;
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
-  const auto& n_l = *S_->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
+  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -293,6 +348,18 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
       bc_value_enth_[f] = enth[0][c] * n_l[0][c];
     }
   }
+}
+
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Energy_PK::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return op_preconditioner_;
+  return Teuchos::null;
 }
 
 }  // namespace Energy

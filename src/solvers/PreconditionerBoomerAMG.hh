@@ -116,6 +116,7 @@ class PreconditionerBoomerAMG : public Preconditioner {
   
   int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
+  Teuchos::RCP<Epetra_RowMatrix> A_;
 };
 
 }  // namespace AmanziPreconditioners

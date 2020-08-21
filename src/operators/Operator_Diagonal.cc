@@ -31,8 +31,8 @@ namespace Operators {
 int Operator_Diagonal::ApplyMatrixFreeOp(
     const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
 {
-  const Epetra_MultiVector& Xi = *X.ViewComponent(op.row_compname(), true);
-  Epetra_MultiVector& Yi = *Y.ViewComponent(op.col_compname(), true);
+  const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
  
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -60,7 +60,6 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
-* Apply the local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Diagonal::SymbolicAssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
@@ -93,7 +92,6 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
 
 /* ******************************************************************
 * Visit methods for assemble
-* Apply the local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Diagonal::AssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,

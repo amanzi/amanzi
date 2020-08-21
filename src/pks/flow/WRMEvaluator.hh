@@ -27,7 +27,7 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  WRMEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMPartition> wrm);
+  WRMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<WRMPartition>& wrm);
   WRMEvaluator(const WRMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;

@@ -73,14 +73,15 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   //      parameter that enforces symmetry for a symmetric tree  operators.
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick.
+  //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
-
  protected:
-  void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
   Teuchos::RCP<Epetra_IntVector> upwind_cell_, downwind_cell_;
+
+ private:
+  void InitAdvection_(Teuchos::ParameterList& plist);
 };
 
 }  // namespace Operators
