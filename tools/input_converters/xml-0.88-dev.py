@@ -84,19 +84,23 @@ def mergePreconditionerLinearSolver(xml):
         if pk.isElement("preconditioner"):
             pc = pk.getElement("preconditioner")
             pc.setName("inverse")
-            change_name(pc, "preconditioner type", "preconditioner method")
+            change_name(pc, "preconditioner type", "preconditioning method")
+            change_name(pc, "preconditioner method", "preconditioning method")
             if pk.isElement("linear solver"):
+                ls = pk.getElement("linear solver")
                 pc.extend(list(pk.getElement("linear solver")))
+                pk.remove(ls)
+                
         elif pk.isElement("linear solver"):
             ls = pk.getElement("linear solver")
             ls.setName("inverse")
+
         elif pk.isElement("inverse"):
             # already done, but check that preconditioning method is set
             pc = pk.getElement("inverse")
-            change_name(pc, "preconditioner type", "preconditioner method")
-            
-
-            
+            change_name(pc, "preconditioner type", "preconditioning method")
+            change_name(pc, "preconditioner method", "preconditioning method") 
+           
 
 def update(xml):
     vanGenuchtenParams(xml)
@@ -105,7 +109,7 @@ def update(xml):
     #fixSnow(xml)
     #fixSubgrid(xml)
     mergePreconditionerLinearSolver(xml)
-            
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Fix a number of changes from ATS input spec 0.88 to master")
