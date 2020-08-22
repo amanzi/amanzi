@@ -33,7 +33,6 @@ void DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
-  this->set_name(Keys::cleanPListName(plist.name()));
   solver_name_ = plist.get<std::string>("solver name", "Klu");
   std::string vo_name = this->name()+" (Amesos " + solver_name_ + ")";
 

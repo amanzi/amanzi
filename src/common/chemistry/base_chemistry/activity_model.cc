@@ -117,7 +117,7 @@ void ActivityModel::CalculateActivityCoefficients(
     std::vector<Species>* primarySpecies,
     std::vector<AqueousEquilibriumComplex>* secondarySpecies,
     Species* water) {
-  const  double r0(0.0e0), r1(1.0e0);
+  const double r1(1.0e0);
   double actw(r1);
   //std::vector<double> gamma;
   // int nsp(primarySpecies->size() + secondarySpecies->size());

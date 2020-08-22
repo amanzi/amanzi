@@ -723,7 +723,7 @@ void Transport_PK::AddMultiscalePorosity_(
   }
   WhetStone::DenseVector tcc_m(nnodes);
 
-  double flux_liquid, flux_solute, wcm0, wcm1, wcf0, wcf1;
+  double flux_liquid, wcm0, wcm1, wcf0, wcf1;
   double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
   std::vector<AmanziMesh::Entity_ID> block;
 
@@ -758,7 +758,7 @@ void Transport_PK::AddMultiscalePorosity_(
           tcc_m(n + 1) = (*tcc_matrix_aux)[n][c];
       }
 
-      flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
+      msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
           flux_liquid, tcc_next[i][c], tcc_m, 
           i, dts, tfp0, tfp1, tmp0, tmp1, phim);
 
