@@ -212,8 +212,13 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create a global problem
   sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
-  op_tree_matrix_->SymbolicAssembleMatrix();
-  op_tree_matrix_->AssembleMatrix();
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  std::string ls_name = ti_list_->get<std::string>("linear solver", "none");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
+								ls_name, *linear_operator_list_,
+								true);
+  op_tree_matrix_->set_inverse_parameters(inv_list);
+  op_tree_matrix_->InitializeInverse();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -230,7 +235,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
     if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green")
                << "matrix:" << std::endl
@@ -294,11 +299,7 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
                                                  double h)
 {
-  // EpetraExt::RowMatrixToMatlabFile("FlowMatrixFracture_PC_.txt", *op_tree_->A());
-  std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-
-  op_tree_matrix_->InitPreconditioner(pc_list);
+  op_tree_matrix_->ComputeInverse();
 }
 
 

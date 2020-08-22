@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
-#include "LinearOperatorFactory.hh"
 
 // Amanzi::NavierStokes
 #include "NavierStokes_PK.hh"
@@ -291,30 +290,25 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_preconditioner_elas_->UpdateMatrices();
   op_preconditioner_elas_->ApplyBCs(true, true, true);
-  op_preconditioner_elas_->global_operator()->SymbolicAssembleMatrix();
+
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  op_preconditioner_elas_->global_operator()->set_inverse_parameters(pc_name, *preconditioner_list_);
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
   vol.PutScalar(1.0 / mu);
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
-  op_mass_->global_operator()->SymbolicAssembleMatrix();
+  op_mass_->global_operator()->set_inverse_parameters("Diagonal", *preconditioner_list_);
 
   // -- generic linear solver for most cases
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
-  // -- preconditioner or encapsulated preconditioner
-  std::string pc_name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
-  op_preconditioner_elas_->global_operator()->InitializePreconditioner(pc_list);
-  
-  op_pc_solver_ = op_preconditioner_;
-
+  Teuchos::ParameterList inv_list;
+  inv_list.set("preconditioning method", "block diagonal");
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
-    if (tmp_solver != "none") {
-      AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> sfactory;
-      op_pc_solver_ = sfactory.Create(tmp_solver, *linear_solver_list_, op_preconditioner_);
-    }
+    inv_list.setParameters(linear_solver_list_->sublist(tmp_solver));
   }
+  op_preconditioner_->set_inverse_parameters(inv_list);
 }
 
 

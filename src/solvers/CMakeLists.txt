@@ -42,12 +42,13 @@ include_directories(${HDF5_INCLUDE_DIRS})
 #
 file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files ResidualDebugger.cc
-                         PreconditionerFactory.cc
-                         PreconditionerBoomerAMG.cc
-                         PreconditionerML.cc
-                         PreconditionerEuclid.cc
-                         PreconditionerBlockILU.cc
-                         SolverFactory.cc)
+  DirectMethodAmesos.cc
+  DirectMethodAmesos2.cc
+  PreconditionerIfpack.cc
+  PreconditionerHypre.cc
+  PreconditionerML.cc
+  SolverFactory.cc
+  )
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
@@ -71,7 +72,6 @@ add_amanzi_library(solvers
 		   LINK_LIBS data_structures output whetstone atk
                              ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
 
-
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
 
@@ -87,12 +87,16 @@ if (BUILD_TESTS)
     # Add the solvers directory to the include paths
     include_directories(${SOLVERS_SOURCE_DIR})
 
+    add_amanzi_test(solver_static_asserts solver_static_asserts
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_static_asserts.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-                  
     add_amanzi_test(solver_preconditioners solver_preconditioners
                     KIND unit
                     SOURCE test/Main.cc test/solver_preconditioners.cc

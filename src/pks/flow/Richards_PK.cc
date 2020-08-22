@@ -31,7 +31,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
-#include "LinearOperatorFactory.hh"
+#include "InverseFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
@@ -567,7 +567,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
-  op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vapor_diffusion_) {
     // op_vapor_diff_->SetBCs(op_bc_);
@@ -575,24 +574,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // -- generic linear solver for most cases
-  solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
-  op_preconditioner_->InitializePreconditioner(pc_list);
-  
-  op_pc_solver_ = op_preconditioner_;
-
-  if (ti_list_->isParameter("preconditioner enhancement")) {
-    std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
-    if (tmp_solver != "none") {
-      AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
-
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-      op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);
-    }
-  }
+  op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_);
   
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
@@ -700,6 +685,24 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
         ->AddComponent("dpre", AmanziMesh::CELL, 1);
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs));
   }
+
+  // NOTE: this is alternatively called "linear solver" or "preconditioner
+  // enhancement".  One got stuffed into op_pc_solver_, the other gets
+  // constructed in, e.g. AdvanceToSteadyState_Picard.  Must these be separate?
+  // They can be... and so I kept them separate for now.  But this means that
+  // all of flow PK cannot have linear solver in the Operator. --etc
+  // solver_name_ = ti_list_->get<std::string>("linear solver");
+  // op_preconditioner_->set_inverse_parameters(pc_name, *preconditioner_list_,
+  //         solver_name_, *linear_operator_list_, true);
+  std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement", "none");
+  if (tmp_solver != "none") {
+    AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
+    Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(tmp_solver);
+    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
+  } else {
+    op_pc_solver_ = op_preconditioner_;
+  }
+  op_pc_solver_->InitializeInverse();
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();

@@ -15,7 +15,6 @@
 #include "PDE_Diffusion.hh"
 
 #include "Darcy_PK.hh"
-#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -39,35 +38,28 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   CompositeVector& rhs = *op_->rhs();
   if (wells_on) AddSourceTerms(rhs);
 
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
+  op_->ComputeInverse();
+  int ierr = op_->ApplyInverse(rhs, *solution);
 
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name_, *linear_operator_list_, op_);
-
-  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
-
-  int ierr = solver->ApplyInverse(rhs, *solution);
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver->num_itrs();
-    double residual = solver->residual();
-    int code = solver->returned_code();
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    int num_itrs = op_->num_itrs();
+    double residual = op_->residual();
+    int code = op_->returned_code();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver (" << solver->name() 
+    *vo_->os() << "pressure solver (" << solver_name_
                << "): ||r||_H=" << residual << " itr=" << num_itrs
                << " code=" << code << std::endl;
 
-    residual = solver->TrueResidual(rhs, *solution);
-    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
+    // Do you really want this just for reporting?  Seems extremely inefficient --etc
+    //    residual = op_->TrueResidual(rhs, *solution);
+    //    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
   // catastrophic failure.
   if (ierr < 0) {
-    Errors::Message msg;
-    msg = solver->DecodeErrorCode(ierr);
+    Errors::Message msg("Transport_PK solver failed with message: \"");
+    msg << op_->returned_code_string() << "\"";
     Exceptions::amanzi_throw(msg);
   }
 }

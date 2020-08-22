@@ -53,8 +53,6 @@ class Operator_Schema : public Operator {
 
   // required methods
   // -- global methods
-  virtual void SymbolicAssembleMatrix() override;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;
 
   // -- visit methods for Apply
@@ -112,7 +110,7 @@ class Operator_Schema : public Operator {
           const WhetStone::DenseVector& v, CompositeVector& X) const override;
 
   // debugging methods
-  int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
+  virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
 };
 
 }  // namespace Operators

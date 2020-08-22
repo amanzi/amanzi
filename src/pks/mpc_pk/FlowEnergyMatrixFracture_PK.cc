@@ -154,9 +154,24 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto pk_matrix = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<FlowEnergy_PK>(sub_pks_[1]);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
-  op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs, 4));
+  //
+  // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (matrix,
+  // fracture) each with 2 sub-pks of their own (flow,energy).  Currently
+  // TreeOperator cannot handle this, so instead we must flatten the map.
+  //
+  // This blob of code should go away in favor of:
+  //   auto tvs = solution_->Map();
+  // once we have a hierarchical TreeOperator.
+  auto tvs = Teuchos::rcp(new TreeVectorSpace());
+  for (const auto& subvec_domain : *solution_) {
+    for (const auto& subvec_pk : (*subvec_domain)) {
+      tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(subvec_pk->Map())));
+    }
+  }
+  // end blob 
+  AMANZI_ASSERT(tvs->size() == 4);
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   for (int l = 0; l < 2; ++l) {
     for (int m = 0; m < 2; ++m) {
@@ -366,6 +381,7 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
 
   // block indices for preconditioner are (0, 1, 0, 1)
   auto smap = op_tree_pc_->smap();
+  // NOTE: this is freed by Hypre
   auto block_indices = Teuchos::rcp(new std::vector<int>(smap->Map()->NumMyElements()));
 
   std::vector<std::string> comps = {"face", "cell"};
@@ -379,8 +395,10 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   }
   auto block_ids = std::make_pair(2, block_indices);
 
-  // op_tree_pc_->InitPreconditioner(pc_list);
-  op_tree_pc_->InitPreconditioner(pc_list, block_ids);
+  op_tree_pc_->set_coloring(2, block_indices);
+  op_tree_pc_->set_inverse_parameters(pc_list);
+  op_tree_pc_->InitializeInverse();
+  op_tree_pc_->ComputeInverse();
 }
 
 

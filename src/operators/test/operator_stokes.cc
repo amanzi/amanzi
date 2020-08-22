@@ -25,7 +25,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -173,8 +172,6 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   op00->UpdateMatrices();
   global00->UpdateRHS(source, true);
   op00->ApplyBCs(true, true, true);
-  global00->SymbolicAssembleMatrix();
-  global00->AssembleMatrix();
 
   // populate local matrices inside the divergence block. Since we will use
   // a matrix-free matvec inside an iterative solver, there is no need to
@@ -189,57 +186,59 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   CompositeVector vol(global11->DomainMap());
   vol.PutScalar(1.0);
   pc11->AddAccumulationTerm(vol, 1.0, "cell");
-  global11->SymbolicAssembleMatrix();
-  global11->AssembleMatrix();
 
   // create a block-diagonal preconditoner, identity is the default one. 
   // The first block will reuse the assembled matrix to build a multigrid
   // solver. The second block is simply a diagonal matrix. The off-diagonal
   // blocks are empty and require no setup.
   Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global00->InitializePreconditioner(slist);
-  global00->UpdatePreconditioner();
+  global00->set_inverse_parameters(slist);
 
   slist = plist.sublist("preconditioners").sublist("Diagonal");
-  global11->InitializePreconditioner(slist); 
-  global11->UpdatePreconditioner(); 
+  global11->set_inverse_parameters(slist); 
 
   Teuchos::RCP<TreeOperator> pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
   pc->SetOperatorBlock(0, 0, op00->global_operator());
   pc->SetOperatorBlock(1, 1, pc11->global_operator());
-  pc->InitBlockDiagonalPreconditioner();
+
+  Teuchos::ParameterList solver_list;
+  solver_list.set("preconditioning method", "block diagonal");
+  pc->set_inverse_parameters(solver_list);
+  pc->InitializeInverse();
+  pc->ComputeInverse();
 
   // Assemble global matrix for tesing purposes
-  op->SymbolicAssembleMatrix();
-  op->AssembleMatrix();
   // Test SPD properties of the matrix and preconditioner.
   VerificationTV ver1(op), ver2(pc);
   ver1.CheckMatrixSPD(true, false, false);
   ver1.CheckMatrixSPD(true, false, true);
   ver2.CheckPreconditionerSPD();
 
-  // solve the discrete problem.
-  // -- create a linear solver: GMRES.
-  Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                         .sublist("GMRES").sublist("gmres parameters");
-  AmanziSolvers::LinearOperatorGMRES<TreeOperator, TreeVector, TreeVectorSpace> solver(op, pc);
-  solver.Init(lop_list);
-
+  // now set up a full solver
+  //
+  // NOTE: this cannot be done in any TreeOperator, as we are using _different
+  // structure_ for the forward operator and preconditioner.  Instead we
+  // directly call the factory.
+  solver_list.setParameters(plist.sublist("solvers").sublist("GMRES"));
+  auto solver = AmanziSolvers::createIterativeMethod(solver_list, op, pc);
+  solver->InitializeInverse();
+  solver->ComputeInverse();
+  
   // -- copy right-hand sides inside two operators to the global rhs.
   TreeVector rhs(*tvs);
   *rhs.SubVector(0)->Data() = *global00->rhs();
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
   // -- execute GMRES solver
-  solver.ApplyInverse(rhs, solution);
+  solver->ApplyInverse(rhs, solution);
 
-  // op->AssembleMatrix();
+  // solver->AssembleMatrix();
   // ver1.CheckResidual(solution, rhs, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "elasticity solver (gmres): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "elasticity solver (gmres): ||r||=" << solver->residual() 
+              << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
   }
 
   // Post-processing
@@ -254,11 +253,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, pl2_err, pinf_err, solver.num_itrs());
+        ul2_err, uinf_err, pl2_err, pinf_err, solver->num_itrs());
 
     CHECK(ul2_err < 0.01);
     CHECK(pl2_err < 0.05);
-    CHECK(solver.num_itrs() < 60);
+    CHECK(solver->num_itrs() < 60);
   }
 
   if (MyPID == 0) {

@@ -50,7 +50,7 @@ TEST_FIXTURE(test_data, CONT_SOLVER_EXACT_JACOBIAN) {
   plist.sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
-  Teuchos::RCP<AmanziSolvers::SolverContinuation<Epetra_Vector, Epetra_BlockMap> > cont =
+  auto cont =
       Teuchos::rcp(new AmanziSolvers::SolverContinuation<Epetra_Vector, Epetra_BlockMap>(list));
   cont->Init(fn, *map);
 

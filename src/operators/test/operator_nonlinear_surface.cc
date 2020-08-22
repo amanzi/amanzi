@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -193,13 +192,11 @@ void RunTest(std::string op_list_name) {
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
     op.ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
     
     // create preconditoner
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
 
     // Test SPD properties of the matrix and preconditioner.
     VerificationCV ver(global_op);
@@ -208,27 +205,21 @@ void RunTest(std::string op_list_name) {
       ver.CheckPreconditionerSPD(1e-12, true, true);
     }
 
-    // solve the problem
-    ParameterList lop_list = plist.sublist("solvers").sublist("Amanzi GMRES").sublist("gmres parameters");
-    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
-        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-    solver->Init(lop_list);
-
     CompositeVector rhs = *global_op->rhs();
-    solver->ApplyInverse(rhs, *solution);
+    global_op->ApplyInverse(rhs, *solution);
 
     if (op_list_name == "diffusion operator")
          ver.CheckResidual(*solution, 1.0e-12);
 
-    int num_itrs = solver->num_itrs();
+    int num_itrs = global_op->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);
 
     if (MyPID == 0) {
       double a;
       rhs.Norm2(&a);
-      std::cout << "pressure solver (gmres): ||r||=" << solver->residual() << " itr=" << num_itrs
+      std::cout << "pressure solver (gmres): ||r||=" << global_op->residual() << " itr=" << num_itrs
                 << "  ||f||=" << a 
-                << " code=" << solver->returned_code() << std::endl;
+                << " code=" << global_op->returned_code() << std::endl;
     }
 
     // derive diffusion flux.

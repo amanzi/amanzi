@@ -19,7 +19,6 @@
 #include "MatrixFE.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "Point.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 

@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "Tensor.hh"
@@ -176,21 +175,13 @@ void MagneticDiffusion2D(double dt, double tend,
     op_mag->ModifyMatrices(E, B, dt);
     op_mag->ApplyBCs(true, true, true);
     op_acc->ApplyBCs();
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
 
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // Solve the problem.
-    ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
-    AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
-    solver.ApplyInverse(rhs, E);
+    global_op->ApplyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -244,8 +235,8 @@ void MagneticDiffusion2D(double dt, double tend,
     CHECK_CLOSE(divB0, divB, 1e-8);
 
     if (MyPID == 0) {
-      std::cout << "time: " << told << "  ||r||=" << solver.residual() 
-                << " itr=" << solver.num_itrs() << "  energy= " << energy 
+      std::cout << "time: " << told << "  ||r||=" << global_op->residual() 
+                << " itr=" << global_op->num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
                 << "  avgB=" << avgB / Bf.GlobalLength()
                 << "  divB=" << std::pow(divB, 0.5) 
@@ -445,21 +436,14 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     // BCs, sources, and assemble
     op_mag->ModifyMatrices(E, B, dt);
     op_mag->ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
-
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
 
     // Solve the problem.
-    ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
-    AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
-    solver.ApplyInverse(rhs, E);
+    global_op->ApplyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -550,8 +534,8 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     CHECK_CLOSE(divB0, divB, 1e-8);
 
     if (MyPID == 0) {
-      std::cout << "time: " << told << "  ||r||=" << solver.residual() 
-                << " itr=" << solver.num_itrs() << "  energy= " << energy 
+      std::cout << "time: " << told << "  ||r||=" << global_op->residual() 
+                << " itr=" << global_op->num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
