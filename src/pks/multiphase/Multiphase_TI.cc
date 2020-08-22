@@ -507,10 +507,11 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   // finalize preconditioner
   if (!op_pc_assembled_) {
-    op_preconditioner_->SymbolicAssembleMatrix();
+    op_pc_solver_->InitializeInverse();
+    // op_preconditioner_->SymbolicAssembleMatrix();
     op_pc_assembled_ = true;
   }
-  op_preconditioner_->AssembleMatrix();
+  // op_preconditioner_->AssembleMatrix();
   // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
   op_preconditioner_->ComputeInverse();
 }
