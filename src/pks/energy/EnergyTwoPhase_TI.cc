@@ -141,14 +141,12 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell", false);
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell", false);
 
-  int cell_bad;
   double error_t(0.0);
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
     if (tmp > error_t) {
       error_t = tmp;
-      cell_bad = c;
     } 
   }
 
@@ -163,13 +161,9 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c]*2.e6 + rtol_* std::abs(energy[0][c]));
     if (tmp > error_e) {
       error_e = tmp;
-      cell_bad = c;
     }
   }
   */
-
-  // Face error is mismatch in flux??
-
 
   double error = std::max(error_t, error_e);
 

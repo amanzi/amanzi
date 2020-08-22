@@ -176,7 +176,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
   Teuchos::RCP<Vector> u_bt = Teuchos::rcp(new Vector(*u));
 
   // variables to monitor the progress of the nonlinear solver
-  double error(0.0), previous_error(0.0), l2_error(0.0), previous_l2_error;
+  double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
@@ -301,7 +301,6 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
     // evaluate new step, backtrack if necessary
     if (num_itrs_ > backtrack_lag_) {
       previous_error = error;
-      previous_l2_error = l2_error;
 
       BackTracking<Vector> bt(fn_);
       bt.Bisection(u, du);
