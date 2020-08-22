@@ -72,12 +72,8 @@ class Inverse : public Matrix<Vector,VectorSpace> {
     set_matrices(m,m);
   }
   
-  virtual const VectorSpace& DomainMap() const {
-    return m_->DomainMap();
-  }
-  virtual const VectorSpace& RangeMap() const {
-    return m_->RangeMap();
-  }
+  virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
+  virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
 
   int Apply(const Vector& x, Vector& y) const {
     return m_->Apply(x,y);
@@ -114,7 +110,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   virtual std::string returned_code_string() const = 0;
   
   std::string name() const { return name_; }
-  void set_name(std::string name) { name_ = name; }
+  void set_name(const std::string& name) { name_ = name; }
 
  protected:
   Teuchos::RCP<Operator> m_;
