@@ -359,7 +359,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 Teuchos::ParameterList InputConverterU::TranslateEuclid_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<std::string>("preconditioner type", "euclid");
+  out_list.set<std::string>("preconditioning method", "euclid");
 
   out_list.sublist("euclid parameters")
       .set<int>("ilu(k) fill level", 5)

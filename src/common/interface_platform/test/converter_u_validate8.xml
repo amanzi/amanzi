@@ -595,7 +595,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
+      <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="max levels" type="int" value="40"/>
@@ -615,7 +615,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0"/>
         <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
@@ -626,7 +626,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Euclid">
-      <Parameter name="preconditioner type" type="string" value="euclid"/>
+      <Parameter name="preconditioning method" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
         <Parameter name="rescale rows" type="bool" value="true"/>
@@ -634,7 +634,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
