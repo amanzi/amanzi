@@ -24,7 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -85,7 +84,6 @@ void RunTestDiffusionCurved() {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
@@ -112,37 +110,33 @@ void RunTestDiffusionCurved() {
 
   // -- assemble the global matrix
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create a preconditoner using the global matrix
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the preconditioner.
   VerificationCV ver(global_op);
   ver.CheckPreconditionerSPD();
 
-  // solve the problem
-  // -- create iand initialize a linear operator: PCG
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("PCG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
+  // create a preconditoner using the global matrix
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+          "PCG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
+  
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs), flux(rhs);
   solution.PutScalar(0.0);
 
   // -- run PCG
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   ver.CheckResidual(solution, 3.0e-7);
@@ -180,10 +174,10 @@ void RunTestDiffusionCurved() {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 0.001 && ul2_err < 0.01);
-    CHECK(solver.num_itrs() < 1000);
+    CHECK(global_op->num_itrs() < 1000);
   }
 }
 

@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
@@ -143,25 +142,15 @@ void RunTest(int icase, double gravity) {
 
   // populate diffusion operator
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // apply BCs and assemble
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
     
   // create preconditoner
-  ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  ParameterList lop_list = plist->sublist("solvers").sublist("PCG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   // post-processing
   auto cvs2 = Operators::CreateNonManifoldCVS(surfmesh);
@@ -174,11 +163,11 @@ void RunTest(int icase, double gravity) {
   double a;
   rhs.Norm2(&a);
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver.name() 
-              << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
+    std::cout << "pressure solver"
+              << ": ||r||=" << global_op->residual() << " itr=" << global_op->num_itrs()
               << "  ||f||=" << a 
               << "  #dofs=" << ndofs
-              << " code=" << solver.returned_code() << std::endl;
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // calculate error in potential

@@ -28,7 +28,6 @@
 
 // Amanzi
 #include "Mesh_MSTK.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -91,7 +90,6 @@ struct Problem {
                  const CompositeVector& v) {
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // kr0,1 on faces, always upwinded
     Epetra_MultiVector& kr0_f = *kr0->ViewComponent("face",true);
@@ -401,7 +399,6 @@ struct Problem {
       pc->SetOperatorBlock(0,1,pc01->global_operator());
       pc->SetOperatorBlock(1,0,pc10->global_operator());
     }
-    pc->SymbolicAssembleMatrix();
   }
   
   
@@ -880,7 +877,6 @@ std::pair<double,double> RunInverseProblem(
   TreeVector X(*problem->tvs);
   TreeVector AX(*problem->tvs);
 
-  // apply inverse
   problem->op->SymbolicAssembleMatrix();
   problem->op->AssembleMatrix();
 
@@ -895,22 +891,20 @@ std::pair<double,double> RunInverseProblem(
 
   
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("preconditioning method", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
-  // pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op->InitPreconditioner(pc_list);
-
-  Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "pcg");
-  lin_list.sublist("pcg parameters").sublist("verbose object").set("verbosity level", "medium");
-  AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
-      fac.Create(lin_list, problem->op);
+  //  pc_list.sublist("boomer amg parameters").set("number of functions", 2);
+  pc_list.set("iterative method", "pcg");
+  pc_list.sublist("pcg parameters").set("maximum number of iterations", 200);
+  pc_list.sublist("verbose object").set("verbosity level", "high");
+  problem->op->set_inverse_parameters(pc_list);
+  problem->op->InitializeInverse();
+  problem->op->ComputeInverse();
 
   X.PutScalar(0.);
-  int ierr = lin_op->ApplyInverse(B,X);
+  int ierr = problem->op->ApplyInverse(B,X);
   CHECK(ierr >= 0);
-  CHECK(lin_op->num_itrs() < 100);
+  CHECK(problem->op->num_itrs() < 100);
 
   // subtract off true solution
   X.SubVector(0)->Data()->Update(-1., *u, 1.);
@@ -1115,23 +1109,19 @@ std::pair<double,double> RunNonlinearProblem(
       EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *problem->pc->A());
     }
     
-    // create the preconditioner, linear solver
     Teuchos::ParameterList pc_list;
-    pc_list.set("preconditioner type", "boomer amg");
+    pc_list.set("preconditioning method", "boomer amg");
     pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-    problem->pc->InitPreconditioner(pc_list);
-
-    Teuchos::ParameterList lin_list;
-    lin_list.set("iterative method", "gmres");
-    lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-    AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
-        fac.Create(lin_list, problem->pc);
+    pc_list.set("iterative method", "gmres");
+    pc_list.sublist("verbose object").set("verbosity level", "medium");
+    problem->op->set_inverse_parameters(pc_list);
+    problem->op->InitializeInverse();
+    problem->op->ComputeInverse();
 
     // invert the preconditioner to get a correction
     DX.PutScalar(0.);
-    int converged_reason = lin_op->ApplyInverse(R, DX);
+    int converged_reason = problem->op->ApplyInverse(R, DX);
     CHECK(converged_reason >= 0);
 
     // apply the correction
@@ -1228,37 +1218,24 @@ std::pair<double,double> RunInverseProblem_Diag(
   problem->op11->ApplyBCs(true,true,true);
 
   // assemble, invert
-  problem->op00->global_operator()->SymbolicAssembleMatrix();
-  problem->op00->global_operator()->AssembleMatrix();
   Teuchos::ParameterList pc_list;
-  pc_list.set("preconditioner type", "boomer amg");
+  pc_list.set("preconditioning method", "boomer amg");
+  pc_list.set("iterative method", "gmres");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op00->global_operator()->InitPreconditioner(pc_list);
+  problem->op00->global_operator()->set_inverse_parameters(pc_list);
+  problem->op00->global_operator()->InitializeInverse();
+  problem->op00->global_operator()->ComputeInverse();
 
-  problem->op11->global_operator()->SymbolicAssembleMatrix();
-  problem->op11->global_operator()->AssembleMatrix();
   Teuchos::ParameterList pc_list11;
-  pc_list11.set("preconditioner type", "boomer amg");
+  pc_list11.set("preconditioning method", "boomer amg");
+  pc_list11.set("iterative method", "gmres");
   pc_list11.sublist("boomer amg parameters").set("tolerance", 0.);
   pc_list11.sublist("boomer amg parameters").set("number of functions", 2);
-  problem->op11->global_operator()->InitPreconditioner(pc_list11);
+  problem->op11->global_operator()->set_inverse_parameters(pc_list11);
+  problem->op11->global_operator()->InitializeInverse();
+  problem->op11->global_operator()->ComputeInverse();
 
-  
-  Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-  AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
-      fac.Create(lin_list, problem->op00->global_operator());
-
-
-  Teuchos::ParameterList lin_list11;
-  lin_list11.set("iterative method", "gmres");
-  lin_list11.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op11 =
-      fac.Create(lin_list, problem->op11->global_operator());
-  
   TreeVector B(*problem->tvs);
   *B.SubVector(0)->Data() = *problem->op00->global_operator()->rhs();
   *B.SubVector(1)->Data() = *problem->op11->global_operator()->rhs();
@@ -1266,10 +1243,10 @@ std::pair<double,double> RunInverseProblem_Diag(
   TreeVector X(*problem->tvs);
   X.PutScalar(0.);
 
-  int ierr = lin_op->ApplyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
+  int ierr = problem->op00->global_operator()->ApplyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
   CHECK(ierr >= 0);
 
-  ierr = lin_op11->ApplyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
+  ierr = problem->op11->global_operator()->ApplyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
   CHECK(ierr >= 0);
 
   //  std::cout << "Ran inverse with nitrs = " << lin_op->num_itrs() << std::endl;

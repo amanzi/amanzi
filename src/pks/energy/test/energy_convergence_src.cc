@@ -59,19 +59,17 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateField_(
           const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
-    const Epetra_MultiVector& temp_c = *S->GetFieldData("temperature")->ViewComponent("cell");
     Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
     int ncomp = result->size("cell", false);
     for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 0.;//temp_c[0][i];
+      result_c[0][i] = 0.;
     }
   }
 
   virtual void EvaluateFieldPartialDerivative_(
           const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    const Epetra_MultiVector& temp_c = *S->GetFieldData("temperature")->ViewComponent("cell");
     Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
     int ncomp = result->size("cell", false);

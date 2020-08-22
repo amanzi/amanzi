@@ -20,7 +20,6 @@
 #include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "LinearOperatorFactory.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -33,8 +32,6 @@
 #include "Darcy_PK.hh"
 #include "DarcyVelocityEvaluator.hh"
 #include "FlowDefs.hh"
-#include "FracturePermModelPartition.hh"
-#include "FracturePermModelEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -108,10 +105,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   pressure_key_ = Keys::getKey(domain_, "pressure"); 
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
 
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
-
-  permeability_key_ = Keys::getKey(domain_, "permeability"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
@@ -126,21 +120,13 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
-  Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(fp_list_, "physical models and assumptions");
+  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
   if (mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
   }
-  // -- type of the flow (in matrix or on manifold)
-  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
-  flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
-
-  // -- coupling with other PKs
-  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
-  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
   // Require primary field for this PK.
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
@@ -166,10 +152,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", pressure_key_);
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(pressure_key_, eval);
+    AddDefaultPrimaryEvaluator(pressure_key_);
   }
 
   // require additional fields for this PK
@@ -187,32 +170,12 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(saturation_liquid_key_, saturation_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", saturation_liquid_key_);
-    auto eval = Teuchos::rcp(new ConstantVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(saturation_liquid_key_, eval);
+    AddDefaultPrimaryEvaluator(saturation_liquid_key_);
   }
 
   if (!S->HasField(prev_saturation_liquid_key_)) {
     S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (!S->HasField(darcy_flux_key_)) {
-    if (flow_on_manifold_) {
-      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
-    } else {
-      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-    }
-  }
-
-  {
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", darcy_flux_key_);
-    darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
   }
 
   // Require additional field evaluators for this PK.
@@ -226,30 +189,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- viscosity
   if (!S->HasField("const_fluid_viscosity")) {
     S->RequireScalar("const_fluid_viscosity", passwd_);
-  }
-
-  // -- effective fracture permeability
-  if (flow_on_manifold_) {
-    if (!S->HasField(permeability_key_)) {
-      S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-      Teuchos::RCP<Teuchos::ParameterList>
-          fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
-      Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
-
-      Teuchos::ParameterList elist;
-      elist.set<std::string>("permeability key", permeability_key_)
-           .set<std::string>("aperture key", Keys::getKey(domain_, "aperture"));
-      Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
-      S->SetFieldEvaluator(permeability_key_, eval);
-    }
-  // -- matrix absolute permeability
-  } else {
-    if (!S->HasField(permeability_key_)) {
-      S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, dim);
-    }
   }
 
   // Local fields and evaluators.
@@ -293,6 +232,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       }
     }
   }
+
+  // save frequently used evaluators 
+  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(darcy_flux_key_));
 }
 
 
@@ -405,8 +347,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- accumulation operator.
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
-
-  op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
   // -- generic linear solver.
@@ -416,8 +356,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- preconditioner. There is no need to enhance it for Darcy
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-  op_->InitializePreconditioner(pc_list);
+  op_->set_inverse_parameters(name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
+  op_->InitializeInverse();
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
@@ -529,8 +469,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
+  op_->ComputeInverse();
 
   // save pressure at time t^n.
   std::string dt_control = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
@@ -539,13 +478,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     p_old = Teuchos::rcp(new Epetra_MultiVector(*solution->ViewComponent("cell")));
   }
 
-  // create linear solver and calculate new pressure
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(solver_name_, *linear_operator_list_, op_);
-
-  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-  solver->ApplyInverse(rhs, *solution);
+  op_->ApplyInverse(rhs, *solution);
 
   // statistics
   num_itrs_++;
@@ -555,9 +488,9 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     solution->Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver (" << solver->name()
+    *vo_->os() << "pressure solver (" << solver_name_
                << "): ||p,lambda||=" << pnorm 
-               << "  itrs=" << solver->num_itrs() << std::endl;
+               << "  itrs=" << op_->num_itrs() << std::endl;
     VV_PrintHeadExtrema(*solution);
   }
 
@@ -670,7 +603,7 @@ void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 ****************************************************************** */
 void Darcy_PK::FractureConservationLaw_()
 {
-  if (!coupled_to_matrix_) return;
+  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
 
   const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
   const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);

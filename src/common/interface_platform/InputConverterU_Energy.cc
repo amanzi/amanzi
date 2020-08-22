@@ -139,7 +139,6 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& d
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);

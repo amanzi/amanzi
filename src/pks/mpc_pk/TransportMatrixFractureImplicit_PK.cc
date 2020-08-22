@@ -13,7 +13,6 @@
   using implicit scheme.
 */
 
-#include "LinearOperatorGMRES.hh"
 #include "Op_Diagonal.hh"
 #include "PK_BDF.hh"
 #include "PDE_CouplingFlux.hh"
@@ -170,7 +169,14 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   pk_matrix->op_adv()->ApplyBCs(true, true, true);
   pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
-  op_tree_matrix_->SymbolicAssembleMatrix();
+  std::string name = tp_list_->sublist("time integrator").get<std::string>("preconditioner", "Hypre AMG");
+  std::string ls_name = tp_list_->sublist("time integrator").get<std::string>("linear solver", "GMRES with Hypre AMG");
+  auto inv_list =
+    AmanziSolvers::mergePreconditionerSolverLists(name, glist_->sublist("preconditioners"),
+						  ls_name, glist_->sublist("solvers"),
+						  true);
+  op_tree_matrix_->set_inverse_parameters(inv_list);
+  op_tree_matrix_->InitializeInverse();
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -269,26 +275,14 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     op_coupling11_->Setup(values2, 1.0);
     op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_tree_matrix_->AssembleMatrix();
-
-    // create preconditioner
-    auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
-    op_tree_matrix_->InitPreconditioner(pc_list);
-
     // create solver
-    Teuchos::ParameterList slist = glist_->sublist("solvers")
-                                          .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
-        solver(op_tree_matrix_, op_tree_matrix_);
-    solver.Init(slist);
-    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    op_tree_matrix_->ComputeInverse();
 
     TreeVector rhs(*tv_one), tv_aux(*tv_one);
     *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
     *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
 
-    int ierr = solver.ApplyInverse(rhs, tv_aux);
-
+    int ierr = op_tree_matrix_->ApplyInverse(rhs, tv_aux);
     SaveComponent_(tv_aux, my_solution_, i);
 
     // process error code

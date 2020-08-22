@@ -91,6 +91,7 @@ class PDE_DiffusionFactory {
 
   // Lazy setup requires minimum input or none.
   // Multiple operator can be generated using a common setup
+  void SetPList(const Teuchos::ParameterList& oplist) { oplist_ = oplist; }
   void SetConstantTensorCoefficient(const WhetStone::Tensor& K);
   void SetVariableTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) { K_ = K; }
 

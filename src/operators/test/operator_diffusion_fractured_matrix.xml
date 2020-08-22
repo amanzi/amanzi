@@ -36,7 +36,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -48,7 +48,7 @@
     </ParameterList>
 
     <ParameterList name="identity">
-      <Parameter name="preconditioner type" type="string" value="identity"/>
+      <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
 

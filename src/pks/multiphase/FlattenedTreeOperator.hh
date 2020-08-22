@@ -38,6 +38,9 @@ class SuperMap;
 
 class FlattenedTreeOperator : public Operators::TreeOperator {
  public:
+  using Vector_t = TreeVector;
+  using VectorSpace_t = TreeVector::VectorSpace_t;
+
   FlattenedTreeOperator() {};
   FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   ~FlattenedTreeOperator() {};

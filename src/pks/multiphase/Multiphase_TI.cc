@@ -49,28 +49,13 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   }
 
   // miscalleneous fields
-  // -- saturation
-  auto& sat_lc = *S_->GetFieldData(saturation_liquid_key_, passwd_)->ViewComponent("cell");
-
   // -- gas pressure
   S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   auto pg = *S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
 
-  // -- molar densities
-  S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
-  const auto& eta_gc = *eta_g->ViewComponent("cell");
-
-  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
-  const auto& eta_lc = *eta_l->ViewComponent("cell");
-
   // -- storage
   S_->GetFieldEvaluator(tws_key_)->HasFieldChanged(S_.ptr(), passwd_);
   S_->GetFieldEvaluator(tcs_key_)->HasFieldChanged(S_.ptr(), passwd_);
-
-  // -- porosity
-  const auto& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
   // -- wrapper for absolute permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
@@ -78,7 +63,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // work memory for miscalleneous operator
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
-  auto& kr_f = *kr->ViewComponent("face");
 
   // primary variables
   auto aux = up[0];
@@ -205,8 +189,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 ****************************************************************** */
 void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
-  double t_old = tp - dtp;
-
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<const CompositeVector> > up;
   for (int i = 0; i < 3; ++i) {
@@ -214,20 +196,9 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   }
 
   // miscalleneous fields
-  // -- saturation
-  auto& sat_lc = *S_->GetFieldData(saturation_liquid_key_, passwd_)->ViewComponent("cell");
-
-  // -- porosity
-  const auto& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
-
   // -- molar densities
   S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
-  const auto& eta_gc = *eta_g->ViewComponent("cell");
-
-  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& eta_l = S_->GetFieldData(molar_density_liquid_key_);
-  const auto& eta_lc = *eta_l->ViewComponent("cell");
 
   // -- mass density of gas phase 
   auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
@@ -251,7 +222,6 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
-  auto& kr_f = *kr->ViewComponent("face");
 
   CompositeVector fone(*up[0]);
   auto& fone_c = *fone.ViewComponent("cell");
@@ -542,7 +512,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   }
   op_preconditioner_->AssembleMatrix();
   // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
-  op_preconditioner_->UpdatePreconditioner();
+  op_preconditioner_->ComputeInverse();
 }
 
 

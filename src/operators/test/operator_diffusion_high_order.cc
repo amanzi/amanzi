@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
+#include "IterativeMethodPCG.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "SurfaceCoordinateSystem.hh"
@@ -70,7 +70,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   ParameterList op_list = plist.sublist("PK operator")
                                .sublist("diffusion operator Crouzeix-Raviart");
   int order = op_list.sublist("schema").get<int>("method order");
-
+  
   Analytic00 ana(mesh, 1.0, 2.0, order);
 
   Point xv(2), x0(2), x1(2);
@@ -117,34 +117,17 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
-  ParameterList slist;
-  // slist.set<std::string>("preconditioner type", "diagonal");
-  slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, solution);
-
-  if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
-  }
+  global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -154,7 +137,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   ana.ComputeEdgeMomentsError(pf, 0.0, 3, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
-    printf("L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_err, pinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-2);
   }
@@ -255,33 +238,22 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
   ParameterList slist;
-  slist.set<std::string>("preconditioner type", "diagonal");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  slist.set<std::string>("preconditioning method", "diagonal");
+  slist.set("iterative method", "pcg");
+  slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->set_inverse_parameters(slist);
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, solution);
-
-  if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
-  }
+  global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -303,7 +275,7 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
   }
 
   if (MyPID == 0) {
-    printf("Node: L2(p)=%12.9f  H1(p)=%12.9f  itr=%3d\n", l2n_err, h1n_err, solver.num_itrs());
+    printf("Node: L2(p)=%12.9f  H1(p)=%12.9f\n", l2n_err, h1n_err);
     printf("Edge: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2f_err, inff_err);
     if (flag) printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2c_err, infc_err);
 
@@ -460,35 +432,21 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
-  ParameterList slist;
-  // slist.set<std::string>("preconditioner type", "diagonal");
-  slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  slist.set("iterative method", "pcg");
+  slist.sublist("pcg parameters") = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  slist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->set_inverse_parameters(slist);
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, solution);
-
-  if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " size=" <<  global_op->A()->NumGlobalRows() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
-  }
+  global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -510,9 +468,9 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   }
 
   if (MyPID == 0) {
-    printf("Node: L2(p)=%12.9f  H1(p)=%12.9f  itr=%3d\n", l2n_err, h1n_err, solver.num_itrs());
-    printf("Edge: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2f_err, inff_err);
-    if (flag) printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2c_err, infc_err);
+    printf("Node: L2(p)=%12.9f  H1(p)=%12.9f\n", l2n_err, h1n_err);
+    printf("Edge: L2(p)=%12.9f  Inf(p)=%12.9f\n", l2f_err, inff_err);
+    if (flag) printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f\n", l2c_err, infc_err);
 
     CHECK(l2n_err < 1e-10 && h1n_err < 2e-1);
     CHECK(l2f_err < 1e-10 && inff_err < 1e-10);

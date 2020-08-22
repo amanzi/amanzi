@@ -24,6 +24,8 @@
 #include "WhetStoneDefs.hh"
 
 #include "Flow_PK.hh"
+#include "FracturePermModelPartition.hh"
+#include "FracturePermModelEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -53,6 +55,23 @@ Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
 ****************************************************************** */
 void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
 {
+  // Work flow can be affected by the list of models
+  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
+
+  // -- type of the flow (in matrix or on manifold)
+  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+  flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+
+  // -- coupling with other PKs
+  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
+  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
+
+  // register fields
+  // -- keys
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  permeability_key_ = Keys::getKey(domain_, "permeability"); 
+
+  // -- constant fields
   if (!S->HasField("const_fluid_density")) {
     S->RequireScalar("const_fluid_density", passwd_);
   }
@@ -64,6 +83,44 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
+
+  // -- effective fracture permeability
+  if (flow_on_manifold_) {
+    if (!S->HasField(permeability_key_)) {
+      S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
+      Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
+
+      Teuchos::ParameterList elist;
+      elist.set<std::string>("permeability key", permeability_key_)
+           .set<std::string>("aperture key", Keys::getKey(domain_, "aperture"));
+      Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
+      S->SetFieldEvaluator(permeability_key_, eval);
+    }
+  // -- matrix absolute permeability
+  } else {
+    if (!S->HasField(permeability_key_)) {
+      S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
+    }
+  }
+
+  // -- darcy flux
+  if (!S->HasField(darcy_flux_key_)) {
+    if (flow_on_manifold_) {
+      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
+      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
+    } else {
+      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    }
+  }
+
+  if (!S->HasFieldEvaluator(darcy_flux_key_)) {
+    AddDefaultPrimaryEvaluator(darcy_flux_key_);
+  }
 
   // Wells
   if (!S->HasField("well_index")) {

@@ -55,7 +55,7 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
   }
 
   // resize the blocks
-  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
+  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<Operator> >(n_blocks, Teuchos::null));
 
   // first map supports solvers which use casual tree vectors
   // second map helps matrix assembly from smaller-size blocks

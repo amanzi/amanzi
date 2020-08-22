@@ -20,7 +20,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "LinearOperatorFactory.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
@@ -78,7 +77,6 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  double t_ini = S->time(); 
   mesh_ = S->GetMesh(domain_);
   dim_ = mesh_->space_dimension();
 
@@ -413,15 +411,13 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitMPPreconditioner();
 
   std::string pc_name = mp_list_->get<std::string>("preconditioner");
-  AMANZI_ASSERT(pc_list_->isSublist(pc_name));
-  auto tmp = pc_list_->sublist(pc_name);
-  op_preconditioner_->InitializePreconditioner(tmp);
+  op_preconditioner_->set_inverse_parameters(pc_name, *pc_list_);
   
   // linear solver
-  op_pc_solver_ = op_preconditioner_;
+  // op_pc_solver_ = op_preconditioner_;
   std::string solver_name = mp_list_->get<std::string>("linear solver");
-  AmanziSolvers::LinearOperatorFactory<Operators::FlattenedTreeOperator, TreeVector, TreeVectorSpace> sfactory;
-  op_pc_solver_ = sfactory.Create(solver_name, *linear_operator_list_, op_preconditioner_);
+  Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(solver_name);
+  op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
@@ -566,7 +562,6 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
   // *S_->GetFieldData(prev_tcs_key_, passwd_) = *S_->GetFieldData(tcs_key_);
 
   S_->GetFieldEvaluator(advection_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& mobility_gc = *S_->GetFieldData(advection_gas_key_)->ViewComponent("cell");
 
   // work memory
   auto kr = CreateCVforUpwind(mesh_);

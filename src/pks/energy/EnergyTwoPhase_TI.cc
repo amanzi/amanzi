@@ -124,8 +124,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
   }
 
   // finalize preconditioner
-  op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->UpdatePreconditioner();
+  op_preconditioner_->ComputeInverse();
 }
 
 

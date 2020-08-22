@@ -2,7 +2,6 @@
 #  Amanzi
 #   Flow process kernel
 #
-
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
@@ -236,6 +235,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_darcy_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                     NPROCS 4)
+
+    add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
 

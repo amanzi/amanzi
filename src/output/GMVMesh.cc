@@ -139,18 +139,12 @@ void open_data_file(std::string meshfile,
 
 void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename) 
 {
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
   write_mesh_to_file_(mesh, filename);
 }
 
 
 void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename, unsigned int cycleno, unsigned int digits) 
 {
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
   std::string suffixstr(digits+1,'.');
   suffix_no(suffixstr, cycleno);
   filename.append(suffixstr); 

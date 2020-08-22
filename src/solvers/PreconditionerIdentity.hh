@@ -13,7 +13,7 @@
 Simply copies the input vector to the output -- uses the Identity matrix as a
 preconditioner.
 
-This is provided when using the `"preconditioner type`"=`"identity`" in the
+This is provided when using the `"preconditioning method`"=`"identity`" in the
 `Preconditioner`_ spec.
 
 No parameters are required.
@@ -30,29 +30,37 @@ No parameters are required.
 #include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
-#include "Preconditioner.hh"
+#include "Inverse.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
-class PreconditionerIdentity : public Preconditioner {
+template<class Matrix,
+         class Preconditioner=Matrix,
+         class Vector=typename Matrix::Vector_t,
+         class VectorSpace=typename Vector::VectorSpace_t>
+class PreconditionerIdentity :
+      public Inverse<Matrix,Preconditioner,Vector,VectorSpace> {
  public:
   PreconditionerIdentity() {};
   ~PreconditionerIdentity() {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) {};
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) {};
-  void Destroy() {};
+  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final {};
+  virtual void InitializeInverse() override final {};
+  virtual void ComputeInverse() override final {};
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) {
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     hv = v;
     return 0;
   }
 
-  int returned_code() { return 0; }
+  virtual int returned_code() const override final { return 1; }
+  virtual std::string returned_code_string() const override {
+    return "PreconditionerIdentity was applied.";
+  }
 };
 
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi
 
 

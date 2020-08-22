@@ -25,62 +25,6 @@ namespace Amanzi {
 namespace Operators {
 
 
-/* ******************************************************************
-* Convert composite vector to/from super vector.
-****************************************************************** */
-int CopyCompositeVectorToSuperVector(const SuperMap& smap,
-        const CompositeVector& cv, Epetra_Vector& sv, int block_num)
-{
-  for (const auto& compname : cv) {
-    if (smap.HasComponent(block_num, compname)) {
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-        const auto& inds = smap.Indices(block_num, compname, dofnum);
-        const auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) sv[inds[f]] = data[dofnum][f];
-      }
-    }
-  }
-  return 0;
-}
-
-
-/* ******************************************************************
-* Copy super vector to composite vector, component-by-component.
-****************************************************************** */
-int CopySuperVectorToCompositeVector(const SuperMap& smap,
-        const Epetra_Vector& sv, CompositeVector& cv, int block_num)
-{
-  for (const auto& compname : cv) {
-    if (smap.HasComponent(block_num, compname)) {
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-        const auto& inds = smap.Indices(block_num, compname, dofnum);
-        auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] = sv[inds[f]];
-      }
-    }
-  }
-  return 0;
-}
-
-
-/* ******************************************************************
-* Add super vector to composite vector, component-by-component.
-****************************************************************** */
-int AddSuperVectorToCompositeVector(const SuperMap& smap,
-        const Epetra_Vector& sv, CompositeVector& cv, int block_num)
-{
-  for (const auto& compname : cv) {
-    if (smap.HasComponent(block_num, compname)) { 
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-        const auto& inds = smap.Indices(block_num, compname, dofnum);
-        auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] += sv[inds[f]];
-      }
-    }
-  }
-  return 0;
-}
-
 
 /* ******************************************************************
 *                        DEPRECATED
@@ -133,69 +77,6 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 
 
 /* ******************************************************************
-* Nonmember: copy TreeVector to/from Super-vector
-****************************************************************** */
-int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
-                                Epetra_Vector& sv)
-{
-  int ierr(0);
-
-  if (tv.Data().get()) {
-    return CopyCompositeVectorToSuperVector(map, *tv.Data(), sv, 0);
-  } else {
-    auto sub_tvs = collectTreeVectorLeaves_const(tv);
-    int block_num = 0;
-    for (const auto& sub_tv : sub_tvs) {
-      ierr |= CopyCompositeVectorToSuperVector(map, *sub_tv->Data(), sv, block_num);
-      block_num++;
-    }
-    return ierr;
-  }
-}
-
-
-int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-                                TreeVector& tv)
-{
-  int ierr(0);
-
-  if (tv.Data().get()) {
-    return CopySuperVectorToCompositeVector(map, sv, *tv.Data(), 0);
-  } else {
-    auto sub_tvs = collectTreeVectorLeaves(tv);
-    int block_num = 0;
-    for (const auto& sub_tv : sub_tvs) {
-      ierr |= CopySuperVectorToCompositeVector(map, sv, *sub_tv->Data(), block_num);
-      block_num++;
-    }
-    return ierr;
-  }
-}
-
-
-/* ******************************************************************
-* Add super vector to tree vector, subvector-by-subvector.
-****************************************************************** */
-int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-                               TreeVector& tv)
-{
-  int ierr(0);
-
-  if (tv.Data().get()) {
-    return AddSuperVectorToCompositeVector(map, sv, *tv.Data(), 0);
-  } else {
-    auto sub_tvs = collectTreeVectorLeaves(tv);
-    int block_num = 0;
-    for (const auto& sub_tv : sub_tvs) {
-      ierr |= AddSuperVectorToCompositeVector(map, sv, *sub_tv->Data(), block_num);
-      block_num++;
-    }
-    return ierr;
-  }
-}
-
-
-/* ******************************************************************
 * Estimate size of the matrix graph.
 ****************************************************************** */
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
@@ -232,7 +113,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
 /* ******************************************************************
 * Estimate size of the matrix graph: general version
 ****************************************************************** */
-unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();

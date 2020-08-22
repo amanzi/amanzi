@@ -3848,18 +3848,20 @@ The conceptual PDE model of the stationary coupled matrix-fracture flow is
 
 .. math::
   \begin{array}{l}
+  \phi_m \frac{S_{s,m}}{g} \frac{\partial p_m}{\partial t}
   - \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
   \quad
   \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu} 
   (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
   %
+  \phi_f \frac{S_{s,f}}{g} \frac{\partial p_f}{\partial t}
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
     -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
   \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
   (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g}) \\
   %
-  \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = k (p_f - p_m)
+  \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = \frac{k}{g} (p_f - p_m)
   \end{array}
 
 subject to convential boundary conditions for both matrix and fracture domains expect for 
@@ -3870,11 +3872,13 @@ the matrix-fracture boundary where the boundary condition is
 
 Here
 :math:`\rho_l` is fluid density [kg/m^3],
+:math:`\phi` is porosity [-],
+:math:`S_s` is ispecific storage [m],
 :math:`p` is aqueous pressure [Pa],
 :math:`\boldsymbol{K}` is absolute permeability [m^2] for matrix domain and [m^3] for fracture domain,
 :math:`Q_m` is source or sink term,
 :math:`\boldsymbol{q}` is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
-:math:`k` is effective normal premeability [m/s/Pa],
+:math:`k` is effective normal premeability [s^-1],
 and
 :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
 

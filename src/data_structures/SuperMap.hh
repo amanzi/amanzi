@@ -27,13 +27,16 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
-
 #include "SuperMapLumped.hh"
+
+class Epetra_Vector;
 
 namespace Amanzi {
 
 class CompositeVectorSpace;
+class CompositeVector;
 class TreeVectorSpace;
+class TreeVector;
 
 namespace AmanziMesh {
 class Mesh;
@@ -111,6 +114,29 @@ class SuperMap {
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
+
+// Copy in/out
+int
+copyToSuperVector(const SuperMap& map, const CompositeVector& bv,
+                  Epetra_Vector& sv, int block_num = 0);
+int
+copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                    CompositeVector& bv, int block_num = 0);
+int
+addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                   CompositeVector& bv, int block_num = 0);
+
+// Nonmember TreeVector to/from Super-vector
+// -- simple schema version
+int
+copyToSuperVector(const SuperMap& map, const TreeVector& tv,
+                  Epetra_Vector& sv);
+int
+copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                    TreeVector& tv);
+int
+addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
+                   TreeVector& tv);
 
 }  // namespace Operators
 }  // namespace Amanzi

@@ -14,10 +14,8 @@
 #ifndef AMANZI_PK_PHYSICAL_BDF_HH_
 #define AMANZI_PK_PHYSICAL_BDF_HH_
 
-
 #include "PK_BDF.hh"
 #include "PK_Physical.hh"
-#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 

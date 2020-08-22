@@ -12,7 +12,6 @@
   Process kernel that couples Darcy flow in matrix and fracture network.
 */
 
-#include "Darcy_PK.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -66,6 +65,8 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+
+    AddDefaultPrimaryEvaluator("pressure");
   }
 
   // -- darcy flux
@@ -75,12 +76,16 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+
+    AddDefaultPrimaryEvaluator("darcy_flux");
   }
 
   // -- darcy flux for fracture
   if (!S->HasField("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
+
+    AddDefaultPrimaryEvaluator("fracture-darcy_flux");
   }
 
   // Require additional fields and evaluators
@@ -207,25 +212,25 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create a global problem
   sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
-  op_tree_matrix_->SymbolicAssembleMatrix();
-  op_tree_matrix_->AssembleMatrix();
-
-  // Test SPD properties of the matrix.
-  // VerificationTV ver(op_tree_);
-  // ver.CheckMatrixSPD();
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  std::string ls_name = ti_list_->get<std::string>("linear solver", "none");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
+								ls_name, *linear_operator_list_,
+								true);
+  op_tree_matrix_->set_inverse_parameters(inv_list);
+  op_tree_matrix_->InitializeInverse();
 
   // stationary solve is modelled with large dt. To pick the correct
   // boundary conditions, dt is negative. This assumes that we are at
   // the beginning of simulation.
   if (ti_list_->isSublist("initialization")) {
-    bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
-
+    // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     double dt(-1e+98), dt_solver;
     bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green")
                << "matrix:" << std::endl
@@ -271,7 +276,8 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
   
   // diagonal blocks in tree operator must be Darcy PKs
   for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy");
+    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy" || 
+                  sub_pks_[i]->name() == "richards");
   }
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
@@ -288,11 +294,7 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
                                                  double h)
 {
-  // EpetraExt::RowMatrixToMatlabFile("FlowMatrixFracture_PC_.txt", *op_tree_->A());
-  std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-
-  op_tree_matrix_->InitPreconditioner(pc_list);
+  op_tree_matrix_->ComputeInverse();
 }
 
 

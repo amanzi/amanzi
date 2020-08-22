@@ -60,8 +60,6 @@ void NCP_F::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 

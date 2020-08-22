@@ -16,12 +16,9 @@
 
 // Amanzi
 #include "errors.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
@@ -56,6 +53,9 @@ void PDE_DiffusionMFD::SetTensorCoefficient(
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
+
+  // changing the tensor coefficient invalidates the mass matrices
+  mass_matrices_initialized_ = false;  
 }
 
 
@@ -1410,8 +1410,12 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
     consistent_face_op_->OpPushBack(local_op_);
-    consistent_face_op_->SymbolicAssembleMatrix();
-    consistent_face_op_->InitializePreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
+    Teuchos::ParameterList lin_solver = plist_.sublist("consistent faces").sublist("preconditioner");
+    if (plist_.sublist("consistent faces").isSublist("linear solver")) {
+      lin_solver.setParameters(plist_.sublist("consistent faces").sublist("linear solver"));
+    }
+    consistent_face_op_->set_inverse_parameters(lin_solver);
+    consistent_face_op_->InitializeInverse();
   }
 
   // calculate the rhs, given by y_f - Afc * x_c
@@ -1437,24 +1441,11 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   y.GatherGhostedToMaster("face", Add);
 
   // x_f = Aff^-1 * ...
-  consistent_face_op_->AssembleMatrix();
-  consistent_face_op_->UpdatePreconditioner();
+  consistent_face_op_->ComputeInverse();
 
-  int ierr = 0;
-  if (plist_.sublist("consistent faces").isSublist("linear solver")) {
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
-    Teuchos::RCP<Operator> lin_solver = fac.Create(
-        plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
-
-    CompositeVector u_f_copy(y);
-    ierr = lin_solver->ApplyInverse(y, u_f_copy);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  } else {
-    CompositeVector u_f_copy(y);
-    ierr = consistent_face_op_->ApplyInverse(y, u);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  }
-  
+  CompositeVector u_f_copy(y);
+  int ierr = consistent_face_op_->ApplyInverse(y, u_f_copy);
+  *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   return (ierr > 0) ? 0 : 1;
 }
   

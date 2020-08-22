@@ -144,13 +144,13 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
   op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
-  op_preconditioner_->SymbolicAssembleMatrix();
 
   // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
-  op_preconditioner_->InitializePreconditioner(slist);
+  op_preconditioner_->set_inverse_parameters(slist);
+  op_preconditioner_->InitializeInverse();
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");

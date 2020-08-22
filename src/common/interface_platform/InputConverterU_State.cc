@@ -138,7 +138,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- permeability. We parse matrix and fractures together.
-      bool perm_err(false), perm_init_from_file(false), conductivity(false);
+      bool perm_err(false), conductivity(false);
       std::string perm_file, perm_format, unit("m^2");
 
       node = GetUniqueElementByTagsString_(inode, "permeability", flag);

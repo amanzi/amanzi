@@ -237,7 +237,7 @@ void ObservableAqueous::ComputeObservation(
         mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
 
 	int sign, c = cells[0];
-        const auto& normal = mesh_->face_normal(f, false, c, &sign);
+        mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
         double scale = 1.;
         if (domain_ == "fracture")

@@ -276,7 +276,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
-  double l2_error(0.0), previous_l2_error(0.0), l2_error_initial(0.0);
+  double l2_error(0.0), previous_l2_error(0.0);
 
   // Evaluate the nonlinear function.
   fun_calls_++;

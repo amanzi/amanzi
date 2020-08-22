@@ -24,7 +24,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LinearOperatorGMRES.hh"
+#include "IterativeMethodGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "OutputXDMF.hh"
@@ -134,13 +134,12 @@ void RunTest(double gravity) {
 
   // apply BCs and assemble
   op_adv->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
     
-  // create preconditoner
-  ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  // create inverse
+  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"),
+                               "GMRES", plist->sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // initialize I/O
   Teuchos::ParameterList iolist;
@@ -150,14 +149,9 @@ void RunTest(double gravity) {
   // time stepping
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
-    // -- solve the problem
-    ParameterList lop_list = plist->sublist("solvers").sublist("GMRES").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    solver.ApplyInverse(rhs, solution_new);
+    global_op->ApplyInverse(rhs, solution_new);
 
     // -- modify right-hand side and solution
     const auto& old_c = *solution.ViewComponent("cell");
@@ -170,12 +164,6 @@ void RunTest(double gravity) {
 
     double a;
     rhs.Norm2(&a);
-    if (MyPID == 0) {
-      std::cout << "pressure solver (" << solver.name() 
-                << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
-                << "  ||f||=" << a 
-                << " code=" << solver.returned_code() << std::endl;
-    }
 
     io.InitializeCycle(t, nstep);
     io.WriteVector(*new_c(0), "solution", AmanziMesh::CELL);

@@ -7,7 +7,6 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
 
   hid_t file, group, dataspace, dataset;
   hsize_t dimsf[2];
-  herr_t status;
   std::string h5Filename, xmfFilename;
 
   // build h5 filename
@@ -44,8 +43,7 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
   dataspace = H5Screate_simple(2, dimsf, NULL);
   dataset = H5Dcreate(group, "Nodes", H5T_NATIVE_DOUBLE, dataspace,
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
-                    H5P_DEFAULT, nodes);
+  H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodes);
   delete[] nodes;
   H5Dclose(dataset);
   H5Sclose(dataspace);
@@ -77,14 +75,13 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
   dataspace = H5Screate_simple(2, dimsf, NULL);
   dataset = H5Dcreate(group, "Elements", H5T_NATIVE_INT, dataspace,
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  status = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL,
-                    H5P_DEFAULT, ielem);
+  H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ielem);
   delete[] ielem;
   H5Dclose(dataset);
   H5Sclose(dataspace);
 
   // close file
-  status = H5Fclose(file);
+  H5Fclose(file);
 
   // Store information
   setH5MeshFilename(h5Filename);
@@ -487,11 +484,11 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
   x.ExtractView(&data);
     
   hid_t dataset = H5Dopen(file, h5path, H5P_DEFAULT);
-  herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+  H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
     
-  status = H5Dclose(dataset);
-  status = H5Fclose(file);
+  H5Dclose(dataset);
+  H5Fclose(file);
 }
   
 Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,

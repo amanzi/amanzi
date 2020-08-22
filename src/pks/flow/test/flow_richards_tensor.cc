@@ -133,10 +133,7 @@ void TestLinearPressure(bool saturated) {
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);
-
-    double p_exact = v0 * xf;
     double f_exact = u0 * normal / rho;
     err_u += pow(flux[0][f] - f_exact, 2.0);
     // std::cout << f << " " << xf << "  flux_num=" << flux[0][f] << " f_ex=" << f_exact << std::endl;

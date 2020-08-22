@@ -261,7 +261,7 @@
 
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
@@ -275,7 +275,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>

@@ -34,10 +34,10 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="fracture" type="ParameterList">
+    <ParameterList name="fracture">
       <ParameterList name="region: labeled set" type="ParameterList">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="test/single_fracture_ref0.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_tet.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -91,7 +91,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="test/single_fracture_ref0.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_tet.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">
@@ -452,7 +452,7 @@
 
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0."/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -465,7 +465,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0e+00"/>

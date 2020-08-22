@@ -54,6 +54,7 @@ class MeshExtractedManifold : public Mesh {
   // initialization
   void InitParentMaps(const std::string& setname);
   void InitEpetraMaps();
+  void InitExteriorEpetraMaps();
 
   virtual Teuchos::RCP<const Mesh> parent() const override { return parent_mesh_; }
 
@@ -199,6 +200,7 @@ class MeshExtractedManifold : public Mesh {
   //    on all owned faces into an Epetra vector defined only on exterior faces
   virtual const Epetra_Import& exterior_face_importer(void) const override {
     AMANZI_ASSERT(false);
+    return *exterior_face_importer_;
   }
 
   // Mesh Sets for ICs, BCs, Material Properties

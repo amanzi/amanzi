@@ -66,9 +66,6 @@ void NCP_HenryLaw::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& pg = *S->GetFieldData(pressure_gas_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
 

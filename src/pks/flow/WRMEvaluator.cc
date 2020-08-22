@@ -26,7 +26,7 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           Teuchos::RCP<WRMPartition> wrm) :
+                           const Teuchos::RCP<WRMPartition>& wrm) :
     SecondaryVariablesFieldEvaluator(plist),
     wrm_(wrm)
 {
@@ -52,7 +52,6 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void WRMEvaluator::InitializeFromPlist_() {
-  // my key is for saturation
   my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
 
   // my dependency is pressure.

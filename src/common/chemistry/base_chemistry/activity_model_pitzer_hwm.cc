@@ -457,7 +457,7 @@ void ActivityModelPitzerHWM::ComputeBetaFunctions() {
   @details Compute the J's functions.
 */
 void ActivityModelPitzerHWM::ComputeJFunctions() {
-  const double e1(4.581), e2(0.7237), e3(0.012), e4(0.528), e12(7.8963);
+  const double e1(4.581), e2(0.7237), e3(0.012), e4(0.528);  // e12(7.8963);
 
   if (jfunction_approach == "pitzer1975") {
 

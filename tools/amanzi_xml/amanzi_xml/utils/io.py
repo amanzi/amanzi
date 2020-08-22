@@ -29,7 +29,7 @@ def fromString(string):
 def toString(plist):
     """Writes a amanzi-xml hierarchy to a string"""
     plist.indent(0)
-    return etree.tostring(plist)
+    return etree.tostring(plist, encoding='unicode')
 
 def toFile(plist, file_or_filename):
     """Writes a amanzi-xml hierarchy to a file"""

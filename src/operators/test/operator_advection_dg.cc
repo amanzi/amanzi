@@ -28,7 +28,6 @@
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"
 #include "DG_Modal.hh"
-#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
@@ -146,7 +145,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   auto Kc = K->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const Point& xc = mesh->cell_centroid(c);
     (*Kc)[0][c] = Kreac;
   }
 
@@ -263,30 +261,21 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("GMRES").sublist("gmres parameters");
-  AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+          "GMRES", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "dG solver (gmres): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() 
+    std::cout << "dG solver (gmres): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() 
               << " order=" << order << std::endl;
 
     // visualization
@@ -301,7 +290,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     GMV::close_data_file();
   }
 
-  CHECK(solver.num_itrs() < 200);
+  CHECK(global_op->num_itrs() < 200);
 
   // compute solution error
   solution.ScatterMasterToGhosted();
@@ -313,7 +302,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(dim));
     std::cout << "\nEXACT solution: " << sol << std::endl;
-    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, global_op->num_itrs());
     printf("Total:    L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%12.9f\n", pl2_int);
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);

@@ -446,7 +446,7 @@
 
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0e+00"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
