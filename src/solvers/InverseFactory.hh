@@ -141,6 +141,7 @@ setMakeOneIterationCriteria(Teuchos::ParameterList& plist) {
   }
 }
 
+
 //
 // Helper function to merge Amanzi-style "solvers" and "preconditioners" lists
 // options.
@@ -175,7 +176,6 @@ mergePreconditionerSolverLists(
   if (make_one_iteration) setMakeOneIterationCriteria(inv_list);
   return inv_list;
 }
-
 
 
 //
@@ -214,6 +214,7 @@ createIterativeMethod(const std::string& method_name,
   return inv;
 }
 
+
 //
 // This also potentially gets used by client code...
 //
@@ -244,7 +245,6 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   inv->set_matrices(m, m);
   return inv;
 }
-
 
 
 //
@@ -423,7 +423,6 @@ createInverse(const std::string& name,
   return createInverse<Operator,Operator,Vector,VectorSpace>(
       name, solvers_list, m, m);
 }
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

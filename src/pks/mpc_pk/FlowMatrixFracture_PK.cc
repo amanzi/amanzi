@@ -220,16 +220,11 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_matrix_->set_inverse_parameters(inv_list);
   op_tree_matrix_->InitializeInverse();
 
-  // Test SPD properties of the matrix.
-  // VerificationTV ver(op_tree_);
-  // ver.CheckMatrixSPD();
-
   // stationary solve is modelled with large dt. To pick the correct
   // boundary conditions, dt is negative. This assumes that we are at
   // the beginning of simulation.
   if (ti_list_->isSublist("initialization")) {
-    bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
-
+    // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     double dt(-1e+98), dt_solver;
     bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");

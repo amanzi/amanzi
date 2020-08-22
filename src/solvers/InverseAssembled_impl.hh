@@ -23,7 +23,6 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-
 namespace Impl {
 
 //
@@ -211,6 +210,5 @@ int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(c
   return returned_code;
 }
 
-    
 } // namespace AmanziSolvers
 } // namespace Amanzi

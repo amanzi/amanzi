@@ -518,7 +518,6 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
   }
 
   // Determine tip types, and through this, the expected number of faces
-  int n_faces_total = n_cells + 1;
   int n_faces_mine = n_cells - 1;
   int n_faces_to_addsegment = n_cells - 1;
   auto first_tip_type = GetTipType_(plist, "first tip type");

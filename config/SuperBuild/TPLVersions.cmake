@@ -148,7 +148,6 @@
 #                - update PETSc to 3.13
 #                - update SuperLU_DIST to 6.1.1
 #                - update CLM to 0.1.1
-#                - update CLM to 0.1.1
 
 include(CMakeParseArguments)
 

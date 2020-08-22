@@ -236,7 +236,6 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0), r_norm_initial;
   int db_write_iter = 0;
 
   num_itrs_ = 0;
