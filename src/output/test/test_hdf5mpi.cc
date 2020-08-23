@@ -14,14 +14,6 @@ TEST(HDF5_MPI) {
   
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
 
-  unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, 
-                                              Amanzi::AmanziMesh::Parallel_type::OWNED);
-  unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL, 
-                                              Amanzi::AmanziMesh::Parallel_type::OWNED);
-
-  //unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, Parallel_type::OWNED);
-  //unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, Parallel_type::OWNED);
-
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
   Teuchos::RCP<Epetra_Vector> fake_pressure;

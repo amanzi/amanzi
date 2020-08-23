@@ -50,7 +50,7 @@ namespace Impl {
 class TreeOperator_BlockPreconditioner;
 }
 
-class TreeOperator {
+class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
  public:
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVector::VectorSpace_t;
@@ -63,41 +63,45 @@ class TreeOperator {
   // main members
   void SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& op);
   
-  virtual int Apply(const TreeVector& X, TreeVector& Y) const;
+  virtual int Apply(const TreeVector& X, TreeVector& Y) const override;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
-  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const override;
   int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
 
-  const TreeVectorSpace& DomainMap() const { return *tvs_; }
-  const TreeVectorSpace& RangeMap() const { return *tvs_; }
+  virtual const TreeVectorSpace& DomainMap() const override { return *tvs_; }
+  virtual const TreeVectorSpace& RangeMap() const override { return *tvs_; }
   Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
   
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
   void set_inverse_parameters(const std::string& prec_name,
-                         const Teuchos::ParameterList& plist);
-  void set_inverse_parameters(Teuchos::ParameterList& plist) {
+                              const Teuchos::ParameterList& plist);
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override {
     inv_plist_ = plist;
     inited_ = true;
     updated_ = false;
     computed_ = false;
   }
-  void InitializeInverse();
-  void ComputeInverse();
+  virtual void InitializeInverse() override;
+  virtual void ComputeInverse() override;
 
   // Inverse diagnostics... these may change
-  double residual() const {
+  virtual double residual() const override {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->residual();
   }
-  int num_itrs() const {
+  virtual int num_itrs() const override {
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->num_itrs();
   }
-  int returned_code() const { 
+  virtual int returned_code() const override { 
     AMANZI_ASSERT(preconditioner_.get());
     return preconditioner_->returned_code();
+  }
+  virtual std::string returned_code_string() const override { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
   }
   
   // access
@@ -113,6 +117,7 @@ class TreeOperator {
   }
 
   // i/o
+  virtual std::string name() const override { return std::string("TreeOperator"); }
   std::string PrintDiagnostics() const;
 
  protected:

@@ -156,7 +156,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
         f = it->first;
         if (f < nfaces_owned) {
           c = BoundaryFaceGetCell(f);
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          mesh_->face_normal(f, false, c, &dir);
           tmp = flux[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;
         }
