@@ -378,7 +378,6 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     double xi, xj, yj;
     double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell); 
     AmanziGeometry::Point v1(3);
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(cell); 
 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
