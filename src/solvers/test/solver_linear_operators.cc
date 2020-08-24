@@ -21,6 +21,9 @@ using namespace Amanzi;
 SUITE(SOLVERS) {
 class Matrix {
  public:
+  using Vector_t = Epetra_Vector;
+  using VectorSpace_t = Epetra_Map;
+
   Matrix() {};
   Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map) {
     x_[0] = 0.00699270335645641;
@@ -91,7 +94,6 @@ class Matrix {
   double x_[5];
   Teuchos::RCP<Epetra_CrsMatrix> A_;
 };
-
 
 TEST(PCG_SOLVER) {
   std::cout << "Checking PCG solver..." << std::endl;
@@ -397,6 +399,44 @@ TEST(SOLVER_FACTORY_WITH_PC) {
   delete comm;
 };
 
+TEST(GMRES_WITH_GMRES_PC) {
+  std::cout << "\nChecking two-level preconditioner (pcg with gmres pc)..." << std::endl;
+
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+
+  // create the gmres preconditioner with tolerance 0.01
+  Teuchos::Array<std::string> options({ "relative residual" });
+  Teuchos::ParameterList plist;
+  auto& slist = plist.sublist("gmres");
+  slist.set<std::string>("iterative method", "gmres")
+       .set<std::string>("preconditioning method", "identity")
+       .sublist("gmres parameters").set<double>("error tolerance", 1.0e-3)
+                                   .set<Teuchos::Array<std::string>>("convergence criteria", options);
+
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  auto pc = AmanziSolvers::createInverse<Matrix,Epetra_Vector,Epetra_Map>("gmres", plist, m);
+
+  // create the gmres solver with tolerance 1e-6
+  AmanziSolvers::IterativeMethodPCG<Matrix,Amanzi::Matrix<Epetra_Vector,Epetra_Map>,Epetra_Vector,Epetra_Map> solver;
+  solver.set_inverse_parameters(plist);
+  solver.set_matrices(m, pc);
+  solver.set_tolerance(1e-12);
+  solver.InitializeInverse();
+  solver.ComputeInverse();
+
+  // initial guess
+  Epetra_Vector u(*map), v(*map);
+  u[55] = 1.0;
+
+  // solve
+  int ierr = solver.ApplyInverse(u, v);
+  CHECK(ierr > 0);
+
+  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+
+  delete comm;
+};
 
 TEST(VERBOSITY_OBJECT) {
   std::cout << "\nChecking verbosity object..." << std::endl;

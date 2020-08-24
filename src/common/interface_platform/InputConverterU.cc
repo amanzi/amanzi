@@ -49,6 +49,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
+  ParseGeochemistry_();
   ModifyDefaultPhysicalConstants_();
   ParseModelDescription_();
 

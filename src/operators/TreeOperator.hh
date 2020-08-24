@@ -77,6 +77,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
 
   void set_inverse_parameters(const std::string& prec_name,
                               const Teuchos::ParameterList& plist);
+
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override {
     inv_plist_ = plist;
     inited_ = true;
@@ -88,20 +89,24 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
 
   // Inverse diagnostics... these may change
   virtual double residual() const override {
-    AMANZI_ASSERT(preconditioner_.get());
-    return preconditioner_->residual();
+    if (preconditioner_.get()) return preconditioner_->residual();
+    return 0.;
   }
   virtual int num_itrs() const override {
-    AMANZI_ASSERT(preconditioner_.get());
-    return preconditioner_->num_itrs();
+    if (preconditioner_.get()) return preconditioner_->num_itrs();
+    return 0;
   }
-  virtual int returned_code() const override { 
-    AMANZI_ASSERT(preconditioner_.get());
-    return preconditioner_->returned_code();
+  virtual int returned_code() const override {
+    if (preconditioner_.get()) return preconditioner_->returned_code();
+    return 0;
   }
-  virtual std::string returned_code_string() const override { 
-    AMANZI_ASSERT(preconditioner_.get());
-    return preconditioner_->returned_code_string();
+  virtual std::string returned_code_string() const override {
+    if (preconditioner_.get()) return preconditioner_->returned_code_string();
+    return "success";
+  }
+  virtual std::string name() const override {
+    if (preconditioner_.get()) return std::string("TreeOperator: ")+preconditioner_->name();
+    return "TreeOperator: block diagonal";
   }
   
   // access
@@ -118,7 +123,6 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   }
 
   // i/o
-  virtual std::string name() const override { return std::string("TreeOperator"); }
   std::string PrintDiagnostics() const;
 
  protected:
@@ -166,7 +170,7 @@ class TreeOperator_BlockPreconditioner {
     Exceptions::amanzi_throw("TreeOperator Preconditioner does not implement Apply()");
     return 1;
   }
-  
+
   int ApplyInverse(const TreeVector& X, TreeVector& Y) const {
     return op_.ApplyInverseBlockDiagonal_(X,Y);
   }
