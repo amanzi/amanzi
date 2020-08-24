@@ -39,13 +39,17 @@ void TotalComponentStorage::Init_()
 
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
   porosity_key_ = plist_.get<std::string>("porosity key");
+  molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
+  molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
+  mole_fraction_liquid_key_ = plist_.get<std::string>("mole fraction liquid key");
+  mole_fraction_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.insert(std::string(porosity_key_));
-  dependencies_.insert(std::string(saturation_liquid_key_));
-  dependencies_.insert(std::string("molar_density_liquid"));
-  dependencies_.insert(std::string("molar_density_gas"));
-  dependencies_.insert(std::string("mole_fraction_liquid"));
-  dependencies_.insert(std::string("mole_fraction_gas"));
+  dependencies_.insert(porosity_key_);
+  dependencies_.insert(saturation_liquid_key_);
+  dependencies_.insert(molar_density_liquid_key_);
+  dependencies_.insert(molar_density_gas_key_);
+  dependencies_.insert(mole_fraction_liquid_key_);
+  dependencies_.insert(mole_fraction_gas_key_);
 }
 
 
@@ -70,10 +74,10 @@ void TotalComponentStorage::EvaluateField_(
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-  const auto& xl = *S->GetFieldData("mole_fraction_liquid")->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
+  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
+  const auto& xl = *S->GetFieldData(mole_fraction_liquid_key_)->ViewComponent("cell");
+  const auto& xg = *S->GetFieldData(mole_fraction_gas_key_)->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);
@@ -95,10 +99,10 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-  const auto& xl = *S->GetFieldData("mole_fraction_liquid")->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
+  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
+  const auto& xl = *S->GetFieldData(mole_fraction_liquid_key_)->ViewComponent("cell");
+  const auto& xg = *S->GetFieldData(mole_fraction_gas_key_)->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);

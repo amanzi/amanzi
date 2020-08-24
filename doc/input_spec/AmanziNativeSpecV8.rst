@@ -1135,12 +1135,8 @@ We define
 
 where :math:`s_l` is liquid saturation [-],
 :math:`\phi` is porosity [-],
-<<<<<<< HEAD
 :math:`\eta_g` is molar density of water vapor [:math:`mol/m^3`],
 and :math:`X_g` is molar fraction of water vapor.
-=======
-and :math:`X_l` is molar fraction of water vapor [-].
->>>>>>> master
 The effective diffusion coefficient of the water vapor is given by
 
 .. math::

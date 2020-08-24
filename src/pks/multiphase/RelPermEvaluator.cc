@@ -60,8 +60,8 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& sat_c = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
-  auto& result_c = *result->ViewComponent("cell", false);
+  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  auto& result_c = *result->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -78,8 +78,8 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
     Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& sat_c = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
-  auto& result_c = *result->ViewComponent("cell", false);
+  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  auto& result_c = *result->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {

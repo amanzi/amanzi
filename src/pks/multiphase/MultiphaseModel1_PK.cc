@@ -100,7 +100,11 @@ void MultiphaseModel1_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist;
     elist.set<std::string>("my key", tcs_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
-         .set<std::string>("porosity key", porosity_key_);
+         .set<std::string>("porosity key", porosity_key_)
+         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
+         .set<std::string>("molar density gas key", molar_density_gas_key_)
+         .set<std::string>("mole fraction liquid key", x_liquid_key_)
+         .set<std::string>("mole fraction gas key", x_gas_key_);
 
     eval_tcs_ = Teuchos::rcp(new TotalComponentStorage(elist));
     S->SetFieldEvaluator(tcs_key_, eval_tcs_);

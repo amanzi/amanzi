@@ -127,10 +127,10 @@ TEST(MULTIPHASE_2P2C) {
   const auto& sl = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0);
+  CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
   
   S->GetFieldData("ncp_fg")->NormInf(&dmax);
-  CHECK(dmax <= 2.0e-14);
+  CHECK(dmax <= 1.0e-13);
 
   const auto& xg = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
   xg.MinValue(&dmin);
