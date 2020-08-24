@@ -138,8 +138,8 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 namespace Amanzi {
 
 class CompositeVector {
-
-public:
+ public:
+  using VectorSpace_t = CompositeVectorSpace;
   // -- Constructors --
 
   // Constructor from a CompositeVectorSpace (which is like a VectorSpace).

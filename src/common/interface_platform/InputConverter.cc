@@ -10,10 +10,11 @@
            Erin Barker (Erin.Barker@pnnl.gov)
 */
 
-#include <sstream>
-#include <fstream>
-#include <string>
 #include <algorithm>
+#include <fstream>
+#include <locale>
+#include <sstream>
+#include <string>
 #include <sys/stat.h>
 
 // TPLs
@@ -21,6 +22,7 @@
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -241,6 +243,35 @@ void InputConverter::ParseConstants_()
         constants_area_mass_flux_[name] = value;
       } else if (type == TYPE_NONE) {
         constants_[name] = value;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Verify miscallenous assumptions for specific engines.
+****************************************************************** */
+void InputConverter::ParseGeochemistry_()
+{
+  bool flag;
+  DOMNode* node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) return;
+
+  std::string engine = GetAttributeValueS_(node, "engine");
+
+  node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+  if (flag && engine.substr(0, 10) == "crunchflow") {
+    std::vector<DOMNode*> children = GetChildren_(node, "constraint", flag);
+    
+    for (int i = 0; i < children.size(); ++i) {
+      std::string name = GetAttributeValueS_(children[i], "name");
+      std::string tmp(name);
+      transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+      if (tmp != name) {
+        Errors::Message msg;
+        msg << "CrunchFlow uses lower-case for geochemical constraint name, \"" << name << "\" does not comply.\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
@@ -1247,7 +1278,15 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
     Exceptions::amanzi_throw(msg);
   }
 
-  controls << "  DATABASE " << datfilename.c_str() << "\n";
+  // add relative path from xmlfilename_ to datfilename (simplified code)
+  size_t pos0;
+  std::string path(xmlfilename_);
+  if ((pos0 = path.find_last_of('/')) == std::string::npos) 
+    path = "./";
+  else
+    path.erase(path.begin() + pos0, path.end());
+
+  controls << "  DATABASE " << boost::filesystem::relative(datfilename, path).string().c_str() << "\n";
 
   base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
   if (flag) {
@@ -1746,7 +1785,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       in_file << "  /\n";
     }
     if (!gases.str().empty()) {
-      in_file << "  GAS_SPECIES\n";
+      in_file << "  PASSIVE_GAS_SPECIES\n";
       in_file << gases.str();
       in_file << "  /\n";
     }

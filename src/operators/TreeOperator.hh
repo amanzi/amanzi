@@ -21,6 +21,7 @@
 #include "TreeVectorSpace.hh"
 #include "VerboseObject.hh"
 
+#include "InverseFactory.hh"
 #include "Operator.hh"
 
 /* ******************************************************************
@@ -45,59 +46,152 @@ namespace Operators {
 class SuperMap;
 class MatrixFE;
 
-class TreeOperator {
+namespace Impl {
+class TreeOperator_BlockPreconditioner;
+}
+
+class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
  public:
+  using Vector_t = TreeVector;
+  using VectorSpace_t = TreeVector::VectorSpace_t;
+
   TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
+  // TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs, int nblocks);
   virtual ~TreeOperator() = default;
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<Operator>& op);
   
-  virtual int Apply(const TreeVector& X, TreeVector& Y) const;
+  virtual int Apply(const TreeVector& X, TreeVector& Y) const override;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
-  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
+  virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const override;
+  int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
 
+  virtual const TreeVectorSpace& DomainMap() const override { return *tvs_; }
+  virtual const TreeVectorSpace& RangeMap() const override { return *tvs_; }
+  Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
+  
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
-  const TreeVectorSpace& DomainMap() const { return *tvs_; }
-  const TreeVectorSpace& RangeMap() const { return *tvs_; }
+  void set_inverse_parameters(const std::string& prec_name,
+                              const Teuchos::ParameterList& plist);
 
-  // preconditioners
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitBlockDiagonalPreconditioner();
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override {
+    inv_plist_ = plist;
+    inited_ = true;
+    updated_ = false;
+    computed_ = false;
+  }
+  virtual void InitializeInverse() override;
+  virtual void ComputeInverse() override;
 
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
-
+  // Inverse diagnostics... these may change
+  virtual double residual() const override {
+    if (preconditioner_.get()) return preconditioner_->residual();
+    return 0.;
+  }
+  virtual int num_itrs() const override {
+    if (preconditioner_.get()) return preconditioner_->num_itrs();
+    return 0;
+  }
+  virtual int returned_code() const override {
+    if (preconditioner_.get()) return preconditioner_->returned_code();
+    return 0;
+  }
+  virtual std::string returned_code_string() const override {
+    if (preconditioner_.get()) return preconditioner_->returned_code_string();
+    return "success";
+  }
+  virtual std::string name() const override {
+    if (preconditioner_.get()) return std::string("TreeOperator: ")+preconditioner_->name();
+    return "TreeOperator: block diagonal";
+  }
+  
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
-  // deep copy for building interfaces to TPLs, mainly to solvers
-  void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
-  void CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const;
+  Teuchos::RCP<const Operator> GetOperatorBlock(int i, int j) const { return blocks_[i][j];}
+  int GetNumberBlocks() const {return blocks_.size();}
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
+
+  // i/o
+  std::string PrintDiagnostics() const;
+
+ protected:
+  int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
+  
 
  private:
+  friend Impl::TreeOperator_BlockPreconditioner;
+
   Teuchos::RCP<const TreeVectorSpace> tvs_;
-  Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
+  Teuchos::Array<Teuchos::Array<Teuchos::RCP<Operator> > > blocks_;
   
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  Teuchos::RCP<Matrix<TreeVector>> preconditioner_;
   bool block_diagonal_;
 
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_, updated_, computed_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 
+
+namespace Impl {
+//
+// This class simply wraps TreeOperator with ApplyInverse() calling
+// ApplyInverseBlockDiagonal() so that it can be used as a preconditioner.  To
+// provide the common interface to the client, TreeOperator's ApplyInverse must
+// call the linear solver's ApplyInverse(), which wants a preconditioner, which
+// might here be the block diagonal case.  This would be circular without
+// introducing a separate object.
+//
+class TreeOperator_BlockPreconditioner {
+ public:
+  using Vector_t = TreeOperator::Vector_t;
+  using VectorSpace_t = TreeOperator::VectorSpace_t;
+  
+  TreeOperator_BlockPreconditioner(TreeOperator& op) :
+      op_(op) {}
+
+  int Apply(const TreeVector& X, TreeVector& Y) const {
+    Exceptions::amanzi_throw("TreeOperator Preconditioner does not implement Apply()");
+    return 1;
+  }
+
+  int ApplyInverse(const TreeVector& X, TreeVector& Y) const {
+    return op_.ApplyInverseBlockDiagonal_(X,Y);
+  }
+  void InitializeInverse() {
+    for (int n=0; n!=op_.tvs_->size(); ++n) {
+      op_.blocks_[n][n]->InitializeInverse();
+    }
+  }
+  void ComputeInverse() {
+    for (int n=0; n!=op_.tvs_->size(); ++n) {
+      op_.blocks_[n][n]->ComputeInverse();
+    }
+  }
+  
+ private:
+  TreeOperator& op_;
+};
+
+} // namespace Impl
+  
 }  // namespace Operators
 }  // namespace Amanzi
 
-
 #endif
-
-

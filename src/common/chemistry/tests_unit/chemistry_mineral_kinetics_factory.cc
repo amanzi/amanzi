@@ -76,11 +76,8 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
 
     // setup a list of minerals
     ac::SpeciesName name("Calcite");
-    ac::SpeciesId id(6);
     double h2o_stoich(0.0);
-    double charge(0.0);
     double gram_molecular_weight(100.0872);
-    double ion_size_parameter(0.0);
     double logK(1.8487);
     double molar_volume(36.9340);
     double specific_surface_area(0.987654);

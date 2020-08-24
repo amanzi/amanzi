@@ -102,6 +102,9 @@ class Alquimia_PK: public Chemistry_PK {
 
   void ComputeNextTimeStep();
 
+  // maps
+  void InitializeAuxNamesMap_();
+
  protected:
   Teuchos::RCP<TreeVector> soln_;
 
@@ -132,6 +135,9 @@ class Alquimia_PK: public Chemistry_PK {
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
+  std::vector<std::vector<int> > map_;
+  std::vector<std::string> mineral_names_, primary_names_;
 
  private:
   // factory registration

@@ -24,7 +24,7 @@
 #include "SuperMap.hh"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
-#include "Preconditioner.hh"
+#include "InverseFactory.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -33,108 +33,9 @@
 #include "Op_Cell_Face.hh"
 #include "Operator_FaceCellSff.hh"
 
+
 namespace Amanzi {
 namespace Operators {
-
-/* ******************************************************************
-* Special inverse algorithm is required to deal with Schur complement.
-****************************************************************** */
-int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
-{
-  // Check preconditions -- Sff must have exactly one CELL+FACE schema,
-  // and no other CELL schemas that are not simply diagonal CELL_CELL.
-  // Additionally, collect the diagonal for inversion.
-  Epetra_MultiVector D_c(mesh_->cell_map(false),1);
-  
-  int num_with_cells = 0;
-  for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->diag->MyLength() == ncells_owned)) {
-        // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) {
-          D_c[0][c] += (*(*it)->diag)[0][c];
-        }
-      } else {
-        num_with_cells++;
-      }
-    }
-  }
-
-  // This error is a false positive when doing coupled surface/subsurface runs. --etc
-  // if (num_with_cells == 0 || num_with_cells > 1) {
-  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
-
-  int ierr(0);
-  Y.PutScalarGhosted(0.0);
-
-  // apply preconditioner inversion
-  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  // const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
-
-  // Temporary cell and face vectors.
-  CompositeVector T(X);
-  T.PutScalarGhosted(0.0);
-
-  for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-
-      // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
-      AmanziMesh::Entity_ID_List faces;
-      {
-        Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
-        for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
-
-          double tmp = Xc[0][c] / (Acell(nfaces, nfaces) + D_c[0][c]);
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            Tf[0][f] -= Acell(n, nfaces) * tmp;
-          }
-        }
-      }
-
-      T.GatherGhostedToMaster("face", Add);
-
-      // Solve the Schur complement system Sff * Yf = Tf.
-      {
-        const Epetra_MultiVector& Tf_short = *T.ViewComponent("face", false);
-        Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
-
-        ierr = preconditioner_->ApplyInverse(Tf_short, Yf_short);
-        AMANZI_ASSERT(ierr >= 0);
-      }
-
-      Y.ScatterMasterToGhosted("face");
-
-      {
-        const Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
-        Epetra_MultiVector& Yc = *Y.ViewComponent("cell", false);
-        // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-        for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
-
-          double tmp = Xc[0][c];
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            tmp -= Acell(nfaces, n) * Yf[0][f];
-          }
-          Yc[0][c] = tmp / (Acell(nfaces, nfaces) + D_c[0][c]);
-        }
-      }
-    }
-  }
-  return ierr;
-}
 
 
 /* ******************************************************************
@@ -162,12 +63,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
     }
   }
-
-  // This error is a false positive when doing coupled surface/subsurface runs. --etc
-  // if (num_with_cells == 0 || num_with_cells > 1) {
-  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
   
   // schur complement
   int i_schur = 0;
@@ -306,6 +201,30 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   std::string name = "Sff alt CELL_FACE";
   Op_Cell_Face schur_op(name, mesh_);
   Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
+}
+
+void Operator_FaceCellSff::InitializeInverse()
+{
+  AMANZI_ASSERT(inited_);
+  schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
+  schur_inv_->set_inverse_parameters(inv_plist_);
+  schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
+  
+  if (inv_plist_.isParameter("iterative method")) {
+    preconditioner_ = AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), schur_inv_);
+  } else {
+    preconditioner_ = schur_inv_;
+  }
+  preconditioner_->InitializeInverse();
+  updated_ = true;
+  computed_ = false;
+}
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_FaceCellSff::Clone() const {
+  return Teuchos::rcp(new Operator_FaceCellSff(*this));
 }
 
 }  // namespace Operators

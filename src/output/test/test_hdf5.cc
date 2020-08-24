@@ -4,7 +4,6 @@
 
 
 TEST(HDF5) {
-
   auto comm = Amanzi::getDefaultComm();
 
   std::string hdf5_meshfile  = "new_mesh.h5";

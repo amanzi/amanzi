@@ -24,7 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -123,23 +122,15 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     // get and assmeble the global operator
     global_op->UpdateRHS(source, false);
     op->ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // solve the problem
-    Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                           .sublist("Belos GMRES").sublist("belos gmres parameters");
-    AmanziSolvers::LinearOperatorBelosGMRES<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+            "Belos GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
-    solver.ApplyInverse(rhs, *solution);
+    global_op->ApplyInverse(rhs, *solution);
     
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -164,13 +155,13 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       ul2_err /= unorm;
       printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",
           pl2_err, pinf_err, ul2_err, uinf_err,
-          solver.num_itrs(), solver.residual(), solver.returned_code());
+          global_op->num_itrs(), global_op->residual(), global_op->returned_code());
 
       if (testing) {
         double factor = std::pow(1.6, loop);
         CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
       }
-      CHECK(solver.num_itrs() < 15);
+      CHECK(global_op->num_itrs() < 15);
     }
   }
 }
@@ -256,28 +247,23 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
+
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+          "Belos GMRES", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  
   for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     // get and assmeble the global operator
     global_op->UpdateRHS(source, false);
     op->ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
-
-    // solve the problem
-    Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                           .sublist("Belos GMRES").sublist("belos gmres parameters");
-    AmanziSolvers::LinearOperatorBelosGMRES<Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_op, global_op);
-    solver.Init(lop_list);
+    global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
-    solver.ApplyInverse(rhs, *solution);
+    global_op->ApplyInverse(rhs, *solution);
  
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -302,13 +288,13 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       ul2_err /= unorm;
       printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",
           pl2_err, pinf_err, ul2_err, uinf_err,
-          solver.num_itrs(), solver.residual(), solver.returned_code());
+          global_op->num_itrs(), global_op->residual(), global_op->returned_code());
 
       if (testing) {
         double factor = 0.5*std::pow(1.6, loop);
         CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
       }
-      CHECK(solver.num_itrs() < 15);
+      CHECK(global_op->num_itrs() < 15);
     }
   }
 }

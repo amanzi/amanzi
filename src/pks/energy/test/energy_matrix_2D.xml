@@ -200,8 +200,13 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/mol-K]" type="double" value="76.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="76.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -212,8 +217,13 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="620.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -357,7 +367,7 @@
   <ParameterList name="preconditioners">
    <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="optimized mfd"/>
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>

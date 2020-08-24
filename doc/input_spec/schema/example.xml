@@ -356,7 +356,7 @@
 
         <box name="string" low_coordinates="coordinate" high_coordinates="coordinate"/>
         <point name="string" coordinate="coordinate"/>
-        <plane name="string" location="coordinate" normal="normal" tolerane="optional exp"/>
+        <plane name="string" location="coordinate" normal="normal" tolerance="optional exp"/>
         <logical name="string">
 	    <!-- ALL Subelements REQUIRED -->
             <operation>union | intersection | subtraction | complement</operation>
@@ -365,7 +365,7 @@
 
         <!-- only available for unstructured -->
 
-        <polygonal_surface name="string" num_points="int" tolerane="optional exp">
+        <polygonal_surface name="string" num_points="int" tolerance="optional exp">
             <point>coordinate</point>
         </polygonal_surface>
 

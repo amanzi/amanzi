@@ -31,14 +31,15 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_RICHARDS_ACCURACY) {
+void TestLinearPressure(bool saturated) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-std::cout << "Test: Tensor Richards, a cube model" << std::endl;
+  std::string wrm = (saturated) ? "saturated" : "van Genuchten";
+  std::cout << "\nTest: Tensor Richards, a cube model: wrm=" << wrm << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -48,6 +49,11 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   /* read parameter list */
   std::string xmlFileName = "test/flow_richards_tensor.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  if (saturated) 
+    plist->sublist("PKs").sublist("flow")
+        .sublist("water retention models").sublist("WRM for All")
+        .set<std::string>("water retention model", "saturated");
 
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -127,10 +133,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);
-
-    double p_exact = v0 * xf;
     double f_exact = u0 * normal / rho;
     err_u += pow(flux[0][f] - f_exact, 2.0);
     // std::cout << f << " " << xf << "  flux_num=" << flux[0][f] << " f_ex=" << f_exact << std::endl;
@@ -141,6 +144,10 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   CHECK(err_p < 1e-8);
   CHECK(err_u < 1e-8);
 
-  
   delete RPK;
+}
+
+TEST(FLOW_RICHARDS_ACCURACY) {
+  TestLinearPressure(false);
+  TestLinearPressure(true);
 }

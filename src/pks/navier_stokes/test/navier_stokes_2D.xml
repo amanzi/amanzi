@@ -256,7 +256,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="1e-7"/>
@@ -268,6 +268,9 @@
         <Parameter name="verbosity" type="int" value="0"/>
         <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
+    </ParameterList>
+    <ParameterList name="Diagonal">
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

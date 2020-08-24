@@ -440,7 +440,7 @@ void BlockVector::Print(std::ostream& os, bool data_io) const {
   os << "Block Vector" << std::endl;
   os << "  components: ";
   for (int i = 0; i != num_components_; ++i) {
-    os << names_[i] << "(" << data_[i]->NumVectors() << ") ";
+    os << names_[i] << "(nvec=" << data_[i]->NumVectors() << ", len=" << data_[i]->GlobalLength() << ") ";
   }
   os << std::endl;
   if (data_io) {

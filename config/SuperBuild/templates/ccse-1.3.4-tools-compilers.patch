@@ -1,6 +1,6 @@
-diff -Naur ccse-1.3.4-old/Tools/Py_util/GNUmakefile ccse-1.3.4-new/Tools/Py_util/GNUmakefile
---- ccse-1.3.4-old/Tools/Py_util/GNUmakefile	2015-09-24 18:01:31.000000000 -0600
-+++ ccse-1.3.4-new/Tools/Py_util/GNUmakefile	2017-09-13 08:57:49.000000000 -0600
+diff -ruNbB BoxLib-16.04/Tools/Py_util/GNUmakefile BoxLib-16.04-new/Tools/Py_util/GNUmakefile
+--- BoxLib-16.04/Tools/Py_util/GNUmakefile	2020-06-19 18:24:27.000000000 -0600
++++ BoxLib-16.04-new/Tools/Py_util/GNUmakefile	2020-06-19 18:25:20.000000000 -0600
 @@ -4,6 +4,9 @@
  MKVERBOSE :=t 
  
@@ -15,7 +15,7 @@ diff -Naur ccse-1.3.4-old/Tools/Py_util/GNUmakefile ccse-1.3.4-new/Tools/Py_util
  all: python_module
  
  python_module: $(objects)
--	f2py --f90flags="-J $(mdir)" -c fsnapshot.f90 -m fsnapshot $(objects) -lstdc++
+-	f2py --fcompiler=$(F90) --f90flags="-J $(mdir)" -c fsnapshot.f90 -m fsnapshot $(objects) -lstdc++
 +	f2py --f90exec=$(BOXLIB_f2py_f90) --f90flags="-J $(mdir)" -c fsnapshot.f90 -m fsnapshot $(objects) -lstdc++
  
  include $(BOXLIB_HOME)/Tools/F_mk/GMakerules.mak

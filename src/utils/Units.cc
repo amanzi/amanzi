@@ -231,7 +231,7 @@ double Units::ConvertUnitD(double val,
     else if (amount_.find(it->first) != amount_.end()) {
       namount += it->second;
     } 
-    else if (temperature_.find(it->first) != temperature_.end() && in_data.size() == 1) {
+    else if (temperature_.find(it->first) != temperature_.end()) {
       if (it->first == "C") tmp += 273.15;
       if (it->first == "F") tmp = (tmp + 459.67) * 5.0 / 9;
       ntemperature += it->second;
@@ -274,7 +274,7 @@ double Units::ConvertUnitD(double val,
     else if (amount_.find(it->first) != amount_.end()) {
       namount -= it->second;
     } 
-    else if (temperature_.find(it->first) != temperature_.end() && out_data.size() == 1) {
+    else if (temperature_.find(it->first) != temperature_.end()) {
       if (it->first == "C") tmp -= 273.15;
       if (it->first == "F") tmp = tmp * 1.8 - 459.67;
       ntemperature -= it->second;

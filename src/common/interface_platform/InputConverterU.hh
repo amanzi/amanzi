@@ -112,6 +112,10 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
 
+  // -- general
+  Teuchos::ParameterList TranslateSources_(
+      const std::string& domain, const std::string& pkname);
+
   // -- state
   void TranslateFieldEvaluator_(
       DOMNode* node, const std::string& field, const std::string& unit,
@@ -130,7 +134,6 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
-  Teuchos::ParameterList TranslateFlowSources_();
   Teuchos::ParameterList TranslateFlowFractures_(const std::string& domain);
 
   // -- transport
@@ -156,11 +159,14 @@ class InputConverterU : public InputConverter {
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
-  Teuchos::ParameterList TranslateEnergy_();
-  Teuchos::ParameterList TranslateEnergyBCs_();
+  Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
+  Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
+
+  // -- shallow water
+  Teuchos::ParameterList TranslateShallowWater_(const std::string& domain);
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_;
+  bool coupled_flow_, coupled_transport_, coupled_energy_;
   std::vector<std::string> fracture_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,

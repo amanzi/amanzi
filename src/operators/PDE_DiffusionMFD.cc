@@ -16,12 +16,9 @@
 
 // Amanzi
 #include "errors.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
@@ -55,11 +52,10 @@ void PDE_DiffusionMFD::SetTensorCoefficient(
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
-
-    if (!mass_matrices_initialized_) {
-      CreateMassMatrices_();
-    }
   }
+
+  // changing the tensor coefficient invalidates the mass matrices
+  mass_matrices_initialized_ = false;  
 }
 
 
@@ -87,11 +83,6 @@ void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVe
       AMANZI_ASSERT(k->HasComponent("twin"));
     }
   }
-
-  // verify that mass matrices were initialized.
-  if (!mass_matrices_initialized_) {
-    CreateMassMatrices_();
-  }
 }
 
 
@@ -102,6 +93,14 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  // verify that mass matrices were initialized.
+  if (!mass_matrices_initialized_) {
+    CreateMassMatrices_();
+    // optimize div[K k(nabla u)] to div[K1 (nabla u)]
+    if (k_ == Teuchos::null && const_k_ != 1.0)
+      ScaleMassMatrices(const_k_);
+  }
+
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
@@ -340,8 +339,9 @@ void PDE_DiffusionMFD::UpdateMatricesNodal_()
 
   nfailed_primary_ = 0;
 
-  WhetStone::Tensor K(2, 1);
+  WhetStone::Tensor K(mesh_->space_dimension(), 1);
   K(0, 0) = 1.0;
+  if (const_K_.rank() > 0) K = const_K_;
   
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) K = (*K_)[c];
@@ -397,6 +397,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   AmanziMesh::Entity_ID_List cells, faces;
   Ttmp.PutScalar(0.0);
@@ -1087,6 +1088,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
+  if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
     int ok;
@@ -1408,8 +1410,12 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
     consistent_face_op_->OpPushBack(local_op_);
-    consistent_face_op_->SymbolicAssembleMatrix();
-    consistent_face_op_->InitializePreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
+    Teuchos::ParameterList lin_solver = plist_.sublist("consistent faces").sublist("preconditioner");
+    if (plist_.sublist("consistent faces").isSublist("linear solver")) {
+      lin_solver.setParameters(plist_.sublist("consistent faces").sublist("linear solver"));
+    }
+    consistent_face_op_->set_inverse_parameters(lin_solver);
+    consistent_face_op_->InitializeInverse();
   }
 
   // calculate the rhs, given by y_f - Afc * x_c
@@ -1435,24 +1441,11 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   y.GatherGhostedToMaster("face", Add);
 
   // x_f = Aff^-1 * ...
-  consistent_face_op_->AssembleMatrix();
-  consistent_face_op_->UpdatePreconditioner();
+  consistent_face_op_->ComputeInverse();
 
-  int ierr = 0;
-  if (plist_.sublist("consistent faces").isSublist("linear solver")) {
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> fac;
-    Teuchos::RCP<Operator> lin_solver = fac.Create(
-        plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
-
-    CompositeVector u_f_copy(y);
-    ierr = lin_solver->ApplyInverse(y, u_f_copy);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  } else {
-    CompositeVector u_f_copy(y);
-    ierr = consistent_face_op_->ApplyInverse(y, u);
-    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
-  }
-  
+  CompositeVector u_f_copy(y);
+  int ierr = consistent_face_op_->ApplyInverse(y, u_f_copy);
+  *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   return (ierr > 0) ? 0 : 1;
 }
   
@@ -1473,6 +1466,7 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
   } else {
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
     Kc(0, 0) = 1.0;
+    if (const_K_.rank() > 0) Kc = const_K_;
     return mfd.Transmissibility(f, c, Kc);
   }
 }

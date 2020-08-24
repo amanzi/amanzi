@@ -114,10 +114,10 @@ Note on implementation for discretization/framework developers:
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 
-namespace AmanziPreconditioners { class Preconditioner; }
 class CompositeVector;
 
 namespace Operators {
@@ -144,8 +144,11 @@ class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
 
 
-class Operator {
+class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
  public:
+  using Vector_t = CompositeVector;
+  using VectorSpace_t = CompositeVector::VectorSpace_t;
+  
   // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
@@ -170,17 +173,35 @@ class Operator {
 
   virtual ~Operator() = default;
   
+  // a specialized copy constructor is used to extend the operator, e.g.
+  // by adding more operators to it.
+  virtual Teuchos::RCP<Operator> Clone() const;
+
   void Init();
 
   // main members
-  // -- virtual methods potentially altered by the schema
+  // -- virtual methods potentially altered by the schema, Schur complements
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
+  // versions that make it easier to deal with Amanzi input spec format
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& plist);
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& prec_list,
+                         const std::string& iter_name,
+                         const Teuchos::ParameterList& iter_list,
+                         bool make_one_iteration=true);
+
+  // -- preferred methods -- set_parameters, initialize, compute
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
+  virtual void InitializeInverse() override;
+  virtual void ComputeInverse() override;
+      
   // symbolic assembly:
   // -- wrapper
   virtual void SymbolicAssembleMatrix();
@@ -204,17 +225,11 @@ class Operator {
   virtual void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
-  const CompositeVectorSpace& DomainMap() const { return *cvs_col_; }
-  const CompositeVectorSpace& RangeMap() const { return *cvs_row_; }
+  const CompositeVectorSpace& DomainMap() const override { return *cvs_col_; }
+  const CompositeVectorSpace& RangeMap() const override { return *cvs_row_; }
 
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
-
-  // preconditioner 
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
 
   void CreateCheckPoint();
   void RestoreCheckPoint();
@@ -223,6 +238,7 @@ class Operator {
   int CopyShadowToMaster(int iops);
 
   // access
+  virtual std::string name() const override { return std::string("Operator (") + schema_string() + ")"; }
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
@@ -231,13 +247,17 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
-  Teuchos::RCP<SuperMap> smap() const { return smap_; }
+  Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
   void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
 
   int apply_calls() { return apply_calls_; }
 
@@ -423,7 +443,23 @@ class Operator {
 
   // diagnostics
   std::string PrintDiagnostics() const;
-
+  double residual() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->residual();
+  }
+  int num_itrs() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->num_itrs();
+  }
+  int returned_code() const override { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code();
+  }
+  std::string returned_code_string() const override { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
+  }
+  
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
 
@@ -431,6 +467,7 @@ class Operator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_row_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
+  Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;
@@ -438,12 +475,17 @@ class Operator {
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_, updated_, computed_;
  
   Teuchos::RCP<Epetra_CrsMatrix> A_;
+  Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
+  
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
-
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
   Teuchos::RCP<VerboseObject> vo_;
 
@@ -455,7 +497,7 @@ class Operator {
   mutable int apply_calls_;
 
  private:
-  Operator(const Operator& op);
+  // Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 

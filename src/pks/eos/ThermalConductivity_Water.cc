@@ -61,7 +61,7 @@ double ThermalConductivity_Water::ThermalConductivity(double T)
 double ThermalConductivity_Water::DThermalConductivityDT(double T)
 {
   double Ts = T / Tref_;
-  double dkdT = kref_ * (ka1_ + 2 * ka2_ * Ts);
+  double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;
 
   return dkdT;
 }

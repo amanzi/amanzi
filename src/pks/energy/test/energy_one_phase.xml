@@ -40,6 +40,12 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="PK tree">
+    <ParameterList name="energy">
+      <Parameter name="PK type" type="string" value="one phase"/>
+    </ParameterList>
+  </ParameterList>
+
   <!--  FLOW  -->
   <ParameterList name="PKs">
     <ParameterList name="energy">
@@ -176,7 +182,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -266,9 +272,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/mol-K]" type="double" value="1.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -278,9 +289,14 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/kg-K]" type="double" value="1.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>

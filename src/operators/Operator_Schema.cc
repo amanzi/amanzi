@@ -18,7 +18,6 @@
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 #include "MeshDefs.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -147,20 +146,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
 }
 
 
-/* ******************************************************************
-* Parallel preconditioner: Y = P * X.
-******************************************************************* */
-int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
-{
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
-
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
-
-  return ierr;
-}
 
 
 /* ******************************************************************
@@ -187,32 +172,6 @@ int Operator_Schema::ApplyAssembled(const CompositeVector& X, CompositeVector& Y
   return ierr;
 }
 
-
-/* ******************************************************************
-* Create structure of a global square matrix.
-****************************************************************** */
-void Operator_Schema::SymbolicAssembleMatrix()
-{
-  // Create the supermap given a space (set of possible schemas) and a
-  // specific schema (assumed/checked to be consistent with the space).
-  smap_ = createSuperMap(*cvs_col_);
-
-  // create the graph
-  int row_size = MaxRowSize(*mesh_, schema_col_);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
-
-  // fill the graph
-  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
-
-  // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  AMANZI_ASSERT(!ierr);
-
-  // create global matrix
-  Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  A_ = Amat_->Matrix();
-}
 
 
 /* ******************************************************************
@@ -820,6 +779,14 @@ void Operator_Schema::ExtractVectorNodeOp(
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Schema::Clone() const {
+  return Teuchos::rcp(new Operator_Schema(*this));
 }
 
 }  // namespace Operators

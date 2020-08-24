@@ -250,12 +250,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   StiffnessMatrix(c, T, A);  
 
   // number of degrees of freedom
-  Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
-  // int ndf = pf.size();  // unused yet
-  // int ndof = A.NumRows();
-
-  // int ndof_f(nfaces * ndf);
-  // int ndof_c(ndof - ndof_f); // unused yet
+  Polynomial poly(d_, order_ -1);
 
   // create zero vector polynomial
   int dim = vf[0].NumRows();

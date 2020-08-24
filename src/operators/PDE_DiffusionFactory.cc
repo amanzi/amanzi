@@ -31,6 +31,140 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
+* Constructors
+****************************************************************** */
+PDE_DiffusionFactory::PDE_DiffusionFactory(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
+  : mesh_(mesh),
+    gravity_(false),
+    const_k_(1.0),
+    const_b_(0.0)
+{};
+
+
+PDE_DiffusionFactory::PDE_DiffusionFactory(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : oplist_(oplist),
+    mesh_(mesh),
+    gravity_(false),
+    const_k_(1.0),
+    const_b_(0.0)
+{
+  if (oplist.isParameter("diffusion coefficient")) {
+    const_k_ = oplist.get<double>("diffusion coefficient");
+  }
+}
+
+
+/* ******************************************************************
+* Setup the problem
+****************************************************************** */
+void PDE_DiffusionFactory::SetConstantTensorCoefficient(const WhetStone::Tensor& K)
+{
+  const_K_ = K;
+  K_ = Teuchos::null;
+}
+
+
+void PDE_DiffusionFactory::SetConstantScalarCoefficient(double k)
+{
+  const_k_ = k;
+  k_ = Teuchos::null;
+  dkdu_ = Teuchos::null;
+}
+
+
+void PDE_DiffusionFactory::SetConstantGravitationalTerm(
+    const AmanziGeometry::Point& g, double b)
+{
+  gravity_ = true;
+  g_ = g;
+  const_b_ = b;
+  b_ = Teuchos::null;
+  dbdu_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Setup the problem
+****************************************************************** */
+Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create()
+{
+  std::string name = oplist_.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist_.isParameter("fracture");
+
+  if (oplist_.isSublist("gravity"))
+    gravity_ = oplist_.get<bool>("gravity");
+
+  if (gravity_ && norm(g_) == 0.0) {
+    double tmp = oplist_.get<double>("gravity magnitude");
+    g_[mesh_->space_dimension() - 1] = tmp;
+  }
+  
+  Teuchos::RCP<PDE_Diffusion> op;
+
+  // FV methods
+  if (name == "fv: default" && !gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, mesh_));
+  } else if (name == "fv: default" && gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, mesh_, g_));
+  
+  // NLFV methods
+  } else if (name == "nlfv: default" && !gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist_, mesh_)); 
+  } else if (name == "nlfv: default" && gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist_, mesh_)); 
+  } else if (name == "nlfv: bnd_faces" && !gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist_, mesh_)); 
+  } else if (name == "nlfv: bnd_faces" && gravity_) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist_, mesh_)); 
+
+  // MFD methods with non-uniform DOFs
+  } else if (fractured_matrix) {
+    auto op_tmp = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist_, mesh_, const_b_, g_));
+    op_tmp->Init(oplist_);
+    op = op_tmp;
+
+  // MFD methods
+  } else if (!gravity_) {
+    auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFD(oplist_, mesh_));
+    op_tmp->Init(oplist_);
+    op = op_tmp;
+
+  } else {
+    auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist_, mesh_));
+    op_tmp->Init(oplist_);
+    op = op_tmp;
+  }
+  
+  // setup problem coefficients
+  if (K_ != Teuchos::null) {
+    op->SetTensorCoefficient(K_);
+  } else if (const_K_.rank() > 0) {
+    op->SetConstantTensorCoefficient(const_K_);
+  }
+
+  if (k_ != Teuchos::null)
+    op->SetScalarCoefficient(k_, dkdu_);
+  else
+    op->SetConstantScalarCoefficient(const_k_);
+
+  if (gravity_) {
+    auto op_tmp = Teuchos::rcp_dynamic_cast<PDE_DiffusionWithGravity>(op);
+    op_tmp->SetGravity(g_);
+
+    if (b_ != Teuchos::null)
+      op_tmp->SetDensity(b_);
+    else
+      op_tmp->SetDensity(const_b_);
+  }
+
+  return op;
+}
+
+
+/* ******************************************************************
 * Initialization of diffusion operator with optional gravity.
 * This is the constructor used by Amanzi.
 ****************************************************************** */
@@ -174,6 +308,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     const Teuchos::RCP<BCs>& bc)
 {
   std::string name = oplist.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist.isParameter("fracture");
   
   // FV methods
   if (name == "fv: default") {
@@ -188,6 +323,14 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 
   } else if (name == "nlfv: bnd_faces") {
     auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+    return op;
+
+  // MFD methods with non-uniform DOFs
+  } else if (fractured_matrix) {
+    AmanziGeometry::Point g(mesh->space_dimension());  // gravity should be turned-off in PList
+    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
     return op;
 

@@ -77,7 +77,7 @@ TEST(ENERGY_2D_MATRIX) {
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   // initialize the Energy process kernel 
-  Teuchos::ParameterList pk_tree;
+  Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
   EPK->Setup(S.ptr());
@@ -186,8 +186,9 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
   Teuchos::ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
-  op->InitializePreconditioner(slist);
-  op->UpdatePreconditioner();
+  op->set_inverse_parameters(slist);
+  op->InitializeInverse();
+  op->ComputeInverse();
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

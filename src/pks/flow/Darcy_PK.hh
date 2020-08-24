@@ -19,7 +19,6 @@
 
 // Amanzi
 #include "FnBaseDefs.hh"
-#include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
 #include "PK_Factory.hh"
@@ -44,7 +43,7 @@ class Darcy_PK : public Flow_PK {
            Teuchos::RCP<State> S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  ~Darcy_PK();
+  ~Darcy_PK() {};
 
   // methods required for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;
@@ -104,8 +103,6 @@ class Darcy_PK : public Flow_PK {
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
       my_pde(const Operators::PDEType& type) override { return op_diff_; } 
 
-  Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
-
  private:
   void InitializeFields_();
   void UpdateSpecificYield_();
@@ -132,9 +129,6 @@ class Darcy_PK : public Flow_PK {
   std::string solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
-
-  bool flow_on_manifold_;  // true for the DFN model
-  bool coupled_to_matrix_, coupled_to_fracture_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

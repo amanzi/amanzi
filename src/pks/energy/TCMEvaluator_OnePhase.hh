@@ -41,7 +41,7 @@ class TCMEvaluator_OnePhase : public SecondaryVariableFieldEvaluator {
   double k_rock_;
 
   // Keys for fields dependencies
-  Key temperature_key_;
+  Key temperature_key_, porosity_key_;
 };
 
 }  // namespace Energy

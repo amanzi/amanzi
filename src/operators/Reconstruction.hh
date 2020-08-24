@@ -31,12 +31,13 @@ class Reconstruction {
   virtual ~Reconstruction() = default;
 
   // main members
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
-                    Teuchos::ParameterList& plist) { field_ = field; }
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
-                    Teuchos::ParameterList& plist, int component) { field_ = field;
-                                                                    component_ = component; }
-  virtual void ComputeGradient() = 0;
+  virtual void Init(Teuchos::ParameterList& plist) = 0;
+
+  virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                               int component = 0) {
+    field_ = field;
+    component_ = component;
+  }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

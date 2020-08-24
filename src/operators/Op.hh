@@ -107,9 +107,11 @@ class Op {
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule) {
     if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
+      if (match_schema == schema_old_) return true;
+    } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUPERSET) {
       if ((match_schema & schema_old_) == schema_old_) return true;
     } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
-      if (match_schema & schema_old_) return true;
+      if ((match_schema & schema_old_) == match_schema) return true;
     }
     return false;
   }

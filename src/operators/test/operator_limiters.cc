@@ -33,7 +33,7 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
-const std::string LIMITERS[7] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all"};
+const std::string LIMITERS[8] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all", "B-J node"};
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in two dimensions
@@ -72,7 +72,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
   }
 
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 8; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -98,6 +98,10 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     } else if (i == 6) {
       plist.set<std::string>("limiter", "Michalak-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
+    } else if (i == 7) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells")
+           .set<std::string>("limiter location", "node");
     }
 
     if (i != 3) {
@@ -129,8 +133,8 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -255,8 +259,8 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field); 
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -389,8 +393,8 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
 
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
-      lifting.Init(field, plist);
-      lifting.ComputeGradient(); 
+      lifting.Init(plist);
+      lifting.ComputeGradient(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
@@ -515,8 +519,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
 
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
-      lifting.Init(field, plist);
-      lifting.ComputeGradient(); 
+      lifting.Init(plist);
+      lifting.ComputeGradient(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
@@ -524,13 +528,20 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
-      double err_int, err_glb, gnorm;
+      double err_int, err_glb, err_int_nobc, err_glb_nobc, gnorm;
       Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
 
       ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
+      // skip boundary data
+      limiter.ApplyLimiter(field, 0, lifting.gradient());
+
+      Epetra_MultiVector& grad_test = *lifting.gradient()->ViewComponent("cell");
+      ComputeGradError(mesh, grad_test, grad_exact, err_int_nobc, err_glb_nobc, gnorm);
+
       if (MyPID == 0)
-          printf("n=%d  %9s: rel errors: %9.5f %9.5f\n", n, LIMITERS[i].c_str(), err_int, err_glb);
+          printf("n=%d  %9s: rel errors: %9.5f %9.5f  no_bc: %9.5f %9.5f\n",
+                 n, LIMITERS[i].c_str(), err_int, err_glb, err_int_nobc, err_glb_nobc);
 
       CHECK(err_int + err_glb < 1.0 / n);
     }
@@ -654,8 +665,8 @@ void SmoothField2DPoly(double extension)
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
@@ -730,7 +741,6 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -768,8 +778,8 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
 
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
-    lifting.Init(field, plist);
-    lifting.ComputeGradient(); 
+    lifting.Init(plist);
+    lifting.ComputeGradient(field);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;

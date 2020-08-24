@@ -374,8 +374,8 @@ RockManager::FillBoundary(Real      time,
     }
     bool local = false;
     bool corner=true;
-    mf.FillBoundary(dComp,nComp,false,!corner);
-    materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
+    mf.FillBoundary(dComp,nComp,!corner);
+    // materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
   }
 }
 

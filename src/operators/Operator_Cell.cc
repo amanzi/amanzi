@@ -213,6 +213,14 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   AMANZI_ASSERT(ierr>=0);
 }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_Cell::Clone() const {
+  return Teuchos::rcp(new Operator_Cell(*this));
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

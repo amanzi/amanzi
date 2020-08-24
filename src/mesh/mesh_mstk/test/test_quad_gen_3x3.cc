@@ -15,7 +15,6 @@
 TEST(MSTK_QUAD_GEN_3x3)
 {
   int j, nc, nf, nv;
-
   int NV = 16;
   int NF = 24;
   int NC = 9;

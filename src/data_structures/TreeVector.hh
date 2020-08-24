@@ -39,6 +39,7 @@ namespace Amanzi {
 class TreeVector {
 
  public:
+  using VectorSpace_t = TreeVectorSpace;
   // -- Constructors --
 
   // Basic constructors of a TreeVector
@@ -140,7 +141,7 @@ class TreeVector {
                          const TreeVector& B, double scalarThis);
 
   // non-inherited extras
-  void Print(std::ostream &os) const;
+  void Print(std::ostream &os, bool data_io = true) const;
 
   int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
 
@@ -155,6 +156,16 @@ class TreeVector {
   Teuchos::RCP<CompositeVector> data_;
   std::vector<Teuchos::RCP<TreeVector> > subvecs_;
 };
+
+
+// non-member functions 
+inline
+Teuchos::RCP<TreeVector> CreateTVwithOneLeaf(Teuchos::RCP<CompositeVector> cv) {
+  auto tvs = CreateTVSwithOneLeaf(cv->Map());
+  auto tv = Teuchos::rcp(new TreeVector(tvs));
+  tv->SetData(cv);
+  return tv;
+}
 
 } // namespace
 

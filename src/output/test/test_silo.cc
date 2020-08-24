@@ -12,9 +12,6 @@ TEST(SILO_STRUCTURED) {
       new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1,
               comm));
 
-  unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::Parallel_type::OWNED);
-
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
   Teuchos::RCP<Epetra_Vector> fake_pressure;
@@ -73,7 +70,6 @@ TEST(SILO_STRUCTURED) {
     // close file
     io.FinalizeCycle();
   }
-
 }
 
 
@@ -82,9 +78,6 @@ TEST(SILO_POLYGONAL) {
     
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh = Teuchos::rcp(
       new Amanzi::AmanziMesh::Mesh_MSTK("./test/four_polygon.exo", comm));
-
-  unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

@@ -64,7 +64,7 @@ class Transport_PK : public PK_Physical {
                  const std::string& pk_list_name,
                  std::vector<std::string>& component_names);
 
-    ~Transport_PK();
+    virtual ~Transport_PK() {};
 
   // members required by PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S) override;

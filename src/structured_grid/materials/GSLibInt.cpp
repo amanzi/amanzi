@@ -215,8 +215,9 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   int max_fab_size = 0;
   for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
     const int  i     = mfi.index();
-    const int* lo    = mfi.validbox().loVect();
-    const int* hi    = mfi.validbox().hiVect();
+    const Box& box   = mfi.validbox();
+    const int* lo    = box.loVect();
+    const int* hi    = box.hiVect();
     const int* dlo   = gdomain.loVect();
     const int* dhi   = gdomain.hiVect();
 	  

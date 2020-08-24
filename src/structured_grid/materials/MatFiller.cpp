@@ -218,8 +218,12 @@ MatFiller::FindMixedCells()
   Array<BoxArray> material_bounds(nMat);
   for (int j=0; j<nMat; ++j) {
     UnionRegion union_region("test","all",materials[j].Regions());
-    material_bounds[j] = union_region.approximate_bounds(Array<Real>(geomArray[nLevs-1].ProbLo(),BL_SPACEDIM),
-                                                         Array<Real>(geomArray[nLevs-1].CellSize(),BL_SPACEDIM));
+    Array<Real> lo(BL_SPACEDIM), dx(BL_SPACEDIM);
+    for (int i = 0; i < BL_SPACEDIM; ++i) {
+      lo[i] = (geomArray[nLevs-1].ProbLo())[i];
+      dx[i] = (geomArray[nLevs-1].CellSize()[i]);
+    }
+    material_bounds[j] = union_region.approximate_bounds(lo, dx);
   }
 
   BoxArray cba(geomArray[0].Domain());
@@ -254,7 +258,7 @@ MatFiller::FindMixedCells()
         for (int k=0; k<nMat; ++k) {
           bool bounds_provided = material_bounds[k].size() > 0;
           if (bounds_provided) {
-            material_bounds[k].intersections(fbox,isects,first_only);
+            material_bounds[k].intersections(fbox,isects,first_only,0);
           }
           if (!bounds_provided || isects.size()>0) {
             hits.push_back(k);
@@ -334,10 +338,14 @@ MatFiller::FindMixedCells()
       }
       tbar[lev].buffer(tags_buffer);
 
-      long int num_tags;
-      IntVect* tags = tbar[lev].collate(num_tags);
+      std::vector<IntVect> tags;
+      tbar[lev].collate(tags);
+      long int num_tags = tags.size();
+      // IntVect* tags;
+      /// long int num_tags;
+      // tags = tbar[lev].collate(num_tags);
       if (num_tags>0) {
-	ClusterList clist(tags, num_tags);
+	ClusterList clist(&(tags[0]), num_tags);
 	clist.chop(grid_eff);
 	BoxList bl = clist.boxList(); bl.simplify();
 	ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());

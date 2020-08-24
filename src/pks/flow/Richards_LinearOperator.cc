@@ -9,11 +9,11 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "RemapUtils.hh"
+#include "InverseFactory.hh"
 
 #include "Richards_PK.hh"
 
@@ -46,20 +46,17 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
-  op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->UpdatePreconditioner();
 
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
-
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-      solver = sfactory.Create(solver_name, *linear_operator_list_, op_matrix_, op_preconditioner_);
-  
-  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+  Teuchos::ParameterList plist = linear_operator_list_->sublist(solver_name);
+  AmanziSolvers::setMakeOneIterationCriteria(plist);
+  auto solver = AmanziSolvers::createIterativeMethod(plist, op_matrix_, op_preconditioner_);
+  solver->InitializeInverse();
+  solver->ComputeInverse();
 
   CompositeVector& rhs = *op_matrix_->rhs();
   int ierr = solver->ApplyInverse(rhs, u);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     int num_itrs = solver->num_itrs();
     int code = solver->returned_code();
     double pnorm;
@@ -70,14 +67,17 @@ void Richards_PK::SolveFullySaturatedProblem(
                << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
                << " code=" << code << std::endl;
 
-    double residual = solver->TrueResidual(rhs, *solution);
+    CompositeVector r(rhs);
+    op_matrix_->ComputeResidual(*solution, r);
+    double residual;
+    r.Norm2(&residual);
     *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
   // catastrophic failure
   if (ierr < 0) {
     Errors::Message msg;
-    msg = solver->DecodeErrorCode(ierr);
+    msg << "Richards_LinearOperator error: " << solver->returned_code_string();
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -129,13 +129,12 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true, true);
   op_preconditioner_diff_->ModifyMatrices(*u);
-  op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-      solver = factory.Create(solver_name_constraint_, *linear_operator_list_, op_matrix_, op_preconditioner_);
+  Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name_constraint_);
+  auto solver = AmanziSolvers::createIterativeMethod(lin_op_list, op_matrix_, op_preconditioner_);
+  solver->InitializeInverse();
+  solver->ComputeInverse();
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);
@@ -157,7 +156,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // catastrophic failure
   if (ierr < 0) {
     Errors::Message msg;
-    msg = solver->DecodeErrorCode(ierr);
+    msg << "Richards::EnforceConstraints error: " << solver->returned_code_string();
     Exceptions::amanzi_throw(msg);
   }
 }

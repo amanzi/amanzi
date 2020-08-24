@@ -183,7 +183,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_(domain);
-  flow_list->sublist("source terms") = TranslateFlowSources_();
+  flow_list->sublist("source terms") = TranslateSources_(domain, "flow");
 
   // models and default assumptions. 
   // Note that MPC/PKs may overwrite these parameters
@@ -228,14 +228,17 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
     DOMNode* inode = children->item(i); 
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
     node = GetUniqueElementByTagsString_(inode, "rel_perm", flag);
-    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
-    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
-    DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
+    DOMElement* element_rp = NULL;
+    if (flag) {
+      rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
+      DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
+      element_rp = static_cast<DOMElement*>(mnode);
+    }
 
     // common stuff
     // -- assigned regions
@@ -247,21 +250,23 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
         element_cp, "optional_krel_smoothing_interval", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
 
     // -- ell
-    double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
+    double ell(0.0);
+    if (element_rp != NULL) {
+      double ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
+      ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
+    }
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
+
+    std::stringstream ss;
+    ss << "WRM_" << i;
+    Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
 
     if (strcmp(model.c_str(), "van_genuchten") == 0) {
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0, "-");
       double m = GetAttributeValueD_(element_cp, "m", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
-
-      std::stringstream ss;
-      ss << "WRM_" << i;
-
-      Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
 
       wrm_list.set<std::string>("water retention model", "van Genuchten")
           .set<Teuchos::Array<std::string> >("regions", regions)
@@ -285,11 +290,6 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
 
-      std::stringstream ss;
-      ss << "WRM_" << i;
-
-      Teuchos::ParameterList& wrm_list = out_list.sublist(ss.str());
-
       wrm_list.set<std::string>("water retention model", "Brooks Corey")
           .set<Teuchos::Array<std::string> >("regions", regions)
           .set<double>("Brooks Corey lambda", lambda)
@@ -307,6 +307,9 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
         *vo_->os() << "water retention curve file:" << name << std::endl;
       }
+    } else if (strcmp(model.c_str(), "saturated") == 0) {
+      wrm_list.set<std::string>("water retention model", "saturated")
+          .set<Teuchos::Array<std::string> >("regions", regions);
     }
   }
 
@@ -500,7 +503,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
           .set<double>("van Genuchten alpha", alpha)
           .set<double>("residual saturation", sr)
           .set<std::string>("relative permeability model", rel_perm);
-    } else if (strcmp(model.c_str(), "brooks_corey")) {
+    } else if (strcmp(model.c_str(), "brooks_corey") == 0) {
       double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
       double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
@@ -604,6 +607,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
     // -- process global and local BC separately
     double refv;
+    std::string filename, xheader, yheader;
     std::vector<double> grad, refc, data, data_tmp;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms, formulas;
@@ -624,26 +628,33 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       grad = GetAttributeVectorD_(element, "gradient", dim_, unit_grad);
       refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
     } else {
-      std::map<double, double> tp_values, tp_fluxes;
-      std::map<double, std::string> tp_forms, tp_formulas;
+      element = static_cast<DOMElement*>(same_list[0]);
+      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
+      if (filename != "") {
+        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
+        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
+      } else {
+        std::map<double, double> tp_values, tp_fluxes;
+        std::map<double, std::string> tp_forms, tp_formulas;
 
-      for (int j = 0; j < same_list.size(); ++j) {
-        element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        for (int j = 0; j < same_list.size(); ++j) {
+          element = static_cast<DOMElement*>(same_list[j]);
+          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
 
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-        tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-      }
+          tp_forms[t0] = GetAttributeValueS_(element, "function");
+          tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+          tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+        }
 
-      // create vectors of values and forms
-      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-        times.push_back(it->first);
-        values.push_back(it->second);
-        fluxes.push_back(tp_fluxes[it->first]);
-        forms.push_back(tp_forms[it->first]);
-        formulas.push_back(tp_formulas[it->first]);
+        // create vectors of values and forms
+        for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
+          times.push_back(it->first);
+          values.push_back(it->second);
+          fluxes.push_back(tp_fluxes[it->first]);
+          forms.push_back(tp_forms[it->first]);
+          formulas.push_back(tp_formulas[it->first]);
+        }
       }
     }
 
@@ -703,6 +714,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
           .set<double>("y0", refv)
           .set<Teuchos::Array<double> >("x0", refc)
           .set<Teuchos::Array<double> >("gradient", grad);
+    } else if (filename != "") {
+      bcfn.sublist("function-tabular")
+          .set<std::string>("file", filename)
+          .set<std::string>("x header", xheader)
+          .set<std::string>("y header", yheader);
     } else {
       TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
@@ -762,21 +778,26 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 /* ******************************************************************
 * Create list of flow sources.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
+Teuchos::ParameterList InputConverterU::TranslateSources_(
+    const std::string& domain, const std::string& pkname)
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
+  bool flag;
   char *text;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode *node, *phase;
   DOMElement* element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("sources"));
-  if (node_list->getLength() == 0) return out_list;
+  if (domain == "fracture")
+    node = GetUniqueElementByTagsString_("fracture_network, sources", flag);
+  else
+    node = GetUniqueElementByTagsString_("sources", flag);
 
-  children = node_list->item(0)->getChildNodes();
+  if (!flag) return out_list;
+  children = node->getChildNodes();
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
@@ -784,7 +805,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
@@ -792,7 +812,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     vv_src_regions_.insert(vv_src_regions_.end(), regions.begin(), regions.end());
 
     // process flow sources for liquid saturation
-    phase = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
+    if (pkname == "flow") {
+      phase = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
+    } else if (pkname == "energy") {
+      phase = GetUniqueElementByTagsString_(inode, "thermal_component", flag);
+    } else {
+      flag = false;
+    }
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
@@ -802,7 +828,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     if (srctype == "volume_weighted") {
       weight = "volume";
-      unit = "kg/s";
+      if (pkname == "flow") unit = "kg/s";
+      else if (pkname == "energy") unit = "J/s";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
       unit = "kg/s";

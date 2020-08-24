@@ -43,16 +43,25 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  std::string name() override { return "thermal richards"; } 
+  std::string name() override { return "thermal flow"; }
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Key domain_;  // computational domain
 
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> particle_density_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
+
+  // keys
+  Key ie_rock_key_, ie_gas_key_, ie_liquid_key_, energy_key_, prev_energy_key_;
+  Key particle_density_key_, effective_pressure_key_;
+  Key mol_density_liquid_key_, mol_density_gas_key_, mass_density_liquid_key_;
+  Key sat_liquid_key_, prev_sat_liquid_key_;
+  Key wc_key_, prev_wc_key_;
+  Key viscosity_liquid_key_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

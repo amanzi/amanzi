@@ -35,18 +35,12 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln) :
-    Energy_PK(glist, S),
+    Energy_PK(pk_tree, glist, S, soln),
     soln_(soln)
 {
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(pk_list, "energy", true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
-   
-  // domain name
-  domain_ = ep_list_->get<std::string>("domain name", "domain");
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
+  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 }
 
 
@@ -61,30 +55,42 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField(energy_key_)) {
+    S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
-  ee_list.set<std::string>("energy key", energy_key_)
-         .set<bool>("vapor diffusion", true);
-  Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
-  S_->SetFieldEvaluator(energy_key_, ee);
+    Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
+    ee_list.set<std::string>("energy key", energy_key_)
+           .set<bool>("vapor diffusion", true)
+           .set<std::string>("particle density key", particle_density_key_)
+           .set<std::string>("internal energy rock key", ie_rock_key_);
+    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
+    S_->SetFieldEvaluator(energy_key_, ee);
+  }
 
   // -- advection of enthalpy
-  S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField(enthalpy_key_)) {
+    S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::ParameterList enth_plist = ep_list_->sublist("enthalpy evaluator");
-  enth_plist.set("enthalpy key", enthalpy_key_);
-  Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-  S_->SetFieldEvaluator(enthalpy_key_, enth);
+    Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
+    elist.set("enthalpy key", enthalpy_key_);
+
+    auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
+    S_->SetFieldEvaluator(enthalpy_key_, enth);
+  }
 
   // -- thermal conductivity
-  S_->RequireField(conductivity_key_)->SetMesh(mesh_)
-    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList tcm_plist = ep_list_->sublist("thermal conductivity evaluator");
-  Teuchos::RCP<TCMEvaluator_TwoPhase> tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(tcm_plist));
-  S_->SetFieldEvaluator(conductivity_key_, tcm);
+  if (!S_->HasField(conductivity_key_)) {
+    S_->RequireField(conductivity_key_)->SetMesh(mesh_)
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
+    elist.set("thermal conductivity key", conductivity_key_);
+
+    auto tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(elist));
+    S_->SetFieldEvaluator(conductivity_key_, tcm);
+  }
 }
 
 
@@ -96,12 +102,6 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // times, initialization could be done on any non-zero interval.
   double t_old = S->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
-  double t_new = t_old + dt_;
-
-  // create verbosity object
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 
   // Call the base class initialize.
   Energy_PK::Initialize(S);
@@ -144,7 +144,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
-  const CompositeVector& flux = *S->GetFieldData("darcy_flux");
+  const CompositeVector& flux = *S->GetFieldData(darcy_flux_key_);
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();
@@ -159,14 +159,14 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
   op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
-  op_preconditioner_->SymbolicAssembleMatrix();
 
   // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
-  op_preconditioner_->InitializePreconditioner(slist);
-
+  op_preconditioner_->set_inverse_parameters(slist);
+  op_preconditioner_->InitializeInverse();
+  
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   if (ti_method_name == "BDF1") {

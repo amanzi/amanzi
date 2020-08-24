@@ -21,7 +21,7 @@
 #include "NOX_Utils.H"
 
 #include "MatrixJF.hh"
-#include "LinearOperator.hh"
+#include "Matrix.hh"
 #include "ResidualDebugger.hh"
 #include "SolverFnBase.hh"
 #include "Solver.hh"

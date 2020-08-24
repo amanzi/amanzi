@@ -32,12 +32,12 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create energy list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergy_()
+Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating energy" << std::endl;
+    *vo_->os() << "Translating energy, domain=" << domain << std::endl;
 
   MemoryManager mm;
   DOMNode* node;
@@ -46,6 +46,9 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls", flag);
+
+  // create flow header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
@@ -70,12 +73,16 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator")
                                             .sublist("thermal conductivity parameters");
-  thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+  if (pk_model_["energy"] == "two-phase energy") {
+    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+    thermal.set<double>("thermal conductivity of gas", 0.02);
+    thermal.set<double>("unsaturated alpha", 1.0);
+    thermal.set<double>("epsilon", 1.0e-10);
+  } else {
+    thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
+  }
   thermal.set<double>("thermal conductivity of rock", 0.2);
   thermal.set<double>("thermal conductivity of liquid", 0.1);
-  thermal.set<double>("thermal conductivity of gas", 0.02);
-  thermal.set<double>("unsaturated alpha", 1.0);
-  thermal.set<double>("epsilon", 1.0e-10);
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
@@ -87,7 +94,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
   }
 
   // insert boundary conditions and source terms
-  out_list.sublist("boundary conditions") = TranslateEnergyBCs_();
+  out_list.sublist("boundary conditions") = TranslateEnergyBCs_(domain);
+  out_list.sublist("source terms") = TranslateSources_(domain, "energy");
 
   // insert internal evaluators
   out_list.sublist("energy evaluator")
@@ -103,22 +111,27 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 /* ******************************************************************
 * Create list of energy BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
+Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
   char *text;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode *node;
   DOMElement *element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (!node_list) return out_list;
+  // correct list of boundary conditions for given domain
+  bool flag;
+  if (domain == "matrix")
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  if (!flag) return out_list;
 
   int ibc(0);
-  children = node_list->item(0)->getChildNodes();
+  children = node->getChildNodes();
   int nchildren = children->getLength();
 
   for (int i = 0; i < nchildren; ++i) {
@@ -126,7 +139,6 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);

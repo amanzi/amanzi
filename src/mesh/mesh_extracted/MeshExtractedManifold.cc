@@ -12,6 +12,9 @@
 #include <set>
 #include <utility>
 
+// TPLs
+#include "Epetra_IntVector.h"
+
 // Amanzi
 #include "dbc.hh"
 #include "errors.hh"
@@ -49,6 +52,14 @@ MeshExtractedManifold::MeshExtractedManifold(
 
   InitParentMaps(setname); 
   InitEpetraMaps(); 
+  try {
+    InitExteriorEpetraMaps();
+  } catch(...) {
+    if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Parent framework does not support buildng of exterior maps.\n";
+    }
+  }
 
   PrintSets_();
 }
@@ -778,6 +789,86 @@ void MeshExtractedManifold::InitEpetraMaps()
     ent_map_owned_[kind_d] = tmp.first;
     ent_map_wghost_[kind_d] = tmp.second;
   }
+}
+
+
+/* ******************************************************************
+* Exterior Epetra maps are cannot be alway extracted from a
+* parent mesh, so we build them explicitly.
+****************************************************************** */
+void MeshExtractedManifold::InitExteriorEpetraMaps()
+{
+  int nents = nents_owned_[FACE];
+  Entity_ID_List cells, nodes;
+
+  const auto& fmap_owned = face_map(false);
+  const auto& fmap_wghost = face_map(true);
+  
+  const auto& vmap_owned = node_map(false);
+  const auto& vmap_wghost = node_map(true);
+  
+  std::vector<int> gids;
+  Epetra_IntVector counts(fmap_wghost), flags(vmap_wghost);
+
+  // collect information about boundary faces and nodes
+  for (int n = 0; n < nents; ++n) {
+    face_get_cells_internal_(n, Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    if (ncells == 1) {
+      gids.push_back(fmap_owned.GID(n));
+
+      face_get_nodes(n, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) flags[nodes[i]] = 1;
+    }
+    counts[n] = ncells; 
+  }
+
+  // process faces
+  ent_extmap_owned_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
+
+#ifdef HAVE_MPI
+  {
+    exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
+    int* vdata;
+    counts.ExtractView(&vdata);
+    Epetra_IntVector tmp(View, fmap_owned, vdata);
+    counts.Import(tmp, *exterior_face_importer_, Insert);
+  }
+#endif
+
+  int nents_wghost = nents + nents_ghost_[FACE];
+  for (int n = nents; n < nents_wghost; ++n) {
+    if (counts[n] == 1) gids.push_back(fmap_wghost.GID(n));
+  }
+
+  ent_extmap_wghost_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
+
+  // process nodes
+  gids.clear();
+
+  nents = nents_owned_[NODE];
+  for (int n = 0; n < nents; ++n) {
+    if (flags[n] == 1) gids.push_back(vmap_owned.GID(n));
+  }
+
+  ent_extmap_owned_[NODE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
+
+#ifdef HAVE_MPI
+  {
+    auto importer_ = Teuchos::rcp(new Epetra_Import(vmap_wghost, vmap_owned));
+    int* vdata;
+    flags.ExtractView(&vdata);
+    Epetra_IntVector tmp(View, vmap_owned, vdata);
+    flags.Import(tmp, *importer_, Insert);
+  }
+#endif
+
+  nents_wghost = nents + nents_ghost_[NODE];
+  for (int n = nents; n < nents_wghost; ++n) {
+    if (flags[n] == 1) gids.push_back(vmap_wghost.GID(n));
+  }
+
+  ent_extmap_wghost_[NODE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
 }
 
 

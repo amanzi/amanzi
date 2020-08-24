@@ -81,8 +81,8 @@ Example:
 #include "Epetra_MultiVector.h"
 
 #include "Mesh.hh"
+#include "DomainSet.hh"
 #include "MeshPartition.hh"
-
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
 
@@ -119,6 +119,7 @@ class State {
   typedef std::map<Key, Teuchos::RCP<CompositeVectorSpace> > FieldFactoryMap;
   typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
   typedef std::map<Key, Teuchos::RCP<FieldEvaluator> > FieldEvaluatorMap;
+  typedef std::map<Key, Teuchos::RCP<AmanziMesh::DomainSet>> DomainSetMap;
   typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition> > MeshPartitionMap;
 
  public:
@@ -178,21 +179,22 @@ class State {
                           bool defoormable=false);
 
   // Register a mesh under a generic key.
-  void RegisterMesh(Key key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+  void RegisterMesh(const Key& key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                     bool deformable=false);
 
   // Alias a mesh to an existing mesh
-  void AliasMesh(Key target, Key alias);
+  void AliasMesh(const Key& target, const Key& alias);
+  bool IsAliasedMesh(const Key& key) const;
 
   // Remove a mesh.
-  void RemoveMesh(Key key);
+  void RemoveMesh(const Key& key);
 
   // Ensure a mesh exists.
-  bool HasMesh(Key key) const { return GetMesh_(key) != Teuchos::null; }
-  bool IsDeformableMesh(Key key) const;
+  bool HasMesh(const Key& key) const { return GetMesh_(key) != Teuchos::null; }
+  bool IsDeformableMesh(const Key& key) const;
 
   // Mesh accessor.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(Key key=Key("domain")) const;
+  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key& key=Key("domain")) const;
   Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(Key key=Key("domain"));
 
   // Iterate over meshes.
@@ -200,6 +202,15 @@ class State {
   mesh_iterator mesh_begin() const { return meshes_.begin(); }
   mesh_iterator mesh_end() const { return meshes_.end(); }
   MeshMap::size_type mesh_count() { return meshes_.size(); }
+
+  // DomainSets are collections of meshes, indexed via NAME_GID and referenced
+  // to a parent mesh and sets.
+  //
+  void RegisterDomainSet(const Key& name,
+                         const Teuchos::RCP<AmanziMesh::DomainSet> set);
+  bool HasDomainSet(const Key& name) const;
+  Teuchos::RCP<const AmanziMesh::DomainSet> GetDomainSet(const Key& name) const;
+  
 
   // -----------------------------------------------------------------------------
   // State handles data management.
@@ -283,6 +294,8 @@ class State {
   //
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
+  Teuchos::ParameterList& GetEvaluatorList(const Key& key);
+  
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
@@ -372,7 +385,7 @@ class State {
  private:
 
   // Accessors that return null if the Key does not exist.
-  Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(Key key) const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<const Field> GetField_(Key fieldname) const;
   Teuchos::RCP<Field> GetField_(Key fieldname);
   Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(Key key);
@@ -387,10 +400,13 @@ class State {
 
   // Containers
   MeshMap meshes_;
+  std::map<Key,Key> mesh_aliases_;
   FieldMap fields_;
   FieldFactoryMap field_factories_;
   FieldEvaluatorMap field_evaluators_;
+
   MeshPartitionMap mesh_partitions_;
+  DomainSetMap domain_sets_;
 
   // meta-data
   double time_;
@@ -413,33 +429,33 @@ class State {
 // Non-member functions for I/O of a State.
 // -----------------------------------------------------------------------------
 // Visualization of State.
-void WriteVis(const Teuchos::Ptr<Visualization>& vis,
-              const Teuchos::Ptr<State>& S);
+void WriteVis(Visualization& vis,
+              State& S);
 
 // Checkpointing State.
-void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
-                     const Teuchos::Ptr<State>& S,
+void WriteCheckpoint(Checkpoint& ckp,
+                     State& S,
                      double dt,
                      bool final = false,
                      Amanzi::ObservationData* obs_data = NULL);
 
 double ReadCheckpoint(const Comm_ptr_type& comm,
-                      const Teuchos::Ptr<State>& S,
+                      State& S,
                       std::string filename);
 
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename);
+                                 const std::string& filename);
 
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           std::string filename);
+                           const std::string& filename);
 
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                std::string filename,
+                                const std::string& filename,
                                 Amanzi::ObservationData& obs_data);
 
-void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
+void DeformCheckpointMesh(State& S, Key domain);
 
-void WriteStateStatistics(const Teuchos::Ptr<State>& S, Teuchos::RCP<VerboseObject>& vo);
+void WriteStateStatistics(const State& S, const VerboseObject& vo);
 
 
 }  // namespace Amanzi

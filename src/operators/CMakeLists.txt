@@ -80,6 +80,7 @@ set(operators_inc_files
     Operator_Edge.hh
     Operator_FaceCell.hh
     Operator_FaceCellScc.hh
+    InverseSchurComplement.hh
     Operator_FaceCellSff.hh
     Operator_Factory.hh
     Operator_Node.hh
@@ -140,6 +141,7 @@ add_amanzi_library(operators
                           Operator_Cell.cc Operator_CellBndFace.cc
                           Operator_Diagonal.cc
                           Operator_FaceCell.cc
+                          InverseSchurComplement.cc
                           Operator_FaceCellScc.cc Operator_FaceCellSff.cc
                           Operator_Factory.cc
                           Operator_Node.cc
@@ -225,7 +227,7 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-
+                 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
@@ -393,5 +395,4 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
-
-
+                

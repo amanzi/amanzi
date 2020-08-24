@@ -67,6 +67,7 @@ const int OPERATOR_SCHEMA_INDICES = 512;
 // schemas
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
+const int OPERATOR_SCHEMA_RULE_SUPERSET = 3;
 
 // Boundary Conditions:
 //   Dirichlet, Neumann and Mixed are conventional boundary conditions

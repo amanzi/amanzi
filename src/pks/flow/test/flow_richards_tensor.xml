@@ -104,7 +104,7 @@
 	  <ParameterList name="timestep controller standard parameters">
 	    <Parameter name="min iterations" type="int" value="2"/>
 	    <Parameter name="max iterations" type="int" value="5"/>
-	    <Parameter name="time step increase factor" type="double" value="1.2"/>
+	    <Parameter name="time step increase factor" type="double" value="2.0"/>
 	    <Parameter name="time step reduction factor" type="double" value="0.5"/>
 	    <Parameter name="max time step" type="double" value="100.0"/>
 	    <Parameter name="min time step" type="double" value="0.0"/>
@@ -113,13 +113,14 @@
 	  <Parameter name="solver type" type="string" value="nka"/>
 	  <ParameterList name="nka parameters">
 	    <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
-	    <Parameter name="diverged tolerance" type="double" value="1+10"/>
+	    <Parameter name="diverged tolerance" type="double" value="1e+10"/>
 	    <Parameter name="limit iterations" type="int" value="12"/>
 	    <Parameter name="max du growth factor" type="double" value="1e+5"/>
 	    <Parameter name="max divergent iterations" type="int" value="3"/>
 	    <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
 	    <ParameterList name="verbose object">
-	      <Parameter name="verbosity level" type="string" value="medium"/>
+	      <Parameter name="verbosity level" type="string" value="high"/>
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
@@ -223,7 +224,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
+      <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -277,7 +278,7 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.e-9}"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="-1.e+10"/>
+        <Parameter name="value" type="double" value="-10.0"/>
       </ParameterList>
 
       <ParameterList name="permeability">
@@ -318,9 +319,9 @@
             <Parameter name="components" type="Array(string)" value="{cell,face}"/>
             <ParameterList name="function">
               <ParameterList name="function-linear"> <!-- time component -->
-                <Parameter name="gradient" type="Array(double)" value="{0.15, -0.3, -0.45}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.15, -0.13, -0.145}"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="y0" type="double" value="0.0"/>
+                <Parameter name="y0" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -9,7 +9,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "LinearOperatorFactory.hh"
 
 #include "Darcy_PK.hh"
 
@@ -76,8 +75,7 @@ int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 ****************************************************************** */
 void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
+  op_->ComputeInverse();
 }
 
 

@@ -93,6 +93,9 @@ add_subdirectory(chemistry)
 # ok, transport is physics but oh well...
 add_subdirectory(transport)
 
+# add shallow water
+add_subdirectory(shallow_water)
+
 if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(dummy)

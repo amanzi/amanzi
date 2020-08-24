@@ -96,10 +96,9 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     }
   }
 
-  // Solve the Schur complement system Scc * Yc = Tc.
+  // Solve the Schur complement system Yc = inv(Scc) * Tc.
   {
-    Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-    preconditioner_->ApplyInverse(Tc, Yc);
+    preconditioner_->ApplyInverse(T, Y);
   }
 
   // BACKWARD SUBSTITUTION:  Yf = inv(Aff) (Xf - Afc Yc)
@@ -372,6 +371,14 @@ void Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   name = "Scc alt as CELL_CELL";
   Op_Cell_Cell diag_op(name, mesh_);
   Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator_FaceCellScc::Clone() const {
+  return Teuchos::rcp(new Operator_FaceCellScc(*this));
 }
 
 }  // namespace Operators

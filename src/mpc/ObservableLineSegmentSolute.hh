@@ -95,8 +95,6 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
     
-  const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-    
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasField("total_component_concentration")) {
       Errors::Message msg;
@@ -121,8 +119,8 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
-    lifting.Init(vector, plist, tcc_index_);
-    lifting.ComputeGradient(ids);
+    lifting.Init(plist);
+    lifting.ComputeGradient(ids, vector, tcc_index_);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");

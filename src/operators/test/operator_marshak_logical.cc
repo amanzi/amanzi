@@ -26,7 +26,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LinearOperatorGMRES.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
 #include "Tensor.hh"
@@ -169,27 +168,18 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // apply BCs and assemble
     op.ApplyBCs(true, true, true);
-    global_op->SymbolicAssembleMatrix();
-    global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-    global_op->InitializePreconditioner(slist);
-    global_op->UpdatePreconditioner();
-
-    // solve the problem
-    ParameterList lop_list = plist.sublist("solvers")
-                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
-    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
-        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-    solver->Init(lop_list);
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
 
     Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    solver->ApplyInverse(rhs, solution);
+    //    global_op->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    global_op->ApplyInverse(rhs, solution);
 
     step++;
     T += dT;
@@ -198,7 +188,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  T=%7.4f  dT=%7.4f\n",
-          step, solver->residual(), solver->num_itrs(), snorm, T, dT);
+          step, global_op->residual(), global_op->num_itrs(), snorm, T, dT);
     }
 
     // change time step

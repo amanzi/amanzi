@@ -36,6 +36,9 @@
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="600"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -51,35 +54,35 @@
     </ParameterList>
 
     <ParameterList name="Belos GMRES">
-      <Parameter name="iterative method" type="string" value="belos gmres"/>
-      <ParameterList name="belos gmres parameters">
+      <Parameter name="iterative method" type="string" value="belos: gmres"/>
+      <ParameterList name="belos: gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Amesos1">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
+      <Parameter name="direct method" type="string" value="amesos: klu"/>
+      <ParameterList name="amesos: klu parameters">
         <Parameter name="solver name" type="string" value="Klu"/>
         <Parameter name="amesos version" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Amesos2: basker">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
+      <Parameter name="direct method" type="string" value="amesos2: basker"/>
+      <ParameterList name="amesos2: basker parameters">
         <Parameter name="solver name" type="string" value="basker"/>
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Amesos2: superludist">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
+      <Parameter name="direct method" type="string" value="amesos2: superludist"/>
+      <ParameterList name="amesos2: superludist parameters">
         <Parameter name="solver name" type="string" value="superludist"/>
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
@@ -89,7 +92,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -98,10 +101,13 @@
         <Parameter name="relaxation type" type="int" value="6"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="identity">
-      <Parameter name="preconditioner type" type="string" value="identity"/>
+      <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
 

@@ -20,6 +20,12 @@
       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.62980e+06, 6.273650880e+10}"/>
       <Parameter name="region" type="string" value="Well2"/>
     </ParameterList>
+    <ParameterList name="obl 2">
+      <Parameter name="variable" type="string" value="Tc-99 sorbed concentration"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.62980e+06, 6.273650880e+10}"/>
+      <Parameter name="region" type="string" value="Well"/>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="walkabout data">
     <Parameter name="file name base" type="string" value="walkabout"/>
@@ -300,7 +306,7 @@
   </ParameterList>
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
+      <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="max levels" type="int" value="40"/>
@@ -320,7 +326,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -334,7 +340,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0"/>
         <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
@@ -441,18 +447,8 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_2">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <ParameterList name="output">
-            <Parameter name="file" type="string" value="WRM_2.txt"/>
-            <Parameter name="number of points" type="int" value="1000"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="operators">
@@ -803,18 +799,8 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_2">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
-          <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation" type="double" value="0.0"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <ParameterList name="output">
-            <Parameter name="file" type="string" value="WRM_2.txt"/>
-            <Parameter name="number of points" type="int" value="1000"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="operators">
@@ -989,7 +975,7 @@
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
       <Parameter name="used source regions" type="Array(string)" value="{}"/>
-      <Parameter name="used observation regions" type="Array(string)" value="{Well2}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{Well2, Well}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>

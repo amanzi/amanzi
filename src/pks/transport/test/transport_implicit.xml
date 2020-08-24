@@ -128,7 +128,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: two-point flux approximation"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>

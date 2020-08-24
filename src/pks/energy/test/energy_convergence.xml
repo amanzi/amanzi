@@ -141,6 +141,7 @@
 	    <Parameter name="max nka vectors" type="int" value="10"/>
 	    <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
 	    <Parameter name="modify correction" type="bool" value="false"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
 	    <ParameterList name="verbose object">
 	      <Parameter name="verbosity level" type="string" value="none"/>
 	    </ParameterList>
@@ -154,65 +155,15 @@
       <ParameterList name="boundary conditions">
 	<ParameterList name="temperature">
 	  <ParameterList name="BC 1">
-	    <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+	    <Parameter name="regions" type="Array(string)" value="{Left side, Right side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-composition">
-		<ParameterList name="function1">
-		  <ParameterList name="function-standard-math">
-		    <Parameter name="operator" type="string" value="pow"/>
-		    <Parameter name="parameter" type="double" value="-1.0"/>
-		  </ParameterList>
-		</ParameterList>
-		<ParameterList name="function2">
-		  <ParameterList name="function-composition">
-		    <ParameterList name="function1">
-		      <ParameterList name="function-standard-math">
-			<Parameter name="operator" type="string" value="tan"/>
-		      </ParameterList>
-		    </ParameterList>
-		    <ParameterList name="function2">
-		      <ParameterList name="function-linear">
-			<Parameter name="y0" type="double" value="0.5"/>
-			<Parameter name="gradient" type="Array(double)" value="{-0.5, 0.0, 0.0}"/>
-			<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-		      </ParameterList>
-		    </ParameterList>
-		  </ParameterList>
-		</ParameterList>
+	      <ParameterList name="function-exprtk">
+                 <Parameter name="number of arguments" type="int" value="2"/>
+                 <Parameter name="formula" type="string" value="1.0 / tan((x - t) / 2)"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
-	  <ParameterList name="BC 2">
-	    <Parameter name="regions" type="Array(string)" value="{Right side}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="boundary temperature">
-	      <ParameterList name="function-composition">
-		<ParameterList name="function1">
-		  <ParameterList name="function-standard-math">
-		    <Parameter name="operator" type="string" value="pow"/>
-		    <Parameter name="parameter" type="double" value="-1.0"/>
-		  </ParameterList>
-		</ParameterList>
-		<ParameterList name="function2">
-		  <ParameterList name="function-composition">
-		    <ParameterList name="function1">
-		      <ParameterList name="function-standard-math">
-			<Parameter name="operator" type="string" value="tan"/>
-		      </ParameterList>
-		    </ParameterList>
-		    <ParameterList name="function2">
-		      <ParameterList name="function-linear">
-			<Parameter name="y0" type="double" value="1.0"/>
-			<Parameter name="gradient" type="Array(double)" value="{-0.5, 0.0, 0.0}"/>
-			<Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-		      </ParameterList>
-		    </ParameterList>
-		  </ParameterList>
-		</ParameterList>
-	      </ParameterList>
-            </ParameterList>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -239,7 +190,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -252,6 +203,9 @@
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
   <ParameterList name="state">
+   <ParameterList name="verbose object">
+     <Parameter name="verbosity level" type="string" value="none"/>
+    </ParameterList>
     <ParameterList name="field evaluators">
       <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -329,24 +283,34 @@
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/mol-K]" type="double" value="1.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
-          <Parameter name="iem type" type="string" value="linear"/>
-          <Parameter name="heat capacity [J/kg-K]" type="double" value="1.0"/>
-          <Parameter name="reference temperature" type="double" value="1.0"/>
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

@@ -141,6 +141,13 @@
 #   0.97.4       - added CLM
 #   0.97.5       - added exprtk
 #   0.97.6       - update BoxLib (CCSE) to version 1.3.5
+#   0.97.7       - update ASCEMIO
+#   0.97.8       - update BoxLib (CCSE) to version 17.05.1
+#   0.97.9       - update Alquimia to 1.0.7-rc
+#                - update PFloTran to v3.0 (Jul 17, 2020)
+#                - update PETSc to 3.13
+#                - update SuperLU_DIST to 6.1.1
+#                - update CLM to 0.1.1
 
 include(CMakeParseArguments)
 
@@ -193,7 +200,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 9)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -267,15 +274,18 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 # TPL: CCSE
 #
-set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 3)
-set(CCSE_VERSION_PATCH 5)
+set(CCSE_VERSION_MAJOR 17)
+set(CCSE_VERSION_MINOR 05)
+set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "https://github.com/BoxLib-Codes/BoxLib/archive/")
-set(CCSE_ARCHIVE_FILE   v${CCSE_VERSION}.tar.gz) 
+set(CCSE_ARCHIVE_FILE   ${CCSE_VERSION}.tar.gz) 
 set(CCSE_SAVEAS_FILE    ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        b1e0cfb99db6665ba70bb5e9ae56e14e) 
+set(CCSE_MD5_SUM        97c3e1615cc649e2748fa9a7291724fa)
+set(CCSE_GIT_REPOSITORY "https://github.com/BoxLib-Codes/BoxLib")
+set(CCSE_GIT_TAG        "a15e0ee6b043cb87dc99c8fe902b10217eb4fe94")
+
 
 #
 # TPL: UnitTest
@@ -345,12 +355,12 @@ set(NetCDF_Fortran_MD5_SUM        759402703585d12f84667716887c42df)
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 2)
+set(ASCEMIO_VERSION_MINOR 4)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_SAVEAS_FILE    ${ASCEMIO_ARCHIVE_FILE})
-set(ASCEMIO_MD5_SUM        869820bacd4c289c8f320be58c1449a7)
+set(ASCEMIO_MD5_SUM        e395b1d32bac6f04fa518911d57de725)
 
 #
 # TPL: MSTK
@@ -384,10 +394,10 @@ set(HYPRE_VERSION_MAJOR  2)
 set(HYPRE_VERSION_MINOR  14)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
-set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
+set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
+set(HYPRE_MD5_SUM        270a6e4620622516655dd9903a36d314)
 
 #
 # TPL: ParMetis
@@ -408,22 +418,22 @@ set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
 set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
-set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
-set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
+set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive")
+set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
+set(SuperLU_MD5_SUM        4a1a602d9335f1da4ba786cccc7873cd)
 
 #
 # TPL: SuperLU_Dist
 #
-set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  4)
-set(SuperLUDist_VERSION_PATCH  0)
+set(SuperLUDist_VERSION_MAJOR  6)
+set(SuperLUDist_VERSION_MINOR  1)
+set(SuperLUDist_VERSION_PATCH  1)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        334cd350ae375be63ccf4d62900be3e4)
+set(SuperLUDist_MD5_SUM        767e221ba3752174b65d9257f9a97e06)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -441,14 +451,14 @@ set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  11)
-set(PETSc_VERSION_PATCH  3)
-set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
+set(PETSc_VERSION_MINOR  13)
+set(PETSc_VERSION_PATCH  0)
+set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_VERSION}")
 set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        c5f8e3aa0bed20a8ab685fb809950fce)
+set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
 
 
 #
@@ -481,26 +491,26 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_VERSION_MINOR 0)
-set(PFLOTRAN_VERSION_PATCH b681066)
+set(PFLOTRAN_VERSION_PATCH 1ba735f)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
 set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-b681066-20Sep2019.tar.gz)
-set(PFLOTRAN_SAVEAS_FILE    pflotran-b681066-20Sep2019.tar.gz)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-1ba735f-17Jul2020.tar.gz)
+set(PFLOTRAN_SAVEAS_FILE    pflotran-1ba735f-17Jul2020.tar.gz)
 set(PFLOTRAN_MD5_SUM        486b0981a90aa662644b907f0a42e7fe)
 set(PFLOTRAN_GIT_REPOSITORY "https://bitbucket.org/pflotran/pflotran/src/master")
-set(PFLOTRAN_GIT_TAG        "b68106687fd4ea421468fda130ea053d44e0262e")
+set(PFLOTRAN_GIT_TAG        "1ba735f1a64a12315c52a64107a75571c53492b3")
 
 #
 # TPL: Alquimia
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 6-rc)
+set(ALQUIMIA_VERSION_PATCH 7-rc)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
 set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        5bcf12c69c63cbd7912facc67b859af1)
+set(ALQUIMIA_MD5_SUM        863b62d0da516fc3de59b5b3587906d3)
 
 #
 # TPL: Silo
@@ -543,12 +553,12 @@ set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
 #
 set(CLM_VERSION_MAJOR 0)
 set(CLM_VERSION_MINOR 1)
-set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION_PATCH 1)
 set(CLM_VERSION  ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
 set(CLM_URL_STRING    "https://github.com/amanzi/pf-clm/archive")
 set(CLM_ARCHIVE_FILE  v${CLM_VERSION}.tar.gz)
 set(CLM_SAVEAS_FILE   clm-${CLM_ARCHIVE_FILE})
-set(CLM_MD5_SUM       e404e9a24691c81e410f1a553b47ebbe)
+set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 
 #
 # TPL: exprtk

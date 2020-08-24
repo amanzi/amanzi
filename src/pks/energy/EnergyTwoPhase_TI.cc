@@ -1,5 +1,5 @@
 /*
-  Energy
+  Energy PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +8,8 @@
 
   Author: Ethan Coon
 */
+
+#include "Key.hh"
 
 #include "FieldEvaluator.hh"
 #include "EnergyTwoPhase_PK.hh"
@@ -34,6 +36,10 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
+  // add sources
+  CompositeVector& rhs = *op_matrix_->rhs();
+  AddSourceTerms(rhs);
+  
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term
@@ -54,9 +60,9 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   // advect tmp = molar_density_liquid * enthalpy 
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
-  const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+  const CompositeVector& n_l = *S_->GetFieldData(mol_density_liquid_key_);
 
-  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
+  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
   op_matrix_advection_->ApplyBCs(false, true, false);
@@ -93,8 +99,9 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
+  auto der_name = Keys::getDerivKey(energy_key_, temperature_key_);
   S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
-  CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
+  CompositeVector& dEdT = *S_->GetFieldData(der_name, energy_key_);
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
@@ -102,10 +109,11 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
+    Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData(darcy_flux_key_);
 
+    der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
     S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
-    Teuchos::RCP<CompositeVector> dHdT = S_->GetFieldData("denthalpy_dtemperature", enthalpy_key_);
+    Teuchos::RCP<CompositeVector> dHdT = S_->GetFieldData(der_name, enthalpy_key_);
 
     const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
@@ -116,8 +124,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
   }
 
   // finalize preconditioner
-  op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->UpdatePreconditioner();
+  op_preconditioner_->ComputeInverse();
 }
 
 
@@ -134,14 +141,12 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell", false);
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell", false);
 
-  int cell_bad;
   double error_t(0.0);
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
     if (tmp > error_t) {
       error_t = tmp;
-      cell_bad = c;
     } 
   }
 
@@ -156,13 +161,9 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c]*2.e6 + rtol_* std::abs(energy[0][c]));
     if (tmp > error_e) {
       error_e = tmp;
-      cell_bad = c;
     }
   }
   */
-
-  // Face error is mismatch in flux??
-
 
   double error = std::max(error_t, error_e);
 

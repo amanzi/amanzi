@@ -20,11 +20,13 @@ project(MPC_TREE)
 
 # Get the includes directory for chemistry
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+message(DEBUG "Including GEOCHEM_SOURCE_DIR = ${GEOCHEM_SOURCE_DIR} ")
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
@@ -60,6 +62,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
       FlowEnergy_PK.hh
+      FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
@@ -73,6 +76,7 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
       FlowEnergy_PK.cc
+      FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc
@@ -80,10 +84,7 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransport_PK.cc
       ReactiveTransportMatrixFracture_PK.cc)
 
-   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-   add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
-                   LINK_LIBS pks flow transport time_integration data_structures state
-                             ${mpc_tree_tpl_libs})
+  set(mpc_tree_link_libs pks flow transport time_integration data_structures state)
 
 else()
 
@@ -104,12 +105,13 @@ else()
       TransportMatrixFracture_PK.cc        
       ReactiveTransport_PK.cc)
 
-   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-   add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
-                   LINK_LIBS pks transport time_integration data_structures state
-                             ${mpc_tree_tpl_libs})
+   set(mpc_tree_link_libs pks transport time_integration data_structures state)
 
 endif()
+
+set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
+                   LINK_LIBS ${mpc_tree_link_libs} ${mpc_tree_tpl_libs})
 
 
 add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)

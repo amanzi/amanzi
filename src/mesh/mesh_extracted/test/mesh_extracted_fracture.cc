@@ -32,7 +32,7 @@
 #include "Mesh_simple.hh"
 
 /* **************************************************************** */
-void RunTest(const std::string regname, int* cells) {
+void RunTest(const std::string regname, int* cells, int* edges) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -77,9 +77,11 @@ void RunTest(const std::string regname, int* cells) {
 
       int ncells = mesh->cell_map(false).NumGlobalElements();
       int nfaces = mesh->face_map(false).NumGlobalElements();
+      int mfaces = (i == 0) ? mesh->exterior_face_map(false).NumGlobalElements() : 0;
       std::cout << i << " pid=" << comm->MyPID() << " cells: " << ncells 
-                     << " faces: " << nfaces << std::endl;
+                     << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl;
       CHECK(cells[i] == ncells);
+      CHECK(edges[i] == mfaces);
 
       // verify mesh 
       MeshAudit audit(mesh);
@@ -95,16 +97,19 @@ void RunTest(const std::string regname, int* cells) {
 
 TEST(MESH_EXTRACTED_FRACTURE_NETWORK2) {
   int cells[3] = {108, 200, 0};
-  RunTest("fractures-two", cells);
+  int edges[3] = {48, 0, 0};
+  RunTest("fractures-two", cells, edges);
 }
 
 TEST(MESH_EXTRACTED_SURFACE) {
   int cells[3] = {9, 25, 0};
-  RunTest("Left side", cells);
+  int edges[3] = {12, 0, 0};
+  RunTest("Left side", cells, edges);
 }
 
 TEST(MESH_EXTRACTED_FRACTURE_NETWORK3) {
   int cells[3] = {108, 200, 0};
-  RunTest("fractures-three", cells);
+  int edges[3] = {72, 0, 0};
+  RunTest("fractures-three", cells, edges);
 }
 

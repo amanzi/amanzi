@@ -234,8 +234,8 @@ void WalkaboutCheckpoint::CalculateData(
   plist.set<std::string>("limiter", "tensorial");
 
   Operators::ReconstructionCell lifting(mesh);
-  lifting.Init(p, plist);
-  lifting.ComputeGradient();
+  lifting.Init(plist);
+  lifting.ComputeGradient(p);
 
   // Populate state data at mesh nodes
   porosity.clear();

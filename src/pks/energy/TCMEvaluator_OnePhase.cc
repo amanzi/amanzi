@@ -8,7 +8,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Interface for a thermal conductivity model with two phases.
+  Interface for a thermal conductivity model with one phase.
 */
 
 #include "dbc.hh"
@@ -23,12 +23,14 @@ namespace Energy {
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
-  }
+  my_key_ = plist_.get<std::string>("thermal conductivity key");
+  auto prefix = Keys::getDomainPrefix(my_key_);
 
-  temperature_key_ = plist_.get<std::string>("temperature key", "temperature");
+  temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   dependencies_.insert(temperature_key_);
+
+  porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
+  dependencies_.insert(porosity_key_);
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -63,7 +65,7 @@ void TCMEvaluator_OnePhase::EvaluateField_(
 {
   // pull out the dependencies
   const Epetra_MultiVector& temp_c = *S->GetFieldData(temperature_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& poro_c = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& poro_c = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
   int ncomp = result->size("cell", false);

@@ -226,10 +226,7 @@
       </mechanical_properties>
       <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
-      <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0674E-03 Pa^-1" m=" vG_M" sr="0.0"/>
-      </cap_pressure>
-      <rel_perm model="mualem"/>
+      <cap_pressure model="saturated"/>
       <assigned_regions>RegionTop</assigned_regions>
     </material>
   </materials>
@@ -344,6 +341,11 @@
           <functional>point</functional>
           <time_macros>EveryMonth</time_macros>
         </aqueous_conc>
+        <sorbed_conc solute="Tc-99">
+          <assigned_regions>Well</assigned_regions>
+          <functional>point</functional>
+          <time_macros>EveryMonth</time_macros>
+        </sorbed_conc>
       </liquid_phase>
     </observations>
   </output>

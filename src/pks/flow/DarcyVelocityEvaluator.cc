@@ -12,6 +12,7 @@
 */
 
 #include "MFD3D_Diffusion.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "DarcyVelocityEvaluator.hh"
 
@@ -60,9 +61,7 @@ void DarcyVelocityEvaluator::EvaluateField_(
 
   const auto& fmap = *S->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(domain);
-  const auto& cmap = mesh->cell_map(true);
-
+  auto mesh = S->GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 
@@ -84,8 +83,7 @@ void DarcyVelocityEvaluator::EvaluateField_(
       if (fmap.ElementSize(f) == 2) {
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 2) {
-          int gid = cmap.GID(c);
-          g += (gid == std::min(cmap.GID(cells[0]), cmap.GID(cells[1]))) ? 0 : 1;
+          g += Operators::UniqueIndexFaceToCells(*mesh, f, c);
         }
       }
       solution[n].Reshape(dim, 0);

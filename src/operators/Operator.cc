@@ -25,8 +25,8 @@
 #include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
+#include "InverseFactory.hh"
 
 // Operators
 #include "Op.hh"
@@ -49,6 +49,8 @@
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
 
+#define TEST_MAPS 0
+
 namespace Amanzi {
 namespace Operators {
 
@@ -62,7 +64,13 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     cvs_col_(cvs),
     schema_row_(schema),
     schema_col_(schema),
-    shift_(0.0)
+    shift_(0.0),
+    plist_(plist),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false),
+    updated_(false),
+    computed_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -83,12 +91,15 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     nedges_wghost = 0;
   }
 
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
-
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
+  apply_calls_ = 0;
 
-  apply_calls_ = 0; 
+  if (plist_.isSublist("inverse")) {
+    auto& inv_list = plist_.sublist("inverse");
+    AmanziSolvers::setMakeOneIterationCriteria(inv_list);
+    set_inverse_parameters(inv_list);
+  }    
 }
 
 
@@ -105,7 +116,11 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     cvs_col_(cvs_col),
     schema_row_(schema_row),
     schema_col_(schema_col),
-    shift_(0.0)
+    shift_(0.0),
+    plist_(plist),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -126,11 +141,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     nedges_wghost = 0;
   }
 
-  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
-  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
-
+  vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-
   apply_calls_ = 0; 
 }
 
@@ -146,6 +158,7 @@ void Operator::Init()
     if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
        ops_[i]->Init();
   }
+  computed_ = false;
 }
 
 
@@ -156,10 +169,10 @@ void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = createSuperMap(*cvs_col_);
+  if (!smap_.get()) smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
-  int row_size = MaxRowSize(*mesh_, schema(), 1);
+  int row_size = MaxRowSize(*mesh_, schema_col());
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
       smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
@@ -182,8 +195,14 @@ void Operator::SymbolicAssembleMatrix()
 void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
                                       int my_block_row, int my_block_col) const
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Symbolic Assembling..." << std::endl;
+
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
 }
@@ -245,7 +264,7 @@ void Operator::AssembleMatrix()
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-  //exit(0);
+  // exit(0);
 }
 
 
@@ -255,8 +274,15 @@ void Operator::AssembleMatrix()
 void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
                               int my_block_row, int my_block_col) const
 {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Assembling block " << my_block_row << "," << my_block_col << std::endl;
+  }
+
   // first of double dispatch via Visitor pattern
   for (auto& it : *this) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  op: " << it->schema_string << std::endl;
     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
 }
@@ -337,6 +363,11 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
 ******************************************************************* */
 int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
+#endif  
+
   X.ScatterMasterToGhosted();
 
   // initialize ghost elements
@@ -378,9 +409,9 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y);
+  ierr |= addFromSuperVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg;
@@ -399,24 +430,13 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  if (preconditioner_.get() == nullptr) {
-    Errors::Message msg("Operator did not initialize a preconditioner.\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Epetra_Vector Xcopy(*smap_->Map());
-  Epetra_Vector Ycopy(*smap_->Map());
-
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
-
-  if (ierr) {
-    Errors::Message msg("Operator: ApplyInverse failed.\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  return ierr;
+  if (!computed_) const_cast<Operator*>(this)->ComputeInverse();
+#if TEST_MAPS
+  AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
+#endif  
+  AMANZI_ASSERT(preconditioner_.get());
+  return preconditioner_->ApplyInverse(X, Y);
 }
 
 
@@ -444,32 +464,21 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
   return 0;
 }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name,
-                                  const Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory factory;
- 
-  preconditioner_ = factory.Create(prec_name, plist);
-  UpdatePreconditioner();
+void Operator::set_inverse_parameters(const std::string& prec_name,
+        const Teuchos::ParameterList& plist) {
+  Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
+  set_inverse_parameters(inner_plist);
 }
 
-
-/* ******************************************************************
-*                       DEPRECATED
-* Initialization of the preconditioner. Note that boundary conditions
-* may be used in re-implementation of this virtual function.
-****************************************************************** */
-void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
-{
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+void Operator::set_inverse_parameters(const std::string& prec_name,
+        const Teuchos::ParameterList& prec_list,
+        const std::string& iter_name,
+        const Teuchos::ParameterList& iter_list,
+        bool make_one_iteration) {
+  auto inv_plist = AmanziSolvers::mergePreconditionerSolverLists(
+      prec_name, prec_list, iter_name, iter_list, make_one_iteration);
+  inv_plist.setName(iter_name);
+  set_inverse_parameters(inv_plist);
 }
 
 
@@ -478,54 +487,57 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 * Create the preconditioner and set options. Symbolic assemble of 
 * operator's matrix must have been called.
 ****************************************************************** */
-void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
-  if (smap_.get() == NULL) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = createSuperMap(*cvs_col_);
-    } else {
-      Errors::Message msg("Operator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
-
-    // NOTE: Hypre frees this
-    auto block_ids = smap_->BlockIndices();
-
-    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-
-    // Note, this passes a raw pointer through a ParameterList.  I was surprised
-    // this worked too, but ParameterList is a boost::any at heart... --etc
-    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
-  }
-
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
+  // delay pc construction until we know we have structure and can create the
+  // coloring.
+  inv_plist_ = plist;
+  inited_ = true; updated_ = false; computed_ = false;
 }
-
 
 /* ******************************************************************
-* Two-stage initialization of preconditioner, part 2.
-* Set the preconditioner structure. Operator's matrix must have been
-* assembled.
+* Three-stage initialization of preconditioner, part 2.
+* Set the preconditioner structure. Operator must have been
+* given all Ops by now.
 ****************************************************************** */
-void Operator::UpdatePreconditioner()
+void Operator::InitializeInverse()
 {
-  if (preconditioner_.get() == NULL) {
-    Errors::Message msg("Operator has no preconditioner, nothing to update.");
-    msg << " ref: " << typeid(*this).name() << "\n";
+  if (!inited_) {
+    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
+    msg << " In: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
-  preconditioner_->Update(A_);
+
+  smap_ = createSuperMap(DomainMap());
+
+  // provide block ids for block strategies.
+  if (inv_plist_.isParameter("preconditioning method") &&
+      inv_plist_.get<std::string>("preconditioning method") == "boomer amg" &&
+      inv_plist_.isSublist("boomer amg parameters") &&
+      inv_plist_.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+    if (coloring_ == Teuchos::null || num_colors_ == 0) {
+      auto block_ids = smap_->BlockIndices();
+      set_coloring(block_ids.first, block_ids.second);
+    }
+    inv_plist_.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    inv_plist_.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
+  preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
+  preconditioner_->InitializeInverse(); // NOTE: calls this->SymbolicAssembleMatrix()
+  updated_ = true;
+  computed_ = false;
 }
 
-
+void Operator::ComputeInverse()
+{
+  if (!updated_) {
+    InitializeInverse();
+  }
+  // assembly must be possible now
+  AMANZI_ASSERT(preconditioner_.get());
+  preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
+  computed_ = true;
+}
 
 /* ******************************************************************
 * Update the RHS with this vector.
@@ -675,20 +687,6 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
   ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
   ops_properties_.resize(nnew, 0);  
-}
-
-
-/* ******************************************************************
-* Copies to/from SuperVector for use by Amesos.
-****************************************************************** */
-void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
-{
-  CopyCompositeVectorToSuperVector(*smap_, cv, sv);
-}
-
-void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
-{
-  CopySuperVectorToCompositeVector(*smap_, sv, cv);
 }
 
 
@@ -1101,6 +1099,16 @@ void Operator::AssembleVectorNodeOp(int n, const Schema& schema,
                                     const WhetStone::DenseVector& v, CompositeVector& X) const {
   Errors::Message msg("Assembly of local node-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
+}
+
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator::Clone() const {
+  Errors::Message msg("Cloning of a derived Operator class is missing");
+  Exceptions::amanzi_throw(msg);
+  return Teuchos::null;
 }
 
 }  // namespace Operators

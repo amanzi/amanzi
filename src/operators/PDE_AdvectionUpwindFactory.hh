@@ -30,6 +30,7 @@ struct PDE_AdvectionUpwindFactory {
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   {
     if (oplist.isParameter("fracture")) {
+      oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
       auto op = Teuchos::rcp(new PDE_AdvectionUpwindFracturedMatrix(oplist, mesh));
       return op;
     } else if (oplist.isParameter("single domain")) {
@@ -46,6 +47,7 @@ struct PDE_AdvectionUpwindFactory {
          const Teuchos::RCP<Operator>& global_op)
   {
     if (oplist.isParameter("fracture")) {
+      oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
       auto op = Teuchos::rcp(new PDE_AdvectionUpwindFracturedMatrix(oplist, global_op));
       return op;
     } else if (oplist.isParameter("single domain")) {
