@@ -36,6 +36,9 @@
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="600"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -56,7 +59,7 @@
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

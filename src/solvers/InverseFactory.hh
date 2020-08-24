@@ -141,6 +141,7 @@ setMakeOneIterationCriteria(Teuchos::ParameterList& plist) {
   }
 }
 
+
 //
 // Helper function to merge Amanzi-style "solvers" and "preconditioners" lists
 // options.
@@ -177,7 +178,6 @@ mergePreconditionerSolverLists(
 }
 
 
-
 //
 // Low level factory -- just make the object
 // -----------------------------------------------------------------------------
@@ -210,9 +210,13 @@ createIterativeMethod(const std::string& method_name,
     Exceptions::amanzi_throw(msg);
   }
 
-  if (inv.get()) inv->set_inverse_parameters(method_list);
+  if (inv.get()) {
+    inv->set_name(Keys::cleanPListName(inv_list.name()));
+    inv->set_inverse_parameters(method_list);
+  }
   return inv;
 }
+
 
 //
 // This also potentially gets used by client code...
@@ -244,7 +248,6 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   inv->set_matrices(m, m);
   return inv;
 }
-
 
 
 //
@@ -301,7 +304,11 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     msg << "Direct method \"" << method_name << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: *\" are valid options.";
     Exceptions::amanzi_throw(msg);
   }
-  if (inv.get()) inv->set_inverse_parameters(method_list);
+
+  if (inv.get()) {
+    inv->set_name(Keys::cleanPListName(inv_list.name()));
+    inv->set_inverse_parameters(method_list);
+  }
   return inv;
 }
 
@@ -423,7 +430,6 @@ createInverse(const std::string& name,
   return createInverse<Operator,Operator,Vector,VectorSpace>(
       name, solvers_list, m, m);
 }
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

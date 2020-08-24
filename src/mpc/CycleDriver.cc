@@ -817,6 +817,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
     pk_->set_dt(dt);
   }
 
+  // enfoce consistent physics after initialization
+  // this is optionla but help corect statistics
+  S_->InitializeEvaluators();
 
   *S_->GetScalarData("dt", "coordinator") = dt;
   S_->GetField("dt","coordinator")->set_initialized();
@@ -976,7 +979,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->CalculateDiagnostics(S_);
   Observations();
-  WriteStateStatistics(*S_, *vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];

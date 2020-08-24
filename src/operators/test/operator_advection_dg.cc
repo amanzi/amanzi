@@ -145,7 +145,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   auto Kc = K->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const Point& xc = mesh->cell_centroid(c);
     (*Kc)[0][c] = Kreac;
   }
 

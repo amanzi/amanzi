@@ -477,6 +477,7 @@ void Operator::set_inverse_parameters(const std::string& prec_name,
         bool make_one_iteration) {
   auto inv_plist = AmanziSolvers::mergePreconditionerSolverLists(
       prec_name, prec_list, iter_name, iter_list, make_one_iteration);
+  inv_plist.setName(iter_name);
   set_inverse_parameters(inv_plist);
 }
 

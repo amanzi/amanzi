@@ -43,17 +43,21 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     int num_itrs = op_->num_itrs();
-    double residual = op_->residual();
-    int code = op_->returned_code();
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver_name_
-               << "): ||r||_H=" << residual << " itr=" << num_itrs
-               << " code=" << code << std::endl;
+               << "): ||r||_H=" << op_->residual() << " itr=" << num_itrs
+               << " code=" << op_->returned_code() << std::endl;
 
-    // Do you really want this just for reporting?  Seems extremely inefficient --etc
-    //    residual = op_->TrueResidual(rhs, *solution);
-    //    *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
+    // verify true resdual if the convergence was too slow
+    if (num_itrs > 10) {
+      CompositeVector r(*solution);
+      op_->ComputeResidual(*solution, r);
+
+      double true_residual;
+      r.Norm2(&true_residual);
+      *vo_->os() << "true l2 residual: ||r||=" << true_residual << std::endl;
+    }
   }
 
   // catastrophic failure.

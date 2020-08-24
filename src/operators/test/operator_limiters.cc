@@ -741,7 +741,6 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {

@@ -57,9 +57,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   std::string engine = GetAttributeValueS_(node, "engine");
 
   // process engine
-  bool native(false);
   if (engine ==  "amanzi") {
-    native = true;
     out_list.set<std::string>("chemistry model", "Amanzi");
 
     std::string bgdfilename, format("simple");

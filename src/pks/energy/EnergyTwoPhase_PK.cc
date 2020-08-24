@@ -102,7 +102,6 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // times, initialization could be done on any non-zero interval.
   double t_old = S->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
-  double t_new = t_old + dt_;
 
   // Call the base class initialize.
   Energy_PK::Initialize(S);

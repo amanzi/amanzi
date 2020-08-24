@@ -62,7 +62,6 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_domain_ = S->GetMesh();
   mesh_fracture_ = S->GetMesh("fracture");
-  int dim = mesh_domain_->space_dimension();
 
   // keys
   normal_permeability_key_ = "fracture-normal_permeability";
@@ -204,7 +203,6 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->GetFieldData(normal_permeability_key_)->ViewComponent("cell");
   const auto& tn = *S_->GetFieldData(normal_conductivity_key_)->ViewComponent("cell");
-  double rho = *S->GetScalarData("fluid_density");
   double gravity;
   S->GetConstantVectorData("gravity")->Norm2(&gravity);
 

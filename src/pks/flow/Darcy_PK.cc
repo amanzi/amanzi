@@ -603,7 +603,7 @@ void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 ****************************************************************** */
 void Darcy_PK::FractureConservationLaw_()
 {
-  if (!coupled_to_matrix_) return;
+  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
 
   const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
   const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);

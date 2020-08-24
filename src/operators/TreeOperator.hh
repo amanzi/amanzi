@@ -50,9 +50,7 @@ namespace Impl {
 class TreeOperator_BlockPreconditioner;
 }
 
-class TreeOperator :
-    public Matrix<TreeVector,TreeVectorSpace> {
-    
+class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
  public:
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVector::VectorSpace_t;
@@ -69,7 +67,7 @@ class TreeOperator :
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const override;
   int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
-  
+
   virtual const TreeVectorSpace& DomainMap() const override { return *tvs_; }
   virtual const TreeVectorSpace& RangeMap() const override { return *tvs_; }
   Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
@@ -78,7 +76,8 @@ class TreeOperator :
   void AssembleMatrix();
 
   void set_inverse_parameters(const std::string& prec_name,
-          const Teuchos::ParameterList& plist);
+                              const Teuchos::ParameterList& plist);
+
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override {
     inv_plist_ = plist;
     inited_ = true;
@@ -109,6 +108,10 @@ class TreeOperator :
     if (preconditioner_.get()) return std::string("TreeOperator: ")+preconditioner_->name();
     return "TreeOperator: block diagonal";
   }
+  virtual std::string returned_code_string() const override { 
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
+  }
   
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
@@ -123,6 +126,7 @@ class TreeOperator :
   }
 
   // i/o
+  virtual std::string name() const override { return std::string("TreeOperator"); }
   std::string PrintDiagnostics() const;
 
  protected:

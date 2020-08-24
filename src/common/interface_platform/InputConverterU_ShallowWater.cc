@@ -40,7 +40,7 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
     *vo_->os() << "Translating shallow water, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNode* node;
+  // DOMNode* node;
 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
