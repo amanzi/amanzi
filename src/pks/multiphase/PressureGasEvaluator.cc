@@ -69,7 +69,6 @@ void PressureGasEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const auto& p_c = *S->GetFieldData(pressure_liquid_key_)->ViewComponent("cell");
   const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
   auto& result_c = *result->ViewComponent("cell");
 

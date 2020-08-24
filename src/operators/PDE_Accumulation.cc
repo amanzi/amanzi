@@ -301,7 +301,6 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
   AmanziMesh::Entity_kind kind;
   Errors::Message msg;
 
-
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh 
     global_op_schema_ = schema;

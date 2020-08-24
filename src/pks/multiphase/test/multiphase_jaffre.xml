@@ -454,7 +454,7 @@
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

@@ -472,12 +472,12 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Block ILU">
-      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
       </ParameterList>
     </ParameterList>
     <ParameterList name="Euclid">
-      <Parameter name="preconditioner type" type="string" value="euclid"/>
+      <Parameter name="preconditioning method" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
         <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
@@ -486,7 +486,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="SysTG">
-      <Parameter name="preconditioner type" type="string" value="systg"/>
+      <Parameter name="preconditioning method" type="string" value="systg"/>
       <ParameterList name="systg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="block size" type="int" value="3"/>

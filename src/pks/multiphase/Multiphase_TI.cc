@@ -53,6 +53,10 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   S_->GetFieldEvaluator(pressure_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   auto pg = *S_->GetFieldData(pressure_gas_key_, pressure_gas_key_);
 
+  // -- molar densities
+  S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+
   // -- storage
   S_->GetFieldEvaluator(tws_key_)->HasFieldChanged(S_.ptr(), passwd_);
   S_->GetFieldEvaluator(tcs_key_)->HasFieldChanged(S_.ptr(), passwd_);
@@ -199,6 +203,8 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   // -- molar densities
   S_->GetFieldEvaluator(molar_density_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& eta_g = S_->GetFieldData(molar_density_gas_key_);
+
+  S_->GetFieldEvaluator(molar_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
   // -- mass density of gas phase 
   auto rho_g = Teuchos::rcp(new CompositeVector(*eta_g));
@@ -508,12 +514,10 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   // finalize preconditioner
   if (!op_pc_assembled_) {
     op_pc_solver_->InitializeInverse();
-    // op_preconditioner_->SymbolicAssembleMatrix();
     op_pc_assembled_ = true;
   }
-  // op_preconditioner_->AssembleMatrix();
+  op_pc_solver_->ComputeInverse();
   // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
-  op_preconditioner_->ComputeInverse();
 }
 
 
@@ -525,8 +529,8 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 {
   Y->PutScalar(0.0);
   // *Y = *X; return 0;
-  int ierr = op_pc_solver_->ApplyInverse(*X, *Y);
-  return ierr;
+  // return op_preconditioner_->ApplyInverse(*X, *Y);
+  return op_pc_solver_->ApplyInverse(*X, *Y);
 }
 
 

@@ -57,8 +57,8 @@ void PreconditionerHypre::Init_()
     vlevel_int = 3;
   }
   if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
-  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,vlevel_int)));
-
+  // funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
+  //                                                     vlevel_int)));
 #endif
 }
   
@@ -78,7 +78,6 @@ void PreconditionerHypre::InitBoomer_()
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
                                                       plist_.get<double>("tolerance", 0.0))));
 
-  
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter,
                                                       plist_.get<int>("cycle applications", 5))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType,
@@ -283,8 +282,6 @@ void PreconditionerHypre::ComputeInverse()
   IfpHypre_->Compute();
 #endif
 }
-
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

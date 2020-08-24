@@ -411,13 +411,13 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitMPPreconditioner();
 
   std::string pc_name = mp_list_->get<std::string>("preconditioner");
-  op_preconditioner_->set_inverse_parameters(pc_name, *pc_list_);
-  
-  // linear solver
-  // op_pc_solver_ = op_preconditioner_;
-  std::string solver_name = mp_list_->get<std::string>("linear solver");
-  Teuchos::ParameterList tmp_plist = linear_operator_list_->sublist(solver_name);
-  op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_preconditioner_);
+  std::string ls_name = mp_list_->get<std::string>("linear solver");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(pc_name, *pc_list_,
+								ls_name, *linear_operator_list_,
+								true);
+  inv_list.setName(pc_name);
+
+  op_pc_solver_ = AmanziSolvers::createInverse(inv_list, op_preconditioner_);
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
