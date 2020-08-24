@@ -8,7 +8,9 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Molar mobility is defined as the product of molar density and mobility.
+  Product evaluator computes product of multiple fields:
+    Product = f1^a1 * f1^a2 * ... * fn^an
+  the powers ai are either 1 or -1.
 */
 
 #include "errors.hh"

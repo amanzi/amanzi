@@ -10,12 +10,11 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Reimplementation of the original multiphase mode for testing.
-  Solution vectors are pressure (l), saturation (l), and hydrogen 
-  molar density (l).
+  Solution vector: pressure (l), saturation (l), and hydrogen molar density (l).
 */
 
-#ifndef AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
-#define AMANZI_MULTIPHASE_TWO_COMPONENTS_PK_HH_
+#ifndef AMANZI_MULTIPHASE_JAFFRE_PK_HH_
+#define AMANZI_MULTIPHASE_JAFFRE_PK_HH_
 
 // Amanzi
 #include "Key.hh"

@@ -40,7 +40,7 @@ class MultiphaseBaseEvaluator : public SecondaryVariableFieldEvaluator {
     return ok || force;
   }
 
-  // added interface
+  // added interface (WIP)
   // -- modifier
   virtual void set_subvector(int ifield, int n, double kH) { n_ = n; kH_ = kH; } 
 
