@@ -152,15 +152,11 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
-  if (!computed_) const_cast<TreeOperator*>(this)->ComputeInverse();
 #if TEST_MAPS
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
 #endif
-  if (!computed_) {
-    Errors::Message msg("Developer error: TreeOperator::ComputeInverse() was not called.\n");
-    Exceptions::amanzi_throw(msg);
-  }    
+  if (!computed_) const_cast<TreeOperator*>(this)->ComputeInverse();
 
   if (preconditioner_.get()) {
     return preconditioner_->ApplyInverse(X,Y);
