@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -199,16 +198,13 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance,
 
   // BCs, sources, and assemble
   global_op->UpdateRHS(source, true);
-
   op_curlcurl->ApplyBCs(true, true, true);
   op_acc->ApplyBCs(true, true, false);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  // create preconditoner
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -216,23 +212,18 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance,
   ver.CheckPreconditionerSPD(1e-10, true, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector& rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-10);
 
-  int num_itrs = solver.num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 2000);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "electric solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << num_itrs
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute electric error
@@ -243,7 +234,7 @@ void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance,
   if (MyPID == 0) {
     el2_err /= enorm;
     printf("L2(e)=%12.9f  Inf(e)=%12.9f  itr=%3d  size=%d\n",
-            el2_err, einf_err, solver.num_itrs(), rhs.GlobalLength());
+            el2_err, einf_err, global_op->num_itrs(), rhs.GlobalLength() * nde);
 
     CHECK(el2_err < tolerance);
   }

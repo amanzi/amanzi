@@ -24,7 +24,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "SurfaceCoordinateSystem.hh"
@@ -118,27 +117,15 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
 
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
   // create preconditioner using the base operator class
-  ParameterList slist;
-  // slist.set<std::string>("preconditioner type", "diagonal");
-  slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
-
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
   auto& lambda = *solution.ViewComponent("face");
@@ -170,7 +157,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_RAVIART_THOMAS) {
   if (MyPID == 0) {
     ul2_err /= unorm;  // this is l2 norm (little l)
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6f  Inf(u)=%9.6f  size=%d  itr=%d\n", 
-        pl2_err, pinf_err, ul2_err, uinf_err, global_op->A()->NumGlobalRows(), solver.num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->A()->NumGlobalRows(), global_op->num_itrs());
 
     CHECK(pl2_err < 1e-2);
   }

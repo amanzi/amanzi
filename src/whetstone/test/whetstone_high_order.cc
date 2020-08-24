@@ -522,7 +522,6 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
   else
     mesh = meshfactory.create(filename, true, true); 
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int d = mesh->space_dimension();
 
   Teuchos::ParameterList plist; 
