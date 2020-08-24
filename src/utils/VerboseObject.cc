@@ -65,7 +65,7 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   Teuchos::ParameterList plist_out;
   if (plist.sublist("verbose object").isParameter("verbosity level")) {
     plist_out.sublist("VerboseObject").set("Verbosity Level",
-        plist.sublist("verbose object").get<std::string>("verbosity level"), "none");
+        plist.sublist("verbose object").get<std::string>("verbosity level"));
   }
 
   Teuchos::readVerboseObjectSublist(&plist_out, this);
