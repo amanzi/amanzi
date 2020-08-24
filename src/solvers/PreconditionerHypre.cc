@@ -49,16 +49,6 @@ void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 void PreconditionerHypre::Init_()
 {
 #ifdef HAVE_HYPRE
-  std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
-  int vlevel_int = 0;
-  if (vlevel == "high") {
-    vlevel_int = 1;
-  } else if (vlevel == "extreme") {
-    vlevel_int = 3;
-  }
-  if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
-  // funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
-  //                                                     vlevel_int)));
 #endif
 }
   
@@ -75,6 +65,17 @@ void PreconditionerHypre::InitBoomer_()
     Exceptions::amanzi_throw(msg);
   }
     
+  // verbosity
+  int vlevel_int = 0;
+  std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
+  if (vlevel == "high") {
+    vlevel_int = 1;
+  } else if (vlevel == "extreme") {
+    vlevel_int = 3;
+  }
+  if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,vlevel_int)));
+
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
                                                       plist_.get<double>("tolerance", 0.0))));
 
@@ -206,9 +207,14 @@ void PreconditionerHypre::InitBoomer_()
 void PreconditionerHypre::InitEuclid_()
 {
   Init_();
+
 #ifdef HAVE_HYPRE
   method_ = Euclid;
   
+  if (plist_.isParameter("verbosity")) 
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
+            plist_.get<int>("verbosity"))));
+
   if (plist_.isParameter("ilu(k) fill level"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel,
             plist_.get<int>("ilu(k) fill level"))));
