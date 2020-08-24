@@ -108,10 +108,6 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     if (preconditioner_.get()) return std::string("TreeOperator: ")+preconditioner_->name();
     return "TreeOperator: block diagonal";
   }
-  virtual std::string returned_code_string() const override { 
-    AMANZI_ASSERT(preconditioner_.get());
-    return preconditioner_->returned_code_string();
-  }
   
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
@@ -126,7 +122,6 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   }
 
   // i/o
-  virtual std::string name() const override { return std::string("TreeOperator"); }
   std::string PrintDiagnostics() const;
 
  protected:
