@@ -91,8 +91,10 @@ void PDE_Electromagnetics::UpdateMatrices(
 ****************************************************************** */
 void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
-                         | OPERATOR_SCHEMA_DOFS_EDGE)) {
+  if (bcs_trial_[0]->type() == WhetStone::DOF_Type::VECTOR) {
+    ApplyBCs_Cell_Vector_(*bcs_trial_[0], local_op_, primary, eliminate, essential_eqn);
+  } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
+                                | OPERATOR_SCHEMA_DOFS_EDGE)) {
     Teuchos::RCP<const BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
@@ -241,12 +243,11 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 ****************************************************************** */
 void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
-  // Determine discretization
   std::string primary = plist.sublist("schema electric").get<std::string>("method");
   order_ = plist.sublist("schema electric").get<int>("method order");
   K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
-  // Primary discretization methods
+  // select discretization method
   if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_DEFAULT;
   } else if (primary == "mfd: generalized") {
@@ -259,7 +260,7 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // Define stencil for the MFD diffusion method.
+  // define stencil for the MFD diffusion method.
   std::vector<std::string> names;
   names = plist.sublist("schema electric").get<Teuchos::Array<std::string> > ("location").toVector();
 
@@ -281,29 +282,23 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 
   local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | schema_dofs;
 
-  // define stencil for the assembled matrix
-  int schema_prec_dofs = schema_dofs;
-
   // create or check the existing Operator
-  int global_op_schema = schema_prec_dofs;  
   if (global_op_ == Teuchos::null) {
-    global_op_schema_ = global_op_schema;
-
     // build the CVS from the global schema
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_EDGE) {
+    if (schema_dofs & OPERATOR_SCHEMA_DOFS_EDGE) {
       cvs->AddComponent("edge", AmanziMesh::EDGE, 1);
-    } else if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE) {
+    } else if (schema_dofs & OPERATOR_SCHEMA_DOFS_NODE) {
       cvs->AddComponent("node", AmanziMesh::NODE, 1);
     }
 
     // choose the Operator from the prec schema
     Teuchos::ParameterList operator_list = plist.sublist("operator");
-    if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_EDGE) {
+    if (schema_dofs == OPERATOR_SCHEMA_DOFS_EDGE) {
       global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
-    } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
+    } else if (schema_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
       global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } else {
       Errors::Message msg;
@@ -313,7 +308,6 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 
   } else {
     // constructor was given an Operator
-    global_op_schema_ = global_op_->schema();
     mesh_ = global_op_->DomainMap().Mesh();
   }
 

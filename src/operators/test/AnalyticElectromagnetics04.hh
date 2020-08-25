@@ -32,7 +32,7 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 
-  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     if (t > 0.0) 
       return Amanzi::AmanziGeometry::Point(0.0, 0.0, 1.0);
 

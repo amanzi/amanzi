@@ -43,7 +43,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
     return Amanzi::AmanziGeometry::Point(z - y, x - z, y - x);
   }
 
-  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 

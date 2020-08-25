@@ -26,7 +26,6 @@
 #include "errors.hh"
 
 #include "Basis_Regularized.hh"
-#include "FunctionPower.hh"
 #include "GrammMatrix.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"

@@ -77,10 +77,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
-  // access
-  int schema_prec_dofs() { return global_op_schema_; }
-  int schema_dofs() { return local_op_schema_; }
-
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
@@ -92,7 +88,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   bool K_symmetric_;
 
   // operator
-  int global_op_schema_, local_op_schema_;
+  int local_op_schema_;
 
   // miscaleneous
   int mfd_primary_, mfd_secondary_;

@@ -38,7 +38,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
     return e * tmp;
   }
 
-  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     Amanzi::AmanziGeometry::Point a(p.dim()), b(3), e(3);
     OrthonormalSystem(a, b, e);
 

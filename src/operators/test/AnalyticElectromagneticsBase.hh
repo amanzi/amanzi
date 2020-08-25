@@ -28,16 +28,18 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- analytic solution E
   virtual Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
-  virtual Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
   // -- source term
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // interface to function (dummy implementation)
   virtual double Value(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     if (ifnc_ == 0) 
-      return electric_exact(p, t) * tau_;
+      return electric_exact(p, t) * vec_;  // E * t
     else if (ifnc_ == 1)
-      return source_exact(p, t) * tau_;
+      return source_exact(p, t) * vec_;
+    else if (ifnc_ == 2)
+      return magnetic_exact(p, t) * vec_;  // B * n
   }
 
   // error calculation
@@ -49,12 +51,13 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   void GlobalOp(std::string op, double* val, int n);
 
   // mutators
-  void set_tau(const Amanzi::AmanziGeometry::Point& tau, int ifnc) { tau_ = tau; ifnc_ = ifnc; }
+  void set_parameters(const Amanzi::AmanziGeometry::Point& vec, int ifnc) { vec_ = vec; ifnc_ = ifnc; }
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
-  Amanzi::AmanziGeometry::Point tau_;
+  Amanzi::AmanziGeometry::Point vec_;
   int ifnc_;
+  double t0_;
 };
 
 #endif

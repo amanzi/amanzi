@@ -416,11 +416,11 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     }
     int nents = entities.size();
 
-    // check for a boundary face
+    // check for a boundary entity
     bool found(false);
     for (int n = 0; n != nents; ++n) {
-      int f = entities[n];
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) found = true;
+      int x = entities[n];
+      if (bc_model[x] == OPERATOR_BC_DIRICHLET) found = true;
     }
     if (!found) continue;
 
@@ -499,6 +499,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
         }
       }
     }
+if (c == 511) std::cout << Acell << std::endl;
   } 
 
   rhs.GatherGhostedToMaster(Add);
