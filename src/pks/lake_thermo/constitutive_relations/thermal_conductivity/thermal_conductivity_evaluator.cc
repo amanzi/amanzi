@@ -34,7 +34,7 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
 //  K_ice_ = sublist.get<double>("thermal conductivity of ice [W/(m-K)]", 2.18);
 //  min_K_ = sublist.get<double>("minimum thermal conductivity", 1.e-14);
 
-  // later: read these parametersfrom xml
+  // later: read these parameters from xml
   K_max_    = 150; // [W/(m * K)]
   K_0_      = 50.;
   V_wind_   = 10.; // [m/s]

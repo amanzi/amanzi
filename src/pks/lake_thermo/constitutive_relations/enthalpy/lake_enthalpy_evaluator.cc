@@ -26,16 +26,16 @@ LakeEnthalpyEvaluator::LakeEnthalpyEvaluator(Teuchos::ParameterList& plist) :
   include_work_ = plist_.get<bool>("include work term", true);
 
   // -- pressure
-  if (include_work_) {
-    pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
-    dependencies_.insert(pres_key_);
+//  if (include_work_) {
+//    pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
+//    dependencies_.insert(pres_key_);
+//
+//    dens_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
+//    dependencies_.insert(dens_key_);
+//  }
 
-    dens_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
-    dependencies_.insert(dens_key_);
-  }
-
-  ie_key_ = Keys::readKey(plist_, domain_name, "internal energy liquid", "internal_energy_liquid");
-  dependencies_.insert(ie_key_);
+//  ie_key_ = Keys::readKey(plist_, domain_name, "internal energy liquid", "internal_energy_liquid");
+//  dependencies_.insert(ie_key_);
 
 };
 

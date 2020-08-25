@@ -51,24 +51,24 @@ Lake_Thermo_PK::Lake_Thermo_PK(Teuchos::ParameterList& FElist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-  if (!plist_->isParameter("conserved quantity key suffix"))
-    plist_->set("conserved quantity key suffix", "energy");
-
-  // set a default error tolerance
-  if (domain_.find("surface") != std::string::npos) {
-    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
-                                     .01 * 55000.);
-    soil_atol_ = 0.;
-  } else {
-    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
-                                     .5 * .1 * 55000.);
-    soil_atol_ = 0.5 * 2000. * 620.e-6;  // porosity * particle density soil * heat capacity soil * 1 degree
-                    // or, dry bulk density soil * heat capacity soil * 1 degree, in MJ
-  }
-
-  if (!plist_->isParameter("absolute error tolerance")) {
-    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol, in MJ/mol water
-  }
+//  if (!plist_->isParameter("conserved quantity key suffix"))
+//    plist_->set("conserved quantity key suffix", "energy");
+//
+//  // set a default error tolerance
+//  if (domain_.find("surface") != std::string::npos) {
+//    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+//                                     .01 * 55000.);
+//    soil_atol_ = 0.;
+//  } else {
+//    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+//                                     .5 * .1 * 55000.);
+//    soil_atol_ = 0.5 * 2000. * 620.e-6;  // porosity * particle density soil * heat capacity soil * 1 degree
+//                    // or, dry bulk density soil * heat capacity soil * 1 degree, in MJ
+//  }
+//
+//  if (!plist_->isParameter("absolute error tolerance")) {
+//    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol, in MJ/mol water
+//  }
 }
 
 
@@ -78,14 +78,19 @@ Lake_Thermo_PK::Lake_Thermo_PK(Teuchos::ParameterList& FElist,
 void Lake_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
 
+  std::cout << "before SetupLakeThermo_" << std::endl;
   SetupLakeThermo_(S);
+  std::cout << "after SetupLakeThermo_" << std::endl;
   SetupPhysicalEvaluators_(S);
+  std::cout << "after SetupPhysicalEvaluators_" << std::endl;
 
 };
 
 
 void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
+  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
+  density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
   wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
@@ -264,16 +269,16 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new LakeThermo::ThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
-  // source terms
-  is_source_term_ = plist_->get<bool>("source term");
-  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
-  is_source_term_finite_differentiable_ = plist_->get<bool>("source term finite difference", false);
-  if (is_source_term_) {
-    source_key_ = Keys::readKey(*plist_, domain_, "source", "total_energy_source");
-    S->RequireField(source_key_)->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(source_key_);
-  }
+//  // source terms
+//  is_source_term_ = plist_->get<bool>("source term");
+//  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
+//  is_source_term_finite_differentiable_ = plist_->get<bool>("source term finite difference", false);
+//  if (is_source_term_) {
+//    source_key_ = Keys::readKey(*plist_, domain_, "source", "total_energy_source");
+//    S->RequireField(source_key_)->SetMesh(mesh_)
+//        ->AddComponent("cell", AmanziMesh::CELL, 1);
+//    S->RequireFieldEvaluator(source_key_);
+//  }
 
   // coupling terms
   // -- subsurface PK, coupled to the surface
