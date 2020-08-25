@@ -121,7 +121,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
-  olist.set<std::string>("discretization primary", disc_method);
+  olist.sublist("schema electric").set<std::string>("method", disc_method);
+std::cout << olist << std::endl; 
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();

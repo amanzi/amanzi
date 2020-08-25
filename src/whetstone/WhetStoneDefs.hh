@@ -106,6 +106,7 @@ const int DIFFUSION_TPFA = 5;
 
 const int ELECTROMAGNETICS_DEFAULT = 1;
 const int ELECTROMAGNETICS_GENERALIZED = 2;
+const int ELECTROMAGNETICS_VEM_TYPE2 = 3;
 
 // various DG schemes
 const int TAYLOR_BASIS_NATURAL = 1;

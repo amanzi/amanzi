@@ -260,16 +260,19 @@ double PDE_MagneticDiffusion::CalculateDivergence(
 ****************************************************************** */
 void PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
 {
-  // Primary discretization methods
-  std::string primary = plist.get<std::string>("discretization primary");
+  // Parse discretization methods
+  std::string primary = plist.sublist("schema electric").get<std::string>("method");
+  order_ = plist.sublist("schema electric").get<int>("method order");
 
   if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_DEFAULT;
   } else if (primary == "mfd: generalized") {
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_GENERALIZED;
+  } else if (primary == "Nedelec serendipity type2") {
+    mfd_primary_ = WhetStone::ELECTROMAGNETICS_VEM_TYPE2;
   } else {
     Errors::Message msg;
-    msg << "Primary discretization method \"" << primary << "\" is not supported.";
+    msg << "Discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   } 
 

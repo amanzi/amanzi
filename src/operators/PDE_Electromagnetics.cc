@@ -20,6 +20,7 @@
 #include "MFD3D_Electromagnetics.hh"
 #include "Point.hh"
 #include "SuperMap.hh"
+#include "VEM_NedelecSerendipityType2.hh"
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
@@ -57,18 +58,26 @@ void PDE_Electromagnetics::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& p)
 {
   Teuchos::ParameterList plist;
-  WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
-  WhetStone::DenseMatrix Acell;
+  plist.set<int>("method order", order_);
 
+  WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
+  WhetStone::VEM_NedelecSerendipityType2 vem(plist, mesh_);
+  vem.set_order(order_);
+
+  WhetStone::DenseMatrix Acell;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
+
     if (mfd_primary_ == WhetStone::ELECTROMAGNETICS_GENERALIZED)
       mfd.StiffnessMatrix_GradCorrection(c, Kc, Acell);
-    else
+    else if (mfd_primary_ == WhetStone::ELECTROMAGNETICS_DEFAULT)
       mfd.StiffnessMatrix(c, Kc, Acell);
+    else 
+      vem.StiffnessMatrix(c, Kc, Acell);
+
     local_op_->matrices[c] = Acell;
   }
 }
@@ -233,7 +242,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
-  std::string primary = plist.get<std::string>("discretization primary");
+  std::string primary = plist.sublist("schema electric").get<std::string>("method");
+  order_ = plist.sublist("schema electric").get<int>("method order");
   K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
@@ -241,21 +251,17 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_DEFAULT;
   } else if (primary == "mfd: generalized") {
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_GENERALIZED;
+  } else if (primary == "Nedelec serendipity type2") {
+    mfd_primary_ = WhetStone::ELECTROMAGNETICS_VEM_TYPE2;
   } else {
     Errors::Message msg;
-    msg << "Electromagnetics: primary discretization method \"" << primary << "\" is not supported.";
+    msg << "Electromagnetics: discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
-  if (plist.isParameter("schema")) {
-    names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
-  } else {
-    names.resize(1);
-    names[0] = "edge";
-    plist.set<Teuchos::Array<std::string> >("schema", names);
-  }
+  names = plist.sublist("schema electric").get<Teuchos::Array<std::string> > ("location").toVector();
 
   int dim = mesh_->space_dimension();
   int schema_dofs = 0;
@@ -276,20 +282,7 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | schema_dofs;
 
   // define stencil for the assembled matrix
-  int schema_prec_dofs = 0;
-  if (plist.isParameter("preconditioner schema")) {
-    names = plist.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
-    for (int i = 0; i < names.size(); i++) {
-      if (names[i] == "edge" && dim == 3) {
-        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_EDGE;
-      } else if (names[i] == "node" && dim == 2) {
-        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_NODE;
-      }
-    } 
-  } else {
-    schema_prec_dofs = schema_dofs;
-  }
-
+  int schema_prec_dofs = schema_dofs;
 
   // create or check the existing Operator
   int global_op_schema = schema_prec_dofs;  

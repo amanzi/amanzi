@@ -41,7 +41,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl_VEM(int nx, const std::string method, int order, double tolerance, 
+void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance, 
                   const std::string filename = "") {
   using namespace Teuchos;
   using namespace Amanzi;

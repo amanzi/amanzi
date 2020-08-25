@@ -353,7 +353,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("magnetic diffusion operators");
   Teuchos::RCP<PDE_MagneticDiffusion> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion(olist, mesh));
   op_mag->SetBCs(bc1, bc1);
   if (!convergence) op_mag->AddBCs(bc2, bc2);

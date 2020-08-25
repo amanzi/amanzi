@@ -30,12 +30,14 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
  public:
   PDE_Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
       PDE_HelperDiscretization(global_op),
-      K_(Teuchos::null) {};
+      K_(Teuchos::null),
+      order_(0) {};
 
   PDE_Electromagnetics(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null)
+      K_(Teuchos::null),
+      order_(0)
   {
     global_op_ = Teuchos::null;
     pde_type_ = PDE_ELECTROMAGNETICS;
@@ -94,6 +96,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
 
   // miscaleneous
   int mfd_primary_, mfd_secondary_;
+  int order_;
 };
 
 }  // namespace Operators
