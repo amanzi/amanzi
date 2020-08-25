@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (amklinv@sandia.gov)
@@ -41,7 +41,7 @@ void DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "set_inverse_parameters()" << std::endl;
-  
+
   inited_ = true;
 }
 
@@ -94,7 +94,7 @@ void DirectMethodAmesos::ComputeInverse() {
       // meaningful negative error codes that indicate errors... in particular
       // -22 is singular matrix error.
       returned_code_ = ierr;
-      
+
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "SymbolicFactorization() failed with error code: " <<
             this->returned_code_string() << std::endl;
@@ -102,11 +102,11 @@ void DirectMethodAmesos::ComputeInverse() {
       // throw on this error?
       Errors::Message msg("DirectMethodAmesos: SymbolicFactorization failed");
       Exceptions::amanzi_throw(msg);
-    }    
+    }
     // END UPDATE
     updated_ = true;
   }
-  
+
   AMANZI_ASSERT(updated_);
   // BEGIN COMPUTE
   if (returned_code_ == 0) {
@@ -135,44 +135,43 @@ void DirectMethodAmesos::ComputeInverse() {
 int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   AMANZI_ASSERT(computed_);
-  
+
   // is this a mistake, or can Amesos change RHS?  That could be bad...
   Epetra_Vector* vv = const_cast<Epetra_Vector*>(&v);
   problem_->SetRHS(vv);
   problem_->SetLHS(&hv);
-  
+
   if (returned_code_ == 0) {
     int ierr = solver_->Solve();
     if (ierr) {
-      returned_code_ = -ierr;
+      returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "ApplyInverse() failed with error code: " <<
             this->returned_code_string() << std::endl;
     } else {
-      returned_code_ = 1;
+      returned_code_ = ierr;
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "ApplyInverse() succeeded." << std::endl;
     }
-  }    
-  return returned_code_;
+  }
+  if (returned_code_ != 0) return 1;
+  return 0;
 }
 
 
 std::string DirectMethodAmesos::returned_code_string() const
 {
   switch(returned_code_) {
-    case (1) :
-      return "success";
     case (0) :
-      return "not yet applied";
-    case (-1) :
+      return "success";
+    case (1) :
       return "singular matrix";
-    case (-2) :
+    case (2) :
       return "non-symmetric matrix";
-    case (-3) :
+    case (3) :
       return "non-positive-definite matrix";
-    case (-4) :
+    case (4) :
       return "insufficient memory";
     case (-22) :
       return "singular matrix found on NumericFactorization";

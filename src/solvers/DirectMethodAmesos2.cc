@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (amklinv@sandia.gov)
@@ -54,7 +54,7 @@ void DirectMethodAmesos2::InitializeInverse() {
 
   solver_ = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(
       solver_name_, h_);
-          
+
   if (!solver_.get()) {
     Errors::Message msg;
     msg << "DirectMethodAmesos2: solver \"" << solver_name_ << "\" is not available";
@@ -83,9 +83,9 @@ int DirectMethodAmesos2::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 
   solver_->setB(Teuchos::rcpFromRef<const Epetra_MultiVector>(v));
   solver_->setX(Teuchos::rcpFromRef<Epetra_MultiVector>(hv));
-  
+
   solver_->solve();
-  returned_code_ = 1;
+  returned_code_ = 0;
   return returned_code_;
 }
 

@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -56,7 +56,8 @@ class IterativeMethodPCG :
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     AMANZI_ASSERT(inited_ && h_.get());
     returned_code_ = PCG_(v, hv, tol_, max_itrs_, this->criteria_);
-    return returned_code_;
+    if (returned_code_ <= 0) return 1;
+    return 0;
   }
 
  protected:
@@ -177,10 +178,10 @@ int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
       *vo_->os() << i << " ||r||=" << residual_ << std::endl;
     }
     num_itrs_ = i + 1;
-    
+
     int ierr = CheckConvergence_(residual_, fnorm);
     if (ierr != 0) return ierr;
-    
+
     double beta = gamma1 / gamma0;
     gamma0 = gamma1;
 

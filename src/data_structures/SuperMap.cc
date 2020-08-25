@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -92,7 +92,7 @@ copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
         }
       }
     }
-  }  
+  }
   return 0;
 }
 
@@ -110,7 +110,7 @@ addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
         }
       }
     }
-  }  
+  }
   return 0;
 }
 
@@ -182,7 +182,7 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   // this groups maps by map equivalence, not component names.
-  
+
   // loop over nodes, finding unique component names on unique meshes
   int block_num = 0;
   for (auto& cvs : cvss) {

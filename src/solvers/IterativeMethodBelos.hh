@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Alicia Klinvex (amklinv@sandia.gov)
@@ -13,7 +13,7 @@
 Includes GMRES
 
 .. warning:: undocumented
-    
+
 */
 
 #pragma once
@@ -66,7 +66,7 @@ class IterativeMethodBelos :
   using InvIt::krylov_dim_;
   using InvIt::inited_;
 
-  Teuchos::RCP<Teuchos::ParameterList> belos_list_;  
+  Teuchos::RCP<Teuchos::ParameterList> belos_list_;
 };
 
 
@@ -92,7 +92,7 @@ void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse
   belos_list_->set("Convergence Tolerance", tol_);
   belos_list_->set("Output Frequency", 1);
 
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {  
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     belos_list_->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails
             + Belos::StatusTestDetails + Belos::Debug + Belos::TimingDetails);
   } else if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -114,14 +114,14 @@ void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse
     belos_list_->set("Implicit Residual Scaling", "None");
     belos_list_->set("Explicit Residual Scaling", "None");
   }
-  
+
 }
 
 template<class Matrix,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-int 
+int
 IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
     const Vector& v, Vector& hv) const
 {
@@ -149,12 +149,13 @@ IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
   num_itrs_ = solver.getNumIters();
   residual_ = solver.achievedTol();
 
-  if (success == Belos::Converged)
+  if (success == Belos::Converged) {
     returned_code_ = LIN_SOLVER_BELOS_SAYS_SUCCESS;
-  else
+    return 0;
+  } else {
     returned_code_ = LIN_SOLVER_BELOS_SAYS_FAIL;
-
-  return returned_code_;
+    return 1;
+  }
 }
 
 }  // namespace AmanziSolvers

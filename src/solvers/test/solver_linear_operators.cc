@@ -34,13 +34,13 @@ class Matrix {
   };
   ~Matrix() {};
   Matrix(const Matrix& other) : map_(other.map_) {};
-    
+
   Teuchos::RCP<Matrix> Clone() const {
     return Teuchos::rcp(new Matrix(*this));
   }
-    
+
   // 5-point FD stencil
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
+  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const {
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < n; j++) {
@@ -58,7 +58,7 @@ class Matrix {
 
   virtual void ComputeInverse() {}
   virtual void InitializeInverse() {}
-  
+
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
     int n = v.Map().NumMyElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];
@@ -72,7 +72,7 @@ class Matrix {
     for (int i = 0; i < n; i++) {
       int indices[3];
       double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
-      for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
+      for (int k = 0; k < 3; k++) indices[k] = i + k - 1;
       A_->InsertMyValues(i, 3, values, indices);
     }
     A_->FillComplete(*map_, *map_);
@@ -80,10 +80,10 @@ class Matrix {
 
   int SymbolicAssembleMatrix() { return 0; }
   int AssembleMatrix() { return 0;}
-  
+
   // partial consistency with Operators'interface
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
-  Teuchos::RCP<Amanzi::Operators::SuperMap> getSuperMap() const { return Teuchos::null; }  
+  Teuchos::RCP<Amanzi::Operators::SuperMap> get_supermap() const { return Teuchos::null; }
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }
   virtual const Epetra_Map& RangeMap() const { return *map_; }
@@ -116,7 +116,7 @@ TEST(PCG_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = pcg.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -146,7 +146,7 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
     // solve
     Epetra_Vector v(*map);
     int ierr = gmres.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
 
@@ -178,7 +178,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
     // solve
     Epetra_Vector v(*map);
     int ierr = gmres.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
@@ -213,7 +213,7 @@ TEST(GMRES_SOLVER_DEFLATION) {
   // solve
   Epetra_Vector v(*map);
   int ierr = gmres.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -243,7 +243,7 @@ TEST(NKA_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = nka.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -258,7 +258,7 @@ TEST(BELOS_GMRES_SOLVER) {
   vo.set("Verbosity Level", "high");
   plist.set<int>("size of Krylov space", 15);
   plist.set<double>("error tolerance", 1e-12);
-  
+
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
@@ -277,7 +277,7 @@ TEST(BELOS_GMRES_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = gmres.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -292,7 +292,7 @@ TEST(AMESOS_SOLVER) {
   vo.set("Verbosity Level", "high");
   plist.set<std::string>("solver name", "Amesos_Klu")
        .set<int>("amesos version", 1);
-  
+
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
 
@@ -313,10 +313,10 @@ TEST(AMESOS_SOLVER) {
     klu.ComputeInverse();
 
     int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(1.0, residual, 1e-12); 
+    CHECK_CLOSE(1.0, residual, 1e-12);
   }
 
   // Amesos2
@@ -331,12 +331,12 @@ TEST(AMESOS_SOLVER) {
     klu.ComputeInverse();
 
     int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(1.0, residual, 1e-12); 
+    CHECK_CLOSE(1.0, residual, 1e-12);
   }
-  
+
 //   delete comm;
 };
 
@@ -362,7 +362,7 @@ TEST(SOLVER_FACTORY_NO_PC) {
   // solve
   Epetra_Vector v(*map);
   int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -392,7 +392,7 @@ TEST(SOLVER_FACTORY_WITH_PC) {
   // solve
   Epetra_Vector v(*map);
   int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -431,7 +431,7 @@ TEST(GMRES_WITH_GMRES_PC) {
 
   // solve
   int ierr = solver.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -464,7 +464,7 @@ TEST(VERBOSITY_OBJECT) {
   // solve
   Epetra_Vector v(*map);
   int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 

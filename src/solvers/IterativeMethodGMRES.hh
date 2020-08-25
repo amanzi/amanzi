@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -80,9 +80,10 @@ class IterativeMethodGMRES :
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     AMANZI_ASSERT(inited_ && h_.get());
     returned_code_ = GMRESRestart_(v, hv, this->tol_, this->max_itrs_, this->criteria_);
-    return returned_code_;
+    if (returned_code_ <= 0) return 1;
+    return 0;
   }
-  
+
  protected:
   virtual std::string MethodName_() const override { return "GMRES"; }
 
@@ -97,7 +98,7 @@ class IterativeMethodGMRES :
 
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
- 
+
   IterativeMethodGMRES(const IterativeMethodGMRES& other) = delete;
 
  private:
@@ -166,7 +167,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRESRestart
 
   if (ierr == LIN_SOLVER_MAX_ITERATIONS) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Not converged (max iterations), ||r||=" << residual_ 
+      *vo_->os() << "Not converged (max iterations), ||r||=" << residual_
                  << " ||f||=" << fnorm_ << std::endl;
   }
 
@@ -279,7 +280,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     }
 
     // optional controller of convergence
-    if (i == controller_start_) { 
+    if (i == controller_start_) {
       controller_[0] = residual_;
     } else if (i == controller_end_) {
       double len = 0.5 / (controller_end_ - controller_start_);
@@ -290,9 +291,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       double reduction = controller_[1] / residual_;
       if (reduction < controller_[0]) {
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
-          *vo_->os() << "controller indicates convergence stagnation\n"; 
+          *vo_->os() << "controller indicates convergence stagnation\n";
 
-        ComputeSolution_(x, i, T, s, p, r); 
+        ComputeSolution_(x, i, T, s, p, r);
         return LIN_SOLVER_MAX_ITERATIONS;
       }
       controller_[1] = residual_;
@@ -415,10 +416,10 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
 
   residual_ = fabs(d(n));
   num_itrs_ += krylov_dim_;
-  ComputeSolution_(x, d.Values(), p, r); 
+  ComputeSolution_(x, d.Values(), p, r);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << num_itrs_ << " ||r||=" << residual_ 
+    *vo_->os() << num_itrs_ << " ||r||=" << residual_
                << "  ritz vectors=" << num_ritz_ << std::endl;
   }
   int ierr = CheckConvergence_(residual_, fnorm);
@@ -436,10 +437,10 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
 
   // -- solve eigenvector problem
   for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
-  
+
   double Vl[1];
   WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
-  WhetStone::DGEEV_F77("N", "V", &n, Sm.Values(), &n, 
+  WhetStone::DGEEV_F77("N", "V", &n, Sm.Values(), &n,
                        wr.Values(), wi.Values(), Vl, &nrhs, Vr.Values(), &m,
                        work.Values(), &lwork, &info);
 
@@ -451,7 +452,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
     int imin = i;
     double emin = wr(i);
     for (int j = i + 1; j < krylov_dim_; ++j) {
-      if (wr(j) < emin) { 
+      if (wr(j) < emin) {
         emin = wr(j);
         imin = j;
       }
@@ -481,7 +482,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
       vv[i]->Update(Vr(k, i), *(v_[k]), 1.0);
     }
   }
-  
+
   for (int i = 0; i <= num_ritz_; ++i) {
     *(v_[i]) = *(vv[i]);
   }
@@ -496,7 +497,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
   TVr.Multiply(T, Vr1, false);
   VTVr.Multiply(Vr2, TVr, true);
   Hu_ = VTVr;
-  
+
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 

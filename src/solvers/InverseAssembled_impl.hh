@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -37,7 +37,7 @@ namespace Impl {
 // Move data from the vector to a flat vector.
 //
 template<class Vector>
-void copyToSuperVector(const Teuchos::RCP<Operators::SuperMap>& smap,
+void copyToSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
                        const Vector& v,
                        Teuchos::RCP<Epetra_Vector>& sv) {
   AMANZI_ASSERT(smap.get());
@@ -46,7 +46,7 @@ void copyToSuperVector(const Teuchos::RCP<Operators::SuperMap>& smap,
 }
 template<>
 void inline
-copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<Operators::SuperMap>& smap,
+copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
         const Epetra_Vector& v,
         Teuchos::RCP<Epetra_Vector>& sv) {
   sv = Teuchos::rcp(new Epetra_Vector(v));
@@ -57,7 +57,7 @@ copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<Operators::SuperMap>& smap,
 // Move data from the flat vector to the vector
 //
 template<class Vector>
-void copyFromSuperVector(const Teuchos::RCP<Operators::SuperMap>& smap,
+void copyFromSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
                          const Epetra_Vector& sv,
                          Vector& v) {
   AMANZI_ASSERT(smap.get());
@@ -65,7 +65,7 @@ void copyFromSuperVector(const Teuchos::RCP<Operators::SuperMap>& smap,
 }
 template<>
 void inline
-copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<Operators::SuperMap>& smap,
+copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
         const Epetra_Vector& sv,
         Epetra_Vector& v) {
   AMANZI_ASSERT(&sv == &v);
@@ -76,11 +76,11 @@ copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<Operators::SuperMap>& smap
 //
 template<class Operator>
 typename std::enable_if<is_assembling<Operator>::value,
-                        std::tuple<Teuchos::RCP<Operators::SuperMap>,
+                        std::tuple<Teuchos::RCP<const Operators::SuperMap>,
                                    Teuchos::RCP<Epetra_Vector>,
                                    Teuchos::RCP<Epetra_Vector>>>::type
 getSuperMap(Operator& m) {
-  auto smap = m.getSuperMap();
+  auto smap = m.get_supermap();
   auto x = Teuchos::rcp(new Epetra_Vector(*smap->Map()));
   auto y = Teuchos::rcp(new Epetra_Vector(*smap->Map()));
   return std::make_tuple(smap, x, y);
