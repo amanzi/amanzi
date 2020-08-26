@@ -39,14 +39,26 @@ SUITE(SOLVERS)
     x.randomize();
     A->apply(x,y);
 
-    Vector x_c = Vector(x, Teuchos::Copy);
+    Vector x_approx = Vector(x, Teuchos::Copy);
+    Vector x_err = Vector(x, Teuchos::Copy);
+    Vector x_itr = Vector(x, Teuchos::Copy);
+    Vector y_c = Vector(y, Teuchos::Copy);
+    Vector y_itr = Vector(y, Teuchos::Copy);
     x_c.putScalar(0);
+    x_itr.putScalar(0);
     std::string xml_plist = "preconditioner_muelu_plist.xml";
     Teuchos::RCP<toperator> op_A = A; 
     Teuchos::RCP<moperator> pc = MueLu::CreateTpetraPreconditioner(op_A,xml_plist); 
-    pc->apply(y, x_c);
-    x_c.update(-1,x,1); 
-    std::cout<<"x_c/x: "<<x_c.norm2() / x.norm2() <<std::endl;
+
+    for (int i=0; i!=10; ++i) {
+      pc->apply(y_itr, x_itr);
+      x_approx.update(1, x_itr, 1);
+      x_err.update(1, x, -1, x_approx, 0);
+      std::cout<<"x_error/x: "<<x_err.norm2() / x.norm2() <<std::endl;
+
+      A->apply(x_itr, y_c);
+      y_itr.update(-1, y_c, 1);
+    }
   };
 
 } // suite SOLVERS
