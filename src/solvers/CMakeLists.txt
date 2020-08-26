@@ -28,7 +28,7 @@ include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Ifpack2_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
-
+include_directories(${MueLu_INCLUDE_DIRS})
 #
 # Library: solvers
 #
@@ -40,6 +40,7 @@ set(solvers_inc_files FnBaseDefs.hh
                       PreconditionerAssembled.hh
                       PreconditionerIfpack2.hh
                       PreconditionerFactory.hh
+                      PreconditionerMueLu.hh
                       NKA_Base.hh
                       LinearOperator.hh
                       LinearOperatorPCG.hh
@@ -51,7 +52,7 @@ set(solvers_inc_files FnBaseDefs.hh
                       )
 set(solvers_source_files SolverFactory.cc)#ResidualDebugger.cc)
 
-set(solvers_tpl_libs ${DBC_LIBRARIES}
+set(solvers_tpl_libs muelu xpetra-sup muelu-adapters muelu-interface ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES}
                      ${Tpetra_LIBRARIES}
                      ${Ifpack2_LIBRARIES})
@@ -112,6 +113,12 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/solvers_nonlinear.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solvers_preconditioner_muelu solvers_preconditioner_muelu
+                    KIND unit
+                    SOURCE test/Main.cc test/solvers_preconditioner_muelu.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
 
     # add_amanzi_test(solvers_continuation solvers_continuation
     #                 KIND unit
