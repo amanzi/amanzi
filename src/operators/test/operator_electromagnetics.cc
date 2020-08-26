@@ -41,7 +41,7 @@
 * **************************************************************** */
 template<class Analytic>
 void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
-              const std::string& disc_method = "mfd: default") {
+              const std::string& disc_method = "electromagnetics") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -122,7 +122,6 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   olist.sublist("schema electric").set<std::string>("method", disc_method);
-std::cout << olist << std::endl; 
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -226,7 +225,7 @@ std::cout << olist << std::endl;
 
 TEST(CURL_CURL_LINEAR) {
   CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false);
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
+  // CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
 }
 
 TEST(CURL_CURL_NONLINEAR) {
@@ -235,5 +234,5 @@ TEST(CURL_CURL_NONLINEAR) {
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
   CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
+  // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }

@@ -84,15 +84,9 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
                       bool primary, bool eliminate, bool essential_eqn);
 
  protected:
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
   bool K_symmetric_;
-
-  // operator
-  int local_op_schema_;
-
-  // miscaleneous
-  int mfd_primary_, mfd_secondary_;
-  int order_;
 };
 
 }  // namespace Operators

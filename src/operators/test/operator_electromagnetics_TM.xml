@@ -13,7 +13,7 @@
       <ParameterList name="schema electric">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node}"/>
-        <Parameter name="method" type="string" value="mfd: default"/>
+        <Parameter name="method" type="string" value="electromagnetics"/>
         <Parameter name="method order" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
