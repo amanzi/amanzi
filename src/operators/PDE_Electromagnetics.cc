@@ -57,7 +57,6 @@ void PDE_Electromagnetics::UpdateMatrices(
 {
   WhetStone::DenseMatrix Acell;
 
-  WhetStone::DenseMatrix Acell;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   

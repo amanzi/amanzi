@@ -58,6 +58,7 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // other methods
+  int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   void CurlMatrix(int c, DenseMatrix& C);
 
   // -- l2 projector

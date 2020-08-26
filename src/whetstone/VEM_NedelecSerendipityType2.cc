@@ -401,23 +401,53 @@ int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix&
 ****************************************************************** */
 int VEM_NedelecSerendipityType2::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
+  DenseMatrix M, C;
+
+  StiffnessMatrix(c, T, A, M, C);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the standard algorithm. Curls in 2D and 3D are
+* defined using exterior face normals.
+****************************************************************** */
+int VEM_NedelecSerendipityType2::StiffnessMatrix(
+    int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
+{
   Teuchos::ParameterList plist;
   plist.set<int>("method order", order_);
 
-  DenseMatrix M, C;
   VEM_RaviartThomasSerendipity rts(plist, mesh_);
   rts.MassMatrix(c, T, M);
 
   // populate curl matrix
   CurlMatrix(c, C);
-  int nfaces = C.NumRows();
-  int nedges = C.NumCols();
+  int ndofs_f = C.NumRows();
+  int ndofs_e = C.NumCols();
 
-  A.Reshape(nedges, nedges);
-  DenseMatrix MC(nfaces, nedges);
+  A.Reshape(ndofs_e, ndofs_e);
+  DenseMatrix MC(ndofs_f, ndofs_e);
 
   MC.Multiply(M, C, false);
   A.Multiply(C, MC, true); 
+
+  // rescaling (FIXME)
+  Entity_ID_List faces, edges;
+  mesh_->cell_get_faces(c, &faces);
+  mesh_->cell_get_edges(c, &edges);
+
+  int ndf = ndofs_f / faces.size();
+  std::vector<double> areas;
+  for (int i = 0; i < faces.size(); ++i) {
+    double area = mesh_->face_area(faces[i]);
+    for (int k = 0; k < ndf; ++k) areas.push_back(area);
+  }
+
+  for (int i = 0; i < ndofs_f; ++i) {
+    for (int j = 0; j < ndofs_f; ++j) M(i, j) /= areas[i] * areas[j];
+    for (int j = 0; j < ndofs_e; ++j) C(i, j) *= areas[i];
+  }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
