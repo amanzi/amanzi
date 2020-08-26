@@ -15,6 +15,7 @@
 
 #include "WhetStoneDefs.hh"
 
+#include "SchemaUtils.hh"
 #include "ParallelCommunication.hh"
 #include "PDE_HelperDiscretization.hh"
 
@@ -250,7 +251,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
               Acell(noff, noff) = 1.0 / cells.size();
             }
 
-            global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+            AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
           }
         }
       }
@@ -364,7 +365,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
-              global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+              AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
             }
           }
         }
@@ -493,13 +494,12 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
-              global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+              AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
             }
           }
         }
       }
     }
-if (c == 511) std::cout << Acell << std::endl;
   } 
 
   rhs.GatherGhostedToMaster(Add);

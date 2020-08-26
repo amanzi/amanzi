@@ -113,7 +113,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
     const auto& xe = mesh->edge_centroid(e);
 
     std::vector<AmanziGeometry::Point> coordsys(1, tau);
-    ana.set_parameters(tau / len, 0);
+    ana.set_parameters(tau / len, 0, 0.0);
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
@@ -168,7 +168,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
       std::vector<AmanziGeometry::Point> coordsys(1, tau);
-      ana.set_parameters(tau / len, 1);
+      ana.set_parameters(tau / len, 1, 0.0);
 
       for (auto it = pe.begin(); it < pe.end(); ++it) {
         WhetStone::Polynomial fmono(1, it.multi_index(), 1.0);

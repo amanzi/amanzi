@@ -35,11 +35,11 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   // interface to function (dummy implementation)
   virtual double Value(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     if (ifnc_ == 0) 
-      return electric_exact(p, t) * vec_;  // E * t
+      return electric_exact(p, t0_) * vec_;  // E * t
     else if (ifnc_ == 1)
-      return source_exact(p, t) * vec_;
+      return source_exact(p, t0_) * vec_;
     else if (ifnc_ == 2)
-      return magnetic_exact(p, t) * vec_;  // B * n
+      return magnetic_exact(p, t0_) * vec_;  // B * n
   }
 
   // error calculation
@@ -51,7 +51,9 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   void GlobalOp(std::string op, double* val, int n);
 
   // mutators
-  void set_parameters(const Amanzi::AmanziGeometry::Point& vec, int ifnc) { vec_ = vec; ifnc_ = ifnc; }
+  void set_parameters(const Amanzi::AmanziGeometry::Point& vec, int ifnc, double t0) {
+    vec_ = vec; ifnc_ = ifnc; t0_ = t0;
+  }
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;

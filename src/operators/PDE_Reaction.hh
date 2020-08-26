@@ -80,9 +80,6 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
  private:
-  Schema global_schema_col_, global_schema_row_;
-  Schema local_schema_col_, local_schema_row_;
-
   CoefType coef_type_;
   bool static_matrices_initialized_;
   std::vector<std::vector<WhetStone::DenseMatrix> > static_matrices_;

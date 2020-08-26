@@ -24,8 +24,7 @@ class Op_Cell_Edge : public Op {
  public:
   Op_Cell_Edge(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Op(OPERATOR_SCHEMA_BASE_CELL |
-         OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {
+      Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {
     WhetStone::DenseMatrix null_matrix;
     matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;

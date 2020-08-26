@@ -1058,51 +1058,6 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
-* Local assemble routines (for new schema)
-****************************************************************** */
-void Operator::ExtractVectorCellOp(int c, const Schema& schema,
-                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
-  Errors::Message msg("Extracton of local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-void Operator::AssembleVectorCellOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
-  Errors::Message msg("Assembly of local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-void Operator::ExtractVectorFaceOp(int c, const Schema& schema,
-                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
-  Errors::Message msg("Extracton of local face-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-void Operator::AssembleVectorFaceOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
-  Errors::Message msg("Assembly of local face-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-void Operator::ExtractVectorNodeOp(int n, const Schema& schema,
-                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
-  Errors::Message msg("Extracton of local node-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-void Operator::AssembleVectorNodeOp(int n, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
-  Errors::Message msg("Assembly of local node-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
-
-
-/* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
 Teuchos::RCP<Operator> Operator::Clone() const {

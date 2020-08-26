@@ -117,7 +117,6 @@ void MagneticDiffusionVEM(
   Teuchos::RCP<Operator> global_op = op_mag->global_operator();
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::VECTOR));
-  // Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
   op_mag->SetBCs(bc, bc);
 
   // create/extract solution maps
@@ -129,7 +128,6 @@ void MagneticDiffusionVEM(
   CompositeVector B(*cvs_b);
 
   // set up initial guess for a time-dependent problem 
-  // NOTE: the algorithm assume that told = 0.0
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge");
@@ -147,7 +145,7 @@ void MagneticDiffusionVEM(
     const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
     std::vector<AmanziGeometry::Point> coordsys(1, tau);
-    ana.set_parameters(tau / len, 1);
+    ana.set_parameters(tau / len, 0, told);
 
     for (auto it = pe.begin(); it < pe.end(); ++it) {
       const int* index = it.multi_index();
@@ -166,7 +164,7 @@ void MagneticDiffusionVEM(
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
  
     SurfaceCoordinateSystem coordsys(xf, normal);
-    ana.set_parameters(normal / area, 2);
+    ana.set_parameters(normal / area, 2, told);
 
     for (auto it = pf.begin(); it < pf.end(); ++it) {
       int m = it.MonomialSetOrder();
@@ -213,7 +211,7 @@ void MagneticDiffusionVEM(
           const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
           std::vector<AmanziGeometry::Point> coordsys(1, tau);
-          ana.set_parameters(tau / len, 1);
+          ana.set_parameters(tau / len, 0, tnew - dt/2);
 
           for (auto it = pe.begin(); it < pe.end(); ++it) {
             const int* index = it.multi_index();
@@ -223,7 +221,6 @@ void MagneticDiffusionVEM(
 
             int k = it.PolynomialPosition();
             bc_value[e][k] = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
-            // bc_value[e] = (ana.electric_exact(xe, tnew - dt/2) * tau) / len;
           }
           bc_model[e] = OPERATOR_BC_DIRICHLET;
         }

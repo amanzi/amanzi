@@ -117,6 +117,7 @@ set(operators_inc_files
     RemapDG_Helper.hh
     RemapUtils.hh
     Schema.hh
+    SchemaUtils.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
@@ -163,7 +164,7 @@ add_amanzi_library(operators
                           PDE_Electromagnetics.cc
                           PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
-                          Schema.cc
+                          Schema.cc SchemaUtils.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc

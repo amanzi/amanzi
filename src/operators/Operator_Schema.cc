@@ -27,6 +27,7 @@
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
 #include "Op_Node_Schema.hh"
+#include "SchemaUtils.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -62,9 +63,9 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
     int nrows = A.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
-    ExtractVectorCellOp(c, op.schema_col_, v, X);
+    ExtractVectorCellOp(c, *mesh_, op.schema_col_, v, X);
     A.Multiply(v, av, false);
-    AssembleVectorCellOp(c, op.schema_row_, av, Y);
+    AssembleVectorCellOp(c, *mesh_, op.schema_row_, av, Y);
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -90,9 +91,9 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
     int nrows = A.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
-    ExtractVectorFaceOp(f, op.schema_col_, v, X);
+    ExtractVectorFaceOp(f, *mesh_, op.schema_col_, v, X);
     A.Multiply(v, av, false);
-    AssembleVectorFaceOp(f, op.schema_row_, av, Y);
+    AssembleVectorFaceOp(f, *mesh_, op.schema_row_, av, Y);
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -118,9 +119,9 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Schema& op,
     int nrows = A.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
-    ExtractVectorNodeOp(n, op.schema_col_, v, X);
+    ExtractVectorNodeOp(n, *mesh_, op.schema_col_, v, X);
     A.Multiply(v, av, false);
-    AssembleVectorNodeOp(n, op.schema_row_, av, Y);
+    AssembleVectorNodeOp(n, *mesh_, op.schema_row_, av, Y);
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -517,268 +518,6 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
     }
   }
   AMANZI_ASSERT(!ierr);
-}
-
-
-/* ******************************************************************
-* Assemble local vector to the global CV when the base is cell.
-****************************************************************** */
-void Operator_Schema::AssembleVectorCellOp(
-    int c, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::NODE) {
-      Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-
-      for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < num; ++k) {
-          Xn[k][nodes[n]] += v(m++);
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::FACE) {
-      Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
-
-      mesh_->cell_get_faces(c, &faces);
-      int nfaces = faces.size();
-
-      for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < num; ++k) {
-          Xf[k][faces[n]] += v(m++);
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::EDGE) {
-      Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-
-      mesh_->cell_get_edges(c, &edges);
-      int nedges = edges.size();
-
-      for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < num; ++k) {
-          Xe[k][edges[n]] += v(m++);
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::CELL) {
-      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-
-      for (int k = 0; k < num; ++k) {
-        Xc[k][c] += v(m++);
-      }
-    }
-
-    else {
-      AMANZI_ASSERT(false);
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Assemble local vector to the global CV when the base is face.
-****************************************************************** */
-void Operator_Schema::AssembleVectorFaceOp(
-    int f, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::CELL) {
-      Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
-
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
-
-      for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < num; ++k) {
-          Xf[k][cells[n]] += v(m++);
-        }
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Assemble local vector to the global CV when the base is node.
-****************************************************************** */
-void Operator_Schema::AssembleVectorNodeOp(
-    int n, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::CELL) {
-      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-
-      mesh_->node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
-
-      for (int i = 0; i != ncells; ++i) {
-        for (int k = 0; k < num; ++k) {
-          Xc[k][cells[i]] += v(m++);
-        }
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Extract local vector from the global CV when the base is cell.
-****************************************************************** */
-void Operator_Schema::ExtractVectorCellOp(
-    int c, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::NODE) {
-      const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-
-      for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < num; ++k) {
-          v(m++) = Xn[k][nodes[n]];
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::FACE) {
-      const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
-
-      mesh_->cell_get_faces(c, &faces);
-      int nfaces = faces.size();
-
-      for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < num; ++k) {
-          v(m++) = Xf[k][faces[n]];
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::EDGE) {
-      const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-
-      mesh_->cell_get_edges(c, &edges);
-      int nedges = edges.size();
-
-      for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < num; ++k) {
-          v(m++) = Xe[k][edges[n]];
-        }
-      }
-    }
-
-    else if (kind == AmanziMesh::CELL) {
-      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-
-      for (int k = 0; k < num; ++k) {
-        v(m++) = Xc[k][c];
-      }
-    }
-
-    else {
-      AMANZI_ASSERT(false);
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Extract local vector from the global CV when the base is face.
-****************************************************************** */
-void Operator_Schema::ExtractVectorFaceOp(
-    int f, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::CELL) {
-      const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
-
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
-
-      for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < num; ++k) {
-          v(m++) = Xf[k][cells[n]];
-        }
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Extract local vector from the global CV when the base is node.
-****************************************************************** */
-void Operator_Schema::ExtractVectorNodeOp(
-    int n, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X) const
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int m(0);
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    if (kind == AmanziMesh::CELL) {
-      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-
-      mesh_->node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
-
-      for (int i = 0; i != ncells; ++i) {
-        for (int k = 0; k < num; ++k) {
-          v(m++) = Xc[k][cells[i]];
-        }
-      }
-    }
-  }
 }
 
 
