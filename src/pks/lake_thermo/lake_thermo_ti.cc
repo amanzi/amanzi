@@ -80,21 +80,21 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 #if DEBUG_FLAG
   vnames[0] = "e_old";
   vnames[1] = "e_new";
-  vecs[0] = S_inter_->GetFieldData(energy_key_).ptr();
-  vecs[1] = S_next_->GetFieldData(energy_key_).ptr();
+  vecs[0] = S_inter_->GetFieldData(temperature_key_).ptr();
+  vecs[1] = S_next_->GetFieldData(temperature_key_).ptr();
   db_->WriteVectors(vnames, vecs, true);
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-  // advection term
-  if (implicit_advection_) {
-    AddAdvection_(S_next_.ptr(), res.ptr(), true);
-  } else {
-    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
-  }
-#if DEBUG_FLAG
-  db_->WriteVector("res (adv)", res.ptr());
-#endif
+//  // advection term
+//  if (implicit_advection_) {
+//    AddAdvection_(S_next_.ptr(), res.ptr(), true);
+//  } else {
+//    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
+//  }
+//#if DEBUG_FLAG
+//  db_->WriteVector("res (adv)", res.ptr());
+//#endif
 
   // source terms
   AddSources_(S_next_.ptr(), res.ptr());
@@ -139,7 +139,6 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   
   return (ierr > 0) ? 0 : 1;
 };
-
 
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
@@ -197,17 +196,17 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
-  S_next_->GetFieldEvaluator(energy_key_)
+  S_next_->GetFieldEvaluator(temperature_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
+  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_))
       ->ViewComponent("cell",false);
   unsigned int ncells = de_dT.MyLength();
 
-  CompositeVector acc(S_next_->GetFieldData(energy_key_)->Map());
+  CompositeVector acc(S_next_->GetFieldData(temperature_key_)->Map());
   auto& acc_c = *acc.ViewComponent("cell", false);
   
 #if DEBUG_FLAG
-  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_)).ptr());
+  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_)).ptr());
 #endif
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
@@ -256,10 +255,6 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
-  if (precon_used_) {
-    preconditioner_->AssembleMatrix();
-    preconditioner_->UpdatePreconditioner();
-  }
 };
 
 // -----------------------------------------------------------------------------
@@ -275,16 +270,21 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     std::cout << "we is here" << std::endl;
   }
   
-  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
+  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(temperature_key_)
       ->ViewComponent("cell",true);
 
-  S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
-      ->ViewComponent("cell",true);
+//  S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+//  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
+//      ->ViewComponent("cell",true);
 
   const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
+
+
+  // THIS IS ONLY FOR DEBUGGING PURPOSES
+  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(cell_vol_key_)
+        ->ViewComponent("cell",true);
 
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();

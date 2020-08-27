@@ -14,7 +14,7 @@ Author: Svetlana Tokareva
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_AdvectionUpwind.hh"
-#include "LinearOperatorFactory.hh"
+//#include "LinearOperatorFactory.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
@@ -91,8 +91,8 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
-  energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
-  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
+  //energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
+//  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
@@ -104,7 +104,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
-  S->RequireScalar("atmospheric_pressure");
+//  S->RequireScalar("atmospheric_pressure");
 
   // Set up Operators
   // -- boundary conditions
@@ -169,6 +169,19 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
+  //    this needs to get some better logic now that symbolic doesn't use this. --etc
+  precon_used_ = plist_->isSublist("preconditioner") ||
+    plist_->isSublist("inverse") ||
+    plist_->isSublist("linear solver");
+
+  if (precon_used_) {
+    auto& inv_list = mfd_pc_plist.sublist("inverse");
+    inv_list.setParameters(plist_->sublist("inverse"));
+    // old style... deprecate me!
+    inv_list.setParameters(plist_->sublist("preconditioner"));
+    inv_list.setParameters(plist_->sublist("linear solver"));
+  }
+
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
@@ -222,21 +235,21 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  //    symbolic assemble
-  precon_used_ = plist_->isSublist("preconditioner");
-  if (precon_used_) {
-    preconditioner_->SymbolicAssembleMatrix();
-    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
-    //    Potentially create a linear solver
-    if (plist_->isSublist("linear solver")) {
-      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-    } else {
-      lin_solver_ = preconditioner_;
-    }
-  }  
+//  //    symbolic assemble
+//  precon_used_ = plist_->isSublist("preconditioner");
+//  if (precon_used_) {
+//    preconditioner_->SymbolicAssembleMatrix();
+//    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
+//
+//    //    Potentially create a linear solver
+//    if (plist_->isSublist("linear solver")) {
+//      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+//      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+//      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+//    } else {
+//      lin_solver_ = preconditioner_;
+//    }
+//  }
 
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
@@ -260,7 +273,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator(density_key_, den);
 
   // -- thermal conductivity evaluator
-  S->RequireField(density_key_)->SetMesh(mesh_)
+  S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
@@ -319,12 +332,18 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
   
   // Require a field for the mass flux for advection.
+  std::cout << "domain_ = " << domain_ << std::endl;
+  std::cout << "flux_key_ = " << flux_key_ << std::endl;
   flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
                                          // makes flux or we need an
                                          // independent variable evaluator
 
-  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("face", AmanziMesh::FACE, 1);
+
+//  // Require a field for water content
+//  S->RequireField(wc_key_, name_)->SetMesh(mesh_)->SetGhosted()
+//        ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for the energy fluxes.
   S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
@@ -352,34 +371,42 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
 
   // read parameters
-  // precipitation rate
-  Epetra_Vector& rvec = *S_->GetConstantVectorData("precipitation", "state");
-  r_ = std::fabs(rvec[1]);
-
-  // precipitation rate
-  Epetra_Vector& Evec = *S_->GetConstantVectorData("evaporation", "state");
-  E_ = std::fabs(Evec[1]);
-
-  // surface runoff
-  Epetra_Vector& Rsvec = *S_->GetConstantVectorData("surface runoff", "state");
-  R_s_ = std::fabs(Rsvec[1]);
-
-  // bottom runoff
-  Epetra_Vector& Rbvec = *S_->GetConstantVectorData("bottom runoff", "state");
-  R_b_ = std::fabs(Rbvec[1]);
-
-  // extinction coefficient
-  Epetra_Vector& alpha_e_vec = *S_->GetConstantVectorData("extinction coefficient", "state");
-  alpha_e_ = std::fabs(alpha_e_vec[1]);
-
-  // solar radiation maximum S(0)
-  Epetra_Vector& S0_vec = *S_->GetConstantVectorData("solar radiation max", "state");
-  S0_ = std::fabs(S0_vec[1]);
-
-  // heat capacity of water
-  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
-  cp_ = std::fabs(cp_vec[1]);
+//  // precipitation rate
+//  Epetra_Vector& rvec = *S_->GetConstantVectorData("precipitation", "state");
+//  r_ = std::fabs(rvec[0]);
+//
+//  // precipitation rate
+//  Epetra_Vector& Evec = *S_->GetConstantVectorData("evaporation", "state");
+//  E_ = std::fabs(Evec[0]);
+//
+//  // surface runoff
+//  Epetra_Vector& Rsvec = *S_->GetConstantVectorData("surface runoff", "state");
+//  R_s_ = std::fabs(Rsvec[0]);
+//
+//  // bottom runoff
+//  Epetra_Vector& Rbvec = *S_->GetConstantVectorData("bottom runoff", "state");
+//  R_b_ = std::fabs(Rbvec[0]);
+//
+//  // extinction coefficient
+//  Epetra_Vector& alpha_e_vec = *S_->GetConstantVectorData("extinction coefficient", "state");
+//  alpha_e_ = std::fabs(alpha_e_vec[0]);
+//
+//  // solar radiation maximum S(0)
+//  Epetra_Vector& S0_vec = *S_->GetConstantVectorData("solar radiation max", "state");
+//  S0_ = std::fabs(S0_vec[0]);
+//
+//  // heat capacity of water
+//  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
+//  cp_ = std::fabs(cp_vec[0]);
   cp_ = 4184.;
+
+  r_ = 0.;
+  E_ = 0.;
+  R_s_ = 0.;
+  R_b_ = 0.;
+  alpha_e_ = 0.;
+  S0_ = 0.;
+
 
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
@@ -396,6 +423,8 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
 #endif
 
+  std::cout << "Initialize Lake Thermo checkpoint 1" << std::endl;
+
   // initialize energy flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
@@ -409,9 +438,23 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   }
   
   // potentially initialize mass flux
-  if (!flux_exists_) {
-    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
-  }
+  std::cout << "flux_exists_ = " << flux_exists_ << std::endl;
+  std::cout << flux_key_ << " " << name_ << " " << plist_->sublist(flux_key_) << std::endl;
+//  if (!flux_exists_) {
+//    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
+//  }
+  S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
+  S->GetField(flux_key_, name_)->set_initialized();
+
+  S->GetFieldData(temperature_key_, name_)->PutScalar(100.0);
+  S->GetField(temperature_key_, name_)->set_initialized();
+
+  std::cout << "Initialized Lake Thermo PK  NEW NEW!!!" << std::endl;
+
+  // summary of initialization
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Lake Thermo PK initialized." << std::endl;
 
 };
 

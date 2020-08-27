@@ -271,6 +271,7 @@ public:
 
  protected:
   int niter_;
+  Teuchos::RCP<Teuchos::ParameterList> lake_list_;
 
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
@@ -346,7 +347,7 @@ public:
 
 
 
-  Key energy_key_;
+  //Key energy_key_;
   Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;
