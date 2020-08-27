@@ -264,7 +264,8 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 
   // create the local Op and register it with the global Operator
   if (local_schema_col_.base() == AmanziMesh::CELL) {
-    if (mfd_->order() > 0)
+    int num = std::get<2>(local_schema_row_[0]);  // number of dofs
+    if (num > 1)
       local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
     else if (dim == 3) 
       local_op_ = Teuchos::rcp(new Op_Cell_Edge("Electromagnetics: CELL_EDGE", mesh_));

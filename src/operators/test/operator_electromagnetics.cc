@@ -228,6 +228,7 @@ TEST(CURL_CURL_LINEAR) {
   // CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
 }
 
+/*
 TEST(CURL_CURL_NONLINEAR) {
   CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false);
 }
@@ -236,3 +237,5 @@ TEST(CURL_CURL_TIME_DEPENDENT) {
   CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
   // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }
+*/
+
