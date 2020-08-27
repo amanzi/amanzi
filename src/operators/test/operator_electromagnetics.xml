@@ -28,6 +28,15 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="zoltan_graph"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+    
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

@@ -73,7 +73,8 @@ void MagneticDiffusionVEM(
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
@@ -354,6 +355,7 @@ void MagneticDiffusionVEM(
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2, 0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
 }
 

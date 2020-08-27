@@ -567,7 +567,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
   static int use_face_centers=1;
 
   /* edge connected neighbors of vertices */
-  static int tetidx[4][3] = {{1,2,3},{2,0,3},{0,1,3},{1,0,2}};
+  // static int tetidx[4][3] = {{1,2,3},{2,0,3},{0,1,3},{1,0,2}};
   static int hexidx[8][3] = {{1,3,4},{2,0,5},{3,1,6},{0,2,7},{0,5,7},{6,4,1},
                              {7,5,2},{6,4,3}};
   static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
