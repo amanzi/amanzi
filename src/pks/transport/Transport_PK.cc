@@ -278,7 +278,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   if (time >= 0.0) t_physics_ = time;
 
   if (tp_list_->isSublist("initial conditions")) {
-    S->GetField(tcc_key_,tcc_passwd_)->Initialize(tp_list_->sublist("initial conditions"));
+    S->GetField(tcc_key_, passwd_)->Initialize(tp_list_->sublist("initial conditions"));
   }
 
   internal_tests = 0;
@@ -298,8 +298,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   InitializeFields_(S);
 
   //create copies
-  S->RequireFieldCopy(tcc_key_, "subcycling", tcc_passwd_);
-  tcc_tmp = S->GetField(tcc_key_, tcc_passwd_)->GetCopy("subcycling", tcc_passwd_)->GetFieldData();
+  S->RequireFieldCopy(tcc_key_, "subcycling", passwd_);
+  tcc_tmp = S->GetField(tcc_key_, passwd_)->GetCopy("subcycling", passwd_)->GetFieldData();
 
   if (special_source_){
     S->RequireFieldCopy(tcc_key_, "with source", passwd_);
@@ -348,7 +348,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   mol_dens_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   mol_dens_prev_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   
-  tcc = S->GetFieldData(tcc_key_, tcc_passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
 
   flux_ = S->GetFieldData(flux_key_)->ViewComponent("face", true);
   solid_qty_ = S->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
@@ -686,7 +686,7 @@ double Transport_PK_ATS::StableTimeStep()
    
   IdentifyUpwindCells();
 
-  tcc = S_inter_->GetFieldData(tcc_key_, tcc_passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // loop over faces and accumulate upwinding fluxes
@@ -836,7 +836,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_inter_->GetFieldData(tcc_key_, tcc_passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // calculate stable time step    
@@ -1295,7 +1295,7 @@ void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
   
   // Copy to S_ as well
-  tcc = S->GetFieldData(tcc_key_, tcc_passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
   
   ChangedSolutionPK(S.ptr());
