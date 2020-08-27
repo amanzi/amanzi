@@ -134,8 +134,8 @@ void RunTest(std::string op_list_name) {
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  bc->bc_model();  // allocate
+  bc->bc_value();  // memory
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

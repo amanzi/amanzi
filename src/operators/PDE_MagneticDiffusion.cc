@@ -256,21 +256,7 @@ double PDE_MagneticDiffusion::CalculateDivergence(
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
-{
-  // Primary discretization methods
-  std::string primary = plist.get<std::string>("discretization primary");
-
-  if (primary == "mfd: default") {
-    mfd_primary_ = WhetStone::ELECTROMAGNETICS_DEFAULT;
-  } else if (primary == "mfd: generalized") {
-    mfd_primary_ = WhetStone::ELECTROMAGNETICS_GENERALIZED;
-  } else {
-    Errors::Message msg;
-    msg << "Primary discretization method \"" << primary << "\" is not supported.";
-    Exceptions::amanzi_throw(msg);
-  } 
-
-  // Define stencil for the MFD diffusion method.
+{ 
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);
 }

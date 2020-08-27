@@ -48,6 +48,7 @@ class Operator_Factory {
   }
   
   Teuchos::RCP<Operator> Create();
+  Teuchos::RCP<Operator> CreateFromSchema();
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

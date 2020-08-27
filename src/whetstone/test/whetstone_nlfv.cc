@@ -147,7 +147,6 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
   double w;
   AmanziGeometry::Point xa(0.8, 0.0), xb(0.7, 1.0);  // end-points of face f
   AmanziGeometry::Point p(2), v(2), u(2), xab(2), xcc(2);
-  const AmanziGeometry::Point& xf = mesh->face_centroid(f);
   const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
   const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
 

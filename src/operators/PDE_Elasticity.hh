@@ -61,11 +61,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override {};
 
-  // access
-  const Schema& global_schema_col() { return global_schema_col_; }
-  const Schema& schema_col() { return local_schema_col_; }
-  const Schema& schema_row() { return local_schema_row_; }
-
  protected:
   void Init_(Teuchos::ParameterList& plist);
 
@@ -75,10 +70,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   AmanziMesh::Entity_kind base_;
-
-  // operator and schemas
-  Schema global_schema_col_, global_schema_row_;
-  Schema local_schema_col_, local_schema_row_;
 };
 
 }  // namespace Operators

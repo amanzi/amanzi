@@ -322,13 +322,6 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
           op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
         }
 
-      /*
-      } else if (kind == AmanziMesh::FACE) {
-        global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist_));
-        std::string name("FACE_FACE");
-        op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
-      */
-
       } else if (kind == AmanziMesh::EDGE) {
         global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
         std::string name("EDGE_EDGE");

@@ -57,12 +57,11 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
     if (plist.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface";
       local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
-      global_op_->OpPushBack(local_op_);
     } else {
       std::string name = "Diffusion: FACE_CELL";
       local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-      global_op_->OpPushBack(local_op_);
     }
+    global_op_->OpPushBack(local_op_);
   }
   
   // upwind options
