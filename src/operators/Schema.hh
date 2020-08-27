@@ -69,6 +69,9 @@ class Schema {
   std::vector<WhetStone::SchemaItem>::const_iterator end() const { return items_.end(); }
   int size() const { return items_.size(); }
 
+  // only constant access should be used in apps
+  const WhetStone::SchemaItem& operator[] (int i) const { return items_[i]; }
+
   // output 
   friend std::ostream& operator << (std::ostream& os, const Schema& s) {
     os << "base=" << s.KindToString(s.base()) << "\n";
