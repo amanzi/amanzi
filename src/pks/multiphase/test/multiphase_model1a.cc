@@ -1,5 +1,5 @@
 /*
-  MultiPhase
+  MultiPhase PK
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -7,6 +7,10 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Gas phase appearense in a two-component system (water + hydrogen) after 
+  liquid hydrogen injection on the left side of the domain. The primary
+  variables are pressure liquid, mole gas fraction, and saturation liquid.
 */
 
 #include <cstdlib>

@@ -3597,7 +3597,53 @@ Multiphase PK
 Mathematical models
 ...................
 
-The conceptual PDE model for the isothermal multiphase equations are
+The conceptual PDE model for the isothermal multiphase flow inlcude
+transport equations for components and nonlinear algebraic constraints for the phase presence. 
+At the moment we consider two phases (liquid and gas), multiple components, and one 
+constraint.
+Each transport equation has the following form:
+
+.. math::
+  \frac{\partial \Theta}{\partial t}
+  + \nabla \cdot \boldsymbol{\Psi} = Q,
+
+where 
+:math:`\Theta` is the storage and 
+:math:`\boldsymbol{\Psi}` is the flux.
+The storage term sums up component amount across two phases, :math:`\alpha=l` for liquid
+phase and :math:`\alpha=g` for gas phase:
+
+.. math::
+  \Theta = \phi \sum_\alpha \eta_\alpha x_\alpha s_\alpha
+
+where
+:math:`\phi` is porosity [-],
+:math:`\eta` is molar density [mol/m^3],
+:math:`x` is molar fraction of component [-], and
+:math:`s` is phase saturation [-].
+
+The flux includes advective and diffusion terms:
+
+.. math::
+  \boldsymbol{\Psi} 
+  = -\sum_\alpha \eta_\alpha \left(\boldsymbol{q}_\alpha + D_\alpha \nabla x \right)
+
+where
+:math:`\boldsymbol{q}` is Darcy phase velocity,
+:math:`D` is molecular duffusion coefficient.
+
+The nonlinear algebraic constraint may have different forms. One of the available forms is
+
+.. math::
+  min (s_g, 1 - x_l - x_g) = 0.
+
+It implies that if gas compounent is present then we must have :math:`x_l + x_g = 1`.
+
+The PK provides three choices of primary variables. 
+The first one includes pressure liquid, mole gas fraction, and saturation liquid.
+The second one includes pressure liquid, molar gas density, and saturation liquid.
+The third one is used for verification purposes and is based on the model in Jaffre's paper. 
+This model describes two-phase two-component system with water and hydrogen. 
 
 
 Shallow water PK
