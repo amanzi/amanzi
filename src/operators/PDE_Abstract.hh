@@ -85,9 +85,6 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kvec_poly_;
   Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > Kvec_stpoly_;
 
-  Schema global_schema_row_, global_schema_col_;
-  Schema local_schema_col_, local_schema_row_;
-
  private:
   void Init_(Teuchos::ParameterList& plist);
   void CreateStaticMatrices_();

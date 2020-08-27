@@ -54,15 +54,15 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   int ncells_bg_owned = bg_mesh->num_entities(CELL, Parallel_type::OWNED);
   int ncells_bg_used = bg_mesh->num_entities(CELL, Parallel_type::ALL);
   int ncells_log = log_mesh->num_entities(CELL, Parallel_type::OWNED);
-  int ncells_my_owned = ncells_bg_owned + ncells_log;
+  // int ncells_my_owned = ncells_bg_owned + ncells_log;
   int ncells_my_used = ncells_bg_used + ncells_log;
 
   int nfaces_bg_owned = bg_mesh->num_entities(FACE, Parallel_type::OWNED);
   int nfaces_bg_used = bg_mesh->num_entities(FACE, Parallel_type::ALL);
   int nfaces_log = log_mesh->num_entities(FACE, Parallel_type::OWNED);
   int nfaces_extra = face_cell_ids.size();
-  int nfaces_my_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
-  int nfaces_my_used = nfaces_bg_used + nfaces_log + nfaces_extra;
+  // int nfaces_my_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
+  // int nfaces_my_used = nfaces_bg_used + nfaces_log + nfaces_extra;
 
   //
   // face ordered things first

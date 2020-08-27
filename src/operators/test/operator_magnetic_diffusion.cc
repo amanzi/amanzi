@@ -579,6 +579,6 @@ TEST(MAGNETIC_DIFFUSION3D_RELAX) {
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
   // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
+  // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
 }
 

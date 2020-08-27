@@ -76,6 +76,11 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   Teuchos::RCP<const Op> local_op() const { return local_op_; }
   void set_local_op(const Teuchos::RCP<Op>& op);
   
+  // -- schemas
+  const Schema& global_schema_col() { return global_schema_col_; }
+  const Schema& schema_col() { return local_schema_col_; }
+  const Schema& schema_row() { return local_schema_row_; }
+
  protected:
   void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
                              bool primary, bool eliminate, bool essential_eqn);
@@ -93,6 +98,10 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
   PDEType pde_type_;
+
+  // schemas
+  Schema global_schema_col_, global_schema_row_;
+  Schema local_schema_col_, local_schema_row_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

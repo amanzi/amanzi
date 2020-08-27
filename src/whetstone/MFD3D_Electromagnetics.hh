@@ -48,7 +48,10 @@ class MFD3D_Electromagnetics : public MFD3D,
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, d_));
+    if (d_ == 2)
+      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+    else
+      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
   }
 
   // -- mass matrices
