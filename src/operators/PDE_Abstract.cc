@@ -87,9 +87,6 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
-    if (local_schema_col_.base() == AmanziMesh::CELL) {
-      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-    }
 
   } else {
     // constructor was given an Operator
@@ -99,11 +96,10 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
     local_schema_row_.Init(mfd_range, mesh_, base);
     local_schema_col_.Init(mfd_domain, mesh_, base);
-
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
+  local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   global_op_->OpPushBack(local_op_);
 
   // default values

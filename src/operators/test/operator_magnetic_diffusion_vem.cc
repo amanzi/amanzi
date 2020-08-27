@@ -61,7 +61,8 @@ void MagneticDiffusionVEM(
   int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion VEM, dt=" 
-                            << dt << ", name: " << name << std::endl;
+                            << dt << ", name: " << name 
+                            << ", order=" << order << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
@@ -79,7 +80,7 @@ void MagneticDiffusionVEM(
   RCP<Mesh> mesh;
   if (name == "structured") {
     mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
-    // DeformMesh(mesh, 5, 1.0);
+    DeformMesh(mesh, 5, 1.0);
   } else {
     mesh = meshfactory.create(name, request_faces, request_edges);
     // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
@@ -351,7 +352,8 @@ void MagneticDiffusionVEM(
 }
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
-  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
 }
 

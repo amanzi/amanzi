@@ -28,8 +28,10 @@
 #include "Op.hh"
 #include "Op_Cell_Edge.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
+#include "Operator_Factory.hh"
 #include "Operator_Node.hh"
 
 namespace Amanzi {
@@ -240,15 +242,16 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
     // constructor was given a mesh
     local_schema_col_.Init(mfd_, mesh_, base);
     global_schema_col_ = local_schema_col_;
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
 
     local_schema_row_ = local_schema_col_;
     global_schema_row_ = global_schema_col_;
 
-    if (dim == 3)
-      global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
-    else 
-      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
+    Operator_Factory factory;
+    factory.set_mesh(mesh_);
+    factory.set_plist(Teuchos::rcpFromRef(plist));
+    factory.set_schema(global_schema_row_);
+
+    global_op_ = factory.CreateFromSchema();
 
   } else {
     // constructor was given an Operator
@@ -260,12 +263,13 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  if (local_schema_col_.base() == AmanziMesh::CELL && dim == 3) {
-    std::string name = "Electromagnetics: CELL_EDGE";
-    local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
-  } else if (local_schema_col_.base() == AmanziMesh::CELL && dim == 2) {
-    std::string name = "Electromagnetics: CELL_NODE";
-    local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
+  if (local_schema_col_.base() == AmanziMesh::CELL) {
+    if (mfd_->order() > 0)
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    else if (dim == 3) 
+      local_op_ = Teuchos::rcp(new Op_Cell_Edge("Electromagnetics: CELL_EDGE", mesh_));
+    else if (dim == 2)
+      local_op_ = Teuchos::rcp(new Op_Cell_Node("Electromagnetics: CELL_NODE", mesh_));
   } else {
     AMANZI_ASSERT(0);
   }
