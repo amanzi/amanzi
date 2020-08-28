@@ -166,7 +166,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     int nents_owned(0);
     if (kind == AmanziMesh::FACE) {
       mesh_->cell_get_faces(c, &entities);
-      nents_owned = ncells_owned;
+      nents_owned = nfaces_owned;
     } else if (kind == AmanziMesh::EDGE) {
       mesh_->cell_get_edges(c, &entities);
       nents_owned = nedges_owned;

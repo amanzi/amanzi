@@ -163,7 +163,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
 #endif
 
   int ierr(0);
-  if (scalar == 0.) {
+  if (scalar == 0.0) {
     Y.PutScalarMasterAndGhosted(0.0);
   } else if (scalar != 1.0) {
     Y.Scale(scalar);

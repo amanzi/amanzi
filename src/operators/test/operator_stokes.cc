@@ -43,207 +43,177 @@
 ***************************************************************** */
 SUITE(OPERATOR_STOKES) {
 
-//
-// I have no clue why this test won't pass.  It looks like an issue with
-// boundary conditions, but I can't get it to pass in master either, which has
-// me questioning the boundary condition implementation/usage in this test.
-// Not sure what is wrong, but would welcome a fix because it is a good
-// independent check on the forward Apply() of a TreeOperator. --etc
-//
+TEST(OPERATOR_STOKES_EXACTNESS_FORWARD) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
 
-// TEST(OPERATOR_STOKES_EXACTNESS_FORWARD) {
-//   using namespace Amanzi;
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
-//   using namespace Amanzi::Operators;
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout << "\nTest: 2D Stokes: exactness test" << std::endl;
 
-//   auto comm = Amanzi::getDefaultComm();
-//   int MyPID = comm->MyPID();
-//   if (MyPID == 0) std::cout << "\nTest: 2D Stokes: exactness test" << std::endl;
+  // read parameter list
+  std::string xmlFileName = "test/operator_stokes.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
-//   // read parameter list
-//   std::string xmlFileName = "test/operator_stokes.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-//   Teuchos::ParameterList plist = xmlreader.getParameters();
+  // create a simple rectangular mesh
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 12, 14);
 
-//   // create a simple rectangular mesh
-//   MeshFactory meshfactory(comm);
-//   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-//   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
-//   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-//   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-//   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-//   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  // populate diffusion coefficient using an analytic solution
+  AnalyticElasticity02 ana(mesh);
 
-//   // populate diffusion coefficient using an analytic solution
-//   AnalyticElasticity02 ana(mesh);
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    K->push_back(Kc);
+  }
 
-//   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-//   for (int c = 0; c < ncells; c++) {
-//     const Point& xc = mesh->cell_centroid(c);
-//     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
-//     K->push_back(Kc);
-//   }
+  // populate boundary data for Bernardi-Raugel-type element
+  // -- Dirichlet condition on faces for the normal velocity component
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  std::vector<int>& bcf_model = bcf->bc_model();
+  std::vector<double>& bcf_value = bcf->bc_value();
 
-//   // populate boundary data for Bernardi-Raugel-type element
-//   // -- Dirichlet condition on faces for the normal velocity component
-//   Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-//   std::vector<int>& bcf_model = bcf->bc_model();
-//   std::vector<double>& bcf_value = bcf->bc_value();
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      const Point& normal = mesh->face_normal(f);
+      double area = mesh->face_area(f);
 
-//   for (int f = 0; f < nfaces_wghost; f++) {
-//     const Point& xf = mesh->face_centroid(f);
-//     const Point& normal = mesh->face_normal(f);
-//     double area = mesh->face_area(f);
+      bcf_model[f] = OPERATOR_BC_DIRICHLET;
+      bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
+    }
+  }
 
-//     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-//         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-//       bcf_model[f] = OPERATOR_BC_DIRICHLET;
-//       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
-//     }
-//   }
+  // -- Dirichlet condition at nodes for the normal velocity component
+  Point xv(2);
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+  std::vector<int>& bcv_model = bcv->bc_model();
+  std::vector<Point>& bcv_value = bcv->bc_value_point();
 
-//   // -- Dirichlet condition at nodes for the normal velocity component
-//   Point xv(2);
-//   Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
-//   std::vector<int>& bcv_model = bcv->bc_model();
-//   std::vector<Point>& bcv_value = bcv->bc_value_point();
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    mesh->node_get_coordinates(v, &xv);
 
-//   for (int v = 0; v < nnodes_wghost; ++v) {
-//     mesh->node_get_coordinates(v, &xv);
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
+        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+      bcv_model[v] = OPERATOR_BC_DIRICHLET;
+      bcv_value[v] = ana.velocity_exact(xv, 0.0);
+    }
+  }
 
-//     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-//         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
-//       bcv_model[v] = OPERATOR_BC_DIRICHLET;
-//       bcv_value[v] = ana.velocity_exact(xv, 0.0);
-//     }
-//   }
+  // create a discrete PDE
+  // -- create an elasticity operator using in particular schema data. In the future,
+  // -- we could take definition of DOFs data from WhetStone using the provided
+  // -- discretization method.
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
+  Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
+  op00->SetTensorCoefficient(K);
+  // -- add boundary conditions to the discrete PDE: Lame equation
+  op00->SetBCs(bcf, bcf);
+  op00->AddBCs(bcv, bcv);
 
-//   // create a discrete PDE
-//   // -- create an elasticity operator using in particular schema data. In the future,
-//   // -- we could take definition of DOFs data from WhetStone using the provided
-//   // -- discretization method.
-//   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
-//   Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
-//   op00->SetTensorCoefficient(K);
-//   // -- add boundary conditions to the discrete PDE: Lame equation
-//   op00->SetBCs(bcf, bcf);
-//   op00->AddBCs(bcv, bcv);
+  // -- create a divergence operator (incompressibility equation).
+  //    Note that it uses two different schemas for DOFs for velocity and pressure.
+  op_list = plist.sublist("PK operator").sublist("divergence operator");
+  Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  op10->SetBCs(bcf, bcf);
+  op10->AddBCs(bcv, bcv);
 
-//   // -- create a divergence operator (incompressibility equation).
-//   //    Note that it uses two different schemas for DOFs for velocity and pressure.
-//   op_list = plist.sublist("PK operator").sublist("divergence operator");
-//   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
-//   op10->SetBCs(bcf, bcf);
-//   op10->AddBCs(bcv, bcv);
+  // -- create a gradient operator as transpose of divergence
+  op_list = plist.sublist("PK operator").sublist("gradient operator");
+  Teuchos::RCP<PDE_Abstract> op01 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  op01->SetBCs(bcf, bcf);
+  op01->AddBCs(bcv, bcv);
 
-//   // -- create a gradient operator as transpose of divergence
-//   op_list = plist.sublist("PK operator").sublist("gradient operator");
-//   Teuchos::RCP<PDE_Abstract> op01 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
-//   op01->SetBCs(bcf, bcf);
-//   op01->AddBCs(bcv, bcv);
+  // create a tree operator for the discrete Stokes PDE. It is a 2x2 block operator
+  // composed of Lame operator (blok 00), divergence operator (blok 10) and traspose
+  // of the divergence operator (block 01).
+  Teuchos::RCP<Operator> global00 = op00->global_operator();
+  Teuchos::RCP<Operator> global10 = op10->global_operator();
+  Teuchos::RCP<Operator> global01 = op01->global_operator();
 
-//   // create identity type operator: pressure block for preconditioner
-//   Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
-//   Teuchos::RCP<Operator> global11 = pc11->global_operator();
+  const CompositeVectorSpace& cvs = global00->DomainMap();
+  Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(cvs))));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(op10->global_operator()->RangeMap()))));
 
-//   // create a tree operator for the discrete Stokes PDE. It is a 2x2 block operator
-//   // composed of Lame operator (blok 00), divergence operator (blok 10) and traspose
-//   // of the divergence operator (block 01).
-//   Teuchos::RCP<Operator> global00 = op00->global_operator();
-//   Teuchos::RCP<Operator> global10 = op10->global_operator();
-//   Teuchos::RCP<Operator> global01 = op01->global_operator();
+  Teuchos::RCP<TreeOperator> op = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op->set_operator_block(0, 0, global00);
+  op->set_operator_block(1, 0, global10);
+  op->set_operator_block(0, 1, global01);
 
-//   const CompositeVectorSpace& cvs = global00->DomainMap();
-//   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
-//   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(cvs))));
-//   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(op10->global_operator()->RangeMap()))));
+  // create source term representing external forces.
+  CompositeVector source(cvs);
+  Epetra_MultiVector& src = *source.ViewComponent("node");
 
-//   Teuchos::RCP<TreeOperator> op = Teuchos::rcp(new Operators::TreeOperator(tvs));
-//   op->set_operator_block(0, 0, global00);
-//   op->set_operator_block(1, 0, global10);
-//   op->set_operator_block(0, 1, global01);
+  for (int v = 0; v < nnodes; v++) {
+    mesh->node_get_coordinates(v, &xv);
+    Point tmp(ana.source_exact(xv, 0.0));
+    for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
+  }
 
-//   // create source term representing external forces.
-//   CompositeVector source(cvs);
-//   Epetra_MultiVector& src = *source.ViewComponent("node");
+  // populate local matrices inside the elasticity block and assemble them
+  // into a global matrix.
+  op00->UpdateMatrices();
+  global00->UpdateRHS(source, true);
+  op00->ApplyBCs(true, true, true);
 
-//   for (int v = 0; v < nnodes; v++) {
-//     mesh->node_get_coordinates(v, &xv);
-//     Point tmp(ana.source_exact(xv, 0.0));
-//     for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
-//   }
+  // populate local matrices inside the divergence block. Since we will use
+  // a matrix-free matvec inside an iterative solver, there is no need to
+  // assemble a global matrix.
+  op10->UpdateMatrices();
+  op10->ApplyBCs(false, true, false);
 
-//   // populate local matrices inside the elasticity block and assemble them
-//   // into a global matrix.
-//   op00->UpdateMatrices();
-//   global00->UpdateRHS(source, true);
-//   op00->ApplyBCs(true, true, true);
+  op01->UpdateMatrices();
+  op01->ApplyBCs(true, false, false);
 
-//   // populate local matrices inside the divergence block. Since we will use
-//   // a matrix-free matvec inside an iterative solver, there is no need to
-//   // assemble a global matrix.
-//   op10->UpdateMatrices();
-//   op10->ApplyBCs(false, true, false);
+  // -- copy right-hand sides inside two operators to the global rhs.
+  TreeVector rhs(*tvs);
+  *rhs.SubVector(0)->Data() = *global00->rhs();
+  *rhs.SubVector(1)->Data() = *global10->rhs();
 
-//   op01->UpdateMatrices();
-//   op01->ApplyBCs(true, false, false);
+  // create and set solution variables: velocity and pressure.
+  TreeVector solution(*tvs);
+  ana.VectorNodeSolution(*solution.SubVector(0)->Data(), 0.0);
+  ana.ScalarFaceSolution(*solution.SubVector(0)->Data(), 0.0);
+  ana.ScalarCellSolution(*solution.SubVector(1)->Data(), 0.0);
 
-//   // populate local matrices in the pressure block (for preconditioner)
-//   CompositeVector vol(global11->DomainMap());
-//   vol.PutScalar(1.0);
-//   pc11->AddAccumulationTerm(vol, 1.0, "cell");
+  TreeVector res(*tvs);
+  op->Apply(solution, res);
+  res.Update(-1.0, rhs, 1.0);
 
+  // Post-processing
+  // -- compute velocity resor
+  double ul2_res, uinf_res, unorm;
+  res.SubVector(0)->Data()->Norm2(&ul2_res);
+  res.SubVector(0)->Data()->NormInf(&uinf_res);
+  solution.SubVector(0)->Data()->Norm2(&unorm);
 
-//   // Assemble global matrix for tesing purposes
-//   // Test SPD properties of the matrix and preconditioner.
-//   // VerificationTV ver1(op);
-//   // ver1.CheckMatrixSPD(true, false, false);
-//   // ver1.CheckMatrixSPD(true, false, true);
+  // -- compute pressure error
+  double pl2_res, pinf_res;
+  res.SubVector(1)->Data()->Norm2(&pl2_res);
+  res.SubVector(1)->Data()->NormInf(&pinf_res);
 
-//   // -- copy right-hand sides inside two operators to the global rhs.
-//   TreeVector rhs(*tvs);
-//   *rhs.SubVector(0)->Data() = *global00->rhs();
-//   *rhs.SubVector(1)->Data() = *global10->rhs();
+  if (MyPID == 0) {
+    ul2_res /= unorm;
+    printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g\n",
+           ul2_res, uinf_res, pl2_res, pinf_res);
 
-//   // create and set solution variables: velocity and pressure.
-//   TreeVector solution(*tvs);
-//   ana.VectorNodeSolution(*solution.SubVector(0)->Data(), 0.0);
-//   ana.ScalarFaceSolution(*solution.SubVector(0)->Data(), 0.0);
-//   ana.ScalarCellSolution(*solution.SubVector(1)->Data(), 0.0);
-//   std::cout << "SOLUTION VECTOR:" << std::endl;
-//   solution.Print(std::cout);
-
-//   TreeVector res(*tvs);
-//   op->Apply(solution, res);
-//   res.Update(-1, rhs, 1);
-//   std::cout << "RESIDUAL VECTOR:" << std::endl;
-//   res.Print(std::cout);
-
-//   // Post-processing
-//   // -- compute velocity resor
-//   double ul2_res, uinf_res, unorm;
-//   res.SubVector(0)->Data()->Norm2(&ul2_res);
-//   res.SubVector(0)->Data()->NormInf(&uinf_res);
-//   solution.SubVector(0)->Data()->Norm2(&unorm);
-
-//   // -- compute pressure error
-//   double pl2_res, pinf_res;
-//   res.SubVector(1)->Data()->Norm2(&pl2_res);
-//   res.SubVector(1)->Data()->NormInf(&pinf_res);
-
-//   if (MyPID == 0) {
-//     ul2_res /= unorm;
-//     printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g\n",
-//            ul2_res, uinf_res, pl2_res, pinf_res);
-
-//     CHECK(ul2_res < 0.01);
-//     CHECK(pl2_res < 0.05);
-//   }
-// }
-
-
+    CHECK(ul2_res < 0.01);
+    CHECK(pl2_res < 0.0001);
+  }
+}
 
 
 /* *****************************************************************
@@ -479,6 +449,5 @@ TEST(OPERATOR_STOKES_EXACTNESS_INVERSE) {
     GMV::close_data_file();
   }
 }
-
 
 } // SUITE
