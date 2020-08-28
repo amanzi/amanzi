@@ -287,7 +287,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     SaveComponent_(tv_aux, my_solution_, i);
 
     // process error code
-    bool fail = (ierr == 0);
+    bool fail = (ierr != 0);
     if (fail) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Step failed." << std::endl;

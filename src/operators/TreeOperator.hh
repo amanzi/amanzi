@@ -85,8 +85,14 @@ public:
   Teuchos::RCP<const TreeOperator> get_block(std::size_t i, std::size_t j) const { return blocks_[i][j]; }
   Teuchos::RCP<Operator> get_operator() { return data_; }
   Teuchos::RCP<const Operator> get_operator() const { return data_; }
-  Teuchos::RCP<Operator> get_operator_block(std::size_t i, std::size_t j) { return get_block(i,j)->get_operator(); }
-  Teuchos::RCP<const Operator> get_operator_block(std::size_t i, std::size_t j) const { return get_block(i,j)->get_operator(); }
+  Teuchos::RCP<Operator> get_operator_block(std::size_t i, std::size_t j) {
+    if (get_block(i,j) != Teuchos::null) return get_block(i,j)->get_operator();
+    return Teuchos::null;
+  }
+  Teuchos::RCP<const Operator> get_operator_block(std::size_t i, std::size_t j) const {
+    if (get_block(i,j) != Teuchos::null) return get_block(i,j)->get_operator();
+    return Teuchos::null;
+  }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
