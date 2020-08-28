@@ -142,6 +142,7 @@ class Op_Node_Node;
 class Op_Node_Schema;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
+class Op_MeshInjection;
 
 
 class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
@@ -231,6 +232,10 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
     return cvs_col_; }
   const Teuchos::RCP<const CompositeVectorSpace>& get_range_map() const {
     return cvs_row_; }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_col_map() const {
+    return cvs_col_; }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_row_map() const {
+    return cvs_row_; }
 
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
@@ -316,6 +321,8 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_MeshInjection& op,
+      const CompositeVector& X, CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_Diagonal& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -365,6 +372,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
 
@@ -417,6 +427,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 

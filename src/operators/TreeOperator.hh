@@ -57,6 +57,16 @@ public:
                Teuchos::ParameterList& plist);
   TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs);
 
+  //
+  // NOTE: this is not a shallow copy, but not quite a deep copy either!
+  //
+  // It is deep in the sense that it calls Clone on all leaf Operator objects,
+  // but those Clone() methods themselves are shallow!
+  TreeOperator(const TreeOperator& other);
+  Teuchos::RCP<TreeOperator> Clone() const {
+    return Teuchos::rcp(new TreeOperator(*this));
+  }
+
   // accessors
   virtual const TreeVectorSpace& DomainMap() const override { return *col_map_; }
   virtual const TreeVectorSpace& RangeMap() const override { return *row_map_; }

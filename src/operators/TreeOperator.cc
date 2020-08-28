@@ -92,6 +92,30 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs,
 TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs)
   : TreeOperator(tvs, tvs) {}
 
+
+/* ******************************************************************
+* Copy constructor does a deep copy.
+****************************************************************** */
+TreeOperator::TreeOperator(const TreeOperator& other)
+  : TreeOperator(other.row_map_, other.col_map_)
+{
+  vo_ = other.vo_;
+  inv_plist_ = other.inv_plist_;
+
+  for (int i=0; i!=row_size_; ++i) {
+    for (int j=0; j!=col_size_; ++j) {
+      if (other.blocks_[i][j] != Teuchos::null) {
+        blocks_[i][j] = other.blocks_[i][j]->Clone();
+      }
+    }
+  }
+
+  if (other.data_ != Teuchos::null) {
+    data_ = other.data_->Clone();
+  }
+}
+
+
 /* ******************************************************************
 * block setters
 ****************************************************************** */
@@ -168,7 +192,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
           const TreeVector& xj = *X.SubVector(j);
           auto block = get_block(i,j);
           if (block != Teuchos::null) {
-            ierr = get_block(i,j)->Apply(xj, yi, 1.0);
+            ierr = block->Apply(xj, yi, 1.0);
             if (ierr) return ierr;
           }
         }
@@ -306,17 +330,17 @@ void TreeOperator::SymbolicAssembleMatrix()
   auto graph = Teuchos::rcp(new GraphFE(row_supermap_->Map(),
       row_supermap_->GhostedMap(), col_supermap_->GhostedMap(), cols_per_row));
 
-  // get a flattened array of blocks
+  // get a flattened array of blocks that are leaves
   auto shape = Impl::collectTreeOperatorLeaves(*this, leaves_, 0, 0);
   AMANZI_ASSERT(n_row_leaves == shape.first);
-  AMANZI_ASSERT(n_col_leaves == n_col_leaves);
+  AMANZI_ASSERT(n_col_leaves == shape.second);
 
   // check at every row and column has at least one non-zero entry
   std::vector<bool> cols_ok(n_col_leaves, false);
   for (std::size_t lcv_row = 0; lcv_row != n_row_leaves; ++lcv_row) {
     bool row_ok = false;
     for (std::size_t lcv_col = 0 ; lcv_col != n_col_leaves; ++lcv_col) {
-      if (blocks_[lcv_row][lcv_col] != Teuchos::null) {
+      if (leaves_[lcv_row][lcv_col] != Teuchos::null) {
         row_ok = true;
         cols_ok[lcv_col] = true;
       }
@@ -338,11 +362,11 @@ void TreeOperator::SymbolicAssembleMatrix()
   // assemble the graph structure
   for (std::size_t lcv_row = 0; lcv_row != n_row_leaves; ++lcv_row) {
     for (std::size_t lcv_col = 0 ; lcv_col != n_col_leaves; ++lcv_col) {
-      Teuchos::RCP<const Operator> block = leaves_[lcv_row][lcv_col];
-      if (block != Teuchos::null) {
+      Teuchos::RCP<const Operator> leaf = leaves_[lcv_row][lcv_col];
+      if (leaf != Teuchos::null) {
         // NOTE: currently the operator interface keeps this from working
         // on non-square matrices... need to pass both row and col supermaps.
-        block->SymbolicAssembleMatrix(*get_row_supermap(),
+        leaf->SymbolicAssembleMatrix(*get_row_supermap(),
                                       *graph, lcv_row, lcv_col);
       }
     }
@@ -372,11 +396,11 @@ void TreeOperator::AssembleMatrix() {
   std::size_t n_col_leaves = leaves_[0].size();
   for (std::size_t lcv_row = 0; lcv_row != n_row_leaves; ++lcv_row) {
     for (std::size_t lcv_col = 0; lcv_col != n_col_leaves; ++lcv_col) {
-      Teuchos::RCP<const Operator> block = leaves_[lcv_row][lcv_col];
-      if (block != Teuchos::null) {
+      Teuchos::RCP<const Operator> leaf = leaves_[lcv_row][lcv_col];
+      if (leaf != Teuchos::null) {
         // NOTE: currently the operator interface keeps this from working
         // on non-square matrices... need to pass both row and col supermaps.
-        block->AssembleMatrix(*get_row_supermap(),
+        leaf->AssembleMatrix(*get_row_supermap(),
                               *Amat_, lcv_row, lcv_col);
       }
     }
@@ -523,12 +547,13 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teucho
     leaves[i][j] = tm.get_operator();
     return std::make_pair<int,int>(1,1);
   } else {
-    std::size_t j0 = j;
     std::size_t i0 = i;
+    std::size_t j0 = j;
 
-    for (std::size_t lcv_i = 0; lcv_i != tm.get_col_size(); ++lcv_i) {
-      std::size_t ni = 0;
-      for (std::size_t lcv_j = 0; lcv_j != tm.get_row_size(); ++lcv_j) {
+    int nj = -1;
+    for (std::size_t lcv_i = 0; lcv_i != tm.get_row_size(); ++lcv_i) {
+      std::size_t ni = -1;
+      for (std::size_t lcv_j = 0; lcv_j != tm.get_col_size(); ++lcv_j) {
         std::pair<int,int> delta;
         if (tm.get_block(lcv_i, lcv_j) != Teuchos::null) {
           delta = collectTreeOperatorLeaves(*tm.get_block(lcv_i,lcv_j), leaves, i, j);
@@ -536,17 +561,23 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teucho
           delta = std::make_pair<int,int>(getNumTreeVectorLeaves(*tm.get_row_map()->SubVector(lcv_i)),
                                           getNumTreeVectorLeaves(*tm.get_col_map()->SubVector(lcv_j)));
         }
-        if (ni == 0) {
+        if (ni == -1) {
           ni = delta.first;
         } else {
           AMANZI_ASSERT(delta.first == ni);
         }
         j += delta.second;
       }
+
+      if (nj == -1) {
+        nj = j;
+      } else {
+        AMANZI_ASSERT(nj == j);
+      }
       j = j0;
       i += ni;
     }
-    return std::make_pair<int,int>(i - i0, j - j0);
+    return std::make_pair<int,int>(i - i0, nj - j0);
   }
 }
 

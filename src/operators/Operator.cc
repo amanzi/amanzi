@@ -45,6 +45,7 @@
 #include "Op_Node_Schema.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
+#include "Op_MeshInjection.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -99,7 +100,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     auto& inv_list = plist_.sublist("inverse");
     AmanziSolvers::setMakeOneIterationCriteria(inv_list);
     set_inverse_parameters(inv_list);
-  }    
+  }
 }
 
 
@@ -143,7 +144,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 
   vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-  apply_calls_ = 0; 
+  apply_calls_ = 0;
 }
 
 
@@ -260,7 +261,7 @@ void Operator::AssembleMatrix()
   if (shift_ != 0.0) {
     Amat_->DiagonalShift(shift_);
   }
-  
+
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
@@ -350,8 +351,8 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
     ierr = Apply(u, r);
   } else {
     ierr = Apply(u, r, 1.0);
-  }    
-  
+  }
+
   r.Update(-1.0, *rhs_, 1.0);
 
   return ierr;
@@ -366,7 +367,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 #if TEST_MAPS
   AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
-#endif  
+#endif
 
   X.ScatterMasterToGhosted();
 
@@ -434,14 +435,14 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 #if TEST_MAPS
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
-#endif  
+#endif
   AMANZI_ASSERT(preconditioner_.get());
   return preconditioner_->ApplyInverse(X, Y);
 }
 
 
 /* ******************************************************************
-* Defaultvisit method for apply 
+* Defaultvisit method for apply
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
                                 const CompositeVector& X, CompositeVector& Y) const
@@ -451,7 +452,7 @@ int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
 
   const Epetra_MultiVector& Xf = *X.ViewComponent(op.col_compname(), true);
   Epetra_MultiVector& Yf = *Y.ViewComponent(op.row_compname(), true);
-  
+
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
 
@@ -484,7 +485,7 @@ void Operator::set_inverse_parameters(const std::string& prec_name,
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
-* Create the preconditioner and set options. Symbolic assemble of 
+* Create the preconditioner and set options. Symbolic assemble of
 * operator's matrix must have been called.
 ****************************************************************** */
 void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
@@ -612,14 +613,14 @@ void Operator::RestoreCheckPoint()
 /* ******************************************************************
 * New implementation of check-point algorithm.
 ****************************************************************** */
-int Operator::CopyShadowToMaster(int iops) 
+int Operator::CopyShadowToMaster(int iops)
 {
   int nops = ops_.size();
   AMANZI_ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
 
   return 0;
-} 
+}
 
 
 /* ******************************************************************
@@ -677,7 +678,7 @@ void Operator::OpPushBack(const Teuchos::RCP<Op>& block, int properties) {
 
 /* ******************************************************************
 * Add more operators to the existing list. The added operators have
-* no special properties. 
+* no special properties.
 ****************************************************************** */
 void Operator::OpExtend(op_iterator begin, op_iterator end)
 {
@@ -686,7 +687,7 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 
   ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
-  ops_properties_.resize(nnew, 0);  
+  ops_properties_.resize(nnew, 0);
 }
 
 
@@ -817,6 +818,14 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+/* ******************************************************************
+* Visit methods for Apply: Mesh Injection
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_MeshInjection& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Cell.
@@ -927,6 +936,15 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 * Visit methods for symbolic assemble: SurfaceFace.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+/* ******************************************************************
+* Visit methods for symbolic assemble: mesh injection
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
@@ -1046,6 +1064,21 @@ void Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 * Visit methods for assemble: Surface Face
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const
+{
+  std::stringstream err;
+  err << "Assemble matrix: invalid schema combination -- " << op.schema_string
+      << " cannot be used with a matrix on " << schema_string_;
+  Errors::Message message(err.str());
+  Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: mesh injection
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_MeshInjection& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const
 {

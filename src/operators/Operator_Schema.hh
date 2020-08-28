@@ -1,9 +1,9 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -20,12 +20,14 @@
 
 #include "DenseVector.hh"
 
-#include "Op_Node_Node.hh"
 #include "Operator.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
+
+class Op_Node_Node;
+class Op_MeshInjection;
 
 class Operator_Schema : public Operator {
  public:
@@ -64,6 +66,8 @@ class Operator_Schema : public Operator {
           const CompositeVector& X, CompositeVector& Y) const override;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const override;
+  virtual int ApplyMatrixFreeOp(const Op_MeshInjection& op,
+      const CompositeVector& X, CompositeVector& Y) const override;
 
   // -- visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
@@ -78,7 +82,10 @@ class Operator_Schema : public Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;
-  
+  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const override;
+
   // -- visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
@@ -90,6 +97,9 @@ class Operator_Schema : public Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const override;
+  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
 
@@ -119,5 +129,5 @@ class Operator_Schema : public Operator {
 
 #endif
 
-    
+
 
