@@ -57,7 +57,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   
   std::cout<<"TransportBoundaryTT:  "<<regions.size()<<" "<<regions[0]<<" "<<times.size()<<" "<<times[0]<<"\n";
   // Function of geochemical conditions and the associates regions.
-  f_ = Teuchos::rcp(new Amanzi::FunctionTabularString(times, conditions));
+  f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
   std::cout<<"TransportBoundaryTTT:  "<<"\n";
   ats_units_ = false;
