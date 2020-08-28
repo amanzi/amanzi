@@ -15,6 +15,7 @@
 
 #include "WhetStoneDefs.hh"
 
+#include "SchemaUtils.hh"
 #include "ParallelCommunication.hh"
 #include "PDE_HelperDiscretization.hh"
 
@@ -93,8 +94,8 @@ void PDE_HelperDiscretization::set_local_op(const Teuchos::RCP<Op>& op)
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices. 
-* NOTE: We always zero-out matrix rows for essential test BCs. 
+* Apply boundary conditions to the local matrices.
+* NOTE: We always zero-out matrix rows for essential test BCs.
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
@@ -110,7 +111,7 @@ void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essen
         ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
         missing = false;
       }
-    } 
+    }
     else if (bc->type() == WhetStone::DOF_Type::POINT) {
       if (base == AmanziMesh::CELL) {
         ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
@@ -190,7 +191,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
-    for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
+    for (auto it = op->schema_row().begin(); it != op->schema_row().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == kind) {
@@ -212,7 +213,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     schema_col.ComputeOffset(c, mesh_, offset);
 
     item = 0;
-    for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
+    for (auto it = op->schema_col().begin(); it != op->schema_col().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == kind) {
@@ -250,12 +251,12 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
               Acell(noff, noff) = 1.0 / cells.size();
             }
 
-            global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+            AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
           }
         }
       }
     }
-  } 
+  }
 
   rhs.GatherGhostedToMaster(Add);
 }
@@ -281,7 +282,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
   if (primary) rhs_node = rhs.ViewComponent("node", true);
 
-  int d = mesh_->space_dimension(); 
+  int d = mesh_->space_dimension();
   const Schema& schema_row = global_op_->schema_row();
   const Schema& schema_col = global_op_->schema_col();
 
@@ -302,13 +303,13 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
     if (!found) continue;
 
     // essential conditions for test functions
-    op->schema_row_.ComputeOffset(c, mesh_, offset);
+    op->schema_row().ComputeOffset(c, mesh_, offset);
 
     bool flag(true);
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
-    for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
+    for (auto it = op->schema_row().begin(); it != op->schema_row().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == AmanziMesh::NODE) {
@@ -332,7 +333,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
     schema_col.ComputeOffset(c, mesh_, offset);
 
     item = 0;
-    for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
+    for (auto it = op->schema_col().begin(); it != op->schema_col().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == AmanziMesh::NODE) {
@@ -364,13 +365,13 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
-              global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+              AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
             }
           }
         }
       }
     }
-  } 
+  }
 
   rhs.GatherGhostedToMaster(Add);
 }
@@ -426,7 +427,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
-    for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
+    for (auto it = op->schema_row().begin(); it != op->schema_row().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == kind) {
@@ -451,7 +452,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     schema_col.ComputeOffset(c, mesh_, offset);
 
     item = 0;
-    for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
+    for (auto it = op->schema_col().begin(); it != op->schema_col().end(); ++it, ++item) {
       std::tie(itkind, std::ignore, std::ignore) = *it;
 
       if (itkind == kind) {
@@ -482,20 +483,20 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
                 Acell(noff, noff) = 1.0;
               }
 
-              global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
+              AssembleVectorCellOp(c, *mesh_, schema_row, rhs_loc, rhs);
             }
           }
         }
       }
     }
-  } 
+  }
 
   rhs.GatherGhostedToMaster(Add);
 }
 
 
 /* ******************************************************************
-* Composite vector space with one face component having multiple DOFs 
+* Composite vector space with one face component having multiple DOFs
 * and one regular cell component
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
@@ -524,7 +525,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
   std::vector<int> gids(nlocal);
   gfmap.MyGlobalElements(&gids[0]);
 
-  int* data; 
+  int* data;
   points->ExtractView(&data);
   auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
 
@@ -572,7 +573,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
   std::vector<int> gids(nlocal);
   gfmap.MyGlobalElements(&gids[0]);
 
-  int* data; 
+  int* data;
   points->ExtractView(&data);
   auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
 

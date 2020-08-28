@@ -20,7 +20,6 @@
 #include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "LinearOperatorFactory.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -348,8 +347,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- accumulation operator.
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
-
-  op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
   // -- generic linear solver.
@@ -359,8 +356,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- preconditioner. There is no need to enhance it for Darcy
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-  op_->InitializePreconditioner(pc_list);
+  op_->set_inverse_parameters(name, *preconditioner_list_, solver_name_, *linear_operator_list_, true);
+  op_->InitializeInverse();
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
@@ -472,8 +469,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
+  op_->ComputeInverse();
 
   // save pressure at time t^n.
   std::string dt_control = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
@@ -482,13 +478,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     p_old = Teuchos::rcp(new Epetra_MultiVector(*solution->ViewComponent("cell")));
   }
 
-  // create linear solver and calculate new pressure
-  AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(solver_name_, *linear_operator_list_, op_);
-
-  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-  solver->ApplyInverse(rhs, *solution);
+  op_->ApplyInverse(rhs, *solution);
 
   // statistics
   num_itrs_++;
@@ -498,9 +488,9 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     solution->Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver (" << solver->name()
+    *vo_->os() << "pressure solver (" << solver_name_
                << "): ||p,lambda||=" << pnorm 
-               << "  itrs=" << solver->num_itrs() << std::endl;
+               << "  itrs=" << op_->num_itrs() << std::endl;
     VV_PrintHeadExtrema(*solution);
   }
 
@@ -613,7 +603,7 @@ void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 ****************************************************************** */
 void Darcy_PK::FractureConservationLaw_()
 {
-  if (!coupled_to_matrix_) return;
+  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
 
   const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
   const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);

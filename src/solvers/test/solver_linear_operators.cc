@@ -7,18 +7,23 @@
 #include "Epetra_Vector.h"
 
 #include "exceptions.hh"
-#include "LinearOperatorFactory.hh"
-#include "LinearOperatorPCG.hh"
-#include "LinearOperatorGMRES.hh"
-#include "LinearOperatorNKA.hh"
-#include "LinearOperatorBelosGMRES.hh"
-#include "LinearOperatorAmesos.hh"
+#include "SuperMap.hh"
+#include "InverseFactory.hh"
+#include "IterativeMethodPCG.hh"
+#include "IterativeMethodGMRES.hh"
+#include "IterativeMethodNKA.hh"
+#include "IterativeMethodBelos.hh"
+#include "DirectMethodAmesos.hh"
+#include "DirectMethodAmesos2.hh"
 
 using namespace Amanzi;
 
 SUITE(SOLVERS) {
 class Matrix {
  public:
+  using Vector_t = Epetra_Vector;
+  using VectorSpace_t = Epetra_Map;
+
   Matrix() {};
   Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map) {
     x_[0] = 0.00699270335645641;
@@ -29,13 +34,13 @@ class Matrix {
   };
   ~Matrix() {};
   Matrix(const Matrix& other) : map_(other.map_) {};
-    
+
   Teuchos::RCP<Matrix> Clone() const {
     return Teuchos::rcp(new Matrix(*this));
   }
-    
+
   // 5-point FD stencil
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
+  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const {
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < n; j++) {
@@ -51,6 +56,9 @@ class Matrix {
     return 0;
   }
 
+  virtual void ComputeInverse() {}
+  virtual void InitializeInverse() {}
+
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
     int n = v.Map().NumMyElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];
@@ -64,16 +72,18 @@ class Matrix {
     for (int i = 0; i < n; i++) {
       int indices[3];
       double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
-      for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
+      for (int k = 0; k < 3; k++) indices[k] = i + k - 1;
       A_->InsertMyValues(i, 3, values, indices);
     }
     A_->FillComplete(*map_, *map_);
   }
 
+  int SymbolicAssembleMatrix() { return 0; }
+  int AssembleMatrix() { return 0;}
+
   // partial consistency with Operators'interface
-  Teuchos::RCP<Epetra_CrsMatrix> A() const { return A_; }
-  void CopyVectorToSuperVector(const Epetra_Vector& ev, Epetra_Vector& sv) const { sv = ev; }
-  void CopySuperVectorToVector(const Epetra_Vector& sv, Epetra_Vector& ev) const { ev = sv; }
+  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
+  Teuchos::RCP<Amanzi::Operators::SuperMap> get_supermap() const { return Teuchos::null; }
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }
   virtual const Epetra_Map& RangeMap() const { return *map_; }
@@ -85,7 +95,6 @@ class Matrix {
   Teuchos::RCP<Epetra_CrsMatrix> A_;
 };
 
-
 TEST(PCG_SOLVER) {
   std::cout << "Checking PCG solver..." << std::endl;
 
@@ -95,8 +104,10 @@ TEST(PCG_SOLVER) {
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   Teuchos::RCP<Matrix> h = m;
-  AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, h);
-  pcg.Init();
+  AmanziSolvers::IterativeMethodPCG<Matrix, Matrix, Epetra_Vector, Epetra_Map> pcg;
+  pcg.set_matrices(m,h);
+  Teuchos::ParameterList plist;
+  pcg.set_inverse_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -105,7 +116,7 @@ TEST(PCG_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = pcg.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -121,8 +132,10 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
   // create the gmres operator
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-    gmres.Init();
+    AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
+    Teuchos::ParameterList plist;
+    gmres.set_inverse_parameters(plist);
+    gmres.set_matrices(m,m);
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
 
@@ -133,7 +146,7 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
     // solve
     Epetra_Vector v(*map);
     int ierr = gmres.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
 
@@ -152,8 +165,9 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
   // create the gmres operator
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-    gmres.Init(plist);
+    AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
+    gmres.set_inverse_parameters(plist);
+    gmres.set_matrices(m,m);
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
 
@@ -164,7 +178,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
     // solve
     Epetra_Vector v(*map);
     int ierr = gmres.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
@@ -188,8 +202,9 @@ TEST(GMRES_SOLVER_DEFLATION) {
 
   // create the gmres operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-  gmres.Init(plist);
+  AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
+  gmres.set_matrices(m, m);
+  gmres.set_inverse_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -198,7 +213,7 @@ TEST(GMRES_SOLVER_DEFLATION) {
   // solve
   Epetra_Vector v(*map);
   int ierr = gmres.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -213,8 +228,13 @@ TEST(NKA_SOLVER) {
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
-  nka.Init();
+  AmanziSolvers::IterativeMethodNKA<Matrix,Matrix,Epetra_Vector,Epetra_Map> nka;
+  nka.set_matrices(m,m);
+  Teuchos::ParameterList plist;
+  plist.set("error tolerance", 1.e-13);
+  plist.set("maximum number of iterations", 200);
+  plist.sublist("verbose object").set("verbosity level", "high");
+  nka.set_inverse_parameters(plist);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -223,7 +243,7 @@ TEST(NKA_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = nka.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -238,14 +258,17 @@ TEST(BELOS_GMRES_SOLVER) {
   vo.set("Verbosity Level", "high");
   plist.set<int>("size of Krylov space", 15);
   plist.set<double>("error tolerance", 1e-12);
-  
+
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   // create the operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-  gmres.Init(plist);
+  AmanziSolvers::IterativeMethodBelos<Matrix,Matrix,Epetra_Vector,Epetra_Map> gmres;
+  gmres.set_matrices(m, m);
+  gmres.set_inverse_parameters(plist);
+  gmres.InitializeInverse();
+  gmres.ComputeInverse();
 
   // initial guess
   Epetra_Vector u(*map);
@@ -254,7 +277,7 @@ TEST(BELOS_GMRES_SOLVER) {
   // solve
   Epetra_Vector v(*map);
   int ierr = gmres.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -269,7 +292,7 @@ TEST(AMESOS_SOLVER) {
   vo.set("Verbosity Level", "high");
   plist.set<std::string>("solver name", "Amesos_Klu")
        .set<int>("amesos version", 1);
-  
+
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
 
@@ -283,34 +306,41 @@ TEST(AMESOS_SOLVER) {
 
   // Amesos1
   {
-    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
-    klu.Init(plist);
+    AmanziSolvers::DirectMethodAmesos klu;
+    klu.set_inverse_parameters(plist);
+    klu.set_matrix(m->A());
+    klu.InitializeInverse();
+    klu.ComputeInverse();
 
     int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(residual, 1.0, 1e-12); 
+    CHECK_CLOSE(1.0, residual, 1e-12);
   }
 
   // Amesos2
   {
-    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
+    AmanziSolvers::DirectMethodAmesos2 klu;
     plist.set<std::string>("solver name", "Klu2")
-         .set<int>("amesos version", 2);
-    klu.Init(plist);
+      .set<int>("amesos version", 2)
+      .set("method", "amesos2: klu");
+    klu.set_inverse_parameters(plist);
+    klu.set_matrix(m->A());
+    klu.InitializeInverse();
+    klu.ComputeInverse();
 
     int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(residual, 1.0, 1e-12); 
+    CHECK_CLOSE(1.0, residual, 1e-12);
   }
-  
-  delete comm;
+
+//   delete comm;
 };
 
-TEST(SOLVER_FACTORY) {
+TEST(SOLVER_FACTORY_NO_PC) {
   std::cout << "\nChecking solver factory..." << std::endl;
 
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
@@ -322,10 +352,8 @@ TEST(SOLVER_FACTORY) {
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
-      solver = factory.Create("pcg", plist, m);
-  solver->Init();
+  auto solver = AmanziSolvers::createInverse<Matrix,Epetra_Vector,Epetra_Map>(
+      "pcg", plist, m);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -334,7 +362,76 @@ TEST(SOLVER_FACTORY) {
   // solve
   Epetra_Vector v(*map);
   int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
+
+  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+
+  delete comm;
+};
+
+TEST(SOLVER_FACTORY_WITH_PC) {
+  std::cout << "\nChecking solver factory..." << std::endl;
+
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+
+  Teuchos::ParameterList plist;
+  Teuchos::ParameterList& slist = plist.sublist("pcg");
+  slist.set<std::string>("iterative method", "pcg");
+  slist.set<std::string>("preconditioning method", "identity");
+
+  // create the pcg operator
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  auto solver = AmanziSolvers::createInverse<Matrix,Epetra_Vector,Epetra_Map>(
+      "pcg", plist, m);
+
+  // initial guess
+  Epetra_Vector u(*map);
+  u[55] = 1.0;
+
+  // solve
+  Epetra_Vector v(*map);
+  int ierr = solver->ApplyInverse(u, v);
+  CHECK(ierr == 0);
+
+  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+
+  delete comm;
+};
+
+TEST(GMRES_WITH_GMRES_PC) {
+  std::cout << "\nChecking two-level preconditioner (pcg with gmres pc)..." << std::endl;
+
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+
+  // create the gmres preconditioner with tolerance 0.01
+  Teuchos::Array<std::string> options({ "relative residual" });
+  Teuchos::ParameterList plist;
+  auto& slist = plist.sublist("gmres");
+  slist.set<std::string>("iterative method", "gmres")
+       .set<std::string>("preconditioning method", "identity")
+       .sublist("gmres parameters").set<double>("error tolerance", 1.0e-3)
+                                   .set<Teuchos::Array<std::string>>("convergence criteria", options);
+
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  auto pc = AmanziSolvers::createInverse<Matrix,Epetra_Vector,Epetra_Map>("gmres", plist, m);
+
+  // create the gmres solver with tolerance 1e-6
+  AmanziSolvers::IterativeMethodPCG<Matrix,Amanzi::Matrix<Epetra_Vector,Epetra_Map>,Epetra_Vector,Epetra_Map> solver;
+  solver.set_inverse_parameters(plist);
+  solver.set_matrices(m, pc);
+  solver.set_tolerance(1e-12);
+  solver.InitializeInverse();
+  solver.ComputeInverse();
+
+  // initial guess
+  Epetra_Vector u(*map), v(*map);
+  u[55] = 1.0;
+
+  // solve
+  int ierr = solver.ApplyInverse(u, v);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -358,9 +455,7 @@ TEST(VERBOSITY_OBJECT) {
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
-      solver = factory.Create("gmres", plist, m);
+  auto solver = AmanziSolvers::createInverse<Matrix,Epetra_Vector,Epetra_Map>("gmres", plist, m);
 
   // initial guess
   Epetra_Vector u(*map);
@@ -369,7 +464,7 @@ TEST(VERBOSITY_OBJECT) {
   // solve
   Epetra_Vector v(*map);
   int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 

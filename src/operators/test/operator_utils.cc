@@ -86,10 +86,10 @@ TEST(SUPERMAP_COPY_INVERTIBLE) {
 
   // copy forward, backward
   Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(*maps.tvs));
-  int ierr = CopyTreeVectorToSuperVector(*maps.map, *tv, vec);
+  int ierr = copyToSuperVector(*maps.map, *tv, vec);
   CHECK(!ierr);
 
-  ierr = CopySuperVectorToTreeVector(*maps.map, vec, *tv2);
+  ierr = copyFromSuperVector(*maps.map, vec, *tv2);
   CHECK(!ierr);
 
   // check the same
@@ -113,7 +113,7 @@ TEST(SUPERMAP_COPY_INTS) {
 
   // copy forward
   Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(*maps.tvs));
-  int ierr = CopyTreeVectorToSuperVector(*maps.map, *tv, vec);
+  int ierr = copyToSuperVector(*maps.map, *tv, vec);
   CHECK(!ierr);
 
   // check values

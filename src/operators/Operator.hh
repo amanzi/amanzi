@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -13,8 +13,8 @@
 /*!
 ``Operator`` represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
-in moving from continuous to discrete equations. The spaces X and Y are described 
-by CompositeVectors (CV). A few maps X->Y are supported. 
+in moving from continuous to discrete equations. The spaces X and Y are described
+by CompositeVectors (CV). A few maps X->Y are supported.
 
 An ``Operator`` provides an interface for applying both the forward and inverse
 linear map (assuming the map is invertible).
@@ -34,26 +34,26 @@ with nearly singular operators:
 */
 
 
-/* 
+/*
 Developer and implementation notes:
 
-An ``Operator`` consists of, potentially, both a single, global, assembled 
+An ``Operator`` consists of, potentially, both a single, global, assembled
 matrix AND an un-ordered, additive collection of lower-rank (or equal) local
 operators, here called ``Op``s. During its construction, an operator can grow
 by assimilating more ``Op``s. An ``Operator`` knows how to Apply and Assemble
 all of its local ``Op``s.
 
-Typically the forward operator is applied using only local ``Op``s -- the 
-inverse operator typically requires assembling a matrix, which may represent 
-the entire operator or may be a Schur complement.  
+Typically the forward operator is applied using only local ``Op``s -- the
+inverse operator typically requires assembling a matrix, which may represent
+the entire operator or may be a Schur complement.
 
-In all ``Operator``s, ``Op``s, and matrices, a key concept is the schema.  
-The retired schema includes, at the least, an enum representing the Degrees 
-of Fredom (DoFs) associated with the Operator/matrix's domain (and implied 
-equivalent range, X=Y).  A schema may also, in the case of ``Op``s, include 
+In all ``Operator``s, ``Op``s, and matrices, a key concept is the schema.
+The retired schema includes, at the least, an enum representing the Degrees
+of Fredom (DoFs) associated with the Operator/matrix's domain (and implied
+equivalent range, X=Y).  A schema may also, in the case of ``Op``s, include
 information on the base entity on which the local matrix lives.
-The new schema specifies dofs for the operator domain and range. It also 
-includes location of the geometric base. 
+The new schema specifies dofs for the operator domain and range. It also
+includes location of the geometric base.
 
 For instance, the global matrix schema may be CELL, indicating that the domain
 and range is defined as the space of cells on the mesh provided at
@@ -63,8 +63,8 @@ each face, and it consists of small dense matrices with a domain and range of
 all cells connected to that face (two for interior faces, one for boundary
 faces).
 
-Notes for application code developers:   
-   
+Notes for application code developers:
+
 * We note that typically the Op object is not directly constructed; instead
   helper classes based on the discretization and continuous operator are used.
   For instance, OperatorDiffusion is a class that constructs local Ops that
@@ -92,11 +92,11 @@ Note on implementation for discretization/framework developers:
   implementations of how to use the mesh to implement the forward action and
   how to assumble the local Op into the global Operator matrix.
 
-* Ops can be shared by ``Operator``s. In combination with CopyShadowToMaster() 
+* Ops can be shared by ``Operator``s. In combination with CopyShadowToMaster()
   and Rescale(), the developer has a room for a variaty of optimized
   implementations.  The key variable is ``ops_properties_``. The key parameters
   are ``OPERATOR_PROPERTY_***`` and described in ``Operators_Defs.hh``.
-*/ 
+*/
 
 #ifndef AMANZI_OPERATOR_HH_
 #define AMANZI_OPERATOR_HH_
@@ -114,10 +114,10 @@ Note on implementation for discretization/framework developers:
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 
-namespace AmanziPreconditioners { class Preconditioner; }
 class CompositeVector;
 
 namespace Operators {
@@ -142,10 +142,14 @@ class Op_Node_Node;
 class Op_Node_Schema;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
+class Op_MeshInjection;
 
 
-class Operator {
+class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
  public:
+  using Vector_t = CompositeVector;
+  using VectorSpace_t = CompositeVector::VectorSpace_t;
+
   // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
@@ -169,7 +173,7 @@ class Operator {
       Operator(cvs, cvs, plist, schema, schema) {};
 
   virtual ~Operator() = default;
-  
+
   // a specialized copy constructor is used to extend the operator, e.g.
   // by adding more operators to it.
   virtual Teuchos::RCP<Operator> Clone() const;
@@ -177,13 +181,27 @@ class Operator {
   void Init();
 
   // main members
-  // -- virtual methods potentially altered by the schema
+  // -- virtual methods potentially altered by the schema, Schur complements
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
     return Apply(X, Y, 0.0);
   }
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
+
+  // versions that make it easier to deal with Amanzi input spec format
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& plist);
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& prec_list,
+                         const std::string& iter_name,
+                         const Teuchos::ParameterList& iter_list,
+                         bool make_one_iteration=true);
+
+  // -- preferred methods -- set_parameters, initialize, compute
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
+  virtual void InitializeInverse() override;
+  virtual void ComputeInverse() override;
 
   // symbolic assembly:
   // -- wrapper
@@ -191,7 +209,7 @@ class Operator {
   // -- first dispatch
   virtual void SymbolicAssembleMatrix(const SuperMap& map,
         GraphFE& graph, int my_block_row, int my_block_col) const;
-  
+
   // actual assembly:
   // -- wrapper
   virtual void AssembleMatrix();
@@ -200,7 +218,7 @@ class Operator {
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   // modifiers
-  // -- add a vector to operator's rhs vector  
+  // -- add a vector to operator's rhs vector
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
   virtual void Rescale(double scaling);
@@ -208,17 +226,19 @@ class Operator {
   virtual void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
-  const CompositeVectorSpace& DomainMap() const { return *cvs_col_; }
-  const CompositeVectorSpace& RangeMap() const { return *cvs_row_; }
+  const CompositeVectorSpace& DomainMap() const override { return *get_domain_map(); }
+  const CompositeVectorSpace& RangeMap() const override { return *get_range_map(); }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_domain_map() const {
+    return cvs_col_; }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_range_map() const {
+    return cvs_row_; }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_col_map() const {
+    return cvs_col_; }
+  const Teuchos::RCP<const CompositeVectorSpace>& get_row_map() const {
+    return cvs_row_; }
 
-  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
-  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
-
-  // preconditioner 
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
-  void InitPreconditioner(Teuchos::ParameterList& plist);
-  void InitializePreconditioner(Teuchos::ParameterList& plist);
-  void UpdatePreconditioner();
+  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
+  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero=true);
 
   void CreateCheckPoint();
   void RestoreCheckPoint();
@@ -227,6 +247,7 @@ class Operator {
   int CopyShadowToMaster(int iops);
 
   // access
+  virtual std::string name() const override { return std::string("Operator (") + schema_string() + ")"; }
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
@@ -235,13 +256,17 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
-  Teuchos::RCP<SuperMap> smap() const { return smap_; }
+  Teuchos::RCP<SuperMap> get_supermap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
   void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
 
   int apply_calls() { return apply_calls_; }
 
@@ -296,6 +321,8 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_MeshInjection& op,
+      const CompositeVector& X, CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_Diagonal& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -347,11 +374,14 @@ class Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
-  
+  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+
   virtual void SymbolicAssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
-  
+
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, MatrixFE& mat,
@@ -399,26 +429,13 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
 
   virtual void AssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
-
-  // local <-> global communications
-  virtual void ExtractVectorCellOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorCellOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
-
-  virtual void ExtractVectorFaceOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorFaceOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
-
-  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // deep copy for building interfaces to TPLs, mainly to solvers
   // -- composite vectors
@@ -427,6 +444,22 @@ class Operator {
 
   // diagnostics
   std::string PrintDiagnostics() const;
+  double residual() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->residual();
+  }
+  int num_itrs() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->num_itrs();
+  }
+  int returned_code() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code();
+  }
+  std::string returned_code_string() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
+  }
 
  protected:
   int SchemaMismatch_(const std::string& schema1, const std::string& schema2) const;
@@ -435,6 +468,7 @@ class Operator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_row_;
   Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
+  Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;
@@ -442,12 +476,19 @@ class Operator {
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
- 
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_, updated_, computed_;
+
   Teuchos::RCP<Epetra_CrsMatrix> A_;
+  Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
+
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  Teuchos::RCP<VerboseObject> vo_;
 
   int schema_old_;
   Schema schema_row_, schema_col_;

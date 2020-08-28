@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -84,8 +83,8 @@ void RunTest(std::string op_list_name) {
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  bc->bc_model();  // allocate internal
+  bc->bc_value();  // memory
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -131,35 +130,27 @@ void RunTest(std::string op_list_name) {
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
   op.ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD(1e-11);
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
   CompositeVector rhs = *global_op->rhs();
   solution.PutScalar(0.0);
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   // ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // repeat the above without destroying the operators.
@@ -171,21 +162,17 @@ void RunTest(std::string op_list_name) {
 
   global_op->UpdateRHS(source, false);
   op.ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->ComputeInverse();
+  global_op->ApplyInverse(rhs, solution);
 
-  solver.ApplyInverse(rhs, solution);
-
-  int num_itrs = solver.num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
               << " itr=" << num_itrs
-              << " code=" << solver.returned_code() << std::endl;
+              << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");

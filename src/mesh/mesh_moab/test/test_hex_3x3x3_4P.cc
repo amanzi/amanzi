@@ -13,7 +13,6 @@ TEST(MOAB_HEX_3x3x3_4P)
   using namespace Amanzi;
 
   int j, nc, nf, nv;
-  unsigned int faces[6], nodes[8];
   int facedirs[6];
   double ccoords[24], fcoords[12];
 

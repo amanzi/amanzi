@@ -235,8 +235,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
-  double l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0), r_norm_initial;
+  double l2_error(0.0);
   int db_write_iter = 0;
 
   num_itrs_ = 0;
@@ -251,7 +250,6 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   previous_error = error;
   residual_ = error;
   r->Norm2(&l2_error);
-  l2_error_initial = l2_error;
 
   int ierr = BT_ErrorControl_(error, previous_error, l2_error);
   if (ierr == SOLVER_CONVERGED) return num_itrs_;

@@ -156,7 +156,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
         f = it->first;
         if (f < nfaces_owned) {
           c = BoundaryFaceGetCell(f);
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          mesh_->face_normal(f, false, c, &dir);
           tmp = flux[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;
         }
@@ -258,8 +258,10 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 ****************************************************************** */
 void Flow_PK::VV_PrintSourceExtrema() const
 {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    double smin(1.0e+99), smax(0.0);
+  int nsrc = srcs.size();
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && nsrc > 0) {
+    double smin(1.0e+99), smax(-1.0e+99);
     std::vector<double> volumes;
 
     for (int i = 0; i < srcs.size(); ++i) {
@@ -275,14 +277,12 @@ void Flow_PK::VV_PrintSourceExtrema() const
     tmp = smax;
     mesh_->get_comm()->MaxAll(&tmp, &smax, 1);
 
-    if (MyPID == 0) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "sources: min=" << smin << " max=" << smax << "  volumes: ";
-      for (int i = 0; i < std::min(5, (int)srcs.size()); ++i) {
-        *vo_->os() << volumes[i] << " ";
-      }
-      *vo_->os() << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "sources: min=" << smin << " max=" << smax << "  volumes: ";
+    for (int i = 0; i < std::min(5, (int)srcs.size()); ++i) {
+      *vo_->os() << volumes[i] << " ";
     }
+    *vo_->os() << std::endl;
   }
 }
 

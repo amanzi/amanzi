@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
 
@@ -42,7 +41,7 @@
 * **************************************************************** */
 template<class Analytic>
 void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
-              const std::string& disc_method = "mfd: default") {
+              const std::string& disc_method = "electromagnetics") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -122,7 +121,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
-  olist.set<std::string>("discretization primary", disc_method);
+  olist.sublist("schema electric").set<std::string>("method", disc_method);
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -179,37 +178,34 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(1e-12, true, true);
 
-  // Solve the problem.
-  ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
+  // re init with a solver...
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "default", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
+  
   CompositeVector& rhs = *global_op->rhs();
-  solver.ApplyInverse(rhs, solution);
+  global_op->ApplyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-10);
 
-  int num_itrs = solver.num_itrs();
+  int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "electric solver (pcg): ||r||=" << global_op->residual() 
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute electric error
@@ -220,7 +216,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   if (MyPID == 0) {
     el2_err /= enorm;
     printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver.num_itrs(), rhs.GlobalLength());
+            global_op->num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }
@@ -229,7 +225,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
 TEST(CURL_CURL_LINEAR) {
   CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false);
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
+  // CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
 }
 
 TEST(CURL_CURL_NONLINEAR) {
@@ -238,5 +234,5 @@ TEST(CURL_CURL_NONLINEAR) {
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
   CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
+  // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }

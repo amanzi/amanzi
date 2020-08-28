@@ -7,7 +7,6 @@
 
 #include "exceptions.hh"
 #include "FnBaseDefs.hh"
-#include "LinearOperatorGMRES.hh"
 #include "SolverNox.hh"
 #include "SolverFnBase.hh"
 

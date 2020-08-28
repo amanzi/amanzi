@@ -171,7 +171,7 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
 Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<std::string>("preconditioner type", "ml");
+  out_list.set<std::string>("preconditioning method", "ml");
 
   MemoryManager mm;
 
@@ -231,7 +231,7 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
 Teuchos::ParameterList InputConverterU::TranslateBILU_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<std::string>("preconditioner type", "block ilu");
+  out_list.set<std::string>("preconditioning method", "block ilu");
 
   MemoryManager mm;
 
@@ -285,7 +285,7 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
 Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<std::string>("preconditioner type", "boomer amg");
+  out_list.set<std::string>("preconditioning method", "boomer amg");
 
   MemoryManager mm;
 

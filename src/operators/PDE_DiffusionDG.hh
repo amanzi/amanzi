@@ -81,10 +81,6 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   // penalty coefficeint
   std::shared_ptr<std::vector<double> > Kf_;
 
-  // operator and schemas
-  Schema global_schema_col_, global_schema_row_;
-  Schema local_schema_col_, local_schema_row_;
-
   // other operators
   Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;
 

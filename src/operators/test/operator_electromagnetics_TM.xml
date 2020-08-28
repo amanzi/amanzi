@@ -10,9 +10,12 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="electromagnetics operator">
-      <Parameter name="schema" type="Array(string)" value="{node}"/>
-      <Parameter name="discretization primary" type="string" value="mfd: default"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
+      <ParameterList name="schema electric">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node}"/>
+        <Parameter name="method" type="string" value="electromagnetics"/>
+        <Parameter name="method order" type="int" value="0"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -44,7 +47,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="1"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>

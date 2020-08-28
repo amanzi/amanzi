@@ -211,8 +211,9 @@ void HeatConduction::Init(
 
   // create preconditoner
   Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  op_->InitializePreconditioner(slist);
-  op_->UpdatePreconditioner();
+  op_->set_inverse_parameters(slist);
+  op_->InitializeInverse();
+  op_->ComputeInverse();
 }
 
 
@@ -277,8 +278,9 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_->AssembleMatrix();
 
   Teuchos::ParameterList pc_list = plist_.sublist("preconditioners").sublist("Hypre AMG");
-  op_->InitializePreconditioner(pc_list);
-  op_->UpdatePreconditioner();
+  op_->set_inverse_parameters(pc_list);
+  op_->InitializeInverse();
+  op_->ComputeInverse();
 }
 
 

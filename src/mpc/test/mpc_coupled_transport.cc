@@ -63,7 +63,8 @@ using namespace Amanzi::AmanziGeometry;
   cycle_driver.Go();
 
   const auto& tcc_m = *S->GetFieldData("total_component_concentration")->ViewComponent("cell");
-  double cmin(1e+99), cmax(-1e+99);
+  double cmin(1e+99);
+  double cmax = -1e+99;
   for (int c = 0; c < 216; ++c) {
     const auto& xc = mesh->cell_centroid(c);
     if (std::fabs(xc[0] - 5.5) < 1e-3) {

@@ -359,8 +359,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // has been already populated during functional evaluation.
  
   // finalize preconditioner
-  op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->UpdatePreconditioner();
+  op_pc_solver_->ComputeInverse();
 }
 
 

@@ -487,7 +487,7 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
-    amanzi_arch         ='"${amanzi_arch}"'
+    amanzi_arch         = '"${amanzi_arch}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -1444,25 +1444,49 @@ function define_install_directories
 # ---------------------------------------------------------------------------- #
 function define_nersc_options
 {
-  shared=$FALSE
-  prefer_static=$TRUE
-  exec_static=$TRUE
-  prg_env="gnu"
-    
-  libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
-  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
-                 -DMPI_EXEC:STRING=srun \
-                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
-                 -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                 -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                 -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
-  
-  arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
-                    -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
-  echo "Setting ARCH for: NERSC"
-  echo "ARCH TPL OPTS = " ${arch_tpl_opts}
-  echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
+  if [ "${shared}" -eq "${FALSE}" ]; then
+
+    prefer_static=$TRUE
+    exec_static=$TRUE
+    prg_env="gnu"
+    
+    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+  
+   arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                     -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  elif [ "${shared}" -eq "${TRUE}" ]; then
+
+    prefer_static=$FALSE
+    exec_static=$FALSE
+    prg_env="gnu"
+    
+    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+  
+    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  fi
+
+   echo ""
+   echo "Setting ARCH:        NERSC"
+   echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
+   echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
+   echo ""
+
 }
 
 function define_summit_options

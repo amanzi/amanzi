@@ -44,7 +44,6 @@ herr_t dataset_info(hid_t loc_id, const char *name, void *empty)
 herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap, int *elemmap)
 {
   hid_t dataset_id, dataspace;
-  herr_t status;
   int rank, num;
   //hsize_t *cdims, *mdims;
   
@@ -70,8 +69,8 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     double *data = new double[cdims[0]] ;
     double *new_data = new double[cdims[0]];
     std::cout << "    E>> doing FLOAT read" << std::endl;
-    status = H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) ;
-    status = H5Dclose(dataset_id) ;
+    H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+    H5Dclose(dataset_id);
     
     // unpermute data
     std::cout << "    E>> compare "<<cdims[0]<<" to #nodes="<<num_nodes<<" or #elems="<<num_elems<< std::endl;
@@ -94,10 +93,10 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     dataset_id = H5Dcreate(new_fileid, name, ds_ntype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     if (cdims[0] == num_nodes || cdims[0] == num_elems) {
       std::cout << "    E>> write permuted data" << std::endl;
-      status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
+      H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
     } else {    
       std::cout << "    E>> write straight data" << std::endl;
-      status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+      H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     }
     delete[] data;
     delete[] new_data;
@@ -107,8 +106,8 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     int *data = new int[cdims[0]] ;
     int *new_data = new int[cdims[0]];
     std::cout << "    E>> doing INT read" << std::endl;
-    status = H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) ;
-    status = H5Dclose(dataset_id) ;
+    H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+    H5Dclose(dataset_id);
     
     // unpermute data
     
@@ -129,10 +128,10 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     dataset_id = H5Dcreate(new_fileid, name, ds_ntype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     if (cdims[0] == num_nodes || cdims[0] == num_elems) {
       std::cout << "    E>> write permuted data" << std::endl;
-      status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
+      H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
     } else {    
       std::cout << "    E>> write straight data" << std::endl;
-      status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+      H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     }
     delete[] data;
     delete[] new_data;

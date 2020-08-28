@@ -25,7 +25,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -119,29 +118,20 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // solve the problem
-  Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                         .sublist("Belos GMRES")
-                                         .sublist("belos gmres parameters");
-  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorBelosGMRES<
-     Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
-  solver->Init(lop_list);
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+          "Belos GMRES", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();
-  solver->ApplyInverse(rhs, *solution);
+  global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (belos gmres): ||r||=" << solver->residual()
-              << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (belos gmres): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs()
+              << " code=" << global_op->returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -161,10 +151,10 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 15);
+    CHECK(global_op->num_itrs() < 15);
   }
 }
 

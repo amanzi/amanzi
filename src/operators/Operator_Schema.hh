@@ -1,9 +1,9 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -20,12 +20,14 @@
 
 #include "DenseVector.hh"
 
-#include "Op_Node_Node.hh"
 #include "Operator.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
+
+class Op_Node_Node;
+class Op_MeshInjection;
 
 class Operator_Schema : public Operator {
  public:
@@ -53,8 +55,6 @@ class Operator_Schema : public Operator {
 
   // required methods
   // -- global methods
-  virtual void SymbolicAssembleMatrix() override;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;
 
   // -- visit methods for Apply
@@ -65,6 +65,8 @@ class Operator_Schema : public Operator {
   virtual int ApplyMatrixFreeOp(const Op_Node_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const override;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
+      const CompositeVector& X, CompositeVector& Y) const override;
+  virtual int ApplyMatrixFreeOp(const Op_MeshInjection& op,
       const CompositeVector& X, CompositeVector& Y) const override;
 
   // -- visit methods for symbolic assemble
@@ -80,7 +82,10 @@ class Operator_Schema : public Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;
-  
+  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const override;
+
   // -- visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
@@ -94,25 +99,12 @@ class Operator_Schema : public Operator {
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
-
-  // -- local <-> global communications
-  virtual void ExtractVectorCellOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorCellOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
-
-  virtual void ExtractVectorFaceOp(int f, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorFaceOp(int f, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
-
-  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
+  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const override;
 
   // debugging methods
-  int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
+  virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
 };
 
 }  // namespace Operators
@@ -121,5 +113,5 @@ class Operator_Schema : public Operator {
 
 #endif
 
-    
+
 

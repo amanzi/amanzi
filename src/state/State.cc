@@ -1008,7 +1008,7 @@ void State::InitializeEvaluators() {
   VerboseObject vo("State", state_plist_); 
 
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo.getOSTab();
       *vo.os() << "processing evaluator \"" << f_it->first << "\"\n";
     }

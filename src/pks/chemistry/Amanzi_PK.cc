@@ -674,7 +674,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   current_time_ = saved_time_ + dt;
 
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
-  int cmax(-1), cmin(-1), ierr(0);
+  int cmax(-1), ierr(0);
 
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < num_cells; ++c) {
@@ -692,7 +692,6 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
       if (min_itrs > num_itrs) {
         min_itrs = num_itrs;
-        cmin = c;
       }
       avg_itrs += num_itrs;
     } catch (ChemistryException& geochem_err) {

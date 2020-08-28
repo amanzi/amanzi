@@ -784,8 +784,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Get the number of owned (non-ghost) cells for the mesh.
   unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  int max_itrs (0), min_itrs(10000000), avg_itrs(0);
-  int imax(-1), imin(-1);
+  int max_itrs (0), avg_itrs(0), imax(-1);
 
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
@@ -795,10 +794,6 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (max_itrs < num_itrs) {
         max_itrs = num_itrs;
         imax = cell;
-      }
-      if (min_itrs > num_itrs) {
-        min_itrs = num_itrs;
-        imin = cell;
       }
       avg_itrs += num_itrs;
     } else {

@@ -44,13 +44,13 @@ int MeshAudit::Verify() const
 {
   int status = 0;
 
-  typedef Graph::vertex_descriptor Vertex;
-  std::list<Vertex> run_order;
+  typedef Graph::vertex_descriptor GraphVertex;
+  std::list<GraphVertex> run_order;
   topological_sort(g, std::front_inserter(run_order));
 
   mark_do_not_run vis;
 
-  for (std::list<Vertex>::iterator itr = run_order.begin(); itr != run_order.end(); ++itr) {
+  for (auto itr = run_order.begin(); itr != run_order.end(); ++itr) {
     if (g[*itr].run) {
       os << "Checking " << g[*itr].name << " ..." << std::endl;
       if (((*this).*(g[*itr].test))()) {

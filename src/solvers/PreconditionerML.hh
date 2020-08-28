@@ -2,9 +2,9 @@
 //! Trilinos ML smoothed aggregation multigrid.
 
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -12,7 +12,7 @@
 
 /*!
 
-This is provided when using the `"preconditioner type`"=`"ml`" in the
+This is provided when using the `"preconditioning method`"=`"ml`" in the
 `Preconditioner`_ spec.
 
 .. warning:: no input spec defined
@@ -58,30 +58,43 @@ Example:
 #include "Preconditioner.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
 class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerML() {};
-  ~PreconditionerML() {};
+  PreconditionerML() :
+      Preconditioner(),
+      initialized_(false) {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy();
+  virtual ~PreconditionerML() {
+    // unclear whether this is needed or not...  It seems that it
+    // ought to be, but destructors crash occassionally if it is used.
+    //    if (ML_.get()) ML_->DestroyPreconditioner();
+  }
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
+			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
 
-  int returned_code() { return returned_code_; }
+  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
+  virtual void InitializeInverse() override final;
+  virtual void ComputeInverse() override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+
+  virtual int returned_code() const override final { return returned_code_; }
+  virtual std::string returned_code_string() const override final {
+    if (returned_code_ == 0) return "success";
+    return "PreconditionerML: unknown error";
+  }
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
+  mutable int returned_code_;
   bool initialized_;
-  int returned_code_;
 };
 
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi
 
 

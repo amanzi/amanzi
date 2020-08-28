@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "RemapUtils.hh"
-#include "LinearOperatorFactory.hh"
+#include "InverseFactory.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -54,6 +54,11 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
   std::string linear_solver = plist.get<std::string>("linear solver");
+  Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);
+  AmanziSolvers::setMakeOneIterationCriteria(lin_solve_list);
+  auto solver = AmanziSolvers::createIterativeMethod(lin_solve_list, op_preconditioner_);
+  solver->InitializeInverse();
+  
   Teuchos::ParameterList& tmp_list = plist.sublist("picard parameters");
   int max_itrs_nonlinear = tmp_list.get<int>("maximum number of iterations", 400);
   double residual_tol_nonlinear = tmp_list.get<double>("convergence tolerance", 1e-8);
@@ -93,20 +98,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
     AddSourceTerms(*rhs);
 
-    // create preconditioner
-    op_preconditioner_->AssembleMatrix();
-    op_preconditioner_->UpdatePreconditioner();
+    // update inverse
+    solver->ComputeInverse();
 
     // check convergence of non-linear residual
     op_preconditioner_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
-
-    // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(linear_solver, *linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 

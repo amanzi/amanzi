@@ -184,7 +184,7 @@ void ObservableSolute::ComputeObservation(
         mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
 
         int sign, c = cells[0];
-        const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &sign);
+        mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);

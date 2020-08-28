@@ -95,8 +95,6 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
     
-  const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-    
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasField("total_component_concentration")) {
       Errors::Message msg;

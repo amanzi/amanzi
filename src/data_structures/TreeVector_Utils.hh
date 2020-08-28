@@ -15,6 +15,7 @@
 
 namespace Amanzi {
 
+
 // Create a BFS-ordered list of TreeVector(Space) nodes.
 template<class T>
 void
@@ -60,7 +61,6 @@ collectTreeVectorLeaves(T& tv) {
       leaves.push_back(*it);
     }
   }
-  
   return leaves;
 }
 
@@ -78,8 +78,12 @@ collectTreeVectorLeaves_const(const T& tv) {
       leaves.push_back(*it);
     }
   }
-  
   return leaves;
+}
+
+template<class T>
+int getNumTreeVectorLeaves(const T& tv) {
+  return collectTreeVectorLeaves_const(tv).size();
 }
 
 
