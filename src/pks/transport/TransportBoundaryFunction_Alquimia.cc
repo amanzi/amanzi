@@ -73,9 +73,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
 TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
 {
   std::string cond_name = (*f_)(0);
-  std::cout<<"CondName2: "<<cond_name<<"\n";
   chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
-  std::cout<<"CondName3: "<<cond_name<<"\n";
 }
 
 
@@ -113,7 +111,6 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
 void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new) 
 {
   std::string cond_name = (*f_)(t_new);
-  std::cout<<"CondName: "<<cond_name<<"\n";
   // Loop over sides and evaluate values.
   for (auto it = begin(); it != end(); ++it) {
     // Find the index of the cell we're in.
