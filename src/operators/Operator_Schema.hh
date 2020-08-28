@@ -103,22 +103,6 @@ class Operator_Schema : public Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
 
-  // -- local <-> global communications
-  virtual void ExtractVectorCellOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorCellOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
-
-  virtual void ExtractVectorFaceOp(int f, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorFaceOp(int f, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
-
-  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const override;
-  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const override;
-
   // debugging methods
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const override;
 };

@@ -116,6 +116,7 @@ class InputConverter {
   // parse various nodes
   void ParseVersion_();
   void ParseConstants_();
+  void ParseGeochemistry_();
   void FilterNodes(const std::string& filter);
 
   // auto-generated input files

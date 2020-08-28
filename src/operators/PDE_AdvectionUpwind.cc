@@ -40,12 +40,6 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
     global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
 
-    if (plist.get<bool>("surface operator", false)) {
-      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name_, mesh_));
-    } else {
-      local_op_ = Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
-    }
-
   } else {
     // constructor was given an Operator
     global_schema_row_ = global_op_->schema_row();
@@ -55,18 +49,16 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
       Errors::Message msg;
       msg << "Operators: global schema for adding advection operator must contain CELL dofs.\n";
       Exceptions::amanzi_throw(msg);
-    } else {
-      mesh_ = global_op_->DomainMap().Mesh();
-
-      if (plist.get<bool>("surface operator", false)) {
-        local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name_, mesh_));
-      } else {
-        local_op_ = Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
-      }
     }
   }
 
   // register the advection Op
+  if (plist.get<bool>("surface operator", false)) {
+    local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name_, mesh_));
+  } else {
+    local_op_ = Teuchos::rcp(new Op_Face_Cell(name_, mesh_));
+  }
+
   global_op_->OpPushBack(local_op_);
 }
 

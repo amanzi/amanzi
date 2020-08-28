@@ -10,10 +10,11 @@
            Erin Barker (Erin.Barker@pnnl.gov)
 */
 
-#include <sstream>
-#include <fstream>
-#include <string>
 #include <algorithm>
+#include <fstream>
+#include <locale>
+#include <sstream>
+#include <string>
 #include <sys/stat.h>
 
 // TPLs
@@ -242,6 +243,35 @@ void InputConverter::ParseConstants_()
         constants_area_mass_flux_[name] = value;
       } else if (type == TYPE_NONE) {
         constants_[name] = value;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Verify miscallenous assumptions for specific engines.
+****************************************************************** */
+void InputConverter::ParseGeochemistry_()
+{
+  bool flag;
+  DOMNode* node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) return;
+
+  std::string engine = GetAttributeValueS_(node, "engine");
+
+  node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+  if (flag && engine.substr(0, 10) == "crunchflow") {
+    std::vector<DOMNode*> children = GetChildren_(node, "constraint", flag);
+    
+    for (int i = 0; i < children.size(); ++i) {
+      std::string name = GetAttributeValueS_(children[i], "name");
+      std::string tmp(name);
+      transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+      if (tmp != name) {
+        Errors::Message msg;
+        msg << "CrunchFlow uses lower-case for geochemical constraint name, \"" << name << "\" does not comply.\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }

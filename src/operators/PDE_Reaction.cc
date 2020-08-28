@@ -55,7 +55,6 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
 
   } else {
     // constructor was given an Operator
@@ -65,11 +64,10 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
     local_schema_row_.Init(mfd_, mesh_, base);
     local_schema_col_ = local_schema_row_;
-
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
+  local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   global_op_->OpPushBack(local_op_);
 }
 

@@ -437,22 +437,6 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
-  // local <-> global communications
-  virtual void ExtractVectorCellOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorCellOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
-
-  virtual void ExtractVectorFaceOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorFaceOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
-
-  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const;
-
   // deep copy for building interfaces to TPLs, mainly to solvers
   // -- composite vectors
   void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
