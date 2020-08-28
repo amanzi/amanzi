@@ -29,6 +29,7 @@
 #include "TreeVector.hh"
 #include "TreeVectorSpace.hh"
 #include "VerboseObject.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -42,7 +43,7 @@ class TreeOperator_BlockDiagonalPreconditioner;
 }
 
 class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
-public:
+ public:
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVector::VectorSpace_t;
 
@@ -158,7 +159,7 @@ public:
 
 
  protected:
-int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
+  int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
 
  private:
   friend Impl::TreeOperator_BlockDiagonalPreconditioner;
@@ -224,8 +225,14 @@ class TreeOperator_BlockDiagonalPreconditioner {
   TreeOperator& op_;
 };
 
+//
+// Nonmember function that flattens the TreeOperator into a 2D array of only
+// its leaf Operators.  Returns the shape (n_leaves_row, n_leaves_col)
+//
 std::pair<int,int>
-collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves, std::size_t i, std::size_t j);
+collectTreeOperatorLeaves(TreeOperator& tm,
+                          std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
+                          std::size_t i, std::size_t j);
 
 } // namespace Impl
 
