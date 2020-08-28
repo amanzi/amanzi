@@ -252,7 +252,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       // add empty operator to have a well-defined global operator pointer
       auto pde0 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
       auto global_op = pde0->global_operator();
-      op_preconditioner_->SetOperatorBlock(row, col, global_op);
+      op_preconditioner_->set_operator_block(row, col, global_op);
       kr_c.PutScalar(0.0);
       pde0->AddAccumulationTerm(*kr, "cell");
 
@@ -464,7 +464,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   for (int i = 0; i < num_primary_ + 2; ++i) {
     auto solc = EquationToSolution(i);
     auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    op_preconditioner_->SetOperatorBlock(n, i, pde->global_operator());
+    op_preconditioner_->set_operator_block(n, i, pde->global_operator());
  
     // -- derivatives
     Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;

@@ -52,6 +52,8 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
   // only assembled matrix is allowed
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
 
+  virtual void set_operator_block( std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op);
+
  private:
   Teuchos::RCP<TreeVectorSpace> tvs_flat_;
   Teuchos::RCP<SuperMap> smap_flat_;

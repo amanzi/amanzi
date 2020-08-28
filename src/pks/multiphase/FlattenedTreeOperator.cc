@@ -22,7 +22,8 @@ namespace Operators {
 
 FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) 
 {
-  tvs_ = tvs;
+  row_map_ = tvs;
+  col_map_ = tvs;
   block_diagonal_ = false;
 
   Schema schema;
@@ -55,15 +56,16 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
   }
 
   // resize the blocks
-  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<Operator> >(n_blocks, Teuchos::null));
+  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<TreeOperator> >(n_blocks, Teuchos::null));
 
   // first map supports solvers which use casual tree vectors
   // second map helps matrix assembly from smaller-size blocks
-  smap_ = createSuperMap(*tvs_);
+  row_supermap_ = createSuperMap(*row_map_);
+  col_supermap_ = row_supermap_;
   if (flag) 
     smap_flat_ = createSuperMap(*tvs_flat_);
   else
-    smap_flat_ = smap_;
+    smap_flat_ = row_supermap_;
 }
 
 
@@ -85,13 +87,13 @@ void FlattenedTreeOperator::SymbolicAssembleMatrix()
     int block_col(-1);
     for (int col = 0; col != n_blocks; ++col) {
       if (blocks_[row][col] != Teuchos::null) {
-        an_op = blocks_[row][col];
+        an_op = blocks_[row][col]->get_operator();
         if (block_col != row) block_col = col;
       }
     }
     AMANZI_ASSERT(block_col >= 0);
 
-    cvs_vec.push_back(blocks_[row][block_col]->RangeMap());
+    cvs_vec.push_back(blocks_[row][block_col]->get_operator()->RangeMap());
     cvs_names.push_back(std::to_string(row));
   }
 
@@ -103,9 +105,10 @@ void FlattenedTreeOperator::SymbolicAssembleMatrix()
   // fill the graph
   for (int row = 0; row != n_blocks; ++row) {
     for (int col = 0; col != n_blocks; ++col) {
-      Teuchos::RCP<const Operator> block = blocks_[row][col];
+      Teuchos::RCP<const TreeOperator> block = blocks_[row][col];
       if (block != Teuchos::null) {
-        block->SymbolicAssembleMatrix(*smap_flat_, *graph, row, col);
+        auto op = block->get_operator();
+        op->SymbolicAssembleMatrix(*smap_flat_, *graph, row, col);
       }
     }
   }
@@ -131,15 +134,42 @@ void FlattenedTreeOperator::AssembleMatrix()
   // check that each row has at least one non-null operator block
   for (int row = 0; row != n_blocks; ++row) {
     for (int col = 0; col != n_blocks; ++col) {
-      Teuchos::RCP<const Operator> block = blocks_[row][col];
+      Teuchos::RCP<const TreeOperator> block = blocks_[row][col];
       if (block != Teuchos::null) {
-        block->AssembleMatrix(*smap_flat_, *Amat_, row, col);
+        auto op = block->get_operator();
+        op->AssembleMatrix(*smap_flat_, *Amat_, row, col);
       }
     }
   }
 
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+void FlattenedTreeOperator::set_operator_block(
+   std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op)
+{
+  auto row_cvs = op->get_row_map();
+  auto col_cvs = op->get_col_map();
+
+  auto row_tvs = Teuchos::rcp(new TreeVectorSpace());
+  auto tmp1 = Teuchos::rcp(new TreeVectorSpace());
+  tmp1->SetData(row_cvs);
+  row_tvs->PushBack(tmp1);
+
+  auto col_tvs = Teuchos::rcp(new TreeVectorSpace());
+  auto tmp2 = Teuchos::rcp(new TreeVectorSpace());
+  tmp2->SetData(col_cvs);
+  col_tvs->PushBack(tmp2);
+
+  Teuchos::ParameterList plist;
+  auto top = Teuchos::rcp(new TreeOperator(row_tvs, col_tvs, plist));
+  top->set_operator(op);
+  set_block(i, j, top);
 }
 
 

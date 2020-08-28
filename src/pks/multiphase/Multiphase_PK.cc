@@ -20,6 +20,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "InverseFactory.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"

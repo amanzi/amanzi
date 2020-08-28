@@ -101,10 +101,8 @@ TEST(MESH_DEFORM2D)
       double volume = mesh->cell_volume(j);
       CHECK_EQUAL(volume,0.5);
     }
-
   } // for each framework i
 }
-
 
 
 TEST(MESH_DEFORM3D)
@@ -161,11 +159,10 @@ TEST(MESH_DEFORM3D)
 
 
     // Deform the mesh
-
     Amanzi::AmanziMesh::Entity_ID_List nodeids;
     Amanzi::AmanziGeometry::Point_List newpos, finpos;
 
-    int status, nnodes;
+    int status, nnodes(0);
     if (nproc == 1) {
 
       nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
@@ -191,22 +188,17 @@ TEST(MESH_DEFORM3D)
       
       std::cerr << "Parallel deformation not implemented" << std::endl;
       status = 0;
-
     }
 
     CHECK_EQUAL(status,1);
 
 
     // Check the deformations
-
     for (int j = 0; j < nnodes; j++) {
       Amanzi::AmanziGeometry::Point diff = finpos[j]-newpos[j];
       CHECK_EQUAL(diff[0],0.0);
       CHECK_EQUAL(diff[1],0.0);
       CHECK_EQUAL(diff[2],0.0);
     }
-
-  } // for each framework i
-
-
+  }
 }
