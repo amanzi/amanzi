@@ -1,9 +1,9 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -57,7 +57,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
@@ -95,7 +95,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     }
   }
 
-  // create space for diffusion operator 
+  // create space for diffusion operator
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
@@ -106,10 +106,10 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
 
-  // create source 
+  // create source
   CompositeVector source(*cvs);
   source.PutScalarMasterAndGhosted(0.0);
-  
+
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -119,7 +119,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   // MAIN LOOP
   for (int n = 0; n < 240; n+=50) {
     double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
-    
+
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("mixed diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
@@ -133,7 +133,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
                         + Operators::OPERATOR_SCHEMA_DOFS_CELL));
     CHECK(schema_prec_dofs == (Operators::OPERATOR_SCHEMA_DOFS_FACE
                              + Operators::OPERATOR_SCHEMA_DOFS_CELL));
-            
+
     op2.set_factor(factor);  // for developers only
     op2.Setup(K, Teuchos::null, Teuchos::null);
     op2.UpdateMatrices();
@@ -142,7 +142,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
-    
+
     global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
@@ -166,9 +166,9 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     if (MyPID == 0) {
       pl2_err /= pnorm;
       ul2_err /= unorm;
-      printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n", 
-          factor, pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs()); 
-    
+      printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n",
+          factor, pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
+
       CHECK(pl2_err < 0.15 && ul2_err < 0.15);
     }
   }
@@ -241,7 +241,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     }
   }
 
-  // create diffusion operator 
+  // create diffusion operator
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
@@ -250,10 +250,10 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
 
-  // create source 
+  // create source
   CompositeVector source(*cvs);
   source.PutScalarMasterAndGhosted(0.0);
-  
+
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -283,7 +283,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
     op2.ApplyBCs(true, true, true);
-    
+
     global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
@@ -291,7 +291,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     CompositeVector& rhs = *global_op->rhs();
     solution.PutScalar(0.0);
     int ierr = global_op->ApplyInverse(rhs, solution);
-    CHECK(ierr > 0);
+    CHECK(ierr == 0);
 
     // calculate errors
 #ifdef HAVE_MPI
@@ -305,9 +305,9 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     if (MyPID == 0) {
       pl2_err /= pnorm;
       ph1_err /= hnorm;
-      double tmp = op2.nfailed_primary() * 100.0 / ncells_owned; 
-      printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  H1(p)=%9.6g  itr=%3d  nfailed=%4.1f\n", 
-          factor, pl2_err, pinf_err, ph1_err, global_op->num_itrs(), tmp); 
+      double tmp = op2.nfailed_primary() * 100.0 / ncells_owned;
+      printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  H1(p)=%9.6g  itr=%3d  nfailed=%4.1f\n",
+          factor, pl2_err, pinf_err, ph1_err, global_op->num_itrs(), tmp);
 
       CHECK(pl2_err < 0.1 && ph1_err < 0.15);
     }

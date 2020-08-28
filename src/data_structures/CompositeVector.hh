@@ -1,8 +1,12 @@
-/* -------------------------------------------------------------------------
-ATS & Amanzi
+/*
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@ornl.gov)
+*/
+
+/*!
 
 Interface for CompositeVector, an implementation of a slightly improved
 Epetra_MultiVector which spans multiple simplices and knows how to
@@ -11,7 +15,7 @@ communicate itself.
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
-freedom (dofs).  This, along with the Epetra_BlockMap provided from the mesh 
+freedom (dofs).  This, along with the Epetra_BlockMap provided from the mesh
 on a given Entity_kind, is enough to create an Epetra_MultiVector.
 
 Note that construction of the CompositeVector does not allocate the
@@ -180,7 +184,7 @@ class CompositeVector {
     return ghosted ? ghostvec_->size(name) : mastervec_->size(name); }
 
   int GlobalLength() const { return mastervec_->GlobalLength(); }
-  
+
   // Access the VectorSpace for each component.
   Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name,
           bool ghosted=false) const {
@@ -312,11 +316,11 @@ class CompositeVector {
   int PutScalar(double scalar);
 
   // Sets all vectors to value including ghosted elements.
-  // Different name is given so it cannot be used in a templated code.   
+  // Different name is given so it cannot be used in a templated code.
   int PutScalarMasterAndGhosted(double scalar);
 
   // Sets ghost elements to value.
-  // Different name is given so it cannot be used in a templated code.   
+  // Different name is given so it cannot be used in a templated code.
   int PutScalarGhosted(double scalar);
 
   // v(name,:,:) = scalar
@@ -331,7 +335,7 @@ class CompositeVector {
 
   // this <- abs(this)
   int Abs(const CompositeVector& other);
-  
+
   // this(name,:,:) <- scalar*this(name,:,:)
   int Scale(std::string name, double scalar);
 
@@ -343,7 +347,7 @@ class CompositeVector {
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const CompositeVector& other);
-  
+
   // result <- other \dot this
   int Dot(const CompositeVector& other, double* result) const;
 

@@ -386,18 +386,18 @@ struct Problem {
 
   void CreateOperator() {
     op = Teuchos::rcp(new Operators::TreeOperator(tvs));
-    op->SetOperatorBlock(0,0,op00->global_operator());
-    op->SetOperatorBlock(1,1,op11->global_operator());
+    op->set_operator_block(0,0,op00->global_operator());
+    op->set_operator_block(1,1,op11->global_operator());
   }
 
   void CreatePC() {
     pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
-    pc->SetOperatorBlock(0,0,pc00->global_operator());
-    pc->SetOperatorBlock(1,1,pc11->global_operator());
+    pc->set_operator_block(0,0,pc00->global_operator());
+    pc->set_operator_block(1,1,pc11->global_operator());
 
     if (pc01 != Teuchos::null) {
-      pc->SetOperatorBlock(0,1,pc01->global_operator());
-      pc->SetOperatorBlock(1,0,pc10->global_operator());
+      pc->set_operator_block(0,1,pc01->global_operator());
+      pc->set_operator_block(1,0,pc10->global_operator());
     }
   }
   

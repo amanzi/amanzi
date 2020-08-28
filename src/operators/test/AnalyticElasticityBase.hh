@@ -1,9 +1,9 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -32,11 +32,16 @@ class AnalyticElasticityBase {
   // analytic solution for elasticity-type problem
   // -- stiffness/elasticity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  // -- analytic solution 
+  // -- analytic solution
   virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- source term
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
+  void VectorNodeSolution(Amanzi::CompositeVector& u, double t);
+  void VectorCellSolution(Amanzi::CompositeVector& u, double t);
+  void ScalarFaceSolution(Amanzi::CompositeVector& un, double t);
+  void ScalarCellSolution(Amanzi::CompositeVector& p, double t);
 
   // error calculation
   // -- velocity or displacement
@@ -53,6 +58,101 @@ class AnalyticElasticityBase {
 
   int nnodes_owned, ncells_owned, nnodes_wghost, ncells_wghost;
 };
+
+
+/* ******************************************************************
+* Solution in displacement
+****************************************************************** */
+void AnalyticElasticityBase::VectorNodeSolution(
+  Amanzi::CompositeVector& u, double t)
+{
+  // calculate nodal volumes
+  Amanzi::AmanziMesh::Entity_ID_List nodes;
+
+  Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
+
+  Amanzi::CompositeVector vol(*cvs);
+  Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
+  vol.PutScalar(0.0);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    mesh_->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+
+    for (int i = 0; i < nnodes; i++) {
+      vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes;
+    }
+  }
+  vol.GatherGhostedToMaster("node");
+
+  // calculate errors
+  int d = mesh_->space_dimension();
+  Amanzi::AmanziGeometry::Point p(d), ucalc(d);
+  Epetra_MultiVector& u_node = *u.ViewComponent("node");
+
+  for (int v = 0; v < nnodes_owned; ++v) {
+    mesh_->node_get_coordinates(v, &p);
+
+    const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(p, t);
+    for (int i = 0; i < d; ++i) u_node[i][v] = uexact[i];
+  }
+}
+
+
+/* ******************************************************************
+* Solution in velocity or displacement
+****************************************************************** */
+inline
+void AnalyticElasticityBase::VectorCellSolution(
+  Amanzi::CompositeVector& u, double t)
+{
+  int d = mesh_->space_dimension();
+  Amanzi::AmanziGeometry::Point ucalc(d);
+  Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double vol = mesh_->cell_volume(c);
+
+    const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(xc, t);
+    for (int i = 0; i < d; ++i) u_cell[i][c] = uexact[i];
+  }
+}
+
+
+/* ******************************************************************
+* Solution in pressure
+****************************************************************** */
+inline
+void AnalyticElasticityBase::ScalarCellSolution(
+  Amanzi::CompositeVector& p, double t)
+{
+  Epetra_MultiVector& p_cell = *p.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
+    p_cell[0][c] = pressure_exact(xm, t);
+  }
+}
+
+/* ******************************************************************
+* Solution for normal flux
+****************************************************************** */
+inline
+void AnalyticElasticityBase::ScalarFaceSolution(
+  Amanzi::CompositeVector& un, double t)
+{
+  Epetra_MultiVector& un_face = *un.ViewComponent("face");
+
+  int nfaces_owned = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double area = mesh_->face_area(f);
+    un_face[0][f] = (velocity_exact(xf, t) * normal) / area;
+  }
+}
 
 
 /* ******************************************************************
@@ -82,13 +182,13 @@ void AnalyticElasticityBase::VectorNodeError(
     int nnodes = nodes.size();
 
     for (int i = 0; i < nnodes; i++) {
-      vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+      vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes;
     }
   }
   vol.GatherGhostedToMaster("node");
 
   // calculate errors
-  int d = mesh_->space_dimension(); 
+  int d = mesh_->space_dimension();
   Amanzi::AmanziGeometry::Point p(d), ucalc(d);
   Epetra_MultiVector& u_node = *u.ViewComponent("node");
 
@@ -126,7 +226,7 @@ void AnalyticElasticityBase::VectorCellError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->space_dimension(); 
+  int d = mesh_->space_dimension();
   Amanzi::AmanziGeometry::Point ucalc(d);
   Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
@@ -198,9 +298,9 @@ void AnalyticElasticityBase::GlobalOp(std::string op, double* val, int n)
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum") 
+  if (op == "sum")
     mesh_->get_comm()->SumAll(val_tmp, val, n);
-  else if (op == "max") 
+  else if (op == "max")
     mesh_->get_comm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
