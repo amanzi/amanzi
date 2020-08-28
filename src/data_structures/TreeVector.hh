@@ -74,7 +74,7 @@ class TreeVector {
   iterator end() { return iterator(subvecs_.end()); }
   const_iterator end() const { return const_iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
-  
+
   // Access to the sub-vector by index
   Teuchos::RCP<TreeVector> SubVector(int index);
 
@@ -98,9 +98,11 @@ class TreeVector {
   // -- Assorted vector operations, this implements a Vec --
   // total length of the containing data
   int GlobalLength() const;
-  
+
   // this <- scalar
   int PutScalar(double scalar);
+  int PutScalarMasterAndGhosted(double scalar);
+  int PutScalarGhosted(double scalar);
 
   // this <- random
   int Random();
@@ -112,7 +114,7 @@ class TreeVector {
 
   // this <- abs(this)
   int Abs(const TreeVector& other);
-  
+
   // this <- value*this
   int Scale(double value);
 
@@ -121,7 +123,7 @@ class TreeVector {
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const TreeVector& other);
-  
+
   // result <- other \dot this
   int Dot(const TreeVector& other, double* result) const;
 
@@ -158,7 +160,7 @@ class TreeVector {
 };
 
 
-// non-member functions 
+// non-member functions
 inline
 Teuchos::RCP<TreeVector> CreateTVwithOneLeaf(Teuchos::RCP<CompositeVector> cv) {
   auto tvs = CreateTVSwithOneLeaf(cv->Map());

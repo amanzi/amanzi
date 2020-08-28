@@ -52,7 +52,7 @@ class TreeVectorSpace {
   iterator begin() { return iterator(subvecs_.begin()); }
   iterator end() { return iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
-  
+
   // Get a pointer to the sub-vector by index
   Teuchos::RCP<const TreeVectorSpace> SubVector(int index) const;
 
@@ -70,7 +70,7 @@ class TreeVectorSpace {
 };
 
 
-// non-member functions 
+// non-member functions
 inline
 Teuchos::RCP<TreeVectorSpace> CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs) {
   auto tvs = Teuchos::rcp(new TreeVectorSpace());

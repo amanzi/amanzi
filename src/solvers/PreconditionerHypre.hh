@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -21,7 +21,7 @@ spec.
 .. _preconditioner-typed-boomer-amg-spec:
 .. admonition:: preconditioner-typed-boomer-amg-spec:
 
-    * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is dynamic 
+    * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is dynamic
       and approximate the inverse matrix with the prescribed tolerance (in
       the energy norm ???).
 
@@ -31,10 +31,10 @@ spec.
 
     * `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles. Default is 5.
 
-    * `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6 
+    * `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6
       which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!
 
-    * `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0 
+    * `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0
       which specifies a Falgout method. TODO: add others!
 
     * `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
@@ -61,7 +61,7 @@ spec.
       smoothing info, and `"3`'" prints both.
 
 Example:
-  
+
 .. code-block:: xml
 
   <ParameterList name="boomer amg parameters">
@@ -90,7 +90,7 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
     * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
     * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
 
-  
+
 */
 
 #ifndef AMANZI_PRECONDITIONER_BOOMERAMG_HH_
@@ -128,26 +128,23 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {
-    if (returned_code_ == 0) return "not yet applied.";
     return "success";
   }
-  
 
  private:
-
   void Init_();
   void InitBoomer_();
   void InitEuclid_();
-  
+
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
-  
+
   Hypre_Solver method_;
   std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
   int block_index_function_index_;
-  
+
   mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
   Teuchos::RCP<Epetra_RowMatrix> A_;

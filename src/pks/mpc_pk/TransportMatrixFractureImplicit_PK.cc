@@ -1,9 +1,9 @@
 /*
-  This is the mpc_pk component of the Amanzi code. 
+  This is the mpc_pk component of the Amanzi code.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
@@ -20,12 +20,13 @@
 #include "TransportImplicit_PK.hh"
 #include "TreeOperator.hh"
 #include "UniqueLocalIndex.hh"
+#include "InverseFactory.hh"
 
 #include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Constructor
 ******************************************************************* */
 TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
@@ -46,11 +47,11 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
   tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist));
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
 void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
@@ -81,7 +82,7 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Initialization creates a tree operator to assemble global matrix
 ******************************************************************* */
 void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
@@ -104,8 +105,8 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
-  op_tree_matrix_->SetOperatorBlock(0, 0, pk_matrix->op());
-  op_tree_matrix_->SetOperatorBlock(1, 1, pk_fracture->op());
+  op_tree_matrix_->set_operator_block(0, 0, pk_matrix->op());
+  op_tree_matrix_->set_operator_block(1, 1, pk_fracture->op());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -160,10 +161,10 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   op_coupling11_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
   op_coupling11_->Setup(values, 1.0);
-  op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);  
+  op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_tree_matrix_->SetOperatorBlock(0, 1, op_coupling01_->global_operator());
-  op_tree_matrix_->SetOperatorBlock(1, 0, op_coupling10_->global_operator());
+  op_tree_matrix_->set_operator_block(0, 1, op_coupling01_->global_operator());
+  op_tree_matrix_->set_operator_block(1, 0, op_coupling10_->global_operator());
 
   // create a global problem
   pk_matrix->op_adv()->ApplyBCs(true, true, true);
@@ -183,13 +184,13 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
   // ver.CheckMatrixSPD();
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete."
                << vo_->reset() << std::endl << std::endl;
   }
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step.
 ******************************************************************* */
 bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -222,9 +223,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
       // since cells are ordered differenty than points, we need a map
       double tmp = flux[0][first + shift] * dir;
 
-      if (tmp > 0) 
+      if (tmp > 0)
         (*values1)[np] = tmp;
-      else 
+      else
         (*values2)[np] = -tmp;
 
       dir = -dir;
@@ -286,7 +287,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     SaveComponent_(tv_aux, my_solution_, i);
 
     // process error code
-    bool fail = (ierr == 0);
+    bool fail = (ierr != 0);
     if (fail) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Step failed." << std::endl;
@@ -294,7 +295,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     }
   }
 
-  // output 
+  // output
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     pk_matrix->VV_PrintSoluteExtrema(*my_solution_->SubVector(0)->Data()->ViewComponent("cell"), dt, " (m)");
@@ -353,7 +354,7 @@ void TransportMatrixFractureImplicit_PK::SaveComponent_(
     const TreeVector& tv_one, const Teuchos::RCP<TreeVector>& tv_all, int component)
 {
   for (int i = 0; i < 2; ++i) {
-    *(*tv_all->SubVector(i)->Data()->ViewComponent("cell"))(component) = 
+    *(*tv_all->SubVector(i)->Data()->ViewComponent("cell"))(component) =
         *(*tv_one.SubVector(i)->Data()->ViewComponent("cell"))(0);
   }
 }

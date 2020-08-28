@@ -387,5 +387,11 @@ if (BUILD_TESTS)
                                         test/operator_mini1D_nonlinear.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_tree operators_tree
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_tree.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+
 endif()
                 

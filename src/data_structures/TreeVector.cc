@@ -1,9 +1,9 @@
 /*
   Data Structures
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -99,6 +99,36 @@ int TreeVector::PutScalar(double scalar) {
   for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     ierr = (*subvec)->PutScalar(scalar);
+    if (ierr) return ierr;
+  }
+  return ierr;
+}
+
+int TreeVector::PutScalarMasterAndGhosted(double scalar) {
+  // Set all data of this node and all child nodes to scalar.
+  int ierr = 0;
+  if (data_ != Teuchos::null) {
+    ierr = data_->PutScalarMasterAndGhosted(scalar);
+    if (ierr) return ierr;
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    ierr = (*subvec)->PutScalarMasterAndGhosted(scalar);
+    if (ierr) return ierr;
+  }
+  return ierr;
+}
+
+int TreeVector::PutScalarGhosted(double scalar) {
+  // Set all data of this node and all child nodes to scalar.
+  int ierr = 0;
+  if (data_ != Teuchos::null) {
+    ierr = data_->PutScalarGhosted(scalar);
+    if (ierr) return ierr;
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    ierr = (*subvec)->PutScalarGhosted(scalar);
     if (ierr) return ierr;
   }
   return ierr;
@@ -218,7 +248,7 @@ int TreeVector::Abs(const TreeVector& other) {
   }
   return ierr;
 }
-  
+
 
 int TreeVector::Scale(double value) {
   // this <- value*this
@@ -395,12 +425,12 @@ int TreeVector::GlobalLength() const {
   if (data_ != Teuchos::null) {
     total += data_->GlobalLength();
   }
-  
+
   for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     total += (*subvec)->GlobalLength();
   }
   return total;
 };
-  
+
 } // namespace
