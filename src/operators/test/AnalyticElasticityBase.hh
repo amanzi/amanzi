@@ -63,30 +63,8 @@ class AnalyticElasticityBase {
 /* ******************************************************************
 * Solution in displacement
 ****************************************************************** */
-void AnalyticElasticityBase::VectorNodeSolution(
-  Amanzi::CompositeVector& u, double t)
+void AnalyticElasticityBase::VectorNodeSolution(Amanzi::CompositeVector& u, double t)
 {
-  // calculate nodal volumes
-  Amanzi::AmanziMesh::Entity_ID_List nodes;
-
-  Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
-
-  Amanzi::CompositeVector vol(*cvs);
-  Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
-  vol.PutScalar(0.0);
-
-  for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-
-    for (int i = 0; i < nnodes; i++) {
-      vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes;
-    }
-  }
-  vol.GatherGhostedToMaster("node");
-
-  // calculate errors
   int d = mesh_->space_dimension();
   Amanzi::AmanziGeometry::Point p(d), ucalc(d);
   Epetra_MultiVector& u_node = *u.ViewComponent("node");
@@ -104,8 +82,7 @@ void AnalyticElasticityBase::VectorNodeSolution(
 * Solution in velocity or displacement
 ****************************************************************** */
 inline
-void AnalyticElasticityBase::VectorCellSolution(
-  Amanzi::CompositeVector& u, double t)
+void AnalyticElasticityBase::VectorCellSolution(Amanzi::CompositeVector& u, double t)
 {
   int d = mesh_->space_dimension();
   Amanzi::AmanziGeometry::Point ucalc(d);
@@ -113,8 +90,6 @@ void AnalyticElasticityBase::VectorCellSolution(
 
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double vol = mesh_->cell_volume(c);
-
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(xc, t);
     for (int i = 0; i < d; ++i) u_cell[i][c] = uexact[i];
   }
@@ -125,8 +100,7 @@ void AnalyticElasticityBase::VectorCellSolution(
 * Solution in pressure
 ****************************************************************** */
 inline
-void AnalyticElasticityBase::ScalarCellSolution(
-  Amanzi::CompositeVector& p, double t)
+void AnalyticElasticityBase::ScalarCellSolution(Amanzi::CompositeVector& p, double t)
 {
   Epetra_MultiVector& p_cell = *p.ViewComponent("cell");
 
@@ -141,7 +115,7 @@ void AnalyticElasticityBase::ScalarCellSolution(
 ****************************************************************** */
 inline
 void AnalyticElasticityBase::ScalarFaceSolution(
-  Amanzi::CompositeVector& un, double t)
+    Amanzi::CompositeVector& un, double t)
 {
   Epetra_MultiVector& un_face = *un.ViewComponent("face");
 
