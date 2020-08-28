@@ -49,6 +49,7 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
   // string function of geochemical conditions
   Teuchos::RCP<FunctionTabularString> f_;
+  //  Teuchos::RCP<Amanzi::FunctionTabularString> f_;
 
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
