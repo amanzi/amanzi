@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   try {
-    Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+    Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
     prefs.clear(); 
     prefs.push_back(the_framework);
     meshfactory.set_preference(prefs);

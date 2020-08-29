@@ -247,13 +247,13 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   int CopyShadowToMaster(int iops);
 
   // access
-  virtual std::string name() const override { return std::string("Operator (") + schema_string() + ")"; }
+  virtual std::string name() const override { return std::string("Operator (") + schema_string_ + ")"; }
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
 
-  const std::string& schema_string() const { return schema_string_; }
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
+  const std::string& get_schema_string() const { return schema_string_; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
   Teuchos::RCP<SuperMap> get_supermap() const { return smap_; }

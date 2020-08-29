@@ -103,7 +103,7 @@ class DG_Modal : public BilinearForm {
   // miscalleneous
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
-  int order() const { return order_; }
+  int get_order() const { return order_; }
 
   // -- access
   const Basis<AmanziMesh::Mesh>& cell_basis(int c) const { return *basis_[c]; }

@@ -331,7 +331,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xc);
     product *= tmp;
   }
@@ -368,7 +368,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xc);
     product *= tmp;
   }
@@ -419,7 +419,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsFace(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xf);
     product *= tmp;
   }
@@ -597,7 +597,7 @@ void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
   int k0 = poly.order();
 
   // reset polynomial metadata
-  if (integrals.kind() != (Entity_kind)WhetStone::CELL || integrals.id() != c) {
+  if (integrals.get_kind() != (Entity_kind)WhetStone::CELL || integrals.get_id() != c) {
     integrals.set_kind((Entity_kind)WhetStone::CELL);
     integrals.set_id(c);
     k0 = -1;

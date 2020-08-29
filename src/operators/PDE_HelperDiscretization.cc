@@ -99,7 +99,7 @@ void PDE_HelperDiscretization::set_local_op(const Teuchos::RCP<Op>& op)
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  auto base = global_op_->schema_row().base();
+  auto base = global_op_->schema_row().get_base();
 
   for (auto bc : bcs_trial_) {
     bool missing(true);

@@ -476,7 +476,7 @@ void MultiphaseModel2_PK::PopulateBCs(int icomp, bool flag)
 
   // populate boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "pressure") {
+    if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model_p[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -484,7 +484,7 @@ void MultiphaseModel2_PK::PopulateBCs(int icomp, bool flag)
       }
     }
 
-    if (bcs_[i]->bc_name() == "flux") {
+    if (bcs_[i]->get_bc_name() == "flux") {
       if (bcs_[i]->component_name() == "water") { 
         for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
           int f = it->first;
@@ -500,7 +500,7 @@ void MultiphaseModel2_PK::PopulateBCs(int icomp, bool flag)
       }
     }
 
-    if (bcs_[i]->bc_name() == "saturation") {
+    if (bcs_[i]->get_bc_name() == "saturation") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;

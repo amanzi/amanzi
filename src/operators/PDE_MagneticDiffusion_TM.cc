@@ -123,7 +123,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
 ****************************************************************** */
 void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_schema_col_.base() == AmanziMesh::CELL && mesh_->space_dimension() == 2) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 2) {
     Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {

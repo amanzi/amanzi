@@ -41,7 +41,7 @@ class SurfaceCoordinateSystem {
   AmanziGeometry::Point Project(const AmanziGeometry::Point& x, bool flag) const;
 
   // const access
-  const AmanziGeometry::Point& origin() const { return origin_; }
+  const AmanziGeometry::Point& get_origin() const { return origin_; }
   const AmanziGeometry::Point& normal() const { return normal_; }
   const AmanziGeometry::Point& normal_unit() const { return normal_unit_; }
   const std::shared_ptr<std::vector<AmanziGeometry::Point> > tau() const { return tau_; }

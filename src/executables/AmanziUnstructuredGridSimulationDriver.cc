@@ -347,7 +347,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   S->RegisterMesh("domain", mesh); 
   
   if (unstr_mesh_params.isSublist("submesh")) {
-    if (meshfactory.preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
+    if (meshfactory.get_preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
       std::cerr << "Cannot extract a mesh using a non-MSTK framework" << std::endl;
       return Amanzi::Simulator::FAIL;
     }

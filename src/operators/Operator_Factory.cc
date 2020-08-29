@@ -83,13 +83,13 @@ Teuchos::RCP<Operator>
 Operator_Factory::CreateFromSchema()
 {
   AMANZI_ASSERT(schema_row_.size() > 0 && schema_col_.size() > 0);
-  AMANZI_ASSERT(schema_row_.base() == schema_col_.base());
-  AMANZI_ASSERT(schema_row_.base() == AmanziMesh::CELL);
+  AMANZI_ASSERT(schema_row_.get_base() == schema_col_.get_base());
+  AMANZI_ASSERT(schema_row_.get_base() == AmanziMesh::CELL);
 
   if (!plist_.get())
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
 
-  auto base = schema_row_.base();
+  // auto base = schema_row_.get_base();
   int size = schema_row_.size();
   int num1 = std::get<2>(schema_row_[0]);  // number of dofs
 

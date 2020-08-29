@@ -143,7 +143,6 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphaseBCs_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode *node;
-  DOMElement *element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;

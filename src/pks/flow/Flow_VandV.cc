@@ -29,19 +29,19 @@ void Flow_PK::VV_ValidateBCs() const
   std::set<int> pressure_faces, head_faces, flux_faces;
 
   for (int i =0; i < bcs_.size(); i++) {
-    if (bcs_[i]->bc_name() == "pressure") {
+    if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         pressure_faces.insert(it->first);
       }  
     }
 
-    if (bcs_[i]->bc_name() == "flux") {
+    if (bcs_[i]->get_bc_name() == "flux") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         flux_faces.insert(it->first);
       }
     }
 
-    if (bcs_[i]->bc_name() == "head") {
+    if (bcs_[i]->get_bc_name() == "head") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         head_faces.insert(it->first);
       }
@@ -150,7 +150,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
   double tmp, outflow(0.0);
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "seepage") {
+    if (bcs_[i]->get_bc_name() == "seepage") {
       nbcs++;
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         f = it->first;

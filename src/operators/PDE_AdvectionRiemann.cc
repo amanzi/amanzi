@@ -94,9 +94,9 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // register the advection Op
-  if (local_schema_col_.base() == AmanziMesh::CELL) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL) {
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-  } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::FACE) {
     local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 

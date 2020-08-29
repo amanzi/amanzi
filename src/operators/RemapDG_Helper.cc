@@ -182,7 +182,7 @@ void RemapDG_Helper::StaticFaceCoVelocity()
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
     WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
-    const auto& origin = velf_vec_[f][0].origin();
+    const auto& origin = velf_vec_[f][0].get_origin();
 
     for (int i = 0; i < dim_; ++i) {
       map[i][0].Reshape(dim_, std::max(1, order_), true);
@@ -211,7 +211,7 @@ void RemapDG_Helper::StaticCellCoVelocity()
     // space-time cell velocity: v = -j J^{-1} u = -C^t u
     WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
     WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
-    const auto& origin = uc_[c][0].origin();
+    const auto& origin = uc_[c][0].get_origin();
 
     for (int i = 0; i < dim_; ++i) {
       for (int j = 0; j < dim_; ++j) {

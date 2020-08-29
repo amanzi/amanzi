@@ -175,7 +175,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
 
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "no slip" && 
+    if (bcs_[i]->get_bc_name() == "no slip" && 
         bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
       std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
@@ -190,7 +190,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
       }
     }
 
-    if (bcs_[i]->bc_name() == "no slip" && 
+    if (bcs_[i]->get_bc_name() == "no slip" && 
         bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
       std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
       std::vector<double>& bc_value = op_bcs_[mf]->bc_value();
