@@ -111,7 +111,7 @@ TEST(DISPERSION) {
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
-  *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -210,7 +210,7 @@ TEST(DIFFUSION) {
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -315,7 +315,7 @@ TEST(GAS_DIFFUSION) {
 
   Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;

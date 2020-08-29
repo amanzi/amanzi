@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -71,7 +71,8 @@ class IterativeMethodNKA :
 
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
-    return returned_code_;
+    if (returned_code_ <= 0) return 1;
+    return 0;
   }
 
  protected:
@@ -111,7 +112,7 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
 {
   AMANZI_ASSERT(m_.get()); // set_matrices() called
   AMANZI_ASSERT(inited_); // init called
-  
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   nka_->Restart();
@@ -163,7 +164,7 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
     ierr = this->CheckConvergence_(residual_, fnorm);
-    if (ierr) return ierr;            
+    if (ierr) return ierr;
 
     done = num_itrs_ > max_itrs;
   }

@@ -87,8 +87,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   S->GetField("permeability", passwd)->set_initialized();
 
   // -- fluid density and viscosity
-  double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
-  S->GetField("fluid_density", passwd)->set_initialized();
+  double rho = *S->GetScalarData("const_fluid_density", passwd) = 998.0;
+  S->GetField("const_fluid_density", passwd)->set_initialized();
 
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(0.00089);
   S->GetField("viscosity_liquid", passwd)->set_initialized();

@@ -12,6 +12,8 @@
   model, an EOS.
 */
 
+#include "errors.hh"
+
 #include "EOSFactory.hh"
 #include "EOSEvaluator.hh"
 
@@ -113,7 +115,7 @@ void EOSEvaluator::EvaluateField_(
 
   if (molar_dens != Teuchos::null) {
     // evaluate MolarDensity()
-    for (CompositeVector::name_iterator comp=molar_dens->begin(); comp!=molar_dens->end(); ++comp) {
+    for (auto comp=molar_dens->begin(); comp!=molar_dens->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
@@ -128,24 +130,23 @@ void EOSEvaluator::EvaluateField_(
   }
 
   if (mass_dens != Teuchos::null) {
-    for (CompositeVector::name_iterator comp=mass_dens->begin(); comp!=mass_dens->end(); ++comp) {
+    for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
       if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
           molar_dens->HasComponent(*comp)) {
         // calculate MassDensity from MolarDensity and molar mass.
         double M = eos_->MolarMass();
 
-        mass_dens->ViewComponent(*comp,false)->Update(M,
-                *molar_dens->ViewComponent(*comp,false), 0.);
+        mass_dens->ViewComponent(*comp)->Update(M, *molar_dens->ViewComponent(*comp), 0.0);
       } else {
         // evaluate MassDensity() directly
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-        Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+        Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
         int count = dens_v.MyLength();
         for (int id = 0; id != count; ++id) {
           dens_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
-          AMANZI_ASSERT(dens_v[0][id] > 0.);
+          if (dens_v[0][id] < 0.0) Exceptions::amanzi_throw(Errors::CutTimeStep());
         }
       }
     }

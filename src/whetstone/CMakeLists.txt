@@ -57,6 +57,7 @@ add_amanzi_library(whetstone
                           Monomial.cc Polynomial.cc SpaceTimePolynomial.cc VectorObjectsUtils.cc 
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
+                          SplinePolynomial.cc
                           SurfaceCoordinateSystem.cc
                           VEM_NedelecSerendipityType2.cc
                           VEM_RaviartThomasSerendipity.cc

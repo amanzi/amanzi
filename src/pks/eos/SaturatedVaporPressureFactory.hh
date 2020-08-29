@@ -11,21 +11,21 @@
   Self-registering factory for EOS implementations.
 */
 
-#ifndef AMANZI_EOS_VAPOR_PRESSURE_BASE_FACTORY_HH_
-#define AMANZI_EOS_VAPOR_PRESSURE_BASE_FACTORY_HH_
+#ifndef AMANZI_EOS_SATURATED_VAPOR_PRESSURE_FACTORY_HH_
+#define AMANZI_EOS_SATURATED_VAPOR_PRESSURE_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "VaporPressure_Base.hh"
+#include "SaturatedVaporPressure.hh"
 #include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class VaporPressureBaseFactory : public Utils::Factory<VaporPressure_Base> {
+class SaturatedVaporPressureFactory : public Utils::Factory<SaturatedVaporPressure> {
  public:
-  Teuchos::RCP<VaporPressure_Base> CreateVaporPressure(Teuchos::ParameterList& plist);
+  Teuchos::RCP<SaturatedVaporPressure> CreateVaporPressure(Teuchos::ParameterList& plist);
 };
 
 }  // namespace AmanziEOS

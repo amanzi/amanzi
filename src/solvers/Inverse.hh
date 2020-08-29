@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -30,7 +30,8 @@ packages (init(), update(), compute(), apply()):
 - ComputeInverse() requires that values in the operator have now been set.
   Work such as calculating L and U, etc, can now be done.
 
-- ApplyInverse() accepts vectors and applies the inverse.
+- ApplyInverse() accepts vectors and applies the inverse.  It returns 0 on
+  success and 1 on failure.
 
 Note that any stage may be called without invalidating any stage before it, but
 necessitates calling all stages after it.
@@ -71,7 +72,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   set_matrix(const Teuchos::RCP<Operator>& m) {
     set_matrices(m,m);
   }
-  
+
   virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
   virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
 
@@ -108,7 +109,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
   virtual int returned_code() const = 0;
   virtual std::string returned_code_string() const = 0;
-  
+
   std::string name() const { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
@@ -120,7 +121,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
- 
 
-               
+
+
 

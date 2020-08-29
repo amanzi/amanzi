@@ -20,8 +20,8 @@
 #include "EOS_Water.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
-#include "VaporPressure_Water.hh"
-#include "VaporPressureBaseFactory.hh"
+#include "SaturatedVaporPressure_Water.hh"
+#include "SaturatedVaporPressureFactory.hh"
 #include "Viscosity_Constant.hh"
 #include "Viscosity_Water.hh"
 #include "ViscosityBaseFactory.hh"
@@ -42,7 +42,7 @@ Utils::RegisteredFactory<EOS, EOS_IdealGas> EOS_IdealGas::factory_("ideal gas");
 Utils::RegisteredFactory<EOS, EOS_VaporInGas> EOS_VaporInGas::factory_("vapor in gas");
 Utils::RegisteredFactory<EOS, EOS_Water> EOS_Water::factory_("liquid water");
 
-Utils::RegisteredFactory<VaporPressure_Base, VaporPressure_Water> VaporPressure_Water::factory_("water vapor over water/ice");
+Utils::RegisteredFactory<SaturatedVaporPressure, SaturatedVaporPressure_Water> SaturatedVaporPressure_Water::factory_("water vapor over water/ice");
 
 Utils::RegisteredFactory<Viscosity_Base, Viscosity_Constant> Viscosity_Constant::factory_("constant");
 Utils::RegisteredFactory<Viscosity_Base, Viscosity_Water> Viscosity_Water::factory_("liquid water");

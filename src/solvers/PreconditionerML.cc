@@ -1,9 +1,9 @@
 /*
   Solvers
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -31,16 +31,14 @@ PreconditionerML::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
   }
   Preconditioner::set_matrices(m,h);
 }
-  
+
 /* ******************************************************************
- * Apply the preconditioner. 
- * ML's return code is set to 0 if successful, see Trilinos webpages. 
+ * Apply the preconditioner.
+ * ML's return code is set to 0 if successful, see Trilinos webpages.
  ****************************************************************** */
 int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   returned_code_ = ML_->ApplyInverse(v, hv);
-  AMANZI_ASSERT(returned_code_ == 0);
-  returned_code_ = 1;
   return returned_code_;
 }
 

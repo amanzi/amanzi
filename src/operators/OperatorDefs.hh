@@ -1,9 +1,9 @@
 /*
-  Operators 
+  Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -15,8 +15,8 @@
 namespace Amanzi {
 namespace Operators {
 
-// general information about an operator, e.g. a preconditioner may 
-// be wrapped up in an iterative solver or be of a "raw" matrix type 
+// general information about an operator, e.g. a preconditioner may
+// be wrapped up in an iterative solver or be of a "raw" matrix type
 typedef enum { OPERATOR_MATRIX,
                OPERATOR_PRECONDITIONER,
                OPERATOR_PRECONDITIONER_RAW,
@@ -73,7 +73,7 @@ const int OPERATOR_SCHEMA_RULE_SUPERSET = 3;
 //   Dirichlet, Neumann and Mixed are conventional boundary conditions
 //   for 2nd-order operators. Composite (additive) operators may require
 //   special treatment of total flux conditions. Finally some essential
-//   boundary conditions may be imposed in a weak form which leads to 
+//   boundary conditions may be imposed in a weak form which leads to
 //   type2 boundary conditions. See BCs.hh for more detail.
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
@@ -127,13 +127,13 @@ const int OPERATOR_PROPERTY_MAP_CONSTANT = 2;
 const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
 // limiting options
-const int OPERATOR_LIMITER_BARTH_JESPERSEN = 1; 
-const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG = 2; 
-const int OPERATOR_LIMITER_MICHALAK_GOOCH = 3; 
-const int OPERATOR_LIMITER_MICHALAK_GOOCH_DG = 4; 
+const int OPERATOR_LIMITER_BARTH_JESPERSEN = 1;
+const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG = 2;
+const int OPERATOR_LIMITER_MICHALAK_GOOCH = 3;
+const int OPERATOR_LIMITER_MICHALAK_GOOCH_DG = 4;
 const int OPERATOR_LIMITER_TENSORIAL = 5;
 const int OPERATOR_LIMITER_KUZMIN = 6;
-const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL = 7; 
+const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL = 7;
 
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
@@ -144,6 +144,8 @@ const int OPERATOR_LIMITER_STENCIL_E2C = 20;
 const int OPERATOR_LIMITER_STENCIL_F2C = 30;
 const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 40;
 const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 41;
+
+const int OPERATOR_MAX_NUM_FACES = 10; // wild guess at this point...
 
 }  // namespace Operators
 }  // namespace Amanzi

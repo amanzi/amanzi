@@ -191,7 +191,7 @@ template<class Operator,
          class VectorSpace=typename Operator::VectorSpace_t>         
 Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>>
 createIterativeMethod(const std::string& method_name,
-                           Teuchos::ParameterList& inv_list)
+                      Teuchos::ParameterList& inv_list)
 {
   auto& method_list = Impl::getMethodSublist(inv_list, method_name);
 
@@ -227,8 +227,8 @@ template<class Operator,
          class VectorSpace=typename Operator::VectorSpace_t>
 Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createIterativeMethod(Teuchos::ParameterList& inv_list,
-              const Teuchos::RCP<Operator>& m,
-              const Teuchos::RCP<Preconditioner>& h)
+                      const Teuchos::RCP<Operator>& m,
+                      const Teuchos::RCP<Preconditioner>& h)
 {
   auto method_name = inv_list.get<std::string>("iterative method");
   auto inv = createIterativeMethod<Operator,Preconditioner,Vector,VectorSpace>(method_name, inv_list);

@@ -8,21 +8,21 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for an ideal gas air with a molar fraction of water vapor.
+  Base class for saturated vapor pressure.
 */
 
-#ifndef AMANZI_EOS_VAPOR_PRESSURE_BASE_HH_
-#define AMANZI_EOS_VAPOR_PRESSURE_BASE_HH_
+#ifndef AMANZI_EOS_SATURATED_VAPOR_PRESSURE_BASE_HH_
+#define AMANZI_EOS_SATURATED_VAPOR_PRESSURE_BASE_HH_
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class VaporPressure_Base {
+class SaturatedVaporPressure {
  public:
-  virtual ~VaporPressure_Base() {};
+  virtual ~SaturatedVaporPressure() {};
 
-  virtual double SaturatedVaporPressure(double T) = 0;
-  virtual double DSaturatedVaporPressureDT(double T) = 0;
+  virtual double Pressure(double T) = 0;
+  virtual double DPressureDT(double T) = 0;
 };
 
 }  // namespace AmanziEOS

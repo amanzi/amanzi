@@ -104,7 +104,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterLis
     gravity_.set(dim, &(gravity_data[0]));  // do it in complicated way because we
                                             // are not sure if gravity_data is an
                                             // array or vector
-    rho_ = *S->GetScalarData("fluid_density");
+    rho_ = *S->GetScalarData("const_fluid_density");
   }
   
   // Add this source specification to the domain function.

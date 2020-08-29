@@ -2,9 +2,9 @@
 //! Trilinos ML smoothed aggregation multigrid.
 
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -74,7 +74,7 @@ class PreconditionerML : public Preconditioner {
 
   virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
 			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
-  
+
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
@@ -82,8 +82,8 @@ class PreconditionerML : public Preconditioner {
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {
-    if (returned_code_ == 0) return "not yet applied.";
-    return "success";
+    if (returned_code_ == 0) return "success";
+    return "PreconditionerML: unknown error";
   }
 
  private:

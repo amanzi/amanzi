@@ -28,7 +28,7 @@ WRM_BrooksCorey::WRM_BrooksCorey(Teuchos::ParameterList& plist)
   double lambda = plist.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
   double alpha = plist.get<double>("Brooks Corey alpha", FLOW_WRM_EXCEPTION);
   double l = plist.get<double>("Brooks Corey l", FLOW_WRM_BROOKS_COREY_L);
-  double sr = plist.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+  double sr = plist.get<double>("residual saturation liquid", FLOW_WRM_EXCEPTION);
   double pc0 = plist.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
   std::string krel_function = plist.get<std::string>("relative permeability model", "Mualem");
 

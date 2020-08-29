@@ -161,10 +161,10 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80665e+00}"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.002e-03"/>
       </ParameterList>
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
@@ -664,6 +664,7 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{9.89062549999999985e-02}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -809,6 +810,13 @@
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

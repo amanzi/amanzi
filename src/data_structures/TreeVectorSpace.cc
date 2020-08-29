@@ -92,11 +92,23 @@ TreeVectorSpace::SubVector(int index) const{
   return Teuchos::null;
 };
 
+
 void
 TreeVectorSpace::PushBack(const Teuchos::RCP<TreeVectorSpace>& subvec) {
   subvecs_.push_back(subvec);
 };
 
 
+// debugging information
+void TreeVectorSpace::Print(std::ostream& os) const {
+  int n(0); 
+  for (auto it = begin(); it != end(); ++it) {
+    auto cvs = (*it)->Data();
+    os << "SubVector: " << n++ << std::endl;
+    for (auto kt = cvs->begin(); kt != cvs->end(); ++kt) {
+      os << "  component: " << *kt << " (" << cvs->NumVectors(*kt) << ")\n";
+    }
+  }
+};
 
-} // namespace
+}  // namespace Amanzi

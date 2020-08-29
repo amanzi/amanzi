@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -29,8 +29,6 @@ int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
   AMANZI_ASSERT(returned_code_ == 0);
-  // returned_code_ = 0 means success. This is the only code returned by IfPack.
-  returned_code_ = 1;
   return returned_code_;
 }
 
@@ -51,20 +49,20 @@ void PreconditionerHypre::Init_()
 #ifdef HAVE_HYPRE
 #endif
 }
-  
+
 void PreconditionerHypre::InitBoomer_()
 {
   Init_();
 
 #ifdef HAVE_HYPRE
   method_ = BoomerAMG;
-  
+
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
     Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
     Exceptions::amanzi_throw(msg);
   }
-    
+
   // verbosity
   int vlevel_int = 0;
   std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
@@ -167,7 +165,7 @@ void PreconditionerHypre::InitBoomer_()
       // level is generally sufficient.)  Note that the interpolation scheme
       // used will be the same as in the unknown approach - so this is what
       // we call a hybrid systems method.
-      // 
+      //
       if (plist_.isParameter("nodal relaxation levels")) {
         int num_levels = plist_.get<int>("nodal relaxation levels");
 
@@ -210,8 +208,8 @@ void PreconditionerHypre::InitEuclid_()
 
 #ifdef HAVE_HYPRE
   method_ = Euclid;
-  
-  if (plist_.isParameter("verbosity")) 
+
+  if (plist_.isParameter("verbosity"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
             plist_.get<int>("verbosity"))));
 
@@ -239,9 +237,11 @@ void PreconditionerHypre::InitializeInverse()
 {
   funcs_.clear();
   std::string method_name = plist_.get<std::string>("method");
-  if (method_name == "boomer amg") InitBoomer_();
-  else if (method_name == "euclid") InitEuclid_();
-  else {
+  if (method_name == "boomer amg") {
+    InitBoomer_();
+  } else if (method_name == "euclid") {
+    InitEuclid_();
+  } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
     Exceptions::amanzi_throw(msg);
@@ -267,7 +267,7 @@ void PreconditionerHypre::InitializeInverse()
     for (int i=0; i!=block_indices_->size(); ++i) {
       indices[i] = (*block_indices_)[i];
     }
-    funcs_[block_index_function_index_] = 
+    funcs_[block_index_function_index_] =
         Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
   }
 
@@ -275,7 +275,7 @@ void PreconditionerHypre::InitializeInverse()
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
 }
-  
+
 /* ******************************************************************
 * Rebuild the preconditioner using the given matrix A.
 ****************************************************************** */
@@ -286,8 +286,6 @@ void PreconditionerHypre::ComputeInverse()
   IfpHypre_->Compute();
 #endif
 }
-
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

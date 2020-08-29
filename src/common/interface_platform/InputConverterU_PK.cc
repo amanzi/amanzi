@@ -102,6 +102,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
     solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
     solver->set<bool>("modify correction", modify_correction);
+    solver->set<std::string>("monitor", "monitor update");
   }
   else if (nonlinear_solver == "nka") {
     bdf1.set<std::string>("solver type", "nka");
@@ -376,6 +377,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
+    if (nonlinear_coef != "") tmp_list.set("nonlinear coefficient", nonlinear_coef);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
   }

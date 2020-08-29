@@ -105,4 +105,6 @@
 #define FLOW_BOTH_REGIMES               3
 #define TRANSPORT_SUBCYCLING            true
 
+#define MOLAR_MASS_WATER                0.0180153333333
+
 #endif

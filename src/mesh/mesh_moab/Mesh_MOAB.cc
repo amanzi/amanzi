@@ -2058,7 +2058,7 @@ const Epetra_Map& Mesh_MOAB::exterior_node_map(bool include_ghost) const {
 Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
                                           const Entity_ID entid) const
 {
-  moab::EntityHandle ent;
+  moab::EntityHandle ent(0);
   unsigned char pstatus;
 
   switch (kind) {
@@ -2075,7 +2075,7 @@ Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind,
     break;
 
   default:
-    std::cerr << "Global ID requested for unknown entity type" << std::endl;
+    AMANZI_ASSERT("Global ID requested for unknown entity type");
   }
 
   mbcomm_->get_pstatus(ent, pstatus);

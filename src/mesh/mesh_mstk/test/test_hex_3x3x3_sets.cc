@@ -138,6 +138,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can get the number of entities in the set
         
         int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size > 0);
         
         // Verify that we can retrieve the set entities
         
@@ -162,6 +163,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can get the number of entities in the set
         
         int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+        CHECK(set_size > 0);
         
         // Verify that we can retrieve the set entities
         
@@ -236,6 +238,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
           // Verify that we can get the number of entities in the set
             
           int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+          CHECK(set_size > 0);
             
           // Verify that we can retrieve the set entities
             
@@ -262,6 +265,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can get the number of entities in the set
     
         int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size > 0);
     
         // Verify that we can retrieve the set entities
     
@@ -287,6 +291,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Verify that we can get the number of entities in the set
       
       int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
+      CHECK(set_size > 0);
       
       // Verify that we can retrieve the set entities
       
@@ -320,6 +325,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can get the number of entities in the set
   
         int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size > 0);
     
         // Verify that we can retrieve the set entities
   
@@ -345,6 +351,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can get the number of entities in the set
   
         int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size > 0);
 
         // Verify that we can retrieve the set entities
   
@@ -397,6 +404,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Verify that we can get the number of entities in the set
       
       int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+      CHECK(set_size > 0);
       
       // Verify that we can retrieve the set entities
       

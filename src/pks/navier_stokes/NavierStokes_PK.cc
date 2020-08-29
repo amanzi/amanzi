@@ -115,9 +115,9 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S->HasField("fluid_viscosity")) {
-    if (!S->HasField("fluid_viscosity")) {
-      S->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("const_fluid_viscosity")) {
+    if (!S->HasField("const_fluid_viscosity")) {
+      S->RequireScalar("const_fluid_viscosity", passwd_);
     }
   }
 }
@@ -210,13 +210,13 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- matrix and preconditioner
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-  op_matrix_->SetOperatorBlock(0, 0, op_matrix_elas_->global_operator());
-  op_matrix_->SetOperatorBlock(1, 0, op_matrix_div_->global_operator());
-  op_matrix_->SetOperatorBlock(0, 1, op_matrix_grad_->global_operator());
+  op_matrix_->set_operator_block(0, 0, op_matrix_elas_->global_operator());
+  op_matrix_->set_operator_block(1, 0, op_matrix_div_->global_operator());
+  op_matrix_->set_operator_block(0, 1, op_matrix_grad_->global_operator());
 
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-  op_preconditioner_->SetOperatorBlock(0, 0, op_preconditioner_elas_->global_operator());
-  op_preconditioner_->SetOperatorBlock(1, 1, op_mass_->global_operator());
+  op_preconditioner_->set_operator_block(0, 0, op_preconditioner_elas_->global_operator());
+  op_preconditioner_->set_operator_block(1, 1, op_mass_->global_operator());
 
   // Create BC objects
   Teuchos::RCP<NavierStokesBoundaryFunction> bc;
@@ -252,7 +252,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = *S_->GetScalarData("fluid_viscosity", passwd_);
+  double mu = *S_->GetScalarData("const_fluid_viscosity", passwd_);
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 

@@ -544,16 +544,16 @@ double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
 double Mesh_MSTK::deform_function(const int nodeid, 
                                   double const * const nodexyz) const {
 
-  double func = 0.0, delta=1.0e-3;
+  double func = 0.0;
   MVertex_ptr v = vtx_id_to_handle[nodeid];
-  double *xyz[MAXPV3], L10_sqr, L20_sqr, L21_sqr, A;
-  double val=0.0, *xyz1[4];
-  double evec0[3], evec1[3], evec2[3], a, b, cpvec[3], vol6;
+  double *xyz[MAXPV3];
+  double val=0.0;
+  // double evec0[3], evec1[3];
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
-  int i, j, k, m, id, jr, jf, found;
+  int i, j, k, id, jr, jf, found;
   MVertex_ptr fv, rv;
-  int vind=-1, ind[4];
+  int vind=-1;
   List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
   static MVertex_ptr (*fverts)[MAXPV2], (*rverts)[MAXPV3];
@@ -568,10 +568,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
   /* edge connected neighbors of vertices */
   // static int tetidx[4][3] = {{1,2,3},{2,0,3},{0,1,3},{1,0,2}};
-  static int hexidx[8][3] = {{1,3,4},{2,0,5},{3,1,6},{0,2,7},{0,5,7},{6,4,1},
-                             {7,5,2},{6,4,3}};
-  static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
-
+  // static int hexidx[8][3] = {{1,3,4},{2,0,5},{3,1,6},{0,2,7},{0,5,7},{6,4,1},
+  //                            {7,5,2},{6,4,3}};
+  // static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
   val = 0.0;
 
   std::copy(nodexyz,nodexyz+space_dimension(),nodexyz_copy);
@@ -760,13 +759,13 @@ double Mesh_MSTK::deform_function(const int nodeid,
       //   xyz1[2] = xyz[(i+nfv[jf]-1)%nfv[jf]];
 
       //   VDiff3(xyz1[1],xyz1[0],evec0);
-      //   L10_sqr = VLenSqr3(evec0);
+      //   double L10_sqr = VLenSqr3(evec0);
 
       //   if (L10_sqr < 1e-12)
       //     L10_sqr = 1e-12;
 
       //   VDiff3(xyz1[2],xyz1[0],evec1);
-      //   L20_sqr = VLenSqr3(evec1);
+      //   souble L20_sqr = VLenSqr3(evec1);
       
       //   if (L20_sqr < 1e-12)
       //     L20_sqr = 1e-12;
@@ -789,7 +788,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       //                xyz1[1][0]*xyz1[2][1] - xyz1[1][0]*xyz1[0][1] - 
       //                xyz1[2][0]*xyz1[1][1] - xyz1[0][0]*xyz1[2][1]);	
       //   }
-      //   delta = 1.0/(1+exp(A));
+      //   double delta = 1.0/(1+exp(A));
       //   condfunc += 2*a/(A+sqrt(A*A+delta*delta));
 
       // }
@@ -888,7 +887,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         
         //   /* coordinates of its edge connected neighbors */
         //   for (j = 0; j < 3; j++) {
-        //     m = nbrs[i][j]; /* j'th neighbor of ind[i] */
+        //     int m = nbrs[i][j]; /* j'th neighbor of ind[i] */
         //     xyz1[j+1] = xyz[m];
         //   }
 

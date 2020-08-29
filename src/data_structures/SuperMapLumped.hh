@@ -79,12 +79,6 @@ class SuperMapLumped {
   // sum(NumDofs(comp) for comp in components), in this array.
   std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
 
-#ifdef SUPERMAP_TESTING
- public:
-#else
- protected:
-#endif
-  
   // meta-data accessors
   int Offset(const std::string& compname) const { return offsets_.at(compname); }
   int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
@@ -93,6 +87,7 @@ class SuperMapLumped {
     return counts_.at(compname) + ghosted_counts_.at(compname); }
   int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
 
+ protected:
   // iterate over compnames
   typedef std::vector<std::string>::const_iterator name_iterator;
   name_iterator begin() const { return compnames_.begin(); }
@@ -100,7 +95,6 @@ class SuperMapLumped {
   unsigned int size() const { return compnames_.size(); }
 
  protected:
-
   // Constructs and returns the vector of indices for a given component into the SuperMapLumped
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
 
@@ -134,14 +128,12 @@ class SuperMapLumped {
 
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_maps_;
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_ghosted_maps_;
-
 };
 
 
 Teuchos::RCP<SuperMapLumped> createSuperMapLumped(const CompositeVectorSpace& cv);
 
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif

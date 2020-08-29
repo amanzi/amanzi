@@ -111,7 +111,7 @@ void ObservableAqueous::ComputeObservation(
   //double volume, value;
   Errors::Message msg;
   int dim = mesh_->space_dimension();
-  double rho = *S.GetScalarData("fluid_density");
+  double rho = *S.GetScalarData("const_fluid_density");
   Key head_key = Keys::getKey(domain_, "hydraulic_head");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key sat_key = Keys::getKey(domain_, "saturation_liquid");

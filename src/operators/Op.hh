@@ -1,9 +1,9 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -25,8 +25,8 @@
 
   1. They provide a class name to the schema, enabling visitor patterns.
   2. They are a container for local matrices.
-  
-  This Op class is a container for storing local matrices that spans 
+
+  This Op class is a container for storing local matrices that spans
   the whole mesh. The dofs vary and defined by operator's schema.
 */
 
@@ -82,7 +82,7 @@ class Op {
       matrices_shadow[i] = null_mat;
     }
   }
-    
+
   // Restore pristine value of the matrices, i.e. before BCs.
   virtual int CopyShadowToMaster() {
     for (int i = 0; i != matrices.size(); ++i) {
@@ -136,21 +136,23 @@ class Op {
 
   // access
   const Schema& schema_row() const { return schema_row_; }
+  const Schema& schema_col() const { return schema_col_; }
+  int schema_old() const { return schema_old_; }
 
  public:
-  int schema_old_;
-  Schema schema_row_, schema_col_;
   std::string schema_string;
 
   // diagonal matrix
   Teuchos::RCP<Epetra_MultiVector> diag;
-  Teuchos::RCP<Epetra_MultiVector> diag_shadow;  
+  Teuchos::RCP<Epetra_MultiVector> diag_shadow;
 
   // collection of local matrices
   std::vector<WhetStone::DenseMatrix> matrices;
   std::vector<WhetStone::DenseMatrix> matrices_shadow;
 
  protected:
+  int schema_old_;
+  Schema schema_row_, schema_col_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
