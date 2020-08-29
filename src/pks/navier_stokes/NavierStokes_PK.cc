@@ -227,7 +227,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- velocity
   if (bc_list->isSublist("velocity")) {
-    PK_DomainFunctionFactory<NavierStokesBoundaryFunction > bc_factory(mesh_);
+    PK_DomainFunctionFactory<NavierStokesBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -340,7 +340,7 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    // revover the original primary solution
+    // recover the original primary solution
     *S_->GetFieldData("pressure", passwd_) = pressure_copy;
     pressure_eval_->SetFieldAsChanged(S_.ptr());
 

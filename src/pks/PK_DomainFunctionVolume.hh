@@ -120,9 +120,8 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
     std::vector<double> val_vec(nfun);  
 
     args[0] = t1;
-    for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-          mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
+    for (auto c = ids->begin(); c != ids->end(); ++c) {
+      auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
 
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
@@ -138,10 +137,8 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
       if (dt > 0.0) dt = 1.0 / dt;
 
       args[0] = t0;
-      for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-            mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
-
+      for (auto c = ids->begin(); c != ids->end(); ++c) {
+        auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         for (int i = 0; i < nfun; ++i) {

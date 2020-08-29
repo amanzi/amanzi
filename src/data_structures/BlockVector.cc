@@ -133,20 +133,20 @@ void BlockVector::CreateData() {
 // View data, const version.
 // I would prefer these be private, but for now...
 Teuchos::RCP<const Epetra_MultiVector>
-BlockVector::ViewComponent(std::string name) const {
+BlockVector::ViewComponent(const std::string& name) const {
   return data_[Index_(name)];
 };
 
 
 // View data, non-const version.
 Teuchos::RCP<Epetra_MultiVector>
-BlockVector::ViewComponent(std::string name) {
+BlockVector::ViewComponent(const std::string& name) {
   return data_[Index_(name)];
 };
 
 
 // Set data
-void BlockVector::SetComponent(std::string name,
+void BlockVector::SetComponent(const std::string& name,
         const Teuchos::RCP<Epetra_MultiVector>& data) {
   AMANZI_ASSERT(ComponentMap(name)->SameAs(data->Map()));
   AMANZI_ASSERT(NumVectors(name) == data->NumVectors());

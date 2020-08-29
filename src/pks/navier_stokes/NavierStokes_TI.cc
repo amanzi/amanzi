@@ -60,8 +60,6 @@ void NavierStokes_PK::FunctionalResidual(double t_old, double t_new,
   op_matrix_->Apply(*u_new, *f);
   fu->Update(-1.0, *op_matrix_elas_->global_operator()->rhs(), 1.0);
   fp->Update(-1.0, *op_matrix_div_->global_operator()->rhs(), 1.0);
-
-  // add convection term
 }
 
 

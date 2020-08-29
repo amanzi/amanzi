@@ -141,10 +141,8 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
       std::vector<double> val_vec(nfun);  
 
       args[0] = t1;
-      for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-            mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
-
+      for (auto c = ids->begin(); c != ids->end(); ++c) {
+        auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
@@ -163,10 +161,8 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
       int nfun = (*uspec)->first->second->size();
       std::vector<double> val_vec(nfun);
       args[0] = t1;
-      for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-          mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
-
+      for (auto c = ids->begin(); c != ids->end(); ++c) {
+        auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         double bhp;

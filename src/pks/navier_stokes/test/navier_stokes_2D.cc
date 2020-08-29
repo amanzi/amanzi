@@ -74,7 +74,7 @@ TEST(NAVIER_STOKES_2D) {
   double dT = plist->get<double>("initial time step", 1.0);
   double T(0.0), T0(0.0), dT0(dT), dTnext;
 
-  T = T1;  // FIXME
+  T = T1;
   while (T < T1 && itrs < max_itrs) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
