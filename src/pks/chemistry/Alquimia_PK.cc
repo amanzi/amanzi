@@ -554,7 +554,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // Auxiliary data -- block copy.
   if (S_->HasField(alquimia_aux_data_key_)) {
     aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell");
-    //aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", true);
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
 
@@ -959,7 +958,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
       for (int j = 0; j < mineral_names_.size(); ++j) {
-        full_name = Keys::getKey(domain_,"mineral_saturation_index_") + mineral_names_[j];
+        full_name = Keys::getKey(domain_,std::string("mineral_saturation_index_") + mineral_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[1].push_back(i);
         }
@@ -967,7 +966,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
       for (int j = 0; j < mineral_names_.size(); ++j) {
-        full_name = Keys::getKey(domain_,"mineral_reaction_rate_") + mineral_names_[j];
+        full_name = Keys::getKey(domain_,std::string("mineral_reaction_rate_") + mineral_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[2].push_back(i);
         }
@@ -975,7 +974,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
       for (int j = 0; j < primary_names_.size(); ++j) {
-        full_name = Keys::getKey(domain_,"primary_free_ion_concentration_") + primary_names_[j];
+        full_name = Keys::getKey(domain_,std::string("primary_free_ion_concentration_") + primary_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[3].push_back(i);
         }
@@ -983,7 +982,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
       for (int j = 0; j < primary_names_.size(); ++j) {
-        full_name = Keys::getKey(domain_,"primary_activity_coeff_") + primary_names_[j];
+        full_name = Keys::getKey(domain_,std::string("primary_activity_coeff_") + primary_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[4].push_back(i);
         }
@@ -993,7 +992,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
       for (int j = 0; j < numAqueousComplexes; ++j) {
         char num_str[16];
         snprintf(num_str, 15, "%d", j);
-        full_name = Keys::getKey(domain_,"secondary_free_ion_concentration_") + std::string(num_str);
+        full_name = Keys::getKey(domain_,std::string("secondary_free_ion_concentration_") + std::string(num_str));
         if (aux_names_.at(i) == full_name) {
           map_[5].push_back(i);
         }
@@ -1003,7 +1002,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
       for (int j = 0; j < numAqueousComplexes; ++j) {
         char num_str[16];
         snprintf(num_str, 15, "%d", j);
-        full_name = Keys::getKey(domain_,"secondary_activity_coeff_") + std::string(num_str);
+        full_name = Keys::getKey(domain_,std::string("secondary_activity_coeff_") + std::string(num_str));
         if (aux_names_.at(i) == full_name) {
           map_[6].push_back(i);
         }

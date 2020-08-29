@@ -41,29 +41,13 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   // Get the regions assigned to this geochemical condition. We do not
   // check for region overlaps here, since a better way is to derive from 
   // the generic mesh function.
-  
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
-  //auto regions_t = plist.get<Teuchos::Array<std::string> >("regions");
-  //std::vector<std::string> regions = regions_t.toVector();
-  
-
   std::vector<double> times = plist.get<Teuchos::Array<double> >("times").toVector();
-  //auto times_t = plist.get<Teuchos::Array<double> >("times");
-  //std::vector<double> times = times_t.toVector();
-  
   std::vector<std::string> conditions = plist.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
-  //auto cond_t = plist.get<Teuchos::Array<std::string> >("geochemical conditions");
-  //std::vector<std::string> conditions = cond_t.toVector();
-  
-  std::cout<<"TransportBoundaryTT:  "<<regions.size()<<" "<<regions[0]<<" "<<times.size()<<" "<<times[0]<<"\n";
+
   // Function of geochemical conditions and the associates regions.
   f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
-  std::cout<<"TransportBoundaryTTT:  "<<"\n";
-  ats_units_ = false;
-  if (plist.isParameter("ats units [moles/m^3]")) {
-    ats_units_ = true;
-  }
 }
 
 
@@ -122,16 +106,11 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
 
     // Enforce the condition.
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
-    
-    double factor = 1.0;
-    if (ats_units_) {
-      factor = 1.0/((*mol_dens_data_)[0][cell] / 1000.);
-    }
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
-      values[i] = alq_state_.total_mobile.data[i] * factor;
+      values[i] = alq_state_.total_mobile.data[i];
     }
   }
 }

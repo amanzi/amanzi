@@ -43,6 +43,7 @@ class MDM_Isotropic : public MDM {
 
  private:
   double alpha_;
+  bool dispersivity_;
 
   static Utils::RegisteredFactory<MDM, MDM_Isotropic> factory_;
 };
