@@ -64,11 +64,11 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
       component_names_ = glist->sublist("cycle driver")
           .get<Teuchos::Array<std::string> >("component names").toVector();
     } else {
-      Errors::Message msg("Transport PK: parameter component names is missing.");
+      Errors::Message msg("Transport PK: parameter \"component names\" is missing.");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("Transport PK: sublist Cycle Driver is missing.");
+    Errors::Message msg("Transport PK: sublist \"cycle driver\" is missing.");
     Exceptions::amanzi_throw(msg);
   }
 

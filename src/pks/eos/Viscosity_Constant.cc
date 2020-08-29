@@ -24,7 +24,7 @@ Viscosity_Constant::Viscosity_Constant(Teuchos::ParameterList& visc_plist) :
 
 void Viscosity_Constant::InitializeFromPlist_() {
   // defaults to water
-  visc_ = visc_plist_.get<double>("viscosity [kg/m-s]", 8.9e-4);
+  visc_ = visc_plist_.get<double>("viscosity", 8.9e-4);
 };
 
 }  // namespace AmanziEOS

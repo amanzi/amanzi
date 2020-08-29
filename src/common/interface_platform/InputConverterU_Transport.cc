@@ -227,74 +227,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     }
   }
 
-  // -- molecular diffusion (liquid)
-  //    check in phases->water list (other solutes are ignored)
-  //    two names are supported (solutes and primaries) FIXME
-  std::string species("solute");
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
-  if (flag) {
-    Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
-    std::vector<std::string> aqueous_names;
-    std::vector<double> aqueous_values;
-
-    children = node->getChildNodes();
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-
-      tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
-
-      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2/s", false);
-      text = mm.transcode(inode->getTextContent());
-
-      aqueous_names.push_back(TrimString_(text));
-      aqueous_values.push_back(val);
-    }
-
-    diff_list.set<Teuchos::Array<std::string> >("aqueous names", aqueous_names);
-    diff_list.set<Teuchos::Array<double> >("aqueous values", aqueous_values);
-  }
-
   // -- molecular diffusion
+  //    check in phases->water list (other solutes are ignored)
   //    check in phases->air list (other solutes are ignored)
-  species = "solute";
-  node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
-
-  if (flag) {
-    Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
-    std::vector<std::string> gaseous_names;
-    std::vector<double> gaseous_values, henry_coef;
-
-    children = node->getChildNodes();
-    for (int i = 0; i < children->getLength(); ++i) {
-      DOMNode* inode = children->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-
-      tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, species.c_str()) != 0) continue;
-
-      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
-      double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
-      text = mm.transcode(inode->getTextContent());
-
-      gaseous_names.push_back(TrimString_(text));
-      gaseous_values.push_back(val);
-      henry_coef.push_back(kh);
-    }
-
-    diff_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
-    diff_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
-    diff_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
-  }
+  //    two names are supported (solutes and primaries)
+  out_list.sublist("molecular diffusion") = TranslateMolecularDiffusion_();
 
   // add dispersion/diffusion operator
   node = GetUniqueElementByTagsString_(
@@ -340,6 +277,95 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   // merging sublist
   if (adv_list.numParams() > 0)
     out_list.sublist("operators").sublist("advection operator") = adv_list;
+
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of molecular diffusion coefficients
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateMolecularDiffusion_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating molecular diffusion data" << std::endl;
+
+  MemoryManager mm;
+
+  bool flag;
+  char *text, *tagname;
+  DOMNodeList *children;
+  DOMNode* node;
+
+  std::vector<std::string> aqueous_names, gaseous_names;
+  std::vector<double> aqueous_values, gaseous_values, molar_masses, henry_coef;
+
+  // liquid phase
+  std::string species("solute");
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
+  if (flag) {
+    children = node->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+      tagname = mm.transcode(inode->getNodeName());
+      if (strcmp(tagname, species.c_str()) != 0) continue;
+
+      text = mm.transcode(inode->getTextContent());
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2/s", false);
+      double mass = GetAttributeValueD_(inode, "molar_mass", TYPE_NUMERICAL, 0.0, DVAL_MAX, "kg/mol", false);
+
+      aqueous_names.push_back(TrimString_(text));
+      aqueous_values.push_back(val);
+      molar_masses.push_back(mass);
+    }
+  }
+
+  // gas phase
+  species = "solute";
+  node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
+  if (flag) {
+    children = node->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+      tagname = mm.transcode(inode->getNodeName());
+      if (strcmp(tagname, species.c_str()) != 0) continue;
+
+      text = mm.transcode(inode->getTextContent());
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
+      double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+
+      gaseous_names.push_back(TrimString_(text));
+      gaseous_values.push_back(val);
+      henry_coef.push_back(kh);
+    }
+  }
+
+  out_list.set<Teuchos::Array<std::string> >("aqueous names", aqueous_names);
+  out_list.set<Teuchos::Array<double> >("aqueous values", aqueous_values);
+  out_list.set<Teuchos::Array<double> >("molar masses", molar_masses);
+  if (gaseous_names.size() > 0) {
+    out_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
+    out_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
+    out_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
+    out_list.set<Teuchos::Array<double> >("Henry dimensionless constants", henry_coef);
+  }
 
   return out_list;
 }

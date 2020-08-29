@@ -12,18 +12,21 @@
 */
 
 #include "MolarFractionGasEvaluator.hh"
-#include "VaporPressureBaseFactory.hh"
+#include "SaturatedVaporPressureFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
+/* ******************************************************************
+* Initialize various PK objects
+****************************************************************** */
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   // set up the actual model
   AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
-  VaporPressureBaseFactory vpm_fac;
-  sat_vapor_model_ = vpm_fac.CreateVaporPressure(plist_.sublist("vapor pressure model parameters"));
+  SaturatedVaporPressureFactory svp_fac;
+  svp_model_ = svp_fac.CreateVaporPressure(plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
   if (my_key_ == "")
@@ -38,7 +41,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    sat_vapor_model_(other.sat_vapor_model_),
+    svp_model_(other.svp_model_),
     temp_key_(other.temp_key_) {};
 
 
@@ -47,8 +50,9 @@ Teuchos::RCP<FieldEvaluator> MolarFractionGasEvaluator::Clone() const {
 }
 
 
-void MolarFractionGasEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& result)
+void MolarFractionGasEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
 {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
@@ -56,13 +60,13 @@ void MolarFractionGasEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   // evaluate p_s / p_atm
   for (CompositeVector::name_iterator comp=result->begin(); comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp, false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
 
     int count = result->size(*comp);
     for (int id = 0; id != count; ++id) {
       AMANZI_ASSERT(temp_v[0][id] > 200.0);
-      result_v[0][id] = sat_vapor_model_->SaturatedVaporPressure(temp_v[0][id]) / p_atm;
+      result_v[0][id] = svp_model_->Pressure(temp_v[0][id]) / p_atm;
     }
   }
 }
@@ -74,19 +78,16 @@ void MolarFractionGasEvaluator::EvaluateFieldPartialDerivative_(
 {
   AMANZI_ASSERT(wrt_key == temp_key_);
 
-  // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
   const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
-  // evaluate d/dT( p_s / p_atm )
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp, false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
 
     int count = result->size(*comp);
-    for (int id=0; id!=count; ++id) {
-      result_v[0][id] = sat_vapor_model_->DSaturatedVaporPressureDT(temp_v[0][id]) / p_atm;
+    for (int id = 0; id != count; ++id) {
+      result_v[0][id] = svp_model_->DPressureDT(temp_v[0][id]) / p_atm;
     }
   }
 }

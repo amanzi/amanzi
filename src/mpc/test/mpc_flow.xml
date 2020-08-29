@@ -173,7 +173,7 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0e+00, -9.80664999999999942e+00}"/>
       </ParameterList>
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
@@ -297,7 +297,7 @@
       	  <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
-      	  <Parameter name="residual saturation" type="double" value="0.0e+00"/>
+      	  <Parameter name="residual saturation liquid" type="double" value="0.0e+00"/>
       	  <Parameter name="regularization interval" type="double" value="0.0e+00"/>
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
@@ -307,7 +307,7 @@
       	  <Parameter name="van Genuchten m" type="double" value="2.13600000000000012e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="2.02600000000000002e-03"/>
-      	  <Parameter name="residual saturation" type="double" value="0.0e+00"/>
+      	  <Parameter name="residual saturation liquid" type="double" value="0.0e+00"/>
       	  <Parameter name="regularization interval" type="double" value="0.0e+00"/>
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
@@ -317,8 +317,8 @@
       	  <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="2.06740000000000005e-03"/>
-      	  <Parameter name="residual saturation" type="double" value="0.0e+00"/>
-      	  <Parameter name="regularization interval" type="double" value="0.0e+00"/>
+      	  <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+      	  <Parameter name="regularization interval" type="double" value="0.0"/>
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
       </ParameterList>

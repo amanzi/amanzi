@@ -57,6 +57,7 @@ add_amanzi_library(whetstone
                           Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
+                          SplinePolynomial.cc
                           SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
@@ -86,6 +87,7 @@ add_amanzi_library(whetstone
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
+                           SplinePolynomial.hh
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh

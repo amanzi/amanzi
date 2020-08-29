@@ -110,7 +110,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());
@@ -229,7 +229,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
     // initialize transport process kernel
     TPK.Initialize(S.ptr());
@@ -371,7 +371,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());

@@ -95,8 +95,8 @@ TEST(FLOW_POROSITY_MODELS) {
   S->GetField("permeability", "flow")->set_initialized();
 
   // -- fluid density and vicosity
-  *S->GetScalarData("fluid_density", passwd) = 10.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 10.0;
+  S->GetField("const_fluid_density", "flow")->set_initialized();
 
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
   S->GetField("viscosity_liquid", passwd)->set_initialized();

@@ -82,6 +82,8 @@ int PolynomialSpaceDimension(int d, int order)
 inline
 int MonomialSetPosition(int d, const int* multi_index)
 {
+  if (d == 1) return 0;
+
   int m(multi_index[1]);
   if (d == 3) {
     int n = multi_index[1] + multi_index[2];

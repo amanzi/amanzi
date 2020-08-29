@@ -143,7 +143,7 @@
 	  <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
 	  <Parameter name="van Genuchten m" type="double" value="0.5"/>
 	  <Parameter name="van Genuchten l" type="double" value="0.5"/>
-	  <Parameter name="residual saturation" type="double" value="0.1"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.1"/>
 	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
 	</ParameterList>
 	<ParameterList name="WRM for Material 2">
@@ -151,7 +151,7 @@
 	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
 	  <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
 	  <Parameter name="van Genuchten m" type="double" value="0.5"/>
-	  <Parameter name="residual saturation" type="double" value="0.1"/>
+	  <Parameter name="residual saturation liquid" type="double" value="0.1"/>
 	</ParameterList>
       </ParameterList>
 
@@ -210,10 +210,10 @@
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">

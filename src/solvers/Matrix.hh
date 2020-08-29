@@ -88,7 +88,6 @@ class Matrix {
   virtual std::string returned_code_string() const = 0;
 
   virtual std::string name() const = 0;
-
 };
 
 }  // namespace Amanzi

@@ -115,9 +115,9 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S->HasField("fluid_viscosity")) {
-    if (!S->HasField("fluid_viscosity")) {
-      S->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("const_fluid_viscosity")) {
+    if (!S->HasField("const_fluid_viscosity")) {
+      S->RequireScalar("const_fluid_viscosity", passwd_);
     }
   }
 }
@@ -252,7 +252,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = *S_->GetScalarData("fluid_viscosity", passwd_);
+  double mu = *S_->GetScalarData("const_fluid_viscosity", passwd_);
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 

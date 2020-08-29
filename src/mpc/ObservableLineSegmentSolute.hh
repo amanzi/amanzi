@@ -49,7 +49,7 @@ void ObservableLineSegmentSolute::ComputeObservation(
   //double volume, value;
   Errors::Message msg;
   int dim = mesh_->space_dimension();
-  // double rho = *S.GetScalarData("fluid_density");
+  // double rho = *S.GetScalarData("const_fluid_density");
   // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
   // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
   // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
@@ -98,7 +98,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasField("total_component_concentration")) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<"total_component_concentration"<<" doesn't exist in state";
+      msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetFieldData("total_component_concentration");
@@ -106,7 +106,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   } else {
     if (!S.HasField(var)) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+      msg <<"InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetFieldData(var);

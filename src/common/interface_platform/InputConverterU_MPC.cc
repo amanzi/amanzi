@@ -510,6 +510,13 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "shallow_water") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 16;
+
+      } else if (strcmp(tagname, "multiphase") == 0) {
+        GetAttributeValueS_(jnode, "state", "on");
+        model = GetAttributeValueS_(jnode, "model");
+        pk_model_["multiphase"] = model;
+        pk_master_["multiphase"] = true;
+        transient_model += 32;
       } 
     }
 
@@ -583,6 +590,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     case 16:
       PopulatePKTree_(pk_tree_list, "shallow water");
       break;
+    case 32: 
+      pk_master_["multiphase"] = true;
+      PopulatePKTree_(pk_tree_list, "multiphase");
+      break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
     }
@@ -633,6 +644,9 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (pk_name == "shallow water") {
     pk_tree.sublist("shallow water").set<std::string>("PK type", "shallow water");
+  }
+  else if (pk_name == "multiphase") {
+    pk_tree.sublist("multiphase").set<std::string>("PK type", pk_model_["multiphase"]);    
   }
   else if (pk_name == "coupled flow") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow");
@@ -852,7 +866,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 /* ******************************************************************
 * Translate PKs list
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterList& cd_list)
+Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 {
   Teuchos::ParameterList out_list;
 
@@ -864,7 +878,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   DOMNode* node;
 
   // create PKs list
-  Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
+  Teuchos::ParameterList tp_list = glist.sublist("cycle driver").sublist("time periods");
 
   for (auto it = tp_list.begin(); it != tp_list.end(); ++it) {
     if ((it->second).isList()) {
@@ -925,6 +939,11 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       else if (it->first == "shallow water") {
         // temporarily, we run only stand-along SW
         out_list.sublist(it->first) = TranslateShallowWater_("matrix");
+      }
+      // -- multiphase PKs
+      else if (it->first == "multiphase") {
+        auto& tmp = glist.sublist("state");
+        out_list.sublist(it->first) = TranslateMultiphase_("matrix", tmp);
       }
       // -- coupled PKs (matrix and fracture)
       else if (it->first == "coupled flow") {

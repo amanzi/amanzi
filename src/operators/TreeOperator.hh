@@ -157,11 +157,10 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     return "TreeOperator: block diagonal";
   }
 
-
  protected:
   int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
 
- private:
+ protected:
   friend Impl::TreeOperator_BlockDiagonalPreconditioner;
 
   Teuchos::RCP<const TreeVectorSpace> row_map_, col_map_;

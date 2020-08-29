@@ -87,7 +87,7 @@ void TestLinearPressure(bool saturated) {
   S->CheckAllFieldsInitialized();
 
   /* calculate the constant Darcy mass velocity */
-  double rho = *S->GetScalarData("fluid_density");
+  double rho = *S->GetScalarData("const_fluid_density");
   double mu = (*S->GetFieldData("viscosity_liquid")->ViewComponent("cell"))[0][0];
   Epetra_Vector& gvec = *S->GetConstantVectorData("gravity", "state");
   AmanziGeometry::Point g(3);

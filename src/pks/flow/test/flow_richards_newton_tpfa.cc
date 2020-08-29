@@ -100,8 +100,8 @@ TEST(FLOW_3D_RICHARDS) {
   S->GetField("permeability", passwd)->set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", passwd)->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  S->GetField("const_fluid_density", passwd)->set_initialized();
 
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
   S->GetField("viscosity_liquid", passwd)->set_initialized();

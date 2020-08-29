@@ -194,7 +194,7 @@
     
     <ParameterList name="initial conditions">
 
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.00000000000000002e-03"/>
       </ParameterList>
 

@@ -56,24 +56,25 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   gravity[dim_-1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
-  // --- viscosity
+  // --- constant viscosities
   bool flag;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
   double viscosity = GetTextContentD_(node, "Pa*s");
-  out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
+  out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
+
+  node = GetUniqueElementByTagsString_("phases, gas_phase, viscosity", flag);
+  if (flag) {
+    viscosity = GetTextContentD_(node, "Pa*s");
+    out_ic.sublist("const_gas_viscosity").set<double>("value", viscosity);
+    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", viscosity);
+  }
 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
   rho_ = GetTextContentD_(node, "kg/m^3");
-  out_ic.sublist("fluid_density").set<double>("value", rho_);
+  out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
-  out_ev.sublist("mass_density_liquid").sublist("function").sublist("All")
-      .set<std::string>("region", "All")
-      .set<std::string>("component", "cell")
-      .sublist("function").sublist("function-constant")
-      .set<double>("value", rho_);
-  out_ev.sublist("mass_density_liquid")
-        .set<std::string>("field evaluator type", "independent variable");
+  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", rho_);
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;
@@ -441,7 +442,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         }
       }
 
-      // -- total_component_concentration (liquid phase)
+      // -- solute concentration or fraction (liquid phase)
       int ncomp_l = phases_["water"].size();
       int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
@@ -480,9 +481,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         }
       }
 
-      // -- total_component_concentration (gas phase)
+      // -- solute concentation or fraction (gas phase)
       node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {
+        int noffset;
+        std::string field_name;
         std::vector<double> vals(ncomp_g, 0.0);
 
         DOMNodeList* children2 = node->getChildNodes();
@@ -491,18 +494,32 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
-            std::string text = GetAttributeValueS_(jnode, "name");
-            int m = GetPosition_(phases_["air"], text);
-            vals[m] = GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+            field_name = "total_component_concentration";
+            noffset = ncomp_l;
+          } else if (strcmp(tagname, "uniform_mole_fraction") == 0) {
+            field_name = "mole_fraction_gas";
+            noffset = 0;
+          } else {
+            continue;
           }
+
+          std::string text = GetAttributeValueS_(jnode, "name");
+          int m = GetPosition_(phases_["air"], text);
+          vals[m] = GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
         }
 
-        Teuchos::ParameterList& tcc_ic = out_ic.sublist("total_component_concentration");
-        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str).sublist("function");
+        Teuchos::ParameterList& tcc_ic = out_ic.sublist(field_name);
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function")
+            .set<int>("number of dofs", noffset + ncomp_g)
+            .set<std::string>("function type", "composite function");
+
         for (int k = 0; k < ncomp_g; k++) {
           std::string name = phases_["air"][k];
           std::stringstream dof_str;
-          dof_str << "dof " << ncomp_l + k + 1 << " function";
+          dof_str << "dof " << noffset + k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
@@ -814,6 +831,24 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
                                      .set<double>("value", val);
     }
   }
+}
+
+
+/* ******************************************************************
+* Add independent field evalautor
+****************************************************************** */
+void InputConverterU::AddIndependentFieldEvaluator_(
+    Teuchos::ParameterList& out_ev,
+    const std::string& field, const std::string& region, double val)
+{
+  out_ev.sublist(field).sublist("function").sublist("All")
+      .set<std::string>("region", region)
+      .set<std::string>("component", "cell")
+      .sublist("function").sublist("function-constant")
+      .set<double>("value", val);
+
+  out_ev.sublist(field)
+      .set<std::string>("field evaluator type", "independent variable");
 }
 
 }  // namespace AmanziInput

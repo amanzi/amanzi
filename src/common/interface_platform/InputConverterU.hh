@@ -44,6 +44,7 @@ class InputConverterU : public InputConverter {
       transport_permeability_(false),
       use_transport_porosity_(false),
       transport_implicit_(false),
+      multiphase_(false),
       restart_(false),
       ic_time_(0.0),
       ic_time_flow_(0.0),
@@ -59,6 +60,7 @@ class InputConverterU : public InputConverter {
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
+      multiphase_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
@@ -92,6 +94,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTrilinosML_();
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
+  Teuchos::ParameterList TranslateEuclid_();
   Teuchos::ParameterList TranslateLinearSolvers_(
       std::string tags, std::string method_default, std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();
@@ -100,7 +103,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateCycleDriver_();
   Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
-  Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
+  Teuchos::ParameterList TranslatePKs_(Teuchos::ParameterList& glist);
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_methods, const std::string& pc_method,
       const std::string& nonlinear_solver, const std::string& nonlinear_coef,
@@ -128,9 +131,13 @@ class InputConverterU : public InputConverter {
       Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
       std::string data_key = "value");
 
+  void AddIndependentFieldEvaluator_(
+      Teuchos::ParameterList& out_ev,
+      const std::string& field, const std::string& region, double val);
+
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
-  Teuchos::ParameterList TranslateWRM_();
+  Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
@@ -138,6 +145,7 @@ class InputConverterU : public InputConverter {
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_(const std::string& domain);
+  Teuchos::ParameterList TranslateMolecularDiffusion_();
   Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_(const std::string& domain);
   void TranslateTransportBCsGroup_(
@@ -161,6 +169,12 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
+
+  // -- multiphase
+  bool multiphase_;
+  Teuchos::ParameterList TranslateMultiphase_(const std::string& domain,
+                                              Teuchos::ParameterList& state_list);
+  Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- shallow water
   Teuchos::ParameterList TranslateShallowWater_(const std::string& domain);

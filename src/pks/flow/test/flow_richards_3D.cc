@@ -79,7 +79,7 @@ TEST(FLOW_3D_RICHARDS) {
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
 
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
   S->GetField("viscosity_liquid", passwd)->set_initialized();
 

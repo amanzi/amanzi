@@ -68,8 +68,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   }
 
   out_list.sublist("cycle driver") = TranslateCycleDriver_();
-  Teuchos::ParameterList& cd_list = out_list.sublist("cycle driver");
-  out_list.sublist("PKs") = TranslatePKs_(cd_list);
+  out_list.sublist("PKs") = TranslatePKs_(out_list);
 
   out_list.sublist("solvers") = TranslateSolvers_();
   out_list.sublist("preconditioners") = TranslatePreconditioners_();
@@ -231,7 +230,12 @@ void InputConverterU::ParseSolutes_()
   comp_names_all_ = phases_["water"];
 
   // gas phase
+  species = "solute";
   node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
   if (flag) {
     children = node->getChildNodes();
     nchildren = children->getLength();
@@ -241,7 +245,7 @@ void InputConverterU::ParseSolutes_()
       tagname = mm.transcode(inode->getNodeName());
       text_content = mm.transcode(inode->getTextContent());
 
-      if (strcmp(tagname, "solute") == 0) {
+      if (species == tagname) {
         phases_["air"].push_back(TrimString_(text_content));
       }
     }

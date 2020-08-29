@@ -138,9 +138,7 @@ int
 addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv,
                    TreeVector& tv);
 
-
-
-} // namespace
-} // namespace
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif

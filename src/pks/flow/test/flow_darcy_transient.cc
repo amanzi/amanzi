@@ -102,11 +102,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->GetField("permeability", "flow")->set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  S->GetField("const_fluid_density", "flow")->set_initialized();
 
-  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
-  S->GetField("fluid_viscosity", "flow")->set_initialized();
+  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
+  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
@@ -215,8 +215,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     K[2][c] = 0.5;
   }
 
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
+  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
 

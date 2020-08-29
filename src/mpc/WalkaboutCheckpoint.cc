@@ -49,7 +49,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  double rho = *S->GetScalarData("fluid_density");
+  double rho = *S->GetScalarData("const_fluid_density");
   S->GetFieldData("darcy_flux")->ScatterMasterToGhosted();
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   

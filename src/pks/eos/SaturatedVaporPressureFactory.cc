@@ -12,7 +12,8 @@
 */
 
 #include <string>
-#include "VaporPressureBaseFactory.hh"
+
+#include "SaturatedVaporPressureFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -22,10 +23,10 @@ namespace AmanziEOS {
 // Amanzi::Utils::Factory<Amanzi::AmanziEOS::VaporPressureRelation>::map_type* 
 //    Amanzi::Utils::Factory<Amanzi::AmanziEOS::VaporPressureRelation>::map_;
 
-// method for instantiating VaporPressure implementations
-Teuchos::RCP<VaporPressure_Base> VaporPressureBaseFactory::CreateVaporPressure(Teuchos::ParameterList& plist) {
-  std::string eos_typename = plist.get<std::string>("vapor pressure model type");
-  return Teuchos::rcp(CreateInstance(eos_typename, plist));
+// method for instantiating vapor pressure implementations
+Teuchos::RCP<SaturatedVaporPressure> SaturatedVaporPressureFactory::CreateVaporPressure(Teuchos::ParameterList& plist) {
+  std::string model = plist.get<std::string>("vapor pressure model type");
+  return Teuchos::rcp(CreateInstance(model, plist));
 };
 
 }  // namespace AmanziEOS

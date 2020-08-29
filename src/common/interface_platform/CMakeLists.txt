@@ -47,6 +47,7 @@ set(interface_src_files  InputConverter.cc InputConverterU.cc
                          InputConverterU_Flow.cc InputConverterU_Transport.cc
                          InputConverterU_Energy.cc InputConverterU_Chemistry.cc
                          InputConverterU_ShallowWater.cc
+                         InputConverterU_Multiphase.cc
                          InputConverterU_Solvers.cc InputConverterU_Mesh.cc
                          InputConverterU_Output.cc)
 
