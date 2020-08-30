@@ -29,6 +29,9 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D::MFD3D()
 {
+  stability_method_ = WHETSTONE_STABILITY_GENERIC;
+  scaling_factor_ = 1.0;
+
   simplex_functional_ = 0.0;
   simplex_num_itrs_ = -1;
 }
