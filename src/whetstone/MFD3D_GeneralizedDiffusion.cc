@@ -89,7 +89,7 @@ int MFD3D_GeneralizedDiffusion::L2consistency(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -107,7 +107,7 @@ int MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& 
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -126,7 +126,7 @@ int MFD3D_GeneralizedDiffusion::MassMatrixOptimized(
   if (ok) return ok;
 
   StabilityOptimized_(K, N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -185,7 +185,7 @@ int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -201,7 +201,7 @@ int MFD3D_GeneralizedDiffusion::MassMatrixInverse(
   if (ok) return ok;
 
   StabilityScalar_(R, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -255,7 +255,7 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
   }
   A(nx, nx) = cntr;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -279,7 +279,7 @@ int MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
     A(0, d_ * n) = norm(normal) * dirs[n]; 
   } 
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

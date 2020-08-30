@@ -16,9 +16,9 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "OutputXDMF.hh"
 
 #include "NavierStokes_PK.hh"
 
@@ -74,7 +74,7 @@ TEST(NAVIER_STOKES_2D) {
   double dT = plist->get<double>("initial time step", 1.0);
   double T(0.0), T0(0.0), dT0(dT), dTnext;
 
-  T = T1;
+  // T = T1;
   while (T < T1 && itrs < max_itrs) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
@@ -108,12 +108,16 @@ TEST(NAVIER_STOKES_2D) {
     NSPK->CommitStep(T - dT, T, S);
   }
 
-  if (MyPID == 0) {
-    const Epetra_MultiVector& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
-    GMV::open_data_file(*mesh, (std::string)"navier_stokes.gmv");
-    GMV::start_data();
-    GMV::write_node_data(u, 0, "velocity_x");
-    GMV::write_node_data(u, 1, "velocity_y");
-    GMV::close_data_file();
-  }
+  // initialize I/O
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh, true, false);
+
+  io.InitializeCycle(T, 1);
+  const auto& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
+  const auto& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
+  io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
+  io.FinalizeCycle();
 }

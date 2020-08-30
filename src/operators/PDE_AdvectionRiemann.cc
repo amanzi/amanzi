@@ -240,7 +240,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, dg_->order(), coef);
+      WhetStone::Polynomial pf(d, dg_->get_order(), coef);
       pf.set_origin(xf);
 
       // -- convert boundary polynomial to regularized space polynomial

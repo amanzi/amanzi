@@ -34,7 +34,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh)
+  : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -121,7 +121,7 @@ int MFD3D_Lagrange::H1consistency(
     N(i, d_) = 1.0;  // additional column is added to the consistency condition
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -137,7 +137,7 @@ int MFD3D_Lagrange::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

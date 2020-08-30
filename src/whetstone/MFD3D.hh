@@ -20,12 +20,12 @@
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 
   NOTE: This class should be never instantiated directly. It is used to
-  add additional functionality to the base class (BilinearForm) specific
-  for MFD and VEM methods, such as various stabilization terms.
+  add additional functionality specific for MFD methods, such as various
+  stabilization terms.
 */
 
-#ifndef AMANZI_MFD3D_HH_
-#define AMANZI_MFD3D_HH_
+#ifndef AMANZI_MFD3D_HELPER_HH_
+#define AMANZI_MFD3D_HELPER_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -34,18 +34,15 @@
 
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
-#include "InnerProductH1.hh"
-#include "InnerProductL2.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public BilinearForm {
+class MFD3D : virtual public BilinearForm {
  public:
-  explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  virtual ~MFD3D() {};
+  MFD3D();
 
   // access members
   double simplex_functional() { return simplex_functional_; }
@@ -55,6 +52,13 @@ class MFD3D : public BilinearForm {
   void ModifyStabilityScalingFactor(double factor);
 
  protected:
+  void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
+  void StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M);
+  int StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
+
+  double CalculateStabilityScalar_(DenseMatrix& Mc);
+  void GrammSchmidt_(DenseMatrix& N);
+
   // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
   int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
@@ -67,6 +71,9 @@ class MFD3D : public BilinearForm {
   void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
 
  protected:
+  int stability_method_;  // stability parameters
+  double scalar_stability_, scaling_factor_;
+
   double simplex_functional_;
   int simplex_num_itrs_;
 };

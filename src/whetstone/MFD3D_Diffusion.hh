@@ -36,18 +36,16 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Diffusion : public MFD3D,
-                        public DeRham_Face { 
+class MFD3D_Diffusion : public DeRham_Face { 
  public:
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh),
-      DeRham_Face(mesh) {};
+    : DeRham_Face(mesh),
+      BilinearForm(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh),
-      DeRham_Face(mesh) {};
-  ~MFD3D_Diffusion() {};
+    : DeRham_Face(mesh),
+      BilinearForm(mesh) {};
 
   // main methods 
   // -- schema
@@ -63,7 +61,7 @@ class MFD3D_Diffusion : public MFD3D,
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override; 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override;
+  int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- divergence matrix

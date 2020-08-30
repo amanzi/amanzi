@@ -91,7 +91,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(
     N(i, d_) = (xf - xc) * normal / len; 
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -169,7 +169,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
     for (int k = 0; k < d_; ++k) N(i, d_ + k) = v3[k];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -221,7 +221,7 @@ int MFD3D_Electromagnetics::MassMatrixDiagonal(
   for (int n = 0; n < nedges; n++) {
     M(n, n) = d_ * volume / (nedges * T(0, 0));
   }
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -235,7 +235,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   DenseMatrix M, C;
 
   StiffnessMatrix(c, T, A, M, C);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -260,7 +260,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   MC.Multiply(M, C, false);
   A.Multiply(C, MC, true); 
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -278,7 +278,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(
   WhetStone::AddGradient(mesh_, c, N);
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

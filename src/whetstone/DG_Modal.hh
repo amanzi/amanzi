@@ -48,7 +48,6 @@ class DG_Modal : public BilinearForm {
  public:
   DG_Modal(const Teuchos::ParameterList& plist,
            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~DG_Modal() {};
 
   // basic member functions
   // -- schema
@@ -58,19 +57,6 @@ class DG_Modal : public BilinearForm {
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
   virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) override;
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
-
-  // -- inverse mass matrices
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override {
-    int ok = MassMatrix(c, K, W);
-    W.Inverse();
-    return ok;
-  }
-
-  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& W) override {
-    int ok = MassMatrix(c, K, W);
-    W.Inverse();
-    return ok;
-  }
 
   // -- stiffness matrices. General coefficient requires to specify the quadrature order
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
@@ -94,11 +80,6 @@ class DG_Modal : public BilinearForm {
   int FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
 
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
-
-  // interfaces that are not used
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return 0; }
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return 0; }
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override { return 0; }
 
   // miscalleneous
   // -- order of polynomials in each cell

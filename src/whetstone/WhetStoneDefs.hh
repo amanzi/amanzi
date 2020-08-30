@@ -71,11 +71,6 @@ enum class Parallel_type {
 };
 #endif
 
-// status of elemental matrices
-const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
-const int WHETSTONE_ELEMENTAL_MATRIX_SIZE = 1;
-const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 2;  // only for unexpected situations
-
 // control of the stabilization term in MFD schemes
 const int WHETSTONE_STABILITY_GENERIC = 1;
 const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;

@@ -19,26 +19,26 @@
 
 #include "Mesh.hh"
 
+#include "BilinearForm.hh"
 #include "DenseMatrix.hh"
-#include "InnerProductL2.hh"
+#include "MFD3D.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class DeRham_Node : virtual public InnerProductL2 { 
+class DeRham_Node : public MFD3D { 
  public:
   DeRham_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : mesh_(mesh),
-      d_(mesh->space_dimension()) {};
-  ~DeRham_Node() {};
+    : BilinearForm(mesh) {};
 
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
+  virtual std::vector<SchemaItem> schema() const override {
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+  }
 
- protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int d_;
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
 };
 
 }  // namespace WhetStone

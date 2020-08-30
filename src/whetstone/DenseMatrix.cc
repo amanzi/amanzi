@@ -504,7 +504,7 @@ DenseMatrix DenseMatrix::NullSpace()
 int DenseMatrix::InverseMoorePenrose()
 {
   // We can treat only square matrices.
-  if (m_ != n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  if (m_ != n_) return 1;
 
   // Allocate memory for Lapack routine.
   int mn, lwork, info; 
@@ -515,7 +515,7 @@ int DenseMatrix::InverseMoorePenrose()
   DGESVD_F77("A", "A", &m_, &n_, data_, &m_, 
              S, U, &m_, V, &n_, work, &lwork, &info);
 
-  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  if (info != 0) return 1;
 
   // inverse of S
   for (int i = 0; i < mn; ++i)

@@ -93,7 +93,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
     R(i, 1) = v3 * (fm - cm);
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -109,7 +109,7 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
   if (ok) return ok;
 
   StabilityOptimized_(K, R, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

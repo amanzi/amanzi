@@ -30,28 +30,22 @@ namespace WhetStone {
 class MFD3D_GeneralizedDiffusion : public MFD3D { 
  public:
   MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh) {};
-  ~MFD3D_GeneralizedDiffusion() {};
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : BilinearForm(mesh) {};
 
   // required member functions
   // -- schema for this element
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M); 
 
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override;
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
 
   // -- stiffness matrices
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override {
-    Errors::Message msg("H1 consistency is not implemented for generalized diffusion scheme.");
-    Exceptions::amanzi_throw(msg);
-    return 0;
-  }
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
