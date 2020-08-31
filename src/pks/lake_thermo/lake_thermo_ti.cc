@@ -96,11 +96,11 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 //  db_->WriteVector("res (adv)", res.ptr());
 //#endif
 
-  // source terms
-  AddSources_(S_next_.ptr(), res.ptr());
-#if DEBUG_FLAG
-  db_->WriteVector("res (src)", res.ptr());
-#endif
+//  // source terms
+//  AddSources_(S_next_.ptr(), res.ptr());
+//#if DEBUG_FLAG
+//  db_->WriteVector("res (src)", res.ptr());
+//#endif
 
   // Dump residual to state for visual debugging.
 #if MORE_DEBUG_FLAG
@@ -265,12 +265,25 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // Abs tol based on old conserved quantity -- we know these have been vetted
   // at some level whereas the new quantity is some iterate, and may be
   // anything from negative to overflow.
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+  const Epetra_MultiVector& temp_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell");
+
+  std::cout << "PRINTING Temperature: " << std::endl;
+  for (int c = 0; c < ncells_owned; c++) {
+    std::cout << temp_c[0][c] << std::endl;
+  }
+  std::cout << "end" << std::endl;
+
+
+
   int cycle = S_next_->cycle();
   if (cycle == 32) {
     std::cout << "we is here" << std::endl;
   }
   
-  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+//  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& energy = *S_inter_->GetFieldData(temperature_key_)
       ->ViewComponent("cell",true);
 
@@ -278,13 +291,31 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 //  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
 //      ->ViewComponent("cell",true);
 
+  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
+          ->ViewComponent("cell",true);
+
+  std::cout << "ErrorNorm after wc" << std::endl;
+
   const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
 
-  // THIS IS ONLY FOR DEBUGGING PURPOSES
-  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(cell_vol_key_)
-        ->ViewComponent("cell",true);
+
+//  //--------->>
+//  // THIS IS ONLY FOR DEBUGGING PURPOSES
+//  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(cell_vol_key_)
+//        ->ViewComponent("cell",true);
+//  for (int c = 0; c < ncells_owned; c++) {
+//      wc[0][c] = 1.;
+//  }
+//  //<<---------
+
+  std::cout << "mass_atol_ = " << mass_atol_ << std::endl;
+  std::cout << "soil_atol_ = " << soil_atol_ << std::endl;
+  std::cout << "atol_ = " << atol_ << std::endl;
+
+
+
 
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -316,6 +347,14 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double energy = mass * atol_ + soil_atol_;
         double enorm_c = std::abs(h * dvec_v[0][c]) / (energy*cv[0][c]);
 
+        std::cout << "c = " << c << ", enorm_c = " << enorm_c << std::endl;
+        std::cout << "mass = " << mass << std::endl;
+        std::cout << "energy = " << energy << std::endl;
+        std::cout << "h = " << h << std::endl;
+        std::cout << "dvec_v[0][c] = " << dvec_v[0][c] << std::endl;
+        std::cout << "cv[0][c] = " << cv[0][c] << std::endl;
+        std::cout << "wc[0][c] = " << wc[0][c] << std::endl;
+
         if (enorm_c > enorm_comp) {
           enorm_comp = enorm_c;
           enorm_loc = c;
@@ -338,6 +377,8 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double energy = mass_min * atol_ + soil_atol_;
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
           / (energy * cv_min);
+
+        std::cout << "f = " << f << ", enorm_f = " << enorm_f << std::endl;
 
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;

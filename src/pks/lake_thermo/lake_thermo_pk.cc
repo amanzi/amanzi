@@ -54,21 +54,21 @@ Lake_Thermo_PK::Lake_Thermo_PK(Teuchos::ParameterList& FElist,
 //  if (!plist_->isParameter("conserved quantity key suffix"))
 //    plist_->set("conserved quantity key suffix", "energy");
 //
-//  // set a default error tolerance
-//  if (domain_.find("surface") != std::string::npos) {
-//    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
-//                                     .01 * 55000.);
-//    soil_atol_ = 0.;
-//  } else {
-//    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
-//                                     .5 * .1 * 55000.);
-//    soil_atol_ = 0.5 * 2000. * 620.e-6;  // porosity * particle density soil * heat capacity soil * 1 degree
-//                    // or, dry bulk density soil * heat capacity soil * 1 degree, in MJ
-//  }
-//
-//  if (!plist_->isParameter("absolute error tolerance")) {
-//    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol, in MJ/mol water
-//  }
+  // set a default error tolerance
+  if (domain_.find("surface") != std::string::npos) {
+    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+                                     .01 * 55000.);
+    soil_atol_ = 0.;
+  } else {
+    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+                                     .5 * .1 * 55000.);
+    soil_atol_ = 0.5 * 2000. * 620.e-6;  // porosity * particle density soil * heat capacity soil * 1 degree
+                    // or, dry bulk density soil * heat capacity soil * 1 degree, in MJ
+  }
+
+  if (!plist_->isParameter("absolute error tolerance")) {
+    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol, in MJ/mol water
+  }
 }
 
 
@@ -92,7 +92,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
   //energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
-//  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
+  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
@@ -341,9 +341,9 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("face", AmanziMesh::FACE, 1);
 
-//  // Require a field for water content
-//  S->RequireField(wc_key_, name_)->SetMesh(mesh_)->SetGhosted()
-//        ->AddComponent("face", AmanziMesh::FACE, 1);
+  // Require a field for water content
+  S->RequireField(wc_key_, name_)->SetMesh(mesh_)->SetGhosted()
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // Require a field for the energy fluxes.
   S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
@@ -445,6 +445,9 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 //  }
   S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
   S->GetField(flux_key_, name_)->set_initialized();
+
+  S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
+    S->GetField(wc_key_, name_)->set_initialized();
 
   S->GetFieldData(temperature_key_, name_)->PutScalar(100.0);
   S->GetField(temperature_key_, name_)->set_initialized();
@@ -769,7 +772,7 @@ bool Lake_Thermo_PK::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 
 
   
-  if (minT < 200.0 || maxT > 300.0) {
+  if (minT < 0.0 || maxT > 10000000.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
       ENorm_t global_minT_c, local_minT_c;

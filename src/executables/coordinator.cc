@@ -542,8 +542,6 @@ void Coordinator::cycle_driver() {
    
   }
 
-  ////exit(0);
-
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
 
@@ -583,8 +581,15 @@ void Coordinator::cycle_driver() {
       S_->set_final_time(S_->time() + dt);
       S_->set_intermediate_time(S_->time());
 
+      std::cout << "cycle_driver: before advance" << std::endl;
+
       fail = advance(S_->time(), S_->time() + dt);
+
+      std::cout << "cycle_driver: after advance" << std::endl;
+
       dt = get_dt(fail);
+
+      std::cout << "cycle_driver: time = " << S_->time() << std::endl;
 
     } // while not finished
 
