@@ -173,10 +173,10 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
-    *vo_->os() << std::endl << vo_->color("green")
+    *vo_->os() << std::endl 
                << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics() << std::endl
                << "preconditioner: " << my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)->PrintDiagnostics() << std::endl
-               << "Initialization of PK is complete: my dT=" << get_dt()
+               << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;
   }
 }

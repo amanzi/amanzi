@@ -181,8 +181,8 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // output of initialization header
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl << vo_->color("green")
-               << "Initialization of TP is complete, T=" << t_old 
+    *vo_->os() << std::endl 
+               << vo_->color("green") << "Initialization of TP is complete, T=" << t_old 
                << " dT=" << dt_ << vo_->reset() << std::endl;
   }
 }

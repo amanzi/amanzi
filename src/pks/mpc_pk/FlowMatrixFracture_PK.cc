@@ -214,7 +214,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
   std::string name = ti_list_->get<std::string>("preconditioner");
-  std::string ls_name = ti_list_->get<std::string>("linear solver", "none");
+  std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
 								ls_name, *linear_operator_list_,
 								true);
@@ -233,10 +233,9 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green")
-               << "matrix:" << std::endl
+    *vo_->os() << "matrix:" << std::endl
                << op_tree_matrix_->PrintDiagnostics() << std::endl
-               << "Initialization of PK is complete: my dT=" << get_dt()
+               << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl << std::endl;
   }
 }

@@ -205,7 +205,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   double tmp;
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (flag) {
+  if (flag == 1) {
     tmp = hmin;  // global extrema
     mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
     tmp = hmax;
