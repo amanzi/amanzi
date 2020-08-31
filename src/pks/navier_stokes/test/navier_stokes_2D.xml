@@ -1,8 +1,8 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <Parameter name="end time" type="double" value="100.0"/>
-  <Parameter name="initial time step" type="double" value="1.0"/>
+  <Parameter name="end time" type="double" value="5000.0"/>
+  <Parameter name="initial time step" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
 
@@ -120,7 +120,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-3"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
             <Parameter name="diverged tolerance" type="double" value="1e+10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="max du growth factor" type="double" value="1e+5"/>
@@ -186,7 +186,7 @@
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="0.1"/>
+        <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
