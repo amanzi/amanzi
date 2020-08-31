@@ -161,7 +161,6 @@ void Coordinator::initialize() {
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
   S_->InitializeFields();
-  S_->InitializeEvaluators();
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
@@ -171,16 +170,17 @@ void Coordinator::initialize() {
   S_->InitializeEvaluators();
   S_->CheckAllFieldsInitialized();
 
+  // commit the initial conditions.
+  pk_->CommitStep(0., 0., S_);
+
   // Write dependency graph.
   S_->WriteDependencyGraph();
+
   // Reset io_vis flags using blacklist and whitelist
   //S_->InitializeIOFlags();
 
   // Check final initialization
   WriteStateStatistics(*S_, *vo_);
-
-  // commit the initial conditions.
-  pk_->CommitStep(0., 0., S_);
 
   // visualization
   auto vis_list = Teuchos::sublist(parameter_list_,"visualization");

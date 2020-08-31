@@ -62,31 +62,18 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
   if (tp_list_->isParameter("component names")) {
     component_names_ = tp_list_->get<Teuchos::Array<std::string> >("component names").toVector();
     mol_masses_ = tp_list_->get<Teuchos::Array<double> >("component molar masses").toVector();
-  }
-  else if (glist->isSublist("Cycle Driver")) {
-    if (glist->sublist("Cycle Driver").isParameter("component names")) {
-      // grab the component names
-      component_names_ = glist->sublist("Cycle Driver")
-        .get<Teuchos::Array<std::string> >("component names").toVector();
-    } else {
-      Errors::Message msg("Transport PK: parameter component names is missing.");
-      Exceptions::amanzi_throw(msg);
-    }
   } else {
-    Errors::Message msg("Transport PK: sublist Cycle Driver or parameter component names is missing.");
+    Errors::Message msg("Transport PK: parameter component names is missing.");
     Exceptions::amanzi_throw(msg);
   }
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
-
   special_source_ = tp_list_->get<bool>("special source", false);
   water_source_in_meters_ = tp_list_->get<bool>("water source in meters", true);
-
 
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
-
   vo_ = Teuchos::null;
 }
 
