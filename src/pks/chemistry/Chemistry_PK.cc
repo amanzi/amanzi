@@ -40,22 +40,18 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh(domain_);
 
   // Require data from flow
-  if (!S->HasField(poro_key_)) {
-    S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(poro_key_);
-  }
+  S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(poro_key_);
 
-  if (!S->HasField(saturation_key_)) {
-    S->RequireField(saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-  
-  if (!S->HasField(fluid_den_key_)) {
-    // S->RequireScalar(fluid_den_key_, passwd_);
-    S->RequireField(fluid_den_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
-       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(fluid_den_key_);
-  }
+  S->RequireField(saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(saturation_key_);
+
+  // S->RequireScalar(fluid_den_key_, passwd_);
+  S->RequireField(fluid_den_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(fluid_den_key_);
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
