@@ -231,7 +231,7 @@ public:
  protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
-  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {};
+  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
   // -- get enthalpy as a function of Dirichlet boundary data.  Note that this
   //    will get replaced by a better system when we get maps on the boundary
@@ -347,7 +347,7 @@ public:
 
 
 
-  //Key energy_key_;
+  Key energy_key_;
   Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;

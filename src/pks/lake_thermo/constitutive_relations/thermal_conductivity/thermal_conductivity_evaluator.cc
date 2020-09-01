@@ -22,11 +22,12 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
 
   Key domain = Keys::getDomain(my_key_);
 
-//  uf_key_ = Keys::readKey(plist_, domain, "unfrozen fraction", "unfrozen_fraction");
-//  dependencies_.insert(uf_key_);
-//
-//  height_key_ = Keys::readKey(plist_, domain, "ponded depth", "ponded_depth");
-//  dependencies_.insert(height_key_);
+  // Set up my dependencies.
+  std::string domain_name = Keys::getDomain(my_key_);
+
+  // -- temperature
+  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
+  dependencies_.insert(temperature_key_);
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -86,27 +87,6 @@ void ThermalConductivityEvaluator::EvaluateField_(
       }
     }
 
-
-
-//  // pull out the dependencies
-//  Teuchos::RCP<const CompositeVector> eta = S->GetFieldData(uf_key_);
-//  Teuchos::RCP<const CompositeVector> height = S->GetFieldData(height_key_);
-//
-//  for (CompositeVector::name_iterator comp=result->begin();
-//       comp!=result->end(); ++comp) {
-//    // much more efficient to pull out vectors first
-//    const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
-//    const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-//    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
-//
-//    int ncomp = result->size(*comp, false);
-//    for (int i=0; i!=ncomp; ++i) {
-//      result_v[0][i] = std::max(min_K_,
-//              height_v[0][i] * (K_liq_ * eta_v[0][i] + K_ice_ * (1. - eta_v[0][i])));
-//    }
-//  }
-//
-//  result->Scale(1.e-6); // convert to MJ
 }
 
 

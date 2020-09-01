@@ -33,7 +33,10 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
+  std::cout << "check 1" << std::endl;
+  std::cout << "density_key_ = " << density_key_ << std::endl;
   S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  std::cout << "check 2" << std::endl;
 
   // evaluate density
   const Epetra_MultiVector& rho =
@@ -118,7 +121,7 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   matrix_adv_->UpdateMatrices(flux.ptr());
 
   // apply to temperature
-  S->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S.ptr(), name_);
+//  S->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
   ApplyDirichletBCsToEnthalpy_(S.ptr());
   matrix_adv_->ApplyBCs(false, true, false);
@@ -138,12 +141,12 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-  for (int f = 0; f < nfaces_owned; f++) {
-      std::cout << uw_cond_c[0][f] << std::endl;
-  }
+//  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+//
+//  for (int f = 0; f < nfaces_owned; f++) {
+//      std::cout << uw_cond_c[0][f] << std::endl;
+//  }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 

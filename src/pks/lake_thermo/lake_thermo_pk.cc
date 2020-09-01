@@ -21,6 +21,7 @@ Author: Svetlana Tokareva
 #include "upwind_gravity_flux.hh"
 #include "lake_enthalpy_evaluator.hh"
 #include "density_evaluator.hh"
+#include "lake_energy_evaluator.hh"
 #include "thermal_conductivity_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
@@ -91,7 +92,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
-  //energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
+  energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
   wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
@@ -272,6 +273,16 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new LakeThermo::DensityEvaluator(den_plist));
   S->SetFieldEvaluator(density_key_, den);
 
+  // -- energy evaluator
+  S->RequireField(energy_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList enrg_plist =
+    plist_->sublist("energy evaluator");
+  enrg_plist.set("evaluator name", energy_key_);
+  Teuchos::RCP<LakeThermo::LakeEnergyEvaluator> enrg =
+    Teuchos::rcp(new LakeThermo::LakeEnergyEvaluator(enrg_plist));
+  S->SetFieldEvaluator(energy_key_, enrg);
+
   // -- thermal conductivity evaluator
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -362,6 +373,32 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   T_limit_ = plist_->get<double>("limit correction to temperature change [K]", -1.);
 };
 
+// -------------------------------------------------------------
+// Create the physical evaluators that are specific to Lake.
+// -------------------------------------------------------------
+void Lake_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
+  // -- Density
+  S->RequireField(density_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(density_key_);
+
+  // -- Energy
+  S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(energy_key_);
+
+  // -- Conductivity
+  S->RequireField(conductivity_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(conductivity_key_);
+
+  // -- Enthalpy
+  S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(enthalpy_key_);
+
+}
+
 
 // -------------------------------------------------------------
 // Initialize PK
@@ -449,8 +486,11 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
     S->GetField(wc_key_, name_)->set_initialized();
 
-  S->GetFieldData(temperature_key_, name_)->PutScalar(100.0);
+  std::cout << "Setup check 1" << std::endl;
+  S->GetFieldData(temperature_key_, name_)->PutScalar(300.0);
+  std::cout << "Setup check 2" << std::endl;
   S->GetField(temperature_key_, name_)->set_initialized();
+  std::cout << "Setup check 3" << std::endl;
 
   std::cout << "Initialized Lake Thermo PK  NEW NEW!!!" << std::endl;
 
@@ -484,7 +524,9 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   
   niter_ = 0;
   bool update = UpdateConductivityData_(S.ptr());
+  std::cout << "CommitStep check 1" << std::endl;
   update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  std::cout << "CommitStep check 2" << std::endl;
 
   if (update) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);

@@ -37,12 +37,14 @@ class ThermalConductivityEvaluator :
  protected:
   // dependencies
 
-  bool ice_cover_;
+  bool ice_cover_ = false;
 
   double V_wind_;
   double V_wind_0_;
   double K_max_;
   double K_0_;
+
+  Key temperature_key_;
 
 
 //  Key uf_key_;

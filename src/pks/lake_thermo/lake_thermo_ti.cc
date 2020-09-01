@@ -196,17 +196,17 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
-  S_next_->GetFieldEvaluator(temperature_key_)
+  S_next_->GetFieldEvaluator(energy_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_))
+  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
       ->ViewComponent("cell",false);
   unsigned int ncells = de_dT.MyLength();
 
-  CompositeVector acc(S_next_->GetFieldData(temperature_key_)->Map());
+  CompositeVector acc(S_next_->GetFieldData(energy_key_)->Map());
   auto& acc_c = *acc.ViewComponent("cell", false);
-  
+
 #if DEBUG_FLAG
-  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_)).ptr());
+//  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_)).ptr());
 #endif
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
@@ -232,26 +232,27 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
         // apply a diagonal shift manually for coupled problems
         acc_c[0][c] = de_dT[0][c] / h + 1.e-6;
       }
-    }      
+    }
   }
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
-  // update with advection terms
-  if (implicit_advection_ && implicit_advection_in_pc_) {
-    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
-    S_next_->GetFieldEvaluator(enthalpy_key_)
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
-    preconditioner_adv_->Setup(*mass_flux);
-    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
-    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
-    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(false, true, false);
-
-  }
+//  // update with advection terms
+//  if (implicit_advection_ && implicit_advection_in_pc_) {
+//    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
+//    S_next_->GetFieldEvaluator(enthalpy_key_)
+//        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+////    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
+//    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_));
+//    preconditioner_adv_->Setup(*mass_flux);
+//    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
+//    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
+//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
+//    preconditioner_adv_->ApplyBCs(false, true, false);
+//
+//  }
 
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
