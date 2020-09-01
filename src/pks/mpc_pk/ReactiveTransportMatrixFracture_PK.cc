@@ -116,7 +116,7 @@ double ReactiveTransportMatrixFracture_PK::get_dt()
   double dTchem = sub_pks_[0]->get_dt();
   double dTtran = sub_pks_[1]->get_dt();
 
-  if (!chem_step_succeeded_ && (dTchem / dTtran > 0.99)) {
+  if (dTchem / dTtran > 0.99) {
     dTchem *= 0.5;
   } 
 
