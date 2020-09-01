@@ -71,7 +71,7 @@ Polynomial::Polynomial(const Polynomial& poly)
 {
   d_ = poly.dimension();
   order_ = poly.order();
-  origin_ = poly.origin();
+  origin_ = poly.get_origin();
   size_ = poly.size();
   coefs_ = poly.coefs();
 }
@@ -111,7 +111,7 @@ Polynomial::Polynomial(const Monomial& mono)
 {
   d_ = mono.dimension();
   order_ = mono.order();
-  origin_ = mono.origin();
+  origin_ = mono.get_origin();
 
   size_ = PolynomialSpaceDimension(d_, order_);
   coefs_.Reshape(size_);
@@ -212,7 +212,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
 Polynomial& Polynomial::operator+=(const Polynomial& poly)
 {
   AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
-  AMANZI_ASSERT(origin_ == poly.origin());
+  AMANZI_ASSERT(origin_ == poly.get_origin());
 
   int order = poly.order();
   if (order_ < order) Reshape(d_, order);
@@ -225,7 +225,7 @@ Polynomial& Polynomial::operator+=(const Polynomial& poly)
 Polynomial& Polynomial::operator-=(const Polynomial& poly)
 {
   AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
-  AMANZI_ASSERT(origin_ == poly.origin());
+  AMANZI_ASSERT(origin_ == poly.get_origin());
 
   int order = poly.order();
   if (order_ < order) Reshape(d_, order);
@@ -325,7 +325,7 @@ Polynomial Polynomial::ChangeOrigin(
   }
   else if (order > 1) {
     int idx[3];
-    AmanziGeometry::Point shift(origin - mono.origin());
+    AmanziGeometry::Point shift(origin - mono.get_origin());
     const int* index = mono.multi_index();
 
     for (int i = 0; i < d_; ++i) {
@@ -665,7 +665,7 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
 
     if (m == MonomialSpaceDimension(d, k) - 1) os << std::endl;
   } 
-  os << "origin: " << p.origin() << std::endl;
+  os << "origin: " << p.get_origin() << std::endl;
   return os;
 }
 
@@ -677,12 +677,12 @@ Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2)
 {
   int d = poly1.dimension();
   AMANZI_ASSERT(d == poly2.dimension());  // FIXME
-  AMANZI_ASSERT(poly1.origin() == poly2.origin());
+  AMANZI_ASSERT(poly1.get_origin() == poly2.get_origin());
 
   int order1 = poly1.order();
   int order2 = poly2.order();
   Polynomial tmp(d, order1 + order2);
-  tmp.set_origin(poly1.origin());
+  tmp.set_origin(poly1.get_origin());
 
   if (order1 == 0) {
     for (int n = 0; n < tmp.size(); ++n) {

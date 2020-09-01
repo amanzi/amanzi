@@ -60,7 +60,7 @@ public:
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
 
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name) const {
+  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name) const {
     return maps_[Index_(name)]; }
 
   // Accessors to data.
@@ -70,10 +70,10 @@ public:
 
   // -- Access a view of a single component's data.
   Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(std::string name) const;
+  ViewComponent(const std::string& name) const;
 
   Teuchos::RCP<Epetra_MultiVector>
-  ViewComponent(std::string name);
+  ViewComponent(const std::string& name);
 
   // -- View entries in the vectors.
   double operator()(std::string name, int i, int j) const {
@@ -85,7 +85,7 @@ public:
 
   // Mutators of data
   // -- Set entries in the vectors.
-  void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
+  void SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data);
 
   // double& operator()(std::string name, int i, int j) {
   //   return (*data_[Index_(name)])[i][j];
@@ -160,7 +160,7 @@ public:
   Comm_ptr_type Comm() const { return comm_; }
 
 private:
-  int Index_(std::string name) const {
+  int Index_(const std::string& name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
     AMANZI_ASSERT(item != indexmap_.end());
     return item->second;

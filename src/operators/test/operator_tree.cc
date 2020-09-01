@@ -95,7 +95,6 @@ TEST(SURFACE_SUBSURFACE_DIFFUSION) {
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
   AmanziMesh::MeshFactory meshfactory(comm, gm);
   auto mesh_subsurf = meshfactory.create(-10,-10,-10,10,10,0,3,3,3);
-  int ncells_subsurf = mesh_subsurf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   auto mesh_surf = meshfactory.create(mesh_subsurf, {"surface"}, Amanzi::AmanziMesh::FACE, true, true, false);
   int ncells_surf = mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -216,7 +215,6 @@ TEST(SURFACE_SUBSURFACE_LOTS_OF_DIAGONALS) {
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
   AmanziMesh::MeshFactory meshfactory(comm, gm);
   auto mesh_subsurf = meshfactory.create(-10,-10,-10,10,10,0,1,1,2);
-  int ncells_subsurf = mesh_subsurf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   auto mesh_surf = meshfactory.create(mesh_subsurf, {"surface"}, Amanzi::AmanziMesh::FACE, true, true, false);
   int ncells_surf = mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 

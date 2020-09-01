@@ -94,9 +94,9 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // register the advection Op
-  if (local_schema_col_.base() == AmanziMesh::CELL) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL) {
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-  } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::FACE) {
     local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
@@ -240,7 +240,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, dg_->order(), coef);
+      WhetStone::Polynomial pf(d, dg_->get_order(), coef);
       pf.set_origin(xf);
 
       // -- convert boundary polynomial to regularized space polynomial

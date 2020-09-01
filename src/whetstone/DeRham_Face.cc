@@ -65,7 +65,7 @@ int DeRham_Face::L2consistency(
     double area = mesh_->face_area(f);
     for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i] / area;
   }
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -83,7 +83,7 @@ int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -148,7 +148,7 @@ int DeRham_Face::L2consistencyInverse(
     }
   }
   */
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

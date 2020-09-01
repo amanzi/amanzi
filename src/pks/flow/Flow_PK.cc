@@ -518,7 +518,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "pressure") {
+    if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -526,7 +526,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       }
     }
 
-    if (bcs_[i]->bc_name() == "head") {
+    if (bcs_[i]->get_bc_name() == "head") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         if (bcs_[i]->no_flow_above_water_table()) {
@@ -541,7 +541,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       }
     }
 
-    if (bcs_[i]->bc_name() == "flux") {
+    if (bcs_[i]->get_bc_name() == "flux") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

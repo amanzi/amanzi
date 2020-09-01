@@ -34,10 +34,10 @@ class PolynomialOnMesh {
   Polynomial& poly() { return poly_; }
   const Polynomial& poly() const { return poly_; }
 
-  const Entity_kind& kind() const { return kind_; }
-  const Entity_ID& id() const { return id_; }
-
   void set_kind(Entity_kind kind) { kind_ = kind; }
+  const Entity_kind& get_kind() const { return kind_; }
+
+  const Entity_ID& get_id() const { return id_; }
   void set_id(Entity_ID id) { id_ = id; }
 
  private:

@@ -37,9 +37,10 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor parses the parameter list
 ****************************************************************** */
-MFD3D_CrouzeixRaviartAnyOrder::MFD3D_CrouzeixRaviartAnyOrder(const Teuchos::ParameterList& plist,
-                                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh)
+MFD3D_CrouzeixRaviartAnyOrder::MFD3D_CrouzeixRaviartAnyOrder(
+    const Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -203,7 +204,7 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
   Rtmp.Transpose(R_);
   Ac.Multiply(RG, Rtmp, false);
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -219,7 +220,7 @@ int MFD3D_CrouzeixRaviartAnyOrder::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

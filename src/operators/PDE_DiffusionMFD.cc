@@ -353,7 +353,7 @@ void PDE_DiffusionMFD::UpdateMatricesNodal_()
     WhetStone::DenseMatrix Acell(nnodes, nnodes);
 
     int method = mfd_primary_;
-    int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+    int ok = 1;
 
     if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
       ok = mfd.StiffnessMatrixMMatrix(c, K, Acell);
@@ -363,12 +363,12 @@ void PDE_DiffusionMFD::UpdateMatricesNodal_()
       method = mfd_secondary_;
     }
 
-    if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
+    if (ok != 0) {
       nfailed_primary_++;
       ok = mfd.StiffnessMatrix(c, K, Acell);
     }
 
-    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
+    if (ok == 1) {
       Errors::Message msg("Stiffness_MFD: unexpected failure of LAPACK in WhetStone.");
       Exceptions::amanzi_throw(msg);
     }
@@ -1100,12 +1100,12 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
       int nfaces = mesh_->cell_get_num_faces(c);
       Wff.Reshape(nfaces, nfaces);
       Wff.PutScalar(0.0);
-      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
+      ok = 0;
     } else if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
       int method = mfd_primary_;
-      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+      ok = 1;
 
       // try primary and then secondary discretization methods.
       if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
@@ -1116,7 +1116,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
         method = mfd_secondary_;
       }
 
-      if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
+      if (ok != 0) {
         if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
           ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_TPFA) {
@@ -1135,7 +1135,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 
     Wff_cells_[c] = Wff;
 
-    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
+    if (ok == 1) {
       Errors::Message msg("PDE_DiffusionMFD: unexpected failure in WhetStone.");
       Exceptions::amanzi_throw(msg);
     }

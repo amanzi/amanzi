@@ -334,7 +334,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xc);
     product *= tmp;
   }
@@ -371,7 +371,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xc);
     product *= tmp;
   }
@@ -422,7 +422,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsFace(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeOrigin(xf);
     product *= tmp;
   }
@@ -599,7 +599,7 @@ void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
   Polynomial& poly = integrals.poly();
   int k0 = poly.order();
 
-  // data are uniqueckly defined by topological dimension of
+  // data are uniquecly defined by topological dimension of
   // a geometric entity and its mesh id. 
   if (integrals.kind() != (Entity_kind)WhetStone::CELL ||
       integrals.id() != c ||

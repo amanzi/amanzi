@@ -112,7 +112,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   }
 
   // i/o
-  std::string PrintDiagnostics() const { return std::string(); }
+  std::string PrintDiagnostics() const;
 
   // forward operator
   virtual int Apply(const TreeVector& X, TreeVector& Y) const override {

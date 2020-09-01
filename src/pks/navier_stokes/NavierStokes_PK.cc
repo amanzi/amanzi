@@ -203,7 +203,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& tmp4 = ns_list_->sublist("operators")
                                           .sublist("advection operator");
   op_matrix_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp4, op_matrix_elas_->global_operator()));
-  op_preconditioner_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_preconditioner_elas_->global_operator()));
+  op_preconditioner_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp4, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
   op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
@@ -227,7 +227,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- velocity
   if (bc_list->isSublist("velocity")) {
-    PK_DomainFunctionFactory<NavierStokesBoundaryFunction > bc_factory(mesh_);
+    PK_DomainFunctionFactory<NavierStokesBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -309,6 +309,20 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
     inv_list.setParameters(linear_solver_list_->sublist(tmp_solver));
   }
   op_preconditioner_->set_inverse_parameters(inv_list);
+
+  // summary of initialization
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
+               << "matrix:\n" << op_matrix_->PrintDiagnostics() << std::endl
+               << "precon:\n" << op_preconditioner_->PrintDiagnostics() << std::endl;
+
+    // *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
+    // *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
+
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
+               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -340,7 +354,7 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    // revover the original primary solution
+    // recover the original primary solution
     *S_->GetFieldData("pressure", passwd_) = pressure_copy;
     pressure_eval_->SetFieldAsChanged(S_.ptr());
 

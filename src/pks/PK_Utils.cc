@@ -17,8 +17,7 @@
 namespace Amanzi {
 
 /* ******************************************************************
-* Averages permeability tensor in horizontal direction is permeability
-* is provided.
+* Averages permeability tensor in horizontal direction.
 ****************************************************************** */
 void PKUtils_CalculatePermeabilityFactorInWell(
     const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
@@ -39,6 +38,25 @@ void PKUtils_CalculatePermeabilityFactorInWell(
     int idim = std::max(1, dim - 1);
     for (int i = 0; i < idim; i++) (*Kxy)[c] += perm[i][c];
     (*Kxy)[c] /= idim;
+  }
+}
+
+
+/* ******************************************************************
+* Return coordinate of mesh entity (
+****************************************************************** */
+AmanziGeometry::Point PKUtils_EntityCoordinates(
+    int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh)
+{
+  if (kind == AmanziMesh::FACE) {
+    return mesh.face_centroid(id);
+  } else if (kind == AmanziMesh::CELL) {
+    return mesh.cell_centroid(id);
+  } else if (kind == AmanziMesh::NODE) {
+    int d = mesh.space_dimension(); 
+    AmanziGeometry::Point xn(d);
+    mesh.node_get_coordinates(id, &xn);
+    return xn;
   }
 }
 

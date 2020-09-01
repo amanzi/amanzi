@@ -37,8 +37,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: whetstone
 #
 add_amanzi_library(whetstone
-                   SOURCE InnerProduct.cc 
-                          DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
+                   SOURCE DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
                           MFD3D_BernardiRaugel.cc
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
@@ -67,7 +66,6 @@ add_amanzi_library(whetstone
                            Basis_Natural.hh Basis_Regularized.hh 
                            Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
-                           InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh BilinearFormFactory.hh 
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            GrammMatrix.hh

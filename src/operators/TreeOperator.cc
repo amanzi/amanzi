@@ -582,5 +582,32 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teucho
 }
 
 
+/* ******************************************************************
+* Populates matrix entries.
+****************************************************************** */
+std::string TreeOperator::PrintDiagnostics() const
+{
+  std::stringstream msg;
+  int n_blocks = blocks_.size();
+  for (int i = 0; i < n_blocks; ++i) {
+    for (int j = 0; j < n_blocks; ++j) {
+      auto block = blocks_[i][j];
+      if (block != Teuchos::null) {
+        msg << " block " << i << " " << j << ": ";
+        auto op = block->get_operator();
+        if (op == Teuchos::null) {
+           msg << "TreeOperator ";
+        } else {
+          for (auto it = op->begin(); it != op->end(); ++it) {
+            msg << "<" << (*it)->schema_string << "> ";
+          }
+        }
+        msg << "\n";
+      }
+    }
+  }
+  return msg.str();
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

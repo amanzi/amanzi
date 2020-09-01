@@ -137,7 +137,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   Rtmp.Transpose(R_);
   Ac.Multiply(Nf, Rtmp, false);
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -153,7 +153,7 @@ int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

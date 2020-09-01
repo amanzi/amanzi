@@ -61,9 +61,9 @@ class Schema {
   // fancy io
   std::string CreateUniqueName() const;
 
-  // access
+  // accessers and modifiers
   void set_base(AmanziMesh::Entity_kind base) { base_ = base; }
-  AmanziMesh::Entity_kind base() const { return base_; }
+  AmanziMesh::Entity_kind get_base() const { return base_; }
 
   std::vector<WhetStone::SchemaItem>::const_iterator begin() const { return items_.begin(); }
   std::vector<WhetStone::SchemaItem>::const_iterator end() const { return items_.end(); }
@@ -74,7 +74,7 @@ class Schema {
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Schema& s) {
-    os << "base=" << s.KindToString(s.base()) << "\n";
+    os << "base=" << s.KindToString(s.get_base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
       os << " item: kind=" << s.KindToString(std::get<0>(*it)) 
          << ", num=" << std::get<2>(*it) << ", type=" << (int)std::get<1>(*it) << "\n";
@@ -95,7 +95,7 @@ class Schema {
 // non-member functions
 // -- comparison operators
 inline bool operator==(const Schema& s1, const Schema& s2) {
-  if (s1.base() != s2.base()) return false;
+  if (s1.get_base() != s2.get_base()) return false;
   if (s1.size() != s2.size()) return false;
 
   for (auto it1 = s1.begin(), it2 = s2.begin(); it1 != s1.end(); ++it1, ++it2) {

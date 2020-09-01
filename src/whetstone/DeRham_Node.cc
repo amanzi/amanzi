@@ -71,7 +71,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
     N(i, 0) = 1.0;
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -87,7 +87,7 @@ int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 
   // StabilityScalar_(N, M);
   StabilityOptimized_(T, N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

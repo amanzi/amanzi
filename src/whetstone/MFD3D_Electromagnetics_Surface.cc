@@ -99,7 +99,7 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
     N(i, 1) = (tau * v1) * dirs[i] / len; 
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -114,7 +114,7 @@ int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatr
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

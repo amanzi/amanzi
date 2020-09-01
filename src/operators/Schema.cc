@@ -240,7 +240,6 @@ std::string Schema::CreateUniqueName() const
     name.append(c);
     name.append(KindToString(kind)); 
     name.append(std::to_string(num)); 
-    c = "+";
   }
 
   std::transform(name.begin(), name.end(), name.begin(), ::toupper);

@@ -101,7 +101,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -191,7 +191,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / len;
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -206,7 +206,7 @@ int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -287,7 +287,7 @@ int DeRham_Edge::L2consistencyInverse2D_(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -370,7 +370,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -385,7 +385,7 @@ int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
   if (ok) return ok;
 
   StabilityScalar_(R, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

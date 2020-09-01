@@ -239,12 +239,12 @@ void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl << vo_->color("green")
+    *vo_->os() << std::endl 
                << "matrix:" << std::endl
                << op_tree_matrix_->PrintDiagnostics() << std::endl
                << "preconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
-               << "Initialization of PK is complete: my dT=" << get_dt() 
+               << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt() 
                << vo_->reset() << std::endl << std::endl;
   }
 

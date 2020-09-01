@@ -114,7 +114,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   // NtR.Multiply(N, R, true);
   // std::cout << NtR << std::endl;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -129,7 +129,7 @@ int MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

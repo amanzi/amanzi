@@ -35,15 +35,15 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
  public:
   MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh) {};
-  ~MFD3D_CrouzeixRaviartSerendipity() {};
+    : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh),
+      BilinearForm(mesh) {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors

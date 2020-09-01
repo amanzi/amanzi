@@ -38,7 +38,6 @@ struct TensorVector {
     data.resize(size_());
   }
 
-
   TensorVector(CompositeVectorSpace map_, int dim_, int rank_, bool ghosted_=false) :
       map(std::move(map_)),
       ghosted(ghosted_) {
@@ -79,15 +78,14 @@ class TensorVector_Factory {
       d_(0),
       rank_(0),
       ghosted_(false)      
-  {}
+  {};
 
   int dimension() const { return d_; }
-  int rank() const { return rank_; }
   const CompositeVectorSpace& map() const { return map_; }
 
-  void set_rank(int rank) {
-    rank_ = rank;
-  }
+  int get_rank() const { return rank_; }
+  void set_rank(int rank) { rank_ = rank; }
+
   void set_map(CompositeVectorSpace map) {
     map_ = std::move(map);
     d_ = map_.Mesh()->space_dimension();
@@ -101,15 +99,12 @@ class TensorVector_Factory {
   }
 
  private:
-
   CompositeVectorSpace map_;
   int d_, rank_;
   bool ghosted_;
-  
 };
 
 }  // namespace Amanzi
-
 
 #endif
 

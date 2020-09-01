@@ -30,7 +30,7 @@ namespace WhetStone {
 std::vector<SchemaItem> MFD3D_BernardiRaugel::schema() const
 {
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::POINT, d_));
   items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::NORMAL_COMPONENT, 1));
   return items;
 }
@@ -219,7 +219,7 @@ int MFD3D_BernardiRaugel::H1consistency(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -235,7 +235,7 @@ int MFD3D_BernardiRaugel::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -294,7 +294,7 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
     }    
   } 
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -321,7 +321,7 @@ int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
     A(0, n1 + n) = area * dirs[n]; 
   } 
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

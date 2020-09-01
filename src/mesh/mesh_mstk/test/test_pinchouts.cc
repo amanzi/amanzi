@@ -39,7 +39,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
-  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
   prefs.clear();
   prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   

@@ -59,7 +59,7 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
     for (int k = 0; k < d_; k++) v1[k] = a - normal[k] * v1[k];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -208,7 +208,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
       }
     }
   }
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -223,7 +223,7 @@ int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -238,7 +238,7 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatr
   if (ok) return ok;
 
   StabilityOptimized_(T, N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

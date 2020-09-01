@@ -54,7 +54,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
     W(n, n) = Knn / fabs(dxn);
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -101,7 +101,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
     double area = mesh_->face_area(f);
     W(n, n) = nfaces * K(0, 0) * area * area / (d_ * volume);
   }
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -192,7 +192,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     Exceptions::amanzi_throw(msg);
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

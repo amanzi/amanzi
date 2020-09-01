@@ -75,7 +75,7 @@ Polynomial ConvertPolynomialsToSurfacePolynomial(
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(d, polys[i]->order(), polys[i]->ExpandCoefficients());
-    tmp.set_origin(polys[i]->origin());
+    tmp.set_origin(polys[i]->get_origin());
     tmp.ChangeCoordinates(xf, *coordsys->tau());  
     product *= tmp;
   }

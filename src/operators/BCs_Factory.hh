@@ -27,11 +27,11 @@ class BCs_Factory {
   void set_type(DOF_Type type) { type_ = type; }
 
   Teuchos::RCP<BCs> Create() const {
-    auto bc_p = Teuchos::rcp(new BCs(mesh_, kind_, type_));
+    auto bc = Teuchos::rcp(new BCs(mesh_, kind_, type_));
     // these are called to force instantiation
-    bc_p->bc_model();
-    bc_p->bc_value();
-    return bc_p;
+    bc->bc_model();
+    bc->bc_value();
+    return bc;
   }
   
  private:

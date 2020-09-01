@@ -47,8 +47,8 @@ class MeshFactory {
   //
   // During construction, the first framework that provides the needed
   // capability is used (except in extraction -- see that documentation).  
-  const Preference& preference() const { return preference_; }
   void set_preference(const Preference& pref);
+  const Preference& get_preference() const { return preference_; }
 
   // Get/set the geometric model
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return gm_; }

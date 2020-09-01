@@ -28,8 +28,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
+typedef std::string BFKey;
+
 class BilinearFormFactory {
-  typedef std::map<std::string,
+  typedef std::map<BFKey,
                    BilinearForm* (*)(const Teuchos::ParameterList&,
                                      const Teuchos::RCP<const AmanziMesh::Mesh>&)> map_type;
 
@@ -57,7 +59,7 @@ class RegisteredFactory : public BilinearFormFactory {
 public:
   RegisteredFactory(const std::string& s) {
     for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}
-    BilinearFormFactory::GetMap()->insert(std::pair<std::string,
+    BilinearFormFactory::GetMap()->insert(std::pair<BFKey,
                                           BilinearForm* (*)(const Teuchos::ParameterList&,
                                                             const Teuchos::RCP<const AmanziMesh::Mesh>&)>(s, &CreateT<TDerived>));
     for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}

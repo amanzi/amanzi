@@ -42,7 +42,7 @@ TEST(MESH_DEFORM2D)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[i]);
 
@@ -137,7 +137,7 @@ TEST(MESH_DEFORM3D)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[i]);
 

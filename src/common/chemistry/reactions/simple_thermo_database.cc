@@ -1019,7 +1019,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
                                       K);
 
   for (unsigned int i = 0; i < ion_exchange_rxns().size(); i++) {
-    if (site_name == ion_exchange_rxns().at(i).site().name()) {
+    if (site_name == ion_exchange_rxns().at(i).site().get_name()) {
       AddIonExchangeComplex(i,exchange_complex);
       break;
     }

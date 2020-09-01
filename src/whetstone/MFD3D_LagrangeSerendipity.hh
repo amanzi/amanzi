@@ -36,14 +36,13 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
  public:
   MFD3D_LagrangeSerendipity(const Teuchos::ParameterList& plist,
                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D_LagrangeSerendipity() {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors

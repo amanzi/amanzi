@@ -48,7 +48,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[frm]);
       meshfactory.set_preference(prefs);
@@ -228,7 +228,7 @@ TEST(MESH_GEOMETRY_SURFACE)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[frm]);
 
@@ -402,7 +402,7 @@ TEST(MESH_GEOMETRY_SOLID)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[frm]);
 

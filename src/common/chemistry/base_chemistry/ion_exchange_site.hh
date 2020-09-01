@@ -39,39 +39,18 @@ class IonExchangeSite {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  // mutators
-  void set_cation_exchange_capacity(const double in_value) {
-    cation_exchange_capacity_ = in_value;
-  };
+  // access and mutators
+  void set_cation_exchange_capacity(double value) { cation_exchange_capacity_ = value; }
+  double get_cation_exchange_capacity() const { return cation_exchange_capacity_; }
 
-  void set_charge(const double value) {
-    charge_ = value;
-  };
+  void set_charge(const double value) { charge_ = value; }
+  double get_charge() const { return charge_; }
 
-  void set_name(const IonxSiteName in_name) {
-    name_ = in_name;
-  };
+  void set_name(const IonxSiteName name) { name_ = name; }
+  IonxSiteName get_name(void) const { return name_; }
 
-  void set_mineral_name(const std::string name) {
-    mineral_name_ = name;
-  };
-
-  // accessors
-  IonxSiteName name(void) const {
-    return name_;
-  };
-
-  double cation_exchange_capacity(void) const {
-    return cation_exchange_capacity_;
-  };
-
-  std::string mineral_name(void) const {
-    return mineral_name_;
-  };
-
-  double charge(void) const {
-    return charge_;
-  };
+  void set_mineral_name(const std::string& name) { mineral_name_ = name; }
+  std::string get_mineral_name() const { return mineral_name_; }
 
  protected:
   IonxSiteName name_;
