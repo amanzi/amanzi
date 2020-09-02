@@ -601,8 +601,8 @@ void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
 
   // data are uniquecly defined by topological dimension of
   // a geometric entity and its mesh id. 
-  if (integrals.kind() != (Entity_kind)WhetStone::CELL ||
-      integrals.id() != c ||
+  if (integrals.get_kind() != (Entity_kind)WhetStone::CELL ||
+      integrals.get_id() != c ||
       poly.dimension() != d_) {
     integrals.set_kind((Entity_kind)WhetStone::CELL);
     integrals.set_id(c);

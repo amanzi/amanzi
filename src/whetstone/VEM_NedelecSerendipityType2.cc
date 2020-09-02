@@ -50,8 +50,8 @@ namespace WhetStone {
 VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
-    DeRham_Edge(mesh)
+  : DeRham_Edge(mesh),
+    BilinearForm(mesh)
 {
   // order of the maximum polynomial space
   order_ = plist.get<int>("method order");
@@ -79,7 +79,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   if (d_ == 2) {
     DenseMatrix MG;
     L2consistency2D_<AmanziMesh::Mesh>(mesh_, c, K, N, Mc, MG);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+    return 0;
   }
 
   Entity_ID_List edges, faces, fedges;
@@ -280,7 +280,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   sMGc.InverseSPD();
   Mc = R * ((Idc * Kinv) ^ sMGc) * RT;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -392,7 +392,7 @@ int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix&
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -404,7 +404,7 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(int c, const Tensor& T, DenseMa
   DenseMatrix M, C;
 
   StiffnessMatrix(c, T, A, M, C);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -449,7 +449,7 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(
     for (int j = 0; j < ndofs_e; ++j) C(i, j) *= areas[i];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

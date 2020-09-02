@@ -8,7 +8,6 @@
 
 ------------------------------------------------------------------------- */
 
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "dbc.hh"
 
 #include "Spline.hh"

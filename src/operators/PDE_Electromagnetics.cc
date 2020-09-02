@@ -80,7 +80,7 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential
 {
   if (bcs_trial_[0]->type() == WhetStone::DOF_Type::VECTOR) {
     ApplyBCs_Cell_Vector_(*bcs_trial_[0], local_op_, primary, eliminate, essential_eqn);
-  } else if (local_schema_col_.base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
     Teuchos::RCP<const BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
@@ -263,7 +263,7 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  if (local_schema_col_.base() == AmanziMesh::CELL) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL) {
     int num = std::get<2>(local_schema_row_[0]);  // number of dofs
     if (num > 1)
       local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));

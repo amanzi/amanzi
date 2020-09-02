@@ -41,18 +41,16 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
  public:
   VEM_RaviartThomasSerendipity(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~VEM_RaviartThomasSerendipity() {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrix
-  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
+  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override { return 0; }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override { return 0; }
 
   // -- l2 projector

@@ -68,7 +68,7 @@ void GrammMatrix(
   G.Reshape(nd, nd);
 
   // extended database of integrals of monomials
-  int c = integrals.id();
+  int c = integrals.get_id();
   numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
 
   int multi_index[3];
@@ -113,7 +113,7 @@ void GrammMatrixGradients(
   G.Reshape(nd, nd);
 
   // extended database of integrals of monomials
-  int c = integrals.id();
+  int c = integrals.get_id();
   numi.UpdateMonomialIntegralsCell(c, std::max(0, 2 * (order - 1)), integrals);
 
   Tensor Ktmp(d, 2);

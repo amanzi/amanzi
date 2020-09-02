@@ -43,7 +43,7 @@ namespace WhetStone {
 VEM_RaviartThomasSerendipity::VEM_RaviartThomasSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
+  : BilinearForm(mesh),
     save_face_matrices_(false)
 {
   order_ = plist.get<int>("method order");
@@ -246,7 +246,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
 
   Mc = R * G_ * RT;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -261,7 +261,7 @@ int VEM_RaviartThomasSerendipity::MassMatrix(int c, const Tensor& K, DenseMatrix
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

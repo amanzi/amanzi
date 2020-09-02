@@ -38,11 +38,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class VEM_NedelecSerendipityType2 : public MFD3D,
-                                    public DeRham_Edge { 
+class VEM_NedelecSerendipityType2 : public DeRham_Edge { 
  public:
   VEM_NedelecSerendipityType2(const Teuchos::ParameterList& plist,
-                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~VEM_NedelecSerendipityType2() {};
 
   // required methods
@@ -50,11 +49,10 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrix
-  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
+  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override { return 0; }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // other methods
@@ -211,7 +209,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   P0T.Transpose(P0);
   Mc = P0 * ((Id * Kinv) ^ MG) * P0T;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

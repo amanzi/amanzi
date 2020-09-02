@@ -84,7 +84,7 @@ Polynomial& Polynomial::operator=(const Polynomial& poly)
 {
   d_ = poly.dimension();
   order_ = poly.order();
-  origin_ = poly.origin();
+  origin_ = poly.get_origin();
   size_ = poly.size();
   coefs_ = poly.coefs();
 
@@ -96,7 +96,7 @@ Polynomial& Polynomial::operator=(Polynomial&& poly) noexcept
 {
   d_ = poly.dimension();
   order_ = poly.order();
-  origin_ = poly.origin();
+  origin_ = poly.get_origin();
   size_ = poly.size();
   coefs_ = std::move(poly.coefs());
 
@@ -319,7 +319,7 @@ Polynomial Polynomial::ChangeOrigin(
     poly(pos) = coef;
 
     for (int i = 0; i < d; ++i) {
-      poly(0) += origin[i] - mono.origin()[i];
+      poly(0) += origin[i] - mono.get_origin()[i];
     }
     poly(0) *= coef;
   }

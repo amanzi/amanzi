@@ -85,7 +85,7 @@ int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix
   A.InsertSubMatrix(BMC, 0, 1, 0, nrows, nrows, 0);
   A(nrows, nrows) = BMB(0, 0);
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

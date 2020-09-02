@@ -15,7 +15,7 @@
 #include "errors.hh"
 
 #include "SplinePolynomial.hh"
-#include "VectorObjects.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

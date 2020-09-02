@@ -20,7 +20,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "VectorObjects.hh"
+#include "VectorObjectsUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

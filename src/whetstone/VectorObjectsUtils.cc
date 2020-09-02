@@ -28,7 +28,7 @@ VectorPolynomial Gradient(const Polynomial& p)
   int order = std::max(0, p.order() - 1);
 
   VectorPolynomial poly(d, d, order);
-  poly.set_origin(p.origin());
+  poly.set_origin(p.get_origin());
 
   int index[3];
   for (auto it = p.begin(); it < p.end(); ++it) {
@@ -83,7 +83,7 @@ VectorPolynomial Curl3D(const VectorPolynomial& vp)
   AMANZI_ASSERT(d == vp.NumRows() && d == 3);
 
   VectorPolynomial curl(d, d, 0);
-  curl.set_origin(vp[0].origin());
+  curl.set_origin(vp[0].get_origin());
 
   for (int i = 0; i < d; ++i) {
     int j = (i + 1) % d;
@@ -186,7 +186,7 @@ Polynomial Divergence(const VectorPolynomial& vp)
   order = std::max(0, order - 1);
 
   Polynomial div(d, order);
-  div.set_origin(vp[0].origin());
+  div.set_origin(vp[0].get_origin());
 
   int index[3];
   for (int i = 0; i < d; ++i) {
@@ -291,7 +291,7 @@ void VectorDecomposition3DCurl(const Monomial& q, int component,
   double coef = q.coefs()(0);
   p1.Reshape(d, d, 0, true);
   p1[component] = Polynomial(d, index, coef / a);
-  p1.set_origin(q.origin());
+  p1.set_origin(q.get_origin());
 
   int idx[3];
   if (index[component] > 0) {
@@ -301,7 +301,7 @@ void VectorDecomposition3DCurl(const Monomial& q, int component,
   } else {
     p2.Reshape(d, 0, true);
   }
-  p2.set_origin(q.origin());
+  p2.set_origin(q.get_origin());
 }
 
 
@@ -317,10 +317,10 @@ void VectorDecomposition2DRot(
   for (int k = 0; k < d; ++k) order = std::max(order, q[k].order() - 1);
 
   p1.Reshape(d, order + 2, true);
-  p1.set_origin(q[0].origin());
+  p1.set_origin(q[0].get_origin());
 
   p2.Reshape(d, order, true);
-  p2.set_origin(q[0].origin());
+  p2.set_origin(q[0].get_origin());
 
   // calculate decomposition for each monomial of each component
   int idx[3];
@@ -375,7 +375,7 @@ int VectorDecomposition3DGrad(const Monomial& q, int component,
 
   idx[component]++;
   p1 = Polynomial(d, idx, coef / a);
-  p1.set_origin(q.origin());
+  p1.set_origin(q.get_origin());
   int pos = PolynomialPosition(d, idx);
 
   p2.Reshape(d, d, 0, true);
@@ -396,7 +396,7 @@ int VectorDecomposition3DGrad(const Monomial& q, int component,
     idx[k1]--;
     p2[k2] = Polynomial(d, idx, tmp);
   }
-  p2.set_origin(q.origin());
+  p2.set_origin(q.get_origin());
 
   return pos;
 }
@@ -464,7 +464,7 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
   AMANZI_ASSERT(k < 3);
 
   VectorPolynomial out(d, d, k);
-  out.set_origin(poly.origin());
+  out.set_origin(poly.get_origin());
 
   double a1, a2, a3, a4, a5, a6, a7, a8, a9;
   double len, len2, len3, len5, ux, uy, vx, vy;
