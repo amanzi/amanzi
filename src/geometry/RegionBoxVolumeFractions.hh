@@ -18,8 +18,8 @@ aligned with coordinate axes.
 Boxes are allowed to be of zero thickness in only one direction in which case 
 they are equivalent to rectangles on a plane or segments on a line.
 
-.. _region-box-volume-fraction-spec:
-.. admonition:: region-box-volume-fraction-spec
+.. _region-box-volume-fractions-spec:
+.. admonition:: region-box-volume-fractions-spec
 
     * `"corner coordinate`" ``[Array(double)]`` Location of one box corner.
     * `"opposite corner coordinate`" ``[Array(double)]`` Location of the opposite box corner.

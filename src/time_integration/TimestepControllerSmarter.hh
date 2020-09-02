@@ -17,8 +17,8 @@ decreases, converges in few iterations, increases, but then fails again.  It
 also tries to grow the step geometrically to more quickly recover from tricky
 nonlinearities.
 
-.. _timestep-controller-typed-smarter-spec:
-.. admonition:: timestep-controller-typed-smarter-spec
+.. _timestep-controller-smarter-spec:
+.. admonition:: timestep-controller-smarter-spec
 
     * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
     * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.

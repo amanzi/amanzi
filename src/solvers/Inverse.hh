@@ -15,6 +15,18 @@ Matrix provides existing Operators with an inverse.  Note this may be
 iterative or non-iterative, assembled or non-assembled, approximate or exact to
 machine precision.
 
+.. _inverse-typed-spec:
+.. admonition:: inverse-typed-spec
+
+   * `"iterative method`" ``[string]`` **optional**
+   * `"direct method`" ``[string]`` **optional**
+   * `"preconditioning method`" ``[string]`` **optional**
+
+DOCUMENT ME!
+
+*/
+
+/*
 Developer notes:
 ----------------
 

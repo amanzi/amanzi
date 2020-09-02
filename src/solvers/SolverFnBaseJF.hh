@@ -104,7 +104,7 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 
   // Create the linear solver for that linear operator, which must be an
   // iterative method.
-  Teuchos::ParameterList lin_plist = plist_.sublist("linear operator");
+  Teuchos::ParameterList lin_plist = plist_.sublist("inverse");
   if (!lin_plist.isParameter("iterative method")) {
     Errors::Message msg("JFNK \"linear operator\" sublist requires parameter \"iterative method\"");
     Exceptions::amanzi_throw(msg);

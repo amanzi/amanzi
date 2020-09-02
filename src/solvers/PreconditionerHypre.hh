@@ -18,8 +18,8 @@ This is provided when using the `"preconditioning method`"=`"boomer amg`" or
 `"preconditioning method`" = `"hypre: boomer amg`" in the `Preconditioner`_
 spec.
 
-.. _preconditioner-typed-boomer-amg-spec:
-.. admonition:: preconditioner-typed-boomer-amg-spec:
+.. _preconditioner-boomer-amg-spec:
+.. admonition:: preconditioner-boomer-amg-spec:
 
     * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is dynamic
       and approximate the inverse matrix with the prescribed tolerance (in
@@ -82,8 +82,8 @@ through the Ifpack interface.
 This is provided when using the `"preconditioning method`"=`"euclid`" or
 =`"hypre: euclid`" in the `Preconditioner`_ spec.
 
-.. _preconditioner-typed-euclid-spec:
-.. admonition:: preconditioner-typed-euclid-spec:
+.. _preconditioner-euclid-spec:
+.. admonition:: preconditioner-euclid-spec:
 
     * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
     * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
