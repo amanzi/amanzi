@@ -79,7 +79,7 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_);
 
-    Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
+    auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
     S->SetFieldEvaluator(enthalpy_key_, enth);
   }
 
@@ -91,7 +91,7 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
     elist.set("thermal conductivity key", conductivity_key_);
 
-    Teuchos::RCP<TCMEvaluator_OnePhase> tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
+    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
     S->SetFieldEvaluator(conductivity_key_, tcm);
   }
 }

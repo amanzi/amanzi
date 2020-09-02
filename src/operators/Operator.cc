@@ -155,10 +155,7 @@ void Operator::Init()
 {
   rhs_->PutScalarMasterAndGhosted(0.0);
   int nops = ops_.size();
-  for (int i = 0; i < nops; ++i) {
-    if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
-       ops_[i]->Init();
-  }
+  for (int i = 0; i < nops; ++i) ops_[i]->Init();
   computed_ = false;
 }
 
@@ -670,15 +667,13 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 /* ******************************************************************
 * Push back.
 ****************************************************************** */
-void Operator::OpPushBack(const Teuchos::RCP<Op>& block, int properties) {
+void Operator::OpPushBack(const Teuchos::RCP<Op>& block) {
   ops_.push_back(block);
-  ops_properties_.push_back(properties);
 }
 
 
 /* ******************************************************************
-* Add more operators to the existing list. The added operators have
-* no special properties.
+* Add more operators to the existing list.
 ****************************************************************** */
 void Operator::OpExtend(op_iterator begin, op_iterator end)
 {
@@ -687,7 +682,6 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 
   ops_.reserve(nnew);
   ops_.insert(ops_.end(), begin, end);
-  ops_properties_.resize(nnew, 0);
 }
 
 
