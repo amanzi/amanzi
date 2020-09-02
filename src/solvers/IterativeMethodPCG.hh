@@ -11,8 +11,8 @@
 
 /*!
 
-.. _linear-solver-typed-pcg-spec:
-.. admonition:: linear-solver-typed-pcg-spec
+.. _iterative-method-pcg-spec:
+.. admonition:: iterative-method-pcg-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
@@ -20,7 +20,7 @@
 
     * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+    * `"convergence criterial`" ``[Array(string)]`` **{relative rhs}** A list of
       criteria, any of which can be applied.  Valid include:
 
       - `"relative rhs`" : measure error relative to the norm of the RHS vector

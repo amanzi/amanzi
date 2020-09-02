@@ -19,8 +19,8 @@ inexact is not made by the Solver, but instead by the PK.  Both use the
 ApplyPreconditioner() method -- if this applies the true Jacobian, then the
 method is Newton.  If it applies an appoximation, it is inexact Newton.
 
-.. _solver-typed-newton-spec:
-.. admonition:: solver-typed-newton-spec
+.. _solver-newton-spec:
+.. admonition:: solver-newton-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.

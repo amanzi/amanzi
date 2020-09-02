@@ -23,58 +23,7 @@ must be specified over a set of regions are (N-1)-dimensional.
 Region specs are **not** denoted by a "type" parameter for legacy reasons.
 Instead, they take a single sublist whose name defines the type.
 
-.. _region-spec:
-.. admonition:: region-spec
-
-    ONE OF
-
-    * `"region: all`" ``[list]`` See All_.
-
-    OR
-
-    * `"region: box`" ``[region-box-spec]`` See Box_.
-
-    OR
-
-    * `"region: plane`" ``[region-plane-spec]`` See Plane_.
-
-    OR
-
-    * `"region: labeled set`" ``[region-labeled-set-spec]`` See `Labeled Set`_.
-
-    OR
-
-    * `"region: color function`" ``[region-color-function-spec]`` See `Function Color`_.
-
-    OR
-
-    * `"region: point`" ``[region-point-spec]`` See Point_.
-
-    OR
-
-    * `"region: logical`" ``[region-logical-spec]`` See Logical_.
-
-    OR
-
-    * `"region: polygon`" ``[region-polygon-spec]`` See Polygon_.
-
-    OR
-
-    * `"region: enumerated`" ``[region-enumerated-spec]`` See Enumerated_.
-
-    OR
-
-    * `"region: boundary`" ``[region-boundary-spec]`` See Boundary_.
-
-    OR
-
-    * `"region: box volume fractions`" ``[region-box-volume-fractions-spec]`` See `Box Volume Fractions`_.
-
-    OR
-
-    * `"region: line segment`" ``[region-line-segment-spec]`` See `Line Segment`_.
-
-    END
+``[region-typedsublist-spec]``
 
 
 .. warning:: Surface files contain labeled triangulated face sets.  The user is

@@ -12,8 +12,8 @@
 
 This is a variation of the GMRES solver for nonlinear problems.
 
-.. _solver-typed-aa-spec:
-.. admonition:: solver-typed-aa-spec
+.. _solver-aa-spec:
+.. admonition:: solver-aa-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
       tolerance. The error is calculated by a PK.

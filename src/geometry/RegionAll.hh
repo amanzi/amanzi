@@ -13,6 +13,9 @@
 
 No parameters required.
 
+``[region-all-spec]``
+
+
 Example:
 
 .. code-block:: xml
@@ -21,7 +24,7 @@ Example:
      <ParameterList name="region: all">
      </ParameterList>
    </ParameterList>
-  
+ 
 */
 
 

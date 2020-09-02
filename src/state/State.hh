@@ -37,15 +37,15 @@ constants are things (like gravity, or atmospheric pressure) which are stored
 in state but never change.  Typically they're limited to scalars and dense,
 local vectors.
 
-``[constants-spec]``
+``[constants-scalar-spec]``
 
 * `"value`" ``[double]`` Value of a scalar constant
 
-or
-
-``[vector-spec]``
+``[constants-vector-spec]``
 
 * `"value`" ``[Array(double)]`` Value of a dense, local vector.
+
+
 
 Example:
 
