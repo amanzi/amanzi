@@ -301,7 +301,6 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
   AmanziMesh::Entity_kind kind;
   Errors::Message msg;
 
-
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh 
     global_op_schema_ = schema;
@@ -408,7 +407,7 @@ void PDE_Accumulation::ApplyBCs()
 
     for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
       const Schema& schema = (*it)->schema_row();
-      if (schema.base() == (*bc)->kind()) {
+      if (schema.get_base() == (*bc)->kind()) {
         Epetra_MultiVector& diag = *(*it)->diag;
         int m = diag.NumVectors();
 
@@ -432,7 +431,7 @@ Teuchos::RCP<Op> PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) 
+    if (schema.KindToString(schema.get_base()) == name) 
       return *it;
   }
   return Teuchos::null;

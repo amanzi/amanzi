@@ -4,13 +4,16 @@
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  The terms of use and "as is" disclaimer by this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The base virtual class for factory of mimetic, DG and other 
-  schemes on polytopal meshes.
+  The base virtual class for of bilinear forms of type 
+     <coef Op1(u), Op2(v)>
+  where Op1 and Op2 are differential operators. The tuple 
+  (u, v, coef) may support a few bilinear forms appearing in
+  applications. Most times u = v.
 */
 
 #ifndef AMANZI_BILINEAR_FORM_HH_
@@ -20,14 +23,9 @@
 
 #include "errors.hh"
 #include "Mesh.hh"
-#include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "InnerProductL2.hh"
-#include "InnerProductH1.hh"
 #include "MatrixObjects.hh"
-#include "Polynomial.hh"
-#include "Tensor.hh"
 #include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
@@ -36,10 +34,9 @@ namespace WhetStone {
 
 class Polynomial;
 
-class BilinearForm : public virtual InnerProductL2,
-                     public virtual InnerProductH1 {
+class BilinearForm {
  public:
-  explicit BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : mesh_(mesh),
       d_(mesh->space_dimension()),
       order_(1) {};
@@ -48,77 +45,103 @@ class BilinearForm : public virtual InnerProductL2,
   // schema
   virtual std::vector<SchemaItem> schema() const = 0;
 
-  // additional members
-  // -- low-order schemes require typically constant vector/tensor coefficients
-  //    also specify function to which gradient operator is applied
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) {
-    Errors::Message msg("AdvectionMatrix: scalar velocity is not supported.");
-    Exceptions::amanzi_throw(msg);
-    return 1;
-  }
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) {
-    Errors::Message msg("AdvectionMatrix: polynomial coefficient is not supported.");
+  // types of bilinear forms differ by the operators applied to arguments
+  // -- mass
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) {
+    Errors::Message msg("Mass operator with tensor coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) {
-    Errors::Message msg("Function DivergenceMatrix is not supported.");
-    Exceptions::amanzi_throw(msg);
-    return 1;
-  }
-
-  // extend interface for the existing members
-  // -- high-order schemes may require polynomial coefficients
-  using InnerProductL2::MassMatrix;
   virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) {
-    Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
+    Errors::Message msg("Mass operator with polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  using InnerProductL2::MassMatrixInverse;
-  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& M) {
-    Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
+    MassMatrix(c, T, W);
+    W.Inverse();
+    return 0;
+  }
+
+  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& W) {
+    MassMatrix(c, K, W);
+    W.Inverse();
+    return 0;
+  }
+
+  // -- stiffness 
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
+    Errors::Message msg("Stiffness operator with tensor is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  using InnerProductH1::StiffnessMatrix;
   virtual int StiffnessMatrix(int c, const Polynomial& K, DenseMatrix& A) {
-    Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
-    Exceptions::amanzi_throw(msg);
-    return 1;
-  }
-  // -- general coefficient. Qudrature rule is provided via the input parameter list
-  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) {
-    Errors::Message msg("StiffnessMatrix: matrix polynomial coefficient is not supported.");
-    Exceptions::amanzi_throw(msg);
-    return 1;
-  }
-  // -- general coefficient. Qudrature rule is provided via the input parameter list
-  virtual int StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A) {
-    Errors::Message msg("StiffnessMatrix: general coefficient is not supported.");
+    Errors::Message msg("Stiffness operator with polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  // Projectors facilitate construction of bilinear forms
+  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) {
+    Errors::Message msg("Stiffness operator with matrix polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A) {
+    Errors::Message msg("Stiffness operator with function coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  // -- advection
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point& v, DenseMatrix& A, bool grad_on_test) {
+    Errors::Message msg("Advection operator is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) {
+    Errors::Message msg("Advection operator with vector polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) {
+    Errors::Message msg("Advection operator with virtual nodal function is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  // -- divergence
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) {
+    Errors::Message msg("Divergence operator is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  // Projectors is a special type of bilinear form (P(u), v) = (u, v) for any v
+  // where coef = 1. If different operators are supported by the derived class,
+  // different projectors can be computed.
+  // NOTE: we need both (1) action on a function u and (2) matrix form of the
+  //       project; hence, the interface will be extended.
   // -- L2 projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("L2 projector is not implemented for this scheme.");
+    Errors::Message msg("L2 projector is not supported.");
     Exceptions::amanzi_throw(msg);
   }
   virtual void L2Face(int f, const std::vector<Polynomial>& ve,
                       const Polynomial* moments, Polynomial& vf) {
-    Errors::Message msg("L2 face projector is not implemented for this scheme.");
+    Errors::Message msg("L2 face projector is not supported.");
     Exceptions::amanzi_throw(msg);
   }
 
   virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
-    Errors::Message msg("L2 projector (from DOFs) is not implemented for this scheme.");
+    Errors::Message msg("L2 projector (from DOFs) is not supported.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -126,22 +149,22 @@ class BilinearForm : public virtual InnerProductL2,
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("H1 cell projector is not implemented for this scheme.");
+    Errors::Message msg("H1 cell projector is not supported.");
     Exceptions::amanzi_throw(msg);
   }
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
                       const Polynomial* moments, Polynomial& vf) {
-    Errors::Message msg("H1 face projector is not implemented for this scheme.");
+    Errors::Message msg("H1 face projector is not supported.");
     Exceptions::amanzi_throw(msg);
   }
 
   virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc) {
-    Errors::Message msg("H1 cell projector (from DOFs) is not implemented for this scheme.");
+    Errors::Message msg("H1 cell projector (from DOFs) is not supported.");
     Exceptions::amanzi_throw(msg);
   }
 
   // miscalleneous
-  int order() const { return order_; }
+  int get_order() const { return order_; }
   void set_order(int order) { order_ = order; }
 
  protected:

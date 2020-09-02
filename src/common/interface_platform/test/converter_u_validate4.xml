@@ -133,10 +133,10 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80665}"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.002e-03"/>
       </ParameterList>
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
@@ -637,6 +637,7 @@
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{H+, Al+++, Ca++, Cl-, Fe+++, CO2(aq), K+, Mg++, Na+, SiO2(aq), SO4--, Tritium, NO3-, UO2++}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -898,7 +899,15 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
+
   <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioning method" type="string" value="ml"/>

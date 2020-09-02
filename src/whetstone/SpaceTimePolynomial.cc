@@ -116,7 +116,7 @@ SpaceTimePolynomial& SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& 
   int order = poly.order();
   int order_prod = order_ + order;
   SpaceTimePolynomial product(d_, order_prod);
-  product.set_origin(poly[0].origin());
+  product.set_origin(poly[0].get_origin());
 
   for (int i = 0; i < size_; ++i) {
     for (int j = 0; j < poly.size(); ++j) {

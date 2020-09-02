@@ -50,8 +50,10 @@
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"
 #include "pks_energy_registration.hh"
+#include "pks_multiphase_registration.hh"
 #include "pks_shallow_water_registration.hh"
 #include "wrm_flow_registration.hh"
+#include "wrmmp_registration.hh"
 
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
@@ -345,7 +347,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   S->RegisterMesh("domain", mesh); 
   
   if (unstr_mesh_params.isSublist("submesh")) {
-    if (meshfactory.preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
+    if (meshfactory.get_preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
       std::cerr << "Cannot extract a mesh using a non-MSTK framework" << std::endl;
       return Amanzi::Simulator::FAIL;
     }

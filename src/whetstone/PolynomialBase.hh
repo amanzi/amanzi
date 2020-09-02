@@ -32,14 +32,14 @@ class PolynomialBase : public WhetStoneFunction {
   // convert to regular vector
   virtual DenseVector ExpandCoefficients() const = 0;
 
-  // modifiers
+  // setter and getters
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
+  const AmanziGeometry::Point& get_origin() const { return origin_; }
 
   // access
   int dimension() const { return d_; }
   int order() const { return order_; }
   int size() const { return size_; }
-  const AmanziGeometry::Point& origin() const { return origin_; }
   const DenseVector& coefs() const { return coefs_; }
 
  protected:
@@ -82,6 +82,8 @@ int PolynomialSpaceDimension(int d, int order)
 inline
 int MonomialSetPosition(int d, const int* multi_index)
 {
+  if (d == 1) return 0;
+
   int m(multi_index[1]);
   if (d == 3) {
     int n = multi_index[1] + multi_index[2];

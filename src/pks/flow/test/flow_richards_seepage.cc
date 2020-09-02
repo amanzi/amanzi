@@ -87,7 +87,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
 
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
-  double rho = *S->GetScalarData("fluid_density");
+  double rho = *S->GetScalarData("const_fluid_density");
   double g = (*S->GetConstantVectorData("gravity", "state"))[1];
 
   // create the initial pressure function

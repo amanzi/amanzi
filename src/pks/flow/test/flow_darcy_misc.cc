@@ -102,8 +102,8 @@ class DarcyProblem {
     S->InitializeEvaluators();
 
     // create other parameters
-    mu = *S->GetScalarData("fluid_viscosity", passwd);
-    rho = *S->GetScalarData("fluid_density", passwd);
+    mu = *S->GetScalarData("const_fluid_viscosity", passwd);
+    rho = *S->GetScalarData("const_fluid_density", passwd);
 
     Epetra_Vector& gvec = *S->GetConstantVectorData("gravity", "state");
     gravity.set(3, gvec.Values());

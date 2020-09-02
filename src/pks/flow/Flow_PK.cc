@@ -72,8 +72,8 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
 
   // -- constant fields
-  if (!S->HasField("fluid_density")) {
-    S->RequireScalar("fluid_density", passwd_);
+  if (!S->HasField("const_fluid_density")) {
+    S->RequireScalar("const_fluid_density", passwd_);
   }
 
   if (!S->HasField("atmospheric_pressure")) {
@@ -167,7 +167,7 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
                                           // are not sure if gravity_data is an
                                           // array or vector
   g_ = fabs(gravity_[dim - 1]);
-  rho_ = *S->GetScalarData("fluid_density");
+  rho_ = *S->GetScalarData("const_fluid_density");
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
@@ -192,23 +192,23 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetField("fluid_density")->owner() == passwd_) {
-    if (!S_->GetField("fluid_density", passwd_)->initialized()) {
-      *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
-      S_->GetField("fluid_density", passwd_)->set_initialized();
+  if (S_->GetField("const_fluid_density")->owner() == passwd_) {
+    if (!S_->GetField("const_fluid_density", passwd_)->initialized()) {
+      *(S_->GetScalarData("const_fluid_density", passwd_)) = 1000.0;
+      S_->GetField("const_fluid_density", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized fluid_density to default value 1000.0" << std::endl;  
     }
   }
 
-  if (S_->HasField("fluid_viscosity")) {
-    if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
-      *(S_->GetScalarData("fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
-      S_->GetField("fluid_viscosity", passwd_)->set_initialized();
+  if (S_->HasField("const_fluid_viscosity")) {
+    if (!S_->GetField("const_fluid_viscosity", passwd_)->initialized()) {
+      *(S_->GetScalarData("const_fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
+      S_->GetField("const_fluid_viscosity", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized fluid_viscosity to default value 1.002e-3" << std::endl;  
+          *vo_->os() << "initialized const_fluid_viscosity to default value 1.002e-3" << std::endl;  
     }
   }
 
@@ -257,7 +257,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 
   Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
   const Epetra_MultiVector& pressure = *(S->GetFieldData(pressure_key_)->ViewComponent("cell"));
-  double rho = *(S->GetScalarData("fluid_density"));
+  double rho = *(S->GetScalarData("const_fluid_density"));
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -518,7 +518,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "pressure") {
+    if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -526,7 +526,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       }
     }
 
-    if (bcs_[i]->bc_name() == "head") {
+    if (bcs_[i]->get_bc_name() == "head") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         if (bcs_[i]->no_flow_above_water_table()) {
@@ -541,7 +541,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       }
     }
 
-    if (bcs_[i]->bc_name() == "flux") {
+    if (bcs_[i]->get_bc_name() == "flux") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

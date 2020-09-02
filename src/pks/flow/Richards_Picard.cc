@@ -69,7 +69,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
     for (int i = 0; i < bcs_.size(); i++) {
-      if (bcs_[i]->bc_name() == "seepage") {
+      if (bcs_[i]->get_bc_name() == "seepage") {
         bcs_[i]->Compute(time, time);
         bcs_[i]->ComputeSubmodel(mesh_);
       }

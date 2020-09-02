@@ -37,9 +37,10 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${MPC_TREE_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
+include_directories(${MPC_TREE_SOURCE_DIR})
+include_directories(${MULTIPHASE_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -94,7 +95,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 add_amanzi_library(udriv
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
                    LINK_LIBS mesh mesh_audit mesh_factory state mpc eos 
-                             flow transport energy shallow_water
+                             flow transport energy shallow_water multiphase
                              interface error_handling
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
@@ -122,7 +123,7 @@ set_target_properties(verify_hex PROPERTIES
 #
 # Binary: verify_deform
 #
-if ( ENABLE_STK_Mesh )
+if (ENABLE_STK_Mesh)
   add_amanzi_executable(verify_deform
                         SOURCE VerifyDeform.cc
                         LINK_LIBS mesh_factory

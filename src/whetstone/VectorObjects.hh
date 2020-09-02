@@ -143,7 +143,7 @@ class VectorObjects {
       tmp = poly;
       tmp *= K(0, 0);
     } else {
-      tmp.set_origin(poly[0].origin());
+      tmp.set_origin(poly[0].get_origin());
 
       for (int i = 0; i < d; ++i) {
         for (int j = 0; j < d; ++j) {

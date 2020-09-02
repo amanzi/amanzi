@@ -34,7 +34,7 @@ class ShallowWaterBoundaryFunction : public PK_DomainFunction {
 
   // modifiers and access
   void set_bc_name(const std::string& name) { bc_name_ = name; }
-  std::string bc_name() { return bc_name_; }
+  std::string get_bc_name() { return bc_name_; }
 
   void set_type(WhetStone::DOF_Type type) { type_ = type; }
   WhetStone::DOF_Type type() { return type_; }

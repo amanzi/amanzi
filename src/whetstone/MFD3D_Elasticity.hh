@@ -35,8 +35,7 @@ class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh) {};
-  ~MFD3D_Elasticity() {};
+    : BilinearForm(mesh) {};
 
   // required methods
   // -- schema
@@ -45,15 +44,10 @@ class MFD3D_Elasticity : public MFD3D {
   }
 
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
-    Errors::Message msg("Mass matrix is not implemented for elasticity space.");
-    Exceptions::amanzi_throw(msg);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // optimization methods (mainly for research, since the maximum principle does not exists)

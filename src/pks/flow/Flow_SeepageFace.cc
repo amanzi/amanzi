@@ -38,7 +38,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   std::vector<double>& bc_mixed = op_bc_->bc_mixed();
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "seepage" && 
+    if (bcs_[i]->get_bc_name() == "seepage" && 
         bcs_[i]->seepage_model() == "PFloTran") {
       double ref_pressure = bcs_[i]->ref_pressure();
       double tol = ref_pressure * 1e-14;
@@ -74,7 +74,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   *area_seepage = 0.0;
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "seepage") {
+    if (bcs_[i]->get_bc_name() == "seepage") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -100,7 +100,7 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
   *area_seepage = 0.0;
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "seepage" && 
+    if (bcs_[i]->get_bc_name() == "seepage" && 
         bcs_[i]->seepage_model() == "FACT") {
       double ref_pressure = bcs_[i]->ref_pressure();
 

@@ -30,7 +30,7 @@ VectorPolynomial Gradient(const Polynomial& p)
   int order = std::max(0, p.order() - 1);
 
   VectorPolynomial poly(d, d, order);
-  poly.set_origin(p.origin());
+  poly.set_origin(p.get_origin());
 
   int index[3];
   for (auto it = p.begin(); it < p.end(); ++it) {
@@ -87,7 +87,7 @@ Polynomial Divergence(const VectorPolynomial& vp)
   order = std::max(0, order - 1);
 
   Polynomial div(d, order);
-  div.set_origin(vp[0].origin());
+  div.set_origin(vp[0].get_origin());
 
   int index[3];
   for (int i = 0; i < d; ++i) {
@@ -123,7 +123,7 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
   AMANZI_ASSERT(k < 3);
 
   VectorPolynomial out(d, d, k);
-  out.set_origin(poly.origin());
+  out.set_origin(poly.get_origin());
 
   double a1, a2, a3, a4, a5, a6, a7, a8, a9;
   double len, len2, len3, len5, ux, uy, vx, vy;

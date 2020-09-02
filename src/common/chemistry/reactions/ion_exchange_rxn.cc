@@ -88,7 +88,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
        ionx != ionx_complexes_.end(); ionx++)
     ionx->set_X(0.);
 
-  double omega = ionx_site_[0].cation_exchange_capacity();
+  double omega = ionx_site_[0].get_cation_exchange_capacity();
   if (!uniform_z()) { // Z_i /= Z_j for all i,j
     int interation_count = 0;
     int ref_cation = ionx_complexes_[0].primary_id();

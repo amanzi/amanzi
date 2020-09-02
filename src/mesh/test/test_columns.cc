@@ -47,7 +47,7 @@ TEST(MESH_COLUMNS)
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::Preference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(factory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[i]);
 

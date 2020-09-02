@@ -28,11 +28,12 @@ set(eos_src_files
     EOS_IdealGas.cc
     EOS_VaporInGas.cc
     EOS_Water.cc
+    Henry_Solubility.cc
     IsobaricEOSEvaluator.cc
     MolarFractionGasEvaluator.cc
     ThermalConductivity_Water.cc
-    VaporPressure_Water.cc
-    VaporPressureBaseFactory.cc
+    SaturatedVaporPressure_Water.cc
+    SaturatedVaporPressureFactory.cc
     Viscosity_Water.cc
     Viscosity_Constant.cc
     ViscosityBaseFactory.cc
@@ -59,12 +60,13 @@ set(eos_inc_files
     EOS_VaporInGas.hh
     EOS_Water.hh
     eos_registration.hh
+    Henry_Solubility.hh
     IsobaricEOSEvaluator.hh
     MolarFractionGasEvaluator.hh
     ThermalConductivity_Water.hh
-    VaporPressure_Base.hh
-    VaporPressure_Water.hh
-    VaporPressureBaseFactory.hh
+    SaturatedVaporPressure.hh
+    SaturatedVaporPressure_Water.hh
+    SaturatedVaporPressureFactory.hh
     Viscosity_Base.hh
     Viscosity_Constant.hh
     Viscosity_Water.hh

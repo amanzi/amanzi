@@ -60,7 +60,7 @@ herr_t dataset_info(hid_t loc_id, const char *name, void *empty)
 
 herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap, int *elemmap)
 {
-  hid_t dataset_id, dataspace, data_type;
+  hid_t dataset_id, dataspace;
   herr_t status;
   int rank, num;
   //hsize_t *cdims, *mdims;

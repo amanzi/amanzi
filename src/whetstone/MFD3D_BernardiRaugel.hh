@@ -29,38 +29,23 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_BernardiRaugel : public MFD3D { 
+class MFD3D_BernardiRaugel : public MFD3D {
  public:
   MFD3D_BernardiRaugel(const Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh) {};
-  ~MFD3D_BernardiRaugel() {};
+    : BilinearForm(mesh) {};
 
   // required methods
-  // -- schema
+  // -- schemas
   virtual std::vector<SchemaItem> schema() const override;
 
-  // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
-    Errors::Message msg("L2 consistency is not supported for Bernardi-Raugel space.");
-    Exceptions::amanzi_throw(msg);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
-    Errors::Message msg("MassMatrix is not supported for Bernardi-Raugel space.");
-    Exceptions::amanzi_throw(msg);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
-
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
-  // -- this should really override the base function and use a vector polynomial 
-  //    provided by a projector (FIXME)
-  int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) override;
 
  private:
   static RegisteredFactory<MFD3D_BernardiRaugel> factory_;

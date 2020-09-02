@@ -527,17 +527,16 @@ void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
   if (components->ion_exchange_sites.size() != ion_exchange_rxns_.size()) {
     components->ion_exchange_sites.resize(ion_exchange_rxns_.size());
   }
-  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
-    components->ion_exchange_sites.at(0) = 
-        ion_exchange_rxns_.at(0).site().cation_exchange_capacity();
+  for (int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+    components->ion_exchange_sites.at(i) = 
+        ion_exchange_rxns_.at(i).site().get_cation_exchange_capacity();
   }
 
-  if (components->ion_exchange_ref_cation_conc.size() != 
-      ion_exchange_rxns_.size()) {
+  if (components->ion_exchange_ref_cation_conc.size() != ion_exchange_rxns_.size()) {
     components->ion_exchange_ref_cation_conc.resize( 
         ion_exchange_rxns_.size());
   }
-  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+  for (int i = 0; i < ion_exchange_rxns_.size(); ++i) {
     components->ion_exchange_ref_cation_conc.at(i) = 
         ion_exchange_rxns_[i].ref_cation_sorbed_conc();
   }

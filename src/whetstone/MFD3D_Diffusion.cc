@@ -73,7 +73,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
     for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -125,7 +125,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
     for (int k = 0; k < d_; k++) R(i, k) = fm[k] - cm[k];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -212,7 +212,7 @@ int MFD3D_Diffusion::H1consistency(
     N(i, d_) = 1.0;  // additional column is added to the consistency condition
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -230,7 +230,7 @@ int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M
   if (ok) return ok;
 
   StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -248,7 +248,7 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
   if (ok) return ok;
 
   StabilityScalarNonSymmetric_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -263,7 +263,7 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
   if (ok) return ok;
 
   StabilityScalarNonSymmetric_(R, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -278,7 +278,7 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -317,7 +317,7 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 
   A *= s;
   simplex_functional_ *= s;
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -368,7 +368,7 @@ int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
   for (int n = 0; n < nfaces; ++n) {
     A(0, n) = mesh_->face_area(faces[n]) * dirs[n]; 
   } 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -444,7 +444,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
     }
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -479,7 +479,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
   ok = StabilityMMatrixHex_(c, K, W);
   if (ok) return ok;
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -504,7 +504,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 
   W *= s;
   simplex_functional_ *= s;
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -644,14 +644,14 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   if (d_ == 3) {
     double lower, upper;
     T1.SpectralBounds(&lower, &upper);
-    if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+    if (lower <= 0.0) return 1;
   }
 
   // verify monotonicity property
   AmanziGeometry::Point T1a(d_);
   T1a = T1 * areas;
   for (int i = 0; i < d_; i++) {
-    if (T1a[i] <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+    if (T1a[i] <= 0.0) return 1;
   }
 
   // add stability term D_ik T1_kl D_il
@@ -668,7 +668,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
       M(l, k) = M(k, l) += T1(i1, i2) * area1 * area2 / volume;  // Fix (lipnikov@lanl.gov)
     }
   }
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

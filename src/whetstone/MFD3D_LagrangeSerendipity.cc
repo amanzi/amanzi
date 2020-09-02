@@ -43,7 +43,8 @@ namespace WhetStone {
 MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D_LagrangeAnyOrder(plist, mesh)
+  : MFD3D_LagrangeAnyOrder(plist, mesh),
+    BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -175,7 +176,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   Rtmp.Transpose(R_);
   Ac.Multiply(Nf, Rtmp, false);
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -191,7 +192,7 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

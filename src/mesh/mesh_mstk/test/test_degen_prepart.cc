@@ -35,9 +35,9 @@ TEST(ELIM_DEGEN_PREPARTITION)
   Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, *comm));
   
   // create and register meshes
-  Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
+  auto mesh_plist = plist->sublist("mesh");
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
-  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
   prefs.clear();
   prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   meshfactory.set_preference(prefs);

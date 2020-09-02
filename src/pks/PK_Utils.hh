@@ -22,6 +22,9 @@ namespace Amanzi {
 void PKUtils_CalculatePermeabilityFactorInWell(
     const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy);
 
+AmanziGeometry::Point PKUtils_EntityCoordinates(
+    int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh);
+
 }  // namespace Amanzi
 
 #endif

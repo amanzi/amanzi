@@ -237,9 +237,11 @@ void PreconditionerHypre::InitializeInverse()
 {
   funcs_.clear();
   std::string method_name = plist_.get<std::string>("method");
-  if (method_name == "boomer amg") InitBoomer_();
-  else if (method_name == "euclid") InitEuclid_();
-  else {
+  if (method_name == "boomer amg") {
+    InitBoomer_();
+  } else if (method_name == "euclid") {
+    InitEuclid_();
+  } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
     Exceptions::amanzi_throw(msg);
@@ -284,8 +286,6 @@ void PreconditionerHypre::ComputeInverse()
   IfpHypre_->Compute();
 #endif
 }
-
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

@@ -95,7 +95,50 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
-  // AMANZI_ASSERT(false);
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  AmanziMesh::Entity_ID_List cells;
+  const Epetra_MultiVector& uf = *u->ViewComponent("face");
+  const auto& gmap = uf.Map();
+
+  dhdT->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& dh = *dhdT->ViewComponent("cell", true);
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    int c1 = (*upwind_cell_)[f];
+    int c2 = (*downwind_cell_)[f];
+
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    int g = gmap.FirstPointInElement(f);
+    double umod = fabs(uf[0][g]);
+    if (c1 < 0) {
+      Aface(0, 0) = umod * dh[0][c2];
+    } else if (c2 < 0) {
+      Aface(0, 0) = umod * dh[0][c1];
+    } else {
+      int i = (cells[0] == c1) ? 0 : 1;
+      Aface(i, i) = umod * dh[0][c1];
+      Aface(1 - i, i) = -umod * dh[0][c2];
+    }
+
+    matrix[f] = Aface;
+  }
+
+  // removed matrices fof faces where fracture is located
+  AmanziMesh::Entity_ID_List block;
+  std::vector<double> vofs;
+  for (int i = 0; i < fractures_.size(); ++i) {
+    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
+                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+
+    for (int n = 0; n < block.size(); ++n) {
+      matrix[block[n]] *= 0.0;
+    }
+  }
 }
 
 

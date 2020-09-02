@@ -1,8 +1,8 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <Parameter name="end time" type="double" value="100.0"/>
-  <Parameter name="initial time step" type="double" value="1.0"/>
+  <Parameter name="end time" type="double" value="5000.0"/>
+  <Parameter name="initial time step" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
 
@@ -120,7 +120,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-1"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
             <Parameter name="diverged tolerance" type="double" value="1e+10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="max du growth factor" type="double" value="1e+5"/>
@@ -182,11 +182,11 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
+      <ParameterList name="const_fluid_viscosity">
+        <Parameter name="value" type="double" value="0.01"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
@@ -259,10 +259,10 @@
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="1e-7"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="2"/>
         <Parameter name="cycle applications" type="int" value="3"/>
-        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="strong threshold" type="double" value="0.25"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>

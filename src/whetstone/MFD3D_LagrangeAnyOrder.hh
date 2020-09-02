@@ -43,29 +43,16 @@ namespace WhetStone {
 class MFD3D_LagrangeAnyOrder : public MFD3D { 
  public:
   MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh) {};
+    : BilinearForm(mesh) {};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D_LagrangeAnyOrder() {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
-  // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
-    Errors::Message msg("L2 consistency is not implemented for LagrangeAnyOrder element.");
-    Exceptions::amanzi_throw(msg);
-    return 0;
-  }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
-    Errors::Message msg("Mass matrix is not implemented for LagrangeAnyOrder element.");
-    Exceptions::amanzi_throw(msg);
-    return 0;
-  }
-
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {
     if (d_ == 2) return H1consistency2D_<AmanziMesh::Mesh>(mesh_, c, T, N, Ac);
     return H1consistency3D_(c, T, N, Ac, true);
   }
@@ -337,7 +324,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   Rtmp.Transpose(R_);
   Ac.Multiply(RG, Rtmp, false);
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 }  // namespace WhetStone

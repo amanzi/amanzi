@@ -305,7 +305,6 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         Aface *= 0.0;
       }
     }
-    
   }
 }
 
@@ -322,7 +321,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   solution->ScatterMasterToGhosted("cell");
-  if (k_ != Teuchos::null)  k_->ScatterMasterToGhosted("face");
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
   
   const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
       k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;

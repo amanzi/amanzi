@@ -76,7 +76,7 @@ void PDE_Electromagnetics::UpdateMatrices(
 ****************************************************************** */
 void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_schema_col_.base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
     Teuchos::RCP<const BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
@@ -260,10 +260,10 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  if (local_schema_col_.base() == AmanziMesh::CELL && dim == 3) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL && dim == 3) {
     std::string name = "Electromagnetics: CELL_EDGE";
     local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
-  } else if (local_schema_col_.base() == AmanziMesh::CELL && dim == 2) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::CELL && dim == 2) {
     std::string name = "Electromagnetics: CELL_NODE";
     local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
   } else {

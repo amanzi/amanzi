@@ -20,9 +20,9 @@ namespace NavierStokes {
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
 void NavierStokes_PK::FunctionalResidual(double t_old, double t_new, 
-                                 Teuchos::RCP<TreeVector> u_old,
-                                 Teuchos::RCP<TreeVector> u_new, 
-                                 Teuchos::RCP<TreeVector> f)
+                                         Teuchos::RCP<TreeVector> u_old,
+                                         Teuchos::RCP<TreeVector> u_new, 
+                                         Teuchos::RCP<TreeVector> f)
 { 
   double dtp = t_new - t_old;
 
@@ -60,8 +60,6 @@ void NavierStokes_PK::FunctionalResidual(double t_old, double t_new,
   op_matrix_->Apply(*u_new, *f);
   fu->Update(-1.0, *op_matrix_elas_->global_operator()->rhs(), 1.0);
   fp->Update(-1.0, *op_matrix_div_->global_operator()->rhs(), 1.0);
-
-  // add convection term
 }
 
 
@@ -175,7 +173,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
 
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->bc_name() == "no slip" && 
+    if (bcs_[i]->get_bc_name() == "no slip" && 
         bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
       std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
@@ -190,7 +188,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
       }
     }
 
-    if (bcs_[i]->bc_name() == "no slip" && 
+    if (bcs_[i]->get_bc_name() == "no slip" && 
         bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
       std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
       std::vector<double>& bc_value = op_bcs_[mf]->bc_value();

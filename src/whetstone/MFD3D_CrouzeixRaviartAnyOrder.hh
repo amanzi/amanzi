@@ -39,26 +39,13 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
  public:
   MFD3D_CrouzeixRaviartAnyOrder(const Teuchos::ParameterList& plist,
                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D_CrouzeixRaviartAnyOrder() {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
-  // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
-    Errors::Message msg("L2 consistency is not implemented for Crouzeix-Raviart space.");
-    Exceptions::amanzi_throw(msg);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
-    Errors::Message msg("MassMatrix is not supported for Crouzeix-Raviart space.");
-    Exceptions::amanzi_throw(msg);
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
-
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors

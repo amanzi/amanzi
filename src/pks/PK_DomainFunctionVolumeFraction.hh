@@ -135,8 +135,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       int c = it->first;
       double vofs = it->second;
 
-      const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-          mesh_->cell_centroid(c) : mesh_->face_centroid(c);
+      auto xc = PKUtils_EntityCoordinates(c, kind_, *mesh_);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
@@ -154,8 +153,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
         int c = it->first;
         double vofs = it->second;
 
-        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-            mesh_->cell_centroid(c) : mesh_->face_centroid(c);
+        auto xc = PKUtils_EntityCoordinates(c, kind_, *mesh_);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         for (int i = 0; i < nfun; ++i) {

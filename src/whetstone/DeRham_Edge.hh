@@ -19,24 +19,27 @@
 
 #include "Mesh.hh"
 
+#include "BilinearForm.hh"
 #include "DenseMatrix.hh"
-#include "InnerProductL2.hh"
+#include "MFD3D.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class DeRham_Edge : public virtual InnerProductL2 { 
+class DeRham_Edge : public MFD3D {
  public:
   DeRham_Edge(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : mesh_(mesh),
-      d_(mesh->space_dimension()) {};
-  ~DeRham_Edge() {};
+    : BilinearForm(mesh) {};
 
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
+  virtual std::vector<SchemaItem> schema() const override {
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
+  }
+
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
 
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override;
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
 
  protected:
@@ -45,10 +48,6 @@ class DeRham_Edge : public virtual InnerProductL2 {
 
   int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
   int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-
- protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int d_;
 };
 
 }  // namespace WhetStone

@@ -1,0 +1,213 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+
+  <model_description name="Thermal Richards">
+    <comments>Example input file</comments>
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="EveryHalfMonth">
+        <start>1956,y</start>
+        <timestep_interval>0.5,m</timestep_interval>
+        <stop>1960,y</stop>
+      </time_macro>
+    </macros>
+
+    <constants>
+      <numerical_constant name="X" value="200.0 m"/>
+      <numerical_constant name="Y" value="20.0 m"/>
+    </constants>
+  </definitions>
+
+  <process_kernels>
+    <pk mode="transient">
+      <multiphase model="multiphase pl sl xg" state="on"/>
+    </pk>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.0e-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <primaries>
+          <primary coefficient_of_diffusion="3.0e-9" molar_mass="2.0e-3">H2</primary>
+        </primaries>
+      </dissolved_components>
+    </liquid_phase>
+    <gas_phase name="air">
+      <eos>false</eos>
+      <viscosity>9.0e-06</viscosity>
+      <dissolved_components>
+        <primaries>
+          <primary coefficient_of_diffusion="3.0e-5" kh="1.39e-10">H2</primary>
+        </primaries>
+      </dissolved_components>
+    </gas_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <!--restart>chk00090.h5</restart-->
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+    <execution_control end="1956,y" mode="steady" start="0.0" init_dt="1000.0"/>
+    <execution_control end="1980,y" mode="transient" start="1956,y"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_flow_controls>
+        <preconditioning_strategy>linearized_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+
+      <unstr_steady-state_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
+      </unstr_steady-state_controls>
+
+      <unstr_transient_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+      </unstr_transient_controls>
+
+      <unstr_linear_solver>
+        <max_iterations>100</max_iterations>
+        <!-- iterative method will defined by the code -->
+        <!--method>pcg</method-->
+        <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+
+      <unstr_nonlinear_solver>
+        <modify_correction>true</modify_correction>
+      </unstr_nonlinear_solver>
+
+      <unstr_preconditioners>
+        <hypre_amg>
+          <use_block_indices>false</use_block_indices>
+        </hypre_amg>
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="200" ny="10" />
+      <box high_coordinates="X, Y" low_coordinates="0.0, 0.0" />
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="Inflow">
+      <box high_coordinates="0.0, Y" low_coordinates="0.0, 0.0" />
+    </region>
+    <region name="Outflow">
+      <box high_coordinates="X, Y" low_coordinates="X, 0.0" />
+    </region>
+  </regions>
+
+  <materials>
+    <material name="Rock">
+      <mechanical_properties>
+        <porosity value="0.15"/>
+        <particle_density value="2600.0"/>
+      </mechanical_properties>
+      <permeability x="5e-20" y="5e-20" />
+      <cap_pressure model="van_genuchten">
+        <parameters alpha="5.0e-7 Pa^-1" m="0.32886" sr="0.4" optional_krel_smoothing_interval="0.01"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="1e+6 Pa" />
+          <uniform_saturation value="1.0" />
+        </liquid_component>
+      </liquid_phase>
+      <gas_phase name="air">
+        <solute_component> 
+          <uniform_mole_fraction name="H2" value="1e-20" />
+        </solute_component>
+      </gas_phase>
+      <uniform_temperature function="uniform" value="303.0 K"/>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="BC1">
+      <assigned_regions>Outflow</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure function="uniform" start="0.0" value="1.0e+6 Pa"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC2">
+      <assigned_regions>Inflow</assigned_regions>
+      <liquid_phase name="water">
+        <solute_component name="water">
+          <inward_volumetric_flux value="0.0" name="water" function="constant" start="0.0"/>
+          <inward_volumetric_flux value="4.41558851e-10" name="H2" function="constant" start="0.0"/>
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC3">
+      <assigned_regions>Outflow</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <saturation value="1.0" function="constant" start="0.0"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>EveryHalfMonth</time_macros>
+    </vis>
+  </output>
+</amanzi_input>
+  

@@ -49,7 +49,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
 
   // modifiers and access
   void set_bc_name(const std::string& name) { bc_name_ = name; }
-  std::string bc_name() { return bc_name_; }
+  std::string get_bc_name() { return bc_name_; }
 
   bool no_flow_above_water_table() const { return no_flow_above_water_table_; }
   std::string seepage_model() const { return seepage_model_; }

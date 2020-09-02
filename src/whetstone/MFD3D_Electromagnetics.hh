@@ -36,14 +36,12 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Electromagnetics : public MFD3D,
-                               public DeRham_Edge {
+class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh),
-      DeRham_Edge(mesh) {};
-  ~MFD3D_Electromagnetics() {};
+    : DeRham_Edge(mesh),
+      BilinearForm(mesh) {};
 
   // required methods
   // -- schema
@@ -60,7 +58,7 @@ class MFD3D_Electromagnetics : public MFD3D,
   using DeRham_Edge::MassMatrixInverse;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // other methods
@@ -82,10 +80,6 @@ class MFD3D_Electromagnetics : public MFD3D,
  private:
   int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-
- protected:
-  using MFD3D::mesh_;
-  using MFD3D::d_;
 
  private:
   static RegisteredFactory<MFD3D_Electromagnetics> factory_;

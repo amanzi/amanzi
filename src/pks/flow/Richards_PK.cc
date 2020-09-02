@@ -276,8 +276,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- viscosity: if not requested by any PK, we request its constant value.
   if (!S->HasField(viscosity_liquid_key_)) {
-    if (!S->HasField("fluid_viscosity")) {
-      S->RequireScalar("fluid_viscosity", passwd_);
+    if (!S->HasField("const_fluid_viscosity")) {
+      S->RequireScalar("const_fluid_viscosity", passwd_);
     }
     S->RequireField(viscosity_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -291,7 +291,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     double rho = glist_->sublist("state").sublist("initial conditions")
-                        .sublist("fluid_density").get<double>("value", 1000.0);
+                        .sublist("const_fluid_density").get<double>("value", 1000.0);
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
     Teuchos::ParameterList& wc_eval = S->FEList().sublist("molar_density_liquid");
@@ -720,7 +720,7 @@ void Richards_PK::InitializeFields_()
   // set popular default values for missed fields.
   // -- viscosity: if not initialized, we constant value from state.
   if (S_->GetField(viscosity_liquid_key_)->owner() == passwd_) {
-    double mu = *S_->GetScalarData("fluid_viscosity");
+    double mu = *S_->GetScalarData("const_fluid_viscosity");
 
     if (!S_->GetField(viscosity_liquid_key_, passwd_)->initialized()) {
       S_->GetFieldData(viscosity_liquid_key_, passwd_)->PutScalar(mu);

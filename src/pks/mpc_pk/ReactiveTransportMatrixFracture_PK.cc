@@ -71,7 +71,7 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& elist = S->FEList();
   Teuchos::ParameterList& ilist = S->ICList();
 
-  double rho = ilist.sublist("fluid_density").get<double>("value");
+  double rho = ilist.sublist("const_fluid_density").get<double>("value");
   elist.sublist("fracture-mass_density_liquid").sublist("function").sublist("All")
       .set<std::string>("region", "All")
       .set<std::string>("component", "cell")

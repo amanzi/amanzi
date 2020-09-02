@@ -99,7 +99,7 @@ void PDE_HelperDiscretization::set_local_op(const Teuchos::RCP<Op>& op)
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  auto base = global_op_->schema_row().base();
+  auto base = global_op_->schema_row().get_base();
 
   for (auto bc : bcs_trial_) {
     bool missing(true);
@@ -166,7 +166,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     int nents_owned(0);
     if (kind == AmanziMesh::FACE) {
       mesh_->cell_get_faces(c, &entities);
-      nents_owned = ncells_owned;
+      nents_owned = nfaces_owned;
     } else if (kind == AmanziMesh::EDGE) {
       mesh_->cell_get_edges(c, &entities);
       nents_owned = nedges_owned;

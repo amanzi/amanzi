@@ -43,8 +43,9 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
-    const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh)
+    const Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -382,7 +383,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     Ac.Multiply(RG, Rtmp, false);
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -398,7 +399,7 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrix(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 
@@ -419,7 +420,7 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
   if (ok) return ok;
 
   StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return 0;
 }
 
 

@@ -203,7 +203,7 @@ AdvectionFn<Analytic>::AdvectionFn(
     : plist_(plist), nx_(nx), dt_(dt), 
       mesh_(mesh),
       dg_(dg), 
-      ana_(mesh, dg->order(), true),
+      ana_(mesh, dg->get_order(), true),
       conservative_form_(conservative_form),
       dt_stable_min(1e+99),
       limiter_min(-1.0),
@@ -243,7 +243,7 @@ AdvectionFn<Analytic>::AdvectionFn(
     op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
   }
 
-  order_ = dg_->order();
+  order_ = dg_->get_order();
 
   // mesh dimensions
   nfaces_wghost_ = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -700,7 +700,7 @@ Teuchos::RCP<Epetra_MultiVector> InterpolateCellToNode(
     const Amanzi::WhetStone::DG_Modal& dg,
     const Epetra_MultiVector& uc)
 {
-  int order = dg.order();
+  int order = dg.get_order();
   int nk = uc.NumVectors();
   Amanzi::AmanziGeometry::Point xv(mesh->space_dimension());
   Amanzi::AmanziMesh::Entity_ID_List cells;

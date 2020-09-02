@@ -30,7 +30,8 @@ Teuchos::RCP<BilinearForm> BilinearFormFactory::Create(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
   std::string method = plist.get<std::string>("method");
-  map_type::iterator iter = GetMap()->find(method);
+  BFKey key = method;
+  map_type::iterator iter = GetMap()->find(key);
 
   if (iter == GetMap()->end()) {
     std::cout << "Factory: cannot get item of type: " << method << std::endl;
