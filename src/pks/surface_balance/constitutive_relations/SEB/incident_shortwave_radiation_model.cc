@@ -63,7 +63,8 @@ double
 IncidentShortwaveRadiationModel::IncidentShortwaveRadiation(double slope, double aspect, double qSWin, double time) const
 {
   double time_days = time / 86400.0;
-  double doy = std::fmodf(doy0_ + time_days, 365);
+  double doy = std::fmod((double)doy0_ + time_days, (double)365);
+
   int doy_i = std::lround(doy);
   if (doy_i == 365) {
     // can round up!
