@@ -32,8 +32,8 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
   alpha_ = 0.;
   dispersivity_ = false;
 
-  if (plist.isParameter("alpha [m]")) {
-    alpha_ = plist.get<double>("alpha [m]");
+  if (plist.isParameter("dispersivity [m]")) {
+    alpha_ = plist.get<double>("dispersivity [m]");
     dispersivity_ = true;
     count++;
   }
