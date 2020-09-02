@@ -198,7 +198,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("const_fluid_density", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized fluid_density to default value 1000.0" << std::endl;  
+          *vo_->os() << "initialized const_fluid_density to default value 1000.0" << std::endl;  
     }
   }
 

@@ -87,6 +87,7 @@ void IndependentVariableFieldEvaluatorFromFile::EnsureCompatibility(const Teucho
   // load times, ensure file is valid
   // if there exists no times, default value is set to +infinity
   HDF5Reader reader(filename_);
+  times_.clear();
   if (temporally_variable_) {
     try {
       reader.ReadData("/time", times_);
