@@ -87,10 +87,12 @@ protected:
   bool reciprocal_;
 };
 
+#ifdef ALQUIMIA_ENABLED
 using TransportBoundaryFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia>;
 using TransportSourceFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia>;
+#endif
 
 } // namespace Transport
 } // namespace Amanzi
