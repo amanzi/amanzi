@@ -64,11 +64,6 @@ if (ENABLE_Unstructured)
   endif()
 endif()
 
-# note this definition is only supplied locally, so should only get used in .cc files.
-if (ENABLE_ATSPhysicsModule)
-  add_definitions("-DENABLE_ATS_PHYSICS_MODULE")
-endif()
-
 add_install_include_file(${chem_inc_files})
 
 add_amanzi_library(chemistry_pk
