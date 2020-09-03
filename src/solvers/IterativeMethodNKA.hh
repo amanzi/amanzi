@@ -14,8 +14,8 @@
 This is effectively equivalent to GMRES with a rolling restart, where vectors
 fall off the end of the space.
 
-.. _linear-solver-typed-nka-spec:
-.. admonition:: linear-solver-typed-nka-spec
+.. _iterative-method-nka-spec:
+.. admonition:: iterative-method-nka-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
@@ -23,7 +23,7 @@ fall off the end of the space.
 
     * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+    * `"convergence criterial`" ``[Array(string)]`` **{relative rhs}** A list of
       criteria, any of which can be applied.  Valid include:
 
       - `"relative rhs`" : measure error relative to the norm of the RHS vector

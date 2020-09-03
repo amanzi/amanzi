@@ -91,11 +91,6 @@ Note on implementation for discretization/framework developers:
   Adding new Ops is a fairly straightforward process of providing
   implementations of how to use the mesh to implement the forward action and
   how to assumble the local Op into the global Operator matrix.
-
-* Ops can be shared by ``Operator``s. In combination with CopyShadowToMaster()
-  and Rescale(), the developer has a room for a variaty of optimized
-  implementations.  The key variable is ``ops_properties_``. The key parameters
-  are ``OPERATOR_PROPERTY_***`` and described in ``Operators_Defs.hh``.
 */
 
 #ifndef AMANZI_OPERATOR_HH_
@@ -283,7 +278,7 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate
-  void OpPushBack(const Teuchos::RCP<Op>& block, int properties = 0);
+  void OpPushBack(const Teuchos::RCP<Op>& block);
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 
@@ -471,7 +466,6 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op> > ops_;
-  mutable std::vector<int> ops_properties_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;

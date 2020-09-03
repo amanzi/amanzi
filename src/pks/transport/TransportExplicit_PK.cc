@@ -342,6 +342,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
         dispersion_preconditioner, *preconditioner_list_,
         dispersion_solver, *linear_solver_list_, true);
+    inv_list.setName(dispersion_preconditioner);
     op->set_inverse_parameters(inv_list);
     op->InitializeInverse();
 

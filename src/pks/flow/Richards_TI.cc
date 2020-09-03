@@ -134,8 +134,10 @@ void Richards_PK::FunctionalResidual(
 ****************************************************************** */
 void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 {
+  Key temperature_key = Keys::getKey(domain_, "temperature"); 
+
   const CompositeVector& pres = *S_->GetFieldData(pressure_key_);
-  const CompositeVector& temp = *S_->GetFieldData("temperature");
+  const CompositeVector& temp = *S_->GetFieldData(temperature_key);
 
   // Compute conductivities
   Teuchos::RCP<CompositeVector> kvapor_pres = Teuchos::rcp(new CompositeVector(f->Map()));
@@ -175,6 +177,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
                                                  Teuchos::RCP<CompositeVector>& kvapor_temp)
 {
   AMANZI_ASSERT(domain_ == "domain");
+  Key temperature_key = Keys::getKey(domain_, "temperature"); 
 
   S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
@@ -189,12 +192,13 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& mlf_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+  const Epetra_MultiVector& x_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
-  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
-  const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
+  std::string der_name = Keys::getDerivKey("molar_fraction_gas", temperature_key);
+  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key);
+  const Epetra_MultiVector& dxgdT = *S_->GetFieldData(der_name)->ViewComponent("cell");
 
-  const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
+  const Epetra_MultiVector& temp = *S_->GetFieldData(temperature_key)->ViewComponent("cell");
   const Epetra_MultiVector& pres = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
@@ -217,9 +221,9 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
     double pc = atm_pressure_ - pres[0][c];
     tmp *= exp(-pc / nRT);
 
-    kp_cell[0][c] = tmp * mlf_g[0][c] / nRT;
-    kt_cell[0][c] = tmp * (dmlf_g_dt[0][c] / atm_pressure_ 
-                        +  mlf_g[0][c] * pc / (nRT * temp[0][c]));
+    kp_cell[0][c] = tmp * x_g[0][c] / nRT;
+    kt_cell[0][c] = tmp * (dxgdT[0][c] / atm_pressure_ 
+                        +  x_g[0][c] * pc / (nRT * temp[0][c]));
   }
 }
 
@@ -357,6 +361,16 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // Add vapor diffusion. We assume that the corresponding local operator
   // has been already populated during functional evaluation.
+  if (vapor_diffusion_) {
+    Teuchos::RCP<CompositeVector> kvapor_pres = Teuchos::rcp(new CompositeVector(u->Data()->Map()));
+    Teuchos::RCP<CompositeVector> kvapor_temp = Teuchos::rcp(new CompositeVector(u->Data()->Map()));
+    CalculateVaporDiffusionTensor_(kvapor_pres, kvapor_temp);
+
+    op_vapor_->Init();
+    op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
+    op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op_vapor_diff_->ApplyBCs(false, true, false);
+  }
  
   // finalize preconditioner
   op_pc_solver_->ComputeInverse();

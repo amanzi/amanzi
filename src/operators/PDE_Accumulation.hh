@@ -36,7 +36,13 @@ This class is usually used as part of a preconditioner, providing the linearizat
 
 for a grid element :math:`\Omega_E`.
 
-No options are available here.
+
+.. _pde-accumulation-spec:
+.. admonition:: pde-accumulation-spec
+
+  * `"entity kind`" ``[string]`` **optional** Typically set by the PK
+  * `"number of vectors`" ``[int]`` **optional** Typically set by the PK
+
 */
 
 namespace Amanzi {

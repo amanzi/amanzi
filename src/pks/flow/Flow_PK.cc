@@ -159,6 +159,8 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
   nseepage_prev = 0;
   ti_phase_counter = 0;
 
+  InitializeFields_();
+
   // Fundamental physical quantities
   // -- temporarily these quantities are constant
   double* gravity_data;
@@ -178,8 +180,6 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 #ifdef HAVE_MPI
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 #endif
-
-  InitializeFields_();
 }
 
 
@@ -198,7 +198,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("const_fluid_density", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized fluid_density to default value 1000.0" << std::endl;  
+          *vo_->os() << "initialized const_fluid_density to default value 1000.0" << std::endl;  
     }
   }
 

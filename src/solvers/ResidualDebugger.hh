@@ -7,9 +7,22 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
+*/
 
-  Debugging object for writing vectors to file within an iterative
-  process for use with vis tools.
+/*!
+
+Debugging object for writing vectors to file within an iterative
+process for use with vis tools.
+
+.. _residual-debugger-spec:
+.. admonition:: residual-debugger-spec
+
+    * `"file name base`" ``[string]`` **amanzi_dbg** Prefix for output filenames.
+
+    INCLUDES:
+
+    * ``[io-event-spec]`` An IOEvent_ spec
+
 */
 
 #ifndef AMANZI_RESIDUAL_DEBUGGER_HH_

@@ -80,12 +80,12 @@ void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-    const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+    const Epetra_MultiVector& x_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
     int ncells = result->size("cell", false);
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l[0][c]
-                                  + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
+                                  + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
     }
   } else {
     int ncells = result->size("cell", false);
@@ -113,11 +113,11 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
 
   if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-    const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+    const Epetra_MultiVector& x_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
     if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = (s_l[0][c]*n_l[0][c] + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
+        result_v[0][c] = (s_l[0][c] * n_l[0][c] + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
       }
     } else if (wrt_key == saturation_key_) {
       for (int c = 0; c != ncells; ++c) {
@@ -129,7 +129,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
       }
     } else if (wrt_key == "molar_density_gas") {
       for (int c = 0; c != ncells; ++c) {
-        result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * mlf_g[0][c];
+        result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * x_g[0][c];
       }
     } else if (wrt_key == "molar_fraction_gas") {
       for (int c = 0; c != ncells; ++c) {

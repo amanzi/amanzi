@@ -22,8 +22,8 @@ large (e.g. for steep nonlinearities such as phase change).
 
 Note this always monitors the residual, and the correction is always modified.
 
-.. _solver-typed-nka-bt-ats-spec:
-.. admonition:: solver-typed-nka-bt-ats-spec
+.. _solver-nka-bt-ats-spec:
+.. admonition:: solver-nka-bt-ats-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** Defines the required error
       tolerance. The error is calculated by a PK.
@@ -74,7 +74,7 @@ Note this always monitors the residual, and the correction is always modified.
       the bad step anyway and hopes to recover in later iterates.
 
     IF
-    
+
     * `"Anderson mixing`" ``[bool]`` **false** If true, use Anderson mixing instead of NKA.
 
     THEN
@@ -85,7 +85,7 @@ Note this always monitors the residual, and the correction is always modified.
     END
 
 */
-    
+
 #ifndef AMANZI_NKA_BT_ATS_SOLVER_
 #define AMANZI_NKA_BT_ATS_SOLVER_
 

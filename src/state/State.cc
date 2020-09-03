@@ -533,9 +533,11 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 void State::WriteDependencyGraph() const {
   auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    *vo->os() << "\nDependency grapth for fields:\n";
     std::ofstream os("dependency_graph.txt", std::ios::out);
     for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
       os << *fe->second;
+      *vo->os() << *fe->second;
     }
     os.close();
   }
@@ -893,7 +895,7 @@ void State::Setup() {
     }
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "Ensure compatibility for evaluator \"" << evaluator->first << "\"\n";
+      *vo->os() << "checking compatibility for evaluator \"" << evaluator->first << "\"\n";
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
@@ -954,7 +956,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
     if (vo->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+      *vo->os() << "copying field \"" << f_it->first << "\"\n";
     }
     
     if (copy != Teuchos::null) {
@@ -1010,7 +1012,7 @@ void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
     if (vo.os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo.getOSTab();
-      *vo.os() << "processing evaluator \"" << f_it->first << "\"\n";
+      *vo.os() << "initializing evaluator \"" << f_it->first << "\"\n";
     }
  
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
@@ -1040,12 +1042,11 @@ void State::InitializeFields() {
    
   // Initialize through initial condition
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-    if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = vo.getOSTab();
-      *vo.os() << "processing field \"" << f_it->first << "\"\n";
-    }
-
     if (pre_initialization || (!f_it->second->initialized())) {
+      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo.os() << "initializing field \"" << f_it->first << "\"\n";
+      }
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);

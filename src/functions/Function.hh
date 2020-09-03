@@ -29,59 +29,59 @@ Note, this does not follow the `"typed`" format for legacy reasons.
 
   ONE OF:
 
-  * `"function: constant`" ``[constant-function-spec]``
+  * `"function: constant`" ``[function-constant-spec]``
 
   OR:
 
-  * `"function: tabular`" ``[tabular-function-spec]``
+  * `"function: tabular`" ``[function-tabular-spec]``
 
   OR:
 
-  * `"function: smooth step`" ``[smooth-step-function-spec]``
+  * `"function: smooth step`" ``[function-smooth-step-spec]``
 
   OR:
 
-  * `"function: polynomial`" ``[polynomial-function-spec]``
+  * `"function: polynomial`" ``[function-polynomial-spec]``
 
   OR:
 
-  * `"function: monomial`" ``[monomial-function-spec]``
+  * `"function: monomial`" ``[function-monomial-spec]``
 
   OR:
 
-  * `"function: linear`" ``[linear-function-spec]``
+  * `"function: linear`" ``[function-linear-spec]``
 
   OR:
 
-  * `"function: separable`" ``[separable-function-spec]``
+  * `"function: separable`" ``[function-separable-spec]``
 
   OR:
 
-  * `"function: additive`" ``[additive-function-spec]``
+  * `"function: additive`" ``[function-additive-spec]``
 
   OR:
 
-  * `"function: multiplicative`" ``[multiplicative-function-spec]``
+  * `"function: multiplicative`" ``[function-multiplicative-spec]``
 
   OR:
 
-  * `"function: composition`" ``[composition-function-spec]``
+  * `"function: composition`" ``[function-composition-spec]``
 
   OR:
 
-  * `"function: static head`" ``[static-head-function-spec]``
+  * `"function: static head`" ``[function-static-head-spec]``
 
   OR:
 
-  * `"function: standard math`" ``[standard-math-function-spec]``
+  * `"function: standard math`" ``[function-standard-math-spec]``
 
   OR:
 
-  * `"function: bilinear`" ``[bilinear-function-spec]``
+  * `"function: bilinear`" ``[function-bilinear-spec]``
 
   OR:
 
-  * `"function: distance`" ``[distance-function-spec]``
+  * `"function: distance`" ``[function-distance-spec]``
 
   END
 

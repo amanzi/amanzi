@@ -27,6 +27,13 @@
 #include "PDE_HelperDiscretization.hh"
 
 /*!
+
+A diffusion PDE for generating both local and global operators.
+
+* `"discretization primary`" ``[string]``
+
+
+
 Example:
 
 .. code-block:: xml
@@ -40,21 +47,12 @@ Example:
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="Newton correction" type="string" value="true Jacobian"/>
-
-      <ParameterList name="consistent faces">
-        <ParameterList name="linear solver">
-          ...
-        </ParameterList>
-        <ParameterList name="preconditioner">
-          ...
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 */
 
 
 /*
-  Ghost elemets of composite vectors k_ and dkdp_ are NOT used to be up to date.
+  Ghost elements of composite vectors k_ and dkdp_ are NOT used to be up to date.
   They always have to be updated from master elements before accessing their values.
 */
 

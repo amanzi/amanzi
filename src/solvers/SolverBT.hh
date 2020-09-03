@@ -30,8 +30,8 @@ provide the correct magnitude.
 
 Note, this always monitors the residual.
 
-.. _solver-typed-backtracking-spec:
-.. admonition:: solver-typed-backtracking-spec
+.. _solver-backtracking-spec:
+.. admonition:: solver-backtracking-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.

@@ -119,10 +119,6 @@ const int OPERATOR_LITTLE_K_STANDARD = 32;
 const int OPERATOR_GRAVITY_HH = 1;
 const int OPERATOR_GRAVITY_FV = 2;
 
-// special properties of operators
-const int OPERATOR_PROPERTY_DATA_READ_ONLY = 1;  // must be power of 2
-const int OPERATOR_PROPERTY_MAP_CONSTANT = 2;
-
 // reconstruction options
 const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
