@@ -635,18 +635,6 @@
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
 
-      <ParameterList name="initial conditions">
-        <ParameterList name="isotherm_kd">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="isotherm_langmuir_b">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="isotherm_freundlich_n">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -672,8 +660,6 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
-
-      <ParameterList name="initial conditions"/>
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

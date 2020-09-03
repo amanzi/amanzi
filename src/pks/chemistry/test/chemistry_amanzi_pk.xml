@@ -99,24 +99,6 @@
     <Parameter name="tolerance" type="double" value="1.50000000000000007e-12"/>
     <Parameter name="maximum Newton iterations" type="int" value="150"/>
     <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
-
-    <ParameterList name="initial conditions">
-      <ParameterList name="free_ion_species">
-        <Parameter name="function" type="string" value="list was moved to state"/>
-      </ParameterList>
-
-      <ParameterList name="mineral_volume_fractions">
-        <Parameter name="function" type="string" value="list was moved to state"/>
-      </ParameterList>
-
-      <ParameterList name="mineral_specific_surface_area">
-        <Parameter name="function" type="string" value="list was moved to state"/>
-      </ParameterList>
-
-      <ParameterList name="sorption_sites">
-        <Parameter name="function" type="string" value="list was moved to state"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
   </ParameterList>
 
@@ -190,6 +172,21 @@
         </ParameterList>
       </ParameterList>
       
+      <ParameterList name="saturation_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
     
     <ParameterList name="initial conditions">

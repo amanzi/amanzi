@@ -98,7 +98,13 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
-  InitializeSorptionSites(cp_list_, state_list);
+  if (cp_list_->isSublist("initial conditions")) {
+    // ATS-style input spec -- initial conditions in the PK
+    InitializeSorptionSites(cp_list_, cp_list_);
+  } else {
+    // Amanzi-style input spec -- initial conditions in State
+    InitializeSorptionSites(cp_list_, state_list);
+  }
 
   // create chemistry engine. (should we do it later in Setup()?)
   if (!cp_list_->isParameter("engine")) {
@@ -246,6 +252,11 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
       AmanziMesh::Entity_ID_List cell_indices;
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
   
+      // Ensure dependencies are filled
+      S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
+      S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
+      S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
         int cell = cell_indices[i];
@@ -423,16 +434,24 @@ void Alquimia_PK::XMLParameters()
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& state_list = glist_->sublist("state");
-  Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  Key geochemical_list_key =  Keys::readKey(initial_conditions, domain_, "geochemical conditions","geochemical conditions");
-  if (initial_conditions.isSublist(geochemical_list_key)) {
-    Teuchos::ParameterList geochem_conditions = initial_conditions.sublist(geochemical_list_key);
+
+  Teuchos::RCP<Teuchos::ParameterList> initial_conditions;
+  if (cp_list_->isSublist("initial conditions")) {
+    // ATS-style input spec -- initial conditions in the PK
+    initial_conditions = Teuchos::sublist(cp_list_, "initial conditions");
+  } else {
+    // Amanzi-style input spec -- initial conditions in State
+    initial_conditions = Teuchos::sublist(Teuchos::sublist(glist_, "state"), "initial conditions");
+  }
+  if (initial_conditions->isSublist("geochemical conditions")) {
+    Teuchos::ParameterList& geochem_conditions = initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
-      msg << "Alquimia_PK::XMLParameters(): \n";
-      msg << "  No geochemical conditions were found in 'State->initial conditions->"
-          << geochemical_list_key << "'!\n";
+      if (cp_list_->isSublist("initial conditions")) {
+        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"PK->initial conditions->geochemical conditions\"";
+      } else {
+        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"State->initial conditions->geochemical conditions\"";
+      }
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -522,7 +541,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell");
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData( mineral_rate_constant_key_)->ViewComponent("cell");
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData(mineral_rate_constant_key_)->ViewComponent("cell");
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
       mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
@@ -554,7 +573,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // Auxiliary data -- block copy.
   if (S_->HasField(alquimia_aux_data_key_)) {
     aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell");
-
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
 
@@ -572,7 +590,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
-  
 
   // sorption isotherms
   if (using_sorption_isotherms_) {
@@ -786,6 +803,11 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
   int max_itrs (0), avg_itrs(0), imax(-1);
 
+  // Ensure dependencies are filled
+  S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
+  S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
+  S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
@@ -836,7 +858,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Key full_name = Keys::getKey(domain_, aux_names_[i]);
+      Key full_name = aux_names_[i];
       Epetra_MultiVector& aux_state = *S_->GetFieldData(full_name, passwd_)->ViewComponent("cell");
       for (int c = 0; c < ncells_owned; ++c) {
         aux_state[0][c] = (*aux_output_)[i][c];
@@ -959,7 +981,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
       for (int j = 0; j < mineral_names_.size(); ++j) {
-        full_name = "mineral_saturation_index_" + mineral_names_[j];
+        full_name = Keys::getKey(domain_,std::string("mineral_saturation_index_") + mineral_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[1].push_back(i);
         }
@@ -967,7 +989,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
       for (int j = 0; j < mineral_names_.size(); ++j) {
-        full_name = "mineral_reaction_rate_" + mineral_names_[j];
+        full_name = Keys::getKey(domain_,std::string("mineral_reaction_rate_") + mineral_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[2].push_back(i);
         }
@@ -975,7 +997,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find("primary_free_ion_concentration") != std::string::npos) {
       for (int j = 0; j < primary_names_.size(); ++j) {
-        full_name = "primary_free_ion_concentration_" + primary_names_[j];
+        full_name = Keys::getKey(domain_,std::string("primary_free_ion_concentration_") + primary_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[3].push_back(i);
         }
@@ -983,7 +1005,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
     }
     else if (aux_names_.at(i).find(primary_activity_coeff_key_) != std::string::npos) {
       for (int j = 0; j < primary_names_.size(); ++j) {
-        full_name = "primary_activity_coeff_" + primary_names_[j];
+        full_name = Keys::getKey(domain_,std::string("primary_activity_coeff_") + primary_names_[j]);
         if (aux_names_.at(i) == full_name) {
           map_[4].push_back(i);
         }
@@ -993,7 +1015,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
       for (int j = 0; j < numAqueousComplexes; ++j) {
         char num_str[16];
         snprintf(num_str, 15, "%d", j);
-        full_name = "secondary_free_ion_concentration_" + std::string(num_str);
+        full_name = Keys::getKey(domain_,std::string("secondary_free_ion_concentration_") + std::string(num_str));
         if (aux_names_.at(i) == full_name) {
           map_[5].push_back(i);
         }
@@ -1003,7 +1025,7 @@ void Alquimia_PK::InitializeAuxNamesMap_()
       for (int j = 0; j < numAqueousComplexes; ++j) {
         char num_str[16];
         snprintf(num_str, 15, "%d", j);
-        full_name = "secondary_activity_coeff_" + std::string(num_str);
+        full_name = Keys::getKey(domain_,std::string("secondary_activity_coeff_") + std::string(num_str));
         if (aux_names_.at(i) == full_name) {
           map_[6].push_back(i);
         }
