@@ -209,23 +209,6 @@
       </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
-      <ParameterList name="initial conditions">
-	<ParameterList name="mineral_volume_fractions">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-	</ParameterList>
-	<ParameterList name="mineral_specific_surface_area">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-	</ParameterList>
-	<ParameterList name="ion_exchange_sites">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-	</ParameterList>
-	<ParameterList name="ion_exchange_ref_cation_conc">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-	</ParameterList>
-	<ParameterList name="free_ion_species">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-	</ParameterList>
-      </ParameterList>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
       <ParameterList name="verbose object">
