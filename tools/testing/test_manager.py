@@ -573,7 +573,12 @@ class RegressionTest(object):
                 h5_gold = None
 
             if h5_reg is not None and h5_gold is not None:
+                status.local_fail = 0
                 self._compare(h5_reg, h5_gold, status, testlog)
+                if status.local_fail == 0:
+                    print("    Passed tests {}".format(os.path.split(gold_file)[-1]), file=testlog)
+                else:
+                    print("    Failed test {}".format(os.path.split(gold_file)[-1]), file=testlog)
 
             if h5_reg is not None: h5_reg.close()
             if h5_gold is not None: h5_gold.close()
@@ -633,9 +638,6 @@ class RegressionTest(object):
                 for (g, r) in zip(gold_matches, reg_matches):
                     self._check_tolerance(h5_current[r][:], h5_gold[g][:], r, tolerance, status, testlog)
 
-        if status.fail == 0:
-            print("    Passed tests.", file=testlog)
-
     def _norm(self, diff):
         """
         Determine the difference between two values
@@ -660,22 +662,13 @@ class RegressionTest(object):
 
         elif (tol_type == self._RELATIVE or
               tol_type == self._PERCENT):
-
             if type(gold) is numpy.ndarray:
-                rel_to = numpy.where(gold > self._eps, gold, current)
-                filter = numpy.where(rel_to > self._eps)[0]            
-                if filter.shape[0] == 0:
-                    delta = 0
-                else:
-                    delta = self._norm((gold[filter] - current[filter]) / rel_to[filter])
+                min_threshold = max(min_threshold, 1.e-12)
+                rel_to = numpy.where(numpy.abs(gold) > min_threshold, gold, min_threshold)
+                delta = self._norm((gold - current) / rel_to)
 
             else:
-                if gold > self._eps:
-                    delta = self._norm((gold - current) / gold)
-                elif current > self._eps:
-                    delta = self._norm((gold - current) / current)
-                else:
-                    delta = 0
+                delta = self._norm((gold - current) / max(abs(gold), min_threshold))
                 
             if tol_type == self._PERCENT:
                 delta *= 100.0
@@ -687,6 +680,7 @@ class RegressionTest(object):
 
         if delta > tol:
             status.fail = 1
+            status.local_fail = 1
             print("    FAIL: {0} : {1} : {2} > {3} [{4}]".format(
                     self.name(), key, delta, tol, tol_type), file=testlog)
         else:
@@ -726,7 +720,7 @@ class RegressionTest(object):
         * key = default
         * key = no
         * key = tolerance type
-        * key = tolerance type [, min_threshold value] [, max_threshold value]
+        * key = tolerance type [ min_threshold value [ max_threshold value ] ]
 
         where the first two use defaults, the third turns the test
         off, and the last two specify the tolerance explicitly, where
@@ -742,19 +736,21 @@ class RegressionTest(object):
             return self._default_tolerance[self._DISCRETE]
 
         # if we get here, parse the string
-        criteria = 4*[None]
-        test_data = test_data.split(",")
-        test_criteria = test_data[0]
-        value = test_criteria.split()[0]
+        criteria = [None, None, 0.0, sys.float_info.max]
+        test_data_s = test_data.split()
 
-        try:
-            value = float(value)
-        except Exception:
+        if len(test_data_s) < 2:
             raise RuntimeError("ERROR : Could not convert '{0}' test criteria "
-                               "value '{1}' into a float!".format(key, value))
+                               "'{1}' into at least a tolerance and type!".format(key, test_data))
+        
+        try:
+            value = float(test_data_s[0])
+        except ValueError:
+            raise RuntimeError("ERROR : Could not convert '{0}' test criteria "
+                               "value '{1}' into a float!".format(key, test_data_s[0]))
         criteria[0] = value
 
-        criteria_type = test_criteria.split()[1]
+        criteria_type = test_data_s[1]
         if (criteria_type.lower() != self._PERCENT and
             criteria_type.lower() != self._ABSOLUTE and
                 criteria_type.lower() != self._RELATIVE):
@@ -762,25 +758,22 @@ class RegressionTest(object):
                                "for '{1}'".format(criteria_type, key))
         criteria[1] = criteria_type
 
-        thresholds = {}
-        for t in range(1, len(test_data)):
-            name = test_data[t].split()[0].strip()
-            value = test_data[t].split()[1].strip()
+        if (len(test_data_s) > 2):
             try:
-                value = float(value)
-            except Exception:
-                raise RuntimeError(
-                    "ERROR : Could not convert '{0}' test threshold '{1}'"
-                    "value '{2}' into a float!".format(key, name, value))
-            thresholds[name] = value
-        value = thresholds.pop("min_threshold", None)
-        criteria[2] = value
-        value = thresholds.pop("max_threshold", None)
-        criteria[3] = value
-        if len(thresholds) > 0:
-            raise RuntimeError("ERROR: test {0} : unknown criteria threshold: {1}",
-                               key, thresholds)
-        
+                min_threshold = float(test_data_s[2])
+            except ValueError:
+                raise RuntimeError("ERROR : Could not convert '{0}' test criteria "
+                                   "min_threshold value '{1}' into a float!".format(key, test_data_s[2]))
+            criteria[2] = min_threshold
+
+        if (len(test_data_s) > 3):
+            try:
+                max_threshold = float(test_data_s[3])
+            except ValueError:
+                raise RuntimeError("ERROR : Could not convert '{0}' test criteria "
+                                   "max_threshold value '{1}' into a float!".format(key, test_data_s[3]))
+            criteria[3] = max_threshold
+
         return criteria
 
 
