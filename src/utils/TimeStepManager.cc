@@ -61,7 +61,8 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
 
   if ((dt_stable_storage > 0) && (!after_failure)) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Proposed dT=" << units.OutputTime(dT) << ", stability from previous step limits it to " << units.OutputTime(dt_stable_storage) << "." << std::endl;
+      *vo_->os() << "Proposed dT=" << units.OutputTime(dT) 
+                 << ", stability from previous step changes it to " << units.OutputTime(dt_stable_storage) << std::endl;
     }
     dT = dt_stable_storage;
     dt_stable_storage = -1.;
@@ -113,7 +114,7 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT;
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
-                 << ". Events limit it to " << units.OutputTime(time_remaining) << "." << std::endl;
+                 << ", events limit it to " << units.OutputTime(time_remaining) << std::endl;
     }
     return time_remaining;
 
@@ -121,13 +122,13 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
-                 << ". Events limit it to " << units.OutputTime(0.5*time_remaining) << std::endl;
+                 << ", events limit it to " << units.OutputTime(0.5*time_remaining) << std::endl;
     }
     return 0.5*time_remaining;
 
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Accepted proposed dT=" << units.OutputTime(dT) << "." << std::endl;
+      *vo_->os() << "Accepted proposed dT=" << units.OutputTime(dT) << std::endl;
     }
     return dT;
   }

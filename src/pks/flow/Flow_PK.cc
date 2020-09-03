@@ -159,6 +159,8 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
   nseepage_prev = 0;
   ti_phase_counter = 0;
 
+  InitializeFields_();
+
   // Fundamental physical quantities
   // -- temporarily these quantities are constant
   double* gravity_data;
@@ -178,8 +180,6 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 #ifdef HAVE_MPI
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 #endif
-
-  InitializeFields_();
 }
 
 

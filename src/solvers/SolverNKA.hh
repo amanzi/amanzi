@@ -41,8 +41,8 @@ especially with an approximate Jacobian.
       indicating divergence of the solver. The error is calculated by a PK.
 
     * `"diverged l2 tolerance`" ``[double]`` **1.e10** Defines another way to
-      identify divergence of the solver. If the relative L2 norm of the
-      solution increment is above this value, the solver is terminated.
+      identify divergence of the solver. If the relative l2 (little l) norm of
+      the solution increment is above this value, the solver is terminated.
 
     * `"diverged pc tolerance`" ``[double]`` **1e10** Defines another way to
       identify divergence of the solver. If the relative maximum norm of the
@@ -50,7 +50,7 @@ especially with an approximate Jacobian.
       value, the solver is terminated.
 
     * `"diverged residual tolerance`" ``[double]`` **1e10** Defines another way
-      to identify divergence of the solver. If the relative L2 norm of the
+      to identify divergence of the solver. If the relative l2 norm of the
       residual (with respect to the initial residual) is above this value, the
       solver is terminated.
 
@@ -294,7 +294,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     } else {
       if (r_norm > overflow_r_tol_ * r_norm_initial) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "teminating due to L2-norm overflow: ||r||=" << r_norm 
+          *vo_->os() << "teminating due to l2-norm overflow: ||r||=" << r_norm 
                      << " ||r0||=" << r_norm_initial << std::endl;
         return SOLVER_OVERFLOW;
       }
@@ -317,8 +317,8 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       } else if (num_itrs_ > 8) {
         if (l2_error > l2_error_initial) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-            *vo_->os() << "Solver stagnating, L2-error=" << l2_error
-                       << " > " << l2_error_initial << " (initial L2-error)" << std::endl;
+            *vo_->os() << "Solver stagnating, l2-error=" << l2_error
+                       << " > " << l2_error_initial << " (initial l2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -389,7 +389,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       du->Norm2(&du_norm2);
       if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-           *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
+           *vo_->os() << "terminating due to l2-norm overflow ||du||=" << du_norm2
                       << ", ||u||=" << u_norm2 << std::endl;
         return SOLVER_OVERFLOW;
       }
@@ -479,7 +479,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(
    double error, double previous_error, double l2_error)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
+    *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error << std::endl;
 
   if (error < tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
