@@ -115,8 +115,8 @@
     </ParameterList>
 
     <ParameterList name="silent">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
@@ -131,11 +131,11 @@
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="cycle applications" type="int" value="1"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.25"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="relaxation type" type="int" value="6"/>
+        <!--Parameter name="relaxation type" type="int" value="6"/-->
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

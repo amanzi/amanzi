@@ -18,7 +18,7 @@
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 // Amanzi
@@ -57,14 +57,14 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.sublist("regions");
+  ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
+  auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
@@ -132,7 +132,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
   }
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("curlcurl operator");
+  Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("curlcurl operator");
   olist.sublist("schema").set<std::string>("method", method);
   olist.sublist("schema").set<int>("method order", order);
   auto op_curlcurl = Teuchos::rcp(new PDE_Abstract(olist, mesh));
@@ -142,7 +142,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
 
   // add an accumulation operator
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  olist = plist.sublist("PK operator").sublist("accumulation operator");
+  olist = plist->sublist("PK operator").sublist("accumulation operator");
   olist.sublist("schema").set<std::string>("method", method);
   olist.sublist("schema").set<int>("method order", order);
   auto op_acc = Teuchos::rcp(new PDE_Abstract(olist, global_op));
@@ -202,7 +202,8 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
   op_acc->ApplyBCs(true, true, false);
 
   // create preconditoner
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"), 
+                                    "silent", plist->sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 

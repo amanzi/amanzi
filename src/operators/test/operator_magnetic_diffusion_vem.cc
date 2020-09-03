@@ -84,7 +84,6 @@ void MagneticDiffusionVEM(
     DeformMesh(mesh, 5, 1.0);
   } else {
     mesh = meshfactory.create(name, request_faces, request_edges);
-    // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
   }
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -353,9 +352,15 @@ void MagneticDiffusionVEM(
 }
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
+  /*
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2, 0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
+  */
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hex_split_faces5.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 5,5,5, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2, 0.1, 0, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/4, 0.1, 0, 32,32,32, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes32.exo");
 }
 
