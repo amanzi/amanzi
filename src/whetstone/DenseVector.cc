@@ -61,6 +61,8 @@ DenseVector::DenseVector(DenseVector&& other)
   m_ = other.m_;
   mem_ = other.mem_;
   data_ = other.data_;
+  other.m_ = 0;
+  other.mem_ = 0;
   other.data_ = NULL;
 }
 
@@ -160,9 +162,14 @@ DenseVector& DenseVector::operator=(const DenseVector& other)
 DenseVector& DenseVector::operator=(DenseVector&& other) noexcept
 {
   if (this != &other) {
+    if (data_ != NULL) delete [] data_;
+
     m_ = other.m_;
     mem_ = other.mem_;
     data_ = other.data_;
+
+    other.m_ = 0;
+    other.mem_ = 0;
     other.data_ = NULL;
   }
   return *this;

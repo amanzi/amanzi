@@ -96,6 +96,10 @@ DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept
   mem_ = other.mem_;
   access_ = other.access_;
   data_ = other.data_;
+
+  other.m_ = 0;
+  other.n_ = 0;
+  other.mem_ = 0;
   other.data_ = NULL;
 }
 
@@ -153,11 +157,17 @@ DenseMatrix& DenseMatrix::operator=(const DenseMatrix& other)
 DenseMatrix& DenseMatrix::operator=(DenseMatrix&& other) noexcept
 {
   if (this != &other) {
+    if (data_ != NULL) delete [] data_;
+
     n_ = other.n_;
     m_ = other.m_;
     mem_ = other.mem_;
     access_ = other.access_;
     data_ = other.data_;
+
+    other.n_ = 0;
+    other.m_ = 0;
+    other.mem_ = 0;
     other.data_ = NULL;
   }
   return *this;
