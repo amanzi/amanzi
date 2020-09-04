@@ -458,6 +458,10 @@ The evaluator has the following control parameters.
     * `"function`" [list] defines an analytic function for calculation. Its structure
       is described in the Functions_ section below.
 
+    * `"initialize faces from cells`" [bool] instructs state to initialize face-component
+      and boundary face-component (if any) of a composite vector from a cell-component 
+      using simple averaging. Default is false.
+
 .. code-block:: xml
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
@@ -2267,9 +2271,10 @@ The diffusivity is defined independently for each solute.
   * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
     `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
   * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
-    For model `"scalar`", the following options must be specified:
+    For model `"scalar`", *only* one of the following options must be specified:
 
-      * `"alpha`" [double] defines dispersion in all directions, [m]. 
+      * `"alpha`" [double] defines dispersivity in all directions, [m].
+      * `"dispersion coefficient`" [double] defines dispersion coefficient [m^2/s].
 
     For model `"Bear`", the following options must be specified:
 
@@ -2279,24 +2284,24 @@ The diffusivity is defined independently for each solute.
     For model `"Burnett-Frind`", the following options must be specified:
 
       * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
-      * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
-      * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions.
+      * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions, [m].
+      * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions, [m].
         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`" models.
 
     For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
 
       * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
-      * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction.
+      * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction, [m].
         When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
-      * `"alpha_th`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions.
+      * `"alpha_th`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions, [m].
       * `"alpha_tv" [double] Defines dispersion in the orthogonal directions.
         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
 
-  * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes.
-  * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes.
+  * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes, [-].
+  * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes, [-].
  
 Three examples are below:
 
@@ -2311,7 +2316,7 @@ Three examples are below:
         <Parameter name="alpha_l" type="double" value="1e-2"/>
         <Parameter name="alpha_t" type="double" value="1e-5"/>
       <ParameterList>
-      <Parameter name="aqueous tortuosity" type="double" value="1.0"/>       
+      <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
       <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
     </ParameterList>  
      
@@ -5038,10 +5043,10 @@ by various PKs.
 
 .. _LinearSolvers:
 
-Linear solvers
---------------
+Iterative solvers
+-----------------
 
-This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
+This list contains sublists for various linear algebra solvers such as PCG, GMRES, and NKA.
 Note that only PK can provide a preconditioner for a linear solver; hence, we cannot
 specify it here.
 
@@ -5571,31 +5576,31 @@ preconditioners required by a simulation. At the moment, we support Trilinos mul
 preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Euclid ILU
 preconditioner, and identity preconditioner. 
 
-* `"type`" [string] defines preconditioner name.
+* `"preconditioning method`" [string] defines preconditioner algorithm.
 
 * `"xxx parameters`" [list] provides parameters for the preconditioner specified 
-  by variable `"type`".
+  by parameter `"preconditioning method`".
  
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
   <ParameterList name="preconditioners">
     <ParameterList name="_TRILINOS ML">
-      <Parameter name="type" type="string" value="ml"/>
+      <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
         ... 
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="_HYPRE AMG">
-      <Parameter name="type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         ...
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="_BLOCK ILU">
-      <Parameter name="type" type="string" value="block ilu"/>
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
       <ParameterList name="block ilu parameters">
         ...
       </ParameterList>
