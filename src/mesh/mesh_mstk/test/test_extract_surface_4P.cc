@@ -74,6 +74,7 @@ TEST(Extract_Surface_MSTK1_4P)
   // Number of nodes in surface mesh
   int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
   int nnodes_surf_owned = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  CHECK(nnodes_surf_owned <= nnodes_surf);
 
   // Check if coordinates of surface mesh node is the same as its
   // parent node in the volume mesh

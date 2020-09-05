@@ -20,7 +20,7 @@ TEST(MSTK_HEX1)
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
-  int NF = 6;
+  // int NF = 6;
   int NC = 1;
   double xyz[12][3] = {{0, 0, 0},
 		       {1, 0, 0},
@@ -30,7 +30,7 @@ TEST(MSTK_HEX1)
 		       {1, 0, 1}, 
 		       {0, 1, 1},
 		       {1, 1, 1}};
-  Amanzi::AmanziMesh::Entity_ID local_cellnodes[8] = {0,1,2,3,4,5,6,7};
+  // Amanzi::AmanziMesh::Entity_ID local_cellnodes[8] = {0,1,2,3,4,5,6,7};
   Amanzi::AmanziMesh::Entity_ID local_facenodes[6][4] = {{0,1,5,4},
 					{1,2,6,5},
 					{2,3,7,6},

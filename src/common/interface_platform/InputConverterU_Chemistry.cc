@@ -255,7 +255,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
           ss << "dof " << j + 1 << " function";
  
           node = GetUniqueElementByTagsString_(inode, "minerals", flag);
-          double mvf(0.0), msa(0.0), mrc(0.0);
+          double mvf(0.0), msa(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
             mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, 0.0, 1.0, "", false, 0.0);
