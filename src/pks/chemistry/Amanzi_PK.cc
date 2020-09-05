@@ -676,6 +676,11 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), ierr(0);
 
+  // Ensure dependencies are filled
+  S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
+  S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
+  S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < num_cells; ++c) {
     CopyCellStateToBeakerStructures(c, aqueous_components_);

@@ -57,6 +57,20 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -168,19 +182,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="saturation_liquid">
-        <ParameterList name="function">
-          <ParameterList name="ALL">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -201,17 +202,6 @@
       <Parameter name="engine" type="string" value="CrunchFlow"/>
       <Parameter name="chemistry model" type="string" value="Alquimia"/>
       <Parameter name="engine input file" type="string" value="test/chemistry_alquimia_pk_crunch.in"/>
-      <ParameterList name="initial conditions">
-        <ParameterList name="isotherm_kd">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="isotherm_langmuir_b">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="isotherm_freundlich_n">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>

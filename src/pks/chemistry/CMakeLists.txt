@@ -110,14 +110,18 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                                 ${NOX_LIBRARIES})
     endif()
 
-    # The following test is disabled in parallel environments. It has to be rewritten in order 
-    # to function properly there.
-    add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmark_1d
-                    KIND int
-                    SOURCE test/chemistry_benchmarks_1d.cc
-                    LINK_LIBS chemistry_pk state pks data_structures
+    if (ENABLE_AmanziPhysicsModule)
+      # this test uses the Amanzi executable...
+      
+      # The following test is disabled in parallel environments. It has to be rewritten in order 
+      # to function properly there.
+      add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmark_1d
+                      KIND int
+                      SOURCE test/chemistry_benchmarks_1d.cc
+                      LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
                               ${NOX_LIBRARIES})
+    endif()
 endif()

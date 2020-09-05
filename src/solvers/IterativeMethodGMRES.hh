@@ -15,8 +15,8 @@ Based on the methods of Yu. Kuznetsov, 1968; Y.Saad, 1986.  Deflated version of
 GMRES is due to R.Morgan, GMRES with deflated restarting, 2002 SISC; S.Rollin,
 W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 
-.. _linear-solver-typed-gmres-spec:
-.. admonition:: linear-solver-typed-gmres-spec
+.. _iterative-method-gmres-spec:
+.. admonition:: iterative-method-gmres-spec
 
     * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
 
@@ -24,7 +24,7 @@ W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 
     * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
 
-    * `"convergence criterial`" ``[Array(string)]`` **"{relative rhs}"** A list of
+    * `"convergence criterial`" ``[Array(string)]`` **{relative rhs}** A list of
       criteria, any of which can be applied.  Valid include:
 
       - `"relative rhs`" : measure error relative to the norm of the RHS vector

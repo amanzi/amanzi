@@ -691,26 +691,6 @@
       <Parameter name="engine" type="string" value="PFloTran"/>
       <Parameter name="chemistry model" type="string" value="Alquimia"/>
       <Parameter name="engine input file" type="string" value="test/converter_u_test4.in"/>
-      <ParameterList name="initial conditions">
-        <ParameterList name="first_order_decay_constant">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="mineral_volume_fractions">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="mineral_specific_surface_area">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="mineral_rate_constant">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="ion_exchange_sites">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-        <ParameterList name="sorption_sites">
-          <Parameter name="function" type="string" value="list was moved to state"/>
-        </ParameterList>
-      </ParameterList>
       <Parameter name="aqueous_reactions" type="Array(string)" value="{Tritium}"/>
       <Parameter name="minerals" type="Array(string)" value="{Quartz, Goethite, Kaolinite, Schoepite, Gibbsite, Jurbanite, Basaluminite, Opal}"/>
       <Parameter name="activity model" type="string" value="unit"/>

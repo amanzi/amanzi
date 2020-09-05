@@ -451,7 +451,10 @@ void InputConverterU::MergeInitialConditionsLists_(
         }
       }
     }
-  }  
+    // Note the list will always be there because, even if it did not exist; we
+    // created it above.
+    plist.sublist("PKs").sublist(chemistry).remove("initial conditions");
+  }
 }
 
 

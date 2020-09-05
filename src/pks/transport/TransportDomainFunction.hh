@@ -47,9 +47,10 @@ class TransportDomainFunction {
   std::string keyword() { return keyword_; }
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
+  void set_tcc_names(const std::vector<std::string>& tcc_names){ tcc_names_ = tcc_names; }
   std::vector<int>& tcc_index() { return tcc_index_; }
   virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
-  
+
   // iterator methods
   typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
@@ -67,7 +68,7 @@ class TransportDomainFunction {
 
   std::string keyword_;
   Teuchos::RCP<const State> S_;
-  
+
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
 };

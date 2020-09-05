@@ -21,16 +21,17 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
 .. _jf-matrix-spec:
 .. admonition:: jf-matrix-spec
 
-    * "typical solution value" [double] **100** Used in relative action
-      approximations. **OPTION NOT IMPLEMENTED**
+    * `"typical solution value`" ``[double]`` **100** Used in relative action
+      approximations. OPTION NOT IMPLEMENTED
 
-    * "finite difference epsilon" [double] **1.e-8** defines the base finite
+    * `"finite difference epsilon`" ``[double]`` **1.e-8** defines the base finite
       difference epsilon.
 
-    * "method for epsilon" [string] defines a method for calculating finite
+    * `"method for epsilon`" ``[string]`` defines a method for calculating finite
       difference epsilon. Available option is "Knoll-Keyes", "Knoll-Keyes L2",
       "Brown-Saad".  See Knoll
- */
+
+*/
 
 
 /*

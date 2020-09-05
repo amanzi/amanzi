@@ -21,7 +21,7 @@ namespace Amanzi {
 
 TimeStepManager::TimeStepManager() {
   dt_stable_storage = -1.;
-  vo_ = Teuchos::null;
+  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", Teuchos::ParameterList()));
 }
 
 TimeStepManager::TimeStepManager(Teuchos::ParameterList& verb_list) {
@@ -52,24 +52,17 @@ void TimeStepManager::RegisterTimeEvent(double time, bool phys) {
 }
 
 double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  Utils::Units units("molar");
   double next_T_all_events(1e99);
   bool physical = true;
 
-  // if (vo_ != Teuchos::null) {
-  //   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-  //     Teuchos::OSTab tab = vo_->getOSTab();
-  //     *vo_->os() <<"PK proposed dT: "<<dT<<std::endl;
-  //   }
-  // }
-
   if (after_failure) dt_stable_storage = -1.;
-  
-  if ((dt_stable_storage > 0)&&(!after_failure)) {
-    if (vo_ != Teuchos::null) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "PK proposed dT=" << dT << " [sec], changing it to " << dt_stable_storage << " [sec]" << std::endl;
-      }
+
+  if ((dt_stable_storage > 0) && (!after_failure)) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Proposed dT=" << units.OutputTime(dT) 
+                 << ", stability from previous step changes it to " << units.OutputTime(dt_stable_storage) << std::endl;
     }
     dT = dt_stable_storage;
     dt_stable_storage = -1.;
@@ -110,39 +103,35 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
 
-  if (dT == time_remaining) return dT;
-
-  if (dT > time_remaining) {
-    if (!physical) dt_stable_storage = dT;
-    if (vo_ != Teuchos::null) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        Utils::Units units("molar");
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
-                   << ". CD limits it to " << units.OutputTime(time_remaining) << std::endl;
-      }
+  if (near_equal(dT, time_remaining)) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Proposed dT=" << units.OutputTime(dT) << ", is near equal to next event time remaining "
+                 << units.OutputTime(time_remaining) << "." << std::endl;
     }
+    return time_remaining;
 
+  } else if (dT > time_remaining) {
+    if (!physical) dt_stable_storage = dT;
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
+                 << ", events limit it to " << units.OutputTime(time_remaining) << std::endl;
+    }
     return time_remaining;
 
   } else if (dT > 0.75*time_remaining) {    
     if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
-    if (vo_!=Teuchos::null) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-        Utils::Units units("molar");
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
-                   << ". CD limits it to " << units.OutputTime(0.5*time_remaining) << std::endl;
-      }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
+                 << ", events limit it to " << units.OutputTime(0.5*time_remaining) << std::endl;
     }
-
     return 0.5*time_remaining;
 
   } else {
-
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Accepted proposed dT=" << units.OutputTime(dT) << std::endl;
+    }
     return dT;
-
-  } 
+  }
 }
 
 void TimeStepManager::print(std::ostream& os, double start, double end) const {

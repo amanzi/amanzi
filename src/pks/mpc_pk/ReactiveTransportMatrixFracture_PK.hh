@@ -64,9 +64,6 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
 
   // factory registration
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;
-
- private:
-  bool chem_step_succeeded_;
 };
 
 }  // namespace Amanzi
