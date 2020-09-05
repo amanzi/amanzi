@@ -16,7 +16,6 @@ map, not the true row map.
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"

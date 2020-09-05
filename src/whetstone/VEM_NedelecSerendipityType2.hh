@@ -26,7 +26,6 @@
 #include "GrammMatrix.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Edge.hh"
-#include "FunctionPower.hh"
 #include "MFD3D.hh"
 #include "Monomial.hh"
 #include "NumericalIntegration.hh"
@@ -140,7 +139,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   mymesh->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  Polynomial poly(d, order_), pe(d - 1, order_);
+  Polynomial poly(d, order_);
 
   int ndc = PolynomialSpaceDimension(d, order_);
   int nde = PolynomialSpaceDimension(d - 1, order_);
@@ -154,9 +153,8 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   NumericalIntegration<MyMesh> numi(mymesh);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
-  std::vector<const WhetStoneFunction*> funcs(2);
-
   // iterators
+  std::vector<double > moments;
   VectorPolynomialIterator it0(d, d, order_), it1(d, d, order_);
   it0.begin();
   it1.end();
@@ -172,20 +170,15 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
     cmono.set_origin(mymesh->cell_centroid(c));
 
     int row(0);
+
     for (int i = 0; i < nedges; ++i) {
       int e = edges[i];
       double len = mymesh->edge_length(e);
       const AmanziGeometry::Point& tau = mymesh->edge_vector(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
 
-      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
-        int m2 = jt.MonomialSetOrder();
-        FunctionPower efunc(tau[k] / len, m2);
-
-        funcs[0] = &cmono;
-        funcs[1] = &efunc;
-
-        N(row, n) = numi.IntegrateFunctionsEdge(e, funcs, m + m2) / len;
+      numi.CalculatePolynomialMomentsEdge(e, cmono, order_, moments);
+      for (int l = 0; l < moments.size(); ++l) {
+        N(row, n) = moments[l] * tau[k] / len;
         row++;
       }
     }
@@ -313,7 +306,7 @@ void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
   NumericalIntegration<MyMesh> numi(mymesh);
 
   // number of moments on edges
-  Polynomial pe(1, order_);
+  std::vector<double> moments;
 
   int row(0);
   for (int n = 0; n < nedges; ++n) {
@@ -322,16 +315,10 @@ void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
     const auto& tau = mymesh->edge_vector(e);
 
     auto poly = ve[n] * tau;
-    int m = poly.order();
 
-    for (auto it = pe.begin(); it < pe.end(); ++it) {
-      int m2 = it.MonomialSetOrder();
-      FunctionPower efunc(1.0 / length, m2);
-
-      funcs[0] = &poly;
-      funcs[1] = &efunc;
-
-      vdof(row) = numi.IntegrateFunctionsEdge(e, funcs, m + m2) / length;
+    numi.CalculatePolynomialMomentsEdge(e, poly, order_, moments);
+    for (int k = 0; k < moments.size(); ++k) {
+      vdof(row) = moments[k] / length;
       row++;
     }
   }

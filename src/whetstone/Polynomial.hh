@@ -113,10 +113,10 @@ class Polynomial : public PolynomialBase {
   PolynomialIterator end() const { PolynomialIterator it(d_); return it.begin(order_ + 1); }
 
   // Change of coordinates:
-  // --  x = xf + B * s
+  // -- x = xf + B * s, where new coorditates s are either 1D or 2D
   void ChangeCoordinates(const AmanziGeometry::Point& xf,
                          const std::vector<AmanziGeometry::Point>& B);
-  // --  s = B^+ (x - xf)
+  // -- s = B^+ (x - xf) 
   void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
                                 const std::vector<AmanziGeometry::Point>& B);
 

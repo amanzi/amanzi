@@ -36,7 +36,6 @@
 #include "PDE_Accumulation.hh"
 #include "PDE_MagneticDiffusion.hh"
 
-#include "AnalyticElectromagnetics04.hh"
 #include "AnalyticElectromagnetics05.hh"
 #include "MeshDeformation.hh"
 
@@ -178,7 +177,7 @@ void MagneticDiffusionVEM(
       funcs[1] = &fmono;
 
       int k = it.PolynomialPosition();
-      Bf[k][f] = numi.IntegrateFunctionsTriangulatedFace(f, funcs, 1) / area;
+      Bf[k][f] = numi.IntegrateFunctionsTriangulatedFace(f, funcs, 3) / area;
     }
   }
 
@@ -195,6 +194,7 @@ void MagneticDiffusionVEM(
     auto& bc_value = bc->bc_value_vector(nde);
 
     std::vector<int> edirs;
+    std::vector<double> moments;
     AmanziMesh::Entity_ID_List cells, edges;
 
     for (int f = 0; f < nfaces_wghost; ++f) {
@@ -205,24 +205,17 @@ void MagneticDiffusionVEM(
           fabs(xf[2] - Za) < 1e-6 || fabs(xf[2] - Zb) < 1e-6) {
         mesh->face_get_edges_and_dirs(f, &edges, &edirs);
         int nedges = edges.size();
+
         for (int i = 0; i < nedges; ++i) {
           int e = edges[i];
           double len = mesh->edge_length(e);
           const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-          const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
           std::vector<AmanziGeometry::Point> coordsys(1, tau);
           ana.set_parameters(tau / len, 0, tnew - dt/2);
 
-          for (auto it = pe.begin(); it < pe.end(); ++it) {
-            const int* index = it.multi_index();
-            Polynomial emono(1, index, 1.0);
-            emono.InverseChangeCoordinates(xe, coordsys);  
-            funcs[1] = &emono;
-
-            int k = it.PolynomialPosition();
-            bc_value[e][k] = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
-          }
+          numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 2);
+          for (int k = 0; k < moments.size(); ++k) bc_value[e][k] = moments[k];
           bc_model[e] = OPERATOR_BC_DIRICHLET;
         }
       }
@@ -354,10 +347,6 @@ void MagneticDiffusionVEM(
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hex_split_faces5.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2, 0.1, 0, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/4, 0.1, 0, 32,32,32, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes32.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
 }
 

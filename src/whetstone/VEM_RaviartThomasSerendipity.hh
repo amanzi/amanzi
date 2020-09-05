@@ -25,7 +25,6 @@
 #include "GrammMatrix.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Edge.hh"
-#include "FunctionPower.hh"
 #include "MFD3D.hh"
 #include "Monomial.hh"
 #include "NumericalIntegration.hh"

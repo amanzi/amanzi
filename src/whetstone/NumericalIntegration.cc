@@ -149,7 +149,7 @@ double IntegrateFunctionsEdge(
 
     double a(q1d_weights[m][n]);
     for (int i = 0; i < funcs.size(); ++i) {
-      a *= funcs[i]->Value(xm, q1d);
+      a *= funcs[i]->Value(xm, 0.0);
     }
     integral += a;      
   }

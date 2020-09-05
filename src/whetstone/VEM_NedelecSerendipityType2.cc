@@ -31,7 +31,6 @@
 #include "errors.hh"
 
 #include "Basis_Regularized.hh"
-#include "FunctionPower.hh"
 #include "GrammMatrix.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
@@ -128,6 +127,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
+  // MassMatricesOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
 
   // L2-projector in cell
   Tensor Idc(d_, 2);
@@ -172,6 +172,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
     VectorDecomposition3DCurl(q, k, p1, p2);
 
     // contributions from faces: int_f (p1^x^n . Pi_f(v))
+    // contributions from faces: int_f (p1^x^n . v) 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       double area = mesh_->face_area(f);
@@ -195,9 +196,11 @@ int VEM_NedelecSerendipityType2::L2consistency(
       int krows = vMGf[n].NumRows();
       WhetStone::DenseVector w(krows), p0v(ncols);
 
+      // method I
       Polynomial xyzn(xyz[0]);
       for (int i = 0; i < d_; ++i) xyzn(i + 1) = normal[i];  // xyz * normal
       VectorPolynomial p3D = p1 * xyzn - xyz * (p1 * normal);
+
       VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p3D, xf, *vcoordsys[n]->tau());
       auto v = ExpandCoefficients(p2D);
       v /= area;
@@ -216,6 +219,9 @@ int VEM_NedelecSerendipityType2::L2consistency(
       w.Regroup(stride2, stride1);
 
       vL2f[n].Multiply(w, p0v, true);
+
+      // method II
+
 
       for (int i = 0; i < p0v.NumRows(); ++i) {
         R(map[i], col) += p0v(i) * fdirs[n];
@@ -296,9 +302,7 @@ void VEM_NedelecSerendipityType2::MatrixOfDofs_(
   int nedges = edges.size();
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-  Polynomial pe(d_ - 2, order_);
-
-  std::vector<const WhetStoneFunction*> funcs(2);
+  std::vector<double> moments;
 
   VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
   it0.begin();
@@ -320,14 +324,9 @@ void VEM_NedelecSerendipityType2::MatrixOfDofs_(
       const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
       double length = mesh_->edge_length(e);
 
-      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
-        int m2 = jt.MonomialSetOrder();
-        FunctionPower efunc(tau[k] / length, m2);
-
-        funcs[0] = &cmono;
-        funcs[1] = &efunc;
-
-        N(row, col) = numi.IntegrateFunctionsEdge(e, funcs, m + m2) / length;
+      numi.CalculatePolynomialMomentsEdge(e, cmono, order_, moments);
+      for (int l = 0; l < moments.size(); ++l) {
+        N(row, col) = moments[l] * tau[k] / length;
         row++;
       }
     }

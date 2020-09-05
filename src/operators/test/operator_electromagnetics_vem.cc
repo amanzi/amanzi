@@ -118,16 +118,11 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
         fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
+      std::vector<double> moments;
+      numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 2);
 
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        WhetStone::Polynomial fmono(1, it.multi_index(), 1.0);
-        fmono.InverseChangeCoordinates(xe, coordsys);  
-        funcs[1] = &fmono;
-
-        int k = it.PolynomialPosition();
-        bc_value[e][k] = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
-        bc_model[e] = OPERATOR_BC_DIRICHLET;
-      }
+      for (int k = 0; k < moments.size(); ++k) bc_value[e][k] = moments[k];
+      bc_model[e] = OPERATOR_BC_DIRICHLET;
     }
   }
 
@@ -165,19 +160,13 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
       int e = edges[n];
       double len = mesh->edge_length(e);
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
       std::vector<AmanziGeometry::Point> coordsys(1, tau);
       ana.set_parameters(tau / len, 1, 0.0);
 
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        WhetStone::Polynomial fmono(1, it.multi_index(), 1.0);
-        fmono.InverseChangeCoordinates(xe, coordsys);  
-        funcs[1] = &fmono;
-
-        int k = it.PolynomialPosition();
-        ana_loc(n * nde + k) = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
-      }
+      std::vector<double> moments;
+      numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 2);
+      for (int k = 0; k < moments.size(); ++k) ana_loc(n * nde + k) = moments[k];
     }
 
     const auto& Acell = (op_acc->local_op()->matrices)[c]; 

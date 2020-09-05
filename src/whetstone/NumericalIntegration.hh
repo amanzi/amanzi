@@ -128,7 +128,8 @@ class NumericalIntegration {
     return WhetStone::IntegratePolynomialsEdge(x1, x2, polys);
   }
 
-  // useful functions: integrate single function
+  // useful functions
+  // -- integrate single function
   double IntegrateFunctionEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const WhetStoneFunction& func, int order) const {
@@ -136,10 +137,19 @@ class NumericalIntegration {
     return IntegrateFunctionsEdge(x1, x2, funcs, order);
   }
 
+  // -- compute moments
+  void CalculateFunctionMomentsEdge(
+       int e, const WhetStoneFunction* func, int order,
+       std::vector<double>& moments, int nquad) const;
+
+  void CalculatePolynomialMomentsEdge(
+       int e, const Polynomial& poly, int order,
+       std::vector<double>& moments) const;
+
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
-  // accsess
+  // access
   int dimension() { return d_; }
 
  private:
@@ -649,6 +659,97 @@ void NumericalIntegration<Mesh>::IntegrateMonomialsEdge_(
       }
 
       integrals(nk + l) += a1 * q1d_weights[m][n];      
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate moments upto given order.
+****************************************************************** */
+template <class Mesh>
+void NumericalIntegration<Mesh>::CalculateFunctionMomentsEdge(
+    int e, const WhetStoneFunction* func, int order,
+    std::vector<double>& moments, int nquad) const
+{
+  moments.clear();
+
+  double len = mesh_->edge_length(e);
+
+  if (order >= 0) {
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(1);
+    funcs[0] = func;
+
+    double tmp = IntegrateFunctionsEdge(e, funcs, nquad) / len;
+    moments.push_back(tmp);
+  }
+
+  if (order > 0) {
+    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+
+    std::vector<AmanziGeometry::Point> coordsys(1, tau);
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
+    funcs[0] = func;
+
+    PolynomialIterator it(1);
+    for (it.begin(1); it.MonomialSetOrder() <= order; ++it) {
+      const int* index = it.multi_index();
+      Polynomial emono(1, index, 1.0);
+      emono.InverseChangeCoordinates(xe, coordsys);  
+      funcs[1] = &emono;
+
+      double tmp = IntegrateFunctionsEdge(e, funcs, nquad) / len;
+      moments.push_back(tmp);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate moments upto given order.
+****************************************************************** */
+template <class Mesh>
+void NumericalIntegration<Mesh>::CalculatePolynomialMomentsEdge(
+    int e, const Polynomial& poly, int order, std::vector<double>& moments) const
+{
+  moments.clear();
+
+  int m = poly.order();
+  double len = mesh_->edge_length(e);
+
+  if (order >= 0) {
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(1);
+    funcs[0] = &poly;
+
+    double tmp = IntegrateFunctionsEdge(e, funcs, m) / len;
+    moments.push_back(tmp);
+  }
+
+  if (order > 0) {
+    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+
+    Polynomial q(poly);
+    std::vector<AmanziGeometry::Point> coordsys(1, tau);
+    q.ChangeCoordinates(xe, coordsys);  
+
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
+    funcs[0] = &q;
+
+    AmanziGeometry::Point x1(1), x2(1);
+    x1[0] = -0.5;
+    x2[0] =  0.5;
+
+    PolynomialIterator it(1);
+    for (it.begin(1); it.MonomialSetOrder() <= order; ++it) {
+      int m2 = it.MonomialSetOrder();
+      const int* index = it.multi_index();
+      Polynomial emono(1, index, 1.0);
+      funcs[1] = &emono;
+
+      double tmp = WhetStone::IntegrateFunctionsEdge(x1, x2, funcs, m + m2);
+      moments.push_back(tmp);
     }
   }
 }
