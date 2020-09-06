@@ -98,7 +98,7 @@ double IntegrateFunctionsTetrahedron(
 * the same order k centered at the centroid of cell c.
 ****************************************************************** */
 template <>
-void NumericalIntegration<AmanziMesh::Mesh>::IntegrateMonomialsFaceReduction_(
+void NumericalIntegration<AmanziMesh::StaticMesh>::IntegrateMonomialsFaceReduction_(
     int c, int f, double factor, int k, Polynomial& integrals) const
 {
   int nk = PolynomialSpaceDimension(d_, k - 1);

@@ -55,7 +55,8 @@ class MeshCurved : public Mesh_MSTK {
 
   // new implementtion of some basis functions
   // -- volume/area of cell
-  double cell_volume(const Entity_ID c, const bool recompute = false) const;
+  virtual double cell_volume(
+          const Entity_ID c, const bool recompute = false) const override;
   double cell_volume_linear(const Entity_ID c) const { return Mesh::cell_volume(c); }
 
   // -- curvature information

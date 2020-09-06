@@ -52,7 +52,7 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
+    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   void L2GradientCell(int c, const std::vector<VectorPolynomial>& vf,
@@ -64,7 +64,7 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
+    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
   // access / setup
@@ -140,7 +140,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::StaticMesh> basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // populate matrices N and R
@@ -201,7 +201,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mymesh);
+    NumericalIntegration<AmanziMesh::StaticMesh> numi(mymesh);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);

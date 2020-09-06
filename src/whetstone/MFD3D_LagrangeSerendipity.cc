@@ -116,11 +116,11 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::StaticMesh> basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials

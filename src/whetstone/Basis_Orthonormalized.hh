@@ -77,7 +77,7 @@ void Basis_Orthonormalized<MyMesh>::Init(
   monomial_scales_.Reshape(d, order);
   monomial_ortho_.Reshape(d, order);
 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
   numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
   
   double volume = integrals(0); 

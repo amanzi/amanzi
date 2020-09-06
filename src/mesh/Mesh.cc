@@ -66,25 +66,23 @@ Mesh::Mesh(const Comm_ptr_type& comm,
            const Teuchos::RCP<const Teuchos::ParameterList>& plist,
            const bool request_faces,
            const bool request_edges)
-    : comm_(comm),
-      geometric_model_(gm),
-      plist_(plist),
+    : plist_(plist),
       faces_requested_(request_faces),
       edges_requested_(request_edges),
-      space_dim_(-1),
-      manifold_dim_(-1),
       mesh_type_(GENERAL),
+      columns_built_(false),
       cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
       edge_geometry_precomputed_(false),
-      columns_built_(false),
       cell2face_info_cached_(false),
       face2cell_info_cached_(false),
       cell2edge_info_cached_(false),
       face2edge_info_cached_(false),
-      parent_(Teuchos::null),
-      logical_(false),
-      kdtree_faces_initialized_(false) {
+      kdtree_faces_initialized_(false)
+{
+  comm_ = comm;
+  geometric_model_ = gm;
+
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
   }
@@ -858,7 +856,11 @@ Mesh::cell_centroid(const Entity_ID cellid,
 }
 
 
-// Centroid of face
+// The face centroid is computed as the area weighted average of the
+// centroids of the triangles from a symmetric triangular
+// decomposition of the face. Each triangular facet is formed by the
+// connecting the face center (average of face nodes) to the two
+// nodes of an edge of the face
 AmanziGeometry::Point
 Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
 {
@@ -1045,83 +1047,6 @@ Mesh::set_name_from_id(const int setid) const
   }
 
   return 0;
-}
-
-
-// Is there a set with this id and entity type
-bool
-Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
-{
-  if (!geometric_model_.get()) return false;
-  Teuchos::RCP<const AmanziGeometry::Region> rgn;
-  try {
-    rgn = geometric_model_->FindRegion(id);
-  } catch (...) {
-    return false;
-  }
-  return valid_set_name(rgn->name(), kind);
-}
-
-
-// Is there a set with this name and entity type
-bool
-Mesh::valid_set_name(std::string name, Entity_kind kind) const
-{
-  if (!geometric_model_.get()) {
-    Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  Teuchos::RCP<const AmanziGeometry::Region> rgn;
-  try {
-    rgn = geometric_model_->FindRegion(name);
-  } catch (...) {
-    return false;
-  }
-
-  unsigned int rdim = rgn->manifold_dimension();
-
-  // For regions of type Color Function, the dimension
-  // parameter is not guaranteed to be correct
-  if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
-
-  // For regions of type Labeled set, extract some more info and verify
-  if (rgn->type() == AmanziGeometry::LABELEDSET) {
-    auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-    std::string entity_type = lsrgn->entity_str();
-
-    if (parent() == Teuchos::null) {
-      if ((kind == CELL && entity_type == "CELL") ||
-          (kind == FACE && entity_type == "FACE") ||
-          (kind == EDGE && entity_type == "EDGE") ||
-          (kind == NODE && entity_type == "NODE"))
-        return true;
-    } else {
-      if ((kind == CELL && entity_type == "FACE") ||
-          (kind == CELL && entity_type == "CELL") ||
-          (kind == FACE && entity_type == "FACE") ||
-          (kind == NODE && entity_type == "NODE")) {
-        // guaranteed we can call, though it may be empty.
-        return true;
-      }
-    } 
-    return false;
-  }
-
-  // If we are looking for a cell set the region has to be
-  // of the same topological dimension as the cells or it
-  // has to be a point region
-  if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
-
-  // If we are looking for a side set, the region has to be
-  // one topological dimension less than the cells
-  if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
-
-  // If we are looking for a node set, the region can be of any
-  // dimension upto the spatial dimension of the domain
-  if (kind == NODE) return true;
-
-  return false;
 }
 
 
@@ -1347,74 +1272,6 @@ Mesh::deform(const Entity_ID_List& nodeids,
   if (edges_requested_) compute_edge_geometric_quantities_();
 
   return status;
-}
-
-
-// Figure out columns of cells in a semi-structured mesh and cache the
-// information for later.
-//
-// The columns are defined by identifying all boundary faces in a provided
-// set, then collecting cells and faces upward.
-//
-// NOTE: Currently ghost columns are built too because we didn't know that
-// they weren't necessary. --etc
-//
-// NOTE: this could be const thanks to only changing mutable things, but we
-// choose not to be since it is directly a user asking for provided column
-// structure.
-int
-Mesh::build_columns(const std::string& setname) const
-{
-
-  if (columns_built_) return 0;
-
-  // Allocate space and initialize.
-  int nn = num_entities(NODE,Parallel_type::ALL);
-  int nc = num_entities(CELL,Parallel_type::ALL);
-
-  columnsID_.resize(nc);
-  cell_cellbelow_.resize(nc);
-  cell_cellbelow_.assign(nc,-1);
-  cell_cellabove_.resize(nc);
-  cell_cellabove_.assign(nc,-1);
-  node_nodeabove_.resize(nn);
-  node_nodeabove_.assign(nn,-1);
-
-  Entity_ID_List top_faces;
-  get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
-
-  int ncolumns = top_faces.size();
-  num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
-
-  int success = 1;
-  for (int i = 0; i < ncolumns; i++) {
-    Entity_ID f = top_faces[i];
-    Entity_ID_List fcells;
-    face_get_cells(f,Parallel_type::ALL,&fcells);
-
-    // not a boundary face?
-    if (fcells.size() != 1) {
-      std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
-      success = 0;
-      break;
-    }
-
-    // check that the normal points upward
-    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
-    normal /= norm(normal);
-    if (normal[2] < 1.e-10) {
-      std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
-      success = 0;
-      break;
-    }
-
-    success &= build_single_column_(i, f);
-  }
-
-  int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
-  columns_built_ = (min_success == 1);
-  return columns_built_ ? 1 : 0;
 }
 
 
@@ -1695,6 +1552,132 @@ Mesh::cell_type_to_name(const Cell_type type)
     default:
       return "unknown";
   }
+}
+
+
+// Figure out columns of cells in a semi-structured mesh and cache the
+// information for later.
+int Mesh::build_columns(const std::string& setname) const
+{
+  if (columns_built_) return 0;
+
+  // Allocate space and initialize.
+  int nn = num_entities(NODE,Parallel_type::ALL);
+  int nc = num_entities(CELL,Parallel_type::ALL);
+
+  columnsID_.resize(nc);
+  cell_cellbelow_.resize(nc);
+  cell_cellbelow_.assign(nc,-1);
+  cell_cellabove_.resize(nc);
+  cell_cellabove_.assign(nc,-1);
+  node_nodeabove_.resize(nn);
+  node_nodeabove_.assign(nn,-1);
+
+  Entity_ID_List top_faces;
+  get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
+
+  int ncolumns = top_faces.size();
+  num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
+
+  int success = 1;
+  for (int i = 0; i < ncolumns; i++) {
+    Entity_ID f = top_faces[i];
+    Entity_ID_List fcells;
+    face_get_cells(f,Parallel_type::ALL,&fcells);
+
+    // not a boundary face?
+    if (fcells.size() != 1) {
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
+      success = 0;
+      break;
+    }
+
+    // check that the normal points upward
+    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
+    normal /= norm(normal);
+    if (normal[2] < 1.e-10) {
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
+      success = 0;
+      break;
+    }
+
+    success &= build_single_column_(i, f);
+  }
+
+  int min_success;
+  get_comm()->MinAll(&success, &min_success, 1);
+  columns_built_ = (min_success == 1);
+  return columns_built_ ? 1 : 0;
+}
+
+
+int Mesh::num_columns(bool ghosted) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("num_columns called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return ghosted ? columns_cells_.size() : num_owned_cols_; // number of vector of vectors
+}
+
+
+const Entity_ID_List& Mesh::cells_of_column(const int columnID) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("cells_of_column called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return columns_cells_[columnID];
+}
+
+
+const Entity_ID_List& Mesh::faces_of_column(const int columnID) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("faces_of_columns called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return columns_faces_[columnID];
+}
+
+
+int Mesh::column_ID(const Entity_ID cellid) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("column_ID called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return columnsID_[cellid];
+}
+
+
+Entity_ID Mesh::cell_get_cell_above(const Entity_ID cellid) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("cell_get_cell_above called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return cell_cellabove_[cellid];
+}
+
+
+Entity_ID Mesh::cell_get_cell_below(const Entity_ID cellid) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("cell_get_cell_below called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return cell_cellbelow_[cellid];
+}
+
+
+Entity_ID Mesh::node_get_node_above(const Entity_ID nodeid) const
+{
+  if (!columns_built_) {
+    Errors::Message mesg("node_get_node_above called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return node_nodeabove_[nodeid];
 }
 
 

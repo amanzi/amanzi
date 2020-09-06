@@ -32,7 +32,7 @@ namespace WhetStone {
 * Constructor.
 ****************************************************************** */
 DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                   const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh)
   : BilinearForm(mesh),
     numi_(mesh)
 {
@@ -52,7 +52,7 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
     monomial_integrals_[c](0) = mesh_->cell_volume(c);
   }
 
-  BasisFactory<AmanziMesh::Mesh> factory;
+  BasisFactory<AmanziMesh::StaticMesh> factory;
   for (int c = 0; c < ncells_wghost; ++c) {
     basis_[c] = factory.Create(basis_name);
     basis_[c]->Init(mesh_, c, order_, monomial_integrals_[c]);

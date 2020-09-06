@@ -90,7 +90,7 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
     const DenseMatrix& G = mfd_ho.G();
     
     PolynomialOnMesh integrals;
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
     numi.UpdateMonomialIntegralsCell(cell, 2 * k, integrals);
 
     Polynomial ptmp, poly(dim, k);
@@ -162,7 +162,7 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
       const DenseMatrix& G = mfd.G();
 
       PolynomialOnMesh integrals;
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
       numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
       Polynomial ptmp, poly(dim, k);
@@ -249,7 +249,7 @@ void HighOrderLagrange2D(std::string file_name) {
       const DenseMatrix& G = mfd_ho.G();
 
       PolynomialOnMesh integrals;
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
       numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
       Polynomial ptmp, poly(mesh->space_dimension(), k);
@@ -342,7 +342,7 @@ void HighOrderLagrange3D(const std::string& filename1,
     const DenseMatrix& G = mfd2.G();
 
     PolynomialOnMesh integrals;
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh2);
+    NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh2);
     numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
 
     Polynomial ptmp, poly(3, k);
@@ -432,7 +432,7 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
       const DenseMatrix& G = mfd_ho.G();
 
       PolynomialOnMesh integrals;
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
       numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
 
       Polynomial ptmp, poly(d, k);

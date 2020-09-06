@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "UnitTest++.h"
 
 #include "MeshFactory.hh"

@@ -49,7 +49,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
+    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   virtual void L2Face(int f, const std::vector<Polynomial>& ve,
@@ -61,7 +61,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
+    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
@@ -72,7 +72,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   // other methods
   void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
                           const Polynomial* moments, Polynomial& uc) {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, vf, vf, ProjectorType::LS, moments, uc);
+    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, vf, vf, ProjectorType::LS, moments, uc);
   }
 
  private:

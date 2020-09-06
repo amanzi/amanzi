@@ -245,29 +245,6 @@ void MeshExtractedManifold::node_get_cells(
 
 
 /* ******************************************************************
-* Connectivity list: node + cell -> faces
-****************************************************************** */
-void MeshExtractedManifold::node_get_cell_faces(
-    const Entity_ID n, const Entity_ID c,
-    const Parallel_type ptype, Entity_ID_List *faces) const
-{
-  Entity_ID_List edges, nodes;
-
-  // int np = entid_to_parent_[NODE][n];
-  // parent_mesh_->node_get_edges(np, ptype, &edges);
-  AMANZI_ASSERT(false);
-  int nedges = edges.size();
-
-  faces->clear();
-  for (int i = 0; i < nedges; ++i) {
-    int e = edges[i];
-    auto it = parent_to_entid_[FACE].find(e);
-    if (it != parent_to_entid_[FACE].end()) faces->push_back(it->second);
-  }
-}
-
-
-/* ******************************************************************
 * Connectivity list: edge -> cells
 ****************************************************************** */
 void MeshExtractedManifold::edge_get_cells(
@@ -368,7 +345,7 @@ void MeshExtractedManifold::node_get_coordinates(
 * Get list of entities of type 'ptype' in set specified by setname
 ****************************************************************** */
 void MeshExtractedManifold::get_set_entities_and_vofs(
-    const std::string setname, 
+    const std::string& setname, 
     const Entity_kind kind, const Parallel_type ptype, 
     std::vector<Entity_ID> *setents, std::vector<double> *vofs) const
 {

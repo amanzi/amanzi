@@ -205,18 +205,6 @@ class MeshColumn : public Mesh {
   }
 
 
-  // Get faces of ptype of a particular cell that are connected to the
-  // given node - The order of faces is not guarnateed to be the same
-  // for corresponding nodes on different processors
-  virtual
-  void node_get_cell_faces(const Entity_ID nodeid,
-                           const Entity_ID cellid,
-                           const Parallel_type ptype,
-                           Entity_ID_List *faceids) const override {
-    Errors::Message mesg("Not implemented");
-    amanzi_throw(mesg);
-  }
-
   // Cells of type 'ptype' connected to an edge - The order of cells is
   // not guaranteed to be the same for corresponding edges on
   // different processors
@@ -250,10 +238,9 @@ class MeshColumn : public Mesh {
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
-  virtual
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Entity_ID_List *nadj_cellids) const override {
+                               Entity_ID_List *nadj_cellids) const {
     extracted_->cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
   }
 
@@ -387,7 +374,7 @@ class MeshColumn : public Mesh {
   using Mesh::get_set_entities;
 
   virtual
-  void get_set_entities_and_vofs(const std::string setname,
+  void get_set_entities_and_vofs(const std::string& setname,
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Entity_ID_List *entids,

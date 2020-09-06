@@ -457,19 +457,6 @@ MeshLogical::node_get_faces(const Entity_ID nodeid,
 }
 
 
-// Get faces of ptype of a particular cell that are connected to the
-// given node - The order of faces is not guarnateed to be the same
-// for corresponding nodes on different processors
-void
-MeshLogical::node_get_cell_faces(const Entity_ID nodeid,
-                                 const Entity_ID cellid,
-                                 const Parallel_type ptype,
-                                 Entity_ID_List *faceids) const {
-  Errors::Message mesg("No nodes in MeshLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
 // Same level adjacencies
 //-----------------------
 
@@ -502,18 +489,6 @@ MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
       Exceptions::amanzi_throw(mesg);
     }
   }
-}
-
-
-// Node connected neighboring cells of given cell
-// (a hex in a structured mesh has 26 node connected neighbors)
-// The cells are returned in no particular order
-void
-MeshLogical::cell_get_node_adj_cells(const Entity_ID cellid,
-                                     const Parallel_type ptype,
-                                     Entity_ID_List *nadj_cellids) const {
-  Errors::Message mesg("No nodes in MeshLogical.");
-  Exceptions::amanzi_throw(mesg);
 }
 
 
@@ -638,12 +613,12 @@ MeshLogical::exterior_face_importer(void) const {
 
 // Get list of entities of type 'category' in set
 void
-MeshLogical::get_set_entities(const Set_ID setid,
+MeshLogical::get_set_entities(const std::string& setname,
                               const Entity_kind kind,
                               const Parallel_type ptype,
                               Entity_ID_List *entids) const {
 
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
   if (rgn->type() == AmanziGeometry::ALL) {
     int nent = num_entities(kind, ptype);
@@ -670,12 +645,12 @@ MeshLogical::get_set_entities(const Set_ID setid,
 
 
 void
-MeshLogical::get_set_entities_and_vofs(const std::string setname,
+MeshLogical::get_set_entities_and_vofs(const std::string& setname,
                                        const Entity_kind kind,
                                        const Parallel_type ptype,
                                        Entity_ID_List *entids,
                                        std::vector<double> *vofs) const {
-  get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
+  get_set_entities(setname, kind, ptype, entids);
   return;
 }
 
@@ -834,7 +809,7 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
   for (auto& r : *m.geometric_model()) {
     if (r->type() == AmanziGeometry::ENUMERATED) {
       AmanziMesh::Entity_ID_List set;
-      m.get_set_entities(r->id(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
+      m.get_set_entities(r->name(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
       os << r->name() << " ";
       for (auto e : set) os << e << " ";
       os << std::endl;

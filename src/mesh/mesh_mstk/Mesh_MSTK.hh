@@ -111,11 +111,10 @@ class Mesh_MSTK : public Mesh {
   // Parent entity in the source mesh if mesh was derived from another mesh
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
-  virtual
-  Teuchos::RCP<const Mesh> parent() const { return parent_mesh_; }
+  virtual Teuchos::RCP<const StaticMesh> parent() const { return parent_mesh_; }
 
 
-  //
+  // -------------------------
   // General mesh information
   // -------------------------
     
@@ -179,13 +178,6 @@ class Mesh_MSTK : public Mesh {
   void node_get_faces(const Entity_ID nodeid, 
 		      const Parallel_type ptype,
 		      Entity_ID_List *faceids) const;
-    
-  // Get faces of ptype of a particular cell that are connected to the
-  // given node
-  void node_get_cell_faces(const Entity_ID nodeid, 
-			   const Entity_ID cellid,
-			   const Parallel_type ptype,
-			   Entity_ID_List *faceids) const;    
     
   // Faces of type 'ptype' connected to an edge
   void edge_get_faces(const Entity_ID edgeid,
@@ -278,7 +270,7 @@ class Mesh_MSTK : public Mesh {
   using Mesh::get_set_entities;
 
   virtual
-  void get_set_entities_and_vofs(const std::string setname, 
+  void get_set_entities_and_vofs(const std::string& setname, 
                                  const Entity_kind kind, 
                                  const Parallel_type ptype, 
                                  std::vector<Entity_ID> *entids,

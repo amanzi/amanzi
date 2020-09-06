@@ -226,11 +226,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::StaticMesh> basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
@@ -467,11 +467,11 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
   DenseVector vdof(ndof);
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::StaticMesh> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
@@ -619,7 +619,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::StaticMesh> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate polynomial coefficients (in vector v5)
@@ -661,7 +661,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);

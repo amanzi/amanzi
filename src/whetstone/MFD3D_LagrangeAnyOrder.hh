@@ -42,7 +42,7 @@ namespace WhetStone {
 
 class MFD3D_LagrangeAnyOrder : public MFD3D { 
  public:
-  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh)
     : BilinearForm(mesh) {};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -53,7 +53,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
 
   // -- stiffness matrix
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {
-    if (d_ == 2) return H1consistency2D_<AmanziMesh::Mesh>(mesh_, c, T, N, Ac);
+    if (d_ == 2) return H1consistency2D_<AmanziMesh::StaticMesh>(mesh_, c, T, N, Ac);
     return H1consistency3D_(c, T, N, Ac, true);
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
