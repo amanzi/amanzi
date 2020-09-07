@@ -140,13 +140,12 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   double volume = mymesh->cell_volume(c); 
 
   // calculate degrees of freedom 
-  Polynomial poly(d, order_), pf, pc;
+  Polynomial poly(d, order_), pc;
   if (order_ > 1) {
-    pf.Reshape(d - 1, order_ - 2);
     pc.Reshape(d, order_ - 2);
   }
   int nd = poly.size();
-  int ndf = pf.size();
+  int ndf = PolynomialSpaceDimension(d - 1, order_ - 2);
   int ndc = pc.size();
 
   int ndof = nnodes + nfaces * ndf + ndc;
@@ -168,8 +167,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
-  std::vector<const PolynomialBase*> polys(2);
-
   for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
@@ -179,8 +176,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     // N: degrees of freedom at vertices
     auto grad = Gradient(cmono);
      
-    polys[0] = &cmono;
-
     int col = it.PolynomialPosition();
     int row(nnodes);
 
@@ -194,7 +189,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     // N and R: degrees of freedom on faces 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      double area = mymesh->face_area(f);
       const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
       AmanziGeometry::Point normal = mymesh->face_normal(f);
 
@@ -263,20 +257,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
       }
 
       if (order_ > 1) {
-std::vector<double> moments;
-// numi.CalculatePolynomialMomentsFace(f, cmono, order_ - 2, moments);
-        for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
-          const int* jndex = jt.multi_index();
-          Polynomial fmono(d - 1, jndex, 1.0);
-          fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
-
-          polys[1] = &fmono;
-
-          int n = jt.PolynomialPosition();
-          N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
-          // N(row + n, col) = moments[n];
+        std::vector<double> moments;
+        numi.CalculatePolynomialMomentsFace(f, cmono, order_ - 2, moments);
+        for (int k = 0; k < moments.size(); ++k) {
+          N(row++, col) = moments[k];
         }
-        row += ndf;
       }
     }
 

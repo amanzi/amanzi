@@ -246,7 +246,6 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   mymesh->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
-  std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration<MyMesh> numi(mymesh);
 
   int i0, i1, pos;
@@ -278,25 +277,13 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
     if (order_ > 1) { 
       double area = mymesh->face_area(f);
-      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
-      const AmanziGeometry::Point& normal = mymesh->face_normal(f);
-
-      // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
-      const auto& tau = *coordsys.tau();
-
-      polys[0] = &(vf[n]);
+      std::vector<double> moments;
+      numi.CalculatePolynomialMomentsFace(f, vf[n], order_ - 2, moments);
 
       for (auto it = pf.begin(); it < pf.end(); ++it) {
-        const int* index = it.multi_index();
+        int k = it.PolynomialPosition();
         double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
-        Polynomial fmono(d - 1, index, factor);
-        fmono.InverseChangeCoordinates(xf, tau);  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-        row++;
+        vdof(row++) = moments[k] * factor;
       }
     }
   }
@@ -322,21 +309,10 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       vdof(pos) = ve[n].Value(xv);
 
       // edge moments
-      const auto& xe = mymesh->edge_centroid(e);
-      double length = mymesh->edge_length(e);
-      std::vector<AmanziGeometry::Point> tau(1, mymesh->edge_vector(e));
-
-      polys[0] = &(ve[n]);
-
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial fmono(d - 2, index, 1.0);
-        fmono.InverseChangeCoordinates(xe, tau);  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsEdge(e, polys) / length;
-        row++;
+      std::vector<double> moments;
+      numi.CalculatePolynomialMomentsEdge(e, ve[n], order_ - 2, moments);
+      for (int k = 0; k < moments.size(); ++k) {
+        vdof(row++) = moments[k];
       }
     }
   }

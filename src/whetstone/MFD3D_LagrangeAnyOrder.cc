@@ -311,22 +311,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     // N: degrees of freedom at edges
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
-      const auto& xe = mesh_->edge_centroid(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->edge_vector(e));
-      double length = mesh_->edge_length(e);
-
-      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
-        const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 2, jndex, 1.0);
-        fmono.InverseChangeCoordinates(xe, tau_edge);  
-
-        polys[0] = &cmono;
-        polys[1] = &fmono;
-
-        int k = jt.PolynomialPosition();
-        N(row + k, col) = numi.IntegratePolynomialsEdge(e, polys) / length;
+      std::vector<double> moments;
+      numi.CalculatePolynomialMomentsEdge(e, cmono, order_ - 2, moments);
+      for (int k = 0; k < moments.size(); ++k) {
+        N(row++, col) = moments[k];
       }
-      row += nde;
     }
 
     // R: degrees of freedom in cells
