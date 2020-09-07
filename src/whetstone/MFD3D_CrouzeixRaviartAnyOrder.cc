@@ -81,12 +81,12 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
   double volume = mesh_->cell_volume(c); 
 
   // calculate degrees of freedom 
-  Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
+  Polynomial poly(d_, order_), pc;
   if (order_ > 1) {
     pc.Reshape(d_, order_ - 2);
   }
   int nd = poly.size();
-  int ndf = pf.size();
+  int ndf = PolynomialSpaceDimension(d_ - 1, order_ - 1);
   int ndc = pc.size();
 
   int ndof = nfaces * ndf + ndc;
@@ -101,14 +101,13 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
   basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
+  std::vector<double> moments;
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
-
-  std::vector<const PolynomialBase*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
@@ -119,14 +118,11 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
     // N and R: degrees of freedom on faces 
     auto grad = Gradient(cmono);
      
-    polys[0] = &cmono;
-
     int col = it.PolynomialPosition();
     int row(0);
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      double area = mesh_->face_area(f);
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
       AmanziGeometry::Point normal = mesh_->face_normal(f);
 
@@ -143,15 +139,9 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
         R_(row + n, col) = tmp(n);
       }
 
-      for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
-        const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 1, jndex, 1.0);
-        fmono.InverseChangeCoordinates(xf, tau);  
-
-        polys[1] = &fmono;
-
-        int n = jt.PolynomialPosition();
-        N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
+      numi.CalculatePolynomialMomentsFace(f, cmono, order_ - 1, moments);
+      for (int n = 0; n < moments.size(); ++n) {
+        N(row + n, col) = moments[n];
       }
       row += ndf;
     }
@@ -314,39 +304,6 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
       uc(i, j) = basis.CalculatePolynomial(mesh_, c, order_ - 1, v5);
     }
-  }
-}
-
-
-/* ******************************************************************
-* Degrees of freedom on face f.
-****************************************************************** */
-void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
-    int f, const Polynomial& vf, const Polynomial& pf,
-    DenseVector& vdof, int& row)
-{
-  std::vector<const PolynomialBase*> polys(2);
-
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-
-  double area = mesh_->face_area(f);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-  // local coordinate system with origin at face centroid
-  SurfaceCoordinateSystem coordsys(xf, normal);
-
-  polys[0] = &vf;
-
-  for (auto it = pf.begin(); it < pf.end(); ++it) {
-    const int* index = it.multi_index();
-    Polynomial fmono(d_ - 1, index, 1.0);
-    fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
-
-    polys[1] = &fmono;
-
-    vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-    row++;
   }
 }
 

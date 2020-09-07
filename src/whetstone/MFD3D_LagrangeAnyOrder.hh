@@ -263,6 +263,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
       }
 
       if (order_ > 1) {
+std::vector<double> moments;
+// numi.CalculatePolynomialMomentsFace(f, cmono, order_ - 2, moments);
         for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
           const int* jndex = jt.multi_index();
           Polynomial fmono(d - 1, jndex, 1.0);
@@ -272,6 +274,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
 
           int n = jt.PolynomialPosition();
           N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
+          // N(row + n, col) = moments[n];
         }
         row += ndf;
       }

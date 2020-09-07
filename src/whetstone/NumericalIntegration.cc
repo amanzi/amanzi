@@ -127,6 +127,12 @@ void NumericalIntegration<AmanziMesh::Mesh>::IntegrateMonomialsFaceReduction_(
 }
 
 
+template <>
+void NumericalIntegration<SurfaceMiniMesh>::IntegrateMonomialsFaceReduction_(
+    int c, int f, double factor, int k, Polynomial& integrals) const
+{};
+
+
 /* ******************************************************************
 * Integrate over edge (x1,x2) a product of functions.
 ****************************************************************** */
@@ -192,12 +198,42 @@ double IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
-* TBW
+* Calculate moments over face f.
 ****************************************************************** */
 template <>
-void NumericalIntegration<SurfaceMiniMesh>::IntegrateMonomialsFaceReduction_(
-    int c, int f, double factor, int k, Polynomial& integrals) const
-{};
+void NumericalIntegration<AmanziMesh::Mesh>::CalculatePolynomialMomentsFace(
+    int f, const Polynomial& poly, int order, std::vector<double>& moments) const
+{
+  double area = mesh_->face_area(f);
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+  std::vector<const PolynomialBase*> polys(2);
+  polys[0] = &poly;
+
+  moments.clear();
+
+  PolynomialIterator it(d_ - 1);
+  for (it.begin(0); it.MonomialSetOrder() <= order; ++it) {
+    const int* index = it.multi_index();
+    Polynomial fmono(d_ - 1, index, 1.0);
+    fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
+
+    polys[1] = &fmono;
+
+    double tmp = IntegratePolynomialsFace(f, polys) / area;
+    moments.push_back(tmp);
+  }
+}
+
+
+template <>
+void NumericalIntegration<SurfaceMiniMesh>::CalculatePolynomialMomentsFace(
+    int f, const Polynomial& poly, int order, std::vector<double>& moments) const
+{ 
+  AMANZI_ASSERT(false); 
+}
 
 
 /* ******************************************************************

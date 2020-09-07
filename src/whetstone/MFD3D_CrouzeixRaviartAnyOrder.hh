@@ -87,10 +87,6 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
                               const ProjectorType type, 
                               const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
 
-  // supporting routines
-  void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
-                          DenseVector& vdof, int& row);
-
  protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
@@ -136,22 +132,28 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
   int ndof_f(nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
-  // calculate DOFs for boundary polynomial
-  DenseVector vdof(ndof);
-
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<MyMesh> basis;
   basis.Init(mymesh, c, order_, ptmp);
 
-  // populate matrices N and R
+  NumericalIntegration<MyMesh> numi(mymesh);
+
+  // calculate DOFs for boundary polynomial
+  std::vector<double> face_moments;
+  DenseVector vdof(ndof);
+
+  // -- degrees of freedom on faces
   int row(0);
-  // degrees of freedom on faces
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    CalculateFaceDOFs_(f, vf[n], pf, vdof, row);
+    numi.CalculatePolynomialMomentsFace(f, vf[n], pf.order(), face_moments);
+    for (int k = 0; k < face_moments.size(); ++k) {
+      vdof(row++) = face_moments[k];
+    }
   }
-  // degrees of freedom in cell
+
+  // -- degrees of freedom in cell
   if (ndof_c > 0) {
     AMANZI_ASSERT(moments != NULL);
     const DenseVector& v3 = moments->coefs();
@@ -201,7 +203,6 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mymesh);
 
     GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);

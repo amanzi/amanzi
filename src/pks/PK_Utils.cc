@@ -57,6 +57,8 @@ AmanziGeometry::Point PKUtils_EntityCoordinates(
     AmanziGeometry::Point xn(d);
     mesh.node_get_coordinates(id, &xn);
     return xn;
+  } else if (kind == AmanziMesh::EDGE) {
+    return mesh.edge_centroid(id);
   }
 }
 

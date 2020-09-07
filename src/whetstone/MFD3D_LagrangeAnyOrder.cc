@@ -452,19 +452,15 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
   StiffnessMatrix(c, T, A);  
 
   // number of degrees of freedom
-  Polynomial pf;
-  if (order_ > 1)
-    pf.Reshape(d_ - 1, order_ - 2);
-
   int nd = PolynomialSpaceDimension(d_, order_);
-  int ndf = pf.size();
+  int ndf = PolynomialSpaceDimension(d_ - 1, order_ - 2);
   int ndof = A.NumRows();
 
   int ndof_f(nnodes + nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
   DenseVector vdof(ndof);
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<double> face_moments;
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   // selecting regularized basis
@@ -492,24 +488,9 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     }
 
     if (order_ > 1) { 
-      double area = mesh_->face_area(f);
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-      // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
-
-      polys[0] = &(vf[n]);
-
-      for (auto it = pf.begin(); it < pf.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial fmono(d_ - 1, index, 1.0);
-        fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-        row++;
+      numi.CalculatePolynomialMomentsFace(f, vf[n], order_ - 2, face_moments);
+      for (int k = 0; k < face_moments.size(); ++k) {
+        vdof(row++) = face_moments[k];
       }
     }
   }

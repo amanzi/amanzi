@@ -20,7 +20,7 @@ TEST(MSTK_HEX1)
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
-  int NF = 6;
+  // int NF = 6;
   int NC = 1;
   double xyz[12][3] = {{0, 0, 0},
 		       {1, 0, 0},

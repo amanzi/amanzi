@@ -146,6 +146,10 @@ class NumericalIntegration {
        int e, const Polynomial& poly, int order,
        std::vector<double>& moments) const;
 
+  void CalculatePolynomialMomentsFace(
+       int f, const Polynomial& poly, int order,
+       std::vector<double>& moments) const;
+
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 

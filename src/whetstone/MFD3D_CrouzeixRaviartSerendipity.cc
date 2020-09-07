@@ -279,35 +279,15 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<double> moments;
   NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-
-  AmanziGeometry::Point xv(d_);
-
-  // number of moments of faces
-  Polynomial pf(d_ - 1, order_ - 1);
 
   int row(0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    double area = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    // local coordinate system with origin at face centroid
-    SurfaceCoordinateSystem coordsys(xf, normal);
-
-    polys[0] = &(vf[n]);
-
-    for (auto it = pf.begin(); it < pf.end(); ++it) {
-      const int* index = it.multi_index();
-      Polynomial fmono(d_ - 1, index, 1.0);
-      fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
-
-      polys[1] = &fmono;
-
-      vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-      row++;
+    numi.CalculatePolynomialMomentsFace(f, vf[n], order_ - 1, moments);
+    for (int k = 0; k < moments.size(); ++k) {
+      vdof(row++) = moments[k];
     }
   }
 }

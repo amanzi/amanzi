@@ -32,6 +32,7 @@ TEST(MSTK_EDGES_2D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
   int ne_all = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
 				  Amanzi::AmanziMesh::Parallel_type::ALL);
+  CHECK(ne_owned <= ne_all);
 
   // This assumes a symmetric partitioning - not always the case with
   // ZOLTAN graph partitioning

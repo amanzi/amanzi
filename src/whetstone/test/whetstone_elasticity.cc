@@ -14,7 +14,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
