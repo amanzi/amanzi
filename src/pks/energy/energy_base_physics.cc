@@ -26,12 +26,12 @@ void EnergyBase::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the energy at both the old and new times.
-  S_next_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get the energy at each time
-  Teuchos::RCP<const CompositeVector> e1 = S_next_->GetFieldData(energy_key_);
-  Teuchos::RCP<const CompositeVector> e0 = S_inter_->GetFieldData(energy_key_);
+  Teuchos::RCP<const CompositeVector> e1 = S_next_->GetFieldData(conserved_key_);
+  Teuchos::RCP<const CompositeVector> e0 = S_inter_->GetFieldData(conserved_key_);
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.

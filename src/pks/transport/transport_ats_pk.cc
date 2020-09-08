@@ -118,8 +118,6 @@ void Transport_ATS::set_states(const Teuchos::RCP<State>& S,
 ****************************************************************** */
 void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
-  passwd_ = "state";  // owner's password
-
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
 
   saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
@@ -148,6 +146,35 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
+  // require my field
+  int ncomponents = component_names_.size();
+  std::vector<std::vector<std::string> > subfield_names(1);
+  subfield_names[0] = component_names_;
+
+  if (component_names_.size() == 0) {
+    Errors::Message msg;
+    msg << "Transport PK: list of solutes is empty.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  const auto& tcc_fac = S->RequireField(tcc_key_)->SetMesh(mesh_)->SetGhosted(true);
+  if (tcc_fac->Owned()) {
+    // reactive transport
+    passwd_ = "reactive_transport";
+  } else {
+    passwd_ = "transport";
+  }
+  S->RequireField(tcc_key_, passwd_, subfield_names)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
+  // other things that I own
+  S->RequireField(prev_saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
+
+  S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
   // require state fields
   if (abs_perm) {
     S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -155,62 +182,26 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(permeability_key_);
   }
 
-  if (!S->HasField(flux_key_)){
-    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->RequireFieldEvaluator(flux_key_);
-  }
+  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireFieldEvaluator(flux_key_);
 
   S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(saturation_key_);
 
-  // prev_sat does not have an evaluator, this is managed by hand.  not sure why
-  S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
+  S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(porosity_key_);
 
-  if (!S->HasField(porosity_key_)){
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
-  }
+  S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(molar_density_key_);
 
-  int ncomponents = component_names_.size();
-  std::vector<std::vector<std::string> > subfield_names(1);
-  subfield_names[0] = component_names_;
-
-  if (!S->HasField(solid_residue_mass_key_)){
-    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
-
-  if (!S->HasField(molar_density_key_)){
-    S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(molar_density_key_);
-  }
-
-  if (!S->HasField(mass_src_key_) && tp_list_->sublist("source terms").isSublist("geochemical")){
+  if (tp_list_->sublist("source terms").isSublist("geochemical")){
     S->RequireField(mass_src_key_, mass_src_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_src_key_);
-  }
-
-  // require state fields when Transport PK is on
-  if (component_names_.size() == 0) {
-    Errors::Message msg;
-    msg << "Transport PK: list of solutes is empty.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  S->RequireField(tcc_key_, passwd_, subfield_names)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
-
-  if (!S->HasField(solid_residue_mass_key_)){
-    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // require multiscale fields
@@ -242,8 +233,8 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   double time = S->time();
   if (time >= 0.0) t_physics_ = time;
 
-  if (tp_list_->isSublist("initial conditions")) {
-    S->GetField(tcc_key_,passwd_)->Initialize(tp_list_->sublist("initial conditions"));
+  if (tp_list_->isSublist("initial condition")) {
+    S->GetField(tcc_key_,passwd_)->Initialize(tp_list_->sublist("initial condition"));
   }
 
   internal_tests = 0;
@@ -954,16 +945,16 @@ void Transport_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new)
   }
 
   if (flag_dispersion_ || flag_diffusion) {
-    Teuchos::ParameterList& op_list =
-        tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-
+    // default boundary conditions (none inside domain and Neumann on its boundary)
     Teuchos::RCP<Operators::BCs> bc_dummy =
         Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-
-    // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
     auto& bc_value = bc_dummy->bc_value();
     PopulateBoundaryData(bc_model, bc_value, -1);
+
+    // diffusion operator
+    Teuchos::ParameterList& op_list = tp_list_->sublist("diffusion");
+    op_list.set("inverse", tp_list_->sublist("inverse"));
 
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);

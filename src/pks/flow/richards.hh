@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -25,7 +25,7 @@ Solves Richards equation:
 
     * `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman,
       0 normal flux.  See `Flow-specific Boundary Conditions`_
- 
+
     * `"permeability type`" ``[string]`` **scalar** This controls the number of
       values needed to specify the absolute permeability.  One of:
 
@@ -38,11 +38,11 @@ Solves Richards equation:
       curve.  This needs to go away, and should get moved to State.
 
     IF
-    
+
     * `"source term`" ``[bool]`` **false** Is there a source term?
 
     THEN
-    
+
     * `"source key`" ``[string]`` **DOMAIN-mass_source** Typically
       not set, as the default is good. ``[mol s^-1]``
     * `"source term is differentiable`" ``[bool]`` **true** Can the source term
@@ -53,7 +53,7 @@ Solves Richards equation:
     END
 
     Math and solver algorithm options:
-      
+
     * `"diffusion`" ``[pde-diffusion-spec]`` The (forward) diffusion operator,
       see PDE_Diffusion_.
 
@@ -73,7 +73,7 @@ Solves Richards equation:
       - `"max`" : use the max of the boundary face and internal cell values
       - `"unsaturated`" : Uses the boundary face when the internal cell is not
         saturated.
-      
+
     * `"relative permeability method`" ``[string]`` **upwind with Darcy flux**
       Relative permeability is defined on cells, but must be calculated on
       faces to multiply a flux.  There are several methods commonly used.  Note
@@ -88,7 +88,7 @@ Solves Richards equation:
         Not a good method.
 
     Globalization and other process-based hacks:
-        
+
     * `"modify predictor with consistent faces`" ``[bool]`` **false** In a
       face+cell diffusion discretization, this modifies the predictor to make
       sure that faces, which are a DAE, are consistent with the predicted cells
@@ -113,7 +113,7 @@ Solves Richards equation:
       **-1** Rejects timesteps whose max ice saturation change is greater than
       this value.  This can be useful to ensure temporally resolved solutions.
       Usually a good value is 0.1 or 0.2.
-      
+
     * `"limit correction to pressure change [Pa]`" ``[double]`` **-1** If > 0,
       this limits an iterate's max pressure change to this value.  Not usually
       helpful.
@@ -126,10 +126,10 @@ Solves Richards equation:
 
     - ``[pk-physical-bdf-default-spec]`` A `PK: Physical and BDF`_ spec.
 
-      
+
     Everything below this point is usually not provided by the user, but are
     documented here for completeness.
-    
+
     Keys name variables:
 
     * `"conserved quantity key`" ``[string]`` **DOMAIN-water_content** Typically
@@ -161,14 +161,14 @@ Solves Richards equation:
     * `"accumulation preconditioner`" ``[pde-accumulation-spec]`` **optional**
       The inverse of the accumulation operator.  See PDE_Accumulation_.
       Typically not provided by users, as defaults are correct.
-      
-    * `"absolute error tolerance`" ``[double]`` **2750.0** ``[mol]``    
+
+    * `"absolute error tolerance`" ``[double]`` **2750.0** ``[mol]``
 
     * `"compute boundary values`" ``[bool]`` **false** Used to include boundary
       face unknowns on discretizations that are cell-only (e.g. FV).  This can
       be useful for surface flow or other wierd boundary conditions.  Usually
       provided by MPCs that need them.
-    
+
     Physics control:
 
     * `"permeability rescaling`" ``[double]`` **1e7** Typically 1e7 or order
@@ -177,7 +177,7 @@ Solves Richards equation:
       (:math:`\rho / \mu`).
 
     IF
-    
+
     * `"coupled to surface via flux`" ``[bool]`` **false** If true, apply
       surface boundary conditions from an exchange flux.  Note, if this is a
       coupled problem, it is probably set by the MPC.  No need for a user to
@@ -191,7 +191,7 @@ Solves Richards equation:
 
     * `"coupled to surface via head`" ``[bool]`` **false** If true, apply
       surface boundary conditions from the surface pressure (Dirichlet).
-      
+
     EVALUATORS:
 
     - `"conserved quantity`"
@@ -211,12 +211,9 @@ Solves Richards equation:
 #include "BoundaryFunction.hh"
 #include "upwinding.hh"
 
-
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_Accumulation.hh"
 #include "PK_Factory.hh"
-//#include "PK_PhysicalBDF_ATS.hh"
-// #include "pk_factory_ats.hh"
 #include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
@@ -224,6 +221,7 @@ namespace Amanzi {
 // forward declarations
 class MPCSubsurface;
 class PredictorDelegateBCFlux;
+class PrimaryVariableFieldEvaluator;
 namespace WhetStone { class Tensor; }
 
 namespace Flow {
@@ -292,11 +290,6 @@ protected:
 
   virtual void UpdateVelocity_(const Teuchos::Ptr<State>& S);
 
-  virtual int BoundaryFaceGetCell(int f) const;
-  virtual double BoundaryFaceValue(int f, const CompositeVector& u);
-  // virtual double DeriveBoundaryFaceValue
-  //        (int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model);
-
   // physical methods
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
@@ -304,11 +297,9 @@ protected:
 
   // virtual void AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
   //         const Teuchos::Ptr<CompositeVector>& g);
-  // virtual void ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S, 
-  //                                        Teuchos::RCP<CompositeVector>& vapor_diff, 
+  // virtual void ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S,
+  //                                        Teuchos::RCP<CompositeVector>& vapor_diff,
   //                                        std::string var_name);
- 
-
 
   // -- accumulation term
   virtual void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
@@ -317,22 +308,6 @@ protected:
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
                            const Teuchos::Ptr<CompositeVector>& f);
   virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
-  
-  // -- gravity contributions to matrix or vector
-  // virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-  //         const Teuchos::Ptr<const CompositeVector>& rho,
-  //         const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
-
-  // virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-  //         const Teuchos::Ptr<const CompositeVector>& rho,
-  //         const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
-
-  // virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
-  //         const Teuchos::Ptr<const CompositeVector>& rel_perm,
-  //         const Teuchos::Ptr<const CompositeVector>& rho,
-  //         const Teuchos::Ptr<CompositeVector>& mass_flux);
 
   // Nonlinear version of CalculateConsistentFaces()
   // virtual void CalculateConsistentFacesForInfiltration_(
@@ -351,11 +326,6 @@ protected:
 
   void  ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p);
 
-
-  
-
-
-  
 protected:
   // control switches
   Operators::UpwindMethod Krel_method_;
@@ -368,7 +338,7 @@ protected:
   bool explicit_source_;
   std::string clobber_policy_;
   bool clobber_boundary_flux_dir_;
-  
+
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
   bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
@@ -395,11 +365,11 @@ protected:
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
 
   // flag to do jacobian and therefore coef derivs
+  bool precon_used_;
   bool jacobian_;
   int iter_;
   double iter_counter_time_;
   int jacobian_lag_;
-  
 
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
@@ -448,11 +418,15 @@ protected:
   Key velocity_key_;
   Key source_key_;
   Key ss_flux_key_;
+  Key ss_primary_key_;
   Key sat_key_;
   Key sat_gas_key_;
   Key sat_ice_key_;
 
- private:
+  // evaluator for flux, which is needed by other pks
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> flux_pvfe_;
+
+private:
   // factory registration
   static RegisteredPKFactory<Richards> reg_;
 

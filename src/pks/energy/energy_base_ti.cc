@@ -80,8 +80,8 @@ void EnergyBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   vnames[0] = "e_old";
   vnames[1] = "e_new";
-  vecs[0] = S_inter_->GetFieldData(energy_key_).ptr();
-  vecs[1] = S_next_->GetFieldData(energy_key_).ptr();
+  vecs[0] = S_inter_->GetFieldData(conserved_key_).ptr();
+  vecs[1] = S_next_->GetFieldData(conserved_key_).ptr();
   db_->WriteVectors(vnames, vecs, true);
   db_->WriteVector("res (acc)", res.ptr());
 #endif
@@ -197,17 +197,17 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
-  S_next_->GetFieldEvaluator(energy_key_)
+  S_next_->GetFieldEvaluator(conserved_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
+  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(conserved_key_, key_))
       ->ViewComponent("cell",false);
   unsigned int ncells = de_dT.MyLength();
 
-  CompositeVector acc(S_next_->GetFieldData(energy_key_)->Map());
+  CompositeVector acc(S_next_->GetFieldData(conserved_key_)->Map());
   auto& acc_c = *acc.ViewComponent("cell", false);
   
 #if DEBUG_FLAG
-  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_)).ptr());
+  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(conserved_key_, key_)).ptr());
 #endif
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
@@ -268,8 +268,8 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // anything from negative to overflow.
   int cycle = S_next_->cycle();
   
-  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
 
   S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);

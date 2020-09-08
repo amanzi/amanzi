@@ -48,33 +48,27 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     domain_name_ =  plist_->sublist("ewc delegate").get<std::string>("domain name", "domain");
   }
 
-  temp_key_ = Keys::getKey(domain_name_, "temperature");
-  pres_key_ = Keys::getKey(domain_name_, "pressure");
-  e_key_ = Keys::getKey(domain_name_, "energy");
-  wc_key_ = Keys::getKey(domain_name_, "water_content");
-  tc_key_ = Keys::getKey(domain_name_, "thermal_conductivity");
-  uw_tc_key_ = Keys::getKey(domain_name_, "upwind_thermal_conductivity");
-  kr_key_ = Keys::getKey(domain_name_, "relative_permeability");
-  uw_kr_key_ = Keys::getKey(domain_name_, "upwind_relative_permeability");
-  enth_key_ = Keys::getKey(domain_name_, "enthalpy");
-  hkr_key_ = Keys::getKey(domain_name_, "enthalpy_times_relative_permeability");
-  uw_hkr_key_ = Keys::getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
-  energy_flux_key_ = Keys::getKey(domain_name_, "diffusive_energy_flux");
-  mass_flux_key_ = Keys::getKey(domain_name_, "mass_flux");
-  mass_flux_dir_key_ = Keys::getKey(domain_name_, "mass_flux_direction");
-  rho_key_ = Keys::getKey(domain_name_, "mass_density_liquid");
+  temp_key_ = Keys::readKey(*plist_, domain_name_, "temperature", "temperature");
+  pres_key_ = Keys::readKey(*plist_, domain_name_, "pressure", "pressure");
+  e_key_ = Keys::readKey(*plist_, domain_name_, "energy", "energy");
+  wc_key_ = Keys::readKey(*plist_, domain_name_, "water_content", "water content");
+  tc_key_ = Keys::readKey(*plist_, domain_name_, "thermal conductivity", "thermal_conductivity");
+  uw_tc_key_ = Keys::readKey(*plist_, domain_name_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
+  kr_key_ = Keys::readKey(*plist_, domain_name_, "conductivity", "relative_permeability");
+  uw_kr_key_ = Keys::readKey(*plist_, domain_name_, "upwinded conductivity", "upwind_relative_permeability");
+  enth_key_ = Keys::readKey(*plist_, domain_name_, "enthalpy", "enthalpy");
+  hkr_key_ = Keys::readKey(*plist_, domain_name_, "enthalpy times conductivity", "enthalpy_times_relative_permeability");
+  uw_hkr_key_ = Keys::readKey(*plist_, domain_name_, "upwind_enthalpy times conductivity", "upwind_enthalpy_times_relative_permeability");
+  energy_flux_key_ = Keys::readKey(*plist_, domain_name_, "diffusive energy flux", "diffusive_energy_flux");
+  mass_flux_key_ = Keys::readKey(*plist_, domain_name_, "mass flux", "mass_flux");
+  mass_flux_dir_key_ = Keys::readKey(*plist_, domain_name_, "mass flux direction", "mass_flux_direction");
+  rho_key_ = Keys::readKey(*plist_, domain_name_, "mass density liquid", "mass_density_liquid");
 
   // supress energy's vision of advective terms as we can do better
-
-  if (plist_->isParameter("supress Jacobian terms: div hq / dp")) {
-    Errors::Message message("MPC Incorrect input: parameter \"supress Jacobian terms: div hq / dp\" changed to \"supress Jacobian terms: div hq / dp,T\" for clarity.");
-    Exceptions::amanzi_throw(message);
-  }
-
-  if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
+  if (!plist_->get<bool>("supress Jacobian terms: d div hq / dp,T", false)) {
     if (pks_list_->sublist(pk_order[1]).isParameter("supress advective terms in preconditioner")
         && !pks_list_->sublist(pk_order[1]).get("supress advective terms in preconditioner",false)) {
-      Errors::Message msg("MPC Incorrect input: options \"supress Jacobian terms: div hq / dp,T\" and subsurface energy PK option \"supress advective terms in preconditioner\" should not both be false, as these include some of the same Jacobian information.\n Recommended: Enable/suppress the latter.");
+      Errors::Message msg("MPC Incorrect input: options \"supress Jacobian terms: d div hq / dp,T\" and subsurface energy PK option \"supress advective terms in preconditioner\" should not both be false, as these include some of the same Jacobian information.\n Recommended: Enable/suppress the latter.");
 
       Exceptions::amanzi_throw(msg);
     }
@@ -234,7 +228,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
     // -- derivatives of advection term
     if (precon_type_ != PRECON_NO_FLOW_COUPLING &&
-        !plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
+        !plist_->get<bool>("supress Jacobian terms: d div hq / dp,T", false)) {
       // derivative with respect to pressure
       Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
 

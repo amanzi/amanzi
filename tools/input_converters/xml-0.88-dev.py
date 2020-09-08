@@ -33,6 +33,24 @@ def vanGenuchtenParams(xml):
             change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
             change_name(region, "residual saturation", "residual saturation [-]")
 
+def thermalConductivityParams(xml):
+    change_name(region, "thermal conductivity of soil [W/(m-K)]", "thermal conductivity of soil [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of ice [W/(m-K)]", "thermal conductivity of ice [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of liquid [W/(m-K)]", "thermal conductivity of liquid [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of water [W/(m-K)]", "thermal conductivity of water [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of gas [W/(m-K)]", "thermal conductivity of gas [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of frozen zone [W/(m-K)]", "thermal conductivity of frozen zone [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of unfrozen zone [W/(m-K)]", "thermal conductivity of unfrozen zone [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity of mushy zone [W/(m-K)]", "thermal conductivity of mushy zone [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity, dry [W/(m-K)]", "thermal conductivity, dry [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity, wet [W/(m-K)]", "thermal conductivity, wet [W m^-1 K^-1]")
+    change_name(region, "thermal conductivity, saturated (unfrozen) [W/(m-K)]",
+                "thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]")
+
+def commonSupressOptions(xml):
+    change_name("supress Jacobian terms: div hq / dp,T", "supress Jacobian terms: d div hq / dp,T")
+    
+            
 def checkManning(xml):
     fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
@@ -100,15 +118,51 @@ def mergePreconditionerLinearSolver(xml):
             pc = pk.getElement("inverse")
             change_name(pc, "preconditioner type", "preconditioning method")
             change_name(pc, "preconditioner method", "preconditioning method") 
-           
+
+def fixOverlandConductivity(xml):
+    pm = asearch.parent_map(xml)
+    fe = asearch.find_path(xml, ["state", "field evaluators"])
+    try:
+        elev = asearch.find_name(xml, "elevation evaluator")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        pk = pm[elev]
+        pk.remove(elev)
+        domain_name = pk.getElement("domain name").getValue()
+        elev.setName(domain_name+"-elevation")
+        if elev.isElement("elevation function"):
+            elev.setParameter("field evaluator type", "string", "standalone elevation")
+            for comp in asearch.findall_name(elev, "components"):
+                comp.setValue(["cell", "face"])
+        else:
+            elev.setParameter("field evaluator type", "string", "meshed elevation")
+        fe.append(elev)
+
+    try:
+        oc = asearch.find_name(xml, "overland conductivity evaluator")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        pk = pm[oc]
+        pk.remove(oc)
+        domain_name = pk.getElement("domain name").getValue()
+        oc.setName(domain_name+"-overland_conductivity")
+        oc.setParameter("field evaluator type", "string", "overland conductivity")
+        fe.append(oc)
+
 
 def update(xml):
     vanGenuchtenParams(xml)
+    thermalConductivityParams(xml)
+    commonSupressOptions(xml)
+    
     checkManning(xml)
     # NOTE: these will get added when subgrid pull request is done
     #fixSnow(xml)
     #fixSubgrid(xml)
     mergePreconditionerLinearSolver(xml)
+    fixOverlandConductivity(xml)
 
 if __name__ == "__main__":
     import argparse
