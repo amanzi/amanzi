@@ -61,6 +61,7 @@ set(state_inc_files
   independent_variable_field_evaluator.hh
   independent_variable_field_evaluator_fromfunction.hh
   independent_variable_field_evaluator_fromfile.hh
+  independent_variable_field_evaluator_constant.hh
   secondary_variable_field_evaluator_fromfunction.hh
   constant_variable_field_evaluator.hh
   deforming_cell_volume_evaluator.hh
@@ -102,6 +103,7 @@ add_amanzi_library(state
                           independent_variable_field_evaluator.cc
                           independent_variable_field_evaluator_fromfunction.cc
                           independent_variable_field_evaluator_fromfile.cc
+                          independent_variable_field_evaluator_constant.cc
                           constant_variable_field_evaluator.cc
                           deforming_cell_volume_evaluator.cc
                           UnstructuredObservations.cc
@@ -127,6 +129,7 @@ register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE secondary_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_constant_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE constant_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
