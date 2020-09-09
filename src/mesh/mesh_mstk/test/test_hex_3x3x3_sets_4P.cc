@@ -17,8 +17,6 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
                                  "Bottom+Middle Box", "Top Box",
         "Bottom ColFunc", "Middle ColFunc", "Top ColFunc", "Entire Mesh"};
 
-  int expcsetcells[4][8][9];
-
   std::vector<std::string> expfsetnames{"Face 101",  
                                         "Face 30004",
                                         "ZLO FACE Plane", 
@@ -40,8 +38,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Load a mesh consisting of 3x3x3 elements
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm,gm));
@@ -142,6 +139,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       // Verify that we can get the number of entities in the set
 
       int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+      CHECK(set_size >= 0);
 
 
       // Verify that we can get the set entities
@@ -175,6 +173,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  // Verify that we can get the number of entities in the set
 	  
 	  int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+          CHECK(set_size >= 0);
 
 	  
 	  // Verify that we can get the correct set entities
@@ -199,7 +198,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  // Verify that we can get the number of entities in the set
 	  
 	  int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-	  
+          CHECK(set_size >= 0);
 	  
 	  // Verify that we can get the set entities
 	  
@@ -234,6 +233,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	// Verify that we can get the number of entities in the set
 	
 	int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size >= 0);
 
 	// Verify that we can get the correct set entities
 	
@@ -258,15 +258,14 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	// Verify that we can get the number of entities in the set
 	
 	int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+        CHECK(set_size >= 0);
 
 	
 	// Verify that we can get the set entities
 	
         Amanzi::AmanziMesh::Entity_ID_List setents;
 	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-
       }
-
     }
     else if (shape == "region: color function") {
 
@@ -285,13 +284,13 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       // Verify that we can get the number of entities in the set
 	
       int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+      CHECK(set_size >= 0);
 
 	
       // Verify that we can get the set entities
 	
       Amanzi::AmanziMesh::Entity_ID_List setents;
       mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-
     }
   }
 }

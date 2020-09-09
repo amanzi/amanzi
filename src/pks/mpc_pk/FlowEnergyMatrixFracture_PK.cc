@@ -354,7 +354,7 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 
   UpdateCouplingFluxes_(adv_coupling_matrix_);
 
-  op_tree_matrix_->ApplyFlattened(*u_new, g);
+  ApplyFlattened(*op_tree_matrix_, *u_new, g);
   f->Update(1.0, g, 1.0);
 }
 
@@ -586,6 +586,31 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
     fdf_copy = Teuchos::rcp(new CompositeVector(fd));
     fd = ev;
   }
+}
+
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y)
+{
+  Y.PutScalar(0.0);
+
+  auto Xtv = collectTreeVectorLeaves_const(X);
+  auto Ytv = collectTreeVectorLeaves(Y);
+
+  int ierr(0), n(0);
+  for (auto jt = Ytv.begin(); jt != Ytv.end(); ++jt, ++n) {
+    CompositeVector& yN = *(*jt)->Data();
+    int m(0);
+    for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
+      auto block = op.get_operator_block(n,m);
+      if (block != Teuchos::null) {
+        ierr |= block->Apply(*(*it)->Data(), yN, 1.0);
+      }
+    }
+  }
+  return ierr;
 }
 
 }  // namespace Amanzi

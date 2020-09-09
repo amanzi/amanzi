@@ -17,7 +17,7 @@ TEST(MOAB_HEX_3x3x3)
   AmanziMesh::Entity_ID_List faces, nodes;
   AmanziGeometry::Point ccoords, fcoords;
 
-  int NV = 64;
+  // int NV = 64;
   int NF = 108;
   int NC = 27;
 

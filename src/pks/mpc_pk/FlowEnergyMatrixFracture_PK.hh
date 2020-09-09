@@ -95,5 +95,9 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
 };
 
+
+// non-member function
+int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y);
+
 }  // namespace Amanzi
 #endif

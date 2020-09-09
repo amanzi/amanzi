@@ -13,8 +13,6 @@ TEST(MOAB_HEX_3x3x3_4P)
   using namespace Amanzi;
 
   int j, nc, nf, nv;
-  int facedirs[6];
-  double ccoords[24], fcoords[12];
 
   int NVowned[4] = {16,16,16,16};
   int NFowned[4] = {16,26,26,40};
