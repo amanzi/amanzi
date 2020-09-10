@@ -10,8 +10,17 @@
 //! An evaluator with no dependencies specified by a constant value.
 
 /*!
-.. todo:
-    This needs a test and documentation! --etc
+
+An independent variable evaluator that is constant in both space and time.  Really, just a number.
+
+This is a quality of life addition -- it is doable as a standard independent
+variable evaluator from a function using the function-constant, but it makes
+life much easier on users who just want a single value.
+
+This is used by providing a field evaluator type == "independent variable constant"
+
+* `"value`" ``[double]`` Provide the value used in PutScalar() to set the vector's value.
+
 */
 
 
