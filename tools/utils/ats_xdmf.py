@@ -34,10 +34,10 @@ class VisFile:
         domain : str, optional
           Amanzi/ATS domain name.  Useful in variable names, filenames, and more.
         filename : str, optional
-          Filename of h5 vis file.  Default is 'visdump_DOMAIN_data.h5'.
-          (e.g. visdump_surface_data.h5).
+          Filename of h5 vis file.  Default is 'ats_vis_DOMAIN_data.h5'.
+          (e.g. ats_vis_surface_data.h5).
         mesh_filename : str, optional
-          Filename for the h5 mesh file.  Default is 'visdump_DOMAIN_mesh.h5'.
+          Filename for the h5 mesh file.  Default is 'ats_vis_DOMAIN_mesh.h5'.
 
         Returns
         -------
@@ -49,16 +49,16 @@ class VisFile:
         self.filename = filename
         if self.filename is None:
             if self.domain is None:
-                self.filename = 'visdump_data.h5'
+                self.filename = 'ats_vis_data.h5'
             else:
-                self.filename = 'visdump_{}_data.h5'.format(self.domain)
+                self.filename = 'ats_vis_{}_data.h5'.format(self.domain)
 
         self.mesh_filename = mesh_filename
         if self.mesh_filename is None:
             if self.domain is None:
-                self.mesh_filename = 'visdump_mesh.h5'
+                self.mesh_filename = 'ats_vis_mesh.h5'
             else:
-                self.mesh_filename = 'visdump_{}_mesh.h5'.format(self.domain)
+                self.mesh_filename = 'ats_vis_{}_mesh.h5'.format(self.domain)
 
         if time_unit == 'yr':
             time_factor = 1.0
@@ -266,7 +266,7 @@ elem_type = {5:'QUAD',
              4:'TRIANGLE'
              }
 
-def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
+def meshXYZ(directory=".", filename="ats_vis_mesh.h5", key=None):
     """Reads a mesh nodal coordinates and connectivity.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -277,7 +277,7 @@ def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
     directory : str, optional
       Directory to read mesh files from.  Default is '.'
     filename : str, optional
-      Mesh filename. Default is the Amanzi/ATS default name, 'visdump_mesh.h5'
+      Mesh filename. Default is the Amanzi/ATS default name, 'ats_vis_mesh.h5'
     key : str, optional
       Key of mesh within the file.  This is the cycle number, defaults to the
       first mesh found in the file.
@@ -323,7 +323,7 @@ def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
     return etype, coords, conn
 
 
-def meshElemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
+def meshElemCentroids(directory=".", filename="ats_vis_mesh.h5", key=None, round=5):
     """Reads and calculates mesh element centroids.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -334,7 +334,7 @@ def meshElemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round
     directory : str, optional
       Directory to read mesh files from.  Default is '.'
     filename : str, optional
-      Mesh filename. Default is the Amanzi/ATS default name, 'visdump_mesh.h5'
+      Mesh filename. Default is the Amanzi/ATS default name, 'ats_vis_mesh.h5'
     key : str, optional
       Key of mesh within the file.  This is the cycle number, defaults to the
       first mesh found in the file.
