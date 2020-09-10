@@ -281,6 +281,7 @@ protected:
   virtual void SetupRichardsFlow_(const Teuchos::Ptr<State>& S);
 
   // boundary condition members
+  void ComputeBoundaryConditions_(const Teuchos::Ptr<State>& S);
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr=true);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
@@ -289,6 +290,7 @@ protected:
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
 
   virtual void UpdateVelocity_(const Teuchos::Ptr<State>& S);
+  virtual void InitializeHydrostatic_(const Teuchos::Ptr<State>& S);
 
   // physical methods
   // -- diffusion term
@@ -378,10 +380,12 @@ protected:
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_infilt_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
+  double bc_rho_water_;
 
   // delegates
   bool modify_predictor_bc_flux_;

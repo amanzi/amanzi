@@ -121,11 +121,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_head_ = bc_factory.CreateHead();
+  bc_level_ = bc_factory.CreateFixedLevel();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
   bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
+  bc_rho_water_ = bc_plist.get<double>("hydrostatic water density [kg m^-3]",1000.);
 
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.e7);
@@ -414,18 +416,22 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // This deals with deprecated location for the WRM list (in the PK).  Move it
   // to state.
   if (plist_->isSublist("water retention evaluator")) {
-    if (!S->HasFieldEvaluator(sat_key_)) {
+    if (S->FEList().isSublist(sat_key_)) {
+      Errors::Message message("Sublists exist in both RichardsPK->water retention evaluator and state->field evaluators->");
+      message << sat_key_ << ".  Only use one (preferably that in State)";
+      Exceptions::amanzi_throw(message);
+    } else {
       Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
       wrm_plist.setName(sat_key_);
       wrm_plist.set("field evaluator type", "WRM");
       S->FEList().set(sat_key_, wrm_plist);
     }
-    if (!S->HasFieldEvaluator(coef_key_)) {
-      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
-      wrm_plist.setName(coef_key_);
-      wrm_plist.set("field evaluator type", "WRM rel perm");
-      S->FEList().set(coef_key_, wrm_plist);
-    }
+  }
+  if (!S->HasFieldEvaluator(coef_key_) && !S->FEList().isSublist(coef_key_)) {
+    Teuchos::ParameterList kr_plist(S->FEList().sublist(sat_key_));
+    kr_plist.setName(coef_key_);
+    kr_plist.set("field evaluator type", "WRM rel perm");
+    S->FEList().set(coef_key_, kr_plist);
   }
 
   // -- saturation
@@ -480,6 +486,9 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
+
+  // Initialize via hydrostatic balance
+  InitializeHydrostatic_(S);
 
   // debugging cruft
 #if DEBUG_RES_FLAG
@@ -544,6 +553,107 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S)
   //   res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData(key_)));
   // }
 };
+
+
+void Richards::InitializeHydrostatic_(const Teuchos::Ptr<State>& S)
+{
+  // constant head over the surface
+  if (plist_->sublist("initial condition").isParameter("hydrostatic head [m]")) {
+    double head_wt = plist_->sublist("initial condition").get<double>("hydrostatic head [m]");
+    double rho = plist_->sublist("initial condition").get<double>("hydrostatic water density [kg m^-3]");
+    int ncols = mesh_->num_columns(false);
+
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    int z_index = mesh_->space_dimension() - 1;
+    double g = -(*gvec)[z_index];
+    double p_atm = *S->GetScalarData("atmospheric_pressure");
+
+    // set pressure on the column of faces and cells
+    Teuchos::RCP<CompositeVector> pres = S->GetFieldData(key_, name_);
+    Teuchos::RCP<Epetra_IntVector> flags = Teuchos::null;
+    if (pres->HasComponent("face"))
+      flags = Teuchos::rcp(new Epetra_IntVector(*pres->Map().Map("face",false)));
+
+    {
+      Epetra_MultiVector& pres_c = *pres->ViewComponent("cell", false);
+      Teuchos::RCP<Epetra_MultiVector> pres_f = Teuchos::null;
+      if (pres->HasComponent("face")) {
+        pres_f = pres->ViewComponent("face", false);
+      }
+
+      int ncells_per = -1;
+      for (int col=0; col!=ncols; ++col) {
+        auto& col_cells = mesh_->cells_of_column(col);
+        if (ncells_per < 0) ncells_per = col_cells.size();
+        AMANZI_ASSERT(col_cells.size() == ncells_per);
+        auto& col_faces = mesh_->faces_of_column(col);
+        AMANZI_ASSERT(col_faces.size() == col_cells.size()+1);
+        double z_wt = mesh_->face_centroid(col_faces[0])[z_index] + head_wt;
+
+        if (pres_f.get()) (*pres_f)[0][col_faces[0]] = p_atm + rho * g * head_wt;
+        for (int lcv_c=0; lcv_c!=col_cells.size(); ++lcv_c) {
+          AmanziMesh::Entity_ID c = col_cells[lcv_c];
+          AmanziMesh::Entity_ID f = col_faces[lcv_c+1];
+          pres_c[0][c] = p_atm + rho * g * (z_wt - mesh_->cell_centroid(c)[z_index]);
+          if (pres_f.get()) {
+            (*pres_f)[0][f] = p_atm + rho * g * (z_wt - mesh_->face_centroid(f)[z_index]);
+            (*flags)[f] = 1;
+          }
+        }
+      }
+    }
+    if (pres->HasComponent("face")) {
+      // communicate, then deal with horizontal-normal faces
+      pres->ScatterMasterToGhosted("cell");
+      {
+        const Epetra_MultiVector& pres_c = *pres->ViewComponent("cell", false);
+        Epetra_MultiVector& pres_f = *pres->ViewComponent("face", false);
+        for (AmanziMesh::Entity_ID f=0; f!=pres_f.MyLength(); ++f) {
+          if (!(*flags)[f]) {
+            AmanziMesh::Entity_ID_List f_cells;
+            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &f_cells);
+            if (f_cells.size() == 1) {
+              // boundary face, use the cell value as the water table is
+              // assumed to parallel the cell structure
+              pres_f[0][f] = pres_c[0][f_cells[0]];
+              (*flags)[f] = 1;
+            } else {
+              AMANZI_ASSERT(f_cells.size() == 2);
+              // interpolate between cells
+              pres_f[0][f] = (pres_c[0][f_cells[0]] + pres_c[0][f_cells[1]]) / 2.;
+              (*flags)[f] = 1;
+            }
+          }
+        }
+      }
+    }
+    S->GetField(key_, name_)->set_initialized();
+  }
+
+  // constant head datum
+  if (plist_->sublist("initial condition").isParameter("hydrostatic water level [m]")) {
+    double z_wt = plist_->sublist("initial condition").get<double>("hydrostatic water level [m]");
+    double rho = plist_->sublist("initial condition").get<double>("hydrostatic water density [kg m^-3]");
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    int z_index = mesh_->space_dimension() - 1;
+    double g = -(*gvec)[z_index];
+    double p_atm = *S->GetScalarData("atmospheric_pressure");
+
+    Teuchos::RCP<CompositeVector> pres = S->GetFieldData(key_, name_);
+    Epetra_MultiVector& pres_c = *pres->ViewComponent("cell", false);
+    for (int c=0; c!=pres_c.MyLength(); ++c) {
+      pres_c[0][c] = p_atm + rho * g * (z_wt - mesh_->cell_centroid(c)[z_index]);
+    }
+
+    if (pres->HasComponent("face")) {
+      Epetra_MultiVector& pres_f = *pres->ViewComponent("face", false);
+      for (int f=0; f!=pres_f.MyLength(); ++f) {
+        pres_f[0][f] = p_atm + rho * g * (z_wt - mesh_->face_centroid(f)[z_index]);
+      }
+    }
+    S->GetField(key_, name_)->set_initialized();
+  }
+}
 
 
 // -----------------------------------------------------------------------------
@@ -847,10 +957,22 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S)
 };
 
 
+// -----------------------------------------------------------------------------
+// Compute boundary condition functions at the current time.
+// -----------------------------------------------------------------------------
+void Richards::ComputeBoundaryConditions_(const Teuchos::Ptr<State>& S)
+{
+  bc_pressure_->Compute(S->time());
+  bc_head_->Compute(S->time());
+  bc_level_->Compute(S->time());
+  bc_flux_->Compute(S->time());
+  bc_seepage_->Compute(S->time());
+  bc_seepage_infilt_->Compute(S->time());
+}
 
 
 // -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time.
+// Push boundary conditions into the global array.
 // -----------------------------------------------------------------------------
 void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
 {
@@ -887,18 +1009,50 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
     values[f] = bc.second;
   }
 
-  // head boundary conditions, like Dirichlet only require change of units
+  // head boundary conditions
   bc_counts.push_back(bc_head_->size());
   bc_names.push_back("head");
-  for (const auto& bc : *bc_head_) {
-    int f = bc.first;
-#ifdef ENABLE_DBC
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    AMANZI_ASSERT(cells.size() == 1);
-#endif
-    markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-    values[f] = bc.second;
+  if (bc_head_->size() > 0) {
+    double p_atm = *S->GetScalarData("atmospheric_pressure");
+    int z_index = mesh_->space_dimension() - 1;
+    double g = -(*S->GetConstantVectorData("gravity"))[z_index];
+
+    for (const auto& bc : *bc_head_) {
+      int f = bc.first;
+
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
+
+      // we need to find the elevation of the surface, but finding the top edge
+      // of this stack of faces is not possible currently.  The best approach
+      // is instead to work with the cell.
+      int col = mesh_->column_ID(cells[0]);
+      double z_surf = mesh_->face_centroid(mesh_->faces_of_column(col)[0])[z_index];
+      double z_wt = bc.second + z_surf;
+
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      // note, here the cell centroid's z is used to relate to the column's top
+      // face centroid, specifically NOT the boundary face's centroid.
+      values[f] = p_atm + bc_rho_water_ * g *
+        (z_wt - mesh_->cell_centroid(cells[0])[z_index]);
+    }
+  }
+
+  // fixed level head boundary conditions
+  bc_counts.push_back(bc_head_->size());
+  bc_names.push_back("head");
+  if (bc_level_->size() > 0) {
+    double p_atm = *S->GetScalarData("atmospheric_pressure");
+    int z_index = mesh_->space_dimension() - 1;
+    double g = -(*S->GetConstantVectorData("gravity"))[z_index];
+
+    for (const auto& bc : *bc_level_) {
+      int f = bc.first;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = p_atm + bc_rho_water_ * g *
+        (bc.second - mesh_->face_centroid(f)[z_index]);
+    }
   }
 
   // Neumann type boundary conditions
@@ -1126,9 +1280,7 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     *vo_->os() << "Modifying predictor:" << std::endl;
 
   // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_head_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
+  ComputeBoundaryConditions_(S_next_.ptr());
   UpdateBoundaryConditions_(S_next_.ptr());
   db_->WriteBoundaryConditions(bc_markers(), bc_values());
 

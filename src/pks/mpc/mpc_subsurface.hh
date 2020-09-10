@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -119,7 +119,7 @@ algorithms are supported by the `EWC Globalization Delegate`_ object.
     * `"preconditioner type`" ``[string]`` **picard** See the above for
       detailed descriptions of the choices.  One of: `"none`", `"block
       diagonal`", `"no flow coupling`", `"picard`", `"ewc`", and `"smart ewc`".
-    
+
     * `"supress Jacobian terms: div hq / dp,T`" ``[bool]`` **false** If using picard or ewc, do not include this block in the preconditioner.
     * `"supress Jacobian terms: d div q / dT`" ``[bool]`` **false** If using picard or ewc, do not include this block in the preconditioner.
     * `"supress Jacobian terms: d div K grad T / dp`" ``[bool]`` **false** If using picard or ewc, do not include this block in the preconditioner.
@@ -129,7 +129,7 @@ algorithms are supported by the `EWC Globalization Delegate`_ object.
     INCLUDES:
 
     - ``[strong-mpc-spec]`` *Is a* StrongMPC_.
-    
+
  */
 
 #ifndef MPC_SUBSURFACE_HH_
@@ -187,7 +187,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
           Teuchos::RCP<TreeVector> up);
 
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
-  
+
   // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   // virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
@@ -200,7 +200,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
                              const Teuchos::RCP<const CompositeVector>& k,
                              const Teuchos::RCP<const CompositeVector>& dk,
                              const Teuchos::RCP<Epetra_MultiVector>& res);
-  
+
  protected:
 
   enum PreconditionerType {
@@ -208,7 +208,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
     PRECON_BLOCK_DIAGONAL = 1,
     PRECON_PICARD = 2,
     PRECON_EWC = 3,
-    PRECON_NO_FLOW_COUPLING = 4,    
+    PRECON_NO_FLOW_COUPLING = 4,
   };
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner_;
@@ -247,7 +247,6 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivhq_dT_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
 
-  
   // friend sub-pk Richards (need K_, some flags from private data)
   Teuchos::RCP<Flow::Richards> richards_pk_;
 
@@ -270,7 +269,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   Key ddivq_dT_key_, ddivKgT_dp_key_;
 
   bool is_fv_;
-  
+
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 
@@ -278,7 +277,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   bool dump_;
   int update_pcs_;
   Teuchos::RCP<Debugger> db_;
-  
+
 private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;
