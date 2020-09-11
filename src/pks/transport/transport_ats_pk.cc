@@ -158,12 +158,7 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   }
 
   const auto& tcc_fac = S->RequireField(tcc_key_)->SetMesh(mesh_)->SetGhosted(true);
-  if (tcc_fac->Owned()) {
-    // reactive transport
-    passwd_ = "reactive_transport";
-  } else {
-    passwd_ = "transport";
-  }
+  passwd_ = "state"; // note: this is required because the chemistry PK is Amanzi code and uses this.
   S->RequireField(tcc_key_, passwd_, subfield_names)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
@@ -813,15 +808,7 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int c = 0; c < ncells_owned; c++) {
     double vol_phi_ws_den;
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-    for (int i=0; i<num_aqueous + num_gaseous; i++){
-      mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws_den;
-    }
-  }
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double vol_phi_ws_den;
-    vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-    for (int i=0; i<num_aqueous + num_gaseous; i++){
+    for (int i=0; i<num_aqueous + num_gaseous; i++) {
       mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws_den;
     }
   }
@@ -838,8 +825,6 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     double tol = 1e-10 * (dt_try + dt_stable);
     bool final_cycle = false;
 
-    // *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
-    //   dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
     if (dt_try >= 2 * dt_stable) {
       dt_cycle = dt_stable;
     } else if (dt_try > dt_stable + tol) {
@@ -1048,7 +1033,7 @@ void Transport_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new)
       }
     }
 
-    // Diffuse gaseous components. We ignore dispersion
+    // Diffuse aqueous components. We ignore dispersion
     // tensor (D is reset). Inactive cells (s[c] = 1 and D_[c] = 0)
     // are treated with a hack of the accumulation term.
     D_.clear();
@@ -1242,8 +1227,8 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
 
-      if (dissolution_){
-        if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Dissolve solid residual into liquid
+      if (dissolution_) {
+        if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )) {  // Dissolve solid residual into liquid
           double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
           (*solid_qty_)[i][c] -= add_mass;
           (*conserve_qty_)[i][c] += add_mass;
@@ -1413,7 +1398,7 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
       if (vol_phi_ws_den_start > water_tolerance_){
         ws_ratio[c] = ( (*ws_start)[0][c] * (*mol_dens_start)[0][c] )
                     / ( (*ws_end)[0][c]   * (*mol_dens_end)[0][c]   );
-      }else{
+      } else {
         ws_ratio[c] = 1;
       }
     }
