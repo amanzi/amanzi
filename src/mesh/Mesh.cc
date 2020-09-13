@@ -1365,8 +1365,8 @@ Mesh::deform(const Entity_ID_List& nodeids,
 int
 Mesh::build_columns(const std::string& setname) const
 {
-
   if (columns_built_) return 0;
+  int rank = get_comm()->MyPID();
 
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);
@@ -1380,15 +1380,21 @@ Mesh::build_columns(const std::string& setname) const
   node_nodeabove_.resize(nn);
   node_nodeabove_.assign(nn,-1);
 
-  Entity_ID_List top_faces;
-  get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
+  // build all columns, but need owned ones first
+  Entity_ID_List top_faces_owned;
+  get_set_entities(setname, FACE, Parallel_type::OWNED, &top_faces_owned);
 
-  int ncolumns = top_faces.size();
-  num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
+  Entity_ID_List top_faces_ghost;
+  get_set_entities(setname, FACE, Parallel_type::GHOST, &top_faces_ghost);
+
+  num_owned_cols_ = top_faces_owned.size();
+  int ncolumns = num_owned_cols_ + top_faces_ghost.size();
 
   int success = 1;
   for (int i = 0; i < ncolumns; i++) {
-    Entity_ID f = top_faces[i];
+    Entity_ID f;
+    if (i < num_owned_cols_) f = top_faces_owned[i];
+    else f = top_faces_ghost[i - num_owned_cols_];
     Entity_ID_List fcells;
     face_get_cells(f,Parallel_type::ALL,&fcells);
 
@@ -1408,6 +1414,7 @@ Mesh::build_columns(const std::string& setname) const
       break;
     }
 
+    // build the column
     success &= build_single_column_(i, f);
   }
 
