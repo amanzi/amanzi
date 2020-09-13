@@ -153,5 +153,14 @@ void IEMEvaluator::CreateIEMPartition_(
   iem_ = Teuchos::rcp(new IEMPartition(partition, iem_list));
 }
 
+
+/* ******************************************************************
+* Evaluation at a point
+****************************************************************** */
+double IEMEvaluator::EvaluateFieldSingle(int c, double T)
+{
+  return iem_->second[(*iem_->first)[c]]->InternalEnergy(T);
+}
+
 }  // namespace Energy
 }  // namespace Amanzi

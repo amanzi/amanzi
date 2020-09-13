@@ -44,7 +44,9 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
 
-   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
+  Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
+
+  double EvaluateFieldSingle(int c, double T);
 
  protected:
   void InitializeFromPlist_();

@@ -32,6 +32,7 @@
 // Energy
 #include "Analytic01.hh"
 #include "EnergyOnePhase_PK.hh"
+#include "EnthalpyEvaluator.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -40,16 +41,10 @@ using namespace Amanzi::Energy;
 
 namespace Amanzi {
 
-class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
+class TestEnthalpyEvaluator : public EnthalpyEvaluator {
  public:
-  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = "enthalpy";
-    temperature_key_ = "temperature";
-    dependencies_.insert(temperature_key_);
-  };
-  TestEnthalpyEvaluator(const TestEnthalpyEvaluator& other) :
-     SecondaryVariableFieldEvaluator(other) {};
+  TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
+      EnthalpyEvaluator(plist) {};
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
@@ -80,8 +75,9 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
     }
   }
 
- protected:
-  Key temperature_key_;
+  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) {
+    return std::pow(T, 3.0);
+  }
 };
 
 }  // namespace Amanzi
@@ -134,6 +130,8 @@ TEST(ENERGY_CONVERGENCE) {
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
+    ev_list.set<std::string>("enthalpy key", "enthalpy")
+           .set<bool>("include work term", false);
     S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
@@ -236,6 +234,8 @@ TEST(ENERGY_PRECONDITIONER) {
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
+    ev_list.set<std::string>("enthalpy key", "enthalpy")
+           .set<bool>("include work term", false);
     S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);

@@ -22,6 +22,7 @@
 #include "WhetStoneDefs.hh"
 
 #include "Energy_PK.hh"
+#include "EnthalpyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -328,7 +329,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   // additional boundary conditions
   AmanziMesh::Entity_ID_List cells;
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
+  auto enth = Teuchos::rcp_dynamic_cast<EnthalpyEvaluator>(S_->GetFieldEvaluator(enthalpy_key_));
   const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
@@ -345,7 +346,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
       int c = cells[0];
 
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][c] * n_l[0][c];
+      bc_value_enth_[f] = enth->EvaluateFieldSingle(S_.ptr(), c, bc_value[f]) * n_l[0][c];
     }
   }
 }
