@@ -130,8 +130,15 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("T_res", u->Data().ptr(), true);
 #endif
 
+  preconditioner_->PrintDiagnostics();
+
   // apply the preconditioner
+  std::cout << "Printing data in u" << std::endl;
+  u->Data()->Print(std::cout);
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  std::cout << "Printing data Pu" << std::endl;
+  Pu->Data()->Print(std::cout);
+  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
