@@ -79,11 +79,8 @@ Lake_Thermo_PK::Lake_Thermo_PK(Teuchos::ParameterList& FElist,
 void Lake_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
 
-  std::cout << "before SetupLakeThermo_" << std::endl;
   SetupLakeThermo_(S);
-  std::cout << "after SetupLakeThermo_" << std::endl;
   SetupPhysicalEvaluators_(S);
-  std::cout << "after SetupPhysicalEvaluators_" << std::endl;
 
 };
 
@@ -343,8 +340,6 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
   
   // Require a field for the mass flux for advection.
-  std::cout << "domain_ = " << domain_ << std::endl;
-  std::cout << "flux_key_ = " << flux_key_ << std::endl;
   flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
                                          // makes flux or we need an
                                          // independent variable evaluator
@@ -460,8 +455,6 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
 #endif
 
-  std::cout << "Initialize Lake Thermo checkpoint 1" << std::endl;
-
   // initialize energy flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
@@ -475,8 +468,6 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   }
   
   // potentially initialize mass flux
-  std::cout << "flux_exists_ = " << flux_exists_ << std::endl;
-  std::cout << flux_key_ << " " << name_ << " " << plist_->sublist(flux_key_) << std::endl;
 //  if (!flux_exists_) {
 //    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
 //  }
@@ -486,13 +477,9 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
     S->GetField(wc_key_, name_)->set_initialized();
 
-  std::cout << "Setup check 1" << std::endl;
   S->GetFieldData(temperature_key_, name_)->PutScalar(300.0);
-  std::cout << "Setup check 2" << std::endl;
   S->GetField(temperature_key_, name_)->set_initialized();
-  std::cout << "Setup check 3" << std::endl;
 
-  std::cout << "Initialized Lake Thermo PK  NEW NEW!!!" << std::endl;
 
   // summary of initialization
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -524,9 +511,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   
   niter_ = 0;
   bool update = UpdateConductivityData_(S.ptr());
-  std::cout << "CommitStep check 1" << std::endl;
   update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
-  std::cout << "CommitStep check 2" << std::endl;
 
   if (update) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);

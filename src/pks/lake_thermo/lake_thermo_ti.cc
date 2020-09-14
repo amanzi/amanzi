@@ -78,8 +78,8 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  vnames[0] = "e_old";
-  vnames[1] = "e_new";
+  vnames[0] = "T_old";
+  vnames[1] = "T_new";
   vecs[0] = S_inter_->GetFieldData(temperature_key_).ptr();
   vecs[1] = S_next_->GetFieldData(temperature_key_).ptr();
   db_->WriteVectors(vnames, vecs, true);
@@ -115,6 +115,8 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
+  g->Data()->Print(std::cout);
+
 
 };
 
@@ -131,7 +133,10 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 #endif
 
   // apply the preconditioner
+  std::cout << "Printing data" << std::endl;
+  u->Data()->Print(std::cout);
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
@@ -258,6 +263,7 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   preconditioner_diff_->ApplyBCs(true, true, true);
 };
 
+/*
 // -----------------------------------------------------------------------------
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
@@ -283,9 +289,9 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (cycle == 32) {
     std::cout << "we is here" << std::endl;
   }
-  
-//  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(temperature_key_)
+
+  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
       ->ViewComponent("cell",true);
 
 //  S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);
@@ -295,25 +301,12 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
           ->ViewComponent("cell",true);
 
-  std::cout << "ErrorNorm after wc" << std::endl;
-
   const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
-
-
-//  //--------->>
-//  // THIS IS ONLY FOR DEBUGGING PURPOSES
-//  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(cell_vol_key_)
-//        ->ViewComponent("cell",true);
-//  for (int c = 0; c < ncells_owned; c++) {
-//      wc[0][c] = 1.;
-//  }
-//  //<<---------
-
-  std::cout << "mass_atol_ = " << mass_atol_ << std::endl;
-  std::cout << "soil_atol_ = " << soil_atol_ << std::endl;
-  std::cout << "atol_ = " << atol_ << std::endl;
+//  std::cout << "mass_atol_ = " << mass_atol_ << std::endl;
+//  std::cout << "soil_atol_ = " << soil_atol_ << std::endl;
+//  std::cout << "atol_ = " << atol_ << std::endl;
 
 
 
@@ -330,7 +323,7 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const MpiComm_type> mpi_comm_p =
     Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
-  
+
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
        comp!=dvec->end(); ++comp) {
@@ -348,20 +341,20 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double energy = mass * atol_ + soil_atol_;
         double enorm_c = std::abs(h * dvec_v[0][c]) / (energy*cv[0][c]);
 
-        std::cout << "c = " << c << ", enorm_c = " << enorm_c << std::endl;
-        std::cout << "mass = " << mass << std::endl;
-        std::cout << "energy = " << energy << std::endl;
-        std::cout << "h = " << h << std::endl;
-        std::cout << "dvec_v[0][c] = " << dvec_v[0][c] << std::endl;
-        std::cout << "cv[0][c] = " << cv[0][c] << std::endl;
-        std::cout << "wc[0][c] = " << wc[0][c] << std::endl;
+//        std::cout << "c = " << c << ", enorm_c = " << enorm_c << std::endl;
+//        std::cout << "mass = " << mass << std::endl;
+//        std::cout << "energy = " << energy << std::endl;
+//        std::cout << "h = " << h << std::endl;
+//        std::cout << "dvec_v[0][c] = " << dvec_v[0][c] << std::endl;
+//        std::cout << "cv[0][c] = " << cv[0][c] << std::endl;
+//        std::cout << "wc[0][c] = " << wc[0][c] << std::endl;
 
         if (enorm_c > enorm_comp) {
           enorm_comp = enorm_c;
           enorm_loc = c;
         }
       }
-      
+
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
@@ -379,7 +372,7 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
           / (energy * cv_min);
 
-        std::cout << "f = " << f << ", enorm_f = " << enorm_f << std::endl;
+//        std::cout << "f = " << f << ", enorm_f = " << enorm_f << std::endl;
 
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;
@@ -421,6 +414,7 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   AMANZI_ASSERT(!ierr);
   return enorm_val;
 };
+*/
 
 
 } // namespace LakeThermo

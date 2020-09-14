@@ -44,8 +44,6 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-  std::cout << "In DensityEvaluator::EvaluateField_" << std::endl;
-
   double rho0 = 1000.;
 
   for (CompositeVector::name_iterator comp=result->begin();
@@ -67,8 +65,6 @@ void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
   // not implemented
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
-
-    std::cout << "In DensityEvaluator::EvaluateFieldPartialDerivative_" << std::endl;
 
     double rho0 = 1000.;
 

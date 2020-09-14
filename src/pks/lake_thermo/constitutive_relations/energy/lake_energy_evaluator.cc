@@ -44,8 +44,6 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-  std::cout << "In LakeEnergyEvaluator::EvaluateField_" << std::endl;
-
   double rho0 = 1000.;
   double cp = 4184.;
 
@@ -67,8 +65,6 @@ void LakeEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
-
-    std::cout << "In LakeEnergyEvaluator::EvaluateFieldPartialDerivative_" << std::endl;
 
     double rho0 = 1000.;
     double cp = 4184.;

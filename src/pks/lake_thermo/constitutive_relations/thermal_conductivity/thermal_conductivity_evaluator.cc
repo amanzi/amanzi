@@ -66,8 +66,6 @@ void ThermalConductivityEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
-  std::cout << "In ThermalConductivityEvaluator::EvaluateField_" << std::endl;
-
   for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       // much more efficient to pull out vectors first
@@ -76,14 +74,12 @@ void ThermalConductivityEvaluator::EvaluateField_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      std::cout << "ncomp = " << ncomp << std::endl;
       for (int i=0; i!=ncomp; ++i) {
         if (ice_cover_) {
             result_v[0][i] = 1.5;
         } else {
             result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
         }
-        std::cout << "conductivity: " << result_v[0][i] << std::endl;
       }
     }
 

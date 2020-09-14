@@ -33,16 +33,11 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
-  std::cout << "check 1" << std::endl;
-  std::cout << "density_key_ = " << density_key_ << std::endl;
   S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  std::cout << "check 2" << std::endl;
 
   // evaluate density
   const Epetra_MultiVector& rho =
   *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
-
-  std::cout << "In AddAccumulation_" << std::endl;
 
   double rho0 = 1000.;
 
@@ -141,17 +136,14 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-//  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
-//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-//
-//  for (int f = 0; f < nfaces_owned; f++) {
-//      std::cout << uw_cond_c[0][f] << std::endl;
-//  }
+  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+      std::cout << uw_cond_c[0][f] << std::endl;
+  }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
-
-  std::cout << "key_ = " << key_ << std::endl;
-  std::cout << "uw_conductivity_key_ = " << uw_conductivity_key_ << std::endl;
 
   // update the stiffness matrix
   matrix_diff_->global_operator()->Init();
@@ -215,32 +207,32 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
 void Lake_Thermo_PK::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
-  if (is_source_term_ && is_source_term_differentiable_ && 
-      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
-
-    Teuchos::RCP<const CompositeVector> dsource_dT;
-    if (!is_source_term_finite_differentiable_) {
-      // evaluate the derivative through the dag
-      S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-      dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
-    } else {
-      // evaluate the derivative through finite differences
-      double eps = 1.e-8;
-      S->GetFieldData(key_, name_)->Shift(eps);
-      ChangedSolution();
-      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-      auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S->GetFieldData(source_key_)));
-
-      S->GetFieldData(key_, name_)->Shift(-eps);
-      ChangedSolution();
-      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-
-      dsource_dT_nc->Update(-1/eps, *S->GetFieldData(source_key_), 1/eps);
-      dsource_dT = dsource_dT_nc;
-    }
-    db_->WriteVector("  dQ_ext/dT", dsource_dT.ptr(), false);
-    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
-  }
+//  if (is_source_term_ && is_source_term_differentiable_ &&
+//      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
+//
+//    Teuchos::RCP<const CompositeVector> dsource_dT;
+//    if (!is_source_term_finite_differentiable_) {
+//      // evaluate the derivative through the dag
+//      S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
+//      dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
+//    } else {
+//      // evaluate the derivative through finite differences
+//      double eps = 1.e-8;
+//      S->GetFieldData(key_, name_)->Shift(eps);
+//      ChangedSolution();
+//      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+//      auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S->GetFieldData(source_key_)));
+//
+//      S->GetFieldData(key_, name_)->Shift(-eps);
+//      ChangedSolution();
+//      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+//
+//      dsource_dT_nc->Update(-1/eps, *S->GetFieldData(source_key_), 1/eps);
+//      dsource_dT = dsource_dT_nc;
+//    }
+//    db_->WriteVector("  dQ_ext/dT", dsource_dT.ptr(), false);
+//    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
+//  }
 }
 
 // -------------------------------------------------------------

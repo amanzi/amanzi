@@ -197,10 +197,10 @@ public:
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {}
 
-  // Default implementations of BDFFnBase methods.
-  // -- Compute a norm on u-du and return the result.
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du) override;
+//  // Default implementations of BDFFnBase methods.
+//  // -- Compute a norm on u-du and return the result.
+//  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+//                       Teuchos::RCP<const TreeVector> du) override;
 
   // Lake_Thermo_PK is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
