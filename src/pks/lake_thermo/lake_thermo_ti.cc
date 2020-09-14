@@ -132,6 +132,8 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("T_res", u->Data().ptr(), true);
 #endif
 
+  preconditioner_->PrintDiagnostics();
+
   // apply the preconditioner
   std::cout << "Printing data" << std::endl;
   u->Data()->Print(std::cout);
