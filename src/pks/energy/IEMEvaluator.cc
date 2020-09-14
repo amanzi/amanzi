@@ -83,12 +83,14 @@ void IEMEvaluator::EvaluateField_(
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
     int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
-      result_v[0][i] = iem_->second[(*iem_->first)[i]]->InternalEnergy(temp_v[0][i]);
+      auto id = MyModel_(kind, i);
+      result_v[0][i] = iem_->second[(*iem_->first)[id]]->InternalEnergy(temp_v[0][i]);
     }
   }
 }
@@ -109,12 +111,14 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
     int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
-      result_v[0][i] = iem_->second[(*iem_->first)[i]]->DInternalEnergyDT(temp_v[0][i]);
+      auto id = MyModel_(kind, i);
+      result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDT(temp_v[0][i]);
     }
   }
 }
@@ -127,6 +131,8 @@ void IEMEvaluator::CreateIEMPartition_(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const Teuchos::ParameterList& plist)
 {
+  mesh_ = mesh;
+
   std::vector<Teuchos::RCP<IEM> > iem_list;
   std::vector<std::vector<std::string> > region_list;
 
@@ -160,6 +166,23 @@ void IEMEvaluator::CreateIEMPartition_(
 double IEMEvaluator::EvaluateFieldSingle(int c, double T)
 {
   return iem_->second[(*iem_->first)[c]]->InternalEnergy(T);
+}
+
+
+/* ******************************************************************
+* Return model id
+****************************************************************** */
+AmanziMesh::Entity_ID IEMEvaluator::MyModel_(
+    AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id)
+{
+  if (kind == AmanziMesh::CELL) {
+    return id;
+  } else if (kind == AmanziMesh::BOUNDARY_FACE) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+    return cells[0];
+  }
+  return -1;
 }
 
 }  // namespace Energy

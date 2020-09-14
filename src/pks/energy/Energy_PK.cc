@@ -71,9 +71,12 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
@@ -91,14 +94,9 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require primary state variables
   if (!S->HasField(temperature_key_)) {
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
- 
+    std::vector<std::string> names({"cell", "face"});
     std::vector<int> ndofs(2, 1);
-    std::vector<AmanziMesh::Entity_kind> locations(2);
-    locations[0] = AmanziMesh::CELL;
-    locations[1] = AmanziMesh::FACE;
+    std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
  
     S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
@@ -118,6 +116,23 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
   }
+
+  // other fields
+  // -- energies
+  S->RequireField(ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(ie_liquid_key_);
+
+  // -- densities
+  S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(mol_density_liquid_key_);
+
+  // S->RequireField(mass_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+  //   ->AddComponent("cell", AmanziMesh::CELL, 1)
+  //   ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
   // -- darcy flux
   if (!S->HasField(darcy_flux_key_)) {

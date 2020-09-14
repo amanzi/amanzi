@@ -644,7 +644,6 @@ void Darcy_PK::FractureConservationLaw_()
           double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
-            
           break;
         }
       }

@@ -243,6 +243,9 @@
       <ParameterList name="const_gas_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
+      </ParameterList>
 
       <ParameterList name="pressure_liquid">
         <ParameterList name="function">

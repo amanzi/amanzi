@@ -163,7 +163,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
 
       t += dt;
       itrs++;

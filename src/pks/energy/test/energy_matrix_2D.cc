@@ -98,7 +98,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   std::string passwd("thermal");
   Epetra_MultiVector& temperature = *S->GetFieldData("temperature", passwd)->ViewComponent("cell");
   temperature.PutScalar(273.0);
-  EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
+  Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());

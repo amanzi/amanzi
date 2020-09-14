@@ -8,7 +8,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for enthalpy, H = U + p / rho. 
+  Field evaluator for enthalpy, H = U + p / eta.
 */
 
 #include "EnthalpyEvaluator.hh"

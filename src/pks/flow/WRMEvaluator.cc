@@ -27,7 +27,7 @@ namespace Flow {
 ****************************************************************** */
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
                            const Teuchos::RCP<WRMPartition>& wrm) :
-    SecondaryVariablesFieldEvaluator(plist),
+    SecondaryVariableFieldEvaluator(plist),
     wrm_(wrm)
 {
   InitializeFromPlist_();
@@ -35,7 +35,7 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
 
 
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other) :
-    SecondaryVariablesFieldEvaluator(other),
+    SecondaryVariableFieldEvaluator(other),
     pressure_key_(other.pressure_key_),
     wrm_(other.wrm_) {};
 
@@ -52,7 +52,7 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void WRMEvaluator::InitializeFromPlist_() {
-  my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
+  my_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
@@ -65,9 +65,9 @@ void WRMEvaluator::InitializeFromPlist_() {
 ****************************************************************** */
 void WRMEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
-    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+    const Teuchos::Ptr<CompositeVector>& result)
 {
-  Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell", false);
+  Epetra_MultiVector& sat_c = *result->ViewComponent("cell", false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
   const double patm = *S->GetScalarData("atmospheric_pressure");
 
@@ -83,10 +83,9 @@ void WRMEvaluator::EvaluateField_(
 ****************************************************************** */
 void WRMEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const std::vector<Teuchos::Ptr<CompositeVector> > & results)
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell", false);
+  Epetra_MultiVector& sat_c = *result->ViewComponent("cell", false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
   const double patm = *S->GetScalarData("atmospheric_pressure");
 
