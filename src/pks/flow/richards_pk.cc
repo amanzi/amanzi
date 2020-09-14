@@ -484,11 +484,11 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S)
   AMANZI_ASSERT(flux_pvfe_ != Teuchos::null);
   flux_pvfe_->SetFieldAsChanged(S);
 
-  // Initialize BDF stuff and physical domain stuff.
-  PK_PhysicalBDF_Default::Initialize(S);
-
   // Initialize via hydrostatic balance
   InitializeHydrostatic_(S);
+
+  // Initialize BDF stuff and physical domain stuff.
+  PK_PhysicalBDF_Default::Initialize(S);
 
   // debugging cruft
 #if DEBUG_RES_FLAG
@@ -590,7 +590,10 @@ void Richards::InitializeHydrostatic_(const Teuchos::Ptr<State>& S)
         AMANZI_ASSERT(col_faces.size() == col_cells.size()+1);
         double z_wt = mesh_->face_centroid(col_faces[0])[z_index] + head_wt;
 
-        if (pres_f.get()) (*pres_f)[0][col_faces[0]] = p_atm + rho * g * head_wt;
+        if (pres_f.get()) {
+          (*pres_f)[0][col_faces[0]] = p_atm + rho * g * head_wt;
+          (*flags)[col_faces[0]] = 1;
+        }
         for (int lcv_c=0; lcv_c!=col_cells.size(); ++lcv_c) {
           AmanziMesh::Entity_ID c = col_cells[lcv_c];
           AmanziMesh::Entity_ID f = col_faces[lcv_c+1];

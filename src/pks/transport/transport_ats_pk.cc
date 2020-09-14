@@ -214,6 +214,13 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
+
+  // Create verbosity object.
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
+  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist));
+
+
 }
 
 
@@ -236,11 +243,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   bc_scaling = 0.0;
-
-  // Create verbosity object.
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist));
 
   Teuchos::OSTab tab = vo_->getOSTab();
   MyPID = mesh_->get_comm()->MyPID();
@@ -277,7 +279,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -334,18 +335,18 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try tracer-type conditions
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
+    Teuchos::ParameterList& conc_bcs_list = tp_list_->sublist("boundary conditions").sublist("concentration");
 
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-      std::string name = it->first;
-      if (clist.isSublist(name)) {
-        Teuchos::ParameterList& bc_list = clist.sublist(name);
-        if (name == "coupling") {
-          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction>
-            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+    for (const auto& it : conc_bcs_list) {
+      std::string name = it.first;
+      if (conc_bcs_list.isSublist(name)) {
+        Teuchos::ParameterList& bc_list = conc_bcs_list.sublist(name);
+        std::string bc_type = bc_list.get<std::string>("spatial distribution method", "none");
+
+        if (bc_type == "domain coupling") {
+          // domain couplings are special -- they always work on all components
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "fields", AmanziMesh::FACE, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
@@ -353,18 +354,18 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           }
           bc->set_state(S_);
           bcs_.push_back(bc);
-        } else if (name == "subgrid") {
-          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::Array<std::string> regions(1, domain_name_);
 
+        } else if (bc_type == "subgrid") {
+          // subgrid domains take a BC from a single entity of a parent mesh --
+          // find the GID of that entity.
+          Teuchos::Array<std::string> regions(1, domain_name_);
           std::size_t last_of = domain_name_.find_last_of("_");
           AMANZI_ASSERT(last_of != std::string::npos);
           int gid = std::stoi(domain_name_.substr(last_of+1, domain_name_.size()));
-          spec.set("entity_gid_out", gid);
-          Teuchos::RCP<TransportDomainFunction>
-            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+          bc_list.set("entity_gid_out", gid);
+
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "none", AmanziMesh::FACE, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
@@ -374,21 +375,19 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           bcs_.push_back(bc);
 
         } else {
-          for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
-            std::string specname = it1->first;
-            Teuchos::ParameterList& spec = bc_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction>
-              bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "boundary concentration function", AmanziMesh::FACE, Kxy);
+          bc->set_state(S_);
 
-            std::vector<int>& tcc_index = bc->tcc_index();
-            std::vector<std::string>& tcc_names = bc->tcc_names();
-            bc->set_state(S_);
+          std::vector<std::string> tcc = bc_list.get<Teuchos::Array<std::string>>("component names").toVector();
+          bc->set_tcc_names(tcc);
 
-            tcc_names.push_back(name);
-            tcc_index.push_back(FindComponentNumber(name));
-
-            bcs_.push_back(bc);
+          // set the component indicies
+          for (const auto& n : bc->tcc_names()) {
+            bc->tcc_index().push_back(FindComponentNumber(n));
           }
+
+          bcs_.push_back(bc);
         }
       }
     }
@@ -434,19 +433,18 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    //if (domain_name_ == "domain")  PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+    Teuchos::ParameterList& conc_sources_list = tp_list_->sublist("source terms").sublist("concentration");
 
-    Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-      std::string name = it->first;
-      if (clist.isSublist(name)) {
-        Teuchos::ParameterList& src_list = clist.sublist(name);
-        if (name=="coupling") {
-          Teuchos::ParameterList::ConstIterator it1 = src_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = src_list.sublist(specname);
+    for (const auto& it : conc_sources_list) {
+      std::string name = it.first;
+      if (conc_sources_list.isSublist(name)) {
+        Teuchos::ParameterList& src_list = conc_sources_list.sublist(name);
+        std::string src_type = src_list.get<std::string>("spatial distribution method", "none");
+
+        if (src_type == "domain coupling") {
+          // domain couplings are special -- they always work on all components
           Teuchos::RCP<TransportDomainFunction> src =
-              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+              factory.Create(src_list, "fields", AmanziMesh::CELL, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             src->tcc_names().push_back(component_names_[i]);
@@ -456,26 +454,19 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           srcs_.push_back(src);
 
         } else {
-          for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
-            std::string specname = it1->first;
-            Teuchos::ParameterList& spec = src_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> src =
-              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
-            std::vector<std::string> tcc = spec.get<Teuchos::Array<std::string>>("component names").toVector();
-            src->set_tcc_names(tcc);
-            // sets the default component name to be the parameterlist's name
-            if (src->tcc_names().size() == 0) {
-              src->tcc_names().push_back(name);
-            }
+          Teuchos::RCP<TransportDomainFunction> src =
+              factory.Create(src_list, "source function", AmanziMesh::CELL, Kxy);
 
-            // set the component indicies
-            for (const auto& n : src->tcc_names()) {
-              src->tcc_index().push_back(FindComponentNumber(n));
-            }
+          std::vector<std::string> tcc = src_list.get<Teuchos::Array<std::string>>("component names").toVector();
+          src->set_tcc_names(tcc);
 
-            src->set_state(S_);
-            srcs_.push_back(src);
+          // set the component indicies
+          for (const auto& n : src->tcc_names()) {
+            src->tcc_index().push_back(FindComponentNumber(n));
           }
+
+          src->set_state(S_);
+          srcs_.push_back(src);
         }
       }
     }
@@ -1270,7 +1261,6 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
         tcc_flux = dt_ * u * tcc_prev[i][c1];
         (*conserve_qty_)[i][c2] += tcc_flux;
       }
-
     }
   }
 
@@ -1739,8 +1729,9 @@ void Transport_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
           if (srcs_[m]->name() == "domain coupling") {
             //val = std::max(val, fabs(values[k])/tcc[imap][c]);
             //val = std::max(val, fabs(values[k]));
-            const Epetra_MultiVector& flux_interface_ = *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
-	    val = std::max(val, fabs(flux_interface_[0][c]));
+            const Epetra_MultiVector& flux_interface_ =
+              *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
+            val = std::max(val, fabs(flux_interface_[0][c]));
           }
         }
       }
