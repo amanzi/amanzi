@@ -74,7 +74,8 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- advection of enthalpy
   if (!S->HasField(enthalpy_key_)) {
     S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->SetGhosted()->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_);

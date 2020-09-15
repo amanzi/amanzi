@@ -54,22 +54,24 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
   virtual void EvaluateField_(
           const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-
-    int ncomp = result->size("cell", false);
-    for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 0.;
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      auto& result_c = *result->ViewComponent(*comp);
+      int ncomp = result->size(*comp, false);
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 0.0;
+      }
     }
   }
 
   virtual void EvaluateFieldPartialDerivative_(
           const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-
-    int ncomp = result->size("cell", false);
-    for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 0.;
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      auto& result_c = *result->ViewComponent(*comp);
+      int ncomp = result->size(*comp, false);
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 0.0;
+      }
     }
   }
 
@@ -132,7 +134,9 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
            .set<bool>("include work term", false);
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 

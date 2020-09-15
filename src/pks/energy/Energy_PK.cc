@@ -334,10 +334,22 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 #endif
 
   // additional boundary conditions
-  AmanziMesh::Entity_ID_List cells;
+  // -- copy essential conditions to primary variables 
+  const auto& temp = *S_->GetFieldData(temperature_key_)->ViewComponent("face", true);
+  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("boundary_face", true);
+
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
+
+  int nbfaces = n_l.MyLength();
+  for (int bf = 0; bf < nbfaces; ++bf) {
+    int f = face_map.LID(ext_face_map.GID(bf));
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) temp[0][f] = bc_value[f];
+  }
+
+  // -- populate BCs
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  auto enth = Teuchos::rcp_dynamic_cast<EnthalpyEvaluator>(S_->GetFieldEvaluator(enthalpy_key_));
-  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
+  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face", true);
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -347,13 +359,11 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     bc_value_enth_[n] = 0.0;
   }
 
-  for (int f = 0; f < bc_model.size(); ++f) {
+  for (int bf = 0; bf < nbfaces; ++bf) {
+    int f = face_map.LID(ext_face_map.GID(bf));
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
-
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth->EvaluateFieldSingle(S_.ptr(), c, bc_value[f]) * n_l[0][c];
+      bc_value_enth_[f] = enth[0][bf] * n_l[0][bf];
     }
   }
 }
