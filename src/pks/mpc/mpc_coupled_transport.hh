@@ -1,9 +1,9 @@
 /*
-  This is the mpc_pk component of the Amanzi code.
+  This is the mpc_pk component of the Amanzi code. 
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy
@@ -25,7 +25,7 @@ namespace Amanzi {
 
   class CoupledTransport_PK: public WeakMPC{
 
-  public:
+  public: 
     CoupledTransport_PK(Teuchos::ParameterList& pk_tree_or_fe_list,
                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
@@ -46,13 +46,12 @@ namespace Amanzi {
     std::string name() { return name_;}
     int num_aqueous_component();
 
-
   private:
 
-    void InterpolateCellVector(const Epetra_MultiVector& v0, const Epetra_MultiVector& v1,
+    void InterpolateCellVector(const Epetra_MultiVector& v0, const Epetra_MultiVector& v1, 
                                double dt_int, double dt, Epetra_MultiVector& v_int) ;
 
-    void ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S);
+    void ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S); 
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_, surf_mesh_;
     std::string passwd_;
@@ -64,12 +63,11 @@ namespace Amanzi {
     Key subsurface_flux_key_, surface_flux_key_;
     Key surface_name_, subsurface_name_;
     Key mass_darcy_key, surf_mass_darcy_key;
-    Key vol_darcy_key, surf_vol_darcy_key;
     Key mol_density_key, surf_mol_density_key;
 
 
     Teuchos::RCP<Transport::Transport_ATS> subsurf_pk_, surf_pk_;
-
+    
     // factory registration
     static RegisteredPKFactory<CoupledTransport_PK> reg_;
 };
