@@ -429,6 +429,12 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
+  }
 }
 
 

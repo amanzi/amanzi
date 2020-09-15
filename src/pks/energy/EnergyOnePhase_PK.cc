@@ -164,12 +164,11 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // initialize boundary conditions
-  dt_ = 0.0;  // no other reasonable estimate
   double t_ini = S->time(); 
   auto temperature = *S->GetFieldData(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
-  // output of initialization header
+  // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces\n\n"
@@ -179,6 +178,12 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
                << "preconditioner: " << my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;
+  }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
 

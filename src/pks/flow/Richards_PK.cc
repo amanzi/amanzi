@@ -840,6 +840,12 @@ void Richards_PK::InitializeStatistics_()
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
   }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
+  }
 }
 
 
