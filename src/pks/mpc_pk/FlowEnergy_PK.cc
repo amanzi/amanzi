@@ -156,7 +156,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("molar density key", mol_density_liquid_key_)
          .set<std::string>("mass density key", mass_density_liquid_key_);
     elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
-         .set<std::string>("eos type", "liquid water");
+         .set<std::string>("eos type", "liquid water 0-30C");
     elist.sublist(mol_density_liquid_key_)
          .sublist("verbose object").set<std::string>("verbosity level", "medium");
   }

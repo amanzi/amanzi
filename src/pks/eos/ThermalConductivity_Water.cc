@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Thermal conductivity for liquid water.
+  Thermal conductivity for ordinary liquid water.
 */
 
 #include "dbc.hh"
