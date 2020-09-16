@@ -3,11 +3,11 @@
 
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_coupled_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 2, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_coupled_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 2, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 20, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -538,9 +538,6 @@
     <ParameterList name="coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="maximum number of iterations" type="int" value="100"/>
-      <Parameter name="error tolerance" type="double" value="1e-6"/>
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>      
 
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
@@ -582,9 +579,6 @@
     <ParameterList name="coupled thermal flow">
       <Parameter name="PKs order" type="Array(string)" value="{thermal flow matrix, thermal flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-      <Parameter name="maximum number of iterations" type="int" value="100"/>
-      <Parameter name="error tolerance" type="double" value="1e-6"/>
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>      
 
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>

@@ -13,9 +13,9 @@
 */
 
 #include "FlowEnergy_PK.hh"
+#include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
@@ -170,7 +170,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // end blob
   AMANZI_ASSERT(tvs->size() == 4);
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_pc_ = Teuchos::rcp(new Operators::FlatTreeOperator(tvs));
 
   for (int l = 0; l < 2; ++l) {
     for (int m = 0; m < 2; ++m) {
@@ -370,8 +370,8 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
 
   UpdateCouplingFluxes_(adv_coupling_pc_);
 
-  std::string name = ti_list_->get<std::string>("preconditioner");
-  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
 
   op_tree_pc_->AssembleMatrix();
   // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
@@ -394,8 +394,19 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
 
   op_tree_pc_->set_coloring(2, block_indices);
   op_tree_pc_->set_inverse_parameters(pc_list);
-  op_tree_pc_->InitializeInverse();
-  op_tree_pc_->ComputeInverse();
+
+  // create a stronger preconditioner by wrapping one inside an iterative solver
+  if (ti_list_->isParameter("preconditioner enhancement")) {
+    std::string solver_name = ti_list_->get<std::string>("preconditioner enhancement");
+    AMANZI_ASSERT(linear_operator_list_->isSublist(solver_name));
+    auto tmp_plist = linear_operator_list_->sublist(solver_name);
+    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp_plist, op_tree_pc_);
+  } else {
+    op_pc_solver_ = op_tree_pc_;
+  }
+
+  op_pc_solver_->InitializeInverse();
+  op_pc_solver_->ComputeInverse();
 }
 
 
@@ -406,7 +417,7 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
                                                      Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_tree_pc_->ApplyInverse(*X, *Y);
+  return op_pc_solver_->ApplyInverse(*X, *Y);
 }
 
 

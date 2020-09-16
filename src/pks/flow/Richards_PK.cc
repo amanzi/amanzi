@@ -22,7 +22,7 @@
 #include "CommonDefs.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "InverseFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -31,7 +31,6 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
-#include "InverseFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
