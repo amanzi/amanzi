@@ -56,17 +56,16 @@ void MolarFractionGasEvaluator::EvaluateField_(
 {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
+  double p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   // evaluate p_s / p_atm
-  for (CompositeVector::name_iterator comp=result->begin(); comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp, false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
     int count = result->size(*comp);
-    for (int id = 0; id != count; ++id) {
-      AMANZI_ASSERT(temp_v[0][id] > 200.0);
-      result_v[0][id] = svp_model_->Pressure(temp_v[0][id]) / p_atm;
+    for (int i = 0; i != count; ++i) {
+      result_v[0][i] = svp_model_->Pressure(temp_v[0][i]) / p_atm;
     }
   }
 }
@@ -79,15 +78,15 @@ void MolarFractionGasEvaluator::EvaluateFieldPartialDerivative_(
   AMANZI_ASSERT(wrt_key == temp_key_);
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
+  double p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp, false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp, false));
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
     int count = result->size(*comp);
-    for (int id = 0; id != count; ++id) {
-      result_v[0][id] = svp_model_->DPressureDT(temp_v[0][id]) / p_atm;
+    for (int i = 0; i != count; ++i) {
+      result_v[0][i] = svp_model_->DPressureDT(temp_v[0][i]) / p_atm;
     }
   }
 }

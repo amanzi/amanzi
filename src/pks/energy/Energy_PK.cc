@@ -22,6 +22,7 @@
 #include "WhetStoneDefs.hh"
 
 #include "Energy_PK.hh"
+#include "EnthalpyEvaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -70,9 +71,12 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
@@ -90,14 +94,9 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require primary state variables
   if (!S->HasField(temperature_key_)) {
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
- 
+    std::vector<std::string> names({"cell", "face"});
     std::vector<int> ndofs(2, 1);
-    std::vector<AmanziMesh::Entity_kind> locations(2);
-    locations[0] = AmanziMesh::CELL;
-    locations[1] = AmanziMesh::FACE;
+    std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
  
     S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
@@ -117,6 +116,23 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
   }
+
+  // other fields
+  // -- energies
+  S->RequireField(ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(ie_liquid_key_);
+
+  // -- densities
+  S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(mol_density_liquid_key_);
+
+  // S->RequireField(mass_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+  //   ->AddComponent("cell", AmanziMesh::CELL, 1)
+  //   ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
   // -- darcy flux
   if (!S->HasField(darcy_flux_key_)) {
@@ -312,24 +328,28 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
   }
-  int flag_essential_bc = (dirichlet_bc_faces_ > 0) ? 1 : 0;
-
-  // verify that the algebraic problem is consistent
 #ifdef HAVE_MPI
-  int flag = flag_essential_bc;
-  mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
+  int tmp = dirichlet_bc_faces_;
+  mesh_->get_comm()->SumAll(&tmp, &dirichlet_bc_faces_, 1);
 #endif
-  if (! flag_essential_bc &&
-      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
-  }
 
   // additional boundary conditions
-  AmanziMesh::Entity_ID_List cells;
+  // -- copy essential conditions to primary variables 
+  const auto& temp = *S_->GetFieldData(temperature_key_)->ViewComponent("face", true);
+  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("boundary_face", true);
+
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
+
+  int nbfaces = n_l.MyLength();
+  for (int bf = 0; bf < nbfaces; ++bf) {
+    int f = face_map.LID(ext_face_map.GID(bf));
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) temp[0][f] = bc_value[f];
+  }
+
+  // -- populate BCs
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("cell");
-  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
+  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face", true);
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -339,13 +359,11 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     bc_value_enth_[n] = 0.0;
   }
 
-  for (int f = 0; f < bc_model.size(); ++f) {
+  for (int bf = 0; bf < nbfaces; ++bf) {
+    int f = face_map.LID(ext_face_map.GID(bf));
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
-
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][c] * n_l[0][c];
+      bc_value_enth_[f] = enth[0][bf] * n_l[0][bf];
     }
   }
 }

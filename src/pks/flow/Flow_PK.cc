@@ -583,18 +583,6 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
   }
-  int flag_essential_bc = (dirichlet_bc_faces_ > 0) ? 1 : 0;
-
-  // verify that the algebraic problem is consistent
-#ifdef HAVE_MPI
-  int flag = flag_essential_bc;
-  mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
-#endif
-  if (! flag_essential_bc &&
-      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
-  }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 #ifdef HAVE_MPI

@@ -21,7 +21,6 @@ include_directories(${ATK_SOURCE_DIR})
 # Library: eos
 #
 set(eos_src_files 
-    EffectivePressureEvaluator.cc
     EOSEvaluator.cc
     EOSFactory.cc 
     EOS_Constant.cc

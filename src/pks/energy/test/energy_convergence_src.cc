@@ -32,6 +32,7 @@
 // Energy
 #include "Analytic00.hh"
 #include "EnergyOnePhase_PK.hh"
+#include "EnthalpyEvaluator.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -40,16 +41,10 @@ using namespace Amanzi::Energy;
 
 namespace Amanzi {
 
-class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
+class TestEnthalpyEvaluator : public EnthalpyEvaluator {
  public:
   explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = "enthalpy";
-    temperature_key_ = "temperature";
-    dependencies_.insert(temperature_key_);
-  };
-  TestEnthalpyEvaluator(const TestEnthalpyEvaluator& other) :
-     SecondaryVariableFieldEvaluator(other) {};
+      EnthalpyEvaluator(plist) {};
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
@@ -59,27 +54,28 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateField_(
           const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-
-    int ncomp = result->size("cell", false);
-    for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 0.;
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      auto& result_c = *result->ViewComponent(*comp);
+      int ncomp = result->size(*comp, false);
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 0.0;
+      }
     }
   }
 
   virtual void EvaluateFieldPartialDerivative_(
           const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-
-    int ncomp = result->size("cell", false);
-    for (int i = 0; i != ncomp; ++i) {
-      result_c[0][i] = 0.;
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      auto& result_c = *result->ViewComponent(*comp);
+      int ncomp = result->size(*comp, false);
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 0.0;
+      }
     }
   }
 
- protected:
-  Key temperature_key_;
+  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) { return 0.0; }
 };
 
 }  // namespace Amanzi
@@ -136,7 +132,11 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+    ev_list.set<std::string>("enthalpy key", "enthalpy")
+           .set<bool>("include work term", false);
+    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
@@ -167,7 +167,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      EPK->temperature_eval()->SetFieldAsChanged(S.ptr());
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
 
       t += dt;
       itrs++;

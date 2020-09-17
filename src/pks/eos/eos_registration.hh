@@ -11,7 +11,6 @@
   Self-registering factory of EOS models.
 */
 
-#include "EffectivePressureEvaluator.hh"
 #include "EOSFactory.hh"
 #include "EOSEvaluator.hh"
 #include "EOS_Constant.hh"
@@ -32,7 +31,6 @@ namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator, EOSEvaluator> EOSEvaluator::factory_("eos");
-Utils::RegisteredFactory<FieldEvaluator, EffectivePressureEvaluator> EffectivePressureEvaluator::factory_("effective_pressure");
 Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
 Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
 Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> ViscosityEvaluator::factory_("viscosity");
