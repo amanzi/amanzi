@@ -136,7 +136,7 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
   int nlabels = labels.size();
 
   int ndata(0);
-  double* tmp_data;
+  double* tmp_data(NULL);
 
   if (nlabels > 0) {
     // save names of observations and their number
@@ -174,10 +174,12 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
   }
 
   // write data only on the root
-  int ndata_glb = 2 * ndata;
-  ndata = (comm_->MyPID() == 0) ? ndata_glb : 0;
-  checkpoint_output_->writeDatasetReal(tmp_data, ndata, ndata_glb, "obs_values");
-  free(tmp_data);
+  if (ndata > 0) {
+    int ndata_glb = 2 * ndata;
+    ndata = (comm_->MyPID() == 0) ? ndata_glb : 0;
+    checkpoint_output_->writeDatasetReal(tmp_data, ndata, ndata_glb, "obs_values");
+    if (tmp_data != NULL) free(tmp_data);
+  }
 }
 
 }  // namespace Amanzi

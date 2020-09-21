@@ -1405,9 +1405,9 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
   // read observations
   int nlabels, ndata(0), ndata_glb(0);
-  int *nobs;
-  char **tmp_labels;
-  double *tmp_data;
+  int* nobs;
+  char** tmp_labels;
+  double* tmp_data(NULL);
 
   checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
   if (nlabels > 0) { 
@@ -1440,7 +1440,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   if (nlabels > 0) {
     free(tmp_labels);
     free(nobs);
-    free(tmp_data);  // has size 1 even for zero observations
+    if (tmp_data != NULL) free(tmp_data); 
   }
 }
 
