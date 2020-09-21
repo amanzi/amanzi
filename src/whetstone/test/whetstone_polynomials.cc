@@ -284,12 +284,13 @@ TEST(VECTOR_CURL_DECOMPOSITON_3D) {
 
   VectorPolynomial q(3, 3, 3), p1;
   Polynomial p2;
+  AmanziGeometry::Point xc(1.0, 2.0, 3.0);
 
   for (auto it = q.begin(); it < q.end(); ++it) {
     int k = it.VectorComponent();
     int n = it.PolynomialPosition();
     Monomial mono(3, it.multi_index(), n + 1);
-    mono.set_origin(AmanziGeometry::Point(3));
+    mono.set_origin(xc);
 
     VectorDecomposition3DCurl(mono, k, p1, p2);
 
@@ -298,6 +299,7 @@ TEST(VECTOR_CURL_DECOMPOSITON_3D) {
     x[0](1) = 1.0;
     x[1](2) = 1.0;
     x[2](3) = 1.0;
+    x.set_origin(xc);
 
     auto p4 = x;
     for (int i = 0; i < 3; ++i) p4[i] *= p2;
@@ -323,12 +325,13 @@ TEST(VECTOR_GRAD_DECOMPOSITON_3D) {
 
   VectorPolynomial q(3, 3, 3), p2;
   Polynomial p1;
+  AmanziGeometry::Point xc(1.0, 2.0, 3.0);
 
   for (auto it = q.begin(); it < q.end(); ++it) {
     int k = it.VectorComponent();
     int n = it.PolynomialPosition();
     Monomial mono(3, it.multi_index(), n + 1);
-    mono.set_origin(AmanziGeometry::Point(3));
+    mono.set_origin(xc);
 
     VectorDecomposition3DGrad(mono, k, p1, p2);
 
@@ -337,6 +340,7 @@ TEST(VECTOR_GRAD_DECOMPOSITON_3D) {
     x[0](1) = 1.0;
     x[1](2) = 1.0;
     x[2](3) = 1.0;
+    x.set_origin(xc);
 
     auto p5 = Gradient(p1);
     auto p6 = x ^ p2;
