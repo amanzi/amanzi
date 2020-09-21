@@ -1042,10 +1042,10 @@ void HDF5_MPI::readAttrInt(int **value, int *ndim, const std::string attrname)
 }
 
 
-void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varname)
+void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string& varname)
 {
-  char *h5path = new char [varname.size()+1];
-  strcpy(h5path,varname.c_str());
+  char *h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
 
   parallelIO_write_str_array(x, num_entries, data_file_, h5path, &IOgroup_);
 
@@ -1053,10 +1053,10 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
 }
 
 
-void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string varname)
+void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string& varname)
 {
-  char *h5path = new char [varname.size()+1];
-  strcpy(h5path,varname.c_str());
+  char *h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
   int ndims, dims[2], tmpsize;
 
   bool exists = checkFieldData_(h5path);
@@ -1078,41 +1078,37 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
 }
 
 
-void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string varname) {
+void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "NONE");
 }
 
 
-void HDF5_MPI::writeDataInt(const Epetra_Vector &x, const std::string varname) {
+void HDF5_MPI::writeDataInt(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "NONE");
 }
 
 
-void HDF5_MPI::writeCellDataReal(const Epetra_Vector &x,
-                                 const std::string varname) {
+void HDF5_MPI::writeCellDataReal(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "Cell");
 }
 
 
-void HDF5_MPI::writeCellDataInt(const Epetra_Vector &x,
-                                const std::string varname) {
+void HDF5_MPI::writeCellDataInt(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "Cell");
 }
 
 
-void HDF5_MPI::writeNodeDataReal(const Epetra_Vector &x,
-                                 const std::string varname) {
+void HDF5_MPI::writeNodeDataReal(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "Node");
 }
 
 
-void HDF5_MPI::writeNodeDataInt(const Epetra_Vector &x,
-                                const std::string varname) {
+void HDF5_MPI::writeNodeDataInt(const Epetra_Vector &x, const std::string& varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "Node");
 }
 
 
-void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
+void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varname,
                                datatype_t type, std::string loc)
 {
   // write field data
@@ -1132,19 +1128,18 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 
   // TODO(barker): add error handling: can't write/create
 
-  //hid_t file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-  //                                FILE_READWRITE);
-  //MB: /if (file < 0) {
-  //MB: /  Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
-  //MB: /  Exceptions::amanzi_throw(message);
-  //MB: /}
+  //hid_t file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_, FILE_READWRITE);
+  //MB: if (file < 0) {
+  //MB:   Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
+  //MB:   Exceptions::amanzi_throw(message);
+  //MB: }
 
   if (TrackXdmf()) {
     h5path << "/" << Iteration();
   }
 
   char *tmp;
-  tmp = new char [h5path.str().size()+1];
+  tmp = new char[h5path.str().size() + 1];
   strcpy(tmp,h5path.str().c_str());
 
   parallelIO_write_dataset(data, type, 2, globaldims, localdims, data_file_, tmp,
@@ -1163,16 +1158,35 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 }
 
 
+void HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::string& varname)
+{
+  int globaldims[2], localdims[2];
+  globaldims[0] = nglb;
+  globaldims[1] = 1;
+  localdims[0] = nloc;
+  localdims[1] = 1;
+
+  char *tmp;
+  tmp = new char[varname.size() + 1];
+  strcpy(tmp, varname.c_str());
+
+  parallelIO_write_dataset(data, PIO_DOUBLE, 2, globaldims, localdims, data_file_, tmp,
+                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+
+  delete [] tmp;
+}
+
+
 bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname) {
   return readFieldData_(x, varname, PIO_DOUBLE);
 }
 
 
-bool HDF5_MPI::checkFieldData_(std::string varname)
+bool HDF5_MPI::checkFieldData_(const std::string& varname)
 {
-  char *h5path = new char [varname.size()+1];
-  strcpy(h5path,varname.c_str());
-  bool exists=false;
+  char *h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
+  bool exists = false;
 
   if (viz_comm_->MyPID() != 0) {
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
@@ -1196,11 +1210,11 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
 }
 
 
-bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
+bool HDF5_MPI::readFieldData_(Epetra_Vector &x, const std::string& varname,
                               datatype_t type)
 {
-  char *h5path = new char [varname.size()+1];
-  strcpy(h5path,varname.c_str());
+  char *h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
 
   if (!checkFieldData_(varname)) return false;
 
@@ -1228,6 +1242,40 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   for (int i=0; i<localdims[0]; ++i) x[i] = data[i];
 
   delete [] data;
+  delete [] h5path;
+
+  return true;
+}
+
+
+bool HDF5_MPI::readDatasetReal(double **data, int nloc, const std::string& varname)
+{
+  char *h5path = new char[varname.size() + 1];
+  strcpy(h5path, varname.c_str());
+
+  if (!checkFieldData_(varname)) return false;
+
+  int ndims;
+  parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
+  
+  if (ndims < 0) {
+    if (viz_comm_->MyPID() == 0) {
+      std::cout<< "Dimension of the dataset "<<h5path<<" is negative.\n";
+    }
+    return false;
+  }
+
+  // root will read all data
+  int globaldims[ndims], localdims[ndims];
+  parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
+  localdims[0] = nloc;
+  localdims[1] = globaldims[1];
+
+  int size = std::max(1, localdims[0] * localdims[1]);
+  *data = new double[size];
+  parallelIO_read_dataset(*data, PIO_DOUBLE, ndims, globaldims, localdims,
+                          data_file_, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+
   delete [] h5path;
 
   return true;
@@ -1341,7 +1389,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_()
 
 
 Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(
-    const std::string name, const double value, const int cycle)
+    const std::string& name, const double value, const int cycle)
 {
   Teuchos::XMLObject domain("Domain");
 
@@ -1529,10 +1577,10 @@ std::string HDF5_MPI::stripFilename_(std::string filename)
   std::string name;
   // strip for linux/unix/mac directory names
   char delim('/');
-  while(std::getline(ss, name, delim)) { }
+  while(std::getline(ss, name, delim)) {};
   // strip for windows directory names
-  //delim='\\';
-  //while(std::getline(ss, name, delim)) { }
+  // delim='\\';
+  // while(std::getline(ss, name, delim)) {}
 
   return name;
 }
