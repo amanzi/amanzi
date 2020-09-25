@@ -80,7 +80,7 @@ class MFD3D : virtual public BilinearForm {
 
 
 // non-member functions
-void AddGradient(const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh, int c, DenseMatrix& N);
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

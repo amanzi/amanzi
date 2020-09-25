@@ -23,7 +23,7 @@ namespace WhetStone {
 
 class SurfaceMiniMesh {
  public:
-  SurfaceMiniMesh(const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh,
+  SurfaceMiniMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                   std::shared_ptr<const SurfaceCoordinateSystem> coordsys)
     : mesh_(mesh),
       coordsys_(coordsys),
@@ -121,7 +121,7 @@ class SurfaceMiniMesh {
   }
 
  private:
-  Teuchos::RCP<const AmanziMesh::StaticMesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::shared_ptr<const SurfaceCoordinateSystem> coordsys_;
   int d_;
 };

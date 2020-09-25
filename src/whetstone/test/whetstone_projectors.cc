@@ -270,7 +270,7 @@ TEST(PROJECTORS_POLYGON_CR) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -612,7 +612,7 @@ TEST(PROJECTORS_POLYGON_PK) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration<AmanziMesh::StaticMesh> numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);

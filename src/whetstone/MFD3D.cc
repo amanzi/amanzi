@@ -630,7 +630,7 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 /* ******************************************************************
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
-void AddGradient(const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh, int c, DenseMatrix& N)
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N)
 {
   Entity_ID_List edges, nodes;
 

@@ -34,7 +34,7 @@ namespace WhetStone {
 ****************************************************************** */
 inline
 void PolygonCentroidWeights(
-    const AmanziMesh::StaticMesh& mesh, const AmanziMesh::Entity_ID_List& nodes,
+    const AmanziMesh::Mesh& mesh, const AmanziMesh::Entity_ID_List& nodes,
     double area, std::vector<double>& weights)
 {
   int d = mesh.space_dimension();
@@ -69,7 +69,7 @@ void PolygonCentroidWeights(
 // Faces of ptype of cell c that are connected to node v.
 ****************************************************************** */
 inline
-void node_get_cell_faces(const AmanziMesh::StaticMesh& mesh,
+void node_get_cell_faces(const AmanziMesh::Mesh& mesh,
                          const AmanziMesh::Entity_ID v, 
                          const AmanziMesh::Entity_ID c,
                          const AmanziMesh::Parallel_type ptype,

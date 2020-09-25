@@ -50,14 +50,14 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, uc);
+    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, uc);
   }
 
   // -- h1 projectors
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::StaticMesh>(mesh_, c, ve, vf, uc);
+    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, uc);
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,

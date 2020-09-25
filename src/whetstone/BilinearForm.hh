@@ -36,7 +36,7 @@ class Polynomial;
 
 class BilinearForm {
  public:
-  BilinearForm(const Teuchos::RCP<const AmanziMesh::StaticMesh>& mesh)
+  BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : mesh_(mesh),
       d_(mesh->space_dimension()),
       order_(1) {};
@@ -168,7 +168,7 @@ class BilinearForm {
   void set_order(int order) { order_ = order; }
 
  protected:
-  Teuchos::RCP<const AmanziMesh::StaticMesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_, order_;
 };
 
