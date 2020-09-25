@@ -485,7 +485,8 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S)
   flux_pvfe_->SetFieldAsChanged(S);
 
   // Initialize via hydrostatic balance
-  InitializeHydrostatic_(S);
+  if (!S->GetField(key_, name_)->initialized())
+    InitializeHydrostatic_(S);
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);

@@ -162,10 +162,10 @@ void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
 void PK_Physical_Default::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
 
-  if (!field->initialized()) {    // NEW ORDER
+  if (!field->initialized()) {
     // initial conditions
     // -- Get the IC function plist.
-    if (!plist_->isSublist("initial condition") && (!field->initialized())) {
+    if (!plist_->isSublist("initial condition")) {
       std::stringstream messagestream;
       messagestream << name_ << " has no initial condition parameter list.";
       Errors::Message message(messagestream.str());
