@@ -325,11 +325,6 @@ class MeshEmbeddedLogical : public Mesh {
           Entity_ID_List *edgeids,
           std::vector<int> *edge_dirs) const override;
 
-  // Cache connectivity info.
-  virtual
-  void cache_cell_face_info_() const override;
-
-
   virtual
   int build_columns_() const;
 

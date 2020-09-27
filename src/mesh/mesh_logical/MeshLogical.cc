@@ -763,13 +763,6 @@ MeshLogical::build_columns_() const {
 }
 
 
-// Cache connectivity info.
-void
-MeshLogical::cache_cell_face_info_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-}
-
 int
 MeshLogical::compute_cell_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");

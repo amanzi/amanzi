@@ -56,7 +56,7 @@ class MeshExtractedManifold : public Mesh {
   void InitEpetraMaps();
   void InitExteriorEpetraMaps();
 
-  virtual Teuchos::RCP<const StaticMesh> parent() const override { return parent_mesh_; }
+  virtual Teuchos::RCP<const Mesh> parent() const override { return parent_mesh_; }
 
   // parallel type of entity - OWNED or GHOST
   virtual
@@ -249,7 +249,7 @@ class MeshExtractedManifold : public Mesh {
   void PrintSets_() const;
 
  private: 
-  Teuchos::RCP<const StaticMesh> parent_mesh_;
+  Teuchos::RCP<const Mesh> parent_mesh_;
 
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;

@@ -9,11 +9,11 @@
   Konstantin Lipnikov
   Rao Garimella
 
-  The smallest abstract mesh class. 
+  The smallest mesh class with basic connectivity and geometry
 */
 
-#ifndef AMANZI_MESH_STATIC_MESH_MINI_HH_
-#define AMANZI_MESH_STATIC_MESH_MINI_HH_
+#ifndef AMANZI_MESH_LIGHT_HH_
+#define AMANZI_MESH_LIGHT_HH_
 
 // Amanzi
 #include "Point.hh"
@@ -24,9 +24,9 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-class StaticMeshMini {
+class MeshLight {
  public:
-   StaticMeshMini() : space_dim_(-1) {};
+   MeshLight() : space_dim_(-1) {};
 
   // base class functionality
   void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
@@ -48,10 +48,10 @@ class StaticMeshMini {
   // send-receive protocols and mesh query operators are designed, a side 
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology. 
-  virtual void cell_get_faces(
-          const Entity_ID c,
-          Entity_ID_List *faces,
-          const bool ordered = false) const {
+  void cell_get_faces(
+       const Entity_ID c,
+       Entity_ID_List *faces,
+       const bool ordered = false) const {
     cell_get_faces_and_dirs(c, faces, NULL, ordered);
   }
 
@@ -67,13 +67,13 @@ class StaticMeshMini {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  virtual void cell_get_faces_and_dirs(
-          const Entity_ID c,
-          Entity_ID_List *faces,
-          std::vector<int> *dirs,
-          bool ordered = false) const = 0;
+  void cell_get_faces_and_dirs(
+       const Entity_ID c,
+       Entity_ID_List *faces,
+       std::vector<int> *dirs,
+       bool ordered = false) const;
 
-  virtual void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const = 0;
+  void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;
 
   virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const = 0;
 
@@ -112,9 +112,56 @@ class StaticMeshMini {
   virtual void edge_get_nodes(
           const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const = 0;
 
-  // --------------------
-  // Geometric objects
-  // --------------------
+  // Get the local index of a face edge in a cell edge list
+  //
+  // Example:
+  // face_get_edges(face=5) --> {20, 21, 35, 9, 10}
+  // cell_get_edges(cell=18) --> {1, 2, 3, 5, 8, 9, 10, 13, 21, 35, 20, 37, 40}
+  // face_to_cell_edge_map(face=5,cell=18) --> {10, 8, 9, 5, 6}
+  virtual void face_to_cell_edge_map(
+          const Entity_ID f, const Entity_ID c, std::vector<int> *map) const = 0;
+
+
+  //--------------------
+  // Upward connectivity 
+  //--------------------
+  // Cells of type 'ptype' connected to a node
+  // NOTE: The order of cells is not guaranteed to be the same for
+  // corresponding nodes on different processors
+  virtual void node_get_cells(
+          const Entity_ID nodeid,
+          const Parallel_type ptype,
+          Entity_ID_List *cellids) const = 0;
+
+  // Faces of type parallel 'ptype' connected to a node
+  // NOTE: The order of faces is not guarnateed to be the same for
+  // corresponding nodes on different processors
+  virtual void node_get_faces(
+          const Entity_ID nodeid,
+          const Parallel_type ptype,
+          Entity_ID_List *faceids) const = 0;
+
+  // Faces of type 'ptype' connected to an edge
+  // NOTE: The order of faces is not guaranteed to be the same for
+  // corresponding edges on different processors
+  virtual void edge_get_faces(
+          const Entity_ID edgeid,
+          const Parallel_type ptype,
+          Entity_ID_List *faceids) const { AMANZI_ASSERT(false); }
+
+  // Cells connected to a face
+  // The cells are returned in no particular order. Also, the order of cells
+  // is not guaranteed to be the same for corresponding faces on different
+  // processors
+  virtual void face_get_cells(
+          const Entity_ID f,
+          const Parallel_type ptype,
+          Entity_ID_List *cells) const = 0;
+
+
+  // --------
+  // Geometry
+  // --------
   // Centroid of cell (center of gravity not just average of node coordinates)
   //
   // The cell centroid is computed as the volume weighted average of the
@@ -185,10 +232,92 @@ class StaticMeshMini {
   virtual double edge_length(
           const Entity_ID e, const bool recompute = false) const = 0;
 
-  virtual void node_get_coordinates(Entity_ID v, AmanziGeometry::Point* xyz) const = 0;
+  // coordinates
+  virtual void node_get_coordinates(
+          const Entity_ID v, AmanziGeometry::Point *ncoord) const = 0;
+
+  virtual void face_get_coordinates(
+          const Entity_ID f, std::vector<AmanziGeometry::Point> *fcoords) const = 0;
+
+  // Coordinates of cells in standard order (Exodus II convention)
+  //
+  // NOTE: Standard convention works only for standard cell types in 3D!
+  // For a general polyhedron this will return the node coordinates in
+  // arbitrary order.
+  virtual void cell_get_coordinates(
+          const Entity_ID c, std::vector<AmanziGeometry::Point> *ccoords) const = 0;
+
+  
+  // ------
+  // Counts
+  // ------
+  // Entities of kind (cell, face, node) in a particular category (OWNED, GHOST, ALL)
+  virtual unsigned int num_entities(
+          const Entity_kind kind, const Parallel_type ptype) const = 0;
+
+
+  // ----------------
+  // Entity meta-data
+  // ----------------
+  virtual Parallel_type entity_get_ptype(
+          const Entity_kind kind, const Entity_ID entid) const = 0;
+
+  unsigned int cell_get_num_faces(const Entity_ID cellid) const;
+  unsigned int cell_get_max_faces() const;
+  unsigned int cell_get_max_edges() const;
+  unsigned int cell_get_max_nodes() const;
+
+ protected:
+  // Cache filling methods use _internal() virtual functions.
+  void cache_cell_face_info_() const;
+  void cache_cell2edge_info_() const;
+
+  // These are virtual and therefore slightly expensive, so they
+  // should be used once to populate the cache and not again.  They
+  // have the same concepts behind them as the non- _internal()
+  // versions.  Non- _internal() versions are not virtual and access
+  // the cache; these do the real work and are implemented by the mesh
+  // implementation.
+
+  // faces of a cell and directions in which it is used
+  virtual void cell_get_faces_and_dirs_internal_(
+          const Entity_ID cellid,
+          Entity_ID_List *faceids,
+          std::vector<int> *face_dirs,
+          const bool ordered = false) const = 0;
+
+  // edges of a cell
+  virtual void cell_get_edges_internal_(
+          const Entity_ID cellid,
+          Entity_ID_List *edgeids) const = 0;
+
+  // edges of a 2D cell and directions
+  virtual void cell_2D_get_edges_and_dirs_internal_(
+          const Entity_ID cellid,
+          Entity_ID_List *edgeids,
+          std::vector<int> *edge_dirs) const = 0;
 
  protected:
   unsigned int space_dim_;
+
+  mutable bool faces_requested_;
+  mutable bool edges_requested_;
+
+  // cache: c -> f
+  mutable bool cell2face_info_cached_;
+  mutable std::vector<Entity_ID_List> cell_face_ids_;
+  mutable std::vector<std::vector<int> > cell_face_dirs_;  // 1 or -1
+
+  // cache: c -> e
+  mutable bool cell2edge_info_cached_;
+  mutable std::vector<Entity_ID_List> cell_edge_ids_;
+  mutable std::vector<std::vector<int> > cell_2D_edge_dirs_;
+
+  // cache: f -> c
+  mutable bool face2cell_info_cached_;
+  // 1s complement if face is pointing out of cell; cannot use 0 as cellid can be 0
+  mutable std::vector<Entity_ID_List> face_cell_ids_;
+  mutable std::vector<std::vector<Parallel_type> > face_cell_ptype_;
 };
 
 }  // namespace AmanziMesh

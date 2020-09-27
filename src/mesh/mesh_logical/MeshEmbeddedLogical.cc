@@ -758,14 +758,6 @@ MeshEmbeddedLogical::build_columns_() const {
 }
 
 
-// Cache connectivity info.
-void
-MeshEmbeddedLogical::cache_cell_face_info_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-}
-
-  
 int
 MeshEmbeddedLogical::compute_cell_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");

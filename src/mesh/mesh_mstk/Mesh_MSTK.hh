@@ -111,7 +111,7 @@ class Mesh_MSTK : public Mesh {
   // Parent entity in the source mesh if mesh was derived from another mesh
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
-  virtual Teuchos::RCP<const StaticMesh> parent() const { return parent_mesh_; }
+  virtual Teuchos::RCP<const Mesh> parent() const { return parent_mesh_; }
 
 
   // -------------------------

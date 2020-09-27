@@ -26,7 +26,7 @@
 
 // Amanzi::AmanziMesh
 #include "MeshDefs.hh"
-#include "StaticMesh.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -34,7 +34,7 @@ namespace AmanziMesh {
 //---------------------------------------------------------
 // Is there a set with this id and entity type
 //---------------------------------------------------------
-bool StaticMesh::valid_set_id(Set_ID id, Entity_kind kind) const
+bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
   if (!geometric_model_.get()) return false;
   Teuchos::RCP<const AmanziGeometry::Region> rgn;
@@ -50,7 +50,7 @@ bool StaticMesh::valid_set_id(Set_ID id, Entity_kind kind) const
 //---------------------------------------------------------
 // Is there a set with this name and entity type
 //---------------------------------------------------------
-bool StaticMesh::valid_set_name(std::string name, Entity_kind kind) const
+bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 {
   if (!geometric_model_.get()) {
     Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
@@ -112,10 +112,10 @@ bool StaticMesh::valid_set_name(std::string name, Entity_kind kind) const
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-void StaticMesh::get_set_entities(const std::string& setname,
-                                  const Entity_kind kind,
-                                  const Parallel_type ptype,
-                                  Entity_ID_List *entids) const
+void Mesh::get_set_entities(const std::string& setname,
+                            const Entity_kind kind,
+                            const Parallel_type ptype,
+                            Entity_ID_List *entids) const
 {
   std::vector<double> vofs;
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
@@ -125,7 +125,7 @@ void StaticMesh::get_set_entities(const std::string& setname,
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-void StaticMesh::get_set_entities_box_vofs_(
+void Mesh::get_set_entities_box_vofs_(
     Teuchos::RCP<const AmanziGeometry::Region> region,
     const Entity_kind kind, 
     const Parallel_type ptype, 
@@ -261,9 +261,9 @@ void StaticMesh::get_set_entities_box_vofs_(
 //---------------------------------------------------------
 // Generic implemnetation of set routines.
 //---------------------------------------------------------
-unsigned int StaticMesh::get_set_size(const std::string& setname, 
-                                      const Entity_kind kind, 
-                                      const Parallel_type ptype) const 
+unsigned int Mesh::get_set_size(const std::string& setname, 
+                                const Entity_kind kind, 
+                                const Parallel_type ptype) const 
 {
   Entity_ID_List setents;
   std::vector<double> vofs;

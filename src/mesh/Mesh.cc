@@ -67,21 +67,26 @@ Mesh::Mesh(const Comm_ptr_type& comm,
            const bool request_faces,
            const bool request_edges)
     : plist_(plist),
-      faces_requested_(request_faces),
-      edges_requested_(request_edges),
       mesh_type_(GENERAL),
+      parent_(Teuchos::null),
+      manifold_dim_(-1),
+      logical_(false),
       columns_built_(false),
       cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
       edge_geometry_precomputed_(false),
-      cell2face_info_cached_(false),
-      face2cell_info_cached_(false),
-      cell2edge_info_cached_(false),
       face2edge_info_cached_(false),
       kdtree_faces_initialized_(false)
 {
   comm_ = comm;
+  faces_requested_ = request_faces;
+  edges_requested_ = request_edges;
+
   geometric_model_ = gm;
+
+  cell2face_info_cached_ = false;
+  cell2edge_info_cached_ = false;
+  face2cell_info_cached_ = false;
 
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
@@ -89,36 +94,6 @@ Mesh::Mesh(const Comm_ptr_type& comm,
   vo_ = Teuchos::rcp(new VerboseObject(comm_,
           Keys::cleanPListName(plist_->name()), *plist_));
 };
-
-
-void
-Mesh::cache_cell_face_info_() const
-{
-  int ncells = num_entities(CELL, Parallel_type::ALL);
-  cell_face_ids_.resize(ncells);
-  cell_face_dirs_.resize(ncells);
-
-  int nfaces = num_entities(FACE, Parallel_type::ALL);
-  face_cell_ids_.resize(nfaces);
-  face_cell_ptype_.resize(nfaces);
-
-  for (int c = 0; c < ncells; c++) {
-    cell_get_faces_and_dirs_internal_(c, &(cell_face_ids_[c]),
-            &(cell_face_dirs_[c]), false);
-
-    int nf = cell_face_ids_[c].size();
-    for (int jf = 0; jf < nf; jf++) {
-      Entity_ID f = cell_face_ids_[c][jf];
-      int dir = cell_face_dirs_[c][jf];
-      face_cell_ids_[f].push_back(dir > 0 ? c : ~c); // store 1s complement of c if dir is -ve
-      face_cell_ptype_[f].push_back(entity_get_ptype(CELL, c));
-    }
-  }
-
-  cell2face_info_cached_ = true;
-  face2cell_info_cached_ = true;
-  faces_requested_ = true;
-}
 
 
 // Gather and cache face to edge connectivity info.
@@ -143,123 +118,12 @@ Mesh::cache_face2edge_info_() const
 }
 
 
-// Gather and cache cell to edge connectivity info.
-void
-Mesh::cache_cell2edge_info_() const
-{
-  int ncells = num_entities(CELL,Parallel_type::ALL);
-  cell_edge_ids_.resize(ncells);
-
-  if (space_dim_ == 2) {
-    cell_2D_edge_dirs_.resize(ncells);
-    for (int c = 0; c < ncells; c++)
-      cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]),
-              &(cell_2D_edge_dirs_[c]));
-  }
-  else
-    for (int c = 0; c < ncells; c++)
-      cell_get_edges_internal_(c, &(cell_edge_ids_[c]));
-
-  cell2edge_info_cached_ = true;
-}
-
-
 Entity_ID
 Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
 {
   Errors::Message mesg("Parent/daughter entities not enabled in this framework.");
   Exceptions::amanzi_throw(mesg);
   return -1;
-}
-
-
-unsigned int
-Mesh::cell_get_num_faces(const Entity_ID cellid) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell_face_info_();
-  return cell_face_ids_[cellid].size();
-
-#else  // Non-cached version
-  Entity_ID_List cfaceids;
-  std::vector<int> cfacedirs;
-
-  cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
-  return cfaceids.size();
-#endif
-}
-
-
-// NOTE: this is a on-processor routine
-unsigned int
-Mesh::cell_get_max_faces() const
-{
-  unsigned int n(0);
-  int ncells = num_entities(CELL, Parallel_type::OWNED);
-  for (int c = 0; c < ncells; ++c) {
-    n = std::max(n, cell_get_num_faces(c));
-  }
-  return n;
-}
-
-
-// NOTE: this is a on-processor routine
-unsigned int
-Mesh::cell_get_max_nodes() const
-{
-  unsigned int n(0);
-  int ncells = num_entities(CELL, Parallel_type::OWNED);
-  for (int c = 0; c < ncells; ++c) {
-    AmanziMesh::Entity_ID_List nodes;
-    cell_get_nodes(c, &nodes);
-    n = std::max(n, (unsigned int) nodes.size());
-  }
-  return n;
-}
-
-
-// NOTE: this is a on-processor routine
-unsigned int
-Mesh::cell_get_max_edges() const
-{
-  unsigned int n(0);
-  if (edges_requested_) {
-    int ncells = num_entities(CELL, Parallel_type::OWNED);
-    for (int c = 0; c < ncells; ++c) {
-      AmanziMesh::Entity_ID_List edges;
-      cell_get_edges(c, &edges);
-      n = std::max(n, (unsigned int) edges.size());
-    }
-  }
-  return n;
-}
-
-
-void
-Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
-                              Entity_ID_List *faceids,
-                              std::vector<int> *face_dirs,
-                              const bool ordered) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell_face_info_();
-
-  if (ordered)
-    cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
-  else {
-    Entity_ID_List &cfaceids = cell_face_ids_[cellid];
-    *faceids = cfaceids; // copy operation
-
-    if (face_dirs) {
-      std::vector<int> &cfacedirs = cell_face_dirs_[cellid];
-      *face_dirs = cfacedirs; // copy operation
-    }
-  }
-
-#else // Non-cached version
-  cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
-
-#endif
 }
 
 
@@ -400,22 +264,6 @@ Mesh::face_to_cell_edge_map(const Entity_ID faceid,
       }
     }
   }
-
-#endif
-}
-
-
-void
-Mesh::cell_get_edges(const Entity_ID cellid,
-                     Entity_ID_List *edgeids) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2edge_info_cached_) cache_cell2edge_info_();
-
-  *edgeids = cell_edge_ids_[cellid]; // copy operation
-
-#else  // Non-cached version
-  cell_get_edges_internal_(cellid, edgeids);
 
 #endif
 }
