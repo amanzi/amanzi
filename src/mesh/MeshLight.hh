@@ -32,6 +32,9 @@ class MeshLight {
   void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
   unsigned int space_dimension() const { return space_dim_; }
 
+  void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
+  unsigned int manifold_dimension() const { return manifold_dim_; }
+
   // ---------------------
   // Downward connectivity
   // ---------------------
@@ -170,11 +173,11 @@ class MeshLight {
   AmanziGeometry::Point cell_centroid(
       const Entity_ID c, bool recompute = false) const;
 
-  virtual double cell_volume(
-          const Entity_ID c, const bool recompute = false) const = 0;
+  double cell_volume(
+      const Entity_ID c, const bool recompute = false) const;
 
-  virtual AmanziGeometry::Point face_centroid(
-          const Entity_ID f, const bool recompute = false) const = 0;
+  AmanziGeometry::Point face_centroid(
+      const Entity_ID f, const bool recompute = false) const;
 
   // The vector is normalized and then weighted by the area of the face
   //
@@ -271,6 +274,7 @@ class MeshLight {
   void cache_face2edge_info_() const;
 
   int compute_cell_geometric_quantities_() const;
+  int compute_face_geometric_quantities_() const;
 
   // These are virtual and therefore slightly expensive, so they
   // should be used once to populate the cache and not again.  They
@@ -316,8 +320,15 @@ class MeshLight {
           double *volume,
           AmanziGeometry::Point *centroid) const = 0;
 
+  virtual int compute_face_geometry_(
+          const Entity_ID faceid,
+          double *area,
+          AmanziGeometry::Point *centroid,
+          std::vector<AmanziGeometry::Point> *normals) const = 0;
+
  protected:
   unsigned int space_dim_;
+  unsigned int manifold_dim_;
 
   mutable bool faces_requested_;
   mutable bool edges_requested_;
@@ -343,10 +354,21 @@ class MeshLight {
   mutable std::vector<Entity_ID_List> face_cell_ids_;
   mutable std::vector<std::vector<Parallel_type> > face_cell_ptype_;
 
-  // cache: centroids
+  // cache: cells
   mutable bool cell_geometry_precomputed_;
   mutable std::vector<double> cell_volumes_;
   mutable std::vector<AmanziGeometry::Point> cell_centroids_;
+
+  // cache: faces
+  mutable bool face_geometry_precomputed_;
+  mutable std::vector<double> face_areas_;
+  mutable std::vector<AmanziGeometry::Point> face_centroids_;
+  // Have to account for the fact that a "face" for a non-manifold
+  // surface mesh can have more than one cell connected to
+  // it. Therefore, we have to store as many normals for a face as
+  // there are cells connected to it. For a given face, its normal to
+  // face_get_cells()[i] is face_normals_[i]
+  mutable std::vector<std::vector<AmanziGeometry::Point>> face_normals_;
 };
 
 }  // namespace AmanziMesh

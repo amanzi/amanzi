@@ -119,9 +119,6 @@ class Mesh : public MeshLight {
   // Were optional edges initialized?
   virtual bool valid_edges() const { return false; }
 
-  void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
-  unsigned int manifold_dimension() const { return manifold_dim_; }
-
   void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist) {
     plist_ = plist;
     if (vo_ == Teuchos::null)
@@ -204,18 +201,11 @@ class Mesh : public MeshLight {
   // --------------------
   // Mesh entity geometry
   // --------------------
-  virtual double cell_volume(
-          const Entity_ID cellid, const bool recompute = false) const;
-
   virtual double face_area(
           const Entity_ID faceid, const bool recompute = false) const;
 
   virtual double edge_length(
           const Entity_ID edgeid, const bool recompute = false) const;
-
-  // Center of gravity not just the average of node coordinates
-  virtual AmanziGeometry::Point face_centroid(
-          const Entity_ID faceid, const bool recompute = false) const;
 
   // Centrer of gravity
   virtual AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
@@ -472,7 +462,6 @@ class Mesh : public MeshLight {
   // Virtual methods to fill the cache with geometric quantities.
   //
   // Default implementations use _internal() methods below.
-  virtual int compute_face_geometric_quantities_() const;
   virtual int compute_edge_geometric_quantities_() const;
 
   // Virtual methods to fill the cache with geometric quantities.
@@ -509,7 +498,6 @@ class Mesh : public MeshLight {
   Mesh_type mesh_type_;
 
   bool logical_;
-  unsigned int manifold_dim_;
   Teuchos::RCP<const Mesh> parent_;
 
   // model
@@ -517,20 +505,12 @@ class Mesh : public MeshLight {
 
   // the cache
   // -- geometry
-  mutable std::vector<double> face_areas_, edge_lengths_;
-  mutable std::vector<AmanziGeometry::Point> face_centroids_;
-
-  // -- Have to account for the fact that a "face" for a non-manifold
-  // surface mesh can have more than one cell connected to
-  // it. Therefore, we have to store as many normals for a face as
-  // there are cells connected to it. For a given face, its normal to
-  // face_get_cells()[i] is face_normals_[i]
-  mutable std::vector<std::vector<AmanziGeometry::Point>> face_normals_;
+  mutable std::vector<double> edge_lengths_;
 
   mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 
   // -- flags to indicate what part of cache is up-to-date
-  mutable bool face_geometry_precomputed_, edge_geometry_precomputed_;
+  mutable bool edge_geometry_precomputed_;
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;

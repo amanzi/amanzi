@@ -310,7 +310,7 @@ unsigned int MeshLight::cell_get_num_faces(const Entity_ID cellid) const
 
 
 // -------------------------------------------------------------------
-// cache: geometries
+// cache: cell geometry
 // -------------------------------------------------------------------
 int MeshLight::compute_cell_geometric_quantities_() const
 {
@@ -329,6 +329,99 @@ int MeshLight::compute_cell_geometric_quantities_() const
   }
 
   cell_geometry_precomputed_ = true;
+
+  return 1;
+}
+
+
+// -------------------------------------------------------------------
+// cache: cell geometry
+// -------------------------------------------------------------------
+double MeshLight::cell_volume(const Entity_ID c, const bool recompute) const
+{
+  if (!cell_geometry_precomputed_) {
+    compute_cell_geometric_quantities_();
+    return cell_volumes_[c];
+  }
+  else {
+    if (recompute) {
+      double volume;
+      AmanziGeometry::Point centroid(space_dim_);
+      compute_cell_geometry_(c, &volume, &centroid);
+      return volume;
+    }
+    else {
+      return cell_volumes_[c];
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
+// cache: face geometry
+// The face centroid is computed as the area weighted average of the
+// centroids of the triangles from a symmetric triangular
+// decomposition of the face. Each triangular facet is formed by the
+// connecting the face center (average of face nodes) to the two
+// nodes of an edge of the face
+// -------------------------------------------------------------------
+AmanziGeometry::Point MeshLight::face_centroid(const Entity_ID f, const bool recompute) const
+{
+  AMANZI_ASSERT(faces_requested_);
+
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
+    return face_centroids_[f];
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(space_dim_);
+      std::vector<AmanziGeometry::Point> normals;
+      compute_face_geometry_(f, &area, &centroid, &normals);
+      return centroid;
+    }
+    else {
+      return face_centroids_[f];
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
+// cache: face geometry
+// -------------------------------------------------------------------
+int MeshLight::compute_face_geometric_quantities_() const
+{
+  if (space_dimension() == 3 && manifold_dimension() == 2) {
+    // need cell centroids to compute normals
+    if (!cell_geometry_precomputed_)
+      compute_cell_geometric_quantities_();
+  }
+
+  int nfaces = num_entities(FACE,Parallel_type::ALL);
+
+  face_areas_.resize(nfaces);
+  face_centroids_.resize(nfaces);
+  face_normals_.resize(nfaces);
+
+  for (int i = 0; i < nfaces; i++) {
+    double area;
+    AmanziGeometry::Point centroid(space_dim_);
+    std::vector<AmanziGeometry::Point> normals;
+
+    // normal0 and normal1 are outward normals of the face with
+    // respect to the cell0 and cell1 of the face. The natural normal
+    // of the face points out of cell0 and into cell1. If one of these
+    // cells do not exist, then the normal is the null vector.
+    compute_face_geometry_(i, &area, &centroid, &normals);
+
+    face_areas_[i] = area;
+    face_centroids_[i] = centroid;
+    face_normals_[i] = normals;
+  }
+
+  face_geometry_precomputed_ = true;
 
   return 1;
 }

@@ -316,10 +316,6 @@ class MeshLogical : public Mesh {
                              AmanziGeometry::Point *centroid,
                              std::vector<AmanziGeometry::Point> *normals) const override;
 
-  // build the cache
-  virtual
-  int compute_face_geometric_quantities_() const override;
-
   // build maps
   void init_maps();
 

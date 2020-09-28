@@ -763,14 +763,6 @@ MeshLogical::build_columns_() const {
 }
 
 
-int
-MeshLogical::compute_face_geometric_quantities_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-  return -1;
-}
-
-
 //
 // Note this works on Mesh, but is less useful for a general mesh
 // --------------------------------------------------------------------------------

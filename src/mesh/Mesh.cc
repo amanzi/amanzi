@@ -69,14 +69,15 @@ Mesh::Mesh(const Comm_ptr_type& comm,
     : plist_(plist),
       mesh_type_(GENERAL),
       parent_(Teuchos::null),
-      manifold_dim_(-1),
       logical_(false),
       columns_built_(false),
-      face_geometry_precomputed_(false),
       edge_geometry_precomputed_(false),
       kdtree_faces_initialized_(false)
 {
   comm_ = comm;
+
+  manifold_dim_ = -1;
+
   faces_requested_ = request_faces;
   edges_requested_ = request_edges;
 
@@ -87,7 +88,8 @@ Mesh::Mesh(const Comm_ptr_type& comm,
   face2cell_info_cached_ = false;
   face2edge_info_cached_ = false;
 
-   cell_geometry_precomputed_ = false;
+  cell_geometry_precomputed_ = false;
+  face_geometry_precomputed_ = false;
 
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
@@ -141,43 +143,6 @@ Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
   cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
 
 #endif
-}
-
-
-int
-Mesh::compute_face_geometric_quantities_() const
-{
-  if (space_dimension() == 3 && manifold_dimension() == 2) {
-    // need cell centroids to compute normals
-    if (!cell_geometry_precomputed_)
-      compute_cell_geometric_quantities_();
-  }
-
-  int nfaces = num_entities(FACE,Parallel_type::ALL);
-
-  face_areas_.resize(nfaces);
-  face_centroids_.resize(nfaces);
-  face_normals_.resize(nfaces);
-
-  for (int i = 0; i < nfaces; i++) {
-    double area;
-    AmanziGeometry::Point centroid(space_dim_);
-    std::vector<AmanziGeometry::Point> normals;
-
-    // normal0 and normal1 are outward normals of the face with
-    // respect to the cell0 and cell1 of the face. The natural normal
-    // of the face points out of cell0 and into cell1. If one of these
-    // cells do not exist, then the normal is the null vector.
-    compute_face_geometry_(i, &area, &centroid, &normals);
-
-    face_areas_[i] = area;
-    face_centroids_[i] = centroid;
-    face_normals_[i] = normals;
-  }
-
-  face_geometry_precomputed_ = true;
-
-  return 1;
 }
 
 
@@ -449,27 +414,6 @@ Mesh::compute_edge_geometry_(const Entity_ID edgeid, double *edge_length,
 }
 
 
-// Volume/Area of cell
-double
-Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
-{
-  if (!cell_geometry_precomputed_) {
-    compute_cell_geometric_quantities_();
-    return cell_volumes_[cellid];
-  }
-  else {
-    if (recompute) {
-      double volume;
-      AmanziGeometry::Point centroid(space_dim_);
-      compute_cell_geometry_(cellid, &volume, &centroid);
-      return volume;
-    }
-    else
-      return cell_volumes_[cellid];
-  }
-}
-
-
 // Area/length of face
 double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
 {
@@ -512,34 +456,6 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
     }
     else
       return edge_lengths_[edgeid];
-  }
-}
-
-
-// The face centroid is computed as the area weighted average of the
-// centroids of the triangles from a symmetric triangular
-// decomposition of the face. Each triangular facet is formed by the
-// connecting the face center (average of face nodes) to the two
-// nodes of an edge of the face
-AmanziGeometry::Point
-Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
-{
-  AMANZI_ASSERT(faces_requested_);
-
-  if (!face_geometry_precomputed_) {
-    compute_face_geometric_quantities_();
-    return face_centroids_[faceid];
-  }
-  else {
-    if (recompute) {
-      double area;
-      AmanziGeometry::Point centroid(space_dim_);
-      std::vector<AmanziGeometry::Point> normals;
-      compute_face_geometry_(faceid, &area, &centroid, &normals);
-      return centroid;
-    }
-    else
-      return face_centroids_[faceid];
   }
 }
 
