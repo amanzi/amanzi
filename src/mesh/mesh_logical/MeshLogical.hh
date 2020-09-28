@@ -318,8 +318,6 @@ class MeshLogical : public Mesh {
 
   // build the cache
   virtual
-  int compute_cell_geometric_quantities_() const override;
-  virtual
   int compute_face_geometric_quantities_() const override;
 
   // build maps

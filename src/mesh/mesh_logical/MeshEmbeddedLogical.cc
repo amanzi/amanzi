@@ -759,13 +759,6 @@ MeshEmbeddedLogical::build_columns_() const {
 
 
 int
-MeshEmbeddedLogical::compute_cell_geometric_quantities_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-  return -1;
-}
-
-int
 MeshEmbeddedLogical::compute_face_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);

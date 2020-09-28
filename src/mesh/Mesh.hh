@@ -171,18 +171,6 @@ class Mesh : public MeshLight {
                                   Entity_ID_List *edgeids,
                                   std::vector<int> *edge_dirs) const;
 
-  virtual void face_get_edges_and_dirs(
-          const Entity_ID faceid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs,
-          const bool ordered = false) const;
-
-  // Get the local ID of a face edge in a cell edge list
-  virtual void face_to_cell_edge_map(
-          const Entity_ID faceid,
-          const Entity_ID cellid,
-          std::vector<int> *map) const;
-
   //-------------------
   // Upward adjacencies
   //-------------------
@@ -194,16 +182,6 @@ class Mesh : public MeshLight {
           const Entity_ID edgeid,
           const Parallel_type ptype,
           Entity_ID_List *cellids) const = 0;
-
-  // Cells connected to a face
-  //
-  // The cells are returned in no particular order. Also, the order of cells
-  // is not guaranteed to be the same for corresponding faces on different
-  // processors
-  virtual void face_get_cells(
-          const Entity_ID faceid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const;
 
 
   //-----------------------
@@ -234,10 +212,6 @@ class Mesh : public MeshLight {
 
   virtual double edge_length(
           const Entity_ID edgeid, const bool recompute = false) const;
-
-  // Center of gravity not just average of node coordinates
-  virtual AmanziGeometry::Point cell_centroid(
-          const Entity_ID cellid, const bool recompute = false) const;
 
   // Center of gravity not just the average of node coordinates
   virtual AmanziGeometry::Point face_centroid(
@@ -498,36 +472,8 @@ class Mesh : public MeshLight {
   // Virtual methods to fill the cache with geometric quantities.
   //
   // Default implementations use _internal() methods below.
-  virtual int compute_cell_geometric_quantities_() const;
   virtual int compute_face_geometric_quantities_() const;
   virtual int compute_edge_geometric_quantities_() const;
-
-  // Virtual methods to fill the cache with topological quantities.
-  //
-  // Default implementations use _internal() methods below.
-  virtual void cache_face2edge_info_() const;
-
-  // Virtual methods for mesh geometry.
-  //
-  // These are virtual and therefore slightly expensive, so they
-  // should be used once to populate the cache and not again.  They
-  // have the same concepts behind them as the non- _internal()
-  // versions.  Non- _internal() versions are not virtual and access
-  // the cache; these do the real work and are implemented by the mesh
-  // implementation.
-
-  // Cells connected to a face
-  virtual void face_get_cells_internal_(
-          const Entity_ID faceid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const = 0;
-
-  // edges of a face
-  virtual void face_get_edges_and_dirs_internal_(
-          const Entity_ID faceid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs,
-          const bool ordered = true) const = 0;
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -571,8 +517,8 @@ class Mesh : public MeshLight {
 
   // the cache
   // -- geometry
-  mutable std::vector<double> cell_volumes_, face_areas_, edge_lengths_;
-  mutable std::vector<AmanziGeometry::Point> cell_centroids_, face_centroids_;
+  mutable std::vector<double> face_areas_, edge_lengths_;
+  mutable std::vector<AmanziGeometry::Point> face_centroids_;
 
   // -- Have to account for the fact that a "face" for a non-manifold
   // surface mesh can have more than one cell connected to
@@ -583,12 +529,8 @@ class Mesh : public MeshLight {
 
   mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 
-  mutable std::vector<Entity_ID_List> face_edge_ids_;
-  mutable std::vector< std::vector<int> > face_edge_dirs_;
-
   // -- flags to indicate what part of cache is up-to-date
-  mutable bool face2edge_info_cached_;
-  mutable bool cell_geometry_precomputed_, face_geometry_precomputed_, edge_geometry_precomputed_;
+  mutable bool face_geometry_precomputed_, edge_geometry_precomputed_;
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;

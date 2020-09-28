@@ -72,10 +72,8 @@ Mesh::Mesh(const Comm_ptr_type& comm,
       manifold_dim_(-1),
       logical_(false),
       columns_built_(false),
-      cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
       edge_geometry_precomputed_(false),
-      face2edge_info_cached_(false),
       kdtree_faces_initialized_(false)
 {
   comm_ = comm;
@@ -87,6 +85,9 @@ Mesh::Mesh(const Comm_ptr_type& comm,
   cell2face_info_cached_ = false;
   cell2edge_info_cached_ = false;
   face2cell_info_cached_ = false;
+  face2edge_info_cached_ = false;
+
+   cell_geometry_precomputed_ = false;
 
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
@@ -94,28 +95,6 @@ Mesh::Mesh(const Comm_ptr_type& comm,
   vo_ = Teuchos::rcp(new VerboseObject(comm_,
           Keys::cleanPListName(plist_->name()), *plist_));
 };
-
-
-// Gather and cache face to edge connectivity info.
-void
-Mesh::cache_face2edge_info_() const
-{
-  int nfaces = num_entities(FACE,Parallel_type::ALL);
-  face_edge_ids_.resize(nfaces);
-  face_edge_dirs_.resize(nfaces);
-
-  for (int f = 0; f < nfaces; f++) {
-    Entity_ID_List fedgeids;
-    std::vector<int> fedgedirs;
-
-    face_get_edges_and_dirs_internal_(f, &(face_edge_ids_[f]),
-            &(face_edge_dirs_[f]), true);
-  }
-
-  face2edge_info_cached_ = true;
-  faces_requested_ = true;
-  edges_requested_ = true;
-}
 
 
 Entity_ID
@@ -147,128 +126,6 @@ void Mesh::cell_get_faces_and_bisectors(
 }
 
 
-// Cells connected to a face - cache the results the first time it
-// is called and then return the cached results subsequently
-void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
-                          Entity_ID_List *cellids) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2cell_info_cached_) cache_cell_face_info_();
-
-  cellids->clear();
-  int n = face_cell_ptype_[faceid].size();
-
-  for (int i = 0; i < n; i++) {
-    Parallel_type cell_ptype = face_cell_ptype_[faceid][i];
-    if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
-
-    int c = face_cell_ids_[faceid][i];
-    if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
-
-    if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-      cellids->push_back(c);
-  } 
-
-#else  // Non-cached version
-  Entity_ID_List fcells;
-  face_get_cells_internal_(faceid, Parallel_type::ALL, &fcells);
-
-  cellids->clear();
-  int n = face_cell_ptype_[faceid].size();
-
-  switch (ptype) {
-    case Parallel_type::ALL:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) != PTYPE_UNKNOWN)
-          cellids->push_back(fcells[i]);
-      break;
-    case Parallel_type::OWNED:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) == Parallel_type::OWNED)
-          cellids->push_back(fcells[i]);
-      break;
-    case Parallel_type::GHOST:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) == Parallel_type::GHOST)
-          cellids->push_back(fcells[i]);
-      break;
-    default:
-      break;
-  }
-
-#endif
-}
-
-
-void
-Mesh::face_get_edges_and_dirs(const Entity_ID faceid,
-                              Entity_ID_List *edgeids,
-                              std::vector<int> *edge_dirs,
-                              const bool ordered) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2edge_info_cached_) cache_face2edge_info_();
-
-  *edgeids = face_edge_ids_[faceid]; // copy operation
-
-  if (edge_dirs) {
-    std::vector<int> &fedgedirs = face_edge_dirs_[faceid];
-    *edge_dirs = fedgedirs; // copy operation
-  }
-
-#else  // Non-cached version
-  face_get_edges_and_dirs_internal_(faceid, edgeids, edge_dirs, ordered);
-
-#endif
-}
-
-
-// Get the local ID of a face edge in a cell edge list
-void
-Mesh::face_to_cell_edge_map(const Entity_ID faceid,
-                            const Entity_ID cellid,
-                            std::vector<int> *map) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2edge_info_cached_) cache_face2edge_info_();
-  if (!cell2edge_info_cached_) cache_cell2edge_info_();
-
-  map->resize(face_edge_ids_[faceid].size());
-  for (int f = 0; f < face_edge_ids_[faceid].size(); ++f) {
-    Entity_ID fedge = face_edge_ids_[faceid][f];
-
-    for (int c = 0; c < cell_edge_ids_[cellid].size(); ++c) {
-      if (fedge == cell_edge_ids_[cellid][c]) {
-        (*map)[f] = c;
-        break;
-      }
-    }
-  }
-
-#else // non-cached version
-
-  Entity_ID_List fedgeids, cedgeids;
-  std::vector<int> fedgedirs;
-
-  face_get_edges_and_dirs(faceid, &fedgeids, &fedgedirs, true);
-  cell_get_edges(cellid, &cedgeids);
-
-  map->resize(fedgeids.size(),-1);
-  for (int f = 0; f < fedgeids.size(); ++f) {
-    Entity_ID fedge = fedgeids[f];
-
-    for (int c = 0; c < cedgeids.size(); ++c) {
-      if (fedge == cedgeids[c]) {
-        (*map)[f] = c;
-        break;
-      }
-    }
-  }
-
-#endif
-}
-
-
 void
 Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
                                  Entity_ID_List *edgeids,
@@ -284,29 +141,6 @@ Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
   cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
 
 #endif
-}
-
-
-int
-Mesh::compute_cell_geometric_quantities_() const
-{
-  int ncells = num_entities(CELL,Parallel_type::ALL);
-
-  cell_volumes_.resize(ncells);
-  cell_centroids_.resize(ncells);
-  for (int i = 0; i < ncells; i++) {
-    double volume;
-    AmanziGeometry::Point centroid(space_dim_);
-
-    compute_cell_geometry_(i,&volume,&centroid);
-
-    cell_volumes_[i] = volume;
-    cell_centroids_[i] = centroid;
-  }
-
-  cell_geometry_precomputed_ = true;
-
-  return 1;
 }
 
 
@@ -678,28 +512,6 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
     }
     else
       return edge_lengths_[edgeid];
-  }
-}
-
-
-// Centroid of cell
-AmanziGeometry::Point
-Mesh::cell_centroid(const Entity_ID cellid,
-                    const bool recompute) const
-{
-  if (!cell_geometry_precomputed_) {
-    compute_cell_geometric_quantities_();
-    return cell_centroids_[cellid];
-  }
-  else {
-    if (recompute) {
-      double volume;
-      AmanziGeometry::Point centroid(space_dim_);
-      compute_cell_geometry_(cellid, &volume, &centroid);
-      return centroid;
-    }
-    else
-      return cell_centroids_[cellid];
   }
 }
 
