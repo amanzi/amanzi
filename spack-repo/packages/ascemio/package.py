@@ -18,8 +18,13 @@ class Ascemio(CMakePackage):
 
     version('2.3', sha256='de556a774b4ef7dc223f4611a39c978c')
 
+    patch('https://raw.githubusercontent.com/amanzi/amanzi/master/config/'\
+        'SuperBuild/templates/ascemio-2.2-hdf5.patch',
+        sha256='f6c14e802604b56c723a69296a77835912e8282b86b7cef84fb4f2923079bbc5',
+        when='@2.3')
+
     depends_on('mpi')
-    depends_on('hdf5@1.10.5 +hl+mpi')
+    depends_on('hdf5@1.10.6 +hl+mpi')
 
     def cmake_args(self):
         options = []
