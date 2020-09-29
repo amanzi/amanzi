@@ -44,7 +44,7 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-  double rho0 = 1000.;
+  double rho0 = 1.;
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {

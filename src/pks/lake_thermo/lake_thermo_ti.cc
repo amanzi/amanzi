@@ -64,6 +64,11 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
+  // update height
+  double dt = S_next_->time() - S_inter_->time();
+  double dhdt = r_ - E_ - R_s_ - R_b_;
+//  h_ += dhdt*dt;
+
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
@@ -86,21 +91,21 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-//  // advection term
-//  if (implicit_advection_) {
-//    AddAdvection_(S_next_.ptr(), res.ptr(), true);
-//  } else {
-//    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
-//  }
-//#if DEBUG_FLAG
-//  db_->WriteVector("res (adv)", res.ptr());
-//#endif
+  // advection term
+  if (implicit_advection_) {
+    AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
+  }
+#if DEBUG_FLAG
+  db_->WriteVector("res (adv)", res.ptr());
+#endif
 
-//  // source terms
-//  AddSources_(S_next_.ptr(), res.ptr());
-//#if DEBUG_FLAG
-//  db_->WriteVector("res (src)", res.ptr());
-//#endif
+  // source terms
+  AddSources_(S_next_.ptr(), res.ptr());
+#if DEBUG_FLAG
+  db_->WriteVector("res (src)", res.ptr());
+#endif
 
   // Dump residual to state for visual debugging.
 #if MORE_DEBUG_FLAG

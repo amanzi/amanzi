@@ -80,6 +80,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
         } else {
             result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
         }
+//        result_v[0][i] = 0.;
       }
     }
 

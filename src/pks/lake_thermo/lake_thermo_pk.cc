@@ -223,6 +223,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
 
   //  -- advection terms
   implicit_advection_ = !plist_->get<bool>("explicit advection", false);
+  std::cout << "implicit_advection_ = " << implicit_advection_ << std::endl;
   if (implicit_advection_) {
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
 
@@ -430,14 +431,16 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 //  // heat capacity of water
 //  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
 //  cp_ = std::fabs(cp_vec[0]);
-  cp_ = 4184.;
+  cp_ = 4184./1000.;
 
-  r_ = 0.;
+  r_ = 1.; //1.e-7;
   E_ = 0.;
   R_s_ = 0.;
   R_b_ = 0.;
   alpha_e_ = 0.;
   S0_ = 0.;
+
+  h_ = 1.;
 
 
 #if MORE_DEBUG_FLAG
@@ -477,9 +480,26 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
     S->GetField(wc_key_, name_)->set_initialized();
 
-  S->GetFieldData(temperature_key_, name_)->PutScalar(300.0);
-  S->GetField(temperature_key_, name_)->set_initialized();
+//  S->GetFieldData(temperature_key_, name_)->PutScalar(300.0);
 
+  // get temperature
+  const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
+        ->ViewComponent("cell",false);
+
+  double T0 = 280., T1 = 400.;
+  double zm = 0.5, Tm = 290.;
+  double d = T0;
+  double b = (Tm-T0-zm*zm*(T1-T0))/(zm*(1.-zm));
+  double a = T1-T0-b;
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  for (int c = 0; c < ncells_owned; c++) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      temp[0][c] = a*xc[2]*xc[2] + b*xc[2] + d;
+  }
+
+  S->GetField(temperature_key_, name_)->set_initialized();
 
   // summary of initialization
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -529,7 +549,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     matrix_adv_->Setup(*flux);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
     Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
-    ApplyDirichletBCsToEnthalpy_(S.ptr());
+    ApplyDirichletBCsToTemperature_(S.ptr());
 
     Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
     matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());

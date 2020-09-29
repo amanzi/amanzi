@@ -94,19 +94,21 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
 
-  const Epetra_MultiVector& flux_c = *flux->ViewComponent("cell", false);
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   double dt = S_next_->time() - S_inter_->time();
 
   // GENERALLY, DON'T UPDATE HERE
   // update h
-  h_ += dhdt*dt;
+//  h_ += dhdt*dt;
 
-  for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    flux_c[0][c] = cp_*rho[0][c]*(dhdt*xc[0] - B_w)/h_;
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+    double rho = 1.;
+//    flux_f[0][f] = cp_*rho*dhdt*xcf[2]/(h_+1.e-6);
+    flux_f[0][f] = cp_*rho*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);
@@ -116,11 +118,9 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   matrix_adv_->UpdateMatrices(flux.ptr());
 
   // apply to temperature
-//  S->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
-  ApplyDirichletBCsToEnthalpy_(S.ptr());
+  ApplyDirichletBCsToTemperature_(S.ptr());
   matrix_adv_->ApplyBCs(false, true, false);
-
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*temp, *g, false);
@@ -139,9 +139,9 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  for (int f = 0; f < nfaces_owned; f++) {
-      std::cout << uw_cond_c[0][f] << std::endl;
-  }
+//  for (int f = 0; f < nfaces_owned; f++) {
+//      std::cout << uw_cond_c[0][f] << std::endl;
+//  }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 
@@ -167,6 +167,8 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  is_source_term_ = true;
+
   // external sources of energy
   if (is_source_term_) {
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
@@ -179,6 +181,10 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     double dhdt = r_ - E_ - R_s_ - R_b_;
+    double B_w  = r_ - E_;
+
+//    double dt = S_next_->time() - S_inter_->time();
+//    h_ += dhdt*dt;
 
     S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), name_);
 
@@ -190,23 +196,60 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
           ->ViewComponent("cell",false);
 
+    // get conductivity
+    S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& lambda_c =
+    *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
+
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      g_c[0][c] = S0_*exp(-alpha_e_*h_*xc[0])*(-alpha_e_*h_) + cp_*rho[0][c]*temp[0][c]*dhdt/h_;
+//      g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c];
+      // manufactured solution 1: linear temperature distribution
+//      double T0 = 280., T1 = 400.;
+//      g_c[0][c] += -cp_*rho[0][c]*(T1-T0)/(h_+1.e-6)*(dhdt*xc[2] - B_w) * cv[0][c] - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      // manufactured solution 2: exponential temperature distribution
+//      double T0 = 280., T1 = 400.;
+//      double coef = log(T1/T0);
+////      std::cout << "lambda_c[0][c] = " << lambda_c[0][c] << std::endl;
+////      std::cout << "coef = " << coef << std::endl;
+////      std::cout << "exp(coef*xc[2]) = " << exp(coef*xc[2]) << std::endl;
+////      std::cout << "h_ = " << h_ << std::endl;
+//      g_c[0][c] += -T0*coef*exp(coef*xc[2])*( 1./(h_+1.e-6)*lambda_c[0][c]*coef + cp_*rho[0][c]*(dhdt*xc[2] - B_w) )/(h_+1.e-6) * cv[0][c]
+//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      // manufactured solution 3: quadratic temperature distribution
+      double T0 = 280., T1 = 400.;
+      double zm = 0.5, Tm = 300.;
+      double d = T0;
+      double b = (Tm-T0-zm*zm*(T1-T0))/(zm*(1.-zm));
+      double a = T1-T0-b;
+////      std::cout << "a = " << a << ", b = " << b << std::endl;
+      g_c[0][c] += (2.*a*lambda_c[0][c]/(h_+1.e-6) - cp_*rho[0][c]*(2.*a*xc[2] + b)*(dhdt*xc[2] - B_w))/(h_+1.e-6) * cv[0][c];
+//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      g_c[0][c] += 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) * cv[0][c];
+      //          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      // manufactured solution without non-conservative part
+//      g_c[0][c] -= (-2.*a*lambda_c[0][c]/(h_+1.e-6) -
+//          cp_*rho[0][c]/(h_+1.e-6)*( dhdt*(3.*a*xc[2]*xc[2] + 2.*b*xc[2] + c) - B_w*(2.*a*xc[2] + b) ) ) * cv[0][c];
+//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      g_c[0][c] += ( 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) - (2.*a*xc[2] + b) ) * cv[0][c];
+//       g_c[0][c] += ( 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) - cp_*rho[0][c]*dhdt/(h_+1.e-6)*(3.*a*xc[2]*xc[2] + 2.*b*xc[2] + c) + cp_*rho[0][c]*B_w/(h_+1.e-6)*(2.*a*xc[2] + b) ) * cv[0][c]
+//                 + cp_*rho[0][c]*dhdt/(h_+1.e-6)*(a*xc[2]*xc[2] + b*xc[2] + c) * cv[0][c];
+//      std::cout << "h_ = " << h_ << std::endl;
+//      std::cout << "SRC = " << g_c[0][c] << std::endl;
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Adding external source term" << std::endl;
-    db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
+//    db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
     db_->WriteVector("res (src)", g, false);
   }
 }
 
 
 void Lake_Thermo_PK::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
-  // external sources of energy (temperature dependent source)
+//  // external sources of energy (temperature dependent source)
 //  if (is_source_term_ && is_source_term_differentiable_ &&
 //      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
 //
@@ -239,21 +282,21 @@ void Lake_Thermo_PK::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h)
 // Plug enthalpy into the boundary faces manually.
 // This will be removed once boundary faces exist.
 // -------------------------------------------------------------
-void Lake_Thermo_PK::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
+void Lake_Thermo_PK::ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& S) {
   // put the boundary fluxes in faces for Dirichlet BCs.
-  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
+//  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
   
-  const Epetra_MultiVector& enth_bf =
-    *S->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face",false);
+  const Epetra_MultiVector& temp_bf =
+    *S->GetFieldData(temperature_key_)->ViewComponent("boundary_face",false);
   const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
   const Epetra_Map& face_map = mesh_->face_map(false);
   
-  int nbfaces = enth_bf.MyLength();
+  int nbfaces = temp_bf.MyLength();
   for (int bf=0; bf!=nbfaces; ++bf) {
     AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
 
     if (bc_adv_->bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      bc_adv_->bc_value()[f] = enth_bf[0][bf];
+      bc_adv_->bc_value()[f] = temp_bf[0][bf];
     }
   }
 }

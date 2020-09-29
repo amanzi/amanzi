@@ -236,7 +236,7 @@ public:
   // -- get enthalpy as a function of Dirichlet boundary data.  Note that this
   //    will get replaced by a better system when we get maps on the boundary
   //    faces.
-  virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S);
+  virtual void ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& S);
   virtual void ApplyDirichletBCsToBoundaryFace_(const Teuchos::Ptr<CompositeVector>& temp);
 
   // -- Add any source terms into the residual.
