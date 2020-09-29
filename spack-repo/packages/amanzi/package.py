@@ -40,7 +40,7 @@ class Amanzi(CMakePackage):
             'unstructured mesh')
 #    variant('moab', default=False, description='Enable MOAB mesh support for '
 #            'unstructured mesh')
-    variant('tests', default=True, description='Enable the unit test suite')
+    variant('tests', default=False, description='Enable the unit test suite')
 #    variant('silo', default=False, description='Enable Silo reader for binary '
 #            'files')
     #variant('petsc', default=True, description='Enable PETsC support')
@@ -86,7 +86,6 @@ class Amanzi(CMakePackage):
     # Other
     depends_on('unittest-cpp', when='+tests')
 
-
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
     #           '+zoltan +nox +ifpack +muelu')
@@ -94,27 +93,31 @@ class Amanzi(CMakePackage):
                '+zlib +anasazi +amesos2 +epetra +ml +teuchos '
                '+zoltan +nox +ifpack +muelu')
 
-
     def cmake_args(self):
         options = ['-DCMAKE_BUILD_TYPE=debug']
         options.append('-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc)
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
+
         # not supported or always off/on options
         options.append('-DENABLE_OpenMP=OFF')
-        options.append('-DENABLE_STK_Mesh=OFF')
         options.append('-DSPACKAGE_BUILD=ON')
         
         options.append('-DXERCES_LIBRARY_DIR=' + self.spec['xerces-c'].prefix + '/lib')
         #options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
-
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
 
         if '+alquimia' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
+            options.append('-DENABLE_PETSC=ON')
+            options.append('-DENABLE_PFLOTRAN=ON')
+            options.append('-DENABLE_CRUNCHTOPE=ON')
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
-        
+            options.append('-DENABLE_PETSC=OFF')
+            options.append('-DENABLE_PFLOTRAN=OFF')
+            options.append('-DENABLE_CRUNCHTOPE=OFF')
+
         # options based on variants
         if '+tests' in self.spec:
             options.append('-DENABLE_TESTS=ON')
@@ -122,22 +125,16 @@ class Amanzi(CMakePackage):
         else:
             options.append('-DENABLE_TESTS=OFF')
             options.append('-DENABLE_UnitTest=OFF')
+
         if '+mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.5')
             options.append('-DENABLE_MSTK_Mesh=ON')
         else:
             options.append('-DENABLE_MSTK_Mesh=OFF')
 
-        if '+moab' in self.spec:
-            options.append('-DENABLE_MOAB_Mesh=ON')
-        else:
-            options.append('-DENABLE_MOAB_Mesh=OFF')
-        if '+silo' in self.spec:
-            options.append('-DENABLE_Silo=ON')
-        else:
-            options.append('-DENABLE_Silo=OFF')
         if '+unstructured' in self.spec:
             options.append('-DENABLE_Unstructured=ON')
+            options.append('-DENABLE_STK_Mesh=OFF')
         else:
             options.append('-DENABLE_Unstructured=OFF')
         if '+structured' in self.spec:
@@ -149,20 +146,34 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_ASCEMIO=ON')
         else:
             options.append('-DENABLE_ASCEMIO=OFF')
-        
+
+        if '+hypre' in self.spec: 
+            options.append('-DENABLE_SUPERLU=ON')
+            options.append('-DENABLE_HYPRE=ON')
+        else: 
+            options.append('-DENABLE_SUPERLU=OFF')
+            options.append('-DENABLE_HYPRE=OFF')
+
         #options.append('-DENABLE_ATSPhysicsModule=ON')
         options.append('-DENABLE_AmanziPhysicsModule=OFF')
         options.append('-DENABLE_CLM=OFF')
-        options.append('-DENABLE_CRUNCHTOPE=OFF')
         options.append('-DENABLE_DBC=ON')
-        options.append('-DENABLE_PETSC=OFF')
-        options.append('-DENABLE_PFLOTRAN=OFF')
-        options.append('-DENABLE_SUPERLU=ON')
-        options.append('-DENABLE_HYPRE=ON')
 
+        # Change to the type of kokkos backend
+        # Need trilinos to support CUDA
         #if '+gpu' in self.spec:
         #    options.append('-DAMANZI_ARCH="Summit"')
         #else: 
         #    options.append('-DAMANZI_ARCH=\'\'')
+
+        # unused 
+        #if '+moab' in self.spec:
+        #    options.append('-DENABLE_MOAB_Mesh=ON')
+        #else:
+        #    options.append('-DENABLE_MOAB_Mesh=OFF')
+        #if '+silo' in self.spec:
+        #    options.append('-DENABLE_Silo=ON')
+        #else:
+        #    options.append('-DENABLE_Silo=OFF')
         
         return options
