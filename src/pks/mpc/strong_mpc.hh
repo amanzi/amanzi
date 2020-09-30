@@ -123,7 +123,7 @@ StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, global_list, S, soln),
     MPC<PK_t>(pk_tree, global_list, S, soln),
     PK_BDF_Default(pk_tree, global_list, S, soln) {
-  MPC<PK_t>::init_(S);
+  MPC<PK_t>::init_(S, soln->Comm());
 }
 
 

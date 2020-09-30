@@ -67,6 +67,9 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
     domain_ = std::string("surface_") + domain;
     domain_snow_ = std::string("snow_") + domain;
   }
+  domain_ = plist.get<std::string>("surface domain name", domain_);
+  domain_ss_ = plist.get<std::string>("subsurface domain name", domain_ss_);
+  domain_snow_ = plist.get<std::string>("snow domain name", domain_snow_);
 
   // my keys
   // -- sources
@@ -91,6 +94,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
     melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
+    my_keys_.push_back(evap_key_);
     snow_temp_key_ = Keys::readKey(plist, domain_snow_, "snow temperature", "temperature");
     qE_sh_key_ = Keys::readKey(plist, domain_, "sensible heat flux", "qE_sensible_heat");
     qE_lh_key_ = Keys::readKey(plist, domain_, "latent heat of evaporation", "qE_latent_heat");
@@ -150,19 +154,20 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(ss_pres_key_);
 
   // parameters
-  min_wind_speed_ = plist.get<double>("minimum wind speed [m/s]?", 1.0);
+  min_rel_hum_ = plist.get<double>("minimum relative humidity [-]", 0.1);
+  min_wind_speed_ = plist.get<double>("minimum wind speed [m s^-1]", 1.0);
   wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
   dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.1);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
+  // developer parameter -- this should likely go away
   ss_topcell_based_evap_ = plist.get<bool>("subsurface top cell based evaporation", false);
 
   roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
   roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);
   snow_ground_trans_ = plist.get<double>("snow-ground transitional depth [m]", 0.02);
-  min_snow_trans_ = plist.get<double>("minimum snow transitional depth", 1.e-8);
-  if (min_snow_trans_ < 0. || snow_ground_trans_ < min_snow_trans_) {
-    Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
+  if (snow_ground_trans_ < 0) {
+    Errors::Message message("Invalid parameter: snow-ground transitional depth < 0.");
     Exceptions::amanzi_throw(message);
   }
 }
@@ -258,7 +263,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     met.QswIn = qSW_in[0][c];
     met.QlwIn = qLW_in[0][c];
     met.air_temp = air_temp[0][c];
-    met.relative_humidity = rel_hum[0][c];
+    met.relative_humidity = std::max(rel_hum[0][c], min_rel_hum_);
     met.Pr = Prain[0][c];
     
     // non-snow covered column
@@ -281,7 +286,6 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
         surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
       }
-      surf.ponded_depth = ponded_depth[0][c];
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       // must ensure that energy is put into melting snow precip, even if it
@@ -304,12 +308,21 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      ss_mass_source[0][cells[0]] += area_fracs[0][c] * flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
-      ss_energy_source[0][cells[0]] += area_fracs[0][c] * flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/s to mol/m^3/s
+      ss_mass_source[0][cells[0]] += area_fracs[0][c] * ss_mass_source_l;
+      double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      ss_energy_source[0][cells[0]] += area_fracs[0][c] * ss_energy_source_l;
 
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
       new_snow[0][c] += met.Ps;
 
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "CELL " << c << " NO_SNOW"
+                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                    << ", Sn = " << flux.M_snow << std::endl;
+
+      
       // diagnostics
       if (diagnostics_) {
         (*evap_rate)[0][c] -= area_fracs[0][c] * mb.Me;
@@ -342,7 +355,6 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       surf.saturation_gas = 0.;
       surf.porosity = 1.;
-      surf.ponded_depth = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       met.Ps = Psnow[0][c] / area_fracs[1][c];
@@ -370,6 +382,14 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       new_snow[0][c] += std::max(met.Ps + mb.Me, 0.) * area_fracs[1][c];
 
+
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "CELL " << c << " SNOW"
+                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                    << ", Mss = " << 0. << ", Ess = " << 0.
+                    << ", Sn = " << flux.M_snow << std::endl;
+
+      
       // diagnostics
       if (diagnostics_) {
         (*evap_rate)[0][c] -= area_fracs[1][c] * mb.Me;
@@ -470,21 +490,33 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
+
+    
+    *vo_->os() << "CELL " << 0 << " TOTAL"
+                    << ": Ms = " << mass_source[0][0] << ", Es = " << energy_source[0][0]
+                    << ", Mss = " << ss_mass_source[0][99] << ", Ess = " << ss_energy_source[0][99]
+                    << ", Sn = " << snow_source[0][0] << std::endl;
+
+    
     vnames.clear();
     vecs.clear();
     vnames.push_back("mass src");
     vnames.push_back("energy src");
-    vnames.push_back("sub mass src");
-    vnames.push_back("sub energy src");
     vnames.push_back("snow src");
     vnames.push_back("new snow");
     vecs.push_back(results[0]);
     vecs.push_back(results[1]);
-    vecs.push_back(results[2]);
-    vecs.push_back(results[3]);
     vecs.push_back(results[4]);
     vecs.push_back(results[5]);
     db_->WriteVectors(vnames, vecs, true);
+
+    vnames.clear();
+    vecs.clear();
+    vnames.push_back("sub mass src");
+    vnames.push_back("sub energy src");
+    vecs.push_back(results[2]);
+    vecs.push_back(results[3]);
+    db_ss_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
   }
 }
@@ -499,6 +531,18 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (db_ == Teuchos::null)
     db_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_), my_keys_[0], plist_));
+  if (db_ss_ == Teuchos::null) {
+    Teuchos::ParameterList plist(plist_);
+    plist.remove("debug cells", false);
+    plist.remove("debug faces", false);
+    if (plist.isParameter("subsurface debug cells")) {
+      plist.set("debug cells", plist.get<Teuchos::Array<int>>("subsurface debug cells"));
+    } else {
+    }
+    if (plist.isParameter("subsurface debug faces")) 
+      plist.set("debug faces", plist.get<Teuchos::Array<int>>("subsurface debug faces"));
+    db_ss_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_ss_), my_keys_[0], plist));
+  }
 
   CompositeVectorSpace domain_fac;
   domain_fac.SetMesh(S->GetMesh(domain_))
