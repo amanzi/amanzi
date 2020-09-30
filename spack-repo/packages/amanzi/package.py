@@ -33,22 +33,23 @@ class Amanzi(CMakePackage):
 
     variant('structured', default=False,
             description='Build structured mesh capability')
-    # Need to have at least one mesh enable
     variant('unstructured', default=True,
             description='Build unstructured mesh capability')
     variant('mstk', default=True, description='Enable MSTK mesh support for '
             'unstructured mesh')
-#    variant('moab', default=False, description='Enable MOAB mesh support for '
-#            'unstructured mesh')
-    variant('tests', default=False, description='Enable the unit test suite')
-#    variant('silo', default=False, description='Enable Silo reader for binary '
-#            'files')
-    #variant('petsc', default=True, description='Enable PETsC support')
     variant('alquimia', default=False, description='Enable alquimia support')
     variant('hypre', default=True, description='Enable Hypre solver support')
     variant('ats', default=False, description='Enable ATS support')
     variant('AmanziPhysics', default=False, description='Enable Amanzi Physics support')
     variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
+
+#    variant('moab', default=False, description='Enable MOAB mesh support for '
+#            'unstructured mesh')
+#    variant('silo', default=False, description='Enable Silo reader for binary '
+#            'files')
+    #variant('petsc', default=True, description='Enable PETsC support')
+#    variant('tests', default=False, description='Enable the unit test suite')
+
 
     patch('exprtk.patch', when = '@1.0.0')
 
@@ -72,6 +73,7 @@ class Amanzi(CMakePackage):
     depends_on('cgns@develop +mpi +parallel')
     depends_on('ascemio')
     depends_on('netcdf-c@4.7.3 +parallel-netcdf')
+    depends_on('unittest-cpp')
     # Alquimia
     depends_on('petsc@3.10.2')
     depends_on('hdf5@1.10.6 +mpi+fortran+hl', when='+alquimia')
@@ -85,7 +87,6 @@ class Amanzi(CMakePackage):
     depends_on('mstk@3.3.5 partitioner=all +exodusii +parallel', when='+mstk')
     depends_on('nanoflann', when='+mstk')
     # Other
-    depends_on('unittest-cpp', when='+tests')
 
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
@@ -131,12 +132,12 @@ class Amanzi(CMakePackage):
 
 
         # options based on variants
-        if '+tests' in self.spec:
-            options.append('-DENABLE_TESTS=ON')
-            options.append('-DENABLE_UnitTest=ON')
-        else:
-            options.append('-DENABLE_TESTS=OFF')
-            options.append('-DENABLE_UnitTest=OFF')
+        #if '+tests' in self.spec:
+        #    options.append('-DENABLE_TESTS=ON')
+        #    options.append('-DENABLE_UnitTest=ON')
+        #else:
+        options.append('-DENABLE_TESTS=ON')
+        options.append('-DENABLE_UnitTest=ON')
 
         if '+mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.5')
