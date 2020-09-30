@@ -201,29 +201,6 @@ class Mesh : public MeshLight {
   // --------------------
   // Mesh entity geometry
   // --------------------
-  virtual double face_area(
-          const Entity_ID faceid, const bool recompute = false) const;
-
-  virtual double edge_length(
-          const Entity_ID edgeid, const bool recompute = false) const;
-
-  // Centrer of gravity
-  virtual AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
-
-  // The normal to face is scaled by the area of the face
-  virtual AmanziGeometry::Point face_normal(
-          const Entity_ID faceid,
-          const bool recompute = false,
-          const Entity_ID cellid = -1,
-          int *orientation = NULL) const;
-
-  // Vector length equals to edge length.
-  virtual AmanziGeometry::Point edge_vector(
-          const Entity_ID edgeid,
-          const bool recompute = false,
-          const Entity_ID pointid = -1,
-          int *orientation = NULL) const;
-
   // Is a point in a given cell?
   bool point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const;
 
@@ -459,10 +436,6 @@ class Mesh : public MeshLight {
   // (i.e. currently they have cell_get_nodes() and
   // cell_get_faces_internal() ). --etc
 
-  // Virtual methods to fill the cache with geometric quantities.
-  //
-  // Default implementations use _internal() methods below.
-  virtual int compute_edge_geometric_quantities_() const;
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -504,14 +477,6 @@ class Mesh : public MeshLight {
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
 
   // the cache
-  // -- geometry
-  mutable std::vector<double> edge_lengths_;
-
-  mutable std::vector<AmanziGeometry::Point> edge_vectors_;
-
-  // -- flags to indicate what part of cache is up-to-date
-  mutable bool edge_geometry_precomputed_;
-
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;
 

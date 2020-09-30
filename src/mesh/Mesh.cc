@@ -71,7 +71,6 @@ Mesh::Mesh(const Comm_ptr_type& comm,
       parent_(Teuchos::null),
       logical_(false),
       columns_built_(false),
-      edge_geometry_precomputed_(false),
       kdtree_faces_initialized_(false)
 {
   comm_ = comm;
@@ -90,6 +89,7 @@ Mesh::Mesh(const Comm_ptr_type& comm,
 
   cell_geometry_precomputed_ = false;
   face_geometry_precomputed_ = false;
+  edge_geometry_precomputed_ = false;
 
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
@@ -143,30 +143,6 @@ Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
   cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
 
 #endif
-}
-
-
-int
-Mesh::compute_edge_geometric_quantities_() const
-{
-  int nedges = num_entities(EDGE,Parallel_type::ALL);
-
-  edge_vectors_.resize(nedges);
-  edge_lengths_.resize(nedges);
-
-  for (int i = 0; i < nedges; i++) {
-    double length;
-    AmanziGeometry::Point evector(space_dim_);
-
-    compute_edge_geometry_(i,&length,&evector);
-
-    edge_lengths_[i] = length;
-    edge_vectors_[i] = evector;
-  }
-
-  edge_geometry_precomputed_ = true;
-
-  return 1;
 }
 
 
@@ -411,180 +387,6 @@ Mesh::compute_edge_geometry_(const Entity_ID edgeid, double *edge_length,
   *edge_length = norm(*edge_vector);
 
   return 0;
-}
-
-
-// Area/length of face
-double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
-{
-  AMANZI_ASSERT(faces_requested_);
-
-  if (!face_geometry_precomputed_) {
-    compute_face_geometric_quantities_();
-    return face_areas_[faceid];
-  }
-  else {
-    if (recompute) {
-      double area;
-      AmanziGeometry::Point centroid(space_dim_);
-      std::vector<AmanziGeometry::Point> normals;
-      compute_face_geometry_(faceid, &area, &centroid, &normals);
-      return area;
-    }
-    else
-      return face_areas_[faceid];
-  }
-}
-
-
-// Length of an edge
-double
-Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
-{
-  AMANZI_ASSERT(edges_requested_);
-
-  if (!edge_geometry_precomputed_) {
-    compute_edge_geometric_quantities_();
-    return edge_lengths_[edgeid];
-  }
-  else {
-    if (recompute) {
-      double length;
-      AmanziGeometry::Point vector(space_dim_);
-      compute_edge_geometry_(edgeid, &length, &vector);
-      return length;
-    }
-    else
-      return edge_lengths_[edgeid];
-  }
-}
-
-
-// Centroid of edge
-AmanziGeometry::Point
-Mesh::edge_centroid(const Entity_ID edgeid) const
-{
-  Entity_ID p0, p1;
-  AmanziGeometry::Point xyz0, xyz1;
-
-  edge_get_nodes(edgeid, &p0, &p1);
-  node_get_coordinates(p0, &xyz0);
-  node_get_coordinates(p1, &xyz1);
-  return (xyz0+xyz1)/2;
-}
-
-
-// Normal to face
-// The vector is normalized and then weighted by the area of the face
-//
-// If recompute is TRUE, then the normal is recalculated using current
-// face coordinates but not stored. (If the recomputed normal must be
-// stored, then call recompute_geometric_quantities).
-//
-// If cellid is not specified, the normal is the natural normal of the face
-// If cellid is specified, the normal is the outward normal with respect
-// to the cell. In planar and solid meshes, the normal with respect to
-// the cell on one side of the face is just the negative of the normal
-// with respect to the cell on the other side. In general surfaces meshes,
-// this will not be true at C1 discontinuities
-//
-// if cellid is specified, then orientation returns the direction of
-// the natural normal of the face with respect to the cell (1 is
-// pointing out of the cell and -1 pointing in)
-AmanziGeometry::Point
-Mesh::face_normal(const Entity_ID faceid,
-                  const bool recompute,
-                  const Entity_ID cellid,
-                  int *orientation) const
-{
-  AMANZI_ASSERT(faces_requested_);
-
-  std::vector<AmanziGeometry::Point> *fnormals = nullptr;
-  std::vector<AmanziGeometry::Point> fnormals_new;
-
-  if (!face_geometry_precomputed_) {
-    compute_face_geometric_quantities_();
-
-    fnormals = &(face_normals_[faceid]);
-  }
-  else {
-    if (recompute) {
-      double area;
-      AmanziGeometry::Point centroid(space_dim_);
-      compute_face_geometry_(faceid, &area, &centroid, &fnormals_new);
-      fnormals = &fnormals_new;
-    }
-    else
-      fnormals = &(face_normals_[faceid]);
-  }
-
-  AMANZI_ASSERT(fnormals->size() > 0);
-
-  if (cellid == -1) {
-    // Return the natural normal. This is the normal with respect to
-    // the first cell, appropriately adjusted according to whether the
-    // face is pointing into the cell (-ve cell id) or out
-
-    int c = face_cell_ids_[faceid][0];
-    return std::signbit(c) ? -(*fnormals)[0] : (*fnormals)[0];
-  } else {
-    // Find the index of 'cellid' in list of cells connected to face
-
-    int dir;
-    int irefcell;
-    int nfc = face_cell_ids_[faceid].size();
-    for (irefcell = 0; irefcell < nfc; irefcell++) {
-      int c = face_cell_ids_[faceid][irefcell];
-      if (c == cellid || ~c == cellid) {
-        dir = std::signbit(c) ? -1 : 1;
-        break;
-      }
-    }
-    AMANZI_ASSERT(irefcell < nfc);
-    if (orientation) *orientation = dir;  // if orientation was requested
-    return (*fnormals)[irefcell];
-  }
-}
-
-
-// Direction vector of edge
-AmanziGeometry::Point
-Mesh::edge_vector(const Entity_ID edgeid,
-                  const bool recompute,
-                  const Entity_ID pointid,
-                  int *orientation) const
-{
-  AMANZI_ASSERT(edges_requested_);
-
-  AmanziGeometry::Point evector(space_dim_);
-  AmanziGeometry::Point& evector_ref = evector; // to avoid extra copying
-
-  if (!edge_geometry_precomputed_)
-    compute_edge_geometric_quantities_();
-
-  if (recompute) {
-    double length;
-    compute_edge_geometry_(edgeid, &length, &evector);
-    // evector_ref already points to evector
-  }
-  else
-    evector_ref = edge_vectors_[edgeid];
-
-  if (orientation) *orientation = 1;
-
-  if (pointid == -1)
-    return evector_ref;
-  else {
-    Entity_ID p0, p1;
-    edge_get_nodes(edgeid, &p0, &p1);
-
-    if (pointid == p0)
-      return evector_ref;
-    else {
-      if (orientation) *orientation=-1;
-      return -evector_ref;
-    }
-  }
 }
 
 

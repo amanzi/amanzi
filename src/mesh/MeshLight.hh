@@ -198,16 +198,16 @@ class MeshLight {
   // if cellid is specified, then orientation returns the direction of
   // the natural normal of the face with respect to the cell (1 is
   // pointing out of the cell and -1 pointing in)
-  virtual AmanziGeometry::Point face_normal(
-          const Entity_ID f,
-          const bool recompute = false,
-          const Entity_ID cellid = -1,
-          int *orientation = NULL) const = 0;
+  AmanziGeometry::Point face_normal(
+      const Entity_ID f,
+      const bool recompute = false,
+      const Entity_ID cellid = -1,
+      int *orientation = NULL) const;
 
-  virtual double face_area(
-          const Entity_ID f, const bool recompute = false) const = 0;
+  double face_area(
+      const Entity_ID f, const bool recompute = false) const;
 
-  virtual AmanziGeometry::Point edge_centroid(const Entity_ID e) const = 0;
+  AmanziGeometry::Point edge_centroid(const Entity_ID e) const;
 
   // Vector length equals to edge length.
   //
@@ -223,14 +223,14 @@ class MeshLight {
   // if pointid is specified, then orientation returns the direction of
   // the natural direction of the edge with respect to the point (1 is
   // away from the point and -1 is towards)
-  virtual AmanziGeometry::Point edge_vector(
-          const Entity_ID e,
-          const bool recompute = false,
-          const Entity_ID pointid = -1,
-          int *orientation = NULL) const = 0;
+  AmanziGeometry::Point edge_vector(
+      const Entity_ID e,
+      const bool recompute = false,
+      const Entity_ID pointid = -1,
+      int *orientation = NULL) const;
 
-  virtual double edge_length(
-          const Entity_ID e, const bool recompute = false) const = 0;
+  double edge_length(
+      const Entity_ID e, const bool recompute = false) const;
 
   // coordinates
   virtual void node_get_coordinates(
@@ -275,6 +275,7 @@ class MeshLight {
 
   int compute_cell_geometric_quantities_() const;
   int compute_face_geometric_quantities_() const;
+  int compute_edge_geometric_quantities_() const;
 
   // These are virtual and therefore slightly expensive, so they
   // should be used once to populate the cache and not again.  They
@@ -326,6 +327,11 @@ class MeshLight {
           AmanziGeometry::Point *centroid,
           std::vector<AmanziGeometry::Point> *normals) const = 0;
 
+  virtual int compute_edge_geometry_(
+          const Entity_ID e,
+          double *length,
+          AmanziGeometry::Point *edge_vector) const = 0;
+
  protected:
   unsigned int space_dim_;
   unsigned int manifold_dim_;
@@ -369,6 +375,11 @@ class MeshLight {
   // there are cells connected to it. For a given face, its normal to
   // face_get_cells()[i] is face_normals_[i]
   mutable std::vector<std::vector<AmanziGeometry::Point>> face_normals_;
+
+  // cache: edges
+  mutable bool edge_geometry_precomputed_;
+  mutable std::vector<double> edge_lengths_;
+  mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 };
 
 }  // namespace AmanziMesh

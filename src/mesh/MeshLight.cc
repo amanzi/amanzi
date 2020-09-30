@@ -389,6 +389,176 @@ AmanziGeometry::Point MeshLight::face_centroid(const Entity_ID f, const bool rec
 
 
 // -------------------------------------------------------------------
+// cache: face normal
+// -------------------------------------------------------------------
+AmanziGeometry::Point MeshLight::face_normal(
+    const Entity_ID faceid,
+    const bool recompute,
+    const Entity_ID cellid,
+    int *orientation) const
+{
+  AMANZI_ASSERT(faces_requested_);
+
+  std::vector<AmanziGeometry::Point> *fnormals = nullptr;
+  std::vector<AmanziGeometry::Point> fnormals_new;
+
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
+    fnormals = &(face_normals_[faceid]);
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(space_dim_);
+      compute_face_geometry_(faceid, &area, &centroid, &fnormals_new);
+      fnormals = &fnormals_new;
+    }
+    else {
+      fnormals = &(face_normals_[faceid]);
+    }
+  }
+
+  AMANZI_ASSERT(fnormals->size() > 0);
+
+  if (cellid == -1) {
+    // Return the natural normal. This is the normal with respect to
+    // the first cell, appropriately adjusted according to whether the
+    // face is pointing into the cell (-ve cell id) or out
+
+    int c = face_cell_ids_[faceid][0];
+    return std::signbit(c) ? -(*fnormals)[0] : (*fnormals)[0];
+  } else {
+    // Find the index of 'cellid' in list of cells connected to face
+
+    int dir;
+    int irefcell;
+    int nfc = face_cell_ids_[faceid].size();
+    for (irefcell = 0; irefcell < nfc; irefcell++) {
+      int c = face_cell_ids_[faceid][irefcell];
+      if (c == cellid || ~c == cellid) {
+        dir = std::signbit(c) ? -1 : 1;
+        break;
+      }
+    }
+    AMANZI_ASSERT(irefcell < nfc);
+    if (orientation) *orientation = dir;  // if orientation was requested
+    return (*fnormals)[irefcell];
+  }
+}
+
+
+// -------------------------------------------------------------------
+// cache: face area
+// -------------------------------------------------------------------
+double MeshLight::face_area(
+    const Entity_ID faceid, const bool recompute) const
+{
+  AMANZI_ASSERT(faces_requested_);
+
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
+    return face_areas_[faceid];
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(space_dim_);
+      std::vector<AmanziGeometry::Point> normals;
+      compute_face_geometry_(faceid, &area, &centroid, &normals);
+      return area;
+    }
+    else {
+      return face_areas_[faceid];
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
+// edge geometry: centroid
+// -------------------------------------------------------------------
+AmanziGeometry::Point MeshLight::edge_centroid(const Entity_ID e) const
+{
+  Entity_ID p0, p1;
+  AmanziGeometry::Point xyz0, xyz1;
+
+  edge_get_nodes(e, &p0, &p1);
+  node_get_coordinates(p0, &xyz0);
+  node_get_coordinates(p1, &xyz1);
+  return (xyz0 + xyz1)/2;
+}
+
+
+// -------------------------------------------------------------------
+// edge geometry: vector
+// -------------------------------------------------------------------
+AmanziGeometry::Point MeshLight::edge_vector(
+    const Entity_ID edgeid,
+    const bool recompute,
+    const Entity_ID pointid,
+    int *orientation) const
+{
+  AMANZI_ASSERT(edges_requested_);
+
+  AmanziGeometry::Point evector(space_dim_);
+  AmanziGeometry::Point& evector_ref = evector; // to avoid extra copying
+
+  if (!edge_geometry_precomputed_)
+    compute_edge_geometric_quantities_();
+
+  if (recompute) {
+    double length;
+    compute_edge_geometry_(edgeid, &length, &evector);
+    // evector_ref already points to evector
+  }
+  else {
+    evector_ref = edge_vectors_[edgeid];
+  }
+
+  if (orientation) *orientation = 1;
+
+  if (pointid == -1)
+    return evector_ref;
+  else {
+    Entity_ID p0, p1;
+    edge_get_nodes(edgeid, &p0, &p1);
+
+    if (pointid == p0)
+      return evector_ref;
+    else {
+      if (orientation) *orientation=-1;
+      return -evector_ref;
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
+// edge geometry: length
+// -------------------------------------------------------------------
+double MeshLight::edge_length(const Entity_ID e, const bool recompute) const
+{
+  AMANZI_ASSERT(edges_requested_);
+
+  if (!edge_geometry_precomputed_) {
+    compute_edge_geometric_quantities_();
+    return edge_lengths_[e];
+  }
+  else {
+    if (recompute) {
+      double length;
+      AmanziGeometry::Point vector(space_dim_);
+      compute_edge_geometry_(e, &length, &vector);
+      return length;
+    }
+    else {
+      return edge_lengths_[e];
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
 // cache: face geometry
 // -------------------------------------------------------------------
 int MeshLight::compute_face_geometric_quantities_() const
@@ -422,6 +592,32 @@ int MeshLight::compute_face_geometric_quantities_() const
   }
 
   face_geometry_precomputed_ = true;
+
+  return 1;
+}
+
+
+// -------------------------------------------------------------------
+// cache: edge geometry
+// -------------------------------------------------------------------
+int MeshLight::compute_edge_geometric_quantities_() const
+{
+  int nedges = num_entities(EDGE,Parallel_type::ALL);
+
+  edge_vectors_.resize(nedges);
+  edge_lengths_.resize(nedges);
+
+  for (int i = 0; i < nedges; i++) {
+    double length;
+    AmanziGeometry::Point evector(space_dim_);
+
+    compute_edge_geometry_(i,&length,&evector);
+
+    edge_lengths_[i] = length;
+    edge_vectors_[i] = evector;
+  }
+
+  edge_geometry_precomputed_ = true;
 
   return 1;
 }
