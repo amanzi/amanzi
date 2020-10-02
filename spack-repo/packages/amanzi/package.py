@@ -31,12 +31,10 @@ class Amanzi(CMakePackage):
     version('1.1-dev', tag='amanzi-1.1-dev', submodules=True)
     version('1.0.0', tag='amanzi-1.0.0', submodules=True)
 
-    variant('structured', default=False,
-            description='Build structured mesh capability')
-    variant('unstructured', default=True,
-            description='Build unstructured mesh capability')
-    variant('mstk', default=True, description='Enable MSTK mesh support for '
-            'unstructured mesh')
+    variant('mesh_type', default='unstructured', 
+        values=('unstructured', 'structured'),
+        description='Select mesh type: unstructured or structured', 
+        multi=False)
     variant('alquimia', default=False, description='Enable alquimia support')
     variant('hypre', default=True, description='Enable Hypre solver support')
     variant('ats', default=False, description='Enable ATS support')
@@ -44,13 +42,14 @@ class Amanzi(CMakePackage):
     variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
     variant('crunchtope', default=False, description='Enable CrunchTope support')
 
+#   variant('mstk', default=True, description='Enable MSTK mesh support for '
+#     'unstructured mesh') 
 #    variant('moab', default=False, description='Enable MOAB mesh support for '
 #            'unstructured mesh')
 #    variant('silo', default=False, description='Enable Silo reader for binary '
 #            'files')
     #variant('petsc', default=True, description='Enable PETsC support')
 #    variant('tests', default=False, description='Enable the unit test suite')
-
 
     patch('exprtk.patch', when = '@1.0.0')
 
@@ -95,6 +94,9 @@ class Amanzi(CMakePackage):
     depends_on('trilinos@12.18.1 +pnetcdf +boost +cgns +hdf5 +metis '
                '+zlib +anasazi +amesos2 +epetra +ml +teuchos '
                '+zoltan +nox +ifpack +muelu')
+
+    # Conflicts 
+    conflicts('+crunchtope', when="-alquimia", msg="+crunchtope needs +alquimia") 
 
     def cmake_args(self):
         options = ['-DCMAKE_BUILD_TYPE=debug']
@@ -152,12 +154,13 @@ class Amanzi(CMakePackage):
         else:
             options.append('-DENABLE_MSTK_Mesh=OFF')
 
-        if '+unstructured' in self.spec:
+        if self.spec.variants['mesh_type'].value == 'unstructured':
             options.append('-DENABLE_Unstructured=ON')
             options.append('-DENABLE_STK_Mesh=OFF')
         else:
             options.append('-DENABLE_Unstructured=OFF')
-        if '+structured' in self.spec:
+
+        if self.spec.variants['mesh_type'].value == 'structured':
             options.append('-DENABLE_Structured=ON')
         else:
             options.append('-DENABLE_Structured=OFF')
