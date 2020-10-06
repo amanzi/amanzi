@@ -270,6 +270,44 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   preconditioner_diff_->ApplyBCs(true, true, true);
 };
 
+double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<const TreeVector> res) {
+
+  const Epetra_MultiVector& temp = *S_inter_->GetFieldData(temperature_key_)
+        ->ViewComponent("cell",true);
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
+        ->ViewComponent("cell",true);
+
+  int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+  double err_max = 0.;
+  double err_L1 = 0.;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double T0 = 280., T1 = 400.;
+    double coef = log(T1/T0);
+    double temp_ex_c = T0*exp(coef*xc[2]);
+    err_max = std::max(err_max,std::abs(temp_ex_c-temp[0][c]));
+    err_L1 += std::abs(temp_ex_c-temp[0][c])*cv[0][c];
+  }
+
+  double err_max_tmp(err_max);
+  double err_L1_tmp(err_L1);
+
+  mesh_->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
+  mesh_->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
+
+  if (mesh_->get_comm()->MyPID() == 0) {
+    std::cout << "err_max = " << err_max << std::endl;
+    std::cout << "err_L1  = " << err_L1 << std::endl;
+  }
+
+  return PK_PhysicalBDF_Default::ErrorNorm(u,res);
+
+}
+
+
 /*
 // -----------------------------------------------------------------------------
 // Default enorm that uses an abs and rel tolerance to monitor convergence.

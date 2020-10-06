@@ -205,27 +205,34 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-//      g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c];
-      // manufactured solution 1: linear temperature distribution
+
+      if (temp[0][c] < 32.) {
+          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+      } else {
+          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
+      }
+
+      /* TESTING
+//      // manufactured solution 1: linear temperature distribution
 //      double T0 = 280., T1 = 400.;
-//      g_c[0][c] += -cp_*rho[0][c]*(T1-T0)/(h_+1.e-6)*(dhdt*xc[2] - B_w) * cv[0][c] - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      // manufactured solution 2: exponential temperature distribution
-//      double T0 = 280., T1 = 400.;
-//      double coef = log(T1/T0);
-////      std::cout << "lambda_c[0][c] = " << lambda_c[0][c] << std::endl;
-////      std::cout << "coef = " << coef << std::endl;
-////      std::cout << "exp(coef*xc[2]) = " << exp(coef*xc[2]) << std::endl;
-////      std::cout << "h_ = " << h_ << std::endl;
-//      g_c[0][c] += -T0*coef*exp(coef*xc[2])*( 1./(h_+1.e-6)*lambda_c[0][c]*coef + cp_*rho[0][c]*(dhdt*xc[2] - B_w) )/(h_+1.e-6) * cv[0][c]
+//      g_c[0][c] += cp_*rho[0][c]*(T1-T0)/(h_+1.e-6)*(dhdt*xc[2] - B_w) * cv[0][c]; // - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+      // manufactured solution 2: exponential temperature distribution
+      double T0 = 280., T1 = 400.;
+      double coef = log(T1/T0);
+//      std::cout << "lambda_c[0][c] = " << lambda_c[0][c] << std::endl;
+//      std::cout << "coef = " << coef << std::endl;
+//      std::cout << "exp(coef*xc[2]) = " << exp(coef*xc[2]) << std::endl;
+//      std::cout << "h_ = " << h_ << std::endl;
+      g_c[0][c] += T0*coef*exp(coef*xc[2])*( 1./(h_+1.e-6)*lambda_c[0][c]*coef - cp_*rho[0][c]*(dhdt*xc[2] - B_w) )/(h_+1.e-6) * cv[0][c];
 //          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
 //      // manufactured solution 3: quadratic temperature distribution
-      double T0 = 280., T1 = 400.;
-      double zm = 0.5, Tm = 300.;
-      double d = T0;
-      double b = (Tm-T0-zm*zm*(T1-T0))/(zm*(1.-zm));
-      double a = T1-T0-b;
+//      double T0 = 280., T1 = 400.;
+//      double zm = 0.5, Tm = 300.;
+//      double d = T0;
+//      double b = (Tm-T0-zm*zm*(T1-T0))/(zm*(1.-zm));
+//      double a = T1-T0-b;
 ////      std::cout << "a = " << a << ", b = " << b << std::endl;
-      g_c[0][c] += (2.*a*lambda_c[0][c]/(h_+1.e-6) - cp_*rho[0][c]*(2.*a*xc[2] + b)*(dhdt*xc[2] - B_w))/(h_+1.e-6) * cv[0][c];
+//      g_c[0][c] += (2.*a*lambda_c[0][c]/(h_+1.e-6) - cp_*rho[0][c]*(2.*a*xc[2] + b)*(dhdt*xc[2] - B_w))/(h_+1.e-6) * cv[0][c];
 //          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
 //      g_c[0][c] += 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) * cv[0][c];
       //          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
@@ -238,6 +245,8 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 //                 + cp_*rho[0][c]*dhdt/(h_+1.e-6)*(a*xc[2]*xc[2] + b*xc[2] + c) * cv[0][c];
 //      std::cout << "h_ = " << h_ << std::endl;
 //      std::cout << "SRC = " << g_c[0][c] << std::endl;
+ *
+ */
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))

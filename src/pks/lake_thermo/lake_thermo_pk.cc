@@ -433,7 +433,7 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 //  cp_ = std::fabs(cp_vec[0]);
   cp_ = 4184./1000.;
 
-  r_ = 1.; //1.e-7;
+  r_ = 0.; //1.; //1.e-7;
   E_ = 0.;
   R_s_ = 0.;
   R_b_ = 0.;
@@ -480,8 +480,9 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
     S->GetField(wc_key_, name_)->set_initialized();
 
-//  S->GetFieldData(temperature_key_, name_)->PutScalar(300.0);
+  S->GetFieldData(temperature_key_, name_)->PutScalar(50.0);
 
+    /*
   // get temperature
   const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
         ->ViewComponent("cell",false);
@@ -498,6 +499,7 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       temp[0][c] = a*xc[2]*xc[2] + b*xc[2] + d;
   }
+  */
 
   S->GetField(temperature_key_, name_)->set_initialized();
 

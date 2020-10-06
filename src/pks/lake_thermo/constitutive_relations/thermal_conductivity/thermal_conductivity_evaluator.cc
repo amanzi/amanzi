@@ -49,7 +49,8 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
     K_max_(other.K_max_),
     K_0_(other.K_0_),
     V_wind_(other.V_wind_),
-    V_wind_0_(other.V_wind_0_) {}
+    V_wind_0_(other.V_wind_0_),
+    temperature_key_(other.temperature_key_){}
 //    uf_key_(other.uf_key_),
 //    height_key_(other.height_key_),
 //    K_liq_(other.K_liq_),
@@ -66,19 +67,37 @@ void ThermalConductivityEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
+  ice_cover_ = false; // first always assume that there is no ice
+
+  // get temperature
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+
   for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       // much more efficient to pull out vectors first
 //      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
 //      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
+
       for (int i=0; i!=ncomp; ++i) {
-        if (ice_cover_) {
-            result_v[0][i] = 1.5;
-        } else {
-            result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
+        if (temp_v[0][i] < 32.) { // check if there is ice cover
+          ice_cover_ = true;
+        }
+      }
+
+      for (int i=0; i!=ncomp; ++i) {
+        if (temp_v[0][i] < 32.) { // this cell is in ice layer
+            result_v[0][i] = 2.2;
+        }
+        else {
+          if (ice_cover_) {
+              result_v[0][i] = 1.5;
+          } else {
+              result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
+          }
         }
 //        result_v[0][i] = 0.;
       }
