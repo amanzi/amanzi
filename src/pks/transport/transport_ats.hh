@@ -136,8 +136,7 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
-  void MixingSolutesWthSources(double told, double tnew);
-    
+  // void MixingSolutesWthSources(double told, double tnew);
 
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
@@ -247,7 +246,7 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
-  bool subcycling_, special_source_, water_source_in_meters_;
+  bool subcycling_, water_source_in_meters_;
   int dim;
   int saturation_name_;
   bool vol_flux_conversion_;

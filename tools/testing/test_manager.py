@@ -494,6 +494,17 @@ class RegressionTest(object):
                 for i in range(len(chp)):
                     chp.pop(chp[0].get('name'))
 
+                # remove the vis list and coordinator "required times" lists which can affect timestepping
+                try:
+                    xml.pop("visualization")
+                except aerrors.MissingXMLError:
+                    pass
+                coord = asearch.find_name(xml, "cycle driver")
+                try:
+                    coord.pop("required times")
+                except aerrors.MissingXMLError:
+                    pass
+
                 chp.setParameter('cycles', 'Array(int)', chp_cycles)
 
                 # -- update timestep controller, nonlinear solvers

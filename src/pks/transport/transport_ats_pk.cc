@@ -68,7 +68,7 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
   }
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
-  special_source_ = tp_list_->get<bool>("special source", false);
+
   water_source_in_meters_ = tp_list_->get<bool>("water source in meters", true);
 
   // initialize io
@@ -172,7 +172,7 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   // quantity.)
   S->RequireField(conserve_qty_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents+2);
-  
+
   // other things that I own
   S->RequireField(prev_saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -263,11 +263,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   //create copies
   S->RequireFieldCopy(tcc_key_, "subcycling", passwd_);
   tcc_tmp = S->GetField(tcc_key_, passwd_)->GetCopy("subcycling", passwd_)->GetFieldData();
-
-  if (special_source_){
-    S->RequireFieldCopy(tcc_key_, "with source", passwd_);
-    tcc_w_src = S->GetField(tcc_key_, passwd_)->GetCopy("with source", passwd_)->GetFieldData();
-  }
 
   S->RequireFieldCopy(saturation_key_, "subcycle_start", passwd_);
   ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",passwd_)
@@ -737,7 +732,7 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
                << "Advancing: t0 = " << S_inter_->time()
                << " t1 = " << S_next_->time() << " h = " << dt_MPC << std::endl
                << "----------------------------------------------------------------" << std::endl;
-  
+
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
@@ -1212,7 +1207,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
   for (int c = 0; c < ncells_owned; c++) {
     double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
     (*conserve_qty_)[num_components+1][c] = vol_phi_ws_den;
-    
+
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
 
@@ -1255,7 +1250,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
         //AmanziGeometry::Point normal = mesh_->face_normal(f);
       }
       (*conserve_qty_)[num_components+1][c1] -= dt_ * u;
-      
+
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
         double tcc_flux = dt_ * u * tcc_prev[i][c1];
@@ -1312,14 +1307,14 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
     AMANZI_ASSERT(water_total >= water_new);
     (*conserve_qty_)[num_components][c] = water_total;
 
-    if (std::abs((*conserve_qty_)[num_components+1][c] - water_total) > water_tolerance_
-        && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "Water balance error (cell " << c << "): " << std::endl
-                 << "  water_old + advected = " << (*conserve_qty_)[num_components+1][c] << std::endl
-                 << "  water_sink = " << water_sink << std::endl
-                 << "  water_new = " << water_new << std::endl;
-    }
-    
+    // if (std::abs((*conserve_qty_)[num_components+1][c] - water_total) > water_tolerance_
+    //     && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    //   *vo_->os() << "Water balance error (cell " << c << "): " << std::endl
+    //              << "  water_old + advected = " << (*conserve_qty_)[num_components+1][c] << std::endl
+    //              << "  water_sink = " << water_sink << std::endl
+    //              << "  water_new = " << water_new << std::endl;
+    // }
+
     for (int i = 0; i < num_advect; i++) {
       if (water_new > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
         // there is both water and stuff present at the new time
@@ -1333,7 +1328,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);
         (*conserve_qty_)[i][c] = 0.;
         tcc_next[i][c] = 0.;
-      }        
+      }
     }
   }
   db_->WriteCellVector("tcc_new", tcc_next);
@@ -1372,49 +1367,73 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 
   // work memory
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
   S_inter_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-
-  Epetra_Vector ws_ratio(Copy, *ws_start, 0);
-  for (int c = 0; c < ncells_owned; c++){
-    double vol_phi_ws_den_end = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-    if (vol_phi_ws_den_end > water_tolerance_)  {
-      double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
-      if (vol_phi_ws_den_start > water_tolerance_){
-        ws_ratio[c] = ( (*ws_start)[0][c] * (*mol_dens_start)[0][c] )
-                    / ( (*ws_end)[0][c]   * (*mol_dens_end)[0][c]   );
-      } else {
-        ws_ratio[c] = 1;
-      }
-    }
-    else  ws_ratio[c]=0.;
-  }
+  // Epetra_Vector ws_ratio(Copy, *ws_start, 0);
+  // for (int c = 0; c < ncells_owned; c++){
+  //   double vol_phi_ws_den_end = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+  //   if (vol_phi_ws_den_end > water_tolerance_)  {
+  //     double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+  //     if (vol_phi_ws_den_start > water_tolerance_){
+  //       ws_ratio[c] = ( (*ws_start)[0][c] * (*mol_dens_start)[0][c] )
+  //                   / ( (*ws_end)[0][c]   * (*mol_dens_end)[0][c]   );
+  //     } else {
+  //       ws_ratio[c] = 1;
+  //     }
+  //   }
+  //   else  ws_ratio[c]=0.;
+  // }
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
+  int num_components = tcc_next.NumVectors();
+  conserve_qty_->PutScalar(0.);
+
+  // prepopulate with initial water for better debugging
+  for (int c = 0; c < ncells_owned; c++) {
+    double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+    (*conserve_qty_)[num_components+1][c] = vol_phi_ws_den_start;
+  }
 
   for (int i = 0; i < num_advect; i++) {
     current_component_ = i;  // needed by BJ
-
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    FunctionalTimeDerivative(T, *component, f_component);
+    FunctionalTimeDerivative(T, *component, *(*conserve_qty_)(i));
+  }
+  db_->WriteCellVector("cons (time_deriv)", *conserve_qty_);
 
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
+  // calculate the new conc
+  for (int c = 0; c < ncells_owned; c++) {
+    double water_old = (*conserve_qty_)[num_components+1][c];
+    double water_new = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+    double water_sink = (*conserve_qty_)[num_components][c];
+    double water_total = water_sink + water_new;
+    (*conserve_qty_)[num_components][c] = water_total;
 
-      if (tcc_next[i][c] < 0){
-        double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-        (*solid_qty_)[i][c] += abs(tcc_next[i][c])*vol_phi_ws_den;
+    for (int i=0; i!=num_components; ++i) {
+      double cons_qty = (tcc_prev[i][c] + dt_ * (*conserve_qty_)[i][c]) * water_old;
+      (*conserve_qty_)[i][c] = cons_qty;
+      if (water_new > water_tolerance_ && cons_qty > 0) {
+        // there is both water and stuff present at the new time
+        // this is stuff at the new time + stuff leaving through the domain coupling, divided by water of both
+        tcc_next[i][c] = cons_qty / water_total;
+      } else if (water_sink > water_tolerance_ && cons_qty > 0) {
+        // there is water and stuff leaving through the domain coupling, but it all leaves (none at the new time)
+        tcc_next[i][c] = 0.;
+      } else {
+        // there is no water leaving, and no water at the new time.  Change any stuff into solid
+        (*solid_qty_)[i][c] += std::max(cons_qty, 0.);
+        (*conserve_qty_)[i][c] = 0.;
         tcc_next[i][c] = 0.;
       }
     }
   }
+  db_->WriteCellVector("tcc_new", tcc_next);
 
   // update mass balance
   for (int i = 0; i < num_aqueous + num_gaseous; i++) {
@@ -1586,7 +1605,7 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
       if (c >= ncells_owned) continue;
 
-      if (srcs_[m]->name() == "domain coupling") {
+      if (srcs_[m]->name() == "domain coupling" && n0 == 0) {
         (*conserve_qty_)[component_names_.size()][c] += values[component_names_.size()];
       }
 
@@ -1605,94 +1624,6 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
   }
 }
 
-
-/* ******************************************************************
-*
-*
-*
-****************************************************************** */
-void Transport_ATS::MixingSolutesWthSources(double told, double tnew)
-
-{
-
-  if (!special_source_) return;
-
-  Key mass_source_key =  Keys::readKey(*tp_list_, domain_name_, "water source", "mass_source");
-  if (!S_->HasFieldEvaluator(mass_source_key)) return;
-
-  const Epetra_MultiVector& water_source =
-    *S_->GetFieldData(mass_source_key)->ViewComponent("cell",false);
-
-  Teuchos::RCP<const Epetra_MultiVector> nliq1_s;
-
-  if (water_source_in_meters_) {
-      // External source term is in [m water / s], not in [mols / s], so a
-      // density is required.  This density should be upwinded.
-    nliq1_s =
-      S_->GetFieldData(Keys::getKey(domain_name_,"source_molar_density"))->ViewComponent("cell",false);
-  }
-
-  const Epetra_MultiVector& tcc_prev_vec = *tcc->ViewComponent("cell");
-  Epetra_MultiVector& tcc_w_src_vec = *tcc_w_src->ViewComponent("cell");
-  int num_vectors = tcc_w_src_vec.NumVectors();
-  int nsrcs = srcs_.size();
-  double dt = (tnew - told);
-
-  for (int m = 0; m < nsrcs; m++) {
-
-    srcs_[m]->Compute(told, tnew);
-
-    std::vector<int> index = srcs_[m]->tcc_index();
-    for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
-
-      if (srcs_[m]->name() == "domain coupling") continue;
-
-      int c = it->first;
-      if (c >= ncells_owned) continue;
-
-      std::vector<double>& values = it->second;
-      double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-      double add_water = 0.;
-
-      if (water_source_in_meters_) {
-        double s1 = water_source[0][c] > 0. ? water_source[0][c] * (*nliq1_s)[0][c] : 0.;
-        add_water = mesh_->cell_volume(c) * s1 * dt;
-      } else {
-        double s1 =  water_source[0][c] > 0. ? water_source[0][c] : 0.;
-        add_water = mesh_->cell_volume(c) * s1 * dt;
-      }
-
-      for (int k = 0; k < index.size(); ++k) {
-        int i = index[k];
-
-        int imap = i;
-        if (num_vectors == 1) imap = 0;
-
-        double tcc_src_value =  mesh_->cell_volume(c) * values[k] * (tnew - told);
-        double consv_qty = tcc_prev_vec[imap][c]*vol_phi_ws_den + tcc_src_value;
-
-        if (vol_phi_ws_den + add_water > water_tolerance_){
-          tcc_w_src_vec[imap][c] = consv_qty/(vol_phi_ws_den + add_water);
-        } else {
-          // if (vo_->getVerbLevel() > Teuchos::VERB_HIGH) {
-          //   Teuchos::OSTab tab = vo_->getOSTab();
-          //   *vo_->os() << vo_->color("yellow") << "No liquid phase in the sources. No mixing occured." << vo_->reset() << std::endl;
-          // }
-        }
-      }
-    }
-  }
-
-  // for (int c = 0; c < ncells_owned; c++) {
-  //   mass2 += tcc[0][c];
-  // }
-  // tmp1 = mass2;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass2, 1);
-  // tmp1 = add_mass;
-  // mesh_->get_comm()->SumAll(&tmp1, &add_mass, 1);
-
-
-}
 
 void Transport_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
                                           std::vector<double>& total_outflux, int n0, int n1){
