@@ -17,6 +17,7 @@
 #include "EOS_IdealGas.hh"
 #include "EOS_VaporInGas.hh"
 #include "EOS_Water.hh"
+#include "EOS_WaterFEHM.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
 #include "SaturatedVaporPressure_Water.hh"
@@ -38,7 +39,8 @@ Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> ViscosityEvaluator:
 Utils::RegisteredFactory<EOS, EOS_Constant> EOS_Constant::factory_("constant");
 Utils::RegisteredFactory<EOS, EOS_IdealGas> EOS_IdealGas::factory_("ideal gas");
 Utils::RegisteredFactory<EOS, EOS_VaporInGas> EOS_VaporInGas::factory_("vapor in gas");
-Utils::RegisteredFactory<EOS, EOS_Water> EOS_Water::factory_("liquid water");
+Utils::RegisteredFactory<EOS, EOS_Water> EOS_Water::factory_("liquid water 0-30C");
+Utils::RegisteredFactory<EOS, EOS_WaterFEHM> EOS_WaterFEHM::factory_("liquid water FEHM");
 
 Utils::RegisteredFactory<SaturatedVaporPressure, SaturatedVaporPressure_Water> SaturatedVaporPressure_Water::factory_("water vapor over water/ice");
 

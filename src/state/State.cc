@@ -1404,29 +1404,34 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   checkpoint.open_h5file();
 
   // read observations
-  int nlabels, ndata;
-  int *nobs;
-  char **tmp_labels;
-  double *tmp_data;
+  int nlabels, ndata(0), ndata_glb(0);
+  int* nobs;
+  char** tmp_labels;
+  double* tmp_data(NULL);
 
   checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
   if (nlabels > 0) { 
     checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
-    checkpoint.readAttrReal(&tmp_data, &ndata, "obs_values");
   }
+  for (int i = 0; i < nlabels; ++i) ndata_glb += 2 * nobs[i];
+  ndata = (comm->MyPID() == 0) ? ndata_glb : 0;
+  checkpoint.readDatasetReal(&tmp_data, ndata, "obs_values");
+
   checkpoint.close_h5file();
 
-  // populated observations
-  int m(0);
-  Amanzi::ObservationData::DataQuadruple data_quad;
+  // populated observations on root
+  if (comm->MyPID() == 0) {
+    int m(0);
+    Amanzi::ObservationData::DataQuadruple data_quad;
 
-  for (int i = 0; i < nlabels; ++i) {
-    std::vector<ObservationData::DataQuadruple>& od = obs_data[tmp_labels[i]];
-    for (int k = 0; k < nobs[i]; ++k) {
-      data_quad.time = tmp_data[m++];
-      data_quad.value = tmp_data[m++];
-      data_quad.is_valid = true;
-      od.push_back(data_quad);
+    for (int i = 0; i < nlabels; ++i) {
+      std::vector<ObservationData::DataQuadruple>& od = obs_data[tmp_labels[i]];
+      for (int k = 0; k < nobs[i]; ++k) {
+        data_quad.time = tmp_data[m++];
+        data_quad.value = tmp_data[m++];
+        data_quad.is_valid = true;
+        od.push_back(data_quad);
+      }
     }
   }
 
@@ -1435,7 +1440,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   if (nlabels > 0) {
     free(tmp_labels);
     free(nobs);
-    free(tmp_data);
+    if (tmp_data != NULL) free(tmp_data); 
   }
 }
 
