@@ -16,17 +16,19 @@ See ATS process model documentation's permafrost model for details.
 
 Usage:
 
-  <ParameterList name="Thermal Conductivity Model">
-    <Parameter name="Thermal Conductivity Type" type="string" value="three-phase Peters-Lidard"/>
-    <Parameter name="thermal conductivity of soil" type="double" value=""/>
-    <Parameter name="thermal conductivity of liquid" type="double" value=""/>
-    <Parameter name="thermal conductivity of gas" type="double" value=""/>
+  <ParameterList name="thermal_conductivity">
+    <Parameter name="thermal conductivity type" type="string" value="three-phase Peters-Lidard"/>
+    <Parameter name="thermal conductivity of soil [W m^-1 K^-1]" type="double" value=""/>
+    <Parameter name="thermal conductivity of liquid [W m^-1 K^-1]" type="double" value=""/>
+    <Parameter name="thermal conductivity of gas [W m^-1 K^-1]" type="double" value=""/>
+    <Parameter name="thermal conductivity of ice [W m^-1 K^-1]" type="double" value=""/>
 
-    <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+    <Parameter name="unsaturated alpha unfrozen [-]" type="double" value=""/>
+    <Parameter name="unsaturated alpha frozen [-]" type="double" value=""/>
+
     <Parameter name="epsilon" type="double" value="1.e-10"/>
   </ParameterList>
 
-Units: ????
 ------------------------------------------------------------------------- */
 
 #ifndef PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_THREEPHASE_PETERSLIDARD_HH_

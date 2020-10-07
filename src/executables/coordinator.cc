@@ -573,8 +573,8 @@ void Coordinator::cycle_driver() {
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
         *vo_->os() << "Cycle = " << S_->cycle();
-        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
-        *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+        *vo_->os() << ",  Time [days] = "<< std::setprecision(16) << S_->time() / (60*60*24);
+        *vo_->os() << ",  dt [days] = " << std::setprecision(16) << dt / (60*60*24)  << std::endl;
         *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;
       }

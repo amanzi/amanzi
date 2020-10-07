@@ -15,14 +15,14 @@ See ATS process model documentation's permafrost model for details.
 
 Usage:
 
-  <ParameterList name="Thermal Conductivity Model">
-    <Parameter name="Thermal Conductivity Type" type="string" value="three-phase wet/dry"/>
-
-    <Parameter name="thermal conductivity, wet" type="double" value=""/>
-    <Parameter name="thermal conductivity, dry" type="double" value=""/>
-
+  <ParameterList name="thermal_conductivity">
+    <Parameter name="thermal conductivity type" type="string" value="three-phase wet/dry"/>
+    <Parameter name="thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]" type="double" value=""/>
+    <Parameter name="thermal conductivity, dry [W m^-1 K^-1]" type="double" value=""/>
+    <Parameter name="unsaturated alpha frozen [-]" type="double" value=""/>
+    <Parameter name="unsaturated alpha unfrozen [-]" type="double" value=""/>
+    <Parameter name="saturated beta frozen [-]" type="double" value="1.0"/>
     <Parameter name="epsilon" type="double" value="1.e-10"/>
-    <Parameter name="unsaturated alpha" type="double" value="1.0"/>
   </ParameterList>
 
 Units: ????

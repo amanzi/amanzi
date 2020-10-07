@@ -30,6 +30,7 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
+#include "Debugger.hh"
 #include "PK_PhysicalExplicit.hh"
 #include "DenseVector.hh"
 
@@ -223,7 +224,6 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
     int internal_tests;
     double tests_tolerance;
 
-
  protected:
     Teuchos::RCP<TreeVector> soln_;
 
@@ -240,6 +240,7 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
     Key solid_residue_mass_key_;
     Key water_content_key_;
     Key mass_src_key_;
+    Key conserve_qty_key_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -254,7 +255,7 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
   Teuchos::RCP<CompositeVector> tcc_w_src;
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_;
+  Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_, water_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux_;
   Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_;
   Teuchos::RCP<Epetra_MultiVector> flux_copy_;
@@ -322,8 +323,9 @@ class Transport_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
 
   // io
   Utils::Units units_;
-    //VerboseObject* vo_;
-    Teuchos::RCP<VerboseObject> vo_;
+
+  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<Debugger> db_;
 
   // Forbidden.
   Transport_ATS(const Transport_ATS&);
