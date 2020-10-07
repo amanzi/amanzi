@@ -234,6 +234,26 @@ Debugger::WriteVector(const std::string& name,
 }
 
 
+// Write a vector individually.
+void
+Debugger::WriteCellVector(const std::string& name,
+                      const Epetra_MultiVector& vec)
+{
+  int n_vecs = vec.NumVectors();
+  for (int i=0; i!=dc_.size(); ++i) {
+    for (int j=0; j!=n_vecs; ++j) {
+      AmanziMesh::Entity_ID c0 = dc_[i];
+      AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+      Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+
+      if (dcvo_[i]->os_OK(verb_level_)) {
+        *dcvo_[i]->os() << FormatHeader_(name, c0_gid) << Format_(vec[j][c0]) << std::endl;
+      }
+    }
+  }
+}
+
+
 // Write list of vectors.
 void
 Debugger::WriteVectors(const std::vector<std::string>& names,
