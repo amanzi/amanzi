@@ -185,7 +185,6 @@ class MeshExtractedManifold : public Mesh {
   // -- Epetra importer that will allow apps to import values from a Epetra vector defined 
   //    on all owned faces into an Epetra vector defined only on exterior faces
   virtual const Epetra_Import& exterior_face_importer(void) const override {
-    AMANZI_ASSERT(false);
     return *exterior_face_importer_;
   }
 

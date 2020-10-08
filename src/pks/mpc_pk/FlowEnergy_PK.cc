@@ -64,7 +64,6 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   energy_key_ = Keys::getKey(domain_, "energy");
   prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
-  effective_pressure_key_ = Keys::getKey(domain_, "effective_pressure");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
@@ -143,6 +142,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<double>("molar heat capacity", 76.0);
   }
 
+  S->RequireField(ie_liquid_key_, ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(ie_liquid_key_);
+
+
   // -- molar and mass density
   if (!S->HasField(mol_density_liquid_key_) && !elist.isSublist(mol_density_liquid_key_)) {
     elist.sublist(mol_density_liquid_key_)
@@ -151,15 +156,15 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("molar density key", mol_density_liquid_key_)
          .set<std::string>("mass density key", mass_density_liquid_key_);
     elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
-         .set<std::string>("eos type", "liquid water");
+         .set<std::string>("eos type", "liquid water 0-30C");
     elist.sublist(mol_density_liquid_key_)
          .sublist("verbose object").set<std::string>("verbosity level", "medium");
-
-    S->RequireField(mol_density_liquid_key_, mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(mol_density_liquid_key_);
-    S->RequireFieldEvaluator(mass_density_liquid_key_);
   }
+
+  S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(mol_density_liquid_key_);
 
   // -- viscosity model
   if (!S->HasField(viscosity_liquid_key_) && !elist.isSublist(viscosity_liquid_key_)) {
@@ -174,17 +179,6 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(viscosity_liquid_key_);
-  }
-
-  // Other fields
-  if (!S->HasField(effective_pressure_key_) && !elist.isSublist(effective_pressure_key_)) {
-    elist.sublist(effective_pressure_key_)
-         .set<std::string>("field evaluator type", "effective_pressure");
-
-    S->RequireField(effective_pressure_key_, effective_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(effective_pressure_key_);
-    S->GetField(effective_pressure_key_, effective_pressure_key_)->set_io_vis(false);
   }
 
   // inform other PKs about strong coupling

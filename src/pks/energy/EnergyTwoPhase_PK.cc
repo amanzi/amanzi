@@ -71,7 +71,8 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- advection of enthalpy
   if (!S->HasField(enthalpy_key_)) {
     S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->SetGhosted()->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_);
@@ -178,12 +179,26 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
     bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
 
-  // output of initialization header
+  // initialize boundary conditions
+  double t_ini = S->time(); 
+  auto temperature = *S->GetFieldData(temperature_key_, passwd_);
+  UpdateSourceBoundaryData(t_ini, t_ini, temperature);
+
+  // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces\n\n"
+               << "solution vector: ";
+    solution->Print(*vo_->os(), false);
     *vo_->os() << std::endl 
                << vo_->color("green") << "Initialization of TP is complete, T=" << t_old 
                << " dT=" << dt_ << vo_->reset() << std::endl;
+  }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
 

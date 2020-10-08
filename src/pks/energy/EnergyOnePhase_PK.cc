@@ -74,7 +74,8 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- advection of enthalpy
   if (!S->HasField(enthalpy_key_)) {
     S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->SetGhosted()->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_);
@@ -164,20 +165,26 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // initialize boundary conditions
-  dt_ = 0.0;  // no other reasonable estimate
   double t_ini = S->time(); 
   auto temperature = *S->GetFieldData(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
-  // output of initialization header
+  // output of initialization summary
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
-    *vo_->os() << std::endl 
-               << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics() << std::endl
+    *vo_->os() << "temperature BC assigned to " << dirichlet_bc_faces_ << " faces\n\n"
+               << "solution vector: ";
+    solution->Print(*vo_->os(), false);
+    *vo_->os() << "matrix: " << my_operator(Operators::OPERATOR_MATRIX)->PrintDiagnostics() << std::endl
                << "preconditioner: " << my_operator(Operators::OPERATOR_PRECONDITIONER_RAW)->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
                << vo_->reset() << std::endl;
+  }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
 

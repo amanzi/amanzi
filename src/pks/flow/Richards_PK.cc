@@ -22,7 +22,7 @@
 #include "CommonDefs.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "InverseFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -31,7 +31,6 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
-#include "InverseFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
@@ -137,6 +136,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
@@ -286,15 +286,16 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- model for liquid density is constant density unless specified otherwise
   //    in high-level PKs.
-  if (!S->HasField("molar_density_liquid")) {
-    S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasField(mol_density_liquid_key_)) {
+    S->RequireField(mol_density_liquid_key_, mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     double rho = glist_->sublist("state").sublist("initial conditions")
                         .sublist("const_fluid_density").get<double>("value", 1000.0);
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
-    Teuchos::ParameterList& wc_eval = S->FEList().sublist("molar_density_liquid");
+    Teuchos::ParameterList& wc_eval = S->FEList().sublist(mol_density_liquid_key_);
     wc_eval.sublist("function").sublist("DOMAIN")
            .set<std::string>("region", "All")
            .set<std::string>("component","cell")
@@ -302,7 +303,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
            .set<double>("value", n_l);
     wc_eval.set<std::string>("field evaluator type", "independent variable");
 
-    S->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator(mol_density_liquid_key_);
   }
   
   // -- saturation
@@ -837,6 +838,12 @@ void Richards_PK::InitializeStatistics_()
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+  }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
 }
 

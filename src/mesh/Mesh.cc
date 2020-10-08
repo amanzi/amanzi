@@ -656,6 +656,81 @@ Mesh::deform(const Entity_ID_List& nodeids,
 // Figure out columns of cells in a semi-structured mesh and cache the
 // information for later.
 //
+// The columns are defined by identifying all boundary faces in a provided
+// set, then collecting cells and faces upward.
+//
+// NOTE: Currently ghost columns are built too because we didn't know that
+// they weren't necessary. --etc
+//
+// NOTE: this could be const thanks to only changing mutable things, but we
+// choose not to be since it is directly a user asking for provided column
+// structure.
+int
+Mesh::build_columns(const std::string& setname) const
+{
+  if (columns_built_) return 0;
+  int rank = get_comm()->MyPID();
+
+  // Allocate space and initialize.
+  int nn = num_entities(NODE,Parallel_type::ALL);
+  int nc = num_entities(CELL,Parallel_type::ALL);
+
+  columnsID_.resize(nc);
+  cell_cellbelow_.resize(nc);
+  cell_cellbelow_.assign(nc,-1);
+  cell_cellabove_.resize(nc);
+  cell_cellabove_.assign(nc,-1);
+  node_nodeabove_.resize(nn);
+  node_nodeabove_.assign(nn,-1);
+
+  // build all columns, but need owned ones first
+  Entity_ID_List top_faces_owned;
+  get_set_entities(setname, FACE, Parallel_type::OWNED, &top_faces_owned);
+
+  Entity_ID_List top_faces_ghost;
+  get_set_entities(setname, FACE, Parallel_type::GHOST, &top_faces_ghost);
+
+  num_owned_cols_ = top_faces_owned.size();
+  int ncolumns = num_owned_cols_ + top_faces_ghost.size();
+
+  int success = 1;
+  for (int i = 0; i < ncolumns; i++) {
+    Entity_ID f;
+    if (i < num_owned_cols_) f = top_faces_owned[i];
+    else f = top_faces_ghost[i - num_owned_cols_];
+    Entity_ID_List fcells;
+    face_get_cells(f,Parallel_type::ALL,&fcells);
+
+    // not a boundary face?
+    if (fcells.size() != 1) {
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
+      success = 0;
+      break;
+    }
+
+    // check that the normal points upward
+    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
+    normal /= norm(normal);
+    if (normal[2] < 1.e-10) {
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
+      success = 0;
+      break;
+    }
+
+    // build the column
+    success &= build_single_column_(i, f);
+  }
+
+  int min_success;
+  get_comm()->MinAll(&success, &min_success, 1);
+  columns_built_ = (min_success == 1);
+  return columns_built_ ? 1 : 0;
+}
+
+
+// Figure out columns of cells in a semi-structured mesh and cache the
+// information for later.
+//
 // The columns are defined by identifying all boundary faces which
 // have a negative-z-direction normal, then collecting cells and faces
 // while travelling downward through the columns.  As a

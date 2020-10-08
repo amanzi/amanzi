@@ -244,7 +244,7 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="liquid water"/>
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
@@ -273,13 +273,6 @@
         <ParameterList name="vapor pressure model parameters">
           <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
         </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="effective_pressure">
-        <Parameter name="field evaluator type" type="string" value="effective_pressure"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
@@ -322,7 +315,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="300.0"/>

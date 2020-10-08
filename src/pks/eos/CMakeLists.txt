@@ -21,13 +21,13 @@ include_directories(${ATK_SOURCE_DIR})
 # Library: eos
 #
 set(eos_src_files 
-    EffectivePressureEvaluator.cc
     EOSEvaluator.cc
     EOSFactory.cc 
     EOS_Constant.cc
     EOS_IdealGas.cc
     EOS_VaporInGas.cc
     EOS_Water.cc
+    EOS_WaterFEHM.cc
     Henry_Solubility.cc
     IsobaricEOSEvaluator.cc
     MolarFractionGasEvaluator.cc
@@ -59,6 +59,7 @@ set(eos_inc_files
     EOS_IdealGas.hh
     EOS_VaporInGas.hh
     EOS_Water.hh
+    EOS_WaterFEHM.hh
     eos_registration.hh
     Henry_Solubility.hh
     IsobaricEOSEvaluator.hh
@@ -77,5 +78,21 @@ set(eos_inc_files
 install(FILES ${eos_inc_files} DESTINATION include/amanzi)
 
 if (BUILD_TESTS) 
+    include_directories(${UnitTest_INCLUDE_DIRS})
+    include_directories(${EOS_SOURCE_DIR})
+
+    # Copy test directory files if any out of source build
+    if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
+        file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml")
+        file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
+    endif()
+
+    set(amanzi_libs eos atk)
+
+    # Test: Multiscale
+    add_amanzi_test(eos_evaluators eos_evaluators
+                    KIND unit
+                    SOURCE test/Main.cc test/eos_evaluators.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

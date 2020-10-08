@@ -166,7 +166,168 @@ TEST(MESH_COLUMNS)
           
       CHECK_EQUAL(expnodeabove,mesh->node_get_node_above(n));
     }
-      
-  } // for each framework i
 
+    // check for parallel
+    if (comm->NumProc() > 1) {
+      // make sure the first num_owned_columns are owned columns.
+      int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+      int nfaces_owned = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+      int num_owned_cols = mesh->num_columns(false);
+      int num_all_cols = mesh->num_columns(true);
+      for (int col=0; col!=num_owned_cols; ++col) {
+        for (auto c : mesh->cells_of_column(col))
+          CHECK(c < ncells_owned);
+        for (auto f : mesh->faces_of_column(col))
+          CHECK(f < nfaces_owned);
+      }
+
+      // check the next are all ghosted columns
+      for (int col=num_owned_cols; col!=num_all_cols; ++col) {
+        for (auto c : mesh->cells_of_column(col))
+          CHECK(c >= ncells_owned);
+        for (auto f : mesh->faces_of_column(col))
+          CHECK(f >= nfaces_owned);
+      }
+    }
+
+  } // for each framework i
+}
+
+
+TEST(MESH_COLUMNS_FROM_SET)
+{
+  auto comm = Amanzi::getDefaultComm();
+
+  // Set the framework
+  std::cerr << "Testing columns from set." << std::endl;
+
+  Teuchos::ParameterList regions("regions");
+  regions.sublist("surface").sublist("region: plane").set<Teuchos::Array<double>>("point",
+          std::vector<double>{0.5,0.5,1.0});
+  regions.sublist("surface").sublist("region: plane").set<Teuchos::Array<double>>("normal",
+          std::vector<double>{0,0,1.0});
+
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions, *comm));
+
+  // Create the mesh
+  auto mesh_fac_list = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
+  mesh_fac_list->sublist("unstructured").sublist("expert parameters").set<std::string>("partitioner", "zoltan_rcb");
+  Amanzi::AmanziMesh::MeshFactory factory(comm, gm, mesh_fac_list);
+
+  auto mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
+  mesh->build_columns("surface");
+
+  int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+  double dz = 0.25;  // difference in height between cell centroids
+                     // or between node points
+
+  // Identify cell above and cell below 
+  for (int c = 0; c < ncells; c++) {
+    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(c);
+
+    int expcellabove = -1, expcellbelow = -1;
+    bool found_above = false, found_below = false;
+
+    if (fabs(ccen[2] - dz/2.0) < 1.e-10) found_below = true;  // bottom layer
+    if (fabs(ccen[2] - (1.0-dz/2.0)) < 1.e-10) found_above = true;  // top layer
+
+    std::vector<int> adjcells;
+    mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED, &adjcells);
+    int nadjcells = adjcells.size();
+    for (int k = 0; k < nadjcells && (!found_above || !found_below); k++) {
+      int c2 = adjcells[k];
+      if (c == c2) continue;
+
+      Amanzi::AmanziGeometry::Point ccen2 = mesh->cell_centroid(c2);
+
+      if (fabs(ccen2[0]-ccen[0]) > 1.0e-10 ||
+          fabs(ccen2[1]-ccen[1]) > 1.0e-10) continue;
+
+      if (!found_above && (fabs(ccen2[2]-dz - ccen[2]) < 1.0e-10)) {
+        expcellabove = c2;
+        found_above = true;
+      }
+      if (!found_below && (fabs(ccen[2]-dz - ccen2[2]) < 1.0e-10)) {
+        expcellbelow = c2;
+        found_below = true;
+      }
+    }
+    CHECK(found_below);
+    CHECK(found_above);
+
+    CHECK_EQUAL(expcellabove,mesh->cell_get_cell_above(c));
+    CHECK_EQUAL(expcellbelow,mesh->cell_get_cell_below(c));
+  }
+
+  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::CELL,
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
+
+  // Identify node_above and node_below with brute force, n^2 search
+  // since there are only 125 nodes
+
+  for (int n = 0; n < nnodes; n++) {
+    Amanzi::AmanziGeometry::Point coord;
+    mesh->node_get_coordinates(n, &coord);
+
+    int expnodeabove = -1;
+    bool found_above = false;
+
+    if (coord[2] == 1.0) found_above = true;  // top surface node
+
+    // Get connected cells of node, and check if one of their nodes
+    // qualifies as the node above or node below
+    std::vector<int> nodecells;
+    mesh->node_get_cells(n, Amanzi::AmanziMesh::Parallel_type::OWNED, &nodecells);
+    int nnodecells = nodecells.size();
+
+    for (int k = 0; k < nnodecells && !found_above; k++) {
+      int c = nodecells[k];
+
+      std::vector<int> cnodes;
+      mesh->cell_get_nodes(c, &cnodes);
+      int ncnodes = cnodes.size();
+      for (int l = 0; l < ncnodes && !found_above; l++) {
+        int n2 = cnodes[l];
+        if (n == n2) continue;
+
+        Amanzi::AmanziGeometry::Point coord2;
+        mesh->node_get_coordinates(n2, &coord2);
+
+        if (fabs(coord[0] - coord2[0]) > 1e-10 ||
+            fabs(coord[1] - coord2[1]) > 1e-10) continue;
+
+        if (!found_above && (fabs(coord2[2]-dz - coord[2]) < 1e-10)) {
+          expnodeabove = n2;
+          found_above = true;
+        }
+      }
+    }
+    CHECK(found_above);
+    CHECK_EQUAL(expnodeabove,mesh->node_get_node_above(n));
+  }
+
+  // check for parallel
+  if (comm->NumProc() > 1) {
+    // make sure the first num_owned_columns are owned columns.
+    int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces_owned = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int num_owned_cols = mesh->num_columns(false);
+    int num_all_cols = mesh->num_columns(true);
+    for (int col=0; col!=num_owned_cols; ++col) {
+      for (auto c : mesh->cells_of_column(col))
+        CHECK(c < ncells_owned);
+      for (auto f : mesh->faces_of_column(col))
+        CHECK(f < nfaces_owned);
+    }
+
+    // check the next are all ghosted columns
+    for (int col=num_owned_cols; col!=num_all_cols; ++col) {
+      for (auto c : mesh->cells_of_column(col))
+        CHECK(c >= ncells_owned);
+      for (auto f : mesh->faces_of_column(col))
+        CHECK(f >= nfaces_owned);
+    }
+  }
 }

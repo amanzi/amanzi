@@ -44,7 +44,9 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
 
-   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
+  Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
+
+  double EvaluateFieldSingle(int c, double T);
 
  protected:
   void InitializeFromPlist_();
@@ -53,12 +55,16 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   void CreateIEMPartition_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::ParameterList& plist);
 
+  AmanziMesh::Entity_ID MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id);
+
  protected:
   Key temp_key_;
   Key domain_;
   Teuchos::RCP<IEMPartition> iem_;
 
  private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
   static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;
 };
 

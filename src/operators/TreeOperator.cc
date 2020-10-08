@@ -207,32 +207,6 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-int TreeOperator::ApplyFlattened(const TreeVector& X, TreeVector& Y) const
-{
-  Y.PutScalar(0.0);
-
-  auto Xtv = collectTreeVectorLeaves_const(X);
-  auto Ytv = collectTreeVectorLeaves(Y);
-
-  int ierr(0), n(0);
-  for (auto jt = Ytv.begin(); jt != Ytv.end(); ++jt, ++n) {
-    CompositeVector& yN = *(*jt)->Data();
-    int m(0);
-    for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
-      if (blocks_[n][m] != Teuchos::null) {
-        ierr |= get_operator_block(n,m)->Apply(*(*it)->Data(), yN, 1.0);
-      }
-    }
-  }
-  return ierr;
-}
-
-
-
-
-/* ******************************************************************
-* Calculate Y = A * X using matrix-free matvec on blocks of operators.
-****************************************************************** */
 int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 {
   Y.PutScalar(0.0);

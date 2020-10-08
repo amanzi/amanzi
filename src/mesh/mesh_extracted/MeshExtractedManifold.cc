@@ -770,7 +770,7 @@ void MeshExtractedManifold::InitEpetraMaps()
 
 
 /* ******************************************************************
-* Exterior Epetra maps are cannot be alway extracted from a
+* Exterior Epetra maps are cannot be always extracted from a
 * parent mesh, so we build them explicitly.
 ****************************************************************** */
 void MeshExtractedManifold::InitExteriorEpetraMaps()
@@ -802,14 +802,15 @@ void MeshExtractedManifold::InitExteriorEpetraMaps()
 
   // process faces
   ent_extmap_owned_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
+  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*ent_extmap_owned_[FACE], *ent_map_owned_[FACE]));
 
 #ifdef HAVE_MPI
   {
-    exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
+    auto importer = Teuchos::rcp(new Epetra_Import(fmap_wghost, fmap_owned));
     int* vdata;
     counts.ExtractView(&vdata);
     Epetra_IntVector tmp(View, fmap_owned, vdata);
-    counts.Import(tmp, *exterior_face_importer_, Insert);
+    counts.Import(tmp, *importer, Insert);
   }
 #endif
 
@@ -832,11 +833,11 @@ void MeshExtractedManifold::InitExteriorEpetraMaps()
 
 #ifdef HAVE_MPI
   {
-    auto importer_ = Teuchos::rcp(new Epetra_Import(vmap_wghost, vmap_owned));
+    auto importer = Teuchos::rcp(new Epetra_Import(vmap_wghost, vmap_owned));
     int* vdata;
     flags.ExtractView(&vdata);
     Epetra_IntVector tmp(View, vmap_owned, vdata);
-    flags.Import(tmp, *importer_, Insert);
+    flags.Import(tmp, *importer, Insert);
   }
 #endif
 
