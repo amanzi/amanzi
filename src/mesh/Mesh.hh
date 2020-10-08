@@ -184,6 +184,18 @@ class Mesh : public MeshLight {
   //-----------------------
   // Same level adjacencies
   //-----------------------
+  // Node connected neighboring cells of given cell
+  // (a hex in a structured mesh has 26 node connected neighbors)
+  // The cells are returned in no particular order
+  virtual void cell_get_node_adj_cells(
+          const Entity_ID cellid,
+          const Parallel_type ptype,
+          Entity_ID_List *nadj_cellids) const { AMANZI_ASSERT(false); }
+
+
+  //-----------------------
+  // Same level adjacencies
+  //-----------------------
 
   // Face connected neighboring cells of given cell of a particular ptype
   // (e.g. a hex has 6 face neighbors)

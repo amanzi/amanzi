@@ -1008,62 +1008,6 @@ Mesh::cell_type_to_name(const Cell_type type)
 }
 
 
-// Figure out columns of cells in a semi-structured mesh and cache the
-// information for later.
-int Mesh::build_columns(const std::string& setname) const
-{
-  if (columns_built_) return 0;
-
-  // Allocate space and initialize.
-  int nn = num_entities(NODE,Parallel_type::ALL);
-  int nc = num_entities(CELL,Parallel_type::ALL);
-
-  columnsID_.resize(nc);
-  cell_cellbelow_.resize(nc);
-  cell_cellbelow_.assign(nc,-1);
-  cell_cellabove_.resize(nc);
-  cell_cellabove_.assign(nc,-1);
-  node_nodeabove_.resize(nn);
-  node_nodeabove_.assign(nn,-1);
-
-  Entity_ID_List top_faces;
-  get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
-
-  int ncolumns = top_faces.size();
-  num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
-
-  int success = 1;
-  for (int i = 0; i < ncolumns; i++) {
-    Entity_ID f = top_faces[i];
-    Entity_ID_List fcells;
-    face_get_cells(f,Parallel_type::ALL,&fcells);
-
-    // not a boundary face?
-    if (fcells.size() != 1) {
-      std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
-      success = 0;
-      break;
-    }
-
-    // check that the normal points upward
-    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
-    normal /= norm(normal);
-    if (normal[2] < 1.e-10) {
-      std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
-      success = 0;
-      break;
-    }
-
-    success &= build_single_column_(i, f);
-  }
-
-  int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
-  columns_built_ = (min_success == 1);
-  return columns_built_ ? 1 : 0;
-}
-
-
 int Mesh::num_columns(bool ghosted) const
 {
   if (!columns_built_) {
