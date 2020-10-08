@@ -58,6 +58,10 @@ class MeshLight {
     cell_get_faces_and_dirs(c, faces, NULL, ordered);
   }
 
+  // new API: cache should be build around mesh constructor,
+  // so no additional checks is needed
+  const Entity_ID_List cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
+
   // Get faces of a cell and directions in which the cell uses the face
   //
   // On a distributed mesh, this will return all the faces of the
