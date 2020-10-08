@@ -114,10 +114,10 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solvers_nonlinear.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solvers_preconditioner_muelu solvers_preconditioner_muelu
-                    KIND unit
-                    SOURCE test/Main.cc test/solvers_preconditioner_muelu.cc
-                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    # add_amanzi_test(solvers_preconditioner_muelu solvers_preconditioner_muelu
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/solvers_preconditioner_muelu.cc
+    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 
     # add_amanzi_test(solvers_continuation solvers_continuation
