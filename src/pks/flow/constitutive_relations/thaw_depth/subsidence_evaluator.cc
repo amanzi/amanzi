@@ -96,7 +96,7 @@ SubsidenceEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, true);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
   
   if (my_fac->Mesh() != Teuchos::null) {
