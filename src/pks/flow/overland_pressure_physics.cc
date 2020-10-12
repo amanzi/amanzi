@@ -103,16 +103,14 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
     if (source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a
       // density is required.  This density should be upwinded.
-      S_next_->GetFieldEvaluator(dens_key_)
+      S_next_->GetFieldEvaluator(molar_dens_key_)
           ->HasFieldChanged(S_next_.ptr(), name_);
-      S_next_->GetFieldEvaluator(source_dens_key_)
+      S_next_->GetFieldEvaluator(source_molar_dens_key_)
           ->HasFieldChanged(S_next_.ptr(), name_);
 
-      const Epetra_MultiVector& nliq1 =
-        *S_next_->GetFieldData(dens_key_)
+      const Epetra_MultiVector& nliq1 = *S_next_->GetFieldData(molar_dens_key_)
           ->ViewComponent("cell",false);
-      const Epetra_MultiVector& nliq1_s =
-        *S_next_->GetFieldData(source_dens_key_)
+      const Epetra_MultiVector& nliq1_s = *S_next_->GetFieldData(source_molar_dens_key_)
           ->ViewComponent("cell",false);
 
       int ncells = g_c.MyLength();

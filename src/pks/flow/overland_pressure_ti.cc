@@ -307,10 +307,9 @@ void OverlandPressureFlow::UpdatePreconditioner(double t,
   //  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
   if (!precon_used_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
-    std::string pd_key = pd_key_;
-    std::string pd_deriv_key = Keys::getDerivKey(pd_key,key_);
+    std::string pd_deriv_key = Keys::getDerivKey(pd_key_,key_);
 
-    S_next_->GetFieldEvaluator(pd_key)
+    S_next_->GetFieldEvaluator(pd_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> dh0_dp = S_next_->GetFieldData(pd_deriv_key);
     const Epetra_MultiVector& dh0_dp_c = *dh0_dp->ViewComponent("cell",false);

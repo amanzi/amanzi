@@ -75,8 +75,8 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
   cond_key_ = Keys::readKey(*plist_, domain_, "overland conductivity", "overland_conductivity");
   uw_cond_key_ = Keys::readKey(*plist_, domain_, "upwind overland conductivity",
           "upwind_overland_conductivity");
-  dens_key_ = Keys::readKey(*plist_, domain_, "molar density liquid", "molar_density_liquid");
-  rho_key_ = Keys::readKey(*plist_, domain_, "mass density liquid", "mass_density_liquid");
+  molar_dens_key_ = Keys::readKey(*plist_, domain_, "molar density liquid", "molar_density_liquid");
+  mass_dens_key_ = Keys::readKey(*plist_, domain_, "mass density liquid", "mass_density_liquid");
   cv_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
 
   // derivative keys
@@ -132,9 +132,9 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S)
   S->RequireFieldEvaluator(conserved_key_);
 
   // this pk uses density
-  S->RequireField(dens_key_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(molar_dens_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(dens_key_);
+  S->RequireFieldEvaluator(molar_dens_key_);
 
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
@@ -331,11 +331,11 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
 
     if (source_in_meters_) {
       // density of incoming water [mol/m^3]
-      source_dens_key_ = Keys::readKey(*plist_, domain_, "source molar density",
+      source_molar_dens_key_ = Keys::readKey(*plist_, domain_, "source molar density",
               "source_molar_density");
-      S->RequireField(source_dens_key_)->SetMesh(mesh_)
+      S->RequireField(source_molar_dens_key_)->SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(source_dens_key_);
+      S->RequireFieldEvaluator(source_molar_dens_key_);
     }
   }
 
@@ -587,7 +587,7 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S)
       ->ViewComponent("cell", true);
   flux->ScatterMasterToGhosted("face");
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",true);
-  const Epetra_MultiVector& nliq_c = *S->GetFieldData(dens_key_)
+  const Epetra_MultiVector& nliq_c = *S->GetFieldData(molar_dens_key_)
     ->ViewComponent("cell");
   const Epetra_MultiVector& pd_c = *S->GetFieldData(pd_key_)
     ->ViewComponent("cell");
@@ -774,7 +774,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     const Epetra_MultiVector& h_cells = *S->GetFieldData(pd_key_)->ViewComponent("cell");
     const Epetra_MultiVector& elevation_cells = *S->GetFieldData(elev_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& rho_l = *S->GetFieldData(rho_key_)->ViewComponent("cell");
+    const Epetra_MultiVector& rho_l = *S->GetFieldData(mass_dens_key_)->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
@@ -865,7 +865,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     const Epetra_MultiVector& h_c = *S->GetFieldData(pd_key_)
                                     ->ViewComponent("cell");
-    const Epetra_MultiVector& nliq_c = *S->GetFieldData(dens_key_)
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData(molar_dens_key_)
                                        ->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
 
@@ -915,7 +915,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     const Epetra_MultiVector& h_cells = *S->GetFieldData(pd_key_)->ViewComponent("cell");
     const Epetra_MultiVector& elevation_cells = *S->GetFieldData(elev_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& rho_l = *S->GetFieldData(rho_key_)->ViewComponent("cell");
+    const Epetra_MultiVector& rho_l = *S->GetFieldData(mass_dens_key_)->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
@@ -1138,7 +1138,7 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
   if (bc_tidal_->size() > 0) {
     const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
-    const Epetra_MultiVector& rho_l = *S->GetFieldData(rho_key_)->ViewComponent("cell");
+    const Epetra_MultiVector& rho_l = *S->GetFieldData(mass_dens_key_)->ViewComponent("cell");
     Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
     const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
     const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);

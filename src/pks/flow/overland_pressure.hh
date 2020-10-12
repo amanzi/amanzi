@@ -255,11 +255,11 @@ protected:
   Key uw_cond_key_;
   Key dcond_key_;
   Key duw_cond_key_;
-  Key dens_key_;
-  Key rho_key_;
+  Key mass_dens_key_;
+  Key molar_dens_key_;
   Key cv_key_;
   Key source_key_;
-  Key source_dens_key_;
+  Key source_molar_dens_key_;
   Key ss_flux_key_;
 
   // control switches
