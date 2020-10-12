@@ -16,9 +16,9 @@ from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
 
-def change_name(xml, old, new):
+def change_name(xml, old, new, allow_multiple=False):
     try:
-        asearch.change_name(xml, old, new)
+        asearch.change_name(xml, old, new, allow_multiple)
     except aerrors.MissingXMLError:
         pass
 
@@ -34,18 +34,38 @@ def vanGenuchtenParams(xml):
             change_name(region, "residual saturation", "residual saturation [-]")
 
 def thermalConductivityParams(xml):
-    change_name(region, "thermal conductivity of soil [W/(m-K)]", "thermal conductivity of soil [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of ice [W/(m-K)]", "thermal conductivity of ice [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of liquid [W/(m-K)]", "thermal conductivity of liquid [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of water [W/(m-K)]", "thermal conductivity of water [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of gas [W/(m-K)]", "thermal conductivity of gas [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of frozen zone [W/(m-K)]", "thermal conductivity of frozen zone [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of unfrozen zone [W/(m-K)]", "thermal conductivity of unfrozen zone [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity of mushy zone [W/(m-K)]", "thermal conductivity of mushy zone [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity, dry [W/(m-K)]", "thermal conductivity, dry [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity, wet [W/(m-K)]", "thermal conductivity, wet [W m^-1 K^-1]")
-    change_name(region, "thermal conductivity, saturated (unfrozen) [W/(m-K)]",
-                "thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]")
+    change_name(xml, "thermal conductivity of soil [W/(m-K)]", "thermal conductivity of soil [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of ice [W/(m-K)]", "thermal conductivity of ice [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of liquid [W/(m-K)]", "thermal conductivity of liquid [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of water [W/(m-K)]", "thermal conductivity of water [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of gas [W/(m-K)]", "thermal conductivity of gas [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of frozen zone [W/(m-K)]", "thermal conductivity of frozen zone [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of unfrozen zone [W/(m-K)]", "thermal conductivity of unfrozen zone [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity of mushy zone [W/(m-K)]", "thermal conductivity of mushy zone [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity, dry [W/(m-K)]", "thermal conductivity, dry [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity, wet [W/(m-K)]", "thermal conductivity, wet [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "thermal conductivity, saturated (unfrozen) [W/(m-K, allow_multiple=True)]",
+                "thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]", allow_multiple=True)
+    change_name(xml, "quadratic u_0 [J/kg]", "latent heat [J kg^-1]", True)
+    change_name(xml, "quadratic u_0 [mol/kg]", "latent heat [J mol^-1]", True)
+    change_name(xml, "quadratic a [J/kg-K]", "heat capacity [J kg^-1 K^-1]", True)
+    change_name(xml, "quadratic a [J/mol-K]", "heat capacity [J mol^-1 K^-1]", True)
+    change_name(xml, "quadratic b [J/kg-K^2]", "quadratic b [J kg^-1 K^-1]", True)
+    change_name(xml, "quadratic b [J/mol-K^2]", "quadratic b [J mol^-1 K^-1]", True)
+    change_name(xml, "latent heat [J/kg]", "latent heat [J kg^-1]", True)
+    change_name(xml, "latent heat [mol/kg]", "latent heat [J mol^-1]", True)
+    change_name(xml, "heat capacity [J/kg-K]", "heat capacity [J kg^-1 K^-1]", True)
+    change_name(xml, "heat capacity [J/mol-K]", "heat capacity [J mol^-1 K^-1]", True)
+    change_name(xml, "Reference temperature [K]", "reference temperature [K]", True)
+    change_name(xml, "heat capacity of air [J/(mol-K)]", "heat capacity [J mol^-1 K^-1]", True)
+    change_name(xml, "heat of vaporization of water [J/mol]", "latent heat [J mol^-1]", True)
+    change_name(xml, "capillary pressure [J/mol]", "latent heat [J mol^-1]", True)
+    change_name(xml, "interfacial tension ice-water", "interfacial tension ice-water [mN m^-1]", True) # note flip in order of phases!
+    change_name(xml, "interfacial tension air-water", "interfacial tension air-water [mN m^-1]", True)
+    change_name(xml, "heat of fusion reference temperature [K]", "reference temperature [K]", True)
+    change_name(xml, "heat of fusion of water [J/mol]", "latent heat [J mol^-1]", True)
+    change_name(xml, "heat of fusion of water [J/kg]", "latent heat [J kg^-1]", True)
+    change_name(xml, "smoothing length [K]", "smoothing width [K]", True)
 
 def commonSupressOptions(xml):
     change_name("supress Jacobian terms: div hq / dp,T", "supress Jacobian terms: d div hq / dp,T")
