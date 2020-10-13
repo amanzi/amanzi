@@ -209,6 +209,8 @@ void Basis_Regularized<MyMesh>::ChangeBasisMyToNatural(DenseVector& v, int nrows
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
+    if (n >= stride) return;
+
     int m = it.MonomialSetOrder();
     for (int i = 0; i < nrows; ++i) {
       int k = i * stride + n;
@@ -229,6 +231,8 @@ void Basis_Regularized<MyMesh>::ChangeBasisNaturalToMy(DenseVector& v, int nrows
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
+    if (n >= stride) return;
+ 
     int m = it.MonomialSetOrder();
     for (int i = 0; i < nrows; ++i) { 
       int k = i * stride + n;

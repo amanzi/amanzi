@@ -150,6 +150,10 @@ class NumericalIntegration {
        int f, const Polynomial& poly, int order,
        std::vector<double>& moments) const;
 
+  void CalculateFunctionMomentsFace(
+       int f, const WhetStoneFunction* func, int order,
+       std::vector<double>& moments, int nquad) const;
+
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
@@ -760,7 +764,51 @@ void NumericalIntegration<Mesh>::CalculatePolynomialMomentsEdge(
 
 
 /* ******************************************************************
-* Calculate moments over face f.
+* Calculate face moments upto given order. Regularized basis is used.
+****************************************************************** */
+template <class Mesh>
+void NumericalIntegration<Mesh>::CalculateFunctionMomentsFace(
+    int f, const WhetStoneFunction* func, int order,
+    std::vector<double>& moments, int nquad) const
+{
+  moments.clear();
+
+  double area = mesh_->face_area(f);
+
+  if (order >= 0) {
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(1);
+    funcs[0] = func;
+
+    double tmp = IntegrateFunctionsTriangulatedFace(f, funcs, nquad) / area;
+    moments.push_back(tmp);
+  }
+
+  if (order > 0) {
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+    std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
+    funcs[0] = func;
+
+    PolynomialIterator it(d_ - 1);
+    for (it.begin(1); it.MonomialSetOrder() <= order; ++it) {
+      const int* index = it.multi_index();
+      double factor = std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
+      Polynomial fmono(d_ - 1, index, factor);
+      fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
+
+      funcs[1] = &fmono;
+
+      double tmp = IntegrateFunctionsTriangulatedFace(f, funcs, nquad) / area;
+      moments.push_back(tmp);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate moments over face f. Regularized basis is used.
 ****************************************************************** */
 template <class Mesh>
 void NumericalIntegration<Mesh>::CalculatePolynomialMomentsFace(
@@ -779,6 +827,8 @@ void NumericalIntegration<Mesh>::CalculatePolynomialMomentsFace(
   PolynomialIterator it(d_ - 1);
   for (it.begin(0); it.MonomialSetOrder() <= order; ++it) {
     const int* index = it.multi_index();
+    // double factor = std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
+    // Polynomial fmono(d_ - 1, index, factor);
     Polynomial fmono(d_ - 1, index, 1.0);
     fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
 

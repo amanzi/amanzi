@@ -35,6 +35,7 @@ Polynomial Divergence(const VectorObjects<Polynomial>& vp);
 
 // matrix form of differential operators
 DenseMatrix Curl3DMatrix(int d, int order);
+DenseMatrix Curl2DMatrix(int d, int order);
 
 // vector decompositions
 // -- q_k = curl(p_k ^ x) + x . p_{k-1}

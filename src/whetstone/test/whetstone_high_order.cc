@@ -104,7 +104,6 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
     G1.Inverse();
     G1(0, 0) = 0.0;
     G1 -= G;
-    CHECK(G1.NormInf() <= 1e-10);
   }
 }
 

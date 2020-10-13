@@ -276,6 +276,56 @@ DenseMatrix Curl3DMatrix(int d, int order)
 
 
 /* ******************************************************************
+* Matrix of a 2D curl operator
+****************************************************************** */
+DenseMatrix Curl2DMatrix(int d, int order)
+{
+  // dimensions of the curl-matrix
+  int nd0 = PolynomialSpaceDimension(d, order - 1);
+  int nd1 = PolynomialSpaceDimension(d, order);
+
+  int nrows(nd0), ncols(2 * nd1);
+  int offset_cols[2] = {0, nd1};
+
+  DenseMatrix curl(nrows, ncols);
+  curl.PutScalar(0.0);
+
+  // populate with cofficients for partial derivatives
+  PolynomialIterator it0(d), it1(d);
+  it0.begin(0);
+  it1.begin(order + 1);
+
+  int index[3];
+  for (auto it = it0; it < it1; ++it) {
+    int m = it.PolynomialPosition();
+    if (m > 0) {
+      const int* idx = it.multi_index();
+      for (int k = 0; k < d; ++k) index[k] = idx[k];
+
+      // add term -(d u_0 / d x_1)
+      if (index[1] > 0) {
+        index[1]--;
+        int row = PolynomialPosition(d, index);
+        int col = offset_cols[0] + m;
+        curl(row, col) -= idx[1];
+        index[1]++;
+      }
+
+      // add term (d u_1 / d x_0)
+      if (index[0] > 0) {
+        index[0]--;
+        int row = PolynomialPosition(d, index);
+        int col = offset_cols[1] + m;
+        curl(row, col) += idx[0];
+      }
+    }
+  }
+
+  return curl;
+}
+
+
+/* ******************************************************************
 * Vector is created by setting one component to *this.
 *   3D: q_k = curl(p_k ^ x) + x . p_{k-1}
 ****************************************************************** */
@@ -306,7 +356,7 @@ void VectorDecomposition3DCurl(const Monomial& q, int component,
 
 
 /* ******************************************************************
-* 2D vector decomposition: q_k = tor(p_{k+1}) + x . p_{k-1}
+* 2D vector decomposition: q_k = rot(p_{k+1}) + x . p_{k-1}
 ****************************************************************** */
 void VectorDecomposition2DRot(
     const VectorPolynomial& q, Polynomial& p1, Polynomial& p2)
@@ -314,12 +364,12 @@ void VectorDecomposition2DRot(
   // reshape output
   int d = q[0].dimension();
   int order(0);
-  for (int k = 0; k < d; ++k) order = std::max(order, q[k].order() - 1);
+  for (int k = 0; k < d; ++k) order = std::max(order, q[k].order());
 
-  p1.Reshape(d, order + 2, true);
+  p1.Reshape(d, order + 1, true);
   p1.set_origin(q[0].get_origin());
 
-  p2.Reshape(d, order, true);
+  p2.Reshape(d, std::max(0, order - 1), true);
   p2.set_origin(q[0].get_origin());
 
   // calculate decomposition for each monomial of each component

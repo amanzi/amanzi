@@ -8,9 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The problem is c E + curl K curl E = Q, where
-  E = linear
-  K = full tensor
+  The problem is c E + curl K curl E = Q, where E is linear and K is full tensor.
+  We define B = curl E for other tests.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_01_HH_
@@ -44,7 +43,7 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    return Amanzi::AmanziGeometry::Point(2.0, 2.0, 2.0);
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 

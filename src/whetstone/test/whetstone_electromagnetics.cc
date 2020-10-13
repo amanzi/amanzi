@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "UnitTest++.h"
 
 #include "MeshFactory.hh"
@@ -184,6 +183,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     for (int method = 0; method < 6; method++) {
       DenseMatrix M;
 
+      int order(0);
       if (method == 0) {
         mfd.MassMatrix(c, T, M);
       } else if (method == 1) {
@@ -200,11 +200,13 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       } else if (method == 5) {
         vem.set_order(1);
         vem.MassMatrix(c, T, M);
+        order = 1;
       }
 
       int nrows = M.NumRows();
       int m = std::min(nrows, max_row);
-      printf("Mass matrix: cell=%d method=%d  edges=%d  size=%d  submatrix=%dx%d\n", c, method, nedges, nrows, m, m);
+      printf("Mass matrix: cell=%d method=%d  order=%d  edges=%d  size=%d  submatrix=%dx%d\n",
+             c, method, order, nedges, nrows, m, m);
 
       for (int i = 0; i < m; i++) {
         for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j)); 
@@ -215,7 +217,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       for (int i = 0; i < nrows; i++) CHECK(M(i, i) > 0.0);
 
       // verify exact integration property
-      std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges);
+      std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges), qf(nedges);
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
 
       int k = (method == 5) ? 1 : 0;
@@ -231,17 +233,23 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
         wf[i].Reshape(3, 3, k);
         wf[i][0](k) = 1.0;
         wf[i].set_origin(xc);
+
+        qf[i].Reshape(3, 3, k);
+        qf[i][2](k + 1) = 2.0;
+        qf[i].set_origin(xc);
       }
 
-      WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows);
+      WhetStone::DenseVector u(nrows), v(nrows), w(nrows), q(nrows), a(nrows);
       vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
       vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
       vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
+      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, qf, qf, q);
 
       M.Multiply(w, a, false);
       double vx1 = u * a;
       double vy1 = v * a;
       double vxx = w * a;
+      double vxy = q * a;
 
       double volume = mesh->cell_volume(c); 
       if (method != 5) {
@@ -250,7 +258,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       } else {
         CHECK_CLOSE(0.0, vx1, 1e-10);
         CHECK_CLOSE(0.0, vy1, 1e-10);
-        CHECK_CLOSE(vem.integrals().poly()(4), vxx, 1e-10 * vxx);
+        CHECK_CLOSE(vem.integrals().poly()(4), vxx, 2e-10 * vxx);
+        CHECK_CLOSE(0.0, vxy, 1e-10);
       }
     }
   }
@@ -264,12 +273,12 @@ TEST(MASS_MATRIX_3D_CUBE_ROTATED) {
   MassMatrix3D("test/cube_unit_rotated.exo", 12);
 }
 
-TEST(MASS_MATRIX_3D_HEX) {
-  MassMatrix3D("test/one_trapezoid.exo", 12);
-}
-
 TEST(MASS_MATRIX_3D_24SIDED) {
   MassMatrix3D("test/cube_triangulated.exo", 10);
+}
+
+TEST(MASS_MATRIX_3D_HEX) {
+  MassMatrix3D("test/one_trapezoid.exo", 12);
 }
 
 TEST(MASS_MATRIX_3D_DODECAHEDRON) {

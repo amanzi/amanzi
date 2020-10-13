@@ -39,14 +39,10 @@ void PDE_MagneticDiffusion::UpdateMatrices(
 {
   WhetStone::DenseMatrix Mcell, Ccell, Acell;
 
-  Teuchos::ParameterList plist;
-  WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
-
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
-    // mfd.StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
     auto tmp = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D_Electromagnetics>(mfd_);
     if (tmp != Teuchos::null) {
       tmp->StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);

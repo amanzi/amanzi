@@ -235,6 +235,19 @@ class VectorObjects {
   std::vector<T> polys_;
 };
 
+
+// other functions
+// -- product v * p 
+template <class T>
+VectorObjects<T> product(const AmanziGeometry::Point& v, const T& poly)
+{
+  int d(v.dim());
+  VectorObjects<T> tmp(d, d, 0);
+  for (int i = 0; i < d; ++i) tmp[i] = v[i] * poly;
+  return tmp;
+}
+
+
 // used types
 typedef VectorObjects<Polynomial> VectorPolynomial;
 typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;

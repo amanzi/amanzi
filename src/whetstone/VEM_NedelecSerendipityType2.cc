@@ -32,10 +32,12 @@
 
 #include "Basis_Regularized.hh"
 #include "GrammMatrix.hh"
+#include "MFD3D_Electromagnetics.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
 #include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
+#include "VectorObjects.hh"
 #include "VectorObjectsUtils.hh"
 #include "VEM_NedelecSerendipityType2.hh"
 #include "VEM_RaviartThomasSerendipity.hh"
@@ -99,7 +101,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   basis.Init(mesh_, c, order_ + 1, integrals_.poly());
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
-  Polynomial pc(d_, order_), pf(d_ - 1, order_);
+  Polynomial pc(d_, order_);
 
   int ndc, nde;
   ndc = pc.size();
@@ -117,7 +119,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
   xyz.set_origin(xc);
 
   // Rows of matrix N are simply tangents. Since N goes to the Gramm-Schmidt 
-  // orthogonalizetion procedure, we drop scaling with tensorial factor K.
+  // orthogonalization procedure, we drop scaling with tensorial factor K.
   N.Reshape(ndof_S, ndc * d_);
   MatrixOfDofs_(c, edges, basis, numi, N);
 
@@ -127,7 +129,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
-  // MassMatricesOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
 
   // L2-projector in cell
   Tensor Idc(d_, 2);
@@ -171,14 +172,9 @@ int VEM_NedelecSerendipityType2::L2consistency(
     Polynomial p2;
     VectorDecomposition3DCurl(q, k, p1, p2);
 
-    // contributions from faces: int_f (p1^x^n . Pi_f(v))
     // contributions from faces: int_f (p1^x^n . v) 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      double area = mesh_->face_area(f);
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
       mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
       int nfedges = fedges.size();
 
@@ -190,38 +186,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
         for (int l = 0; l < nde; ++l) map.push_back(nde * pos + l); 
       }
 
-      // integral over face requires vector of polynomial coefficients of pc
-      int nrows = vL2f[n].NumRows();
-      int ncols = vL2f[n].NumCols();
-      int krows = vMGf[n].NumRows();
-      WhetStone::DenseVector w(krows), p0v(ncols);
-
       // method I
-      Polynomial xyzn(xyz[0]);
-      for (int i = 0; i < d_; ++i) xyzn(i + 1) = normal[i];  // xyz * normal
-      VectorPolynomial p3D = p1 * xyzn - xyz * (p1 * normal);
-
-      VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p3D, xf, *vcoordsys[n]->tau());
-      auto v = ExpandCoefficients(p2D);
-      v /= area;
-
-      int stride1 = v.NumRows() / (d_ - 1);
-      int stride2 = PolynomialSpaceDimension(d_ - 1, order_ + 1);
-      v.Regroup(stride1, stride2);
-
-      // calculate one factor in the L2 inner product
-      vbasisf[n].ChangeBasisNaturalToMy(v, d_ - 1);
-
-      vMGf[n].Multiply(v, w, false);
-
-      // reduce polynomial degree by one
-      stride1 = nrows / (d_ - 1);
-      w.Regroup(stride2, stride1);
-
-      vL2f[n].Multiply(w, p0v, true);
+      DenseVector p0v;
+      // L2consistency3DFace_Method1_(p1, xyz, *vcoordsys[n], vbasisf[n], vL2f[n], vMGf[n], p0v);
 
       // method II
-
+      L2consistency3DFace_Method2_(f, p1, *vcoordsys[n], vbasisf[n], vL2f[n], vMGf[n], p0v);
 
       for (int i = 0; i < p0v.NumRows(); ++i) {
         R(map[i], col) += p0v(i) * fdirs[n];
@@ -287,96 +257,6 @@ int VEM_NedelecSerendipityType2::L2consistency(
   Mc = R * ((Idc * Kinv) ^ sMGc) * RT;
 
   return 0;
-}
-
-
-/* ******************************************************************
-* Mass matrix for edge-based discretization.
-****************************************************************** */
-void VEM_NedelecSerendipityType2::MatrixOfDofs_(
-    int c, const Entity_ID_List& edges,
-    const Basis_Regularized<AmanziMesh::Mesh>& basis,
-    const NumericalIntegration<AmanziMesh::Mesh>& numi,
-    DenseMatrix& N)
-{
-  int nedges = edges.size();
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-  std::vector<double> moments;
-
-  VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
-  it0.begin();
-  it1.end();
-
-  for (auto it = it0; it < it1; ++it) { 
-    int m = it.MonomialSetOrder();
-    int k = it.VectorComponent();
-    int col = it.VectorPolynomialPosition();
-
-    const int* index = it.multi_index();
-    double factor = basis.monomial_scales()[m];
-    Monomial cmono(d_, index, factor);
-    cmono.set_origin(xc);  
-
-    int row(0);
-    for (int i = 0; i < nedges; i++) {
-      int e = edges[i];
-      const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-      double length = mesh_->edge_length(e);
-
-      numi.CalculatePolynomialMomentsEdge(e, cmono, order_, moments);
-      for (int l = 0; l < moments.size(); ++l) {
-        N(row, col) = moments[l] * tau[k] / length;
-        row++;
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Mass matrix for edge-based discretization.
-****************************************************************** */
-void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
-    int c, const Tensor& K, const Entity_ID_List& faces,
-    std::vector<WhetStone::DenseMatrix>& vL2f, 
-    std::vector<WhetStone::DenseMatrix>& vMGf,
-    std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
-    std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
-    int MGorder)
-{
-  int nfaces = faces.size();
-
-  Tensor Idf(d_ - 1, 2);
-  Idf.MakeDiagonal(1.0);
-
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-    auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-    vcoordsys.push_back(coordsys);
-
-    DenseMatrix Nf, NfT, Mf, MG;
-    L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
-    if (MGorder == order_) vMGf.push_back(Idf ^ MG);
-
-    NfT.Transpose(Nf);
-    auto NN = NfT * Nf;
-    NN.InverseMoorePenrose();
-    auto L2f = NN * NfT;
-    vL2f.push_back(L2f);
-
-    Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_ + 1, integrals_.poly());
-    vbasisf.push_back(basis_f);
-
-    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
-    GrammMatrix(numi_f, order_ + 1, integrals_, basis_f, MG);
-    if (MGorder == order_ + 1) vMGf.push_back(Idf ^ MG);
-  }
 }
 
 
@@ -528,11 +408,14 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
     if (order_ > 0) {
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         int pos = it.PolynomialPosition();
+        if (pos == 0) continue;
+
         double factor = vbasisf[n].monomial_scales()[it.MonomialSetOrder()];
         Polynomial fmono(d_ - 1, it.multi_index(), factor);
 
         auto rot = Rot2D(fmono);
         auto v1 = ExpandCoefficients(rot);
+        vbasisf[n].ChangeBasisNaturalToMy(v1, d_ - 1);
 
         int stride1 = v1.NumRows() / (d_ - 1);
         int stride2 = ndf;
@@ -581,6 +464,294 @@ void VEM_NedelecSerendipityType2::ProjectorFace_(
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
   for (int i = 0; i < uf.NumRows(); ++i) {
     uf[i].InverseChangeCoordinates(xf, *coordsys->tau());  
+  }
+}
+
+
+/* ******************************************************************
+* Collection of face-based objects
+****************************************************************** */
+void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
+    int c, const Tensor& K, const Entity_ID_List& faces,
+    std::vector<WhetStone::DenseMatrix>& vL2f, 
+    std::vector<WhetStone::DenseMatrix>& vMGf,
+    std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+    std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
+    int MGorder)
+{
+  int nfaces = faces.size();
+
+  Tensor Idf(d_ - 1, 2);
+  Idf.MakeDiagonal(1.0);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+    auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    vcoordsys.push_back(coordsys);
+
+    DenseMatrix Nf, NfT, Mf, MG;
+    L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
+    if (MGorder == order_) vMGf.push_back(Idf ^ MG);
+
+    NfT.Transpose(Nf);
+    auto NN = NfT * Nf;
+    NN.InverseMoorePenrose();
+    auto L2f = NN * NfT;
+    vL2f.push_back(L2f);
+
+    Basis_Regularized<SurfaceMiniMesh> basis_f;
+    basis_f.Init(surf_mesh, f, order_ + 1, integrals_.poly());
+    vbasisf.push_back(basis_f);
+
+    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+    GrammMatrix(numi_f, order_ + 1, integrals_, basis_f, MG);
+    if (MGorder == order_ + 1) vMGf.push_back(Idf ^ MG);
+  }
+}
+
+
+/* ******************************************************************
+* Projector on edge is inverse of the Gramm matrix.
+****************************************************************** */
+void VEM_NedelecSerendipityType2::L2ProjectorOnEdge_(
+    WhetStone::DenseMatrix& L2e, int order)
+{
+  L2e.Reshape(order + 1, order + 1);
+  L2e.PutScalar(0.0);
+
+  L2e(0, 0) = 1.0;
+
+  double a, b;
+  if (order > 0) {
+    a = 1.0 / 12;
+    L2e(1, 1) = a;
+  }
+  if (order > 1) {
+    b = 1.0 / 80;
+    L2e(2, 0) = a;
+    L2e(0, 2) = a;
+    L2e(2, 2) = b;
+  }
+
+  L2e.InverseSPD();
+}
+
+
+/* ******************************************************************
+* Compute face integrals using L2 projection
+****************************************************************** */
+void VEM_NedelecSerendipityType2::L2consistency3DFace_Method1_(
+    const VectorPolynomial& p1,
+    const VectorPolynomial& xyz,
+    const SurfaceCoordinateSystem& coordsys,
+    const Basis_Regularized<SurfaceMiniMesh>& basis,
+    const DenseMatrix& L2f,
+    const DenseMatrix& MGf,
+    DenseVector& p0v)
+{
+  // integral over face requires vector of polynomial coefficients of pc
+  int nrows = L2f.NumRows();
+  int ncols = L2f.NumCols();
+  int krows = MGf.NumRows();
+  WhetStone::DenseVector w(krows);
+
+  p0v.Reshape(ncols);
+
+  const AmanziGeometry::Point& xc = p1[0].get_origin();
+  const AmanziGeometry::Point& xf = coordsys.get_origin();
+  const AmanziGeometry::Point& normal = coordsys.normal_unit();
+
+  double beta = (xf - xc) * normal;  // xyz * normal = constant
+  VectorPolynomial p3D = p1 * beta - xyz * (p1 * normal);
+
+  VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p3D, xf, *coordsys.tau());
+  auto v = ExpandCoefficients(p2D);
+
+  int stride1 = v.NumRows() / (d_ - 1);
+  int stride2 = PolynomialSpaceDimension(d_ - 1, order_ + 1);
+  v.Regroup(stride1, stride2);
+
+  // calculate one factor in the L2 inner product
+  basis.ChangeBasisNaturalToMy(v, d_ - 1);
+
+  MGf.Multiply(v, w, false);
+
+  // reduce polynomial degree by one
+  stride1 = nrows / (d_ - 1);
+  w.Regroup(stride2, stride1);
+
+  L2f.Multiply(w, p0v, true);
+}
+
+
+/* ******************************************************************
+* Compute face integrals using integration by parts and L2 projection
+****************************************************************** */
+void VEM_NedelecSerendipityType2::L2consistency3DFace_Method2_(
+    int f,
+    const VectorPolynomial& p1,
+    const SurfaceCoordinateSystem& coordsys,
+    const Basis_Regularized<SurfaceMiniMesh>& basis,
+    const DenseMatrix& L2f,
+    const DenseMatrix& MGf,
+    DenseVector& p0v)
+{
+  // integral over face requires vector of polynomial coefficients of pc
+  int nrows = L2f.NumRows();
+  int ncols = L2f.NumCols();
+  int krows = MGf.NumRows();
+
+  p0v.Reshape(ncols);
+  p0v.PutScalar(0.0);
+
+  const AmanziGeometry::Point& xc = p1[0].get_origin();
+  const AmanziGeometry::Point& xf = coordsys.get_origin();
+  const AmanziGeometry::Point& normal = coordsys.normal_unit();
+
+  // decomposition of the first component of face polynomial
+  Polynomial p1f, p2f;
+  VectorPolynomial p2D = ProjectVectorPolynomialOnManifold(p1, xf, *coordsys.tau());
+
+  Polynomial tmp = p1 * normal;
+  tmp.ChangeCoordinates(xf, *coordsys.tau());
+
+  double beta = (xf - xc) * normal;  // xyz * normal = constant
+  p2D *= beta;
+  p2D -= product(coordsys.Project(xf - xc, false), tmp);
+  VectorDecomposition2DRot(p2D, p1f, p2f);
+
+  p2f -= tmp;
+
+  // face integral of curl [Pi_f(V)] . p1f
+  if (order_ > 0 && p1f.order() > 1) {
+    double area = mesh_->face_area(f);
+
+    // due to rot(p1f), we orthogonalize it to a constant 
+    auto v = p1f.ExpandCoefficients();
+    basis.ChangeBasisNaturalToMy(v);
+
+    for (auto it = p1f.begin(2); it < p1f.end(); ++it) {
+      int i = it.PolynomialPosition();
+      p1f(0) -= MGf(0, i) * v(i) / area;
+    }
+  }
+
+  // face integral of (x - xf) [Pi_f(V)] . p2f
+  if (order_ > 0) {
+    VectorPolynomial xy(2, 2, 1);
+    for (int i = 0; i < 2; ++i) {
+      xy[i](i + 1) = 1.0;
+      xy[i] *= p2f;
+    }
+    auto v = ExpandCoefficients(xy);
+    int stride1 = v.NumRows() / 2;
+    int stride2 = PolynomialSpaceDimension(2, order_ + 1);
+    v.Regroup(stride1, stride2);
+    basis.ChangeBasisNaturalToMy(v, 2);
+
+    DenseVector w(krows), u(ncols);
+    MGf.Multiply(v, w, false);
+
+    // reduce polynomial degree by one
+    stride1 = nrows / 2;
+    w.Regroup(stride2, stride1);
+    L2f.Multiply(w, u, true);
+
+    for (int k = 0; k < ncols; ++k) {
+      p0v(k) += u(k);
+    }
+  }
+
+  // edge integrals of [Pi_e(V)] . p1f
+  DenseMatrix L2e, L2e_tmp;
+  L2ProjectorOnEdge_(L2e, order_);
+  L2ProjectorOnEdge_(L2e_tmp, order_ + 1);
+  L2e_tmp.Inverse();
+
+  int nde = L2e.NumRows();
+  int nde_tmp = L2e_tmp.NumRows();
+  DenseVector w(nde_tmp), u(nde);
+
+  Entity_ID_List edges;
+  std::vector<int> dirs;
+
+  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+  int nedges = edges.size();
+
+  int row(0);
+  for (int n = 0; n < nedges; ++n) {
+    int e = edges[n];
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    double len = mesh_->edge_length(e);
+
+    auto xe_tmp = coordsys.Project(xe, true);
+    std::vector<AmanziGeometry::Point> tau_edge(1, coordsys.Project(tau, false));
+
+    Polynomial q(p1f);
+    q.ChangeCoordinates(xe_tmp, tau_edge);
+    auto v = q.ExpandCoefficients();
+
+    v.Reshape(nde_tmp);
+    w.Reshape(nde_tmp);
+    L2e_tmp.Multiply(v, w, false);
+
+    w.Reshape(nde);
+    L2e.Multiply(w, u, true);
+
+    // p0v(n) -= p1f.Value(xe_tmp) * len * dirs[n];
+    for (int k = 0; k < nde; ++k) {
+      p0v(row) -= u(k) * len * dirs[n];
+      row++;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Mass matrix for edge-based discretization.
+****************************************************************** */
+void VEM_NedelecSerendipityType2::MatrixOfDofs_(
+    int c, const Entity_ID_List& edges,
+    const Basis_Regularized<AmanziMesh::Mesh>& basis,
+    const NumericalIntegration<AmanziMesh::Mesh>& numi,
+    DenseMatrix& N)
+{
+  int nedges = edges.size();
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+  std::vector<double> moments;
+
+  VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
+  it0.begin();
+  it1.end();
+
+  for (auto it = it0; it < it1; ++it) { 
+    int m = it.MonomialSetOrder();
+    int k = it.VectorComponent();
+    int col = it.VectorPolynomialPosition();
+
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[m];
+    Monomial cmono(d_, index, factor);
+    cmono.set_origin(xc);  
+
+    int row(0);
+    for (int i = 0; i < nedges; i++) {
+      int e = edges[i];
+      const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+      double length = mesh_->edge_length(e);
+
+      numi.CalculatePolynomialMomentsEdge(e, cmono, order_, moments);
+      for (int l = 0; l < moments.size(); ++l) {
+        N(row, col) = moments[l] * tau[k] / length;
+        row++;
+      }
+    }
   }
 }
 

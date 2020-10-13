@@ -112,6 +112,26 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
       std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
       int MGorder);
 
+  void L2ProjectorOnEdge_(WhetStone::DenseMatrix& L2e, int order);
+
+  void L2consistency3DFace_Method1_(
+      const VectorPolynomial& p1,
+      const VectorPolynomial& xyz,
+      const SurfaceCoordinateSystem& coordsys,
+      const Basis_Regularized<SurfaceMiniMesh>& basis,
+      const DenseMatrix& L2f,
+      const DenseMatrix& MGf,
+      DenseVector& p0v);
+
+  void L2consistency3DFace_Method2_(
+      int f,
+      const VectorPolynomial& p1,
+      const SurfaceCoordinateSystem& coordsys,
+      const Basis_Regularized<SurfaceMiniMesh>& basis,
+      const DenseMatrix& L2f,
+      const DenseMatrix& MGf,
+      DenseVector& p0v);
+
  protected:
   using MFD3D::mesh_;
   using MFD3D::d_;

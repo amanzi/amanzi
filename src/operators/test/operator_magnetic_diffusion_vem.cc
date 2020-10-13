@@ -33,7 +33,6 @@
 // Amanzi::Operators
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "PDE_Accumulation.hh"
 #include "PDE_MagneticDiffusion.hh"
 
 #include "AnalyticElectromagnetics05.hh"
@@ -47,7 +46,8 @@ void MagneticDiffusionVEM(
     double dt, double tend, int order,
     int nx, int ny, int nz,
     double Xa, double Ya, double Za, double Xb, double Yb, double Zb,
-    const std::string& name)
+    const std::string& filename,
+    const std::string& method = "Nedelec serendipity type2")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -60,7 +60,7 @@ void MagneticDiffusionVEM(
   int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion VEM, dt=" 
-                            << dt << ", name: " << name 
+                            << dt << ", mesh: " << filename 
                             << ", order=" << order << std::endl;
 
   // read parameter list
@@ -78,11 +78,11 @@ void MagneticDiffusionVEM(
 
   bool request_faces(true), request_edges(true);
   RCP<Mesh> mesh;
-  if (name == "structured") {
+  if (filename == "structured") {
     mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
-    DeformMesh(mesh, 5, 1.0);
+    // DeformMesh(mesh, 5, 1.0);
   } else {
-    mesh = meshfactory.create(name, request_faces, request_edges);
+    mesh = meshfactory.create(filename, request_faces, request_edges);
   }
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -92,7 +92,7 @@ void MagneticDiffusionVEM(
 
   Analytic ana(mesh);
 
-  Polynomial pe(1, order), pf(2, order);
+  Polynomial pf(2, order);
   int nde = PolynomialSpaceDimension(1, order);
   int ndf = PolynomialSpaceDimension(2, order);
 
@@ -112,6 +112,7 @@ void MagneticDiffusionVEM(
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("magnetic diffusion operators vem");
   olist.sublist("schema electric").set<int>("method order", order);
   olist.sublist("schema magnetic").set<int>("method order", order);
+  olist.sublist("schema electric").set<std::string>("method", method);
 
   Teuchos::RCP<PDE_MagneticDiffusion> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion(olist, mesh));
   Teuchos::RCP<Operator> global_op = op_mag->global_operator();
@@ -127,7 +128,7 @@ void MagneticDiffusionVEM(
   CompositeVector E(cvs_e);
   CompositeVector B(*cvs_b);
 
-  // set up initial guess for a time-dependent problem 
+  // set up initial guess (only B) for a time-dependent problem 
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge");
@@ -138,25 +139,6 @@ void MagneticDiffusionVEM(
 
   std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
   funcs[0] = &ana;
-
-  for (int e = 0; e < nedges_owned; ++e) {
-    double len = mesh->edge_length(e);
-    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
-
-    std::vector<AmanziGeometry::Point> coordsys(1, tau);
-    ana.set_parameters(tau / len, 0, told);
-
-    for (auto it = pe.begin(); it < pe.end(); ++it) {
-      const int* index = it.multi_index();
-      Polynomial emono(1, index, 1.0);
-      emono.InverseChangeCoordinates(xe, coordsys);  
-      funcs[1] = &emono;
-
-      int k = it.PolynomialPosition();
-      Ee[k][e] = numi.IntegrateFunctionsEdge(e, funcs, 2) / len;
-    }
-  }
 
   for (int f = 0; f < nfaces_owned; ++f) {
     double area = mesh->face_area(f);
@@ -345,8 +327,14 @@ void MagneticDiffusionVEM(
 }
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
+  /*
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  */  
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo", "electromagnetics");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01,0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2,0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/4,0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
 }
 

@@ -103,10 +103,6 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
   AmanziMesh::Entity_ID_List cells, edges;
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
-  WhetStone::Polynomial pe(1, order);
-  std::vector<const WhetStone::WhetStoneFunction*> funcs(2);
-  funcs[0] = &ana;
-
   for (int e = 0; e < nedges_wghost; ++e) {
     double len = mesh->edge_length(e);
     const auto& tau = mesh->edge_vector(e);
@@ -165,7 +161,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
       ana.set_parameters(tau / len, 1, 0.0);
 
       std::vector<double> moments;
-      numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 2);
+      numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 3);
       for (int k = 0; k < moments.size(); ++k) ana_loc(n * nde + k) = moments[k];
     }
 
@@ -199,7 +195,8 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(1e-10, true, true);
+  if (comm->NumProc() == 1)
+    ver.CheckPreconditionerSPD(1e-10, true, true);
 
   // Solve the problem.
   CompositeVector& rhs = *global_op->rhs();
@@ -211,7 +208,7 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
   CHECK(num_itrs < 2000);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (pcg): ||r||=" << global_op->residual() 
+    std::cout << "electric solver: ||r||=" << global_op->residual() 
               << " itr=" << num_itrs
               << " code=" << global_op->returned_code() << std::endl;
   }
@@ -232,26 +229,23 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
 
 
 TEST(CURL_CURL_HIGH_ORDER) {
-/*
-  // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 0, 1e+1, "test/hexes8.exo");
-  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "electromagnetics", 0, 1e+3, "test/hexes8.exo");
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "electromagnetics", 0, 1e+3, "test/hexes8.exo");
   CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes8.exo");
   CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes16.exo");
-  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes32.exo");
+/*
 L2(e)= 0.030491648  Inf(e)= 0.033814076  itr= 89  size=10072
 L2(e)= 0.015556440  Inf(e)= 0.018429069  itr=162  size=78128
 L2(e)= 0.007872589  Inf(e)= 0.008978115  itr=291  size=615520
 
-L2(e)= 0.628790334  Inf(e)= 0.737978276  itr=137  size=10072
-L2(e)= 0.657143265  Inf(e)= 0.738068330  itr=249  size=78128
+L2(e)= 0.006310242  Inf(e)= 0.006942832  itr=249  size=20144
+L2(e)= 0.001723041  Inf(e)= 0.001851226  itr=401  size=156256
 
 L2(e)= 0.004197785  Inf(e)= 0.004418447  itr=131  size=10072
 L2(e)= 0.001097908  Inf(e)= 0.001145579  itr=243  size=78128
 L2(e)= 0.000289011  Inf(e)= 0.000289035  itr=456  size=615520
-*/
   CurlCurl_VEM<AnalyticElectromagnetics01>(0, "electromagnetics", 0, 1e-8, "test/hex_split_faces5.exo");
   CurlCurl_VEM<AnalyticElectromagnetics02>(8, "electromagnetics", 0, 1e-3);
   CurlCurl_VEM<AnalyticElectromagnetics02>(7, "Nedelec serendipity type2", 0, 2e-3);
-  CurlCurl_VEM<AnalyticElectromagnetics02>(7, "Nedelec serendipity type2", 1, 2e-3);
+*/
 }
 

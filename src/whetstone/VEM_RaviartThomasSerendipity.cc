@@ -266,7 +266,7 @@ int VEM_RaviartThomasSerendipity::MassMatrix(int c, const Tensor& K, DenseMatrix
 
 
 /* ******************************************************************
-* Mass matrix for edge-based discretization.
+* Mass matrix for face-based discretization.
 ****************************************************************** */
 void VEM_RaviartThomasSerendipity::ComputeN_(
     int c, const Entity_ID_List& faces, const std::vector<int>& dirs,

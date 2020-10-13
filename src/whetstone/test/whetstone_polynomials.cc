@@ -387,3 +387,40 @@ TEST(CURL3D_MATRIX_FORM) {
   // PrintMatrix(A);
 }
 
+
+/* ****************************************************************
+* Test of matrix form of curl operator
+**************************************************************** */
+TEST(CURL2D_MATRIX_FORM) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  // polynomials in two dimentions
+  std::cout << "\nMatrix representation of 2D culr operator..." << std::endl; 
+
+  VectorPolynomial q(2, 2, 2);
+
+  for (auto it = q.begin(); it < q.end(); ++it) {
+    int k = it.VectorComponent();
+    int n = it.PolynomialPosition();
+    q[k](n) = k + n;
+  }
+
+  VectorPolynomial p = Curl2D(q);
+
+  auto A = Curl2DMatrix(2, 2);
+  auto vq = ExpandCoefficients(q);
+  auto vp = ExpandCoefficients(p);
+
+  DenseVector tmp(vp);
+  A.Multiply(vq, tmp, false);
+  vp -= tmp;
+
+  double err, norm;
+  vp.NormInf(&err);
+  tmp.NormInf(&norm);
+
+  CHECK_CLOSE(0.0, err, 1e-12);
+  // PrintMatrix(A);
+}
+

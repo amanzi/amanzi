@@ -46,7 +46,7 @@ inline
 void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0)
 {
-  if (mesh1->get_comm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
+  // if (mesh1->get_comm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
 
   // create distributed random vector
   int d = mesh1->space_dimension();

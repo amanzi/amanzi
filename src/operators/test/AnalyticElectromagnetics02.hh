@@ -8,8 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The problem is c E + curl K curl E = Q, where K is the
-  identity tensor.
+  The problem is c E + curl K curl E = Q, where K is the identity tensor.
+  We define B = curl E for other tests.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_02_HH_
@@ -43,7 +43,14 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    double x = p[0];
+    double y = p[1];
+    double z = p[2];
+
+    double Bx = x * x * cos(y) - 2 * z * sin(x);
+    double By = y * y * cos(z) - 2 * x * sin(y);
+    double Bz = z * z * cos(x) - 2 * y * sin(z);
+    return Amanzi::AmanziGeometry::Point(Bx, By, Bz);
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
