@@ -57,11 +57,8 @@ CarbonDecomposeRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
 
-  std::string domain_ss = Keys::getDomain(temp_key_);
-
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
-  const auto& cv_c = *S->GetFieldData(pres_key_)->ViewComponent("cell", false);
-  //const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
+  const auto& pres_c = *S->GetFieldData(pres_key_)->ViewComponent("cell", false);
 
   std::string domain_ss = Keys::getDomain(temp_key_);
   const auto& top_z_centroid = S->GetMesh(domain_ss)->face_centroid(0);
@@ -81,16 +78,16 @@ CarbonDecomposeRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       double dz = z_up_centroid[2] - z_down_centroid[2];
       double depth = top_z_centroid[2] - z_down_centroid[2];
 
-      double f_temp = std::pow(q10_,(temp-293.15)/10.0);
+      double f_temp = std::pow(q10_,(temp_c[0][i]-293.15)/10.0);
       
       double f_depth = depth < 1.0 ? 1 : std::exp(-0.5*(depth-1));
 
-      double f_pres_temp = Func_TempPres(temp,pres);
+      double f_pres_temp = Func_TempPres(temp_c[0][i],pres_c[0][i]);
 
-      col_sum + = f_temp * f_depth * f_pres_temp * dz;
+      col_sum += f_temp * f_depth * f_pres_temp * dz;
     }
     else {
-      col_sum = 0
+      col_sum = 0;
     }
 
   }
@@ -150,7 +147,7 @@ CarbonDecomposeRateEvaluator::Func_TempPres(double temp, double pres) {
   double p_atm = 101325.;
   
   double pn_star = pres - p_atm;
-  double pn = std::min(0, std::max(pn_star,p_min));
+  double pn = std::min(0.0, std::max(pn_star,p_min));
   
   double f = -1.e18;
   
