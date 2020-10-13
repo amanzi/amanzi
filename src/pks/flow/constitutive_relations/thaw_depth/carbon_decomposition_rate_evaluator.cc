@@ -7,7 +7,7 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "carbon_decompostion_rate_evaluator.hh"
+#include "carbon_decomposition_rate_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
