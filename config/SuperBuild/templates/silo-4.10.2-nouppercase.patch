@@ -1,0 +1,495 @@
+diff -Naur silo-4.10.2/src/fpzip/codec.h silo-4.10.2-patched/src/fpzip/codec.h
+--- silo-4.10.2/src/fpzip/codec.h	2013-12-18 13:22:35.000000000 -0500
++++ silo-4.10.2-patched/src/fpzip/codec.h	2020-10-06 20:57:33.000000000 -0400
+@@ -16,13 +16,13 @@
+ // identity map for integer arithmetic
+ template <typename T, unsigned width>
+ struct PCmap<T, width, T> {
+-  typedef T DOMAIN;
+-  typedef T RANGE;
++  typedef T Domain;
++  typedef T Range;
+   static const unsigned bits = width;
+   static const T        mask = ~T(0) >> (bitsizeof(T) - bits);
+-  RANGE forward(DOMAIN d) const { return d & mask; }
+-  DOMAIN inverse(RANGE r) const { return r & mask; }
+-  DOMAIN identity(DOMAIN d) const { return d & mask; }
++  Range forward(Domain d) const { return d & mask; }
++  Domain inverse(Range r) const { return r & mask; }
++  Domain identity(Domain d) const { return d & mask; }
+ };
+ #endif
+ 
+diff -Naur silo-4.10.2/src/fpzip/pcdecoder.inl silo-4.10.2-patched/src/fpzip/pcdecoder.inl
+--- silo-4.10.2/src/fpzip/pcdecoder.inl	2013-12-18 13:22:35.000000000 -0500
++++ silo-4.10.2-patched/src/fpzip/pcdecoder.inl	2020-10-06 20:57:33.000000000 -0400
+@@ -19,7 +19,7 @@
+ T PCdecoder<T, M, false>::decode(T pred, unsigned context)
+ {
+   // map type T to unsigned integer type
+-  typedef typename M::RANGE U;
++  typedef typename M::Range U;
+   U p = map.forward(pred);
+   // entropy decode d = r - p
+   U r = p + rd->decode(rm[context]) - bias;
+@@ -46,7 +46,7 @@
+ template <typename T, class M>
+ T PCdecoder<T, M, true>::decode(T pred, unsigned context)
+ {
+-  typedef typename M::RANGE U;
++  typedef typename M::Range U;
+   unsigned s = rd->decode(rm[context]);
+   if (s > bias) {      // underprediction
+     unsigned k = s - bias - 1;
+diff -Naur silo-4.10.2/src/fpzip/pcencoder.inl silo-4.10.2-patched/src/fpzip/pcencoder.inl
+--- silo-4.10.2/src/fpzip/pcencoder.inl	2013-12-18 13:22:35.000000000 -0500
++++ silo-4.10.2-patched/src/fpzip/pcencoder.inl	2020-10-06 20:57:33.000000000 -0400
+@@ -18,7 +18,7 @@
+ T PCencoder<T, M, false>::encode(T real, T pred, unsigned context)
+ {
+   // map type T to unsigned integer type
+-  typedef typename M::RANGE U;
++  typedef typename M::Range U;
+   U r = map.forward(real);
+   U p = map.forward(pred);
+   // entropy encode d = r - p
+@@ -47,7 +47,7 @@
+ T PCencoder<T, M, true>::encode(T real, T pred, unsigned context)
+ {
+   // map type T to unsigned integer type
+-  typedef typename M::RANGE U;
++  typedef typename M::Range U;
+   U r = map.forward(real);
+   U p = map.forward(pred);
+   // compute (-1)^s (2^k + m) = r - p, entropy code (s, k),
+diff -Naur silo-4.10.2/src/fpzip/pcmap.h silo-4.10.2-patched/src/fpzip/pcmap.h
+--- silo-4.10.2/src/fpzip/pcmap.h	2013-12-18 13:22:35.000000000 -0500
++++ silo-4.10.2-patched/src/fpzip/pcmap.h	2020-10-06 20:58:58.000000000 -0400
+@@ -14,53 +14,53 @@
+ // specialized for integer-to-integer map
+ template <typename T, unsigned width>
+ struct PCmap<T, width, void> {
+-  typedef T DOMAIN;
+-  typedef T RANGE;
+-  static const unsigned bits = width;                    // RANGE bits
+-  static const unsigned shift = bitsizeof(RANGE) - bits; // DOMAIN\RANGE bits
+-  RANGE forward(DOMAIN d) const { return d >> shift; }
+-  DOMAIN inverse(RANGE r) const { return r << shift; }
+-  DOMAIN identity(DOMAIN d) const { return inverse(forward(d)); }
++  typedef T Domain;
++  typedef T Range;
++  static const unsigned bits = width;                    // Range bits
++  static const unsigned shift = bitsizeof(Range) - bits; // Domain\Range bits
++  Range forward(Domain d) const { return d >> shift; }
++  Domain inverse(Range r) const { return r << shift; }
++  Domain identity(Domain d) const { return inverse(forward(d)); }
+ };
+ 
+ // specialized for float type
+ template <unsigned width>
+ struct PCmap<float, width, void> {
+-  typedef float    DOMAIN;
+-  typedef unsigned RANGE;
+-  union UNION {
+-    UNION(DOMAIN d) : d(d) {}
+-    UNION(RANGE r) : r(r) {}
+-    DOMAIN d;
+-    RANGE r;
++  typedef float    Domain;
++  typedef unsigned Range;
++  union Union {
++    Union(Domain d) : d(d) {}
++    Union(Range r) : r(r) {}
++    Domain d;
++    Range r;
+   };
+-  static const unsigned bits = width;                    // RANGE bits
+-  static const unsigned shift = bitsizeof(RANGE) - bits; // DOMAIN\RANGE bits
+-  RANGE fcast(DOMAIN d) const;
+-  DOMAIN icast(RANGE r) const;
+-  RANGE forward(DOMAIN d) const;
+-  DOMAIN inverse(RANGE r) const;
+-  DOMAIN identity(DOMAIN d) const;
++  static const unsigned bits = width;                    // Range bits
++  static const unsigned shift = bitsizeof(Range) - bits; // Domain\Range bits
++  Range fcast(Domain d) const;
++  Domain icast(Range r) const;
++  Range forward(Domain d) const;
++  Domain inverse(Range r) const;
++  Domain identity(Domain d) const;
+ };
+ 
+ // specialized for double type
+ template <unsigned width>
+ struct PCmap<double, width, void> {
+-  typedef double             DOMAIN;
+-  typedef unsigned long long RANGE;
+-  union UNION {
+-    UNION(DOMAIN d) : d(d) {}
+-    UNION(RANGE r) : r(r) {}
+-    DOMAIN d;
+-    RANGE r;
++  typedef double             Domain;
++  typedef unsigned long long Range;
++  union Union {
++    Union(Domain d) : d(d) {}
++    Union(Range r) : r(r) {}
++    Domain d;
++    Range r;
+   };
+-  static const unsigned bits = width;                    // RANGE bits
+-  static const unsigned shift = bitsizeof(RANGE) - bits; // DOMAIN\RANGE bits
+-  RANGE fcast(DOMAIN d) const;
+-  DOMAIN icast(RANGE r) const;
+-  RANGE forward(DOMAIN d) const;
+-  DOMAIN inverse(RANGE r) const;
+-  DOMAIN identity(DOMAIN d) const;
++  static const unsigned bits = width;                    // Range bits
++  static const unsigned shift = bitsizeof(Range) - bits; // Domain\Range bits
++  Range fcast(Domain d) const;
++  Domain icast(Range r) const;
++  Range forward(Domain d) const;
++  Domain inverse(Range r) const;
++  Domain identity(Domain d) const;
+ };
+ 
+ #include "pcmap.inl"
+diff -Naur silo-4.10.2/src/fpzip/pcmap.inl silo-4.10.2-patched/src/fpzip/pcmap.inl
+--- silo-4.10.2/src/fpzip/pcmap.inl	2013-12-18 13:22:35.000000000 -0500
++++ silo-4.10.2-patched/src/fpzip/pcmap.inl	2020-10-06 20:58:58.000000000 -0400
+@@ -3,12 +3,12 @@
+ PCmap<float, width, void>::fcast(float d) const
+ {
+ #ifdef WITH_REINTERPRET_CAST
+-  return reinterpret_cast<const RANGE&>(d);
++  return reinterpret_cast<const Range&>(d);
+ #elif defined WITH_UNION
+-  UNION shared(d);
++  Union shared(d);
+   return shared.r;
+ #else
+-  RANGE r;
++  Range r;
+   memcpy(&r, &d, sizeof(r));
+   return r;
+ #endif
+@@ -19,12 +19,12 @@
+ PCmap<float, width, void>::icast(unsigned r) const
+ {
+ #ifdef WITH_REINTERPRET_CAST
+-  return reinterpret_cast<const DOMAIN&>(r);
++  return reinterpret_cast<const Domain&>(r);
+ #elif defined WITH_UNION
+-  UNION shared(r);
++  Union shared(r);
+   return shared.d;
+ #else
+-  DOMAIN d;
++  Domain d;
+   memcpy(&d, &r, sizeof(d));
+   return d;
+ #endif
+@@ -37,7 +37,7 @@
+ unsigned
+ PCmap<float, width, void>::forward(float d) const
+ {
+-  RANGE r = fcast(d);
++  Range r = fcast(d);
+   r = ~r;
+   r >>= shift;
+   r ^= -(r >> (bits - 1)) >> (shift + 1);
+@@ -61,7 +61,7 @@
+ float
+ PCmap<float, width, void>::identity(float d) const
+ {
+-  RANGE r = fcast(d);
++  Range r = fcast(d);
+   r >>= shift;
+   r <<= shift;
+   return icast(r);
+@@ -72,12 +72,12 @@
+ PCmap<double, width, void>::fcast(double d) const
+ {
+ #ifdef WITH_REINTERPRET_CAST
+-  return reinterpret_cast<const RANGE&>(d);
++  return reinterpret_cast<const Range&>(d);
+ #elif defined WITH_UNION
+-  UNION shared(d);
++  Union shared(d);
+   return shared.r;
+ #else
+-  RANGE r;
++  Range r;
+   memcpy(&r, &d, sizeof(r));
+   return r;
+ #endif
+@@ -88,12 +88,12 @@
+ PCmap<double, width, void>::icast(unsigned long long r) const
+ {
+ #ifdef WITH_REINTERPRET_CAST
+-  return reinterpret_cast<const DOMAIN&>(r);
++  return reinterpret_cast<const Domain&>(r);
+ #elif defined WITH_UNION
+-  UNION shared(r);
++  Union shared(r);
+   return shared.d;
+ #else
+-  DOMAIN d;
++  Domain d;
+   memcpy(&d, &r, sizeof(d));
+   return d;
+ #endif
+@@ -106,7 +106,7 @@
+ unsigned long long
+ PCmap<double, width, void>::forward(double d) const
+ {
+-  RANGE r = fcast(d);
++  Range r = fcast(d);
+   r = ~r;
+   r >>= shift;
+   r ^= -(r >> (bits - 1)) >> (shift + 1);
+@@ -130,7 +130,7 @@
+ double
+ PCmap<double, width, void>::identity(double d) const
+ {
+-  RANGE r = fcast(d);
++  Range r = fcast(d);
+   r >>= shift;
+   r <<= shift;
+   return icast(r);
+diff -Naur silo-4.10.2/src/fpzip/read.cpp silo-4.10.2-patched/src/fpzip/read.cpp
+--- silo-4.10.2/src/fpzip/read.cpp	2014-06-02 17:31:14.000000000 -0400
++++ silo-4.10.2-patched/src/fpzip/read.cpp	2020-10-06 20:57:33.000000000 -0400
+@@ -103,7 +103,7 @@
+ {
+   // initialize decompressor
+   typedef PCmap<T, bits> TMAP;
+-  typedef typename TMAP::RANGE U;
++  typedef typename TMAP::Range U;
+   typedef PCmap<U, bits, U> UMAP;
+   RCmodel* rm = new RCqsmodel(false, PCdecoder<U, UMAP>::symbols);
+   PCdecoder<U, UMAP>* fd = new PCdecoder<U, UMAP>(rd, &rm);
+diff -Naur silo-4.10.2/src/fpzip/write.cpp silo-4.10.2-patched/src/fpzip/write.cpp
+--- silo-4.10.2/src/fpzip/write.cpp	2014-06-02 16:32:17.000000000 -0400
++++ silo-4.10.2-patched/src/fpzip/write.cpp	2020-10-06 20:57:33.000000000 -0400
+@@ -103,7 +103,7 @@
+ {
+   // initialize compressor
+   typedef PCmap<T, bits> TMAP;
+-  typedef typename TMAP::RANGE U;
++  typedef typename TMAP::Range U;
+   typedef PCmap<U, bits, U> UMAP;
+   RCmodel* rm = new RCqsmodel(true, PCencoder<U, UMAP>::symbols);
+   PCencoder<U, UMAP>* fe = new PCencoder<U, UMAP>(re, &rm);
+diff -Naur silo-4.10.2/src/hzip/hzmap.h silo-4.10.2-patched/src/hzip/hzmap.h
+--- silo-4.10.2/src/hzip/hzmap.h	2013-12-18 13:22:37.000000000 -0500
++++ silo-4.10.2-patched/src/hzip/hzmap.h	2020-10-06 20:58:58.000000000 -0400
+@@ -9,8 +9,8 @@
+ template <typename T>
+ class HZmap {
+ public:
+-  typedef T DOMAIN;
+-  typedef T RANGE;
++  typedef T Domain;
++  typedef T Range;
+   T operator()(T x) const { return x; }
+ };
+ 
+@@ -18,13 +18,13 @@
+ template <>
+ class HZmap<int> {
+ public:
+-  typedef int DOMAIN;
+-  typedef unsigned RANGE;
+-  union UNION {
+-    UNION(DOMAIN d) : d(d) {}
+-    UNION(RANGE r) : r(r) {}
+-    DOMAIN d;
+-    RANGE r;
++  typedef int Domain;
++  typedef unsigned Range;
++  union Union {
++    Union(Domain d) : d(d) {}
++    Union(Range r) : r(r) {}
++    Domain d;
++    Range r;
+   };
+   int operator()(unsigned u) const
+   {
+@@ -32,7 +32,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     return reinterpret_cast<const int&>(u);
+ #elif defined WITH_UNION
+-    UNION shared(u);
++    Union shared(u);
+     return shared.d;
+ #else
+     int i;
+@@ -45,7 +45,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     unsigned u = reinterpret_cast<const unsigned&>(i);
+ #elif defined WITH_UNION
+-    UNION shared(i);
++    Union shared(i);
+     unsigned u = shared.r;
+ #else
+     unsigned u;
+@@ -59,13 +59,13 @@
+ template <>
+ class HZmap<float> {
+ public:
+-  typedef float DOMAIN;
+-  typedef unsigned RANGE;
+-  union UNION {
+-    UNION(DOMAIN d) : d(d) {}
+-    UNION(RANGE r) : r(r) {}
+-    DOMAIN d;
+-    RANGE r;
++  typedef float Domain;
++  typedef unsigned Range;
++  union Union {
++    Union(Domain d) : d(d) {}
++    Union(Range r) : r(r) {}
++    Domain d;
++    Range r;
+   };
+   float operator()(unsigned u) const
+   {
+@@ -73,7 +73,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     return reinterpret_cast<const float&>(u);
+ #elif defined WITH_UNION
+-    UNION shared(u);
++    Union shared(u);
+     return shared.d;
+ #else
+     float f;
+@@ -86,7 +86,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     unsigned u = reinterpret_cast<const unsigned&>(f);
+ #elif defined WITH_UNION
+-    UNION shared(f);
++    Union shared(f);
+     unsigned u = shared.r;
+ #else
+     unsigned u;
+@@ -100,13 +100,13 @@
+ template <>
+ class HZmap<double> {
+ public:
+-  typedef double DOMAIN;
+-  typedef unsigned long long RANGE;
+-  union UNION {
+-    UNION(DOMAIN d) : d(d) {}
+-    UNION(RANGE r) : r(r) {}
+-    DOMAIN d;
+-    RANGE r;
++  typedef double Domain;
++  typedef unsigned long long Range;
++  union Union {
++    Union(Domain d) : d(d) {}
++    Union(Range r) : r(r) {}
++    Domain d;
++    Range r;
+   };
+   double operator()(unsigned long long u) const
+   {
+@@ -114,7 +114,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     return reinterpret_cast<const double&>(u);
+ #elif defined WITH_UNION
+-    UNION shared(u);
++    Union shared(u);
+     return shared.d;
+ #else
+     double f;
+@@ -127,7 +127,7 @@
+ #ifdef WITH_REINTERPRET_CAST
+     unsigned long long u = reinterpret_cast<const unsigned long long&>(f);
+ #elif defined WITH_UNION
+-    UNION shared(f);
++    Union shared(f);
+     unsigned long long u = shared.r;
+ #else
+     unsigned long long u;
+diff -Naur silo-4.10.2/src/hzip/hzresidual.h silo-4.10.2-patched/src/hzip/hzresidual.h
+--- silo-4.10.2/src/hzip/hzresidual.h	2013-12-18 13:22:37.000000000 -0500
++++ silo-4.10.2-patched/src/hzip/hzresidual.h	2020-10-06 20:57:33.000000000 -0400
+@@ -27,7 +27,7 @@
+   bool zero() const { return !value; }
+ 
+ private:
+-  typedef typename M::RANGE U;
++  typedef typename M::Range U;
+   U value; // value of residual
+   M map;   // functors for mapping between value type T and integer type U
+ };
+diff -Naur silo-4.10.2/tools/browser/array.c silo-4.10.2-patched/tools/browser/array.c
+--- silo-4.10.2/tools/browser/array.c	2014-06-19 15:41:41.000000000 -0400
++++ silo-4.10.2-patched/tools/browser/array.c	2020-10-06 21:09:17.000000000 -0400
+@@ -1191,7 +1191,7 @@
+        */
+       if (num_isint (argv[argno])) {
+          lo = hi = num_int (argv[argno]);
+-      } else if (C_RANGE==argv[argno]->pub.cls) {
++      } else if (C_Range==argv[argno]->pub.cls) {
+          range_range (argv[argno], &lo, &hi);
+       } else {
+          sprintf (buf, "ary_deref: arg-%d is an inappropriate array "
+diff -Naur silo-4.10.2/tools/browser/browser.h silo-4.10.2-patched/tools/browser/browser.h
+--- silo-4.10.2/tools/browser/browser.h	2014-05-07 22:55:39.000000000 -0400
++++ silo-4.10.2-patched/tools/browser/browser.h	2020-10-06 20:57:33.000000000 -0400
+@@ -450,7 +450,7 @@
+ extern class_t  C_NUM  ;                /*numbers                       */
+ extern class_t  C_PRIM ;                /*a primitive type              */
+ extern class_t  C_PTR  ;                /*a pointer type                */
+-extern class_t  C_RANGE ;               /*integer range object          */
++extern class_t  C_Range ;               /*integer range object          */
+ extern class_t  C_SDO  ;                /*a silo data object            */
+ extern class_t  C_STC  ;                /*structure data type           */
+ extern class_t  C_STR  ;                /*strings                       */
+diff -Naur silo-4.10.2/tools/browser/obj.c silo-4.10.2-patched/tools/browser/obj.c
+--- silo-4.10.2/tools/browser/obj.c	2014-05-07 22:55:39.000000000 -0400
++++ silo-4.10.2-patched/tools/browser/obj.c	2020-10-06 21:09:17.000000000 -0400
+@@ -95,7 +95,7 @@
+    C_NUM   = num_class  ();
+    C_PRIM  = prim_class ();
+    C_PTR   = ptr_class  ();
+-   C_RANGE = range_class ();
++   C_Range = range_class ();
+    C_SDO   = sdo_class  ();
+    C_STC   = stc_class  ();
+    C_STR   = str_class  ();
+diff -Naur silo-4.10.2/tools/browser/parse.c silo-4.10.2-patched/tools/browser/parse.c
+--- silo-4.10.2/tools/browser/parse.c	2013-12-18 13:22:39.000000000 -0500
++++ silo-4.10.2-patched/tools/browser/parse.c	2020-10-06 21:09:17.000000000 -0400
+@@ -863,7 +863,7 @@
+        */
+       lt = obj_dest (lt);
+       rt = obj_dest (rt);
+-      retval = obj_new (C_RANGE, lo, hi);
++      retval = obj_new (C_Range, lo, hi);
+    } else {
+       retval = lt;
+    }
+diff -Naur silo-4.10.2/tools/browser/range.c silo-4.10.2-patched/tools/browser/range.c
+--- silo-4.10.2/tools/browser/range.c	2014-05-07 22:55:39.000000000 -0400
++++ silo-4.10.2-patched/tools/browser/range.c	2020-10-06 21:09:17.000000000 -0400
+@@ -73,7 +73,7 @@
+    int          lo, hi ;                /*inclusive                     */
+ } obj_range_t;
+ 
+-class_t         C_RANGE;
++class_t         C_Range;
+ static obj_t    range_new (va_list);
+ static void     range_print (obj_t, out_t*);
+ static int      range_diff (obj_t, obj_t);
+@@ -246,7 +246,7 @@
+ 
+    obj_range_t  *self = MYCLASS(_self);
+ 
+-   if (!self || C_RANGE!=self->pub.cls) return -1;
++   if (!self || C_Range!=self->pub.cls) return -1;
+    if (lo) *lo = self->lo;
+    if (hi) *hi = self->hi;
+    return 0;
