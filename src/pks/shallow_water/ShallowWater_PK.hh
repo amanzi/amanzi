@@ -37,6 +37,7 @@
 #include "WhetStoneMeshUtils.hh"
 
 #include "ShallowWaterBoundaryFunction.hh"
+#include "Elements.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -106,10 +107,19 @@ class ShallowWater_PK : public PK_Physical,
   Key bathymetry_key_;
   Key discharge_y_grad_key_;
 
+  // arrays of keys containing the DOFs
+  std::vector<Key> velocity_x_keys_, velocity_y_keys_;
+  std::vector<Key> discharge_x_keys_, discharge_y_keys_;
+  std::vector<Key> ponded_depth_keys_;
+  std::vector<Key> total_depth_keys_;
+  std::vector<Key> bathymetry_keys_;
+
   std::string passwd_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+
+  std::vector<Element2DQuad> elements_;
 
  private:
   // boundary conditions

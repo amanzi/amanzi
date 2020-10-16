@@ -74,7 +74,8 @@ add_amanzi_library(shallow_water SOURCE ${sw_src_files}
 #
 set(sw_inc_files 
   ShallowWater_PK.hh
-  ShallowWaterBoundaryFunction.hh)
+  ShallowWaterBoundaryFunction.hh
+  Elements.hh)
 
 add_install_include_file(${sw_inc_files})
 

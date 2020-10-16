@@ -7,9 +7,6 @@
  provided in the top-level COPYRIGHT file.
  
  Author: Svetlana Tokareva (tokareva@lanl.gov)
-
- This PK implements a simple residual distribution method for shallow water equations
-
 */
 
 #include <algorithm>
@@ -20,7 +17,6 @@
 
 // Amanzi::ShallowWater
 #include "ShallowWater_PK.hh"
-#include "Elements.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -134,15 +130,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 //--------------------------------------------------------------
 void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-
-  // Initialize elements
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  elements_.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) {
-      elements_[c].quadrature();
-  }
-
-
   // Create BC objects
   Teuchos::RCP<ShallowWaterBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
@@ -301,38 +288,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   limiter_->ApplyLimiter(tmp6, 0, discharge_y_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  // GET SOLUTION VALUES at DOFS
-
-  // save a copy of primary and conservative fields
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_keys_[0],passwd_)->ViewComponent("cell",true);
-
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector h_vec_c_tmp(h_vec_c);
-
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
-
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData(velocity_x_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
-
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData(velocity_y_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
-
-  Epetra_MultiVector& qx_vec_c = *S_->GetFieldData(discharge_x_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector qx_vec_c_tmp(qx_vec_c);
-
-  Epetra_MultiVector& qy_vec_c = *S_->GetFieldData(discharge_y_keys_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
-
-  // distribute data to ghost cells
-  S_->GetFieldData(bathymetry_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(total_depth_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(ponded_depth_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_x_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_y_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_x_keys_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_y_keys_)->ScatterMasterToGhosted("cell");
-
   // update boundary conditions
   if (bcs_.size() > 0)
       bcs_[0]->Compute(t_old, t_new);
@@ -354,64 +309,137 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     double farea;
     double vol = mesh_->cell_volume(c);
 
-    std::vector<double> Phi;                         // residuals
+    std::vector<double> FL, FR, FNum, FNum_rot, FS;  // fluxes
     std::vector<double> S;                           // source term
-    std::vector<double> U, U_pr, U_new;              // solution vectors
+    std::vector<double> UL, UR, U;                   // data for the fluxes
+
+    UL.resize(3);
+    UR.resize(3);
+
+    FS.resize(3);
+    FNum.resize(3);
+
+    for (int i = 0; i < 3; i++) FS[i] = 0.;
+
+    for (int f = 0; f < cfaces.size(); f++) {
+
+      int orientation;
+      AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
+      mesh_->face_get_cells(cfaces[f],AmanziMesh::Parallel_type::OWNED,&fcells);
+      farea = mesh_->face_area(cfaces[f]);
+      normal /= farea;
+
+      const AmanziGeometry::Point& xcf = mesh_->face_centroid(cfaces[f]);
+
+      double ht_rec = total_depth_grad_->getValue(c, xcf);
+      double B_rec  = bathymetry_grad_->getValue(c, xcf);
+
+      if (ht_rec < B_rec) {
+        ht_rec = ht_vec_c[0][c];
+        B_rec  = B_vec_c[0][c];
+      }
+      double h_rec = ht_rec - B_rec;
+
+      if (h_rec < 0.) {
+        std::cout << "c = " << c << std::endl;
+        std::cout << "ht_rec = " << ht_rec << std::endl;
+        std::cout << "B_rec  = " << B_rec << std::endl;
+        std::cout << "h_rec  = " << h_rec << std::endl;
+        Errors::Message msg;
+        msg << "Shallow water PK: negative h.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+
+      double vx_rec  = velocity_x_grad_->getValue(c, xcf);
+      double vy_rec  = velocity_y_grad_->getValue(c, xcf);
+      double qx_rec = discharge_x_grad_->getValue(c, xcf);
+      double qy_rec = discharge_y_grad_->getValue(c, xcf);
+
+      vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+      vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+
+      double vn, vt;
+      vn =  vx_rec*normal[0] + vy_rec*normal[1];
+      vt = -vx_rec*normal[1] + vy_rec*normal[0];
+
+      UL[0] = h_rec;
+      UL[1] = h_rec*vn;
+      UL[2] = h_rec*vt;
+
+      int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, cfaces[f]);
+
+      if (cn == -1) {
+        if (bcs_.size() > 0 && bcs_[0]->bc_find(cfaces[f]))
+          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(cfaces[f])[i];
+        else
+          UR = UL;
+
+      } else {
+        ht_rec = total_depth_grad_->getValue(cn, xcf);
+        B_rec  = bathymetry_grad_->getValue(cn, xcf);
+
+        if (ht_rec < B_rec) {
+          ht_rec = ht_vec_c[0][cn];
+          B_rec  = B_vec_c[0][cn];
+        }
+        h_rec = ht_rec - B_rec;
+
+        if (h_rec < 0.) {
+          std::cout << "cn = " << cn << std::endl;
+          std::cout << "ht_rec = " << ht_rec << std::endl;
+          std::cout << "B_rec  = " << B_rec << std::endl;
+          std::cout << "h_rec  = " << h_rec << std::endl;
+          Errors::Message msg;
+          msg << "Shallow water PK: negative h.\n";
+          Exceptions::amanzi_throw(msg);
+        }
+
+        vx_rec  = velocity_x_grad_->getValue(cn, xcf);
+        vy_rec  = velocity_y_grad_->getValue(cn, xcf);
+        qx_rec = discharge_x_grad_->getValue(cn, xcf);
+        qy_rec = discharge_y_grad_->getValue(cn, xcf);
+
+        vx_rec = 2.*h_rec*qx_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+        vy_rec = 2.*h_rec*qy_rec/(h_rec*h_rec + std::fmax(h_rec*h_rec,eps*eps));
+
+        vn =  vx_rec*normal[0] + vy_rec*normal[1];
+        vt = -vx_rec*normal[1] + vy_rec*normal[0];
+
+        UR[0] = h_rec;
+        UR[1] = h_rec*vn;
+        UR[2] = h_rec*vt;
+      }
+
+      FNum_rot = NumFlux_x(UL,UR);
+
+      FNum[0] = FNum_rot[0];
+      FNum[1] = FNum_rot[1]*normal[0] - FNum_rot[2]*normal[1];
+      FNum[2] = FNum_rot[1]*normal[1] + FNum_rot[2]*normal[0];
+
+      for (int i = 0; i < 3; i++) {
+        FS[i] += FNum[i]*farea;
+      }
+
+    } // faces
+
+    double h, u, v, qx, qy;
 
     U.resize(3);
-    U_pr.resize(3);
-    U_new.resize(3);
 
-    Phi.resize(3);
+    h  = h_vec_c[0][c];
+    qx = qx_vec_c[0][c];
+    qy = qy_vec_c[0][c];
+    u = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
+    v = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
-    for (int i = 0; i < 3; i++) Phi[i] = 0.;
+    U[0] = h;
+    U[1] = h*u;
+    U[2] = h*v;
 
-    // Caclulate residuals
+    S = NumSrc(U,c);
 
-    // need to implement:
-    // shape functions
-    // numerical integration
-
-   // Phi_Rus = \int_omega divF(U)*\varphi_i(x)dx + alpha(u-ubar)
-
-    // 1. Predictor
-
-    // construct Lax-Friedrichs residuals
-    Phi_Rus = ResidualsTimeSpace(U,U);
-
-    // get distribution coefficients
-    beta = DistrCoeffs(Phi_Rus);
-
-    // comute new residuals
     for (int i = 0; i < 3; i++) {
-      for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-        Phi[i][nDOF] = beta[i][nDOF]*Phi_total[i];
-      }
-    }
-
-    // update solution
-    for (int i = 0; i < 3; i++) {
-      U_pr[i] = U[i] - dt/vol*Phi[i];
-    }
-
-    // 2. Corrector
-    Phi_Rus = ResidualsTimeSpace(U,U_pr);
-
-    // get distribution coefficients
-    beta = DistrCoeffs(Phi_Rus);
-
-    // comute new residuals
-    for (int i = 0; i < 3; i++) {
-      for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-        Phi[i][nDOF] = beta[i][nDOF]*Phi_total[i];
-      }
-    }
-
-    // update solution
-    for (int i = 0; i < 3; i++) {
-      for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-        U_new[i] = U_pr[i] - dt/vol*Phi[i];
-      }
+      U_new[i] = U[i] - dt/vol*FS[i] + dt*S[i];
     }
 
     h  = U_new[0];
@@ -467,197 +495,6 @@ double minmod(double a, double b)
   return m;
 }
 
-//--------------------------------------------------------------
-// Lax-Friedrichs residual
-//--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::ResidualsLF(int c, std::vector<std::vector<double> >& U) {  // input argument must contain coefficients of the basis expansion
-  std::vector<double> Phi;
-  Phi.resize(3);
-
-  // flux vectors
-  std::vector<double> flux;
-  flux.resize(2);
-
-  // shape function gradient
-  std::vector<double> grad;
-  grad.resize(2);
-
-  mesh_->cell_get_faces(c,&cfaces);
-
-  double farea;
-  double vol = mesh_->cell_volume(c);
-
-  // loop over conservative variables
-  for (int i = 0, i < 3; i++) {
-
-    // compute solution average
-    U_av[i] = 0.;
-    for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-        U_av[i] += U[i][nDOF]
-    }
-    U_av[i] /= nDOFs;
-
-    double h, u, v, h, qx, qy;
-    double eps = 1.e-6;
-
-    // SW conservative variables: (h, hu, hv)
-
-    double S, Smax = 0.; // wave speeds
-
-    // compite max wave speed estimates
-    for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-
-      h  = U[0][nDOF];
-      qx = U[1][nDOF];
-      qy = U[2][nDOF];
-      u  = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
-      v  = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
-
-      S = std::max(std::fabs(u) + std::sqrt(g_*h),std::fabs(v) + std::sqrt(g_*h));
-
-      Smax = std::max(S,Smax);
-
-    }
-
-    // viscosity term
-    alpha = Smax;
-
-    double viscLF = alpha*(U[i][nDOF]-U_av[i]);
-
-    // loop over DOFs of the element K
-    for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-
-      // loop over quadrature points in K
-      for (int qp = 0; qp < nQPs_vol; qp++) {
-
-        std::vector<double> U_qp;
-        U_qp.resize(3);
-
-        for (int k = 0; k < nvertex; k++) x_qp[k] = quad_nodes_vol[k][qp];
-
-        U_qp = EvalSol(U,x_qp);
-
-        flux[0] = PhysFlux_x(U_qp);
-        flux[1] = PhysFlux_y(U_qp);
-
-        grad = basis_grad(nDOF,x_qp);
-
-        phi_vol += (flux[0]*grad[0] + flux[1]*grad[1])*weight_vol[qp];
-
-      } //qp
-
-      // loop over dK (edges/faces of K)
-      for (int f = 0; f < cfaces.size(); f++) {
-
-        int orientation;
-        AmanziGeometry::Point n = mesh_->face_normal(cfaces[f],false,c,&orientation);
-        mesh_->face_get_cells(cfaces[f],AmanziMesh::Parallel_type::OWNED,&fcells);
-        farea = mesh_->face_area(cfaces[f]);
-        n /= farea;
-
-        // loop over quadrature points in dK
-        for (int qp = 0; qp < nQPs_face; qp++) {
-
-          std::vector<double> U_qp;
-          U_qp.resize(3);
-
-          x_qp = quad_nodes_face[qp];
-
-          U_qp = EvalSol(U,x_qp);
-
-          flux[0] = PhysFlux_x(U_qp);
-          flux[1] = PhysFlux_y(U_qp);
-
-          phi_face += (flux[0]*n[0] + flux[1]*n[1])*basis(nDOF,x_qp)*weight_face[qp];
-
-        } // qp
-
-      } // face
-
-      // residual
-      Phi[i][nDOF] = phi_vol - phi_face + viscLF;
-
-    } // nDOF
-  } // i
-
-  return Phi;
-}
-
-//--------------------------------------------------------------
-// Time-space residuals for time-stepping scheme
-//--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int c, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr){
-  std::vector<double> Phi, Phi_n, Phi_pr;
-  Phi.resize(3);
-  Phi_n.resize(3);
-  Phi_pr.resize(3);
-
-  Phi_n  = ResidualsLF(U);
-  Phi_pr = ResidualsLF(U_pr);
-
-  mesh_->cell_get_faces(c,&cfaces);
-
-  double vol = mesh_->cell_volume(c);
-
-  for (i = 0; i < 3; i++) {
-
-    // loop over DOFs of the element K
-    for (int nDOF = 0, nDOF < nDOFs; nDOF++) {
-
-      double du = 0;
-
-      // loop over quadrature points in K
-      for (int qp = 0; qp < nQPs_vol; qp++) {
-
-        std::vector<double> U_qp;
-        U_qp.resize(3);
-
-        std::vector<double> U_pr_qp;
-        U_pr_qp.resize(3);
-
-        x_qp = quad_nodes_vol[qp];
-
-        U_qp    = EvalSol(U,x_qp);
-        U_pr_qp = EvalSol(U_pr,x_qp);
-
-        du += (U_pr_qp - U_qp)*basis(nDOF,x_qp)*weight_vol[qp];
-
-      } //qp
-
-      Phi[i][nDOF] = du/dt + 0.5*(Phi_n[i][nDOF] + Phi_pr[i][nDOF]);
-    }
-  }
-
-  return Phi;
-}
-
-//--------------------------------------------------------------
-// Distribution coefficients
-//--------------------------------------------------------------
-std::vector<std::vector<double> > ShallowWater_PK::DistrCoeffs(std::vector<std::vector<double> >& Phi_Rus){
-
-  for (int i = 0; i < 3; i++) {
-
-    for (int nDOF = 0; nDOF < nDOFs; nDOF++) {
-      Phi_total[i] += Phi_Rus[i][nDOF];
-    }
-
-    for (int nDOF = 0; nDOF < nDOFs; nDOF++) {
-      sum_max += max(Phi_Rus[i][nDOF],0.);
-    }
-
-    for (int nDOF = 0; nDOF < nDOFs; nDOF++) {
-      if (abs(Phi_total[i]) > 0.0) {
-        beta[i][nDOF] = max(Phi_Rus[i][nDOF]/Phi_total[i],0.0)/sum_max;
-      } else {
-        beta[i][nDOF] = 0.0;
-      }
-    }
-
-  } // i
-
-  return beta;
-}
 
 //--------------------------------------------------------------
 // physical flux in x-direction
