@@ -148,6 +148,7 @@
 #                - update PETSc to 3.13
 #                - update SuperLU_DIST to 6.1.1
 #                - update CLM to 0.1.1
+#   0.97.10      - update Hypre to 2.20.0
 
 include(CMakeParseArguments)
 
@@ -200,7 +201,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION_PATCH 10)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -391,13 +392,13 @@ set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  14)
+set(HYPRE_VERSION_MINOR  20)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        270a6e4620622516655dd9903a36d314)
+set(HYPRE_MD5_SUM        aba74c2f30fdb0188c4328e53b1929f2)
 
 #
 # TPL: ParMetis
