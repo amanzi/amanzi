@@ -47,6 +47,8 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
   void ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
   void ComputeNodeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
 
+  void ComputeFaceErrorMoments(Epetra_MultiVector& u, double t, int order, std::vector<double>& l2_err);
+
   // communications
   void GlobalOp(std::string op, double* val, int n);
 

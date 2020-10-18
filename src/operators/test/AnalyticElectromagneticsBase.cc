@@ -13,6 +13,8 @@
 
 #include "Epetra_MultiVector.h"
 
+#include "NumericalIntegration.hh"
+
 #include "AnalyticElectromagneticsBase.hh"
 
 /* ******************************************************************
@@ -48,6 +50,42 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
+};
+
+
+/* ******************************************************************
+* Error calculation of faces.
+****************************************************************** */
+void AnalyticElectromagneticsBase::ComputeFaceErrorMoments(
+    Epetra_MultiVector& u, double t, int order, std::vector<double>& l2_err)
+{
+  int d = mesh_->space_dimension();
+  double scale = double(d) / (d - 1);
+
+  int nmoments = u.NumVectors();
+  l2_err.resize(nmoments, 0.0);
+
+  std::vector<double> moments;
+  Amanzi::WhetStone::NumericalIntegration<Amanzi::AmanziMesh::Mesh> numi(mesh_);
+
+  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    double area = mesh_->face_area(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+    set_parameters(normal / area, 2, t);
+
+    numi.CalculateFunctionMomentsFace(f, this, order, moments, 3);
+
+    for (int k = 0; k < nmoments; ++k) {
+      l2_err[k] += std::pow((moments[k] - u[k][f]), 2.0) * std::pow(area, scale);
+    }
+  }
+#ifdef HAVE_MPI
+  auto tmp = l2_err;
+  mesh_->get_comm()->SumAll(&(tmp[0]), &(l2_err[0]), nmoments);
+#endif
+  for (int k = 0; k < nmoments; ++k) l2_err[k] = sqrt(l2_err[k]);
 };
 
 
