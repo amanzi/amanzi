@@ -86,14 +86,10 @@ CarbonDecomposeRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       col_sum += f_temp * f_depth * f_pres_temp * dz;
     }
-    else {
-      col_sum = 0;
-    }
 
   }
   
   res_c[0][0] = col_sum;
- 
 }
   
 void
